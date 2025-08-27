@@ -1,0 +1,110 @@
+/* Tippy.js custom styles and container constraint fixes */
+
+/* Ensure tooltips escape parent container bounds */
+.tippy-box {
+	position: fixed !important;
+	z-index: 9999 !important;
+}
+
+/* Custom theme for system tooltips */
+.tippy-box[data-theme~='system'] {
+	background-color: #1f2937;
+	color: #f9fafb;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 1.4;
+	box-shadow:
+		0 10px 25px rgba(0, 0, 0, 0.1),
+		0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tippy-box[data-theme~='system'] .tippy-arrow {
+	color: #1f2937;
+}
+
+/* Light theme customization */
+.tippy-box[data-theme~='light'] {
+	background: #ff9999;
+	color: #ffffff;
+	border: none;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	padding: 12px 16px;
+	box-shadow:
+		0 10px 25px rgba(59, 130, 246, 0.3),
+		0 4px 6px rgba(59, 130, 246, 0.1);
+}
+
+.tippy-box[data-theme~='light'] .tippy-arrow {
+	color: #3b82f6;
+}
+
+/* Success theme */
+.tippy-box[data-theme~='success'] {
+	background-color: #10b981;
+	color: #ffffff;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.tippy-box[data-theme~='success'] .tippy-arrow {
+	color: #10b981;
+}
+
+/* Warning theme */
+.tippy-box[data-theme~='warning'] {
+	background-color: #f59e0b;
+	color: #ffffff;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.tippy-box[data-theme~='warning'] .tippy-arrow {
+	color: #f59e0b;
+}
+
+/* Error theme */
+.tippy-box[data-theme~='error'] {
+	background-color: #ef4444;
+	color: #ffffff;
+	border-radius: 8px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.tippy-box[data-theme~='error'] .tippy-arrow {
+	color: #ef4444;
+}
+
+/* Ensure parent containers don't clip tooltips */
+.tooltip-container {
+	position: relative;
+	overflow: visible !important;
+}
+
+/* Fix for containers that might constrain tooltips */
+.overflow-hidden .tippy-box,
+.overflow-clip .tippy-box {
+	position: fixed !important;
+}
+
+/* Animation improvements */
+.tippy-box[data-animation='fade'] {
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease;
+}
+
+.tippy-box[data-state='hidden'] {
+	opacity: 0;
+	transform: scale(0.8);
+}
+
+.tippy-box[data-state='visible'] {
+	opacity: 1;
+	transform: scale(1);
+}

@@ -22,30 +22,30 @@ import ToastContainer from '$lib/components/ToastContainer.svelte';
 ```javascript
 // Success notification
 toast.success({
-  title: 'Success!',
-  message: 'Your changes have been saved',
-  duration: 3000 // milliseconds (optional, default: 5000)
+	title: 'Success!',
+	message: 'Your changes have been saved',
+	duration: 3000 // milliseconds (optional, default: 5000)
 });
 
 // Error notification
 toast.error({
-  title: 'Error',
-  message: 'Failed to save changes',
-  duration: 5000
+	title: 'Error',
+	message: 'Failed to save changes',
+	duration: 5000
 });
 
 // Warning notification
 toast.warning({
-  title: 'Warning',
-  message: 'Please review your input',
-  duration: 4000
+	title: 'Warning',
+	message: 'Please review your input',
+	duration: 4000
 });
 
 // Info notification
 toast.info({
-  title: 'Note',
-  message: 'New updates are available',
-  duration: 3000
+	title: 'Note',
+	message: 'New updates are available',
+	duration: 3000
 });
 ```
 
@@ -54,16 +54,16 @@ toast.info({
 ```javascript
 // Show a loading toast (infinite duration by default)
 const toastId = toast.loading({
-  title: 'Processing...',
-  message: 'Please wait while we save your data'
+	title: 'Processing...',
+	message: 'Please wait while we save your data'
 });
 
 // Later, update it to show success
 toast.updateToast(toastId, {
-  title: 'Complete!',
-  message: 'Your data has been saved',
-  type: 'success',
-  duration: 3000
+	title: 'Complete!',
+	message: 'Your data has been saved',
+	type: 'success',
+	duration: 3000
 });
 
 // Or dismiss it if needed
@@ -78,29 +78,29 @@ Perfect for workflows with multiple stages:
 
 ```javascript
 const toastId = toast.multiStep({
-  steps: [
-    { 
-      title: 'Validating...', 
-      message: 'Checking your input', 
-      type: 'info' 
-    },
-    { 
-      title: 'Processing...', 
-      message: 'Saving to database', 
-      type: 'loading' 
-    },
-    { 
-      title: 'Uploading...', 
-      message: 'Sending files to server', 
-      type: 'loading' 
-    },
-    { 
-      title: 'Success!', 
-      message: 'Everything is complete', 
-      type: 'success' 
-    }
-  ],
-  closeable: false // Prevent closing during process
+	steps: [
+		{
+			title: 'Validating...',
+			message: 'Checking your input',
+			type: 'info'
+		},
+		{
+			title: 'Processing...',
+			message: 'Saving to database',
+			type: 'loading'
+		},
+		{
+			title: 'Uploading...',
+			message: 'Sending files to server',
+			type: 'loading'
+		},
+		{
+			title: 'Success!',
+			message: 'Everything is complete',
+			type: 'success'
+		}
+	],
+	closeable: false // Prevent closing during process
 });
 
 // Progress through steps
@@ -125,7 +125,7 @@ toast.updateStep(toastId, 2); // Go to step 3 (0-indexed)
 
 // Update current step's content
 toast.updateToast(toastId, {
-  message: 'Almost done...'
+	message: 'Almost done...'
 });
 ```
 
@@ -134,10 +134,10 @@ toast.updateToast(toastId, {
 ```javascript
 // Non-closeable toast (good for critical operations)
 toast.info({
-  title: 'System Update',
-  message: 'Please do not close this window',
-  closeable: false,
-  duration: -1 // Infinite duration
+	title: 'System Update',
+	message: 'Please do not close this window',
+	closeable: false,
+	duration: -1 // Infinite duration
 });
 ```
 
@@ -145,12 +145,12 @@ toast.info({
 
 ```javascript
 toast.success({
-  title: 'Deleted',
-  message: 'Item has been removed',
-  onClose: () => {
-    console.log('User closed the toast');
-    // Perform cleanup or other actions
-  }
+	title: 'Deleted',
+	message: 'Item has been removed',
+	onClose: () => {
+		console.log('User closed the toast');
+		// Perform cleanup or other actions
+	}
 });
 ```
 
@@ -158,15 +158,15 @@ toast.success({
 
 ### Toast Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `title` | string | '' | Main heading of the toast |
-| `message` | string | '' | Detailed message content |
-| `type` | string | 'info' | Toast type: 'success', 'error', 'warning', 'info', 'loading' |
-| `duration` | number | 5000 | Auto-dismiss time in milliseconds (-1 for infinite) |
-| `closeable` | boolean | true | Whether the toast can be manually closed |
-| `steps` | array | null | Array of step objects for multi-step toasts |
-| `onClose` | function | null | Callback when toast is dismissed |
+| Option      | Type     | Default | Description                                                  |
+| ----------- | -------- | ------- | ------------------------------------------------------------ |
+| `title`     | string   | ''      | Main heading of the toast                                    |
+| `message`   | string   | ''      | Detailed message content                                     |
+| `type`      | string   | 'info'  | Toast type: 'success', 'error', 'warning', 'info', 'loading' |
+| `duration`  | number   | 5000    | Auto-dismiss time in milliseconds (-1 for infinite)          |
+| `closeable` | boolean  | true    | Whether the toast can be manually closed                     |
+| `steps`     | array    | null    | Array of step objects for multi-step toasts                  |
+| `onClose`   | function | null    | Callback when toast is dismissed                             |
 
 ### Duration Constants
 
@@ -174,8 +174,8 @@ toast.success({
 import { DURATIONS } from '$lib/stores/toast.js';
 
 toast.success({
-  title: 'Quick message',
-  duration: DURATIONS.short  // 3000ms
+	title: 'Quick message',
+	duration: DURATIONS.short // 3000ms
 });
 
 // Available durations:
@@ -191,37 +191,37 @@ toast.success({
 
 ```javascript
 async function handleSubmit(e) {
-  e.preventDefault();
-  
-  const toastId = toast.loading({
-    title: 'Submitting form...',
-    message: 'Please wait'
-  });
-  
-  try {
-    const response = await fetch('/api/submit', {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    });
-    
-    if (response.ok) {
-      toast.updateToast(toastId, {
-        title: 'Success!',
-        message: 'Form submitted successfully',
-        type: 'success',
-        duration: 3000
-      });
-    } else {
-      throw new Error('Submission failed');
-    }
-  } catch (error) {
-    toast.updateToast(toastId, {
-      title: 'Submission Failed',
-      message: error.message,
-      type: 'error',
-      duration: 5000
-    });
-  }
+	e.preventDefault();
+
+	const toastId = toast.loading({
+		title: 'Submitting form...',
+		message: 'Please wait'
+	});
+
+	try {
+		const response = await fetch('/api/submit', {
+			method: 'POST',
+			body: JSON.stringify(formData)
+		});
+
+		if (response.ok) {
+			toast.updateToast(toastId, {
+				title: 'Success!',
+				message: 'Form submitted successfully',
+				type: 'success',
+				duration: 3000
+			});
+		} else {
+			throw new Error('Submission failed');
+		}
+	} catch (error) {
+		toast.updateToast(toastId, {
+			title: 'Submission Failed',
+			message: error.message,
+			type: 'error',
+			duration: 5000
+		});
+	}
 }
 ```
 
@@ -229,40 +229,39 @@ async function handleSubmit(e) {
 
 ```javascript
 async function uploadFile(file) {
-  const toastId = toast.multiStep({
-    steps: [
-      { title: 'Preparing upload...', type: 'info' },
-      { title: 'Uploading file...', type: 'loading' },
-      { title: 'Processing...', type: 'loading' },
-      { title: 'Complete!', type: 'success' }
-    ]
-  });
-  
-  try {
-    // Step 1: Prepare
-    await prepareUpload(file);
-    toast.nextStep(toastId);
-    
-    // Step 2: Upload
-    await uploadToServer(file);
-    toast.nextStep(toastId);
-    
-    // Step 3: Process
-    await processFile(file);
-    toast.nextStep(toastId);
-    
-    // Auto-dismiss after 3 seconds
-    setTimeout(() => toast.dismiss(toastId), 3000);
-    
-  } catch (error) {
-    toast.updateToast(toastId, {
-      title: 'Upload Failed',
-      message: error.message,
-      type: 'error',
-      closeable: true,
-      duration: 5000
-    });
-  }
+	const toastId = toast.multiStep({
+		steps: [
+			{ title: 'Preparing upload...', type: 'info' },
+			{ title: 'Uploading file...', type: 'loading' },
+			{ title: 'Processing...', type: 'loading' },
+			{ title: 'Complete!', type: 'success' }
+		]
+	});
+
+	try {
+		// Step 1: Prepare
+		await prepareUpload(file);
+		toast.nextStep(toastId);
+
+		// Step 2: Upload
+		await uploadToServer(file);
+		toast.nextStep(toastId);
+
+		// Step 3: Process
+		await processFile(file);
+		toast.nextStep(toastId);
+
+		// Auto-dismiss after 3 seconds
+		setTimeout(() => toast.dismiss(toastId), 3000);
+	} catch (error) {
+		toast.updateToast(toastId, {
+			title: 'Upload Failed',
+			message: error.message,
+			type: 'error',
+			closeable: true,
+			duration: 5000
+		});
+	}
 }
 ```
 
@@ -270,20 +269,20 @@ async function uploadFile(file) {
 
 ```javascript
 async function copyToClipboard(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.success({
-      title: 'Copied!',
-      message: 'Text copied to clipboard',
-      duration: 2000
-    });
-  } catch (err) {
-    toast.error({
-      title: 'Copy Failed',
-      message: 'Could not access clipboard',
-      duration: 3000
-    });
-  }
+	try {
+		await navigator.clipboard.writeText(text);
+		toast.success({
+			title: 'Copied!',
+			message: 'Text copied to clipboard',
+			duration: 2000
+		});
+	} catch (err) {
+		toast.error({
+			title: 'Copy Failed',
+			message: 'Could not access clipboard',
+			duration: 3000
+		});
+	}
 }
 ```
 
@@ -322,15 +321,18 @@ The system uses Tailwind CSS classes and includes smooth animations for appearan
 ## Troubleshooting
 
 ### Toast not appearing
+
 - Ensure `<ToastContainer />` is added to your page
 - Check that you've imported the toast store correctly
 - Verify no CSS is hiding the toast container (z-index issues)
 
 ### Toast dismissing too quickly
+
 - Increase the `duration` value
 - Use `duration: -1` for manual dismissal only
 
 ### Multi-step not progressing
+
 - Ensure you're calling `toast.nextStep(toastId)` with the correct ID
 - Check that the step index is within bounds
 

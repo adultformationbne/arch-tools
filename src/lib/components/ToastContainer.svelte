@@ -1,13 +1,13 @@
 <script>
-  import { toast as toastStore } from '$lib/stores/toast.js';
-  import Toast from './Toast.svelte';
+	import { toast as toastStore } from '$lib/stores/toast.svelte.js';
+	import Toast from './Toast.svelte';
 </script>
 
-<div class="fixed z-50 pointer-events-none">
-  <!-- Top right position by default -->
-  <div class="fixed top-4 right-4 space-y-2 pointer-events-auto max-w-sm w-full">
-    {#each toastStore.toasts as toast (toast.id)}
-      <Toast {toast} />
-    {/each}
-  </div>
+<div class="pointer-events-none fixed z-50">
+	<!-- Top right position by default -->
+	<div class="pointer-events-auto fixed top-4 right-4 w-full max-w-sm space-y-2">
+		{#each toastStore.toasts as toast (toast.id)}
+			<Toast {toast} />
+		{/each}
+	</div>
 </div>

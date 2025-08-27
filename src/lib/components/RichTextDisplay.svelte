@@ -1,51 +1,43 @@
 <script>
+	import { decodeHtmlEntities } from '$lib/utils/html.js';
+
 	let { content = '', class: className = '' } = $props();
-	
-	// Convert plain text to HTML if needed
+
+	// Convert content to properly decoded HTML
 	function getDisplayContent() {
 		if (!content) return '';
-		
-		// If content already contains HTML tags, return as-is
-		if (content.includes('<') && content.includes('>')) {
-			return content;
-		}
-		
-		// Otherwise, treat as plain text and escape HTML
-		return content.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;')
-			.replace(/\n/g, '<br>');
+
+		// Decode HTML entities and handle line breaks
+		let decoded = decodeHtmlEntities(content).replace(/\n/g, '<br>');
+
+		return decoded;
 	}
 </script>
 
-<div 
-	class="rich-text-display {className}"
->
+<div class="rich-text-display {className}">
 	{@html getDisplayContent()}
 </div>
 
 <style>
 	/* Rich text formatting styles */
-	:global(.rich-text-display [data-format="scripture"]) {
-		@apply text-teal-700 font-medium bg-teal-50 px-1 rounded;
+	:global(.rich-text-display [data-format='scripture']) {
+		@apply rounded bg-teal-50 px-1 font-medium text-teal-700;
 	}
-	
-	:global(.rich-text-display [data-format="quote"]) {
-		@apply text-blue-700 italic bg-blue-50 px-1 rounded;
+
+	:global(.rich-text-display [data-format='quote']) {
+		@apply rounded bg-blue-50 px-1 text-blue-700 italic;
 	}
-	
+
 	:global(.rich-text-display strong),
 	:global(.rich-text-display b) {
 		@apply font-bold;
 	}
-	
+
 	:global(.rich-text-display em),
 	:global(.rich-text-display i) {
 		@apply italic;
 	}
-	
+
 	:global(.rich-text-display) {
 		line-height: 1.6;
 	}

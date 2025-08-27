@@ -1,0 +1,889 @@
+[
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "59471cd5-ec77-491c-9e8e-54b951e4ad37",
+				"tag": "h2",
+				"content": "read",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:55:48.734Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "59471cd5-ec77-491c-9e8e-54b951e4ad37",
+					"tag": "h2",
+					"content": "read",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:55:48.734Z",
+					"isVisible": true
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "78353815-68b4-48a5-8d90-d1edd2a80841",
+				"tag": "paragraph",
+				"content": "Read through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:55:56.015Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "78353815-68b4-48a5-8d90-d1edd2a80841",
+					"tag": "paragraph",
+					"content": "Read through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:55:56.015Z",
+					"isVisible": true
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "33a8861e-2d59-4323-bd71-048706831828",
+				"tag": "paragraph",
+				"content": "Reflect on what these Gospel words are saying to your life, here and now.",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:55:56.015Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "545c02fd-15b7-43cd-a795-e7b52003b413",
+				"tag": "h2",
+				"content": "Share",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:04.792Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "545c02fd-15b7-43cd-a795-e7b52003b413",
+					"tag": "h2",
+					"content": "Share",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:56:04.792Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "1de1c24b-b70d-4b2b-9e8e-f803243821eb",
+				"tag": "paragraph",
+				"content": "What image of God did you have as a child?",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:10.929Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "1de1c24b-b70d-4b2b-9e8e-f803243821eb",
+					"tag": "paragraph",
+					"content": "What image of God did you have as a child?",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:56:10.929Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "9046a0f6-2019-4107-afa5-502726ffcd85",
+				"tag": "paragraph",
+				"content": "Have you been conscious of a personal search for God that has brought you to this group? If so, what have been some of the steps on this path?",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:33.857Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "9046a0f6-2019-4107-afa5-502726ffcd85",
+					"tag": "paragraph",
+					"content": "Have you been conscious of a personal search for God that has brought you to this group? If so, what have been some of the steps on this path?",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:56:33.857Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "dd92b16f-ed71-4fc7-8d82-9f4bb124167f",
+				"tag": "paragraph",
+				"content": "People’s actions can be a sign to us of goodness and life-giving love. Describe an experience when someone helped you in a time of hardship and suffering.",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:40.520Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "568e8fc5-7a38-48d4-b6c8-050c94dd0714",
+				"tag": "h2",
+				"content": "Pray",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:47.114Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [
+				{
+					"id": "568e8fc5-7a38-48d4-b6c8-050c94dd0714",
+					"tag": "h2",
+					"content": "Pray",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:56:47.114Z",
+					"isVisible": true
+				}
+			],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "b5bfeddf-db21-4799-a52c-e04ffb0be70f",
+				"tag": "paragraph",
+				"content": "Lord, you are great \n\tand greatly to be praised; \n\t\tgreat is your power,\n\tand your wisdom infinite.\nWe would praise you without ceasing.\nYou call us to delight in your praise,\n\tfor you have made us for yourself,\n\tand our hearts are restless\n\t\tuntil they rest in you.\n(St Augustine, 354-430)",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:56:59.225Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "ae76c51a-bb62-43bf-8ade-58016aaa2b53",
+				"tag": "h2",
+				"content": "Research",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:57:11.909Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [],
+			"research": [
+				{
+					"id": "ae76c51a-bb62-43bf-8ade-58016aaa2b53",
+					"tag": "h2",
+					"content": "Research",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:57:11.909Z",
+					"isVisible": true
+				}
+			]
+		}
+	},
+	{
+		"chapter": "In Search Of God",
+		"chapterId": "54b8c473-0d61-4aa4-a51c-9b16fc4aa945",
+		"blocks": [
+			{
+				"id": "5b130623-3c4a-45d5-bfad-06c486fa0b63",
+				"tag": "paragraph",
+				"content": "Catechism of the Catholic Church: \nNos 27-49",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-21T23:57:20.030Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [],
+			"pray": [],
+			"research": [
+				{
+					"id": "5b130623-3c4a-45d5-bfad-06c486fa0b63",
+					"tag": "paragraph",
+					"content": "Catechism of the Catholic Church: \nNos 27-49",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-21T23:57:20.030Z",
+					"isVisible": true
+				}
+			]
+		}
+	},
+	{
+		"chapter": "Prayer",
+		"chapterId": "53de4e2f-767c-4660-a4cf-812c5319764c",
+		"blocks": [
+			{
+				"id": "946d2279-0f43-4477-96ae-b0e2564ec7d3",
+				"tag": "paragraph",
+				"content": "Read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nDescribe a place where you experience a sense of quietness and/or peace, where the business of life is put aside for a moment. How can this become a regular place of prayer for you for spending time with God?\n\n\n\nThe Gospels have many records of Jesus praying. Can you recall some of the different ways Jesus prayed?\n\n\n\n\nPrayer is a gift from God who loves us and speaks with us. We begin our prayer with a sense of gratitude and thanks for all that God gives us. Share and discuss a simple prayer that you have used or are aware of. \n\n\n\n\nPray\nO Lord our God, \n\tgrant us grace to desire you \n\t\twith a whole heart, \n\tthat so desiring you \n\t\twe may seek and find you, \n\tand so finding you may love you, \n\tand loving you may hate those sins \n\t\twhich separate us from you, \n\tfor the sake of Jesus Christ. \nAmen.\n(St Anselm of Canterbury, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 2558-2865",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T00:10:29.412Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "946d2279-0f43-4477-96ae-b0e2564ec7d3",
+					"tag": "paragraph",
+					"content": "Read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nDescribe a place where you experience a sense of quietness and/or peace, where the business of life is put aside for a moment. How can this become a regular place of prayer for you for spending time with God?\n\n\n\nThe Gospels have many records of Jesus praying. Can you recall some of the different ways Jesus prayed?\n\n\n\n\nPrayer is a gift from God who loves us and speaks with us. We begin our prayer with a sense of gratitude and thanks for all that God gives us. Share and discuss a simple prayer that you have used or are aware of. \n\n\n\n\nPray\nO Lord our God, \n\tgrant us grace to desire you \n\t\twith a whole heart, \n\tthat so desiring you \n\t\twe may seek and find you, \n\tand so finding you may love you, \n\tand loving you may hate those sins \n\t\twhich separate us from you, \n\tfor the sake of Jesus Christ. \nAmen.\n(St Anselm of Canterbury, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 2558-2865",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T00:10:29.412Z",
+					"isVisible": true
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Bible - The Word of God",
+		"chapterId": "24a59c6a-80e7-4245-ab34-419a07a3093e",
+		"blocks": [
+			{
+				"id": "d88371e2-1a04-4808-800f-8c365aed4071",
+				"tag": "paragraph",
+				"content": "read\nTake time to find next Sunday’s Gospel reading. Read it slowly. Imagine yourself present there. Reflect on what it is saying to your life.\nShare\nDo you have a favourite story from the Bible?\n\n\n\n\nA key biblical word is ‘covenant’, meaning an agreement, contract or bond. Discuss the importance of these words, ‘You shall be my people and I will be your God’, for both the Hebrew and Christian people, and ‘But you have come ... to Jesus, the mediator of a new covenant,’ for Christian people.\n\n\n\n\n\nThe New Testament teaches us about the life, death and resurrection of Jesus. What are some of the characteristics of Jesus that appeal to you?\n\n\n\nPray\nBlessed Lord,\n\twho caused all the Holy Scriptures \n\t\tto be written for our learning:\nGrant that we may in such ways \n\thear them, read, mark,\n\t\tlearn and inwardly digest them,\n\tthat by patience and comfort\n\t\tof the holy word, \n\twe may embrace \n\t\tand ever hold fast\n\tthe blessed hope \n\t\tof everlasting life,\n\twhich you have given us \n\t\tin our Saviour Jesus Christ. \nAmen.\n(Book of Common Prayer)\nresearch\nCatechism of the Catholic Church: \nNos 50-73",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T00:33:14.850Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "d88371e2-1a04-4808-800f-8c365aed4071",
+					"tag": "paragraph",
+					"content": "read\nTake time to find next Sunday’s Gospel reading. Read it slowly. Imagine yourself present there. Reflect on what it is saying to your life.\nShare\nDo you have a favourite story from the Bible?\n\n\n\n\nA key biblical word is ‘covenant’, meaning an agreement, contract or bond. Discuss the importance of these words, ‘You shall be my people and I will be your God’, for both the Hebrew and Christian people, and ‘But you have come ... to Jesus, the mediator of a new covenant,’ for Christian people.\n\n\n\n\n\nThe New Testament teaches us about the life, death and resurrection of Jesus. What are some of the characteristics of Jesus that appeal to you?\n\n\n\nPray\nBlessed Lord,\n\twho caused all the Holy Scriptures \n\t\tto be written for our learning:\nGrant that we may in such ways \n\thear them, read, mark,\n\t\tlearn and inwardly digest them,\n\tthat by patience and comfort\n\t\tof the holy word, \n\twe may embrace \n\t\tand ever hold fast\n\tthe blessed hope \n\t\tof everlasting life,\n\twhich you have given us \n\t\tin our Saviour Jesus Christ. \nAmen.\n(Book of Common Prayer)\nresearch\nCatechism of the Catholic Church: \nNos 50-73",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T00:33:14.850Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Bible and The Church",
+		"chapterId": "a6cc1499-de52-484b-b8fd-697ddc2b0151",
+		"blocks": [
+			{
+				"id": "9ec412ef-e422-472b-9ac5-3397f9fbdb55",
+				"tag": "paragraph",
+				"content": "read\nWhen you take up the Gospel for next Sunday’s Mass, pause to remember that this is God’s word to you. \nRead it attentively, pausing as some word or phrase strikes you.\nShare\nWhat do you understand by the term ‘Tradition’? \n\n\n\n\nWhy is it important to have both Scripture and Tradition?\n\n\n\n\n\nWhy were four Gospels included in the New Testament?\n\n\n\n\nPray\nO gracious and holy God,\n\tgive us wisdom to perceive you,\n\tintelligence to understand you,\n\tdiligence to seek you,\n\tpatience to wait for you,\n\teyes to see you,\n\ta heart to meditate on you,\n\tand a life to proclaim you,\n\t\tthrough the power of the Spirit \n\t\t\tof Jesus Christ our Lord.\n(St Benedict, 480-547)\nresearch\nCatechism of the Catholic Church: \nNos 74-141",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T01:00:00.864Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "9ec412ef-e422-472b-9ac5-3397f9fbdb55",
+					"tag": "paragraph",
+					"content": "read\nWhen you take up the Gospel for next Sunday’s Mass, pause to remember that this is God’s word to you. \nRead it attentively, pausing as some word or phrase strikes you.\nShare\nWhat do you understand by the term ‘Tradition’? \n\n\n\n\nWhy is it important to have both Scripture and Tradition?\n\n\n\n\n\nWhy were four Gospels included in the New Testament?\n\n\n\n\nPray\nO gracious and holy God,\n\tgive us wisdom to perceive you,\n\tintelligence to understand you,\n\tdiligence to seek you,\n\tpatience to wait for you,\n\teyes to see you,\n\ta heart to meditate on you,\n\tand a life to proclaim you,\n\t\tthrough the power of the Spirit \n\t\t\tof Jesus Christ our Lord.\n(St Benedict, 480-547)\nresearch\nCatechism of the Catholic Church: \nNos 74-141",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T01:00:00.864Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The God of Revelation",
+		"chapterId": "385c351d-2dee-4719-bd18-c9e6d071714d",
+		"blocks": [
+			{
+				"id": "26e0f252-1f19-47af-b8eb-254d9a125089",
+				"tag": "paragraph",
+				"content": "read\nFind the Gospel reading for next Sunday’s Mass. Before you begin to read it, pause and remind yourself that God is speaking to you in these words. Now read the Gospel, pausing here and there as something strikes you. Savour God’s word to you.\nShare\nWhat Gospel story comes to mind when you think about who Jesus is?\n\n\n\nWhat does this story tell you about Jesus? What does it tell you about God?\n\n\n\nWhat difference does it make to you that Jesus lived and dwelt among us?\n\n\nPray\nThank you, Lord Jesus Christ,\n\tfor all the benefits and blessings \n\t\twhich you have given me,\n\tfor all the pains and insults\n\t\twhich you have borne for me.\nMerciful Friend, Brother and Redeemer,\n\tmay I know you more clearly,\n\t\tlove you more dearly,\n\t\t\tand follow you more nearly,\n\t\tday by day.\n(St Richard of Chichester, 1198-1253)\nresearch\nCatechism of the Catholic Church: \nNos 51-141",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T01:09:43.749Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "26e0f252-1f19-47af-b8eb-254d9a125089",
+					"tag": "paragraph",
+					"content": "read\nFind the Gospel reading for next Sunday’s Mass. Before you begin to read it, pause and remind yourself that God is speaking to you in these words. Now read the Gospel, pausing here and there as something strikes you. Savour God’s word to you.\nShare\nWhat Gospel story comes to mind when you think about who Jesus is?\n\n\n\nWhat does this story tell you about Jesus? What does it tell you about God?\n\n\n\nWhat difference does it make to you that Jesus lived and dwelt among us?\n\n\nPray\nThank you, Lord Jesus Christ,\n\tfor all the benefits and blessings \n\t\twhich you have given me,\n\tfor all the pains and insults\n\t\twhich you have borne for me.\nMerciful Friend, Brother and Redeemer,\n\tmay I know you more clearly,\n\t\tlove you more dearly,\n\t\t\tand follow you more nearly,\n\t\tday by day.\n(St Richard of Chichester, 1198-1253)\nresearch\nCatechism of the Catholic Church: \nNos 51-141",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T01:09:43.749Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Birth of the Church",
+		"chapterId": "df8ff67d-869d-47c7-9c45-348564c978c5",
+		"blocks": [
+			{
+				"id": "5946be0a-b1c4-4d30-b69c-985677ddea8c",
+				"tag": "paragraph",
+				"content": "read\nFind the Gospel reading for next Sunday’s Mass. Again, remind yourself that God speaks to you: Spirit of God, be with me as I read your word. Help me to be attentive to what you are saying to me, and to my life.\nShare\nWhy is Pentecost sometimes called the birth of the Church?\n\n\n\nWhat enabled the early Christian communities to grow and spread even under difficult circumstances?\n\n\n\n\nWhat role does the Holy Spirit have in the Church today?\n\n\n\n\nPray\nO you, from whom to be turned is to fall,\n\tto whom to be turned is to rise,\n\tand in whom to stand \n\t\tis to abide for ever:\nGrant us in all our duties your help,\n\tin all our perplexities your guidance,\n\tin all our dangers your protection,\n\tand in all our sorrows your peace; \n\t\tthrough Jesus Christ our Lord.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 748-769",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T02:13:38.437Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "5946be0a-b1c4-4d30-b69c-985677ddea8c",
+					"tag": "paragraph",
+					"content": "read\nFind the Gospel reading for next Sunday’s Mass. Again, remind yourself that God speaks to you: Spirit of God, be with me as I read your word. Help me to be attentive to what you are saying to me, and to my life.\nShare\nWhy is Pentecost sometimes called the birth of the Church?\n\n\n\nWhat enabled the early Christian communities to grow and spread even under difficult circumstances?\n\n\n\n\nWhat role does the Holy Spirit have in the Church today?\n\n\n\n\nPray\nO you, from whom to be turned is to fall,\n\tto whom to be turned is to rise,\n\tand in whom to stand \n\t\tis to abide for ever:\nGrant us in all our duties your help,\n\tin all our perplexities your guidance,\n\tin all our dangers your protection,\n\tand in all our sorrows your peace; \n\t\tthrough Jesus Christ our Lord.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 748-769",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T02:13:38.437Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Church - God's People",
+		"chapterId": "ae03c6df-1abe-49eb-ba3a-0a4d2abd3d90",
+		"blocks": [
+			{
+				"id": "6c1dfe3d-356c-4497-ba9f-d67530dc92a4",
+				"tag": "paragraph",
+				"content": "read\nSpend some time praying through next Sunday’s Gospel. As you listen to what God’s word is saying to your life, recall that the whole Church will share this Gospel on Sunday, will be nourished by it and will try to let it speak to their lives, too. Pray that you and they will grow to be ever more attentive to this Word.\nShare\nWhat image of Church appeals most to you?\n\n\n\nHow is the Church the ‘Body of Christ’?\n\n\n\nAn early Christian document (Didaskalia Apostolorum) states: Teach the faithful and exhort them to be present at Sunday Mass, less they decrease the Church by their absence and deprive the mystical Body of Christ of one of its members. What do you think this means?\n\n\n\nPray\nO God, send forth your Holy Spirit \n\tinto my heart that I may perceive, \n\tinto my mind that I may remember, \t\tand into my soul that I may meditate. \nInspire me to speak with piety, holiness, \n\ttenderness and mercy. \nTeach, guide and direct \n\tmy thoughts and senses \n\t\tfrom beginning to end. \nMay your grace ever help and correct me, \n\tand may I be strengthened now \n\t\twith wisdom from on high, \n\t\tfor the sake of your infinite mercy. Amen.\n(St Anthony of Padua, 1195-1231)\nresearch\nCatechism of the Catholic Church: \nNos 770-870",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T02:37:29.361Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "6c1dfe3d-356c-4497-ba9f-d67530dc92a4",
+					"tag": "paragraph",
+					"content": "read\nSpend some time praying through next Sunday’s Gospel. As you listen to what God’s word is saying to your life, recall that the whole Church will share this Gospel on Sunday, will be nourished by it and will try to let it speak to their lives, too. Pray that you and they will grow to be ever more attentive to this Word.\nShare\nWhat image of Church appeals most to you?\n\n\n\nHow is the Church the ‘Body of Christ’?\n\n\n\nAn early Christian document (Didaskalia Apostolorum) states: Teach the faithful and exhort them to be present at Sunday Mass, less they decrease the Church by their absence and deprive the mystical Body of Christ of one of its members. What do you think this means?\n\n\n\nPray\nO God, send forth your Holy Spirit \n\tinto my heart that I may perceive, \n\tinto my mind that I may remember, \t\tand into my soul that I may meditate. \nInspire me to speak with piety, holiness, \n\ttenderness and mercy. \nTeach, guide and direct \n\tmy thoughts and senses \n\t\tfrom beginning to end. \nMay your grace ever help and correct me, \n\tand may I be strengthened now \n\t\twith wisdom from on high, \n\t\tfor the sake of your infinite mercy. Amen.\n(St Anthony of Padua, 1195-1231)\nresearch\nCatechism of the Catholic Church: \nNos 770-870",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T02:37:29.361Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Peter and the Church",
+		"chapterId": "b4df3afd-870a-4d9d-958a-d5a8bacb47a0",
+		"blocks": [
+			{
+				"id": "1a4f65a6-784d-4ab2-b79a-f86a4c72c305",
+				"tag": "paragraph",
+				"content": "read\nTake some time to read through next Sunday’s Gospel. Read through the first reading, too, which will have a connection to the Gospel. What are these readings saying to your life, to its frailty?\nShare\nWhy did the early Church need leaders?\n\n\n\n\n\n\nHow is leadership exercised in the Church today?\n\n\n\n\nHow is the office of the Pope seen as a symbol of unity for the Church?\n\n\n\n\n\n\nPray\nTeach us, good Lord,\n\tto serve you as you deserve;\n\tto give and not to count the cost;\n\tto fight and not to heed the wounds;\n\tto toil and not to seek for rest;\n\tto labour and not to ask for reward\nsave that of knowing we do your will\n\tthrough Jesus Christ our Lord.\n(St Ignatius of Loyola, 1491-1556)\nresearch\nCatechism of the Catholic Church: \nNos 871-896, 934-945",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T02:44:50.025Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "1a4f65a6-784d-4ab2-b79a-f86a4c72c305",
+					"tag": "paragraph",
+					"content": "read\nTake some time to read through next Sunday’s Gospel. Read through the first reading, too, which will have a connection to the Gospel. What are these readings saying to your life, to its frailty?\nShare\nWhy did the early Church need leaders?\n\n\n\n\n\n\nHow is leadership exercised in the Church today?\n\n\n\n\nHow is the office of the Pope seen as a symbol of unity for the Church?\n\n\n\n\n\n\nPray\nTeach us, good Lord,\n\tto serve you as you deserve;\n\tto give and not to count the cost;\n\tto fight and not to heed the wounds;\n\tto toil and not to seek for rest;\n\tto labour and not to ask for reward\nsave that of knowing we do your will\n\tthrough Jesus Christ our Lord.\n(St Ignatius of Loyola, 1491-1556)\nresearch\nCatechism of the Catholic Church: \nNos 871-896, 934-945",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T02:44:50.025Z",
+					"isVisible": true
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Sacraments of the Church",
+		"chapterId": "e6bad1c3-07aa-44cc-ae51-c6b0a6c46bc5",
+		"blocks": [
+			{
+				"id": "e17bb786-380c-4d2a-915d-f770d2ea450b",
+				"tag": "paragraph",
+				"content": "read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nWhat image of God did you have as a child?\n\n\n\nHave you been conscious of a personal search for God that has brought you to this group? If so, what have been some of the steps on this path?\n\n\n\n\nPeople’s actions can be a sign to us of goodness and life-giving love. Describe an experience when someone helped you in a time of hardship and suffering.\n\n\n\nPray\nLord, you are great \n\tand greatly to be praised; \n\tgreat is your power,\n\t\tand your wisdom infinite.\nWe would praise you without ceasing.\nYou call us to delight in your praise,\n\tfor you have made us for yourself,\n\tand our hearts are restless\n\t\tuntil they rest in you.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 1066-1209",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T03:36:20.512Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "e17bb786-380c-4d2a-915d-f770d2ea450b",
+					"tag": "paragraph",
+					"content": "read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nWhat image of God did you have as a child?\n\n\n\nHave you been conscious of a personal search for God that has brought you to this group? If so, what have been some of the steps on this path?\n\n\n\n\nPeople’s actions can be a sign to us of goodness and life-giving love. Describe an experience when someone helped you in a time of hardship and suffering.\n\n\n\nPray\nLord, you are great \n\tand greatly to be praised; \n\tgreat is your power,\n\t\tand your wisdom infinite.\nWe would praise you without ceasing.\nYou call us to delight in your praise,\n\tfor you have made us for yourself,\n\tand our hearts are restless\n\t\tuntil they rest in you.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 1066-1209",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T03:36:20.512Z",
+					"isVisible": true
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Sacraments of Initiation: Baptism and Confirmation",
+		"chapterId": "4133b82f-3e09-4771-9182-870b6fbfbfa7",
+		"blocks": [
+			{
+				"id": "d6ecdd5e-b3a8-4158-b2a4-efd98f0dae79",
+				"tag": "paragraph",
+				"content": "read\nWhen you take up the Gospel for next Sunday, remind yourself that this is God’s word to you and to your daily life.\nSpirit of God, help me to be attentive to your word.\nShare\nWhat have been your experiences of water that have been refreshing, life-giving, frightening or renewing?\n\n\n\nIf the sacraments are a sign and symbol of God’s love, what has been a ‘sacrament’ for you in your daily life?\n\n\n‘Be sealed with the gift of the Holy Spirit’. How have you witnessed one or more of these gifts in someone you know?\n\n\n\nPray\nChrist be with me, Christ within me,\nChrist behind me, Christ before me,\nChrist beside me, Christ to win me,\nChrist to comfort and restore me,\nChrist beneath me, Christ above me,\nChrist in quiet, Christ in danger,\nChrist in hearts of all that love me,\nChrist in mouth of friends and stranger.\n(St Patrick, 389-461)\nresearch\nCatechism of the Catholic Church: \nNos 1210-1321",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T03:48:44.408Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "d6ecdd5e-b3a8-4158-b2a4-efd98f0dae79",
+					"tag": "paragraph",
+					"content": "read\nWhen you take up the Gospel for next Sunday, remind yourself that this is God’s word to you and to your daily life.\nSpirit of God, help me to be attentive to your word.\nShare\nWhat have been your experiences of water that have been refreshing, life-giving, frightening or renewing?\n\n\n\nIf the sacraments are a sign and symbol of God’s love, what has been a ‘sacrament’ for you in your daily life?\n\n\n‘Be sealed with the gift of the Holy Spirit’. How have you witnessed one or more of these gifts in someone you know?\n\n\n\nPray\nChrist be with me, Christ within me,\nChrist behind me, Christ before me,\nChrist beside me, Christ to win me,\nChrist to comfort and restore me,\nChrist beneath me, Christ above me,\nChrist in quiet, Christ in danger,\nChrist in hearts of all that love me,\nChrist in mouth of friends and stranger.\n(St Patrick, 389-461)\nresearch\nCatechism of the Catholic Church: \nNos 1210-1321",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T03:48:44.408Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Sacraments of Initiation: Eucharist",
+		"chapterId": "2f5f6dff-1fe6-4a69-b464-7366b31acade",
+		"blocks": [
+			{
+				"id": "0de67873-25f7-4a68-9491-0775cb7a1d65",
+				"tag": "paragraph",
+				"content": "read\nRead the Gospel for next Sunday. Be open. Be attentive. Make connections with your life.\nShare\nReflect on your memories of sharing meals that have been experiences of God’s love and presence.\n\n\n\n\nWhy does the Church teach that the Eucharist is the summit and fountain of the Christian life? \n\n\n\n\nThe Second Vatican Council taught the importance of full, active and conscious participation in the Eucharist. How can you do this effectively?\n\n\n\n\n\n\nPray\nSoul of Christ, sanctify me.\nBody of Christ, heal me.\nBlood of Christ, fill me.\nWater from the side of Christ, wash me.\nPassion of Christ, strengthen me.\nGood Jesus, hear me.\nIn your wounds shelter me.\nFrom turning away keep me.\nFrom the evil one protect me.\nAt the hour of my death call me.\nInto your presence lead me,\n\tto praise you with all your saints\n\t\tfor ever and ever.\nAmen.\n(Anima Christi)\nresearch\nCatechism of the Catholic Church: \nNos 1322-1344, 1356-1410",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T03:56:10.122Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "0de67873-25f7-4a68-9491-0775cb7a1d65",
+					"tag": "paragraph",
+					"content": "read\nRead the Gospel for next Sunday. Be open. Be attentive. Make connections with your life.\nShare\nReflect on your memories of sharing meals that have been experiences of God’s love and presence.\n\n\n\n\nWhy does the Church teach that the Eucharist is the summit and fountain of the Christian life? \n\n\n\n\nThe Second Vatican Council taught the importance of full, active and conscious participation in the Eucharist. How can you do this effectively?\n\n\n\n\n\n\nPray\nSoul of Christ, sanctify me.\nBody of Christ, heal me.\nBlood of Christ, fill me.\nWater from the side of Christ, wash me.\nPassion of Christ, strengthen me.\nGood Jesus, hear me.\nIn your wounds shelter me.\nFrom turning away keep me.\nFrom the evil one protect me.\nAt the hour of my death call me.\nInto your presence lead me,\n\tto praise you with all your saints\n\t\tfor ever and ever.\nAmen.\n(Anima Christi)\nresearch\nCatechism of the Catholic Church: \nNos 1322-1344, 1356-1410",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T03:56:10.122Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Structure of the Mass",
+		"chapterId": "d1d9f6c0-6d2a-468f-bba9-ccf6dd9f810b",
+		"blocks": [
+			{
+				"id": "867b1613-ceb8-444b-9a68-7dc20d5522b8",
+				"tag": "paragraph",
+				"content": "read\nTo your prayerful, reflective reading of the Gospel for next Sunday, you may like to add the first reading (which is always connected to it). Be attentive to what God may be saying to you in your life through these words.\nShare\nWhat do we bring when we gather with the faith community at the Mass on Sunday?\n\n\n\n\nWhen has there been a time when the word of God has made a profound difference to your life? Was it a particular scripture passage or someone’s perspective on the scripture?\n\n\n\n\nIn one church, as people leave, they see the sign ‘Servants Entrance’ over the doors. What does this signify?\n\n\n\n\nPray\nEternal Light, shine into our hearts,\nEternal Goodness, deliver us from evil;\nEternal Power, be our support,\nEternal Wisdom, scatter the darkness \n\tof our ignorance;\nEternal Pity, have mercy upon us; \n\tthat with all our heart\n\tand mind and soul and strength \n\twe may seek your face \n\tand be brought \n\t\tby your infinite mercy\n\t\tto your holy presence,\n\tthrough Jesus Christ our Lord.\n(Alcuin of York, c 732-804)\nresearch\nCatechism of the Catholic Church: \nNos 1345-1355, 1378-1381, 1398-1401, 2691",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T04:07:31.172Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "867b1613-ceb8-444b-9a68-7dc20d5522b8",
+					"tag": "paragraph",
+					"content": "read\nTo your prayerful, reflective reading of the Gospel for next Sunday, you may like to add the first reading (which is always connected to it). Be attentive to what God may be saying to you in your life through these words.\nShare\nWhat do we bring when we gather with the faith community at the Mass on Sunday?\n\n\n\n\nWhen has there been a time when the word of God has made a profound difference to your life? Was it a particular scripture passage or someone’s perspective on the scripture?\n\n\n\n\nIn one church, as people leave, they see the sign ‘Servants Entrance’ over the doors. What does this signify?\n\n\n\n\nPray\nEternal Light, shine into our hearts,\nEternal Goodness, deliver us from evil;\nEternal Power, be our support,\nEternal Wisdom, scatter the darkness \n\tof our ignorance;\nEternal Pity, have mercy upon us; \n\tthat with all our heart\n\tand mind and soul and strength \n\twe may seek your face \n\tand be brought \n\t\tby your infinite mercy\n\t\tto your holy presence,\n\tthrough Jesus Christ our Lord.\n(Alcuin of York, c 732-804)\nresearch\nCatechism of the Catholic Church: \nNos 1345-1355, 1378-1381, 1398-1401, 2691",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T04:07:31.172Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Sin and Forgiveness",
+		"chapterId": "1699dfc9-fe6c-4eca-a35f-5e2a4861e718",
+		"blocks": [
+			{
+				"id": "47350826-6dcb-4ce5-a08e-60472a903127",
+				"tag": "paragraph",
+				"content": "read\nSpend some time with next Sunday’s Gospel, with your mind and heart open to what the Lord is saying to you in it.\nShare\nWhat emphasis did Jesus place on the loving forgiveness of one another? Give examples.\n\n\n\n\nAn examination of conscience is one of the essential parts of the Rite of Penance. What does this mean for you and how will it make a difference when you are celebrating the sacrament of Reconciliation?\n\n\n\n\nWhen has there been a time when you have experienced true forgiveness?\n\n\n\nPray\nI confess to almighty God,\nand to you, my brothers and sisters,\nthat I have greatly sinned, \nin my thoughts and in my words,\nin what I have done \n\tand in what I have failed to do,\nthrough my fault, through my fault,\nthrough my most grievous fault;\ntherefore I ask blessed Mary, ever-Virgin,\nall the Angels and Saints,\nand you, my brothers and sisters,\nto pray for me to the Lord our God.\n(Introductory Rite at Mass)\nresearch\nCatechism of the Catholic Church: \nNos 1420-1498",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T04:19:52.958Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "47350826-6dcb-4ce5-a08e-60472a903127",
+					"tag": "paragraph",
+					"content": "read\nSpend some time with next Sunday’s Gospel, with your mind and heart open to what the Lord is saying to you in it.\nShare\nWhat emphasis did Jesus place on the loving forgiveness of one another? Give examples.\n\n\n\n\nAn examination of conscience is one of the essential parts of the Rite of Penance. What does this mean for you and how will it make a difference when you are celebrating the sacrament of Reconciliation?\n\n\n\n\nWhen has there been a time when you have experienced true forgiveness?\n\n\n\nPray\nI confess to almighty God,\nand to you, my brothers and sisters,\nthat I have greatly sinned, \nin my thoughts and in my words,\nin what I have done \n\tand in what I have failed to do,\nthrough my fault, through my fault,\nthrough my most grievous fault;\ntherefore I ask blessed Mary, ever-Virgin,\nall the Angels and Saints,\nand you, my brothers and sisters,\nto pray for me to the Lord our God.\n(Introductory Rite at Mass)\nresearch\nCatechism of the Catholic Church: \nNos 1420-1498",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T04:19:52.958Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Anointing of the Sick",
+		"chapterId": "84a3ecb6-fdee-47bf-86a4-5d2100b01e51",
+		"blocks": [
+			{
+				"id": "66b27531-d7e7-46c3-accc-89a54a39cd79",
+				"tag": "paragraph",
+				"content": "read\nWith a mind and heart open to what the Spirit may say to you, read the Sunday Gospel slowly and reflectively. Make connections with your life.\nShare\nWhat Gospel stories do you think of in relation to this sacrament?\n\n\n\n\n\n\nHow does the healing power of Christ manifest itself today?\n\n\n\n\n\nFormerly the Church administered the Last Rites, but the present understanding of the sacrament of Anointing of the Sick reflects a shift in emphasis. What are the key reasons for this change?\n\n\n\n\n\nPray\nTend your sick ones, Lord Christ;\n\trest your weary ones,\n\tbless your dying ones,\n\tsoothe your suffering ones,\n\tpity your afflicted ones,\n\tshield your joyous ones,\n\t\tand all for your love’s sake.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 1499-1532",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T04:24:19.631Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "66b27531-d7e7-46c3-accc-89a54a39cd79",
+					"tag": "paragraph",
+					"content": "read\nWith a mind and heart open to what the Spirit may say to you, read the Sunday Gospel slowly and reflectively. Make connections with your life.\nShare\nWhat Gospel stories do you think of in relation to this sacrament?\n\n\n\n\n\n\nHow does the healing power of Christ manifest itself today?\n\n\n\n\n\nFormerly the Church administered the Last Rites, but the present understanding of the sacrament of Anointing of the Sick reflects a shift in emphasis. What are the key reasons for this change?\n\n\n\n\n\nPray\nTend your sick ones, Lord Christ;\n\trest your weary ones,\n\tbless your dying ones,\n\tsoothe your suffering ones,\n\tpity your afflicted ones,\n\tshield your joyous ones,\n\t\tand all for your love’s sake.\n(St Augustine, 354-430)\nresearch\nCatechism of the Catholic Church: \nNos 1499-1532",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T04:24:19.631Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Marriage",
+		"chapterId": "04677ef2-fb4a-43a9-98f1-679bab07ccc9",
+		"blocks": [
+			{
+				"id": "4873c667-3715-4f86-b4a5-ca94a088ec0e",
+				"tag": "paragraph",
+				"content": "read\nRead next Sunday’s Gospel prayerfully and reflectively, attending to what it may be saying to your life.\nShare\nIn the sacrament of Marriage the bride and bridegroom are the ministers of the sacrament to each other. Why is this important?\n\n\n\nShare stories of married people you know whose love for each other is ‘an outward, visible sign of Jesus’ presence and love in the world.’\n\n\n\nLove by its nature is life-giving. How can married love be a sign of God’s creative love?\n\n\n\nPray\nO blessed Lord,\n\tyou have commanded us to love\n\t\tone another;\n\tgrant us grace that,\n\thaving received your \n\t\tundeserved bounty,\n\twe may love everyone in you \n\tand for you.\nWe seek your clemency for all,\n\tbut especially for the friends\n\tyour love has given us.\nLove them, Wellspring of love,\n\tand make them love you \n\t\twith all their heart,\n\tthat they may will and speak and do\n\t\tthose things only which \n\t\t\tare pleasing to you.\n(St Anselm of Canterbury, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1601-1666, 2360-2379",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T04:33:26.519Z",
+				"isVisible": true
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "4873c667-3715-4f86-b4a5-ca94a088ec0e",
+					"tag": "paragraph",
+					"content": "read\nRead next Sunday’s Gospel prayerfully and reflectively, attending to what it may be saying to your life.\nShare\nIn the sacrament of Marriage the bride and bridegroom are the ministers of the sacrament to each other. Why is this important?\n\n\n\nShare stories of married people you know whose love for each other is ‘an outward, visible sign of Jesus’ presence and love in the world.’\n\n\n\nLove by its nature is life-giving. How can married love be a sign of God’s creative love?\n\n\n\nPray\nO blessed Lord,\n\tyou have commanded us to love\n\t\tone another;\n\tgrant us grace that,\n\thaving received your \n\t\tundeserved bounty,\n\twe may love everyone in you \n\tand for you.\nWe seek your clemency for all,\n\tbut especially for the friends\n\tyour love has given us.\nLove them, Wellspring of love,\n\tand make them love you \n\t\twith all their heart,\n\tthat they may will and speak and do\n\t\tthose things only which \n\t\t\tare pleasing to you.\n(St Anselm of Canterbury, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1601-1666, 2360-2379",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T04:33:26.519Z",
+					"isVisible": true
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Ministry and Mission",
+		"chapterId": "cc5c3d77-0f36-44b0-a7e2-29fd2e10b9e0",
+		"blocks": [
+			{
+				"id": "8abdeb52-9f0e-4786-b634-25a18676ecd9",
+				"tag": "paragraph",
+				"content": "read\nSpend some time with next Sunday’s Gospel, letting it speak to your situation. There may be a word, or a phrase, or an image in it that you can carry around with you and use.\nShare\nHow are you a sign of Good News in your everyday life?\n\n\n\nSt Paul writes of a variety of gifts but the same Spirit. What particular gifts are being exercised in your community to promote God’s reign of peace, justice and compassion?\n\n\n\n\nDescribe ways in which the ministry of the Church is essential to the mission of the Church and how the mission of the Church grounds the ministry of the Church.\n\n\n\n\nPray\nLord, \nmake me an instrument of your peace, \n\twhere there is hatred, \n\t\tlet me sow love;\n\twhere there is injury, pardon;\n\twhere there is doubt, faith;\n\twhere there is despair, hope;\n\twhere there is darkness, light;\n\twhere there is sadness, joy; \nO Divine Master, grant that I \n\tmay not so much seek \n\t\tto be consoled as to console; \n\tto be understood as to understand; \n\tto be loved as to love. \nFor it is in giving that we receive; \n\tit is in pardoning \n\t\tthat we are pardoned; \n\tand it is in dying \n\t\tthat we are born to eternal life.\n(St Francis of Assisi, 1182-1226)\nresearch\nCatechism of the Catholic Church: \nNos 849-865, 897-913, 1877-1896",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T05:37:55.024Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "8abdeb52-9f0e-4786-b634-25a18676ecd9",
+					"tag": "paragraph",
+					"content": "read\nSpend some time with next Sunday’s Gospel, letting it speak to your situation. There may be a word, or a phrase, or an image in it that you can carry around with you and use.\nShare\nHow are you a sign of Good News in your everyday life?\n\n\n\nSt Paul writes of a variety of gifts but the same Spirit. What particular gifts are being exercised in your community to promote God’s reign of peace, justice and compassion?\n\n\n\n\nDescribe ways in which the ministry of the Church is essential to the mission of the Church and how the mission of the Church grounds the ministry of the Church.\n\n\n\n\nPray\nLord, \nmake me an instrument of your peace, \n\twhere there is hatred, \n\t\tlet me sow love;\n\twhere there is injury, pardon;\n\twhere there is doubt, faith;\n\twhere there is despair, hope;\n\twhere there is darkness, light;\n\twhere there is sadness, joy; \nO Divine Master, grant that I \n\tmay not so much seek \n\t\tto be consoled as to console; \n\tto be understood as to understand; \n\tto be loved as to love. \nFor it is in giving that we receive; \n\tit is in pardoning \n\t\tthat we are pardoned; \n\tand it is in dying \n\t\tthat we are born to eternal life.\n(St Francis of Assisi, 1182-1226)\nresearch\nCatechism of the Catholic Church: \nNos 849-865, 897-913, 1877-1896",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T05:37:55.024Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Moral Life",
+		"chapterId": "76b7b991-c4d4-41c5-9309-9ee0970d75df",
+		"blocks": [
+			{
+				"id": "de474ef4-d147-4419-8cce-3b12d6882a6c",
+				"tag": "paragraph",
+				"content": "read\nTake up the Gospel for next Sunday. Remind yourself that this is God’s word for you, and read it with attentiveness. There will be something in it for you to take away with you.\nShare\nShare some of the comments you highlighted or that stood out for you.\n\n\n\n\n\n\n\n\nThe Psalmist writes of delight and joy in the law of the Lord. Does this view of law surprise you?\n\n\n\n\nHow would you help someone facing a significant dilemma discern the morally appropriate path?\n\n\n\nPray\nO merciful God, \n\tfill our hearts ... \n\twith the graces of your Holy Spirit, \n\twith love, joy, peace, long-suffering, \n\t\tgentleness, goodness, faith, \n\t\tmeekness, temperance. \nTeach us to love those who hate us; \n\tto pray for those who \n\t\tdespitefully use us; \n\tthat we may be your children, \n\tour Father, who make your sun \n\t\tto shine on the evil \n\t\t\tand on the good \n\tand send rain on the just \n\t\tand on the unjust.\n(St Anselm, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1846-1876, 1949-2029, 2052-2557",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T05:44:08.416Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "de474ef4-d147-4419-8cce-3b12d6882a6c",
+					"tag": "paragraph",
+					"content": "read\nTake up the Gospel for next Sunday. Remind yourself that this is God’s word for you, and read it with attentiveness. There will be something in it for you to take away with you.\nShare\nShare some of the comments you highlighted or that stood out for you.\n\n\n\n\n\n\n\n\nThe Psalmist writes of delight and joy in the law of the Lord. Does this view of law surprise you?\n\n\n\n\nHow would you help someone facing a significant dilemma discern the morally appropriate path?\n\n\n\nPray\nO merciful God, \n\tfill our hearts ... \n\twith the graces of your Holy Spirit, \n\twith love, joy, peace, long-suffering, \n\t\tgentleness, goodness, faith, \n\t\tmeekness, temperance. \nTeach us to love those who hate us; \n\tto pray for those who \n\t\tdespitefully use us; \n\tthat we may be your children, \n\tour Father, who make your sun \n\t\tto shine on the evil \n\t\t\tand on the good \n\tand send rain on the just \n\t\tand on the unjust.\n(St Anselm, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1846-1876, 1949-2029, 2052-2557",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T05:44:08.416Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Law and Freedom",
+		"chapterId": "ba74ad86-a8d0-458c-8f1f-0540e371949c",
+		"blocks": [
+			{
+				"id": "073069be-a2c5-48cc-93dd-db570122edd3",
+				"tag": "paragraph",
+				"content": "read\nWhen you come to read next Sunday’s Gospel, pause first and ask the Spirit to help you read with openness and attentiveness – with your heart and mind really free to hear what is being said to you.\nShare\nHow do you see God’s law of love bringing freedom to your life?\n\n\n\nLegalism is not enough according to Jesus. What is necessary?\n\n\n\nShare your views about the statement: Freedom is perhaps our greatest responsibility and our most difficult obligation.\n\n\n\nPray\nMay the strength of God pilot us. \nMay the power of God preserve us. \nMay the wisdom of God instruct us. \nMay the hand of God protect us. \nMay the way of God direct us. \nMay the shield of God defend us.\n(St Patrick, 389-461)\nresearch\nCatechism of the Catholic Church: \nNos 577-582, 1691-1845",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T05:49:05.307Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "073069be-a2c5-48cc-93dd-db570122edd3",
+					"tag": "paragraph",
+					"content": "read\nWhen you come to read next Sunday’s Gospel, pause first and ask the Spirit to help you read with openness and attentiveness – with your heart and mind really free to hear what is being said to you.\nShare\nHow do you see God’s law of love bringing freedom to your life?\n\n\n\nLegalism is not enough according to Jesus. What is necessary?\n\n\n\nShare your views about the statement: Freedom is perhaps our greatest responsibility and our most difficult obligation.\n\n\n\nPray\nMay the strength of God pilot us. \nMay the power of God preserve us. \nMay the wisdom of God instruct us. \nMay the hand of God protect us. \nMay the way of God direct us. \nMay the shield of God defend us.\n(St Patrick, 389-461)\nresearch\nCatechism of the Catholic Church: \nNos 577-582, 1691-1845",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T05:49:05.307Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Authority and Wisdom",
+		"chapterId": "939826a3-7704-48c5-97d0-85c851ddae95",
+		"blocks": [
+			{
+				"id": "8105b641-b1a5-4c4a-a60f-e2dbbd98ab43",
+				"tag": "paragraph",
+				"content": "read\nRead next Sunday’s Gospel with due care and attention. Be attentive to what the Spirit may be inviting you to in this reading.\nShare\nA popular decision-making question is: ‘What would Jesus do?’ Does this question fulfil the Christian’s responsibility of making decisions with an informed conscience?\n\n\n\n\nWho do you feel speaks with authority and why?\n\n\n\n\nWhen considering the deeper questions that face our society, what influences your thinking and decision-making?\n\n\n\nPray\nMy God,\nI am yours\n\tfor time and eternity.\nTeach me to cast myself \n\tentirely into the arms \n\t\tof your loving providence\n\twith the most lively, \n\t\tunlimited confidence \n\tin your compassionate, \n\t\ttender pity.\n(Venerable Catherine McAuley, 1778-1841)\nresearch\nCatechism of the Catholic Church: \nNos 874-896, 1776-1802, 2030-2051",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T06:26:12.731Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "8105b641-b1a5-4c4a-a60f-e2dbbd98ab43",
+					"tag": "paragraph",
+					"content": "read\nRead next Sunday’s Gospel with due care and attention. Be attentive to what the Spirit may be inviting you to in this reading.\nShare\nA popular decision-making question is: ‘What would Jesus do?’ Does this question fulfil the Christian’s responsibility of making decisions with an informed conscience?\n\n\n\n\nWho do you feel speaks with authority and why?\n\n\n\n\nWhen considering the deeper questions that face our society, what influences your thinking and decision-making?\n\n\n\nPray\nMy God,\nI am yours\n\tfor time and eternity.\nTeach me to cast myself \n\tentirely into the arms \n\t\tof your loving providence\n\twith the most lively, \n\t\tunlimited confidence \n\tin your compassionate, \n\t\ttender pity.\n(Venerable Catherine McAuley, 1778-1841)\nresearch\nCatechism of the Catholic Church: \nNos 874-896, 1776-1802, 2030-2051",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T06:26:12.731Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Social Justice",
+		"chapterId": "344820d3-97a2-44a5-8238-aa152e7b35dd",
+		"blocks": [
+			{
+				"id": "326a6ce7-3e0d-4c7c-a668-78920b2cd327",
+				"tag": "paragraph",
+				"content": "read\nRead next Sunday’s Gospel prayerfully, and be open to what this word of God may be inviting you to do.\nShare\nHow does the Church identify with the poor in practice here in Australia and in other parts of the world?\n\n\n\n\n\nWhat challenges and difficulties do individual Christians face in trying to live in solidarity with the poor?\n\n\n\n\n\nHow could Christians be politically active in society without being part of a political party?\n\n\n\nPray\nWe bring before you, O Lord, \n\tthe troubles and perils \n\t\tof people and nations, \n\tthe sighing of prisoners and captives, \n\tthe sorrows of the bereaved, \n\tthe necessities of strangers, \n\tthe helplessness of the weak, \n\tthe despondency of the weary, \n\tthe failing powers of the aged. \nO Lord, draw near to each; \n\tfor the sake of Jesus Christ our Lord. \nAmen.\n(St Anselm, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1928-1948, 2401-2463",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T06:36:57.600Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "326a6ce7-3e0d-4c7c-a668-78920b2cd327",
+					"tag": "paragraph",
+					"content": "read\nRead next Sunday’s Gospel prayerfully, and be open to what this word of God may be inviting you to do.\nShare\nHow does the Church identify with the poor in practice here in Australia and in other parts of the world?\n\n\n\n\n\nWhat challenges and difficulties do individual Christians face in trying to live in solidarity with the poor?\n\n\n\n\n\nHow could Christians be politically active in society without being part of a political party?\n\n\n\nPray\nWe bring before you, O Lord, \n\tthe troubles and perils \n\t\tof people and nations, \n\tthe sighing of prisoners and captives, \n\tthe sorrows of the bereaved, \n\tthe necessities of strangers, \n\tthe helplessness of the weak, \n\tthe despondency of the weary, \n\tthe failing powers of the aged. \nO Lord, draw near to each; \n\tfor the sake of Jesus Christ our Lord. \nAmen.\n(St Anselm, 1033-1109)\nresearch\nCatechism of the Catholic Church: \nNos 1928-1948, 2401-2463",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T06:36:57.600Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "Care of the Planet",
+		"chapterId": "3004572e-837a-4277-a5fb-c91e7d512f02",
+		"blocks": [
+			{
+				"id": "199ba084-28c5-4af7-9557-025dd7f618e1",
+				"tag": "paragraph",
+				"content": "read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nWhere has human greed and negligence caused serious environmental damage locally and nationally?\n\n\n\n\n\nThe Queensland bishops suggested three steps to take everyday responsibility for our care of the planet. How could your habits and lifestyle change to become more environmentally responsible?\n\n\n\n\n\nHow could the Church promote ecological conversion by its example locally, nationally and universally?\n\n\n\n\n\nPray\nPraised be my Lord God \n\twith all creatures;\n\tand especially our brother the sun,\n\twhich brings us the day, and the light;\n\t\tfair is he, and shining \n\t\t\twith a very great splendour:\n\tO Lord, he signifies you to us!\nPraised be my Lord for our sister \n\tthe moon, and for the stars,\n\twhich God has set clear and lovely \n\t\tin heaven.\nPraised be my Lord for our brother \n\tthe wind, and for air and cloud,  \n\t\tcalms and all weather,\n\tby which you uphold in life \n\t\tall creatures.\nPraised be my Lord for our sister water,\n\twhich is very serviceable to us,\n\tand humble, and precious, and clean.\nPraised be my Lord for brother fire,\n\tthrough which you give us light \n\t\tin the darkness:\n\tand he is bright, and pleasant, \n\tand very mighty, and strong.\nPraised be my Lord \n\tfor our mother the Earth,\n\t\twhich sustains us and keeps us,\n\t\t\tand yields diverse fruits, \n\t\t\tand flowers of many colours, \n\t\t\tand grass ...\nPraise you, and bless you the Lord,\n\tand give thanks to God, \n\tand serve God with great humility.\n(St Francis, 1182-1226)\nresearch\nCatechism of the Catholic Church: \nNos 279-294; 337-354; 1146-1149; 2415-2418",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-22T06:45:07.111Z"
+			}
+		],
+		"structure": {
+			"read": [
+				{
+					"id": "199ba084-28c5-4af7-9557-025dd7f618e1",
+					"tag": "paragraph",
+					"content": "read\nRead through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.\nReflect on what these Gospel words are saying to your life, here and now.\nShare\nWhere has human greed and negligence caused serious environmental damage locally and nationally?\n\n\n\n\n\nThe Queensland bishops suggested three steps to take everyday responsibility for our care of the planet. How could your habits and lifestyle change to become more environmentally responsible?\n\n\n\n\n\nHow could the Church promote ecological conversion by its example locally, nationally and universally?\n\n\n\n\n\nPray\nPraised be my Lord God \n\twith all creatures;\n\tand especially our brother the sun,\n\twhich brings us the day, and the light;\n\t\tfair is he, and shining \n\t\t\twith a very great splendour:\n\tO Lord, he signifies you to us!\nPraised be my Lord for our sister \n\tthe moon, and for the stars,\n\twhich God has set clear and lovely \n\t\tin heaven.\nPraised be my Lord for our brother \n\tthe wind, and for air and cloud,  \n\t\tcalms and all weather,\n\tby which you uphold in life \n\t\tall creatures.\nPraised be my Lord for our sister water,\n\twhich is very serviceable to us,\n\tand humble, and precious, and clean.\nPraised be my Lord for brother fire,\n\tthrough which you give us light \n\t\tin the darkness:\n\tand he is bright, and pleasant, \n\tand very mighty, and strong.\nPraised be my Lord \n\tfor our mother the Earth,\n\t\twhich sustains us and keeps us,\n\t\t\tand yields diverse fruits, \n\t\t\tand flowers of many colours, \n\t\t\tand grass ...\nPraise you, and bless you the Lord,\n\tand give thanks to God, \n\tand serve God with great humility.\n(St Francis, 1182-1226)\nresearch\nCatechism of the Catholic Church: \nNos 279-294; 337-354; 1146-1149; 2415-2418",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-22T06:45:07.111Z"
+				}
+			],
+			"share": [],
+			"pray": [],
+			"research": []
+		}
+	},
+	{
+		"chapter": "The Last Things",
+		"chapterId": "4cd07adb-1d5f-4c04-b5b3-356d608e67c7",
+		"blocks": [
+			{
+				"id": "4d783202-74df-44c9-84ec-2d1db5a300a0",
+				"tag": "h3",
+				"content": "read\nRead the Gospel for next Sunday with a prayer for openness, and some serious reflection on what implications it has for your life. Sometimes a word or phrase from it will ‘stay with you’ for a time afterwards.\nShare\nOn our pilgrimage, moving towards our true homeland, many become restrained by the fear of letting go of their human relationships, needs and accomplishments. How can we, in the light of the readings of this chapter, release ourselves from this fear and each day live the pilgrimage as a rich gift of God? \n\n\n\nJesus spoke of Heaven as a magnificent banquet. What is your vision of Heaven?\n\n\n\n\nHow does this doctrine of the Communion of Saints influence your personal understanding and experience of death and God’s saving love?\n\n\n\n\nPray\nGod be in my head\n\tand in my understanding.\nGod be in mine eyes\n\tand in my looking.\nGod be in my mouth\n\tand in my speaking.\nGod be in my heart\n\tand in my thinking.\nGod be at mine end\n\tand my departing.   \n(Sarum Primer, 1527)\nresearch\nCatechism of the Catholic Church: \nNos 946-962 \n988-1060",
+				"metadata": ["reflection"],
+				"createdAt": "2025-08-26T02:35:49.976Z"
+			}
+		],
+		"structure": {
+			"read": [],
+			"share": [
+				{
+					"id": "4d783202-74df-44c9-84ec-2d1db5a300a0",
+					"tag": "h3",
+					"content": "read\nRead the Gospel for next Sunday with a prayer for openness, and some serious reflection on what implications it has for your life. Sometimes a word or phrase from it will ‘stay with you’ for a time afterwards.\nShare\nOn our pilgrimage, moving towards our true homeland, many become restrained by the fear of letting go of their human relationships, needs and accomplishments. How can we, in the light of the readings of this chapter, release ourselves from this fear and each day live the pilgrimage as a rich gift of God? \n\n\n\nJesus spoke of Heaven as a magnificent banquet. What is your vision of Heaven?\n\n\n\n\nHow does this doctrine of the Communion of Saints influence your personal understanding and experience of death and God’s saving love?\n\n\n\n\nPray\nGod be in my head\n\tand in my understanding.\nGod be in mine eyes\n\tand in my looking.\nGod be in my mouth\n\tand in my speaking.\nGod be in my heart\n\tand in my thinking.\nGod be at mine end\n\tand my departing.   \n(Sarum Primer, 1527)\nresearch\nCatechism of the Catholic Church: \nNos 946-962 \n988-1060",
+					"metadata": ["reflection"],
+					"createdAt": "2025-08-26T02:35:49.976Z"
+				}
+			],
+			"pray": [],
+			"research": []
+		}
+	}
+]
