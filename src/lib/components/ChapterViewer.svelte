@@ -20,8 +20,8 @@
 	}
 
 	// Get chapter with block count
-	let chaptersWithCounts = $derived(() => {
-		return chapters.map((chapter) => {
+	let chaptersWithCounts = $derived(
+		chapters.map((chapter) => {
 			const chapterIndex = blocks.findIndex((b) => b.id === chapter.id);
 			let blockCount = 0;
 
@@ -37,13 +37,13 @@
 				...chapter,
 				blockCount
 			};
-		});
-	});
+		})
+	);
 
-	let selectedChapterInfo = $derived(() => {
-		if (!selectedChapter) return null;
-		return chaptersWithCounts.find((c) => c.id === selectedChapter);
-	});
+	let selectedChapterInfo = $derived(
+		!selectedChapter ? null : chaptersWithCounts.find((c) => c.id === selectedChapter)
+	);
+
 </script>
 
 <div class="relative">

@@ -136,160 +136,218 @@
 				{@const isSelected = selectedBlocks.has(block.id)}
 				{@const isHidden = !block.isVisible}
 
-				<div
-					class="block-container group/block relative {isHidden ? 'opacity-50' : ''} {isSelected
-						? 'bg-blue-50 ring-2 ring-blue-400'
-						: ''}"
-				>
-					<!-- Analytics dot - positioned on right side -->
-					<div class="absolute top-2 right-2 z-10">
-						<TrafficLight blockId={block.id} {evaluations} showTooltip={true} />
-					</div>
-
-					<!-- Block Content -->
-					{#if isListItem(block.tag)}
-						<li class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</li>
-					{:else if block.tag === 'chapter'}
-						<h1 class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</h1>
-					{:else if block.tag === 'h1'}
-						<h1 class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</h1>
-					{:else if block.tag === 'h2'}
-						<h2 class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</h2>
-					{:else if block.tag === 'h3'}
-						<h3 class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</h3>
-					{:else if block.tag === 'title'}
-						<div class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</div>
-					{:else}
-						<div class="{getSemanticClass(block.tag)} pr-12">
-							<RichTextDisplay content={block.content} />
-						</div>
-					{/if}
-
-					<!-- Horizontal Actions Bar - appears above block on hover -->
-					<div
-						class="absolute -top-16 right-0 left-0 z-20 translate-y-2 transform opacity-0 transition-all duration-300 group-hover/block:translate-y-0 group-hover/block:opacity-100"
-					>
-						<div class="rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-							<div class="flex items-center justify-between">
-								<!-- Left side - Block info -->
-								<div class="flex items-center gap-3">
-									<input
-										type="checkbox"
-										checked={isSelected}
-										onchange={() => onToggleSelection(block.id)}
-										class="h-4 w-4 rounded border-gray-300 text-blue-600"
-										title="Select block"
-									/>
-									<span class="font-mono text-xs text-gray-500">#{blockIndex + 1}</span>
-									<span class="text-xs font-medium text-gray-600">{block.tag}</span>
+				{#if isHidden}
+					<!-- Hidden block dot indicator -->
+					<div class="group relative mb-2">
+						<!-- Dot indicator -->
+						<div class="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-gray-400 transition-all group-hover:opacity-0"></div>
+						
+						<!-- Expanded hidden block content on hover -->
+						<div class="hidden-block-content ml-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
+							<div
+								class="block-container group/block relative rounded-lg bg-gray-50 p-4 opacity-60 {isSelected
+									? 'ring-2 ring-blue-400'
+									: ''}"
+							>
+								<!-- Analytics dot - positioned on right side -->
+								<div class="absolute top-2 right-2 z-10">
+									<TrafficLight blockId={block.id} {evaluations} showTooltip={true} />
 								</div>
 
-								<!-- Center - Action buttons -->
-								<div class="flex items-center gap-2">
-									<button
-										onclick={() => onEdit(block)}
-										class="flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
-										title="Edit content"
-									>
-										<Edit class="h-4 w-4" />
-										Edit
-									</button>
-
-									<button
-										onclick={() => {
-											console.log('Hide/Show button clicked for block:', block.id);
-											onToggleVisibility(block.id);
-										}}
-										class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {block.isVisible
-											? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-											: 'bg-green-50 text-green-700 hover:bg-green-100'}"
-										title={block.isVisible ? 'Hide block' : 'Show block'}
-									>
-										{#if block.isVisible}
-											<EyeOff class="h-4 w-4" />
-											Hide
-										{:else}
-											<Eye class="h-4 w-4" />
-											Show
-										{/if}
-									</button>
-
-									<button
-										onclick={() => onShowVersionHistory(block)}
-										class="flex items-center gap-1.5 rounded-md bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
-										title="Version history"
-									>
-										<History class="h-4 w-4" />
-										History
-									</button>
-
-									<div class="mx-1 h-6 w-px bg-gray-300"></div>
-
-									<button
-										onclick={() => {
-											console.log('Move up button clicked for block:', block.id);
-											onMove(block.id, 'up');
-										}}
-										disabled={blockIndex === 0}
-										class="flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-										title="Move up"
-									>
-										<ChevronUp class="h-4 w-4" />
-										Up
-									</button>
-
-									<button
-										onclick={() => {
-											console.log('Move down button clicked for block:', block.id);
-											onMove(block.id, 'down');
-										}}
-										disabled={blockIndex === group.blocks.length - 1}
-										class="flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-										title="Move down"
-									>
-										<ChevronDown class="h-4 w-4" />
-										Down
-									</button>
+								<!-- Block Content with greyed out text -->
+								<div class="text-gray-400">
+									{#if isListItem(block.tag)}
+										<li class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</li>
+									{:else if block.tag === 'chapter'}
+										<h1 class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</h1>
+									{:else if block.tag === 'h1'}
+										<h1 class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</h1>
+									{:else if block.tag === 'h2'}
+										<h2 class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</h2>
+									{:else if block.tag === 'h3'}
+										<h3 class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</h3>
+									{:else if block.tag === 'title'}
+										<div class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</div>
+									{:else}
+										<div class="{getSemanticClass(block.tag)} pr-12">
+											<RichTextDisplay content={block.content} />
+										</div>
+									{/if}
 								</div>
 
-								<!-- Right side - Block ID -->
-								<span class="font-mono text-xs text-gray-400">
-									{block.id.slice(0, 8)}...
-								</span>
+								<!-- Unhide button -->
+								<button
+									onclick={() => onToggleVisibility(block.id)}
+									class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-700"
+									title="Show block"
+								>
+									<Eye class="h-4 w-4" />
+									Unhide
+								</button>
 							</div>
 						</div>
 					</div>
-
-					<!-- Hidden indicator -->
-					{#if isHidden}
-						<div class="absolute top-2 left-2 rounded bg-red-100 px-2 py-1 text-xs text-red-700">
-							Hidden
+				{:else}
+					<div
+						class="block-container group/block relative {isSelected
+							? 'bg-blue-50 ring-2 ring-blue-400'
+							: ''}"
+					>
+						<!-- Analytics dot - positioned on right side -->
+						<div class="absolute top-2 right-2 z-10">
+							<TrafficLight blockId={block.id} {evaluations} showTooltip={true} />
 						</div>
-					{/if}
 
-					<!-- Metadata badges -->
-					{#if block.metadata && block.metadata.length > 0 && group.type !== 'metadata-group'}
-						<div class="absolute top-2 right-16 flex gap-1">
-							{#each block.metadata as meta}
-								<span class="rounded bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
-									{meta}
-								</span>
-							{/each}
+						<!-- Block Content -->
+						{#if isListItem(block.tag)}
+							<li class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</li>
+						{:else if block.tag === 'chapter'}
+							<h1 class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</h1>
+						{:else if block.tag === 'h1'}
+							<h1 class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</h1>
+						{:else if block.tag === 'h2'}
+							<h2 class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</h2>
+						{:else if block.tag === 'h3'}
+							<h3 class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</h3>
+						{:else if block.tag === 'title'}
+							<div class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</div>
+						{:else}
+							<div class="{getSemanticClass(block.tag)} pr-12">
+								<RichTextDisplay content={block.content} />
+							</div>
+						{/if}
+
+						<!-- Horizontal Actions Bar - appears above block on hover -->
+						<div
+							class="absolute -top-16 right-0 left-0 z-20 translate-y-2 transform opacity-0 transition-all duration-300 group-hover/block:translate-y-0 group-hover/block:opacity-100"
+						>
+							<div class="rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+								<div class="flex items-center justify-between">
+									<!-- Left side - Block info -->
+									<div class="flex items-center gap-3">
+										<input
+											type="checkbox"
+											checked={isSelected}
+											onchange={() => onToggleSelection(block.id)}
+											class="h-4 w-4 rounded border-gray-300 text-blue-600"
+											title="Select block"
+										/>
+										<span class="font-mono text-xs text-gray-500">#{blockIndex + 1}</span>
+										<span class="text-xs font-medium text-gray-600">{block.tag}</span>
+									</div>
+
+									<!-- Center - Action buttons -->
+									<div class="flex items-center gap-2">
+										<button
+											onclick={() => onEdit(block)}
+											class="flex items-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+											title="Edit content"
+										>
+											<Edit class="h-4 w-4" />
+											Edit
+										</button>
+
+										<button
+											onclick={() => {
+												console.log('Hide/Show button clicked for block:', block.id);
+												onToggleVisibility(block.id);
+											}}
+											class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {block.isVisible
+												? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+												: 'bg-green-50 text-green-700 hover:bg-green-100'}"
+											title={block.isVisible ? 'Hide block' : 'Show block'}
+										>
+											{#if block.isVisible}
+												<EyeOff class="h-4 w-4" />
+												Hide
+											{:else}
+												<Eye class="h-4 w-4" />
+												Show
+											{/if}
+										</button>
+
+										<button
+											onclick={() => onShowVersionHistory(block)}
+											class="flex items-center gap-1.5 rounded-md bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+											title="Version history"
+										>
+											<History class="h-4 w-4" />
+											History
+										</button>
+
+										<div class="mx-1 h-6 w-px bg-gray-300"></div>
+
+										<button
+											onclick={() => {
+												console.log('Move up button clicked for block:', block.id);
+												onMove(block.id, 'up');
+											}}
+											disabled={blockIndex === 0}
+											class="flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+											title="Move up"
+										>
+											<ChevronUp class="h-4 w-4" />
+											Up
+										</button>
+
+										<button
+											onclick={() => {
+												console.log('Move down button clicked for block:', block.id);
+												onMove(block.id, 'down');
+											}}
+											disabled={blockIndex === group.blocks.length - 1}
+											class="flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+											title="Move down"
+										>
+											<ChevronDown class="h-4 w-4" />
+											Down
+										</button>
+									</div>
+
+									<!-- Right side - Block ID -->
+									<span class="font-mono text-xs text-gray-400">
+										{block.id.slice(0, 8)}...
+									</span>
+								</div>
+							</div>
 						</div>
-					{/if}
-				</div>
+
+						<!-- Metadata badges -->
+						{#if block.metadata && block.metadata.length > 0 && group.type !== 'metadata-group'}
+							<div class="absolute top-2 right-16 flex gap-1">
+								{#each block.metadata as meta}
+									<span class="rounded bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
+										{meta}
+									</span>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			{/each}
 		</div>
 	{/each}
@@ -323,5 +381,16 @@
 		transition: all 0.2s ease-in-out;
 		border-radius: 0.375rem;
 		position: relative;
+	}
+
+	/* Hidden block expansion */
+	.hidden-block-content {
+		max-height: 0;
+		overflow: hidden;
+		transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+	}
+
+	.group:hover .hidden-block-content {
+		max-height: 500px;
 	}
 </style>
