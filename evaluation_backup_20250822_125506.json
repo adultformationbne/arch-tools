@@ -1,0 +1,369 @@
+{
+  "metadata": {
+    "total_evaluations": 20,
+    "successful_evaluations": 19,
+    "failed_evaluations": 1,
+    "model_used": "llama3.2",
+    "timestamp": 1755829853.432081
+  },
+  "evaluations": [
+    {
+      "block_id": "a69696b7-84ce-4daf-a94f-38993e7852af",
+      "content_full": "Part of being human is to be always searching for happiness – for what may be good or true or beautiful for us.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "The human search for happiness",
+          "Personal experience of faith"
+        ],
+        "content_type_analysis": "This text block focuses on the universal human desire for happiness and its connection to personal experience, making it relatable. It lacks historical focus, instead focusing on a timeless concept. T"
+      },
+      "analysis_timestamp": 1755829400.157194
+    },
+    {
+      "block_id": "9bb86bad-0d51-4472-b35a-7088eace0955",
+      "content_full": "The name we give to that dream of ultimate happiness or goodness or beauty is ‘God’. Your own search for God has brought you to where you are now, reading these words.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "the concept of God",
+          "personal search for meaning"
+        ],
+        "content_type_analysis": "This text block is a personal and introspective introduction to the concept of God, focusing on the individual's search for ultimate happiness or goodness. It sets a relatable tone by using first-pers"
+      },
+      "analysis_timestamp": 1755829403.661258
+    },
+    {
+      "block_id": "d8c6dc8e-e35c-4445-876f-d23979e3f02b",
+      "content_full": "As part of the searching, spend some time reflecting on these questions.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "personal reflection",
+          "life experiences"
+        ],
+        "content_type_analysis": "The text block encourages personal reflection on life questions, but lacks historical context or theological depth. It is somewhat applicable to daily life and has a moderate level of emotional resona"
+      },
+      "analysis_timestamp": 1755829406.250727
+    },
+    {
+      "block_id": "9efa6598-b2bd-4cea-a43e-23219dddf354",
+      "error": "JSON parse error: Expecting value: line 1 column 1 (char 0)",
+      "raw_response": "{\n    \"relatability\": 9,\n    \"historical_focus\": 2,\n    \"theological_depth\": 4,\n    \"practical_application\": 8,\n    \"accessibility\": 9,\n    \"emotional_resonance\": 10,\n    \"key_themes\": [\"personal expe"
+    },
+    {
+      "block_id": "05c800bb-b7a6-4c73-aa8b-47f919ccf214",
+      "content_full": "Part of the Catholic belief is that God is always present and lovingly active in our lives, whether we’re aware of it or not. Do you think God was present in the times you remembered in the previous reflection? Where do you think God is present in your life now? What do you think God is calling you to, right now?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 8.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "God's presence",
+          "personal relationship with God"
+        ],
+        "content_type_analysis": "This text block focuses on the personal aspect of Catholic belief, inviting readers to reflect on their own experiences and emotions. It encourages a relational understanding of faith, making it acces"
+      },
+      "analysis_timestamp": 1755829413.001545
+    },
+    {
+      "block_id": "de79db58-087c-4591-b255-b7b751018df2",
+      "content_full": "You may use one of these readings for several days; you may choose a different one each day.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 4.0,
+        "key_themes": [
+          "choice",
+          "flexibility",
+          "daily life"
+        ],
+        "content_type_analysis": "This text block is a brief, practical instruction that allows readers to choose from various readings. It lacks theological depth and historical focus, but its simplicity and accessibility make it rel"
+      },
+      "analysis_timestamp": 1755829415.6974149
+    },
+    {
+      "block_id": "e7dfb86d-6b92-4fba-a4fa-013338c42c9a",
+      "content_full": "Open your heart to the Spirit of God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "inviting",
+          "spirituality",
+          "faith"
+        ],
+        "content_type_analysis": "This text block is a brief, modernized introduction to the concept of the 'Spirit of God' in Christianity. It lacks historical context and focuses on its emotional resonance, making it accessible to b"
+      },
+      "analysis_timestamp": 1755829418.615089
+    },
+    {
+      "block_id": "1a128ec1-26d8-4409-b0aa-6fa96b43a4c5",
+      "content_full": "Read. Listen. Pray.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "encouragement",
+          "spiritual practice"
+        ],
+        "content_type_analysis": "This text block is a concise and inspirational message that encourages readers to engage with their faith. It lacks historical context and theological depth, but its simplicity and accessibility make "
+      },
+      "analysis_timestamp": 1755829421.271591
+    },
+    {
+      "block_id": "766e37d1-bea8-4d15-afa9-ba50632510bd",
+      "content_full": "Notice the variety of people gathered for Mass in your parish this Sunday. Each one is on his or her own journey of faith, of growing closer to God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "encouragement",
+          "diversity",
+          "personal journey"
+        ],
+        "content_type_analysis": "This text block focuses on the universal experience of personal faith journeys, encouraging readers to see themselves in the collective Mass attendance. It lacks historical context and theological dep"
+      },
+      "analysis_timestamp": 1755829424.281089
+    },
+    {
+      "block_id": "76e699eb-5e90-4b22-8fa1-9026b82d4bde",
+      "content_full": "Ask your sponsor to share some of his or her journey with you.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 9.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "encouragement",
+          "sponsorship",
+          "personal journey"
+        ],
+        "content_type_analysis": "This text block is a simple, encouraging message to RCIA candidates, inviting them to learn from their sponsor's personal experience. The content is relatable and accessible, making it suitable for be"
+      },
+      "analysis_timestamp": 1755829427.273246
+    },
+    {
+      "block_id": "1b3862bd-4b3d-45e9-8ad3-dc87cf2a07ae",
+      "content_full": "For anyone on a journey of faith, God is the end of the road, the goal of the search. But God is also the starting point, because faith itself is a gift of God. So too, the restlessness which leads a man or woman to take the first steps towards faith, or to reinforce the initial faith which has already been given, is also God’s gift. From whatever perspective we view things it is God who is both the source and the goal of all our searching and striving.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 8.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "faith as a gift",
+          "God as the source and goal"
+        ],
+        "content_type_analysis": "This text focuses on conveying the core principles of faith in a relatable way, using universal human experiences. It doesn't delve deeply into historical context or theological complexity but instead"
+      },
+      "analysis_timestamp": 1755829820.963598
+    },
+    {
+      "block_id": "0d1d756f-0349-41d8-85d3-ffd8b6542dee",
+      "content_full": "In the world today there are many professed believers in God who are not Christian. Believers include Jews, Muslims, Hindus and many who would disclaim any affiliation with any particular religious movement.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 4.0
+      },
+      "analysis_timestamp": 1755829823.148396
+    },
+    {
+      "block_id": "a4b667b3-89f3-4a4a-a6a1-0ad097579901",
+      "content_full": "And in fact, it is possible to come to belief in God, and arrive at some knowledge of God, just by using our natural intelligence, our own natural powers of reasoning. (We believe, of course, that even human intelligence is a divine gift.)",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "natural intelligence",
+          "divine gift",
+          "human nature"
+        ],
+        "content_type_analysis": "This text block emphasizes the idea that one can come to believe in God through reason and natural abilities. It appeals to universal human experiences and uses a personal tone, making it relatable. H"
+      },
+      "analysis_timestamp": 1755829826.4959948
+    },
+    {
+      "block_id": "61ea1ccc-e56f-4933-92a2-9e2eacf0344b",
+      "content_full": "There is the evidence of the beauty and order and harmony of the world around us: the greatness of the universe, of which our planet earth is relatively such a tiny part; the power of the sun, the beauty of the moon, the magnificence of a star-studded sky on a clear night, the beauty of a beach in the moonlight; the regular ebb and flow of the tide, the surge of a rolling surf; the constant pattern by which the seasons follow one upon the other, the way night follows day; the variety and colour of the trees and flowers; the existence of so many species of animals, birds and fish; and especially, the wonder of human life.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 1,
+        "accessibility": 8.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "beauty",
+          "order",
+          "harmony",
+          "universe",
+          "earth",
+          "human life"
+        ],
+        "content_type_analysis": "This text focuses on the natural world and its beauty, using universal human experiences to describe the wonder of existence. It does not have a strong historical focus, but rather aims to inspire a s"
+      },
+      "analysis_timestamp": 1755829830.715557
+    },
+    {
+      "block_id": "383f9593-ce5e-407a-aa53-a9679ed9801d",
+      "content_full": "So many young couples have looked into the eyes of their new-born first child, and thought: how can anyone not believe that there is a God? There are, then, many strong reasons which appeal to our human minds and hearts, to argue that there must be some supreme intelligence behind it all.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "the existence of God",
+          "supreme intelligence"
+        ],
+        "content_type_analysis": "This text block starts by making a personal and relatable statement, asking the reader if they can see how there must be a God given the birth of their child. The tone is conversational and inviting, "
+      },
+      "analysis_timestamp": 1755829834.531931
+    },
+    {
+      "block_id": "d3176e47-ae0d-4697-826a-54fbcb81e3fd",
+      "content_full": "The only alternative is that all this wonderfully creative work happened by chance. The story is told of two scientists who were admiring a perfectly constructed model of the whole solar system. One asked the other: ‘Who made it?’ The other, knowing that his colleague was a professed non-believer, replied: ‘Nobody made it. It just happened.’ The former did not appreciate being made fun of, and said as much. To which the believer responded: ‘If you cannot accept that this model happened by chance, how can you accept that no intelligent being was responsible for the real thing?’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 4.0,
+        "theological_depth": 7.0,
+        "practical_application": 2.0,
+        "accessibility": 5.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "creation",
+          "faith",
+          "probability",
+          "intelligent design"
+        ],
+        "content_type_analysis": "This text block uses a narrative approach to illustrate the concept of creation and faith, making it relatable to readers. However, its primary focus on historical context (the analogy of the solar sy"
+      },
+      "analysis_timestamp": 1755829838.4061701
+    },
+    {
+      "block_id": "6b278384-3a73-46e2-8950-70c7c5709e1a",
+      "content_full": "A believer will argue that it is much easier to believe in God than not. The Bible has harsh words for non-believers. The Psalmist states Fools say in their hearts, ‘There is no God’ (Psalm 14:1). And Paul, writing to the Romans, says that the pagans are without excuse for failing to recognise the existence of a Creator from the wonderful things which God has made. Ever since the creation of the world his eternal power and divine nature, invisible though they are, have been understood and seen through the things he has made. So they are without excuse … (Romans 1:20).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 7.0,
+        "theological_depth": 8.0,
+        "practical_application": 2.0,
+        "accessibility": 4.0,
+        "emotional_resonance": 5.0
+      },
+      "analysis_timestamp": 1755829843.149097
+    },
+    {
+      "block_id": "7dbfc2c7-9905-4661-9ffc-724f313c6a0d",
+      "content_full": "One might well ask how many real atheists there are in the world. Certainly there are many practical atheists, that is, people who choose to live as though God does not exist, who prefer not to think about it. There are also many who would sincerely classify themselves as agnostics – people who suspend belief because they are unable to decide one way or the other from the apparently conflicting evidence which they find confronting them. It must also be said that doubt is distinct from a denial of faith. As some of the great mystics and spiritual writers throughout history have expressed, doubt is a companion of faith. It can be the doorway that leads to a deeper faith.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "doubt as a companion of faith",
+          "sincerity in doubt",
+          "living without certainty"
+        ],
+        "content_type_analysis": "This text block provides relatable examples of practical atheists, agnostics, and the relationship between doubt and faith. It uses universal human experiences to convey theological concepts, making i"
+      },
+      "analysis_timestamp": 1755829846.774592
+    },
+    {
+      "block_id": "09264484-00c7-44a6-a449-9c64af2b6916",
+      "content_full": "But how numerous are the convinced theoretical atheists? In recent years, some prominent atheists have become increasingly vocal. Publications such as Richard Dawkins’ The God Delusion (2006) and Christopher Hitchens’ God is Not Great: How Religion Poisons Everything (2007) have presented a public challenge to religious faith. In these works, faith in a divine being is dismissed as infantile, divisive and destructive. For Dawkins, Hitchens and other publicly-avowed atheists, only the rational and scientifically discernible world is credible. Any statement of faith beyond this is a delusion. Dawkins, Hitchens and companions are best understood as social iconoclasts attempting to shatter what they see as illusions and shadows opposed to human reason. Rather than exorcising religion from the public realm, these debates have only served to keep religious faith on centre stage.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 4.0,
+        "theological_depth": 5.0,
+        "practical_application": 2.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0
+      },
+      "analysis_timestamp": 1755829849.142297
+    },
+    {
+      "block_id": "149f55c4-ecbb-45e7-a30c-9e18aeb80ecf",
+      "content_full": "These arguments against faith are not new. In the second century, a writer called Celsus argued that Christianity was full of ‘fairy tales’ and childish beliefs. Perhaps what is new is the sense of militantism associated with this ‘new atheism’. In some parts of the world, an advertising campaign was undertaken with signs on public transport saying, ‘Relax. There is no God. Go ahead and enjoy yourself.’ One Christian thinker suggested that the Christian churches should respond with a similar sign: ‘Relax. There is a God. Go ahead and enjoy yourself.’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 9.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 6.0
+      },
+      "analysis_timestamp": 1755829852.9294012
+    }
+  ]
+}

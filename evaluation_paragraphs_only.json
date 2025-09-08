@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "total_evaluations": 5,
+    "successful_evaluations": 5,
+    "failed_evaluations": 0,
+    "model_used": "llama3.2",
+    "timestamp": 1755825699.587897
+  },
+  "evaluations": [
+    {
+      "block_id": "b418bfb9-5f53-4f08-95e4-7492a8ee5f8e",
+      "content_full": "The book you have in your hands has been a helpful guide for more than 40,000 people who have had similar questions. For over thirty years At Home with God’s People has met the needs of individuals and groups. It has now been revised and adapted to best meet those needs in changing times. Like all tools it is important to use this resource in an appropriate manner for the task at hand. Please read the section below that best describes your situation.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "spiritual guidance",
+          "personal growth"
+        ],
+        "content_type_analysis": "A brief introduction to a revised religious guide, suitable for both beginners and experienced readers."
+      },
+      "analysis_timestamp": 1755825690.2924101
+    },
+    {
+      "block_id": "cb93496c-d930-45b8-948c-c61984c10f8f",
+      "content_full": "This book explores both the life of Jesus, who lived and breathed as a person just like us, and the tradition which continues in his name. Jesus, sent by God the Father to save us, offers the world hope through his life, death and resurrection. Jesus remains a living presence among us through the Holy Spirit and empowers us for Christian discipleship.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Christian discipleship",
+          "hope"
+        ],
+        "content_type_analysis": "The content is a brief, introductory passage that explores the life and teachings of Jesus Christ."
+      },
+      "analysis_timestamp": 1755825692.5262668
+    },
+    {
+      "block_id": "e8b842d1-16f0-499d-989a-e7d8c35ebf36",
+      "content_full": "Through these pages you will uncover how the early Christian community grew and responded to the problems and issues of the world. Today the Catholic Church provides a community of faith for its members to worship God and equips them for Christian mission in the world.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Christian community",
+          "Catholic Church"
+        ],
+        "content_type_analysis": "A brief overview of the Catholic Church's role in modern society"
+      },
+      "analysis_timestamp": 1755825694.657245
+    },
+    {
+      "block_id": "e41dc306-aacd-46fa-bf29-f239afa68d45",
+      "content_full": "At Home with God’s People presents a concise overview of the teachings of the Catholic Church. The material provides an excellent resource for personal reflection, reading and praying. It may be used in a variety of ways to assist you to: deepen your understanding of your faith; grow in your relationship with God; and be informed and transformed for ministry and mission.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Personal Reflection",
+          "Faith Growth"
+        ],
+        "content_type_analysis": "A brief overview of Catholic teachings, suitable for personal reflection and daily life."
+      },
+      "analysis_timestamp": 1755825696.8628411
+    },
+    {
+      "block_id": "67194e54-4557-4782-817b-7e61e86555eb",
+      "content_full": "small group study program. A group could plan to work through topics appropriate to their specific learning needs, e.g. a sacramental preparation team might focus on the topics relating to sacraments. Be aware of the limits and demands on the participants’ time – plan for a five session program with the option of negotiating the next ‘program’ at the last meeting.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "small group study",
+          "sacramental preparation"
+        ],
+        "content_type_analysis": "A brief description of a small group study program with practical application."
+      },
+      "analysis_timestamp": 1755825699.082269
+    }
+  ]
+}

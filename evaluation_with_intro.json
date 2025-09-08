@@ -1,0 +1,2060 @@
+{
+  "metadata": {
+    "total_evaluations": 106,
+    "successful_evaluations": 105,
+    "failed_evaluations": 1,
+    "model_used": "llama3.2",
+    "timestamp": 1755829114.340506
+  },
+  "evaluations": [
+    {
+      "block_id": "b418bfb9-5f53-4f08-95e4-7492a8ee5f8e",
+      "content_preview": "The book you have in your hands has been a helpful guide for more than 40,000 people who have had si...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "spiritual guidance",
+          "community building"
+        ],
+        "content_type_analysis": "A brief introduction to a revised religious education resource, suitable for individuals and groups seeking spiritual guidance"
+      },
+      "analysis_timestamp": 1755825471.148727
+    },
+    {
+      "block_id": "cb93496c-d930-45b8-948c-c61984c10f8f",
+      "content_preview": "This book explores both the life of Jesus, who lived and breathed as a person just like us, and the ...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Christian discipleship",
+          "hope"
+        ],
+        "content_type_analysis": "The content is a brief summary of Christian teachings and its relevance to modern readers."
+      },
+      "analysis_timestamp": 1755825475.4825852
+    },
+    {
+      "block_id": "e8b842d1-16f0-499d-989a-e7d8c35ebf36",
+      "content_preview": "Through these pages you will uncover how the early Christian community grew and responded to the pro...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "growth of the early Christian community",
+          "Christian mission"
+        ],
+        "content_type_analysis": "A brief overview of Catholic Church's role in modern society"
+      },
+      "analysis_timestamp": 1755825477.6434581
+    },
+    {
+      "block_id": "e41dc306-aacd-46fa-bf29-f239afa68d45",
+      "content_preview": "At Home with God’s People presents a concise overview of the teachings of the Catholic Church. The m...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "personal reflection",
+          "faith growth"
+        ],
+        "content_type_analysis": "A concise overview of Catholic teachings, suitable for personal reflection and daily life."
+      },
+      "analysis_timestamp": 1755825481.884904
+    },
+    {
+      "block_id": "67194e54-4557-4782-817b-7e61e86555eb",
+      "content_preview": "small group study program. A group could plan to work through topics appropriate to their specific l...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "small group study",
+          "sacramental preparation"
+        ],
+        "content_type_analysis": "A brief description of a small group study program, focusing on practical application and accessibility."
+      },
+      "analysis_timestamp": 1755825484.160218
+    },
+    {
+      "block_id": "a03d572f-a591-467d-a7f0-9e6eacd3fd12",
+      "content_preview": "For the group leader a book such as Facilitating for Growth by Barbara Fleischer (Liturgical Press) ...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Christian story",
+          "integration"
+        ],
+        "content_type_analysis": "The content is written in a clear and concise manner, making it suitable for readers with varying levels of religious knowledge."
+      },
+      "analysis_timestamp": 1755825486.455759
+    },
+    {
+      "block_id": "31ec92a7-270d-42bd-bc52-0402d3d88d4c",
+      "content_preview": "This resource may be of assistance to you in the Period of the Catechumenate of the Rite of Christia...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Catechumenate",
+          "Christian Initiation"
+        ],
+        "content_type_analysis": "A brief introduction to the Rite of Christian Initiation of Adults, emphasizing active participation and reflection."
+      },
+      "analysis_timestamp": 1755825501.1222458
+    },
+    {
+      "block_id": "1a574643-be5b-4271-80d0-9bbe6e6b2e76",
+      "content_preview": "The Catechumenate is sometimes seen as an ‘apprenticeship’ into the Christian life during which you ...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Catechumenate",
+          "Christian life"
+        ],
+        "content_type_analysis": "The text is a brief introduction to the Catechumenate, providing an overview of its purpose and objectives."
+      },
+      "analysis_timestamp": 1755825503.597919
+    },
+    {
+      "block_id": "a262a6a7-7f9f-4ad8-b21a-9a04ee7bc99c",
+      "content_preview": "This book provides useful reference material on the teachings of the Catholic Church. To supplement ...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Catholic Church",
+          "faith journey"
+        ],
+        "content_type_analysis": "A brief overview of a Catholic book, with supplementary resources for further learning."
+      },
+      "analysis_timestamp": 1755825508.02526
+    },
+    {
+      "block_id": "171fe165-1c20-4eb2-b8d7-c807dfbe1f57",
+      "content_preview": "However the best guide is the Rite of Christian Initiation of Adults. In Australia the Rites have be...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Catholicism",
+          "Christian Initiation"
+        ],
+        "content_type_analysis": "The content is a brief analysis of religious education, focusing on the Rite of Christian Initiation of Adults and its relevance to modern readers."
+      },
+      "analysis_timestamp": 1755825510.5098739
+    },
+    {
+      "block_id": "71dabb13-b02f-4578-bbc3-1db504fec786",
+      "content_preview": "At Home with God’s People provides participants with suggested questions for reflection and discussi...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "catechumens",
+          "reflection"
+        ],
+        "content_type_analysis": "A brief analysis of a religious education text, focusing on its content type and structure."
+      },
+      "analysis_timestamp": 1755825512.7408671
+    },
+    {
+      "block_id": "e971363f-da13-4ab2-8dee-14b1fcf355ee",
+      "content_preview": "One of your key roles in the group is to be a facilitator – one who ‘makes easy’ the work of the gro...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "group facilitation",
+          "adaptability"
+        ],
+        "content_type_analysis": "The content is a brief paragraph discussing the role of a facilitator in a group setting, with an emphasis on adaptability and meeting individual needs."
+      },
+      "analysis_timestamp": 1755825515.117249
+    },
+    {
+      "block_id": "a13049fa-84c4-4334-b2e9-4b90f1a1e238",
+      "content_preview": "The primary purpose of the Period of the Catechumenate is formation in the Christian life, not infor...",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 3.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "formation",
+          "faith education"
+        ],
+        "content_type_analysis": "The content is a brief, practical guide for catechumens and faith educators, focusing on the importance of formation in Christian life."
+      },
+      "analysis_timestamp": 1755825517.530037
+    },
+    {
+      "block_id": "a1fbf2a5-1af5-4c8c-afac-45dfc9271e69",
+      "content_full": "The analogy of a railway may be helpful. It is tempting to think of the role of the RCIA team as the ‘Controller’ – efficiently directing traffic, making sure timetables are printed, ensuring trains run on time and that platforms are tidy. However this is to deny the truth that we are in fact a pilgrim church and we take the ‘conversion journey’ together. Perhaps a better analogy is that of the ‘Conductor’. He or she makes the same trip as the passengers and shares with them the same steep climbs, deep gorges, long tunnels and glorious vistas. \nWith open hands and hearts the team – along with catechists, sponsors and the whole parish community – approach this Period of the Catechumenate not with a ‘subject’ to be transmitted, but with a deep humility and openness to the encounter of mutual conversion.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 4.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "pilgrim church",
+          "conversion journey",
+          "mutual conversion"
+        ],
+        "content_type_analysis": "This text block is a paragraph of religious education content, focusing on the role and responsibilities of an RCIA team in a pilgrim church. The author uses analogies to convey their message, compari"
+      },
+      "analysis_timestamp": 1755827699.42714
+    },
+    {
+      "block_id": "cfe984b2-613a-499f-aca1-9c1469898115",
+      "content_full": "As ‘Conductor’ we allow ourselves to be a channel for God’s grace, transforming love, peace and reconciliation. Paragraph 1 of the Rite of Christian Initiation of Adults outlines a vision that, after hearing the mystery of Christ proclaimed, Catechumens seek the living God and enter the way of faith and conversion as the Holy Spirit opens their heart.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 9.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "reconciliation",
+          "faith",
+          "conversion"
+        ],
+        "content_type_analysis": "This content type is a paragraph, likely from a religious education context. The language and structure suggest a formal or instructional tone, possibly used in a liturgical setting or as part of a ca"
+      },
+      "analysis_timestamp": 1755827702.114592
+    },
+    {
+      "block_id": "ae4388ec-bba4-40be-9cbf-63dd2bfbe124",
+      "content_full": "As members of the team it is essential that you are clear about vision, purpose, intention and process. The Rite of Christian Initiation of Adults is your ‘guidebook’. For example when you are clear about the purpose of each period of the Catechumenate it will be obvious that a catechesis resource such as At Home with God’s People will not be appropriate for Lent or Mystagogia.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 9.0,
+        "theological_depth": 8.0,
+        "practical_application": 5.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 4.0,
+        "key_themes": [
+          "vision",
+          "purpose",
+          "intention",
+          "process",
+          "catechumenate",
+          "catechesis",
+          "Lent",
+          "Mystagogia"
+        ],
+        "content_type_analysis": "This text appears to be part of a religious educational resource, specifically targeting individuals involved in the Rite of Christian Initiation of Adults. The content is formal and technical, sugges"
+      },
+      "analysis_timestamp": 1755827705.1808152
+    },
+    {
+      "block_id": "503f46d3-309e-4ba2-8fb3-8be071e9580f",
+      "content_full": "Books such as The RCIA Team Book (Evangelisation Brisbane) can be beneficial resources to provide practical information about specific roles, pastoral principles, planning outlines and practical strategies for each period of the Catechumenate.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 8.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "RCIA Team Book",
+          "pastoral principles",
+          "planning outlines",
+          "strategies"
+        ],
+        "content_type_analysis": "The text provides a brief review of the 'RCIA Team Book' as a resource for understanding specific roles and strategies within the Catechumenate. The content is concise and to the point, with no appare"
+      },
+      "analysis_timestamp": 1755827708.0672
+    },
+    {
+      "block_id": "8d55d93f-492d-4b26-bdfe-4ba385091a24",
+      "content_full": "The Rite of Christian Initiation of Adults is intended for those who are unbaptised. Part II of the Rite of Christian Initiation of Adults provides pastoral guidelines for those people already baptised who express interest in becoming Catholic. Paragraph 391 directs that: The baptised Christian is to receive both doctrinal and spiritual preparation, adapted to individual pastoral requirements, for reception into the full communion of the Catholic Church.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 8.0,
+        "practical_application": 5.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 4.0,
+        "key_themes": [
+          "Rite of Christian Initiation",
+          "Catholic Church",
+          "Christian baptism",
+          "spiritual preparation"
+        ],
+        "content_type_analysis": "This text block appears to be part of a formal religious document, likely from a Catholic source. The content is informative and explanatory, with a focus on the process of becoming Catholic through b"
+      },
+      "analysis_timestamp": 1755827711.082121
+    },
+    {
+      "block_id": "a5cacb6f-301a-49a7-88b3-501ffb85a4ea",
+      "content_full": "The key phrase here is ‘adapted to individual pastoral requirements’. For example a candidate who has been a regular church-goer may already be very familiar with the Creed and the Bible. In a situation such as this the team, with the catechist, and in dialogue with the candidate, would determine a process of formation that respects the candidate’s journey of faith and current needs. In this way, The rite is arranged so that no greater burden than necessary (see Acts 15:28) is required for the establishment of communion and unity (387).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 9.0,
+        "practical_application": 8.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "adaptation",
+          "individual needs",
+          "formation",
+          "journey of faith"
+        ],
+        "content_type_analysis": "This content appears to be part of a religious education program, possibly a catechism or a guide for new members. The text is written in a formal tone and assumes some basic knowledge of Christian th"
+      },
+      "analysis_timestamp": 1755827713.946731
+    },
+    {
+      "block_id": "9f2d2dec-2d79-453d-8892-c905b1430e19",
+      "content_full": "The material in this resource has been prepared to help you and the group do some important things.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 5.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "importance of group work",
+          "preparation for important tasks"
+        ],
+        "content_type_analysis": "The content is a brief statement, likely from an introduction or welcome message. It sets a positive tone and encourages collaboration without providing specific details."
+      },
+      "analysis_timestamp": 1755827716.403737
+    },
+    {
+      "block_id": "43e05710-9e2e-40e9-8439-f212e13a0409",
+      "content_full": "It gives you an opportunity to pause and reflect on your life – on who you are, where you’ve come from and where you’d like to go. Our culture doesn’t seem to encourage this kind of reflection, but it’s very necessary if we are to grow in our lives.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 9.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "self-reflection",
+          "personal growth",
+          "mindful living"
+        ],
+        "content_type_analysis": "This text is a reflective paragraph that encourages readers to pause and think about their lives. It focuses on personal growth and self-awareness, with no specific historical or theological context. "
+      },
+      "analysis_timestamp": 1755827719.265583
+    },
+    {
+      "block_id": "d8b58ab2-03c8-4fb8-bc05-70db5cde2fbf",
+      "content_full": "It also gives you opportunities to share your reflections in a group of like-minded people, and to listen to their own thoughtful reflections.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "sharing reflections",
+          "listening to others",
+          "community bonding"
+        ],
+        "content_type_analysis": "This text block is a short, contemporary passage that focuses on the benefits of sharing personal reflections with like-minded individuals. It appears to be part of a larger educational context, possi"
+      },
+      "analysis_timestamp": 1755827721.912052
+    },
+    {
+      "block_id": "215527ab-03fe-478e-92a7-89060dbba8a0",
+      "content_full": "This reflecting and sharing, together with the teaching that’s given, will be a great help to you as you strive to:",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 5.0,
+        "practical_application": 8.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "reflection",
+          "sharing",
+          "teaching"
+        ],
+        "content_type_analysis": "This text appears to be from a Christian religious education context, aiming to encourage personal reflection and sharing in relation to their faith. The content is written in an accessible style, wit"
+      },
+      "analysis_timestamp": 1755827724.508283
+    },
+    {
+      "block_id": "d85a2ccf-c6fc-406b-b081-9453e250d25a",
+      "content_full": "To help you do all this you are invited to:",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 4.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "personal call to action",
+          "invitation",
+          "no specific themes mentioned"
+        ],
+        "content_type_analysis": "The content is a brief, informal invitation to take action. It lacks depth and historical context, but is written in an approachable tone that makes it accessible to beginners."
+      },
+      "analysis_timestamp": 1755827727.0773492
+    },
+    {
+      "block_id": "0b018528-920e-4a83-8ebc-89d69347d3d8",
+      "content_full": "3\t‘This is good … I like this’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "This is a brief, seemingly insignificant comment with little to no depth or complexity.",
+          "It may be intended as a teaching moment or example, but it lacks explicit themes or messages.",
+          "The content does not reveal any specific historical events or figures.",
+          "This statement appears to be a simplistic expression rather than a profound theological insight."
+        ],
+        "content_type_analysis": "This text block contains a brief, seemingly insignificant comment that may be intended as an example or teaching moment. The content lacks depth and complexity, making it more accessible to beginners."
+      },
+      "analysis_timestamp": 1755827730.336334
+    },
+    {
+      "block_id": "b664a254-bde5-48be-9dd5-cc6ca54f42c4",
+      "content_full": "?\t‘This is a new insight, it is quite",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 1,
+        "accessibility": 5.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "actual",
+          "themes",
+          "from",
+          "content"
+        ],
+        "content_type_analysis": "This text block appears to be a fragment of a religious education content, likely from a sermon or lecture. The brevity and incomplete sentence structure suggest it may not be fully developed or coher"
+      },
+      "analysis_timestamp": 1755827732.96473
+    },
+    {
+      "block_id": "c3735dee-c0a4-4f52-8e61-b9c854d99a23",
+      "content_full": "challenging’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 5.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "actual",
+          "themes",
+          "from",
+          "content"
+        ],
+        "content_type_analysis": "The content is a single word that does not convey any specific religious message or idea. It may be used as an adjective to describe something challenging, but on its own, it lacks depth and relatabil"
+      },
+      "analysis_timestamp": 1755827735.583331
+    },
+    {
+      "block_id": "3b15b6fa-a7c6-47a3-bf82-0f3353cf59a2",
+      "content_full": "…\t‘I need to give this some thought’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "unclear"
+        ],
+        "content_type_analysis": "This text appears to be a fragment of a conversation or written expression. The lack of context makes it difficult to determine the author's intent, but it seems to suggest that someone is contemplati"
+      },
+      "analysis_timestamp": 1755827738.070383
+    },
+    {
+      "block_id": "454b9c04-893d-4701-8c50-8cea1b1cd299",
+      "content_full": "!\t‘This is similar to my experience’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 6.0,
+        "theological_depth": 8.0,
+        "practical_application": 2.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0
+      },
+      "analysis_timestamp": 1755827740.9560199
+    },
+    {
+      "block_id": "7a5083b9-5028-450e-b204-44717b831d7f",
+      "content_full": "Two suggested ‘rules’:",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "actual",
+          "themes",
+          "from",
+          "content"
+        ],
+        "content_type_analysis": "The text block is a short paragraph with two suggested 'rules'. It lacks depth and historical context, making it less relatable to modern readers. However, the concise language makes it somewhat acces"
+      },
+      "analysis_timestamp": 1755827743.563498
+    },
+    {
+      "block_id": "12c4f219-eaed-407f-9f6b-6f77a6fcc680",
+      "content_full": "During the meeting it will help you (and the group) if you are:",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "help you",
+          "group"
+        ],
+        "content_type_analysis": "This text block appears to be an instructional passage aimed at a group setting, focusing on individual and collective behavior. The content is straightforward and easy to understand, making it access"
+      },
+      "analysis_timestamp": 1755827746.274579
+    },
+    {
+      "block_id": "e3814147-2a34-43df-bbcf-0c3fc466e5a4",
+      "content_full": "Your questions and insights are worthwhile, so don’t keep them bottled up. The only ‘dumb’ question is the unspoken one!",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "encouragement",
+          "self-expression",
+          "spirituality"
+        ],
+        "content_type_analysis": "This text block is a modern, conversational piece of religious education content that encourages readers to express their questions and insights without fear of judgment. The focus is on personal grow"
+      },
+      "analysis_timestamp": 1755827749.480883
+    },
+    {
+      "block_id": "430f2522-df6b-455d-9b59-cb3a4983e624",
+      "content_full": "Attentive.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "none"
+        ],
+        "content_type_analysis": "The text is a single word 'Attentive' without any supporting context or explanation. It seems to be an adjective used to describe someone's behavior, but its relevance to the content type of religious"
+      },
+      "analysis_timestamp": 1755827751.982955
+    },
+    {
+      "block_id": "cca22ac5-ffba-4d28-bb37-ce571a4bc087",
+      "content_full": "Your contributions are important, but so are those of the others in the group.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 7.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "Importance of individual contributions",
+          "Group dynamics"
+        ],
+        "content_type_analysis": "This text is a brief statement emphasizing the value of collective contributions, suggesting it could be part of a discussion or lecture on teamwork and community. Its brevity and straightforward mess"
+      },
+      "analysis_timestamp": 1755827754.5735319
+    },
+    {
+      "block_id": "4d256446-1d3c-4562-b32c-412683571427",
+      "content_full": "If you are attentive to the wisdom in the group, you won’t be taking up too much of the ‘air-time’.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 8.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "air-time",
+          "wisdom",
+          "group"
+        ],
+        "content_type_analysis": "This content is a brief, informal remark on being mindful of one's contributions in a group discussion. It appears to be written for an audience that values community and shared wisdom."
+      },
+      "analysis_timestamp": 1755827757.094141
+    },
+    {
+      "block_id": "a347b495-8e30-4f91-a3a8-f0ed86c7642b",
+      "content_full": "Respectful.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "respect",
+          "values"
+        ],
+        "content_type_analysis": "The content is a simple affirmation of respect. It does not contain any complex theological concepts or historical references, but rather conveys a straightforward message that can be easily understoo"
+      },
+      "analysis_timestamp": 1755827759.7265081
+    },
+    {
+      "block_id": "18e34994-da31-40c7-8655-289ebbb1679d",
+      "content_full": "One of the strengths of the group is the differences that exist among its members. There will be different stories, different opinions, different basic attitudes to issues.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "diversity",
+          "stories",
+          "opinions",
+          "attitudes"
+        ],
+        "content_type_analysis": "This text block appears to be a paragraph discussing the benefits of diversity among group members. The content is accessible and easy to understand, making it suitable for beginners. However, it lack"
+      },
+      "analysis_timestamp": 1755827762.612562
+    },
+    {
+      "block_id": "7a25234b-1d6e-4f83-ae38-297c7adb0b67",
+      "content_full": "If you have a respectful love for each of the others, you will be better able to ‘hear’ what they are saying, even if you may disagree.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 8.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "empathy",
+          "communication",
+          "disagreement"
+        ],
+        "content_type_analysis": "This text block is a short paragraph that focuses on the importance of empathy and understanding in relationships. It appears to be part of a broader discussion on Christian values or ethics, but does"
+      },
+      "analysis_timestamp": 1755827765.273385
+    },
+    {
+      "block_id": "b073e5dd-895e-44bd-ab29-b62dd0e12873",
+      "content_full": "It is vital to respect the confidentiality of the group.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "confidentiality",
+          "respect"
+        ],
+        "content_type_analysis": "The text is a brief statement emphasizing the importance of confidentiality, which is a fundamental aspect of group dynamics. The content is straightforward and easy to understand, making it accessibl"
+      },
+      "analysis_timestamp": 1755827768.304924
+    },
+    {
+      "block_id": "46e3a394-1fb6-4689-8369-92cb8c976d93",
+      "content_full": "Prayerful.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 5.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "inspiration",
+          "spirituality",
+          "hope"
+        ],
+        "content_type_analysis": "This text block is a simple, one-word description of prayer. It lacks depth and historical context, but could be appealing to readers looking for a brief reminder of the importance of prayer in their "
+      },
+      "analysis_timestamp": 1755827770.8757582
+    },
+    {
+      "block_id": "00fddcc1-ab95-469a-a6a8-bd22c1540b83",
+      "content_full": "Prayer is not so much our talking to God to remind God of our needs, as it is our becoming more aware of the fact that God is always present to us and active in our lives.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "becoming more aware of God's presence",
+          "God's active role in life"
+        ],
+        "content_type_analysis": "This text focuses on the personal and present aspect of prayer, emphasizing the individual's awareness of God's constant presence. It is a contemporary and relatable perspective on prayer, making it a"
+      },
+      "analysis_timestamp": 1755827773.6084301
+    },
+    {
+      "block_id": "d14f4ded-6043-4753-8f93-dbb141bf5843",
+      "content_full": "This awareness of God’s loving presence can also be a great help in our becoming more loving to others. (God is present and active in their lives, too. God dwells in each of us.)",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 9.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "God's loving presence",
+          "becoming more loving to others"
+        ],
+        "content_type_analysis": "The provided text block discusses the concept of God's loving presence and its application in daily life, making it relatable to modern readers. It lacks historical focus but delves into theological d"
+      },
+      "analysis_timestamp": 1755827776.651428
+    },
+    {
+      "block_id": "712dbf42-7e92-44bf-a262-fd7763f668cb",
+      "content_full": "Each member of the group has left something important behind to be with the group. It’s a sign of your regard for them and what they’ve left behind to be there on time.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 8.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "self-sacrifice",
+          "regard",
+          "importance of relationships"
+        ],
+        "content_type_analysis": "This text appears to be a modern, informal passage about the importance of relationships and personal sacrifice. It lacks historical or theological depth, but offers practical advice on how to priorit"
+      },
+      "analysis_timestamp": 1755827779.853164
+    },
+    {
+      "block_id": "adbdd4f4-12ba-4ac2-9067-1c561df260ed",
+      "content_full": "It also helps people to organise things ‘back home’ if they know that the group meetings will finish on time.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 9.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "organising things",
+          "group meetings",
+          "daily life"
+        ],
+        "content_type_analysis": "The content is a short paragraph discussing the practical benefits of attending group meetings, focusing on the importance of punctuality and how it can help individuals manage their daily tasks. The "
+      },
+      "analysis_timestamp": 1755827782.580541
+    },
+    {
+      "block_id": "a008abd8-2698-4ca2-985b-2fe8fc10f3de",
+      "content_full": "The Canadian Jesuit, Bernard Lonergan – one of the best thinkers of our time – once said:\n\tTo fulfil the demands of the human spirit, \nwe need to be:\nattentive,\nintelligent,\nreasonable,\nresponsible,\nand in love.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 8.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "attentive",
+          "intelligent",
+          "reasonable",
+          "responsible",
+          "and in love"
+        ],
+        "content_type_analysis": "This text block is a short, inspiring passage from Bernard Lonergan's perspective on human fulfillment. It focuses on individual qualities that contribute to personal growth and development, making it"
+      },
+      "analysis_timestamp": 1755827785.7327921
+    },
+    {
+      "block_id": "a38c4cf0-ba07-474e-a01a-40fd0dd73679",
+      "content_full": "That is a useful guide for your being a part of the group.\nFinally, as you use this resource on your journey may the Spirit comfort and inspire you, and may your learning, sharing and praying be a source of healing and strengthening for you on your way to becoming at home with God’s people.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 10,
+        "key_themes": [
+          "spiritual guidance",
+          "healing",
+          "sharing",
+          "praying"
+        ],
+        "content_type_analysis": "The content appears to be a closing message or blessing from the resource, focusing on spiritual comfort and inspiration. It has a contemporary tone while still conveying traditional Christian values."
+      },
+      "analysis_timestamp": 1755827788.344743
+    },
+    {
+      "block_id": "a69696b7-84ce-4daf-a94f-38993e7852af",
+      "content_full": "Part of being human is to be always searching for happiness – for what may be good or true or beautiful for us.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "human search for happiness",
+          "value of truth and beauty"
+        ],
+        "content_type_analysis": "This text block is a philosophical reflection on the human experience, focusing on the universal desire for happiness. It sets a tone of personal inquiry and introspection, making it accessible to beg"
+      },
+      "analysis_timestamp": 1755828852.5794408
+    },
+    {
+      "block_id": "9bb86bad-0d51-4472-b35a-7088eace0955",
+      "content_full": "The name we give to that dream of ultimate happiness or goodness or beauty is ‘God’. Your own search for God has brought you to where you are now, reading these words.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 5.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "dream of ultimate happiness or goodness or beauty",
+          "search for God"
+        ],
+        "content_type_analysis": "This text block introduces the concept of 'God' as a term for the dream of ultimate happiness, making it relatable to readers. It does not delve into historical events or figures and focuses more on p"
+      },
+      "analysis_timestamp": 1755828855.9500742
+    },
+    {
+      "block_id": "d8c6dc8e-e35c-4445-876f-d23979e3f02b",
+      "content_full": "As part of the searching, spend some time reflecting on these questions.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 3.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 4.0,
+        "key_themes": [
+          "none",
+          "reflection",
+          "questions"
+        ],
+        "content_type_analysis": "This text block is a call to reflection, encouraging readers to explore their own thoughts and questions. It lacks historical focus, theological depth, and practical application. The language is strai"
+      },
+      "analysis_timestamp": 1755828858.584895
+    },
+    {
+      "block_id": "9efa6598-b2bd-4cea-a43e-23219dddf354",
+      "content_full": "Can you recall something that was a real help to you in your search for God? Perhaps a particular event ... a conversation ... a book ... a person ... a thought that struck you. Remember it. Remember what a difference it made to you.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "personal experience",
+          "reflection",
+          "search for God"
+        ],
+        "content_type_analysis": "This text block is designed to encourage personal reflection and introspection. It invites readers to recall a moment or event that helped them in their search for God, making it relatable and accessi"
+      },
+      "analysis_timestamp": 1755828862.165799
+    },
+    {
+      "block_id": "05c800bb-b7a6-4c73-aa8b-47f919ccf214",
+      "content_full": "Part of the Catholic belief is that God is always present and lovingly active in our lives, whether we’re aware of it or not. Do you think God was present in the times you remembered in the previous reflection? Where do you think God is present in your life now? What do you think God is calling you to, right now?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "God's presence",
+          "awareness of God",
+          "calling from God"
+        ],
+        "content_type_analysis": "This text block uses a conversational tone to explore the concept of God's presence in one's life, encouraging reflection and personal connection. It does not delve into historical context or theologi"
+      },
+      "analysis_timestamp": 1755828865.245227
+    },
+    {
+      "block_id": "de79db58-087c-4591-b255-b7b751018df2",
+      "content_full": "You may use one of these readings for several days; you may choose a different one each day.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 1,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 6.0
+      },
+      "analysis_timestamp": 1755828867.181033
+    },
+    {
+      "block_id": "e7dfb86d-6b92-4fba-a4fa-013338c42c9a",
+      "content_full": "Open your heart to the Spirit of God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "invitation",
+          "spirituality",
+          "heart",
+          "god"
+        ],
+        "content_type_analysis": "This text block is a brief, modern spiritual invitation that encourages readers to open their hearts to the Spirit of God. It lacks historical context and focuses on the personal, emotional connection"
+      },
+      "analysis_timestamp": 1755828869.842613
+    },
+    {
+      "block_id": "1a128ec1-26d8-4409-b0aa-6fa96b43a4c5",
+      "content_full": "Read. Listen. Pray.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "encouragement",
+          "spiritual practice",
+          "faith development"
+        ],
+        "content_type_analysis": "The text 'Read. Listen. Pray.' is a concise and modern spiritual prompt that encourages readers to engage with their faith in a simple yet intentional way. It lacks historical context, focusing instea"
+      },
+      "analysis_timestamp": 1755828872.8132532
+    },
+    {
+      "block_id": "766e37d1-bea8-4d15-afa9-ba50632510bd",
+      "content_full": "Notice the variety of people gathered for Mass in your parish this Sunday. Each one is on his or her own journey of faith, of growing closer to God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0
+      },
+      "analysis_timestamp": 1755828875.517437
+    },
+    {
+      "block_id": "76e699eb-5e90-4b22-8fa1-9026b82d4bde",
+      "content_full": "Ask your sponsor to share some of his or her journey with you.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 9.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "personal experience",
+          "spoonfeeding",
+          "spiritual guidance"
+        ],
+        "content_type_analysis": "This text block is a simple and relatable call to action, encouraging RCIA candidates to share their personal journey with their sponsor. It lacks historical focus and theological depth, but provides "
+      },
+      "analysis_timestamp": 1755828878.316027
+    },
+    {
+      "block_id": "1b3862bd-4b3d-45e9-8ad3-dc87cf2a07ae",
+      "content_full": "For anyone on a journey of faith, God is the end of the road, the goal of the search. But God is also the starting point, because faith itself is a gift of God. So too, the restlessness which leads a man or woman to take the first steps towards faith, or to reinforce the initial faith which has already been given, is also God’s gift. From whatever perspective we view things it is God who is both the source and the goal of all our searching and striving.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "God as the source and goal",
+          "faith as a gift",
+          "restlessness leading to faith"
+        ],
+        "content_type_analysis": "This text block presents a modern, inclusive understanding of God's role in the journey of faith. It emphasizes the idea that faith is a gift from God and that God is both the starting point and the e"
+      },
+      "analysis_timestamp": 1755828955.202552
+    },
+    {
+      "block_id": "0d1d756f-0349-41d8-85d3-ffd8b6542dee",
+      "content_full": "In the world today there are many professed believers in God who are not Christian. Believers include Jews, Muslims, Hindus and many who would disclaim any affiliation with any particular religious movement.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0
+      },
+      "analysis_timestamp": 1755828958.262657
+    },
+    {
+      "block_id": "a4b667b3-89f3-4a4a-a6a1-0ad097579901",
+      "content_full": "And in fact, it is possible to come to belief in God, and arrive at some knowledge of God, just by using our natural intelligence, our own natural powers of reasoning. (We believe, of course, that even human intelligence is a divine gift.)",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "natural intelligence",
+          "divine gift",
+          "belief in God"
+        ],
+        "content_type_analysis": "This text block focuses on the idea that human intelligence is a divine gift and that it's possible to come to belief in God through natural reasoning. The content is relatively accessible and relatab"
+      },
+      "analysis_timestamp": 1755828961.27541
+    },
+    {
+      "block_id": "61ea1ccc-e56f-4933-92a2-9e2eacf0344b",
+      "content_full": "There is the evidence of the beauty and order and harmony of the world around us: the greatness of the universe, of which our planet earth is relatively such a tiny part; the power of the sun, the beauty of the moon, the magnificence of a star-studded sky on a clear night, the beauty of a beach in the moonlight; the regular ebb and flow of the tide, the surge of a rolling surf; the constant pattern by which the seasons follow one upon the other, the way night follows day; the variety and colour of the trees and flowers; the existence of so many species of animals, birds and fish; and especially, the wonder of human life.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "nature",
+          "creation",
+          "wonder",
+          "human life"
+        ],
+        "content_type_analysis": "This text block focuses on the beauty and order of the natural world, highlighting the wonder of human existence. It sets a contemplative tone, inviting readers to appreciate the harmony and beauty in"
+      },
+      "analysis_timestamp": 1755828964.510302
+    },
+    {
+      "block_id": "383f9593-ce5e-407a-aa53-a9679ed9801d",
+      "content_full": "So many young couples have looked into the eyes of their new-born first child, and thought: how can anyone not believe that there is a God? There are, then, many strong reasons which appeal to our human minds and hearts, to argue that there must be some supreme intelligence behind it all.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "The existence of God",
+          "Human reason and faith"
+        ],
+        "content_type_analysis": "This text block uses a philosophical approach to explore the idea of God's existence, appealing to human minds and hearts. It sets a conversational tone, making it relatable to modern readers who may "
+      },
+      "analysis_timestamp": 1755828968.361578
+    },
+    {
+      "block_id": "d3176e47-ae0d-4697-826a-54fbcb81e3fd",
+      "content_full": "The only alternative is that all this wonderfully creative work happened by chance. The story is told of two scientists who were admiring a perfectly constructed model of the whole solar system. One asked the other: ‘Who made it?’ The other, knowing that his colleague was a professed non-believer, replied: ‘Nobody made it. It just happened.’ The former did not appreciate being made fun of, and said as much. To which the believer responded: ‘If you cannot accept that this model happened by chance, how can you accept that no intelligent being was responsible for the real thing?’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 3.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 6.0,
+        "key_themes": [
+          "chance",
+          "intelligent design",
+          "faith vs. reason"
+        ],
+        "content_type_analysis": "This text block uses a narrative approach to explore the tension between chance and intelligent design, illustrating how faith and science can coexist. The story is meant to prompt readers to consider"
+      },
+      "analysis_timestamp": 1755828971.639714
+    },
+    {
+      "block_id": "6b278384-3a73-46e2-8950-70c7c5709e1a",
+      "content_full": "A believer will argue that it is much easier to believe in God than not. The Bible has harsh words for non-believers. The Psalmist states Fools say in their hearts, ‘There is no God’ (Psalm 14:1). And Paul, writing to the Romans, says that the pagans are without excuse for failing to recognise the existence of a Creator from the wonderful things which God has made. Ever since the creation of the world his eternal power and divine nature, invisible though they are, have been understood and seen through the things he has made. So they are without excuse … (Romans 1:20).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 8.0,
+        "theological_depth": 9.0,
+        "practical_application": 3.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "The existence of God",
+          "non-believers",
+          "creativity and creation"
+        ],
+        "content_type_analysis": "This text block uses biblical references to support the argument that believing in God is easier than not. It highlights the idea that non-believers have no excuse for not recognizing God's existence "
+      },
+      "analysis_timestamp": 1755828974.980347
+    },
+    {
+      "block_id": "7dbfc2c7-9905-4661-9ffc-724f313c6a0d",
+      "content_full": "One might well ask how many real atheists there are in the world. Certainly there are many practical atheists, that is, people who choose to live as though God does not exist, who prefer not to think about it. There are also many who would sincerely classify themselves as agnostics – people who suspend belief because they are unable to decide one way or the other from the apparently conflicting evidence which they find confronting them. It must also be said that doubt is distinct from a denial of faith. As some of the great mystics and spiritual writers throughout history have expressed, doubt is a companion of faith. It can be the doorway that leads to a deeper faith.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "doubt",
+          "faith",
+          "mystics"
+        ],
+        "content_type_analysis": "This text block discusses the relationship between doubt and faith, acknowledging that many people struggle with uncertainty. It uses a relatable tone to explain how some individuals live as if God do"
+      },
+      "analysis_timestamp": 1755828978.304075
+    },
+    {
+      "block_id": "09264484-00c7-44a6-a449-9c64af2b6916",
+      "content_full": "But how numerous are the convinced theoretical atheists? In recent years, some prominent atheists have become increasingly vocal. Publications such as Richard Dawkins’ The God Delusion (2006) and Christopher Hitchens’ God is Not Great: How Religion Poisons Everything (2007) have presented a public challenge to religious faith. In these works, faith in a divine being is dismissed as infantile, divisive and destructive. For Dawkins, Hitchens and other publicly-avowed atheists, only the rational and scientifically discernible world is credible. Any statement of faith beyond this is a delusion. Dawkins, Hitchens and companions are best understood as social iconoclasts attempting to shatter what they see as illusions and shadows opposed to human reason. Rather than exorcising religion from the public realm, these debates have only served to keep religious faith on centre stage.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 4.0,
+        "theological_depth": 7.0,
+        "practical_application": 5.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "secularism vs. religious faith",
+          "challenging religious beliefs",
+          "public debate and its impact"
+        ],
+        "content_type_analysis": "This text block provides a clear analysis of the current state of secularism and its challenge to religious faith, highlighting the public debates and the responses from religious individuals. The con"
+      },
+      "analysis_timestamp": 1755828981.9006321
+    },
+    {
+      "block_id": "149f55c4-ecbb-45e7-a30c-9e18aeb80ecf",
+      "content_full": "These arguments against faith are not new. In the second century, a writer called Celsus argued that Christianity was full of ‘fairy tales’ and childish beliefs. Perhaps what is new is the sense of militantism associated with this ‘new atheism’. In some parts of the world, an advertising campaign was undertaken with signs on public transport saying, ‘Relax. There is no God. Go ahead and enjoy yourself.’ One Christian thinker suggested that the Christian churches should respond with a similar sign: ‘Relax. There is a God. Go ahead and enjoy yourself.’",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0
+      },
+      "analysis_timestamp": 1755828985.565856
+    },
+    {
+      "block_id": "60813637-dd1c-4094-be6b-5e0edaa380af",
+      "content_full": "Fundamentalist beliefs, whether theistic or atheistic, are destructive. What these latest arguments against faith fail to take into account is the significant intellectual tradition which has accompanied the search for faith and God. Faith and reason go hand in hand. Our Catholic tradition holds that there is a discernible Presence which, in part, can be discovered through a reasoned exploration of the world and the human person. Faith and reason are not enemies but necessary companions. Science and religion are partners in the search for truth.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "Faith and reason",
+          "Catholic tradition",
+          "Search for truth"
+        ],
+        "content_type_analysis": "This text block presents a modern, inclusive view of faith, emphasizing the connection between faith and reason. The content is accessible to beginners, but may not delve deeply into historical contex"
+      },
+      "analysis_timestamp": 1755828988.841281
+    },
+    {
+      "block_id": "8d9a77aa-d517-4321-a068-b2f6007ee9da",
+      "content_full": "Admittedly there are problems about the argument for the existence of God from the beauty of creation, and the order and harmony in nature. For not all creation is beautiful and harmonious. There is also an ugliness and a wildness and a savagery in nature – earthquakes, famines, drought, floods, storms and tempests. There is also all too often an ugliness in the affairs of human beings, in the way they treat one another – wars, persecutions, racism, and various other forms of injustice, exploitation and oppression.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "ugliness",
+          "harmony",
+          "nature",
+          "humanity"
+        ],
+        "content_type_analysis": "This text block presents a relatable and accessible discussion of the challenges to the argument for God's existence based on creation. The focus is more on philosophical and moral concerns rather tha"
+      },
+      "analysis_timestamp": 1755828992.545996
+    },
+    {
+      "block_id": "0e13fba2-156c-4f9c-90b9-9399e7b0b527",
+      "content_full": "Therefore the question which inevitably arises is this: if there exists a God who is good and loving and merciful, how could such a God permit evil and injustice and suffering? How can we reconcile the existence of a good and loving and merciful God with the evil and injustice and suffering that are so much a part of a world created by God?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "existence of God",
+          "evil and injustice",
+          "suffering",
+          "reconciliation"
+        ],
+        "content_type_analysis": "This text block explores the paradox of a loving God allowing evil and suffering, which is a classic theological conundrum. The question posed is relatable to modern readers who grapple with similar m"
+      },
+      "analysis_timestamp": 1755828996.447096
+    },
+    {
+      "block_id": "2faea0d6-8573-4fc9-aa4d-29afbc63a748",
+      "content_full": "In one area of human tragedies, the question is not so difficult to answer. The plain fact is that most of the evil is man-made. It is the tragic result of our abuse of that freedom which is one of God’s greatest gifts to us. For God to prevent such evil would necessitate the withdrawal of that gift of freedom, and this would in effect mean taking away our human nature.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 4.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "human nature",
+          "freedom",
+          "God's greatest gift"
+        ],
+        "content_type_analysis": "This text block focuses on the concept of human freedom as a gift from God, highlighting its importance in understanding evil. It appeals to modern readers by framing the issue of evil in relatable te"
+      },
+      "analysis_timestamp": 1755829000.103304
+    },
+    {
+      "block_id": "e085c423-48e3-4c9e-a9dc-0c9f9a82e703",
+      "content_full": "In creating us as intelligent, free beings, God knew that we would abuse our intelligence and freedom, and this is what has constantly been the case throughout the whole history of the human race. We cannot therefore hold God responsible for all the evil in the world, the evil which is the result of human sin.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 4.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "original sin",
+          "human nature",
+          "God's sovereignty"
+        ],
+        "content_type_analysis": "This text block uses a classic theological concept (original sin) to explain human nature and God's role in the world. While it does not explicitly focus on historical events or figures, it touches on"
+      },
+      "analysis_timestamp": 1755829003.406751
+    },
+    {
+      "block_id": "191712e3-d2b1-4435-9bc6-2bb4ccc8c0c1",
+      "content_full": "But the problem is not so easy to answer in the case of the misery and suffering caused by phenomena which are not made by humans, such as earthquakes, floods, droughts and other natural disasters – what are popularly called ‘acts of God’.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "natural disasters",
+          "suffering",
+          "misery",
+          "God"
+        ],
+        "content_type_analysis": "This text block is more focused on explaining a concept (the distinction between human-made and natural disasters) than providing historical context. The content is relatively straightforward and easy"
+      },
+      "analysis_timestamp": 1755829006.642561
+    },
+    {
+      "block_id": "fcdbaa0d-3f16-4466-a912-7decbef799b2",
+      "content_full": "People often become bewildered and angry when confronted with tragedies for which there seems no natural explanation or moral justification. At such times, there is the natural tendency to blame God for apparent cruelty or lack of concern. We find this reaction often expressed in the pages of the Bible, especially the Old Testament. The Book of Job is the fullest biblical treatment of the problem of suffering. It is the story of an innocent man who gradually loses everything. Chapters 39 to 42 of this book give us a powerful presentation of this problem. Although he does not understand, Job grows into a peaceful acceptance and serenity, so that in spite of his misfortune he can still say Blessed be the name of the Lord.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 6.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "suffering",
+          "acceptance",
+          "faith",
+          "God's plan"
+        ],
+        "content_type_analysis": "This text block uses the biblical example of Job to explore the human struggle with suffering and the need for faith in the face of tragedy. It provides a relatable example of how people have grappled"
+      },
+      "analysis_timestamp": 1755829010.372173
+    },
+    {
+      "block_id": "fee0802f-0126-43ab-9fb4-db8e6fbbefbf",
+      "content_full": "Several of the Psalms too depict the innocent righteous sufferer complaining to God about the misfortune that afflicts him and the people of Israel as a whole. But again these prayers always end with an expression of trust and confidence in the goodness and wise providence of God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0
+      },
+      "analysis_timestamp": 1755829012.210998
+    },
+    {
+      "block_id": "8308c6bf-dfab-4a30-a717-3153f03b797a",
+      "content_full": "Like Job and the psalmists, we have to humbly acknowledge that there are mysteries in the world which our finite minds are unable to comprehend. Our human horizons are limited, and we can see only a restricted area of the total reality. The infinite mind of God sees the whole picture, while we can see only a tiny piece of the canvas. How particular disasters and tragedies fit into God’s overall plan we often cannot hope to grasp.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "acknowledging limitations",
+          "comparing to biblical figures",
+          "God's plan",
+          "tragedy and disaster"
+        ],
+        "content_type_analysis": "This content focuses on the universal human experience of struggling with mysteries and limited understanding, using biblical examples to illustrate this concept. It then connects this idea to God's p"
+      },
+      "analysis_timestamp": 1755829015.5615559
+    },
+    {
+      "block_id": "aa77ab8a-dd7d-49a4-9620-067929391078",
+      "content_full": "To appeal to the experience of Jesus at this point is to anticipate a little, but it needs to be said here that the Christian is in a much better position to understand and to accept the problem of suffering in the world. Jesus renounced a life of comfort and security, but instead emptied himself, taking the form of a slave, and humbled himself and became obedient to the point of death – even death on a cross (Philippians 2:7-8). He freely came not to be served but to serve, and to give his life as a ransom for many (Matthew 20:28).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 9.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "self-sacrifice",
+          "service",
+          "humility",
+          "suffering"
+        ],
+        "content_type_analysis": "This text block appeals to the reader's understanding of Jesus' selfless act, highlighting his willingness to suffer and die for others. It uses biblical references (Philippians 2:7-8 and Matthew 20:2"
+      },
+      "analysis_timestamp": 1755829019.4655738
+    },
+    {
+      "block_id": "88c69d9f-65fd-45ae-b4cc-fb29403a60f9",
+      "content_full": "As with Job and the psalmist, there was the natural human reaction on Jesus’ part, too, to the suffering that his mission involved. He prayed to his Father on the night before his death: for you all things are possible; remove this cup from me (Mark 14:36). In the midst of his suffering on the cross, he cried out in anguish: My God, my God, why have you forsaken me? (Mark 15:34). But even in his agony of fear he signified his acceptance of God’s will (Mark 14:36), and among his last words on the cross was a prayer that expressed his serenity: Father, into your hands I commend my spirit (Luke 23:46).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 9.0,
+        "theological_depth": 8.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "suffering",
+          "acceptance",
+          "serenity",
+          "God's will"
+        ],
+        "content_type_analysis": "This text block provides a relatable portrayal of Jesus' human emotions and experiences with suffering, while also highlighting his acceptance of God's will. The historical focus is prominent, as it d"
+      },
+      "analysis_timestamp": 1755829023.324047
+    },
+    {
+      "block_id": "a93964aa-65ef-4f57-97c3-9ee8b36a7b44",
+      "content_full": "The Christian can find in Jesus a companion in the midst of the most severe sufferings, for his cross was very much a part of our suffering world. The author of the letter to the Hebrews emphasises the identification of Jesus with us when he refers to him as one who is able to sympathise with our weaknesses, because we have one who in every respect has been tested as we are, yet without sin (4:15); moreover, he learned obedience through what he suffered (5:8). The suffering of Jesus was life-giving and productive of great good for humanity. By reflecting on his experience, we can begin to see that suffering can have a rich and positive value.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 6.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "suffering",
+          "identification",
+          "obedience",
+          "value"
+        ],
+        "content_type_analysis": "This content type is a mix of reflection and explanation, aiming to connect the reader with Jesus' experience through his suffering. The text assumes some basic knowledge of Christianity but doesn't r"
+      },
+      "analysis_timestamp": 1755829026.2662988
+    },
+    {
+      "block_id": "7011f236-a682-49b9-b738-27cc01414c98",
+      "content_full": "Although there are mysteries we cannot hope to fathom in this life, and questions we cannot answer, we need to look at all the evidence – good as well as evil, joy as well as suffering. The human mind can discover God’s goodness in the beauty of the world created for our benefit and enjoyment, and in God’s gifts of life and love. Suffering is only part of the human experience, but even the pain, suffering and evil that are part of the fabric of our lives can speak to us of God. There is a strange mixture of joy and sadness in our experience, in which we can sometimes glimpse a life-giving pattern. At times, suffering is a prelude to real happiness. Overall, the problems and difficulties associated with human existence are not enough to outweigh all the evidence for the existence of a good and loving God.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "the existence of God",
+          "suffering and joy",
+          "God's goodness"
+        ],
+        "content_type_analysis": "This text block focuses on the human experience of suffering and joy, highlighting how these experiences can reveal aspects of God's goodness. It aims to provide a perspective on the nature of God tha"
+      },
+      "analysis_timestamp": 1755829029.603791
+    },
+    {
+      "block_id": "fbd5de63-1654-4dde-b0f3-fe2ae8856680",
+      "content_full": "Throughout human history people have formed different images of God. God has not always been seen as a personal being, but sometimes as one or other of the impersonal forces of nature. People have worshipped the sun, thunder and lightning as their gods. They have fashioned for themselves their own gods, idols of gold and silver and bronze which they have worshipped. At times in history, they have imagined the existence of a whole host of gods, often in conflict with one another. And still today, there are those who can go no further than speak of some higher power.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 9.0,
+        "theological_depth": 6.0,
+        "practical_application": 2.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0
+      },
+      "analysis_timestamp": 1755829032.62021
+    },
+    {
+      "block_id": "077ff9f0-78e8-42c8-b182-c723722ba115",
+      "content_full": "Even when people came to the point of believing in a personal god or gods, their ideas were many and varied. Sometimes they conceived their gods as angry, vindictive masters, whom they felt they had to placate and appease by the offering of sacrifices, even human sacrifices. At other times they thought of the gods as superior beings who regarded humans as mere playthings to have sport with, gods who acted capriciously and according to their whims.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 7.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "ancient polytheistic beliefs",
+          "relationship between humans and gods",
+          "sacrifice"
+        ],
+        "content_type_analysis": "This text block provides a general overview of ancient polytheistic beliefs, highlighting the varied and often capricious nature of gods in different cultures. It sets the stage for understanding how "
+      },
+      "analysis_timestamp": 1755829035.621613
+    },
+    {
+      "block_id": "20e47475-9849-47e9-861c-a51a550964cb",
+      "content_full": "Only rarely could they conceive of a god or gods who were really interested or cared about the welfare of mere individual mortals. This is true of some ‘believers’ in God today. They see God as a kind of divine watchmaker, who set the world in motion in the beginning but now sits idly by; just letting things take their course (this way of understanding God is called ‘Deism’). We can imagine this picture of a god sitting in the grandstand, watching the game of human history unfold, but taking no active part or even any active interest in the affairs and foibles of people. Could there be any more monstrous conception than this, of a do-nothing, detached god? Surely it would be more logical to deny the existence of any higher power, than to accept the existence of such a deity.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 7.0,
+        "practical_application": 4.0,
+        "accessibility": 5.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "Deism",
+          "detached god",
+          "higher power"
+        ],
+        "content_type_analysis": "This text block uses a critical tone to argue against the concept of a detached, do-nothing deity. It compares this idea to Deism and suggests it's more logical to deny the existence of any higher pow"
+      },
+      "analysis_timestamp": 1755829039.097642
+    },
+    {
+      "block_id": "483f9c9f-ba5d-4c20-817e-230a700b0aaa",
+      "content_full": "nto this confused variety of beliefs about gods in ancient times came a religion which stood out like a beacon of light in the darkness, the religion of the people of Israel, the religion of that people with whom we share that part of the Bible we call the Old Testament.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 8.0,
+        "theological_depth": 4.0,
+        "practical_application": 3.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 5.0
+      },
+      "analysis_timestamp": 1755829040.934208
+    },
+    {
+      "block_id": "1e3c7610-0fe5-4412-9b86-0b9657e4670e",
+      "content_full": "Here we find a concept of God that far surpassed any other in the world of that time. The Jews believed, and Christians share this belief, that God’s self-revelation to them was as one God only, a personal God, a God who asked to be identified as I am who I am (Exodus 3:14), a God who loved them and wanted to be loved by them in return. A God who chose them: you shall be my people, and I will be your God (Ezekiel 36:28). God wanted their love and obedience and service, but also their happiness and prosperity.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "God's self-revelation",
+          "personal God",
+          "love and obedience",
+          "happiness and prosperity"
+        ],
+        "content_type_analysis": "This text block effectively conveys the core concept of one God, a personal God who loves and desires relationship with humanity. It provides a clear understanding of God's nature without delving into"
+      },
+      "analysis_timestamp": 1755829044.36815
+    },
+    {
+      "block_id": "a6ac7532-231b-41c8-9561-47dac92dc116",
+      "content_full": "In a later chapter, we shall be taking a closer look at the Bible, the word of God. As we become more familiar with the Scriptures, we will come to appreciate more the depth and tenderness of God’s love for us – God’s own people. God’s relationship is sometimes described in terms of a relationship between father and son, at other times, between bridegroom and bride. Without this revelation on God’s part, we could never have come to know the extent of God’s love for us.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "God's love",
+          "relationship with God",
+          "God's relationship",
+          "depth of God's love"
+        ],
+        "content_type_analysis": "This text block provides a relatable and emotionally engaging explanation of God's love for the reader, using imagery and metaphor to convey the depth of their relationship. While it touches on histor"
+      },
+      "analysis_timestamp": 1755829048.157295
+    },
+    {
+      "block_id": "275c6f9b-2546-4930-8dbf-c7c46a511c4a",
+      "content_full": "But in the Christian view, even this lofty teaching of the Old Testament was only a pale shadow of what was to come, when God the Father would choose to send his own Son into the world as a human being, as one of us: the Word became flesh and lived among us (John 1:14). By seeing the works and hearing the words of the man Jesus, we gain an insight into the character of God that was otherwise unknown and unknowable – God’s love, compassion and mercy, God’s care and concern for individuals, especially the poor, the sick, the weak, the outcasts, those whom Jesus called God’s ‘little ones’.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 6.0,
+        "theological_depth": 9.0,
+        "practical_application": 7.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "God's love",
+          "God's compassion",
+          "God's mercy",
+          "God's care for the poor and sick"
+        ],
+        "content_type_analysis": "This text block effectively conveys the Christian perspective on God's nature, using relatable language to describe God's love, compassion, and care. It provides a clear connection between Old Testame"
+      },
+      "analysis_timestamp": 1755829051.790504
+    },
+    {
+      "block_id": "5501bfb3-777a-44e8-a7f4-4adacb801ee8",
+      "content_full": "By our own reasoning and intellectual capabilities, we can know something of the power and love and goodness of God. By getting to know Jesus Christ, we experience God’s love and mercy in a way we otherwise would never even suspect. His whole life was the love of God in action. As we look at the cross of Christ, we see God’s love revealed in all its clarity.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 4.0,
+        "theological_depth": 7.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "God's love",
+          "mercy",
+          "cross of Christ"
+        ],
+        "content_type_analysis": "This text focuses on the personal experience of God's love and mercy through Jesus Christ, emphasizing the transformative power of faith. While it touches upon historical events (the life of Jesus), i"
+      },
+      "analysis_timestamp": 1755829054.711537
+    },
+    {
+      "block_id": "78353815-68b4-48a5-8d90-d1edd2a80841",
+      "content_full": "Read through the text of next Sunday’s Gospel, stopping to dwell on words or images that strike you.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "personal reflection",
+          "scripture contemplation"
+        ],
+        "content_type_analysis": "This text block is focused on personal reflection and encourages readers to engage with the scripture in a contemplative manner. The content type seems more suitable for a devotional or spiritual prac"
+      },
+      "analysis_timestamp": 1755829057.39813
+    },
+    {
+      "block_id": "33a8861e-2d59-4323-bd71-048706831828",
+      "content_full": "Reflect on what these Gospel words are saying to your life, here and now.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "Reflecting on personal life",
+          "Gospel words",
+          "Relatability to modern readers"
+        ],
+        "content_type_analysis": "This text block is a call to reflection, focusing on the personal relevance of Gospel teachings. It encourages readers to consider how these teachings apply to their daily lives, making it relatable a"
+      },
+      "analysis_timestamp": 1755829060.587688
+    },
+    {
+      "block_id": "1de1c24b-b70d-4b2b-9e8e-f803243821eb",
+      "content_full": "What image of God did you have as a child?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "childhood",
+          "God image"
+        ],
+        "content_type_analysis": "This text block is relatable and accessible, as it asks a universal question that many people can identify with. It lacks historical focus and theological depth, but provides some insight into how the"
+      },
+      "analysis_timestamp": 1755829063.571845
+    },
+    {
+      "block_id": "9046a0f6-2019-4107-afa5-502726ffcd85",
+      "content_full": "Have you been conscious of a personal search for God that has brought you to this group? If so, what have been some of the steps on this path?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 7.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "personal search for God",
+          "path to faith"
+        ],
+        "content_type_analysis": "This text focuses on the personal aspect of seeking faith, encouraging readers to reflect on their own journey. It lacks historical context and instead invites introspection. The content is accessible"
+      },
+      "analysis_timestamp": 1755829066.404922
+    },
+    {
+      "block_id": "dd92b16f-ed71-4fc7-8d82-9f4bb124167f",
+      "content_full": "People’s actions can be a sign to us of goodness and life-giving love. Describe an experience when someone helped you in a time of hardship and suffering.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 3.0,
+        "practical_application": 9.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 10,
+        "key_themes": [
+          "experiencing kindness",
+          "help in hardship",
+          "goodness and love"
+        ],
+        "content_type_analysis": "This text encourages the reader to share a personal experience of receiving help during a difficult time, highlighting the relational aspect of Christian values. The content is straightforward and foc"
+      },
+      "analysis_timestamp": 1755829069.165206
+    },
+    {
+      "block_id": "b5bfeddf-db21-4799-a52c-e04ffb0be70f",
+      "content_full": "Lord, you are great \n\tand greatly to be praised; \n\t\tgreat is your power,\n\tand your wisdom infinite.\nWe would praise you without ceasing.\nYou call us to delight in your praise,\n\tfor you have made us for yourself,\n\tand our hearts are restless\n\t\tuntil they rest in you.\n(St Augustine, 354-430)",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "Restlessness",
+          "Delight in praise",
+          "Made for God"
+        ],
+        "content_type_analysis": "This text is a excerpt from the Confessions of St. Augustine, a personal and introspective prayer that expresses the human desire to connect with God. The poem is written in a lyrical style, making it"
+      },
+      "analysis_timestamp": 1755829072.889431
+    },
+    {
+      "block_id": "5b130623-3c4a-45d5-bfad-06c486fa0b63",
+      "content_full": "Catechism of the Catholic Church: \nNos 27-49",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 4.0,
+        "historical_focus": 9.0,
+        "theological_depth": 7.0,
+        "practical_application": 2.0,
+        "accessibility": 6.0,
+        "emotional_resonance": 5.0,
+        "key_themes": [
+          "Catechism of the Catholic Church",
+          "Nos 27-49",
+          "religions/catholic"
+        ],
+        "content_type_analysis": "This text block appears to be a reference to a specific section in the Catechism of the Catholic Church. It is likely intended for individuals who are already familiar with Catholic doctrine and are l"
+      },
+      "analysis_timestamp": 1755829076.001709
+    },
+    {
+      "block_id": "8e28da97-7798-4d45-af3c-f08b86ba570d",
+      "content_full": "Some people find that an object can help them to focus better when they pray: a lit candle, a flower, a picture, etc. Others make their own images in their heads, while others, ‘centre in’ on a feeling or a value. What is it that you find helps you to focus or ‘centre’ when you come to pray?",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 9.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 8.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "personalization of prayer",
+          "focus and mindfulness",
+          "individual experiences"
+        ],
+        "content_type_analysis": "This text block aims to encourage RCIA candidates to share their personal experiences with prayer and focus, making it relatable and accessible. It does not delve into historical context or theologica"
+      },
+      "analysis_timestamp": 1755829078.8536582
+    },
+    {
+      "block_id": "dd5eab86-7154-44c7-9c5f-2149ec3cd732",
+      "content_full": "Reflecting on the Scriptures can be a beautiful way to pray.\nArrange to spend some time each day with your Bible, reflecting on one of these readings. Open your heart to the Spirit of God.\nMatthew 6:5-15. Jesus’ advice on how to pray.\nLuke 11:1-13.  Persistence and confidence in prayer.\nLuke 18:9-14. The need for humility in prayer.\nEphesians 3:14-21. Paul’s prayer for his people.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 7.0,
+        "practical_application": 9.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "Reflection",
+          "Prayer",
+          "Humility"
+        ],
+        "content_type_analysis": "This text block provides a list of scriptural readings and their corresponding prayers, aiming to guide readers in reflecting on the Bible. It focuses on practical application and emotional resonance "
+      },
+      "analysis_timestamp": 1755829082.707583
+    },
+    {
+      "block_id": "068c6632-0b0c-40d9-8e48-6e82d7f48088",
+      "content_full": "Consciously look for an ‘environment’ that helps you to pray – to become aware of God’s loving presence to you. As you do this, become more attentive to God, and what God may be inviting you to. Talk to God about this.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 9.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "finding a prayer space",
+          "attentiveness to God",
+          "communication with God"
+        ],
+        "content_type_analysis": "This text focuses on the personal and practical aspects of prayer, encouraging readers to create an environment that fosters their relationship with God. It lacks historical context but provides guida"
+      },
+      "analysis_timestamp": 1755829085.582997
+    },
+    {
+      "block_id": "0ec09491-853b-485f-86d1-2eaa6def672a",
+      "content_full": "Sometimes people are helped to pray by becoming aware of their breathing, and then letting a word accompany each breath, like:",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "meditation",
+          "mindfulness",
+          "spirituality"
+        ],
+        "content_type_analysis": "This text focuses on a modern, non-historical approach to prayer, emphasizing the use of breathing and word accompaniment as a means to cultivate mindfulness and spirituality. It appears to be an intr"
+      },
+      "analysis_timestamp": 1755829088.4591172
+    },
+    {
+      "block_id": "c14c1e06-c7d8-47f7-a774-9480b83fd853",
+      "content_full": "Father or Shepherd or Jesus.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 4.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0
+      },
+      "analysis_timestamp": 1755829090.978784
+    },
+    {
+      "block_id": "b30c893c-c420-45ce-98a6-30432da3d876",
+      "content_full": "The word can be said aloud, or heard inside you, or felt in your heart.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 4.0,
+        "practical_application": 6.0,
+        "accessibility": 9.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "the nature of God's presence",
+          "the subjective experience of faith"
+        ],
+        "content_type_analysis": "This text block is focused on conveying the personal and experiential aspects of religious belief, using a poetic and metaphorical language. It doesn't delve into historical events or figures, but rat"
+      },
+      "analysis_timestamp": 1755829094.443866
+    },
+    {
+      "block_id": "cb9fbcb8-21a3-492a-bd97-b3ced635f1e8",
+      "error": "JSON parse error: Expecting value: line 1 column 1 (char 0)",
+      "raw_response": "{\n    \"relatability\": 8,\n    \"historical_focus\": 2,\n    \"theological_depth\": 6,\n    \"practical_application\": 7,\n    \"accessibility\": 9,\n    \"emotional_resonance\": 8,\n    \"key_themes\": [\"communication\""
+    },
+    {
+      "block_id": "da774469-085b-4769-9211-7d0eb0f900bd",
+      "content_full": "When Jesus talked about prayer he revealed to us its unsuspected depths, and he spoke about God’s side of the communication.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 6.0,
+        "historical_focus": 2.0,
+        "theological_depth": 5.0,
+        "practical_application": 4.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "Jesus",
+          "prayer",
+          "communication"
+        ],
+        "content_type_analysis": "This text block focuses on Jesus' discussion of prayer, highlighting its depth and the nature of communication with God. The language is simple and concise, making it accessible to modern readers. How"
+      },
+      "analysis_timestamp": 1755829100.500706
+    },
+    {
+      "block_id": "15727f6a-6873-40ea-a9c7-7bf08b63a9fe",
+      "content_full": "The first thing we should note about prayer is that it is a gift. It is God who speaks first. Prayer is not something we do in order to get in touch with God, but rather it is God’s gift to us. We cannot pray unless God opens our minds and moves our hearts and attracts us to God’s own self.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "God's gift to us",
+          "moving our hearts and attracting us to God's own self"
+        ],
+        "content_type_analysis": "This text focuses on the relational aspect of prayer, highlighting that prayer is a gift from God, rather than an action humans take. It uses emotive language like 'moves our hearts' to convey this id"
+      },
+      "analysis_timestamp": 1755829103.707943
+    },
+    {
+      "block_id": "b997b90a-9e1f-43ad-be79-fc63136c954f",
+      "content_full": "That may come as a surprise to many people and may even be somewhat deflating to hear. We tend to think of prayer as our business, our activity. Yet on reflection, we will come to see it as an encouraging truth and even a great relief. We are indeed responsible adults who must make it through each day, and yet we are also God’s children, walking along hand in hand with God, in total and peaceful dependence.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 6.0,
+        "practical_application": 9.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 9.0,
+        "key_themes": [
+          "dependence",
+          "peacefulness",
+          "encouragement",
+          "relief"
+        ],
+        "content_type_analysis": "This text block uses a reflective and personal tone to explain the concept of prayer, focusing on its emotional and relational aspects. It aims to connect readers with their faith in a relatable way, "
+      },
+      "analysis_timestamp": 1755829106.9659479
+    },
+    {
+      "block_id": "97a8597a-b550-41d0-b840-66262c7dca29",
+      "content_full": "Paul teaches this truth with his usual bluntness: the Spirit helps us in our weakness; for we do not know how to pray as we ought, but that very Spirit intercedes with sighs too deep for words. And God, who searches the heart, knows what is the mind of the Spirit, because the Spirit intercedes for the saints according to the will of God (Romans 8:26-27). In other words, prayer is what the Spirit of God produces in us, and God knows the mind of the Spirit – and what is in our minds, and what are our needs.",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 2.0,
+        "theological_depth": 9.0,
+        "practical_application": 6.0,
+        "accessibility": 8.0,
+        "emotional_resonance": 7.0,
+        "key_themes": [
+          "The role of the Holy Spirit in prayer",
+          "The relationship between human prayer and divine providence"
+        ],
+        "content_type_analysis": "This text focuses on a specific biblical passage (Romans 8:26-27) to explain the role of the Holy Spirit in prayer. It uses clear language and presents a concise theological argument, making it access"
+      },
+      "analysis_timestamp": 1755829110.493647
+    },
+    {
+      "block_id": "e0965e6c-9ead-4ab3-b9d5-53d59e896245",
+      "content_full": "The best model of prayer we have is Jesus himself. The writer of the Letter to the Hebrews reflects on Jesus’ life of prayer: In the days of his flesh, Jesus offered up prayers and supplications, with loud cries and tears, to the one who was able to save him from death, and he was heard because of his reverent submission. Although he was a Son, he learned obedience through what he suffered; and having been made perfect, he became the source of eternal salvation for all who obey him (5:7-9).",
+      "tag": "paragraph",
+      "scores": {
+        "relatability": 8.0,
+        "historical_focus": 6.0,
+        "theological_depth": 9.0,
+        "practical_application": 5.0,
+        "accessibility": 7.0,
+        "emotional_resonance": 8.0,
+        "key_themes": [
+          "Jesus Christ",
+          "prayer",
+          "obedience",
+          "salvation"
+        ],
+        "content_type_analysis": "This text block describes Jesus' model of prayer and its significance in the Christian faith. The focus is on Jesus himself, emphasizing his life of prayer and obedience. This content would be suitabl"
+      },
+      "analysis_timestamp": 1755829113.835103
+    }
+  ]
+}

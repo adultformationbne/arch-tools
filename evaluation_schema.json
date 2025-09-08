@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AHWGP Content Evaluation Schema",
+  "description": "Schema for evaluating religious education content blocks with scoring metrics",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "total_evaluations": {
+          "type": "integer",
+          "description": "Total number of content blocks evaluated"
+        },
+        "successful_evaluations": {
+          "type": "integer",
+          "description": "Number of successfully analyzed blocks"
+        },
+        "failed_evaluations": {
+          "type": "integer",
+          "description": "Number of blocks that failed analysis"
+        },
+        "model_used": {
+          "type": "string",
+          "description": "Name of the LLM model used for analysis"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Unix timestamp when evaluation was completed"
+        }
+      },
+      "required": ["total_evaluations", "model_used", "timestamp"]
+    },
+    "evaluations": {
+      "type": "array",
+      "description": "Array of individual content block evaluations",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "title": "Successful Evaluation",
+            "properties": {
+              "block_id": {
+                "type": "string",
+                "description": "Unique identifier for the content block"
+              },
+              "content_full": {
+                "type": "string",
+                "description": "Full content of the paragraph block"
+              },
+              "tag": {
+                "type": "string",
+                "description": "Content type tag (paragraph, h1, h3, etc.)"
+              },
+              "scores": {
+                "type": "object",
+                "properties": {
+                  "relatability": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How relatable this content is to modern readers (1-10)"
+                  },
+                  "historical_focus": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How much this content focuses on historical events/figures (1-10)"
+                  },
+                  "theological_depth": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Depth of theological content and concepts (1-10)"
+                  },
+                  "practical_application": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How applicable this content is to daily life (1-10)"
+                  },
+                  "accessibility": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How easy this is for beginners to understand (1-10)"
+                  },
+                  "emotional_resonance": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How emotionally engaging this content is (1-10)"
+                  },
+                  "key_themes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Key themes identified in the content"
+                  },
+                  "content_type_analysis": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Brief analysis of the content type and structure"
+                  }
+                },
+                "required": [
+                  "relatability",
+                  "historical_focus", 
+                  "theological_depth",
+                  "practical_application",
+                  "accessibility",
+                  "emotional_resonance"
+                ]
+              },
+              "analysis_timestamp": {
+                "type": "number",
+                "description": "Unix timestamp when this block was analyzed"
+              }
+            },
+            "required": ["block_id", "scores"]
+          },
+          {
+            "type": "object",
+            "title": "Failed Evaluation",
+            "properties": {
+              "block_id": {
+                "type": "string",
+                "description": "Unique identifier for the content block"
+              },
+              "error": {
+                "type": "string",
+                "description": "Error message explaining why analysis failed"
+              },
+              "raw_response": {
+                "type": "string",
+                "description": "Raw LLM response (if applicable)"
+              }
+            },
+            "required": ["block_id", "error"]
+          }
+        ]
+      }
+    }
+  },
+  "required": ["metadata", "evaluations"],
+  "additionalProperties": false
+}

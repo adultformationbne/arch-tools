@@ -1,4 +1,4 @@
-we# Svelte 5 Syntax & Best Practices Cheat Sheet
+# Svelte 5 Syntax & Best Practices Cheat Sheet
 
 ## 🔹 Svelte 5 Syntax Changes
 
