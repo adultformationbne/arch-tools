@@ -10,8 +10,8 @@ const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 	}
 });
 
-// Function to fetch Gospel data from Universalis API
-async function fetchGospelForDate(date) {
+// Function to fetch all readings data from Universalis API
+async function fetchAllReadingsForDate(date) {
 	try {
 		const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
 		const region = 'australia.brisbane';
@@ -30,22 +30,100 @@ async function fetchGospelForDate(date) {
 
 		const data = JSON.parse(jsonMatch[1]);
 
+		// Normalize readings using the same logic as client-side
+		const readings = normalizeUniversalisReadings(data);
+
 		return {
+			readings: readings,
+			liturgicalDate: data.date || '',
+			// Backward compatibility
 			reference: data.Mass_G?.source || '',
 			text: data.Mass_G?.text || '',
-			liturgicalDate: data.date || '',
 			heading: data.Mass_G?.heading || ''
 		};
 	} catch (error) {
-		console.error('Error fetching Gospel data:', error);
+		console.error('Error fetching readings data:', error);
 		// Return empty data if fetch fails
 		return {
+			readings: {},
+			liturgicalDate: '',
 			reference: '',
 			text: '',
-			liturgicalDate: '',
 			heading: ''
 		};
 	}
+}
+
+// Helper function to normalize readings (server-side version)
+function normalizeUniversalisReadings(universalisData) {
+	const readings = {};
+
+	// Helper to decode HTML entities server-side
+	const decodeHtmlEntities = (str) => {
+		if (!str) return '';
+		return str
+			.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)))
+			.replace(/&#([0-9]+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)))
+			.replace(/&quot;/g, '"')
+			.replace(/&apos;/g, "'")
+			.replace(/&lt;/g, '<')
+			.replace(/&gt;/g, '>')
+			.replace(/&amp;/g, '&');
+	};
+
+	// First Reading
+	if (universalisData.Mass_R1?.source) {
+		readings.first_reading = {
+			source: decodeHtmlEntities(universalisData.Mass_R1.source),
+			text: universalisData.Mass_R1.text ? decodeHtmlEntities(universalisData.Mass_R1.text) : '',
+			heading: universalisData.Mass_R1.heading ? decodeHtmlEntities(universalisData.Mass_R1.heading) : ''
+		};
+	}
+
+	// Responsorial Psalm
+	if (universalisData.Mass_Ps?.source) {
+		readings.psalm = {
+			source: decodeHtmlEntities(universalisData.Mass_Ps.source),
+			text: universalisData.Mass_Ps.text ? decodeHtmlEntities(universalisData.Mass_Ps.text) : ''
+		};
+	}
+
+	// Second Reading (optional - not present on all days)
+	if (universalisData.Mass_R2?.source) {
+		readings.second_reading = {
+			source: decodeHtmlEntities(universalisData.Mass_R2.source),
+			text: universalisData.Mass_R2.text ? decodeHtmlEntities(universalisData.Mass_R2.text) : '',
+			heading: universalisData.Mass_R2.heading ? decodeHtmlEntities(universalisData.Mass_R2.heading) : ''
+		};
+	}
+
+	// Gospel Acclamation
+	if (universalisData.Mass_GA?.source) {
+		readings.gospel_acclamation = {
+			source: decodeHtmlEntities(universalisData.Mass_GA.source),
+			text: universalisData.Mass_GA.text ? decodeHtmlEntities(universalisData.Mass_GA.text) : ''
+		};
+	}
+
+	// Gospel
+	if (universalisData.Mass_G?.source) {
+		readings.gospel = {
+			source: decodeHtmlEntities(universalisData.Mass_G.source),
+			text: universalisData.Mass_G.text ? decodeHtmlEntities(universalisData.Mass_G.text) : '',
+			heading: universalisData.Mass_G.heading ? decodeHtmlEntities(universalisData.Mass_G.heading) : ''
+		};
+	}
+
+	// Generate combined readings string in the format used by DGR forms
+	const readingsSources = [];
+	if (readings.first_reading?.source) readingsSources.push(readings.first_reading.source);
+	if (readings.psalm?.source) readingsSources.push(readings.psalm.source);
+	if (readings.second_reading?.source) readingsSources.push(readings.second_reading.source);
+	if (readings.gospel?.source) readingsSources.push(readings.gospel.source);
+
+	readings.combined_sources = readingsSources.join('; ');
+
+	return readings;
 }
 
 export async function GET({ url, locals }) {
@@ -146,8 +224,8 @@ async function generateSchedule({ startDate, days = 14 }) {
 				// Generate submission token
 				const { data: token } = await supabase.rpc('generate_submission_token');
 
-				// Fetch Gospel data for this date
-				const gospelData = await fetchGospelForDate(date);
+				// Fetch all readings data for this date
+				const readingsData = await fetchAllReadingsForDate(date);
 
 				scheduleEntries.push({
 					date: dateStr,
@@ -155,9 +233,10 @@ async function generateSchedule({ startDate, days = 14 }) {
 					contributor_email: contributor?.email,
 					submission_token: token,
 					status: 'pending',
-					gospel_reference: gospelData.reference,
-					gospel_text: gospelData.text,
-					liturgical_date: gospelData.liturgicalDate
+					gospel_reference: readingsData.reference, // Backward compatibility
+					gospel_text: readingsData.text, // Backward compatibility
+					liturgical_date: readingsData.liturgicalDate,
+					readings_data: readingsData.readings // New JSONB column with all readings
 				});
 			}
 		}

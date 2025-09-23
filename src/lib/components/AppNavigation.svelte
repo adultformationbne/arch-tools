@@ -5,9 +5,7 @@
 	const routes = [
 		{ name: 'Home', path: '/', description: 'Dashboard home' },
 		{ name: 'Editor', path: '/editor', description: 'Main content editor' },
-		{ name: 'Scripture', path: '/scripture', description: 'Bible passage lookup' },
 		{ name: 'DGR', path: '/dgr', description: 'DGR tools' },
-		{ name: 'DGR Admin', path: '/dgr-admin', description: 'DGR management dashboard' },
 		{ name: 'QR Code', path: '/qr', description: 'QR code generator' }
 	];
 </script>

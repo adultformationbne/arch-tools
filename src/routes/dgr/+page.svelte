@@ -1,171 +1,447 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
-	import DGRForm from '$lib/components/DGRForm.svelte';
-	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
-	import { generateDGRHTML, parseReadings } from '$lib/utils/dgr-html.js';
+	import DGRReviewModal from '$lib/components/DGRReviewModal.svelte';
+	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { onMount } from 'svelte';
+	import { Eye, Send, ExternalLink } from 'lucide-svelte';
 
-	// Initialize with defaults
-	const getInitialFormData = () => {
-		// Only use localStorage in development
-		if (import.meta.env.DEV && typeof window !== 'undefined') {
-			const saved = localStorage.getItem('dgr-form-data-dev');
-			if (saved) {
-				try {
-					console.log('Restoring form data from localStorage (dev mode)');
-					return JSON.parse(saved);
-				} catch (e) {
-					console.error('Failed to parse saved form data:', e);
-				}
-			}
-		}
-		
-		// Default values
-		return {
-			date: new Date().toISOString().split('T')[0],
-			liturgicalDate: '',
-			readings: '', // All readings (1st, 2nd, psalm, gospel)
-			title: '',
-			gospelQuote: '', // Author's selected quote/highlight
-			reflectionText: '',
-			authorName: ''
-		};
-	};
+	let schedule = $state([]);
+	let contributors = $state([]);
+	let loading = $state(true);
+	let activeTab = $state('schedule');
+	let reviewModalOpen = $state(false);
+	let selectedReflection = $state(null);
+	
+	// Promo tiles state - start with 1 tile, can add up to 3
+	let promoTiles = $state([
+		{ position: 1, image_url: '', title: '', link_url: '' }
+	]);
+	let savingTiles = $state(false);
 
-	let formData = $state(getInitialFormData());
-
-	let publishing = $state(false);
-	let result = $state(null);
-	let useNewDesign = $state(true); // Toggle for design format
-	let fetchingGospel = $state(false);
-	let gospelFullText = $state(''); // Full gospel text for the day
-	let gospelReference = $state(''); // Extracted gospel reference (e.g., "Matthew 1:1-16, 18-23")
-	let promoTiles = $state([]); // Promo tiles for preview
-
-	// Load promo tiles on mount
-	onMount(async () => {
-		try {
-			const response = await fetch('/api/dgr-admin/promo-tiles');
-			const data = await response.json();
-			console.log('Loaded promo tiles:', data);
-			if (data.tiles) {
-				promoTiles = data.tiles;
-				console.log('Set promoTiles to:', promoTiles);
-			}
-		} catch (err) {
-			console.error('Failed to load promo tiles:', err);
-		}
+	// Form states
+	let generateForm = $state({
+		startDate: new Date().toISOString().split('T')[0],
+		days: 14
 	});
 
-	async function handleSubmit(e) {
-		if (e && e.preventDefault) e.preventDefault();
-		
-		// Form validation
-		if (!formData.date || !formData.liturgicalDate || !formData.readings || 
-			!formData.title || !formData.gospelQuote || !formData.reflectionText || 
-			!formData.authorName) {
-			toast.error({
-				title: 'Form incomplete',
-				message: 'Please fill in all required fields',
-				duration: 4000
-			});
-			return;
-		}
-		
-		publishing = true;
-		result = null;
+	let newContributor = $state({
+		name: '',
+		email: '',
+		preferred_days: [],
+		day_of_month: null,
+		notes: ''
+	});
 
-		// Create a multi-step toast for the publishing process
-		const toastId = toast.multiStep({
-			steps: [
-				{ title: 'Validating form...', message: 'Checking all fields are complete', type: 'info' },
-				{
-					title: 'Connecting to WordPress...',
-					message: 'Establishing secure connection',
-					type: 'info'
-				},
-				{ title: 'Publishing content...', message: 'Uploading your reflection', type: 'loading' },
-				{ title: 'Success!', message: 'Reflection published successfully', type: 'success' }
-			],
-			closeable: false
-		});
+	const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	const statusColors = {
+		pending: 'bg-yellow-100 text-yellow-800',
+		submitted: 'bg-blue-100 text-blue-800',
+		approved: 'bg-green-100 text-green-800',
+		published: 'bg-purple-100 text-purple-800'
+	};
 
+	const statusOptions = [
+		{ value: 'pending', label: 'Pending' },
+		{ value: 'submitted', label: 'Needs Approval' },
+		{ value: 'approved', label: 'Approved' },
+		{ value: 'published', label: 'Published' }
+	];
+
+	onMount(async () => {
+		await Promise.all([loadSchedule(), loadContributors(), loadPromoTiles()]);
+		loading = false;
+	});
+
+	async function loadSchedule() {
 		try {
-			// Step 1: Validation
-			await new Promise((resolve) => setTimeout(resolve, 500));
-			toast.nextStep(toastId);
+			const response = await fetch('/api/dgr-admin/schedule?days=30');
+			const data = await response.json();
 
-			// Step 2: Connection
-			await new Promise((resolve) => setTimeout(resolve, 500));
-			toast.nextStep(toastId);
-
-			// Step 3: Publishing
-			const response = await fetch('/api/dgr/publish', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					...formData,
-					useNewDesign, // Pass the design format preference
-					gospelFullText, // Pass the fetched gospel text
-					gospelReference // Pass the extracted gospel reference
-				})
-			});
-
-			result = await response.json();
-
-			if (result.success) {
-				// Step 4: Success
-				toast.nextStep(toastId);
-				setTimeout(() => {
-					toast.dismiss(toastId);
-					// Clear localStorage in dev mode since we're resetting
-					if (import.meta.env.DEV && typeof window !== 'undefined') {
-						localStorage.removeItem('dgr-form-data-dev');
-						console.log('Cleared saved form data (dev mode)');
-					}
-					// Reset form to prevent double submission
-					formData = {
-						date: new Date().toISOString().split('T')[0],
-						liturgicalDate: '',
-						readings: '',
-						title: '',
-						gospelQuote: '',
-						reflectionText: '',
-						authorName: ''
-					};
-					gospelFullText = '';
-					gospelReference = '';
-					// Clear the result message after a delay
-					setTimeout(() => {
-						result = null;
-					}, 5000);
-				}, 2000);
-			} else {
-				toast.updateToast(toastId, {
-					title: 'Publishing failed',
-					message: result.error || 'An error occurred',
-					type: 'error',
-					closeable: true,
-					duration: 5000
-				});
-			}
+			if (data.error) throw new Error(data.error);
+			schedule = data.schedule || [];
 		} catch (error) {
-			toast.dismiss(toastId);
 			toast.error({
-				title: 'Connection Error',
+				title: 'Failed to load schedule',
 				message: error.message,
 				duration: 5000
 			});
-			result = { success: false, error: error.message };
-		} finally {
-			publishing = false;
 		}
 	}
 
-	function formatDateDisplay(dateString) {
-		const date = new Date(dateString);
-		return date.toLocaleDateString('en-US', {
+	async function loadContributors() {
+		try {
+			const response = await fetch('/api/dgr-admin/contributors');
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+			contributors = data.contributors || [];
+		} catch (error) {
+			toast.error({
+				title: 'Failed to load contributors',
+				message: error.message,
+				duration: 5000
+			});
+		}
+	}
+
+	async function loadPromoTiles() {
+		try {
+			const response = await fetch('/api/dgr-admin/promo-tiles');
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+			
+			// Update the promoTiles array with fetched data
+			if (data.tiles && data.tiles.length > 0) {
+				// Only include tiles that have image URLs (not empty ones)
+				const activeTiles = data.tiles.filter(tile => tile.image_url);
+				if (activeTiles.length > 0) {
+					promoTiles = activeTiles.map(tile => ({
+						position: tile.position,
+						image_url: tile.image_url || '',
+						title: tile.title || '',
+						link_url: tile.link_url || ''
+					}));
+				} else {
+					// No active tiles, start with one empty tile
+					promoTiles = [{ position: 1, image_url: '', title: '', link_url: '' }];
+				}
+			}
+		} catch (error) {
+			console.error('Failed to load promo tiles:', error);
+		}
+	}
+
+	async function savePromoTiles() {
+		savingTiles = true;
+		const loadingId = toast.loading({
+			title: 'Saving promo tiles...',
+			message: 'Updating promotional content'
+		});
+
+		try {
+			// Only save tiles that have image URLs, reposition them as 1, 2, 3
+			const tilesToSave = promoTiles
+				.filter(tile => tile.image_url && tile.image_url.trim())
+				.map((tile, index) => ({
+					...tile,
+					position: index + 1
+				}));
+
+			const response = await fetch('/api/dgr-admin/promo-tiles', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ tiles: tilesToSave })
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.dismiss(loadingId);
+			toast.success({
+				title: 'Promo tiles saved',
+				message: `${tilesToSave.length} promotional tile${tilesToSave.length !== 1 ? 's' : ''} updated`,
+				duration: 3000
+			});
+
+			// Reload to refresh positions
+			await loadPromoTiles();
+		} catch (error) {
+			toast.dismiss(loadingId);
+			toast.error({
+				title: 'Failed to save promo tiles',
+				message: error.message,
+				duration: 5000
+			});
+		} finally {
+			savingTiles = false;
+		}
+	}
+
+	function addTile() {
+		if (promoTiles.length < 3) {
+			promoTiles.push({
+				position: promoTiles.length + 1,
+				image_url: '',
+				title: '',
+				link_url: ''
+			});
+		}
+	}
+
+	function removeTile(index) {
+		if (promoTiles.length > 1) {
+			promoTiles.splice(index, 1);
+			// Update positions
+			promoTiles.forEach((tile, idx) => {
+				tile.position = idx + 1;
+			});
+		}
+	}
+
+	async function generateSchedule() {
+		const loadingId = toast.loading({
+			title: 'Generating schedule...',
+			message: 'Creating assignments for the next ' + generateForm.days + ' days'
+		});
+
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'generate_schedule',
+					startDate: generateForm.startDate,
+					days: generateForm.days
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Schedule generated!',
+				message: data.message,
+				type: 'success',
+				duration: 4000
+			});
+
+			await loadSchedule();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Generation failed',
+				message: error.message,
+				type: 'error',
+				duration: 5000
+			});
+		}
+	}
+
+	async function updateAssignment(scheduleId, contributorId) {
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'update_assignment',
+					scheduleId,
+					contributorId
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.success({
+				title: 'Assignment updated',
+				message: 'Contributor assignment changed successfully',
+				duration: 3000
+			});
+
+			await loadSchedule();
+		} catch (error) {
+			toast.error({
+				title: 'Update failed',
+				message: error.message,
+				duration: 5000
+			});
+		}
+	}
+
+	async function approveReflection(scheduleId) {
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'approve_reflection',
+					scheduleId
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.success({
+				title: 'Reflection approved',
+				message: 'Reflection has been approved and is ready for publishing',
+				duration: 3000
+			});
+
+			await loadSchedule();
+		} catch (error) {
+			toast.error({
+				title: 'Approval failed',
+				message: error.message,
+				duration: 5000
+			});
+		}
+	}
+
+	async function updateStatus(scheduleId, newStatus) {
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'update_status',
+					scheduleId,
+					status: newStatus
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			const statusLabels = {
+				pending: 'set to Pending',
+				submitted: 'marked as Needs Approval',
+				approved: 'approved',
+				published: 'marked as Published'
+			};
+
+			toast.success({
+				title: 'Status updated',
+				message: `Reflection ${statusLabels[newStatus]}`,
+				duration: 3000
+			});
+
+			await loadSchedule();
+		} catch (error) {
+			toast.error({
+				title: 'Status update failed',
+				message: error.message,
+				duration: 5000
+			});
+		}
+	}
+
+	async function addContributor() {
+		if (!newContributor.name || !newContributor.email) {
+			toast.warning({
+				title: 'Missing information',
+				message: 'Name and email are required',
+				duration: 3000
+			});
+			return;
+		}
+
+		try {
+			const response = await fetch('/api/dgr-admin/contributors', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(newContributor)
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.success({
+				title: 'Contributor added',
+				message: `${newContributor.name} has been added successfully`,
+				duration: 3000
+			});
+
+			newContributor = { name: '', email: '', preferred_days: [], day_of_month: null, notes: '' };
+			await loadContributors();
+		} catch (error) {
+			toast.error({
+				title: 'Failed to add contributor',
+				message: error.message,
+				duration: 5000
+			});
+		}
+	}
+
+	async function saveReflection(reflectionData) {
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'save_reflection',
+					...reflectionData
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			await loadSchedule();
+			return data.schedule;
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	async function sendToWordPress(scheduleId) {
+		const loadingId = toast.loading({
+			title: 'Sending to WordPress...',
+			message: 'Publishing reflection to WordPress'
+		});
+
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'send_to_wordpress',
+					scheduleId
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Published to WordPress!',
+				message: 'Reflection has been published successfully',
+				type: 'success',
+				duration: 4000
+			});
+
+			await loadSchedule();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Publishing failed',
+				message: error.message,
+				type: 'error',
+				duration: 5000
+			});
+		}
+	}
+
+	function openReviewModal(entry) {
+		selectedReflection = entry;
+		reviewModalOpen = true;
+	}
+
+	function getSubmissionUrl(token) {
+		return `${window.location.origin}/dgr/submit/${token}`;
+	}
+
+	function copySubmissionUrl(token) {
+		const url = getSubmissionUrl(token);
+		navigator.clipboard.writeText(url).then(() => {
+			toast.success({
+				title: 'Link copied',
+				message: 'Submission link copied to clipboard',
+				duration: 2000
+			});
+		});
+	}
+
+	function formatDate(dateStr) {
+		return new Date(dateStr).toLocaleDateString('en-US', {
 			weekday: 'long',
 			day: 'numeric',
 			month: 'long',
@@ -173,414 +449,543 @@
 		});
 	}
 
-	// Gospel reference extraction is now handled by shared utility
-
-	// Fetch gospel text for the selected date
-	async function fetchGospelForSelectedDate() {
-		if (!formData.date) return;
-
-		fetchingGospel = true;
-		try {
-			const result = await fetchGospelTextForDate(formData.date, 'NRSVAE', 'australia.brisbane');
-			
-			// Simple Gospel Debug Log
-			if (result.success && result.content) {
-				console.log('=== GOSPEL FETCH ===');
-				console.log('RAW INPUT (FULL):', result.content);
-			}
-			
-			if (result.success) {
-				gospelFullText = result.content;
-				gospelReference = result.reference;
-			} else {
-				console.warn('Failed to fetch gospel:', result.error);
-				gospelFullText = '';
-				gospelReference = '';
-				
-				// Try fallback with extracted reference from readings
-				if (formData.readings) {
-					const extractedRef = extractGospelReference(formData.readings);
-					if (extractedRef) {
-						gospelReference = extractedRef;
-						await fetchGospelByReference();
-					}
-				}
-			}
-		} catch (err) {
-			console.error('Error fetching gospel for date:', err);
-			gospelFullText = '';
-			gospelReference = '';
-		} finally {
-			fetchingGospel = false;
-		}
-	}
-
-	// Fetch gospel by reference (fallback)
-	async function fetchGospelByReference() {
-		if (!gospelReference) return;
-
-		fetchingGospel = true;
-		try {
-			const response = await fetch(`/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`);
-			if (response.ok) {
-				const data = await response.json();
-				
-				if (data.success && data.content) {
-					gospelFullText = data.content;
-				}
-			}
-		} catch (err) {
-			console.error('Error fetching gospel by reference:', err);
-		} finally {
-			fetchingGospel = false;
-		}
-	}
-
-	// Watch for date and readings changes to auto-fetch gospel
-	$effect(() => {
-		// Extract gospel reference from readings if available
-		if (formData.readings) {
-			gospelReference = extractGospelReference(formData.readings);
-		}
-		
-		// Always try to fetch gospel for the date first (this gets the liturgical gospel)
-		if (formData.date) {
-			fetchGospelForSelectedDate();
-		}
-	});
-
-	// Save form data to localStorage in dev mode only
-	$effect(() => {
-		if (import.meta.env.DEV && typeof window !== 'undefined') {
-			// Skip saving if form is empty (just initialized)
-			const hasContent = formData.liturgicalDate || formData.readings || 
-				formData.title || formData.gospelQuote || 
-				formData.reflectionText || formData.authorName;
-			
-			if (hasContent) {
-				localStorage.setItem('dgr-form-data-dev', JSON.stringify(formData));
-				console.log('Saved form data to localStorage (dev mode)');
-			}
-		}
-	});
-
-
-	// Generate preview HTML using centralized function - make it reactive
-	let previewHtml = $state('');
-	
-	// Regenerate preview when form data, gospel content, or promo tiles change
-	$effect(async () => {
-		if (formData.title && formData.reflectionText) {
-			console.log('Regenerating preview with promoTiles:', promoTiles);
-			previewHtml = await generateDGRHTML(formData, {
-				useNewDesign,
-				gospelFullText,
-				gospelReference,
-				includeWordPressCSS: false,
-				promoTiles
-			});
+	function togglePreferredDay(day) {
+		if (newContributor.preferred_days.includes(day)) {
+			newContributor.preferred_days = newContributor.preferred_days.filter((d) => d !== day);
 		} else {
-			previewHtml = '';
+			newContributor.preferred_days = [...newContributor.preferred_days, day];
 		}
-	});
-
-	async function pasteFromWord() {
-		const loadingId = toast.loading({
-			title: 'Reading clipboard...',
-			message: 'Getting text from clipboard'
-		});
-
-		try {
-			console.log('Reading from clipboard...');
-			const text = await navigator.clipboard.readText();
-			console.log('Clipboard text:', text);
-
-			toast.dismiss(loadingId);
-
-			if (!text || text.trim().length === 0) {
-				toast.warning({
-					title: 'Clipboard is empty',
-					message: 'Please copy the text from Word first',
-					duration: 4000
-				});
-				return;
-			}
-
-			parseWordDocument(text);
-
-			toast.success({
-				title: 'Content pasted!',
-				message: 'Form fields have been populated',
-				duration: 3000
-			});
-		} catch (err) {
-			console.error('Clipboard error:', err);
-			toast.dismiss(loadingId);
-			toast.error({
-				title: 'Clipboard access denied',
-				message: 'Please allow clipboard access or paste manually',
-				duration: 5000
-			});
-		}
-	}
-
-	function parseWordDocument(text) {
-		console.log('Parsing document...');
-		// Split into lines but don't trim yet to preserve structure
-		const lines = text
-			.split('\n')
-			.filter((line) => line.length > 0);
-		console.log('Lines found:', lines.length, lines);
-
-		// Parse sections from the structured format
-		const sections = {};
-		let reflectionStartIndex = -1;
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim();
-
-			// Check if this is a label line (ending with colon)
-			if (line.endsWith(':')) {
-				const label = line.slice(0, -1).trim(); // Remove the colon
-				const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-				
-				switch (label) {
-					case 'Date':
-						// Check if content is on same line after colon (desktop Word)
-						if (line.includes(':\t') || line.match(/Date:\s+\S/)) {
-							const parts = lines[i].split(/Date:\s*/);
-							sections.date = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							// Content is on next line (web Word)
-							sections.date = nextLine;
-						}
-						console.log('Found Date:', sections.date);
-						break;
-						
-					case 'Liturgical Date':
-						if (line.includes(':\t') || line.match(/Liturgical Date:\s+\S/)) {
-							const parts = lines[i].split(/Liturgical Date:\s*/);
-							sections.liturgicalDate = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.liturgicalDate = nextLine;
-						}
-						console.log('Found Liturgical Date:', sections.liturgicalDate);
-						break;
-						
-					case 'Readings':
-						if (line.includes(':\t') || line.match(/Readings:\s+\S/)) {
-							const parts = lines[i].split(/Readings:\s*/);
-							sections.readings = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.readings = nextLine;
-						}
-						console.log('Found Readings:', sections.readings);
-						break;
-						
-					case 'Title':
-						if (line.includes(':\t') || line.match(/Title:\s+\S/)) {
-							const parts = lines[i].split(/Title:\s*/);
-							sections.title = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.title = nextLine;
-						}
-						console.log('Found Title:', sections.title);
-						break;
-						
-					case 'Gospel quote':
-					case 'Gospel Quote':
-						if (line.includes(':\t') || line.match(/Gospel [Qq]uote:\s+\S/)) {
-							const parts = lines[i].split(/Gospel [Qq]uote:\s*/);
-							sections.gospelQuote = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.gospelQuote = nextLine;
-						}
-						console.log('Found Gospel quote:', sections.gospelQuote);
-						break;
-						
-					case 'Reflection written by':
-						if (line.includes(':\t') || line.match(/Reflection written by:\s+\S/)) {
-							const parts = lines[i].split(/Reflection written by:\s*/);
-							sections.author = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.author = nextLine;
-						}
-						console.log('Found Author:', sections.author);
-						// Reflection text starts after author line
-						reflectionStartIndex = sections.author && nextLine === sections.author ? i + 2 : i + 1;
-						break;
-				}
-			} else if (line.startsWith('By ') && i > lines.length - 5) {
-				// Alternative author format at the end (usually in last few lines)
-				sections.author = line.substring(3).trim();
-				console.log('Found By line author:', sections.author);
-			}
-		}
-
-		// Find reflection text (everything after "Reflection written by:" until "By" line or end)
-		if (reflectionStartIndex > 0 && reflectionStartIndex < lines.length) {
-			const reflectionLines = [];
-			let inReflection = true;
-			
-			for (let i = reflectionStartIndex; i < lines.length && inReflection; i++) {
-				const line = lines[i].trim();
-				
-				// Stop if we hit the "By" author line (but not if it's too early)
-				if (line.startsWith('By ') && i > reflectionStartIndex + 3) {
-					inReflection = false;
-					continue;
-				}
-				
-				// Skip empty lines but keep track for paragraph breaks
-				if (line === '') {
-					if (reflectionLines.length > 0 && reflectionLines[reflectionLines.length - 1] !== '') {
-						reflectionLines.push(''); // Keep one empty line for paragraph break
-					}
-					continue;
-				}
-				
-				reflectionLines.push(line);
-			}
-			
-			// Clean up the reflection text - join with proper paragraph breaks
-			sections.reflection = reflectionLines
-				.join('\n')
-				.split(/\n\n+/) // Split by multiple newlines
-				.filter(para => para.trim()) // Remove empty paragraphs
-				.join('\n\n'); // Join back with double newlines
-				
-			console.log('Found reflection with', reflectionLines.filter(l => l).length, 'lines');
-		}
-
-		console.log('Parsed sections:', sections);
-
-		// Parse the date to get YYYY-MM-DD format
-		if (sections.date) {
-			// Extract date from format like "Friday 29h August" or "Friday 29th August"
-			const dateMatch = sections.date.match(/\w+\s+(\d+)\w*\s+(\w+)/);
-			if (dateMatch) {
-				const day = dateMatch[1];
-				const month = dateMatch[2];
-				const year = new Date().getFullYear(); // Use current year
-				const dateStr = `${month} ${day}, ${year}`;
-				// Parse in UTC to avoid timezone issues
-				const dateObj = new Date(dateStr + ' UTC');
-				if (!isNaN(dateObj)) {
-					// Format as YYYY-MM-DD using UTC values
-					const utcYear = dateObj.getUTCFullYear();
-					const utcMonth = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-					const utcDay = String(dateObj.getUTCDate()).padStart(2, '0');
-					formData.date = `${utcYear}-${utcMonth}-${utcDay}`;
-				}
-			}
-		}
-
-		// No need to extract reference here since parseGospelContent will handle it
-
-		// Find reflection text (everything after author line until "By" line)
-		const authorIndex = lines.indexOf('Reflection written by:');
-		const byLineIndex = lines.findIndex((line) => line.startsWith('By '));
-		if (authorIndex !== -1 && byLineIndex !== -1) {
-			const reflectionLines = lines.slice(authorIndex + 2, byLineIndex);
-			sections.reflection = reflectionLines.join('\n\n');
-		}
-
-		// Update form data
-		formData.liturgicalDate = sections.liturgicalDate || '';
-		formData.readings = sections.readings || '';
-		formData.title = sections.title || '';
-		formData.gospelQuote = sections.gospelQuote || '';
-		formData.reflectionText = sections.reflection || '';
-		formData.authorName = sections.author || '';
-
-		// Extract gospel reference from readings
-		if (formData.readings) {
-			gospelReference = extractGospelReference(formData.readings);
-		}
-
-		console.log('Form data updated:', formData);
 	}
 
 </script>
 
-<!-- Split View Layout -->
-<div class="min-h-screen bg-gray-50">
-	<div class="flex flex-col lg:flex-row h-screen">
-		<!-- Left Panel: Form (narrow on large screens, full width on mobile) -->
-		<div class="lg:w-96 w-full bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col">
-			<!-- Header -->
-			<div class="p-4 border-b border-gray-200 bg-white">
-				<div class="flex items-center justify-between mb-2">
-					<div>
-						<h1 class="text-lg font-bold text-gray-900">DGR Publisher</h1>
-						<p class="text-xs text-gray-600">Daily Gospel Reflection</p>
-					</div>
-					<button
-						onclick={handleSubmit}
-						disabled={publishing}
-						class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						{publishing ? 'Publishing...' : 'Publish'}
-					</button>
-				</div>
-			</div>
-			
-			<!-- Form Container (scrollable) -->
-			<div class="flex-1 overflow-y-auto p-4">
-				<DGRForm
-					bind:formData
-					bind:publishing
-					bind:result
-					bind:useNewDesign
-					bind:fetchingGospel
-					bind:gospelFullText
-					bind:gospelReference
-					onPasteFromWord={pasteFromWord}
-				/>
-			</div>
+<div class="mx-auto max-w-7xl p-6">
+	<div class="mb-8 flex items-center justify-between">
+		<div>
+			<h1 class="text-3xl font-bold text-gray-900">Daily Gospel Reflections</h1>
+			<p class="mt-1 text-sm text-gray-600">Unified management platform with full liturgical readings integration</p>
+		</div>
+		<div class="text-sm text-gray-600">Admin Dashboard</div>
+	</div>
+
+	{#if loading}
+		<div class="flex justify-center py-12">
+			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+		</div>
+	{:else}
+		<!-- Tabs -->
+		<div class="mb-6 border-b border-gray-200">
+			<nav class="-mb-px flex space-x-8">
+				<button
+					onclick={() => (activeTab = 'schedule')}
+					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'schedule'
+						? 'border-blue-500 text-blue-600'
+						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+				>
+					Schedule ({schedule.length})
+				</button>
+				<button
+					onclick={() => (activeTab = 'contributors')}
+					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'contributors'
+						? 'border-blue-500 text-blue-600'
+						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+				>
+					Contributors ({contributors.length})
+				</button>
+				<button
+					onclick={() => (activeTab = 'promo')}
+					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'promo'
+						? 'border-blue-500 text-blue-600'
+						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+				>
+					Promo Tiles
+				</button>
+				<a
+					href="/dgr-publish"
+					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
+				>
+					<ExternalLink class="w-4 h-4 mr-1" />
+					Quick Publish
+				</a>
+				<a
+					href="/dgr-templates"
+					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
+				>
+					<ExternalLink class="w-4 h-4 mr-1" />
+					Templates
+				</a>
+			</nav>
 		</div>
 
-		<!-- Right Panel: Preview (large on desktop, hidden on mobile unless content exists) -->
-		<div class="flex-1 flex flex-col {formData.title && formData.reflectionText ? 'block' : 'hidden lg:flex'}">
-			<!-- Preview Header -->
-			<div class="p-4 border-b border-gray-200 bg-white">
-				<div class="flex items-center justify-between">
-					<h2 class="text-lg font-semibold text-gray-900">Live Preview</h2>
-					<div class="flex items-center gap-2 text-xs text-gray-600">
-						<div class="w-2 h-2 rounded-full {formData.title && formData.reflectionText ? 'bg-green-500' : 'bg-gray-300'}"></div>
-						{formData.title && formData.reflectionText ? 'Ready' : 'Waiting for content'}
+		{#if activeTab === 'schedule'}
+			<!-- Schedule Tab -->
+			<div class="space-y-6">
+				<!-- Generate Schedule Form -->
+				<div class="rounded-lg bg-white p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold">Generate Schedule</h2>
+					<div class="flex items-end gap-4">
+						<div>
+							<label for="start-date" class="mb-1 block text-sm font-medium text-gray-700">Start Date</label>
+							<input
+								id="start-date"
+								type="date"
+								bind:value={generateForm.startDate}
+								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							/>
+						</div>
+						<div>
+							<label for="num-days" class="mb-1 block text-sm font-medium text-gray-700">Number of Days</label>
+							<input
+								id="num-days"
+								type="number"
+								bind:value={generateForm.days}
+								min="1"
+								max="365"
+								class="w-24 rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							/>
+						</div>
+						<button
+							onclick={generateSchedule}
+							class="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						>
+							Generate Schedule
+						</button>
+					</div>
+				</div>
+
+				<!-- Schedule List -->
+				<div class="overflow-hidden rounded-lg bg-white shadow-sm">
+					<div class="border-b border-gray-200 px-6 py-4">
+						<h2 class="text-lg font-semibold">Upcoming Schedule</h2>
+					</div>
+
+					{#if schedule.length === 0}
+						<div class="px-6 py-8 text-center text-gray-500">
+							No schedule entries found. Generate a schedule to get started.
+						</div>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+									<tr>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Date</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Gospel Reference</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Contributor</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Status</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Actions</th
+										>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-200 bg-white">
+									{#each schedule as entry (entry.id)}
+										<tr>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm font-medium text-gray-900">
+													{formatDate(entry.date)}
+												</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm text-gray-700">
+													{entry.gospel_reference ? decodeHtmlEntities(entry.gospel_reference) : '—'}
+												</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<select
+													value={entry.contributor_id || ''}
+													onchange={(e) => updateAssignment(entry.id, e.target.value)}
+													class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+												>
+													<option value="">Unassigned</option>
+													{#each contributors as contributor}
+														<option value={contributor.id}>
+															{contributor.name}
+														</option>
+													{/each}
+												</select>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<select
+													value={entry.status}
+													onchange={(e) => updateStatus(entry.id, e.target.value)}
+													class="rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none {statusColors[
+														entry.status
+													]} font-medium"
+												>
+													{#each statusOptions as option}
+														<option value={option.value}>{option.label}</option>
+													{/each}
+												</select>
+											</td>
+											<td class="space-x-3 px-6 py-4 text-sm font-medium whitespace-nowrap">
+												{#if entry.submission_token && entry.status === 'pending'}
+													<button
+														onclick={() => copySubmissionUrl(entry.submission_token)}
+														class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900"
+													>
+														<Send class="h-3 w-3" />
+														Copy Link
+													</button>
+												{/if}
+												{#if entry.status === 'submitted' || entry.status === 'approved'}
+													<button
+														onclick={() => openReviewModal(entry)}
+														class="inline-flex items-center gap-1 text-purple-600 hover:text-purple-900"
+													>
+														<Eye class="h-3 w-3" />
+														{entry.status === 'approved' ? 'Edit' : 'Review'}
+													</button>
+												{/if}
+												{#if entry.status === 'approved'}
+													<button
+														onclick={() => sendToWordPress(entry.id)}
+														class="inline-flex items-center gap-1 text-green-600 hover:text-green-900"
+													>
+														<Send class="h-3 w-3" />
+														Send to WordPress
+													</button>
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{:else if activeTab === 'contributors'}
+			<!-- Contributors Tab -->
+			<div class="space-y-6">
+				<!-- Add Contributor Form -->
+				<div class="rounded-lg bg-white p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold">Add New Contributor</h2>
+					<div class="space-y-4">
+						<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+							<div>
+								<label for="contributor-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+								<input
+									id="contributor-name"
+									type="text"
+									bind:value={newContributor.name}
+									class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+									placeholder="Sr. Mary Catherine"
+								/>
+							</div>
+							<div>
+								<label for="contributor-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+								<input
+									id="contributor-email"
+									type="email"
+									bind:value={newContributor.email}
+									class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+									placeholder="contributor@example.com"
+								/>
+							</div>
+						</div>
+
+						<fieldset>
+							<legend class="mb-2 block text-sm font-medium text-gray-700">Preferred Days</legend>
+							<div class="flex flex-wrap gap-2">
+								{#each dayNames as day, index}
+									<button
+										onclick={() => togglePreferredDay(index)}
+										class="rounded px-3 py-1 text-sm {newContributor.preferred_days.includes(index)
+											? 'bg-blue-600 text-white'
+											: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+									>
+										{day}
+									</button>
+								{/each}
+							</div>
+						</fieldset>
+
+						<div>
+							<label for="contributor-day-of-month" class="mb-1 block text-sm font-medium text-gray-700">
+								Day of Month Assignment (1-31)
+							</label>
+							<select
+								id="contributor-day-of-month"
+								bind:value={newContributor.day_of_month}
+								class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={null}>No specific day</option>
+								{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+									<option value={day}>{day}</option>
+								{/each}
+							</select>
+							<p class="mt-1 text-xs text-gray-500">
+								Assign this contributor to write on a specific day each month (e.g., always the 15th)
+							</p>
+						</div>
+
+						<div>
+							<label for="contributor-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+							<textarea
+								id="contributor-notes"
+								bind:value={newContributor.notes}
+								rows="2"
+								class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								placeholder="Any additional notes or preferences..."
+							></textarea>
+						</div>
+
+						<button
+							onclick={addContributor}
+							class="rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
+						>
+							Add Contributor
+						</button>
+					</div>
+				</div>
+
+				<!-- Contributors List -->
+				<div class="overflow-hidden rounded-lg bg-white shadow-sm">
+					<div class="border-b border-gray-200 px-6 py-4">
+						<h2 class="text-lg font-semibold">Contributors</h2>
+					</div>
+
+					{#if contributors.length === 0}
+						<div class="px-6 py-8 text-center text-gray-500">
+							No contributors found. Add some contributors to get started.
+						</div>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+									<tr>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Name</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Email</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Preferred Days</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Day of Month</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Status</th
+										>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+											>Notes</th
+										>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-200 bg-white">
+									{#each contributors as contributor (contributor.id)}
+										<tr>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm font-medium text-gray-900">{contributor.name}</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm text-gray-500">{contributor.email}</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm text-gray-500">
+													{contributor.preferred_days?.map((d) => dayNames[d]).join(', ') ||
+														'Any day'}
+												</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<select
+													value={contributor.day_of_month || ''}
+													onchange={async (e) => {
+														const newDayOfMonth = e.target.value ? parseInt(e.target.value) : null;
+														try {
+															const response = await fetch('/api/dgr-admin/contributors', {
+																method: 'PUT',
+																headers: { 'Content-Type': 'application/json' },
+																body: JSON.stringify({
+																	id: contributor.id,
+																	day_of_month: newDayOfMonth
+																})
+															});
+															if (!response.ok) throw new Error('Update failed');
+															contributor.day_of_month = newDayOfMonth;
+															toast.success({
+																title: 'Day updated',
+																message: `${contributor.name} assigned to day ${newDayOfMonth || 'none'}`,
+																duration: 2000
+															});
+														} catch (error) {
+															toast.error({
+																title: 'Update failed',
+																message: error.message,
+																duration: 3000
+															});
+														}
+													}}
+													class="w-16 rounded border border-gray-300 px-1 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+												>
+													<option value="">—</option>
+													{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+														<option value={day}>{day}</option>
+													{/each}
+												</select>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<span
+													class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {contributor.active
+														? 'bg-green-100 text-green-800'
+														: 'bg-red-100 text-red-800'}"
+												>
+													{contributor.active ? 'Active' : 'Inactive'}
+												</span>
+											</td>
+											<td class="px-6 py-4">
+												<div class="max-w-xs truncate text-sm text-gray-500">
+													{contributor.notes || '—'}
+												</div>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{:else if activeTab === 'promo'}
+			<!-- Promo Tiles Tab -->
+			<div class="space-y-6">
+				<div class="rounded-lg bg-white p-6 shadow">
+					<h3 class="mb-4 text-lg font-medium text-gray-900">Promotional Event Tiles</h3>
+					<p class="mb-6 text-sm text-gray-600">
+						Manage the promotional tiles that appear at the bottom of Daily Gospel Reflections.
+						Enter WordPress media URLs for each tile position.
+					</p>
+					
+					<div class="space-y-6">
+						{#each promoTiles as tile, index}
+							<div class="border rounded-lg p-4 bg-gray-50">
+								<div class="flex items-center justify-between mb-3">
+									<h4 class="font-medium text-gray-900">Tile {index + 1}</h4>
+									{#if promoTiles.length > 1}
+										<button
+											onclick={() => removeTile(index)}
+											class="text-red-600 hover:text-red-800 text-sm font-medium"
+										>
+											Remove
+										</button>
+									{/if}
+								</div>
+								
+								<div class="grid grid-cols-1 gap-4">
+									<div>
+										<label for="tile-{tile.position}-image" class="block text-sm font-medium text-gray-700">
+											Image URL
+										</label>
+										<input
+											id="tile-{tile.position}-image"
+											type="text"
+											bind:value={tile.image_url}
+											placeholder="https://archdiocesanministries.org.au/wp-content/uploads/..."
+											class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+										/>
+									</div>
+									
+									<div class="grid grid-cols-2 gap-4">
+										<div>
+											<label for="tile-{tile.position}-title" class="block text-sm font-medium text-gray-700">
+												Title (optional)
+											</label>
+											<input
+												id="tile-{tile.position}-title"
+												type="text"
+												bind:value={tile.title}
+												placeholder="Event name"
+												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+											/>
+										</div>
+										
+										<div>
+											<label for="tile-{tile.position}-link" class="block text-sm font-medium text-gray-700">
+												Link URL (optional)
+											</label>
+											<input
+												id="tile-{tile.position}-link"
+												type="text"
+												bind:value={tile.link_url}
+												placeholder="https://..."
+												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+											/>
+										</div>
+									</div>
+									
+									{#if tile.image_url}
+										<div class="mt-3">
+											<p class="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+											<img 
+												src={tile.image_url} 
+												alt={tile.title || 'Promo tile ' + tile.position}
+												class="h-32 w-32 object-cover rounded-lg border border-gray-300"
+												onerror={(e) => e.target.style.display = 'none'}
+											/>
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+						
+						{#if promoTiles.length < 3}
+							<div class="text-center">
+								<button
+									onclick={addTile}
+									class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+								>
+									+ Add Another Tile
+								</button>
+							</div>
+						{/if}
+						
+						<div class="flex justify-between items-center mt-6">
+							<div class="text-sm text-gray-500">
+								{promoTiles.length} of 3 tiles
+							</div>
+							<button
+								onclick={savePromoTiles}
+								disabled={savingTiles}
+								class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{savingTiles ? 'Saving...' : 'Save Promo Tiles'}
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
-			
-			<!-- Preview Content (scrollable) -->
-			<div class="flex-1 overflow-y-auto bg-white">
-				{#if formData.title && formData.reflectionText}
-					<div class="h-full">
-						{#if previewHtml}
-							{@html previewHtml}
-						{:else}
-							<div class="flex items-center justify-center h-full">
-								<div class="text-gray-500">Generating preview...</div>
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<div class="flex items-center justify-center h-full text-gray-500">
-						<div class="text-center p-8">
-							<div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-								<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-								</svg>
-							</div>
-							<p class="text-sm font-medium">Fill in the form to see preview</p>
-							<p class="text-xs text-gray-400 mt-1">Enter title and reflection text to get started</p>
-						</div>
-					</div>
-				{/if}
-			</div>
-		</div>
-	</div>
+		{/if}
+	{/if}
 </div>
+
+<!-- Review Modal -->
+<DGRReviewModal
+	bind:isOpen={reviewModalOpen}
+	bind:reflection={selectedReflection}
+	onSave={saveReflection}
+	onApprove={approveReflection}
+	onSendToWordPress={sendToWordPress}
+/>
 
 <ToastContainer />
