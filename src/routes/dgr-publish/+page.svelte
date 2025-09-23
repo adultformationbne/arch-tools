@@ -3,7 +3,7 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRForm from '$lib/components/DGRForm.svelte';
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
-	import { generateDGRHTML, parseReadings } from '$lib/utils/dgr-utils.js';
+	import { generateDGRHTML, parseReadings, cleanGospelText } from '$lib/utils/dgr-utils.js';
 	import { onMount } from 'svelte';
 
 	// Initialize with defaults
@@ -190,7 +190,7 @@
 			}
 			
 			if (result.success) {
-				gospelFullText = result.content;
+				gospelFullText = cleanGospelText(result.content);
 				gospelReference = result.reference;
 			} else {
 				console.warn('Failed to fetch gospel:', result.error);
@@ -226,7 +226,7 @@
 				const data = await response.json();
 				
 				if (data.success && data.content) {
-					gospelFullText = data.content;
+					gospelFullText = cleanGospelText(data.content);
 				}
 			}
 		} catch (err) {
@@ -291,6 +291,20 @@
 		});
 
 		try {
+			// Check for clipboard permission first
+			if (navigator.permissions) {
+				const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+				if (permission.state === 'denied') {
+					toast.dismiss(loadingId);
+					toast.error({
+						title: 'Clipboard access denied',
+						message: 'Please enable clipboard permissions in your browser settings',
+						duration: 5000
+					});
+					return;
+				}
+			}
+
 			console.log('Reading from clipboard...');
 			const text = await navigator.clipboard.readText();
 			console.log('Clipboard text:', text);
