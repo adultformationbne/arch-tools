@@ -2,13 +2,12 @@
 	import { onMount } from 'svelte';
 	import EditBlockModal from '$lib/components/EditBlockModal.svelte';
 	import DocumentPreview from '$lib/components/DocumentPreview.svelte';
-	import AnalyticsSidebar from '$lib/components/AnalyticsSidebar.svelte';
 	import BlockVersionHistory from '$lib/components/BlockVersionHistory.svelte';
 	import EditorHeader from '$lib/components/EditorHeader.svelte';
 	import EditorFilters from '$lib/components/EditorFilters.svelte';
 	import EditorListView from '$lib/components/EditorListView.svelte';
 	import EditorEmptyState from '$lib/components/EditorEmptyState.svelte';
-	import ChapterViewer from '$lib/components/ChapterViewer.svelte';
+	import ChapterSidebar from '$lib/components/ChapterSidebar.svelte';
 	import SyncStatus from '$lib/components/SyncStatus.svelte';
 	import { OptimisticEditor } from '$lib/optimistic-editor.svelte.js';
 	import * as EditorAPI from '$lib/editor-api.js';
@@ -29,10 +28,6 @@
 	let lastSaveTime = $state(null);
 	let errorMessage = $state('');
 
-	// Analytics functions and data - will be set by AnalyticsSidebar
-	let getBlockRecommendation = $state(null);
-	let getBlockScores = $state(null);
-	let evaluations = $state([]);
 
 	// Filters and settings
 	let searchQuery = $state('');
@@ -368,68 +363,102 @@
 		// TODO: Implement block duplication
 		console.log('Duplicate block:', block.id);
 	}
+
+	// Chapter navigation function
+	function scrollToChapter(chapterId) {
+		// Find the chapter element and scroll to it
+		const chapterElement = document.querySelector(`[data-block-id="${chapterId}"]`);
+		if (chapterElement) {
+			chapterElement.scrollIntoView({ 
+				behavior: 'smooth', 
+				block: 'start',
+				inline: 'nearest'
+			});
+		}
+	}
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 pr-16">
-	<div class="mx-auto max-w-7xl space-y-6">
+<div class="flex bg-gradient-to-br from-blue-50 to-indigo-50">
+	<!-- Chapter Sidebar - Hidden on mobile, visible on tablet+ -->
+	<div class="hidden md:block">
+		<ChapterSidebar
+			{chapters}
+			{blocks}
+			bind:selectedChapter
+			onChapterSelect={applyFilters}
+			onScrollToChapter={scrollToChapter}
+		/>
+	</div>
+
+	<!-- Mobile Chapter Sidebar Overlay -->
+	<div class="md:hidden">
+		<ChapterSidebar
+			{chapters}
+			{blocks}
+			bind:selectedChapter
+			onChapterSelect={applyFilters}
+			onScrollToChapter={scrollToChapter}
+		/>
+	</div>
+
+	<!-- Main Content Area -->
+	<div class="flex-1 flex flex-col min-w-0 min-h-screen">
 		<!-- Header -->
-		<div class="flex items-center justify-between">
-			<div class="flex-1">
-				<EditorHeader bind:documentTitle {saveStatus} {lastSaveTime} {errorMessage} />
-			</div>
-			<div class="flex items-center gap-4">
-				<ChapterViewer
-					{chapters}
-					{blocks}
-					bind:selectedChapter
-					onChapterSelect={applyFilters}
-				/>
-				<SyncStatus {syncStatus} />
+		<div class="bg-white border-b border-gray-200 px-6 py-4">
+			<div class="flex items-center justify-between">
+				<div class="flex-1">
+					<EditorHeader bind:documentTitle {saveStatus} {lastSaveTime} {errorMessage} />
+				</div>
+				<div class="flex items-center gap-4">
+					<SyncStatus {syncStatus} />
+				</div>
 			</div>
 		</div>
 
-		<!-- Filters and Controls -->
-		<EditorFilters
-			bind:searchQuery
-			bind:tagFilter
-			bind:metadataFilter
-			bind:hideInvisible
-			{allTags}
-			{allMetadata}
-			filteredCount={filteredBlocks.length}
-			totalCount={blocks.length}
-			{selectedBlocks}
-			onSelectAll={selectAll}
-			onClearSelection={clearSelection}
-			onBulkToggleVisibility={bulkToggleVisibility}
-		/>
-
-		<!-- Content Display -->
-		{#if filteredBlocks.length === 0}
-			<EditorEmptyState
-				{searchQuery}
-				hasFilters={tagFilter !== 'all' ||
-					metadataFilter !== 'all' ||
-					hideInvisible ||
-					selectedChapter}
-			/>
-		{:else}
-			<!-- Document Preview Mode -->
-			<div class="rounded-xl bg-white p-8 shadow-lg">
-				<DocumentPreview
-					blocks={filteredBlocks}
+		<!-- Main Content -->
+		<div class="flex-1 overflow-auto p-6">
+			<div class="mx-auto max-w-5xl space-y-6">
+				<!-- Filters and Controls -->
+				<EditorFilters
+					bind:searchQuery
+					bind:tagFilter
+					bind:metadataFilter
+					bind:hideInvisible
+					{allTags}
+					{allMetadata}
+					filteredCount={filteredBlocks.length}
+					totalCount={blocks.length}
 					{selectedBlocks}
-					onEdit={editBlock}
-					onToggleVisibility={toggleBlockVisibility}
-					onMove={moveBlock}
-					onToggleSelection={toggleBlockSelection}
-					onShowVersionHistory={showBlockVersionHistory}
-					{getBlockRecommendation}
-					{getBlockScores}
-					{evaluations}
+					onSelectAll={selectAll}
+					onClearSelection={clearSelection}
+					onBulkToggleVisibility={bulkToggleVisibility}
 				/>
+
+				<!-- Content Display -->
+				{#if filteredBlocks.length === 0}
+					<EditorEmptyState
+						{searchQuery}
+						hasFilters={tagFilter !== 'all' ||
+							metadataFilter !== 'all' ||
+							hideInvisible ||
+							selectedChapter}
+					/>
+				{:else}
+					<!-- Document Preview Mode -->
+					<div class="rounded-xl bg-white p-8 shadow-lg">
+						<DocumentPreview
+							blocks={filteredBlocks}
+							{selectedBlocks}
+							onEdit={editBlock}
+							onToggleVisibility={toggleBlockVisibility}
+							onMove={moveBlock}
+							onToggleSelection={toggleBlockSelection}
+							onShowVersionHistory={showBlockVersionHistory}
+						/>
+					</div>
+				{/if}
 			</div>
-		{/if}
+		</div>
 	</div>
 </div>
 
@@ -441,15 +470,6 @@
 	{metadataOptions}
 	onSave={saveBlockEdit}
 	onClose={closeEditModal}
-/>
-
-<!-- Analytics Sidebar -->
-<AnalyticsSidebar
-	onAnalyticsReady={(data) => {
-		getBlockRecommendation = data.getBlockRecommendation;
-		getBlockScores = data.getBlockScores;
-		evaluations = data.evaluations || [];
-	}}
 />
 
 <!-- Version History Modal -->

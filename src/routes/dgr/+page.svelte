@@ -1,17 +1,39 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import DGRForm from '$lib/components/DGRForm.svelte';
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
+	import { generateDGRHTML, parseReadings } from '$lib/utils/dgr-html.js';
+	import { onMount } from 'svelte';
 
-	let formData = $state({
-		date: new Date().toISOString().split('T')[0],
-		liturgicalDate: '',
-		readings: '', // All readings (1st, 2nd, psalm, gospel)
-		title: '',
-		gospelQuote: '', // Author's selected quote/highlight
-		reflectionText: '',
-		authorName: ''
-	});
+	// Initialize with defaults
+	const getInitialFormData = () => {
+		// Only use localStorage in development
+		if (import.meta.env.DEV && typeof window !== 'undefined') {
+			const saved = localStorage.getItem('dgr-form-data-dev');
+			if (saved) {
+				try {
+					console.log('Restoring form data from localStorage (dev mode)');
+					return JSON.parse(saved);
+				} catch (e) {
+					console.error('Failed to parse saved form data:', e);
+				}
+			}
+		}
+		
+		// Default values
+		return {
+			date: new Date().toISOString().split('T')[0],
+			liturgicalDate: '',
+			readings: '', // All readings (1st, 2nd, psalm, gospel)
+			title: '',
+			gospelQuote: '', // Author's selected quote/highlight
+			reflectionText: '',
+			authorName: ''
+		};
+	};
+
+	let formData = $state(getInitialFormData());
 
 	let publishing = $state(false);
 	let result = $state(null);
@@ -19,9 +41,38 @@
 	let fetchingGospel = $state(false);
 	let gospelFullText = $state(''); // Full gospel text for the day
 	let gospelReference = $state(''); // Extracted gospel reference (e.g., "Matthew 1:1-16, 18-23")
+	let promoTiles = $state([]); // Promo tiles for preview
+
+	// Load promo tiles on mount
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/dgr-admin/promo-tiles');
+			const data = await response.json();
+			console.log('Loaded promo tiles:', data);
+			if (data.tiles) {
+				promoTiles = data.tiles;
+				console.log('Set promoTiles to:', promoTiles);
+			}
+		} catch (err) {
+			console.error('Failed to load promo tiles:', err);
+		}
+	});
 
 	async function handleSubmit(e) {
-		e.preventDefault();
+		if (e && e.preventDefault) e.preventDefault();
+		
+		// Form validation
+		if (!formData.date || !formData.liturgicalDate || !formData.readings || 
+			!formData.title || !formData.gospelQuote || !formData.reflectionText || 
+			!formData.authorName) {
+			toast.error({
+				title: 'Form incomplete',
+				message: 'Please fill in all required fields',
+				duration: 4000
+			});
+			return;
+		}
+		
 		publishing = true;
 		result = null;
 
@@ -55,7 +106,9 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					...formData,
-					useNewDesign // Pass the design format preference
+					useNewDesign, // Pass the design format preference
+					gospelFullText, // Pass the fetched gospel text
+					gospelReference // Pass the extracted gospel reference
 				})
 			});
 
@@ -66,6 +119,11 @@
 				toast.nextStep(toastId);
 				setTimeout(() => {
 					toast.dismiss(toastId);
+					// Clear localStorage in dev mode since we're resetting
+					if (import.meta.env.DEV && typeof window !== 'undefined') {
+						localStorage.removeItem('dgr-form-data-dev');
+						console.log('Cleared saved form data (dev mode)');
+					}
 					// Reset form to prevent double submission
 					formData = {
 						date: new Date().toISOString().split('T')[0],
@@ -123,13 +181,17 @@
 
 		fetchingGospel = true;
 		try {
-			console.log('Fetching gospel for date:', formData.date);
 			const result = await fetchGospelTextForDate(formData.date, 'NRSVAE', 'australia.brisbane');
+			
+			// Simple Gospel Debug Log
+			if (result.success && result.content) {
+				console.log('=== GOSPEL FETCH ===');
+				console.log('RAW INPUT (FULL):', result.content);
+			}
 			
 			if (result.success) {
 				gospelFullText = result.content;
 				gospelReference = result.reference;
-				console.log('Successfully fetched gospel:', result.reference);
 			} else {
 				console.warn('Failed to fetch gospel:', result.error);
 				gospelFullText = '';
@@ -139,7 +201,6 @@
 				if (formData.readings) {
 					const extractedRef = extractGospelReference(formData.readings);
 					if (extractedRef) {
-						console.log('Trying fallback with extracted reference:', extractedRef);
 						gospelReference = extractedRef;
 						await fetchGospelByReference();
 					}
@@ -160,13 +221,12 @@
 
 		fetchingGospel = true;
 		try {
-			console.log('Fetching gospel by reference:', gospelReference);
 			const response = await fetch(`/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`);
 			if (response.ok) {
 				const data = await response.json();
+				
 				if (data.success && data.content) {
 					gospelFullText = data.content;
-					console.log('Successfully fetched gospel by reference');
 				}
 			}
 		} catch (err) {
@@ -189,226 +249,40 @@
 		}
 	});
 
-	// Generate preview HTML
-	function generatePreviewHTML() {
-		const dateObj = new Date(formData.date);
-		const formattedDate = dateObj.toLocaleDateString('en-GB', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
-
-		if (useNewDesign) {
-			return `<!-- New Clean Design -->
-<!-- Header Image -->
-<div style="text-align:center; margin-bottom:40px;">
-  <img src="https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Header-1024x683.png" 
-       alt="Daily Gospel Reflections" 
-       style="max-width:500px; width:100%; height:auto; display:inline-block;">
-</div>
-
-<article style="max-width:700px; margin:0 auto; font-family: Arial, Helvetica, sans-serif; line-height:1.6; color:#333;">
-
-  <!-- Meta Row -->
-  <div style="display:flex; justify-content:space-between; font-size:14px; color:#555; border-bottom:1px solid #ddd; padding-bottom:6px; margin-bottom:18px;">
-    <span>${formattedDate}</span>
-    <span>${formData.liturgicalDate}</span>
-  </div>
-
-  <!-- Title -->
-  <h1 style="font-family:'PT Serif', Georgia, serif; font-size:28px; color:#2c7777; margin:0 0 12px;">${formData.title}</h1>
-
-  <!-- Readings -->
-  <p style="font-size:14px; color:#666; margin:0 0 20px;">
-    Readings: ${formData.readings}
-  </p>
-
-  <!-- Author's Gospel Quote/Highlight -->
-  <blockquote style="margin:20px 0; padding-left:16px; border-left:3px solid #2c7777; font-style:italic; font-size:16px; color:#2c7777;">
-    ${formData.gospelQuote}
-  </blockquote>
-
-  ${gospelFullText && gospelReference ? `
-  <!-- Full Gospel Reading for the Day -->
-  <div style="background:#f8fffe; padding:25px; margin:30px 0; border-radius:10px; border:1px solid #0fa3a3; box-shadow:0 2px 8px rgba(15,163,163,0.1);">
-    <h3 style="font-family:'PT Serif', Georgia, serif; font-size:20px; color:#0fa3a3; margin:0 0 15px; font-weight:600;">Gospel Reading: ${gospelReference}</h3>
-    <div style="font-size:16px; color:#333; line-height:1.8; font-family:'PT Serif', Georgia, serif;">
-      ${gospelFullText}
-    </div>
-  </div>
-  ` : ''}
-
-  <!-- Body -->
-  <div style="font-size:16px; color:#333;">
-    ${formData.reflectionText
-			.split('\n')
-			.filter((p) => p.trim())
-			.map((paragraph) => `<p>${paragraph.trim()}</p>`)
-			.join('\n')}
-  </div>
-
-  <!-- Author -->
-  <p style="margin-top:30px; font-size:14px; color:#555; border-top:1px solid #eee; padding-top:10px;">
-    <strong>Reflection written by:</strong> ${formData.authorName}
-  </p>
-
-</article>
-
-[elementor-template id="10072"]
-
-<!-- Custom Subscribe Section -->
-<div style="background: linear-gradient(135deg, #0fa3a3 0%, #2c7777 100%); padding:50px 20px; margin-top:50px; text-align:center; width:100vw; margin-left:calc(-50vw + 50%);">
-  <div style="max-width:600px; margin:0 auto;">
-    <h3 style="font-family:'PT Serif', Georgia, serif; font-size:28px; font-weight:700; color:white; margin:0 0 15px;">
-      Subscribe to Daily Gospel Reflections
-    </h3>
-    <p style="font-size:16px; color:white; margin:0 0 30px; opacity:0.95;">
-      Sent directly to your email inbox, every morning.
-    </p>
-    <a href="https://share-ap1.hsforms.com/1tifbJAvIRhmZf5yuh3qEsQ7av94g" target="_blank" style="display:inline-block; background:white; color:#2c7777; padding:14px 35px; text-decoration:none; font-size:16px; font-weight:600; border-radius:5px; transition:all 0.3s; line-height:1; vertical-align:middle; box-shadow: 0 2px 10px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.2)'">Subscribe</a>
-  </div>
-</div>`;
-		} else {
-			const heroImageUrl = 'https://archdiocesanministries.org.au/wp-content/uploads/2024/10/image-20240803-012152-4ace2c2e-Large-Medium.jpeg';
+	// Save form data to localStorage in dev mode only
+	$effect(() => {
+		if (import.meta.env.DEV && typeof window !== 'undefined') {
+			// Skip saving if form is empty (just initialized)
+			const hasContent = formData.liturgicalDate || formData.readings || 
+				formData.title || formData.gospelQuote || 
+				formData.reflectionText || formData.authorName;
 			
-			return `<!-- Original Hero Design -->
-<div class="dgr-hero" style="
-  background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${heroImageUrl}');
-  background-size: cover;
-  background-position: center;
-  height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  margin: 0 0 0 0;
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-">
-  <h1 style="font-family: 'PT Serif', Georgia, serif; font-size: 3rem; font-weight: bold; margin: 0; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-    Daily Reflections
-  </h1>
-</div>
-
-<!-- Header Image -->
-<div style="text-align:center; margin:40px auto;">
-  <img src="https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Header-1024x683.png" 
-       alt="Daily Gospel Reflections" 
-       style="max-width:300px; width:100%; height:auto; display:inline-block;">
-</div>
-
-<div class="dgr-content" style="max-width: 1200px; margin: 0 auto; padding: 3rem 2rem;">
-  
-  <!-- Title Section -->
-  <h2 style="
-    font-family: 'PT Serif', Georgia, serif; 
-    font-size: 2.2rem; 
-    font-weight: bold;
-    color: #2c2c2c; 
-    margin: 0 0 2rem 0;
-    line-height: 1.2;
-  ">
-    ${formData.title}
-  </h2>
-  
-  <!-- Date and Scripture Info -->
-  <div style="display: flex; justify-content: space-between; margin-bottom: 2.5rem; gap: 0rem;">
-    
-    <!-- Left Column: Date -->
-    <div style="flex: 1; text-align: left;">
-      <div style="
-        font-family: 'PT Serif', Georgia, serif;
-        font-size: 1.1rem; 
-        font-weight: bold;
-        color: #2c2c2c;
-        margin-bottom: 0.5rem;
-      ">
-        ${formattedDate}
-      </div>
-    </div>
-    
-    <!-- Right Column: Liturgical Info -->
-    <div style="flex: 1; text-align: right;">
-      <div style="
-        font-family: 'Open Sans', Arial, sans-serif;
-        font-size: 1rem; 
-        color: #666;
-        line-height: 1.4;
-      ">
-        <div style="margin-bottom: 0.3rem;">${formData.liturgicalDate}</div>
-        <div style="font-style: italic; font-size: 0.9rem; font-family: 'PT Serif', Georgia, serif;">${formData.readings}</div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Gospel Quote -->
-  <div style="
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 2.5rem 0;
-    text-align: left;
-  ">
-    <p style="
-      font-family: 'PT Serif', Georgia, serif;
-      font-size: 1.1rem;
-      font-style: italic;
-      color: #444;
-      margin: 0 0 0.5rem 0;
-      line-height: 1.6;
-    ">
-      '${formData.gospelQuote}' <span style="font-weight: normal; color: #666;">(${formData.gospelReference})</span>
-    </p>
-  </div>
-  
-  <!-- Reflection Text -->
-  <div style="
-    font-family: 'Open Sans', Arial, sans-serif;
-    font-size: 1.1rem;
-    line-height: 1.5; 
-    color: #333; 
-    text-align: left;
-    margin: 2rem 0;
-  ">
-    ${formData.reflectionText
-			.split('\n')
-			.filter((p) => p.trim())
-			.map(
-				(paragraph) => `<p style="margin: 0 0 1.5rem 0; text-indent: 0;">${paragraph.trim()}</p>`
-			)
-			.join('')}
-  </div>
-  
-  <!-- Author -->
-  <div style="
-    font-family: 'Open Sans', Arial, sans-serif;
-    font-size: 1rem;
-    color: #666; 
-    text-align: left;
-    margin-top: 2rem;
-  ">
-    By ${formData.authorName}
-  </div>
-  
-</div>
-
-[elementor-template id="10072"]
-
-<!-- Custom Subscribe Section -->
-<div style="background: linear-gradient(135deg, #0fa3a3 0%, #2c7777 100%); padding:50px 20px; margin-top:50px; text-align:center; width:100vw; margin-left:calc(-50vw + 50%);">
-  <div style="max-width:600px; margin:0 auto;">
-    <h3 style="font-family:'PT Serif', Georgia, serif; font-size:28px; font-weight:700; color:white; margin:0 0 15px;">
-      Subscribe to Daily Gospel Reflections
-    </h3>
-    <p style="font-size:16px; color:white; margin:0 0 30px; opacity:0.95;">
-      Sent directly to your email inbox, every morning.
-    </p>
-    <a href="https://share-ap1.hsforms.com/1tifbJAvIRhmZf5yuh3qEsQ7av94g" target="_blank" style="display:inline-block; background:white; color:#2c7777; padding:14px 35px; text-decoration:none; font-size:16px; font-weight:600; border-radius:5px; transition:all 0.3s; line-height:1; vertical-align:middle; box-shadow: 0 2px 10px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.2)'">Subscribe</a>
-  </div>
-</div>`;
+			if (hasContent) {
+				localStorage.setItem('dgr-form-data-dev', JSON.stringify(formData));
+				console.log('Saved form data to localStorage (dev mode)');
+			}
 		}
-	}
+	});
+
+
+	// Generate preview HTML using centralized function - make it reactive
+	let previewHtml = $state('');
+	
+	// Regenerate preview when form data, gospel content, or promo tiles change
+	$effect(async () => {
+		if (formData.title && formData.reflectionText) {
+			console.log('Regenerating preview with promoTiles:', promoTiles);
+			previewHtml = await generateDGRHTML(formData, {
+				useNewDesign,
+				gospelFullText,
+				gospelReference,
+				includeWordPressCSS: false,
+				promoTiles
+			});
+		} else {
+			previewHtml = '';
+		}
+	});
 
 	async function pasteFromWord() {
 		const loadingId = toast.loading({
@@ -629,213 +503,84 @@
 
 </script>
 
-<div class="mx-auto max-w-3xl p-6">
-
-	<div class="mb-8">
-		<div class="flex items-center justify-between mb-4">
-			<h1 class="text-3xl font-bold text-gray-900">Daily Gospel Reflection Publisher</h1>
-			<button
-				type="button"
-				onclick={pasteFromWord}
-				class="rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
-			>
-				📋 Paste from Word
-			</button>
-		</div>
-		
-		<!-- Design Format Toggle -->
-		<div class="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-			<label class="flex items-center cursor-pointer">
-				<input 
-					type="checkbox" 
-					bind:checked={useNewDesign}
-					class="mr-2 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-				/>
-				<span class="text-sm font-medium text-gray-700">
-					Use new clean design format
-				</span>
-			</label>
-			<span class="text-xs text-gray-500">
-				{useNewDesign ? '(Clean article style with gospel text)' : '(Original hero image style)'}
-			</span>
-		</div>
-	</div>
-
-	<form onsubmit={handleSubmit} class="space-y-6">
-		<div class="space-y-4 rounded-lg bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-xl font-semibold text-gray-800">Reflection Details</h2>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Date </label>
-				<input
-					type="date"
-					bind:value={formData.date}
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-				<p class="mt-1 text-sm text-gray-500">
-					Will display as: {formatDateDisplay(formData.date)}
-				</p>
-			</div>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Liturgical Date </label>
-				<input
-					type="text"
-					bind:value={formData.liturgicalDate}
-					placeholder="e.g., Memorial St Augustine, bishop, doctor"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-			</div>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Readings </label>
-				<input
-					type="text"
-					bind:value={formData.readings}
-					placeholder="e.g., 1 Thess 3:7-13; Ps 89:3-4, 12-14, 17; Mt 24:42–51"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-			</div>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Title for the Day </label>
-				<input
-					type="text"
-					bind:value={formData.title}
-					placeholder="e.g., Faithful and Wise Servant"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-			</div>
-		</div>
-
-		<div class="space-y-4 rounded-lg bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-xl font-semibold text-gray-800">Gospel Content</h2>
-
-			{#if gospelReference}
-				<div class="rounded-lg bg-green-50 p-4 border border-green-200 mb-4">
-					<div class="flex items-center justify-between mb-2">
-						<h4 class="text-sm font-semibold text-green-900">Gospel for {formatDateDisplay(formData.date)}</h4>
-						<span class="text-xs text-green-600">
-							{fetchingGospel ? 'Loading...' : 'Auto-loaded'}
-						</span>
+<!-- Split View Layout -->
+<div class="min-h-screen bg-gray-50">
+	<div class="flex flex-col lg:flex-row h-screen">
+		<!-- Left Panel: Form (narrow on large screens, full width on mobile) -->
+		<div class="lg:w-96 w-full bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col">
+			<!-- Header -->
+			<div class="p-4 border-b border-gray-200 bg-white">
+				<div class="flex items-center justify-between mb-2">
+					<div>
+						<h1 class="text-lg font-bold text-gray-900">DGR Publisher</h1>
+						<p class="text-xs text-gray-600">Daily Gospel Reflection</p>
 					</div>
-					<p class="text-sm text-green-800 font-medium mb-3">
-						{gospelReference}
-					</p>
-					{#if gospelFullText}
-						<div class="bg-white p-3 rounded border border-green-100 max-h-48 overflow-y-auto">
-							<div class="text-sm text-gray-700">
-								{@html gospelFullText}
+					<button
+						onclick={handleSubmit}
+						disabled={publishing}
+						class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{publishing ? 'Publishing...' : 'Publish'}
+					</button>
+				</div>
+			</div>
+			
+			<!-- Form Container (scrollable) -->
+			<div class="flex-1 overflow-y-auto p-4">
+				<DGRForm
+					bind:formData
+					bind:publishing
+					bind:result
+					bind:useNewDesign
+					bind:fetchingGospel
+					bind:gospelFullText
+					bind:gospelReference
+					onPasteFromWord={pasteFromWord}
+				/>
+			</div>
+		</div>
+
+		<!-- Right Panel: Preview (large on desktop, hidden on mobile unless content exists) -->
+		<div class="flex-1 flex flex-col {formData.title && formData.reflectionText ? 'block' : 'hidden lg:flex'}">
+			<!-- Preview Header -->
+			<div class="p-4 border-b border-gray-200 bg-white">
+				<div class="flex items-center justify-between">
+					<h2 class="text-lg font-semibold text-gray-900">Live Preview</h2>
+					<div class="flex items-center gap-2 text-xs text-gray-600">
+						<div class="w-2 h-2 rounded-full {formData.title && formData.reflectionText ? 'bg-green-500' : 'bg-gray-300'}"></div>
+						{formData.title && formData.reflectionText ? 'Ready' : 'Waiting for content'}
+					</div>
+				</div>
+			</div>
+			
+			<!-- Preview Content (scrollable) -->
+			<div class="flex-1 overflow-y-auto bg-white">
+				{#if formData.title && formData.reflectionText}
+					<div class="h-full">
+						{#if previewHtml}
+							{@html previewHtml}
+						{:else}
+							<div class="flex items-center justify-center h-full">
+								<div class="text-gray-500">Generating preview...</div>
 							</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="flex items-center justify-center h-full text-gray-500">
+						<div class="text-center p-8">
+							<div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+								<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+								</svg>
+							</div>
+							<p class="text-sm font-medium">Fill in the form to see preview</p>
+							<p class="text-xs text-gray-400 mt-1">Enter title and reflection text to get started</p>
 						</div>
-					{/if}
-				</div>
-			{/if}
-
-			<div>
-				<label for="gospelQuote" class="mb-1 block text-sm font-medium text-gray-700"> 
-					Gospel Quote/Highlight (Author's Selection)
-				</label>
-				<textarea
-					id="gospelQuote"
-					bind:value={formData.gospelQuote}
-					placeholder="Enter the specific gospel quote/highlight chosen by the author, e.g.: 'Look, the virgin shall conceive and bear a son, and they shall name him Emmanuel.' (Matthew 1:23)"
-					rows="3"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				></textarea>
-				<p class="mt-1 text-xs text-gray-500">
-					This is the specific quote the author selected for their reflection
-				</p>
+					</div>
+				{/if}
 			</div>
 		</div>
-
-		<div class="space-y-4 rounded-lg bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-xl font-semibold text-gray-800">Reflection</h2>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Reflection Text </label>
-				<textarea
-					bind:value={formData.reflectionText}
-					placeholder="Enter the reflection text (separate paragraphs with blank lines)..."
-					rows="10"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-			</div>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700"> Author </label>
-				<input
-					type="text"
-					bind:value={formData.authorName}
-					placeholder="e.g., Sr. Theresa Maria Dao, SPC"
-					required
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				/>
-			</div>
-		</div>
-
-		<div class="flex justify-end">
-			<button
-				type="submit"
-				disabled={publishing}
-				class="rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{publishing ? 'Scheduling...' : 'Schedule on WordPress'}
-			</button>
-		</div>
-	</form>
-
-	{#if result}
-		<div
-			class="mt-6 rounded-lg p-4 {result.success
-				? 'border border-green-200 bg-green-50'
-				: 'border border-red-200 bg-red-50'}"
-		>
-			{#if result.success}
-				<div class="flex items-center text-green-800">
-					<svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-						<path
-							fill-rule="evenodd"
-							d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-							clip-rule="evenodd"
-						></path>
-					</svg>
-					<span class="font-medium">Successfully published!</span>
-					<a href={result.link} target="_blank" class="ml-2 underline hover:no-underline">
-						View Post →
-					</a>
-				</div>
-			{:else}
-				<div class="flex items-center text-red-800">
-					<svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-						<path
-							fill-rule="evenodd"
-							d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-							clip-rule="evenodd"
-						></path>
-					</svg>
-					<span class="font-medium">Error:</span>
-					<span class="ml-1">{result.error}</span>
-				</div>
-			{/if}
-		</div>
-	{/if}
-</div>
-
-<!-- HTML Preview Section -->
-{#if formData.title && formData.reflectionText}
-<div class="mt-12 border-t pt-8">
-	<h2 class="text-2xl font-bold mb-4">HTML Preview</h2>
-	<div class="bg-white border rounded-lg overflow-auto shadow-sm" style="max-height: 600px;">
-		{@html generatePreviewHTML()}
 	</div>
 </div>
-{/if}
 
 <ToastContainer />

@@ -8,10 +8,6 @@
 export function decodeHtmlEntities(text) {
 	if (!text || typeof text !== 'string') return text;
 
-	// Debug logging
-	if (text.includes('&#x2010;')) {
-		console.log('decodeHtmlEntities - Input:', text);
-	}
 
 	const result = text
 		// Common numeric entities (hex)
@@ -46,18 +42,7 @@ export function decodeHtmlEntities(text) {
 		.replace(/&ldquo;/g, '\u201c')
 		.replace(/&rdquo;/g, '\u201d');
 
-	// Debug logging
-	if (text.includes('&#x2010;')) {
-		console.log('decodeHtmlEntities - Output:', result);
-	}
 
 	return result;
 }
 
-// Test the function immediately
-const testInput = 'Matthew 23:23&#x2010;26';
-const testOutput = decodeHtmlEntities(testInput);
-console.log('HTML Entities Test:');
-console.log('Input:', testInput);
-console.log('Output:', testOutput);
-console.log('Contains entity?', testOutput.includes('&#x2010;'));

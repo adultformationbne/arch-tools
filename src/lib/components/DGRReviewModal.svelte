@@ -106,7 +106,13 @@
 
 {#if isOpen && reflection}
 	<!-- Modal backdrop -->
-	<div class="bg-opacity-50 fixed inset-0 z-40 bg-black" onclick={handleClose}></div>
+	<button
+		type="button"
+		class="bg-opacity-50 fixed inset-0 z-40 bg-black"
+		onclick={handleClose}
+		onkeydown={(e) => e.key === 'Escape' && handleClose()}
+		aria-label="Close modal"
+	></button>
 
 	<!-- Modal content -->
 	<div
@@ -159,8 +165,9 @@
 
 			<!-- Title field -->
 			<div class="mb-6">
-				<label class="mb-2 block text-sm font-medium text-gray-700"> Reflection Title </label>
+				<label for="reflection-title" class="mb-2 block text-sm font-medium text-gray-700"> Reflection Title </label>
 				<input
+					id="reflection-title"
 					type="text"
 					bind:value={editedTitle}
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#009199] focus:outline-none"
@@ -170,8 +177,9 @@
 
 			<!-- Content editor -->
 			<div class="mb-6">
-				<label class="mb-2 block text-sm font-medium text-gray-700"> Reflection Content </label>
+				<label for="reflection-content" class="mb-2 block text-sm font-medium text-gray-700"> Reflection Content </label>
 				<textarea
+					id="reflection-content"
 					bind:value={editedContent}
 					placeholder="Edit the reflection content..."
 					class="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 leading-relaxed text-gray-800 focus:border-transparent focus:ring-2 focus:ring-[#009199] focus:outline-none"
