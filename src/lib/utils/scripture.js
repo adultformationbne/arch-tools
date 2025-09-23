@@ -103,8 +103,8 @@ export async function fetchScripturePassage(passage, version = 'NRSVAE') {
 	};
 }
 
-// Fetch gospel reading for a specific date using Universalis
-export async function fetchGospelForDate(dateInput, region = 'australia.brisbane') {
+// Fetch all readings for a specific date using Universalis API
+export async function fetchAllReadingsForDate(dateInput, region = 'australia.brisbane') {
 	return new Promise((resolve, reject) => {
 		try {
 			const targetDate = dateInput ? new Date(dateInput) : new Date();
@@ -118,20 +118,19 @@ export async function fetchGospelForDate(dateInput, region = 'australia.brisbane
 			// Set up callback function
 			window[callbackName] = function (data) {
 				try {
-					if (data && data.Mass_G && data.Mass_G.source) {
-						const gospelSource = data.Mass_G.source;
-						const cleanGospel = decodeHtmlEntities(gospelSource);
-						
+					if (data) {
+						const readings = normalizeUniversalisReadings(data);
+
 						resolve({
 							success: true,
-							passage: cleanGospel,
-							reference: cleanGospel,
+							readings: readings,
+							liturgicalDate: data.date || '',
 							universalisData: data
 						});
 					} else {
 						resolve({
 							success: false,
-							error: 'No Gospel reading found in Universalis data',
+							error: 'No readings data found in Universalis response',
 							universalisData: data
 						});
 					}
@@ -155,9 +154,32 @@ export async function fetchGospelForDate(dateInput, region = 'australia.brisbane
 
 			document.head.appendChild(script);
 		} catch (err) {
-			reject(new Error(`Error loading Gospel: ${err.message}`));
+			reject(new Error(`Error loading readings: ${err.message}`));
 		}
 	});
+}
+
+// Fetch gospel reading for a specific date using Universalis (legacy function for backward compatibility)
+export async function fetchGospelForDate(dateInput, region = 'australia.brisbane') {
+	try {
+		const result = await fetchAllReadingsForDate(dateInput, region);
+		if (result.success && result.readings?.gospel) {
+			return {
+				success: true,
+				passage: result.readings.gospel.source,
+				reference: result.readings.gospel.source,
+				universalisData: result.universalisData
+			};
+		} else {
+			return {
+				success: false,
+				error: 'No Gospel reading found in Universalis data',
+				universalisData: result.universalisData
+			};
+		}
+	} catch (err) {
+		throw err;
+	}
 }
 
 // Fetch gospel reading for date and then get the full text
@@ -208,4 +230,72 @@ export function extractGospelReference(readings) {
 		return ref;
 	}
 	return '';
+}
+
+// Normalize Universalis API readings data into structured format for database storage
+export function normalizeUniversalisReadings(universalisData) {
+	const readings = {};
+
+	// First Reading
+	if (universalisData.Mass_R1?.source) {
+		readings.first_reading = {
+			source: decodeHtmlEntities(universalisData.Mass_R1.source),
+			text: universalisData.Mass_R1.text ? decodeHtmlEntities(universalisData.Mass_R1.text) : '',
+			heading: universalisData.Mass_R1.heading ? decodeHtmlEntities(universalisData.Mass_R1.heading) : ''
+		};
+	}
+
+	// Responsorial Psalm
+	if (universalisData.Mass_Ps?.source) {
+		readings.psalm = {
+			source: decodeHtmlEntities(universalisData.Mass_Ps.source),
+			text: universalisData.Mass_Ps.text ? decodeHtmlEntities(universalisData.Mass_Ps.text) : ''
+		};
+	}
+
+	// Second Reading (optional - not present on all days)
+	if (universalisData.Mass_R2?.source) {
+		readings.second_reading = {
+			source: decodeHtmlEntities(universalisData.Mass_R2.source),
+			text: universalisData.Mass_R2.text ? decodeHtmlEntities(universalisData.Mass_R2.text) : '',
+			heading: universalisData.Mass_R2.heading ? decodeHtmlEntities(universalisData.Mass_R2.heading) : ''
+		};
+	}
+
+	// Gospel Acclamation
+	if (universalisData.Mass_GA?.source) {
+		readings.gospel_acclamation = {
+			source: decodeHtmlEntities(universalisData.Mass_GA.source),
+			text: universalisData.Mass_GA.text ? decodeHtmlEntities(universalisData.Mass_GA.text) : ''
+		};
+	}
+
+	// Gospel
+	if (universalisData.Mass_G?.source) {
+		readings.gospel = {
+			source: decodeHtmlEntities(universalisData.Mass_G.source),
+			text: universalisData.Mass_G.text ? decodeHtmlEntities(universalisData.Mass_G.text) : '',
+			heading: universalisData.Mass_G.heading ? decodeHtmlEntities(universalisData.Mass_G.heading) : ''
+		};
+	}
+
+	// Generate combined readings string in the format used by DGR forms
+	// Format: "First Reading; Psalm; Second Reading; Gospel" (skipping optional second reading if not present)
+	const readingsSources = [];
+	if (readings.first_reading?.source) readingsSources.push(readings.first_reading.source);
+	if (readings.psalm?.source) readingsSources.push(readings.psalm.source);
+	if (readings.second_reading?.source) readingsSources.push(readings.second_reading.source);
+	if (readings.gospel?.source) readingsSources.push(readings.gospel.source);
+
+	readings.combined_sources = readingsSources.join('; ');
+
+	return readings;
+}
+
+// Format readings data for display in DGR forms and templates
+export function formatReadingsForDisplay(readingsData) {
+	if (!readingsData) return '';
+
+	// Return the combined sources format that matches your Word document style
+	return readingsData.combined_sources || '';
 }

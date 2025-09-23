@@ -10,13 +10,6 @@
 			icon: '✏️'
 		},
 		{
-			name: 'Scripture',
-			path: '/scripture',
-			description: 'Bible passage lookup and display tool',
-			color: 'bg-indigo-600 hover:bg-indigo-700',
-			icon: '📖'
-		},
-		{
 			name: 'DGR',
 			path: '/dgr',
 			description: 'DGR tools and utilities',

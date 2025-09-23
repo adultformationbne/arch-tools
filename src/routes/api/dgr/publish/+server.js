@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { decodeHtmlEntities } from '$lib/utils/html.js';
-import { generateDGRHTML } from '$lib/utils/dgr-html.js';
+import { renderTemplate, formatReflectionText } from '$lib/utils/dgr-template-renderer.js';
 
 // Initialize Supabase client
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
@@ -51,7 +51,7 @@ async function getMediaImage(searchTerm = 'daily-reflections-hero', mediaId = nu
 export async function POST({ request }) {
 	try {
 		const data = await request.json();
-		const useNewDesign = data.useNewDesign !== false; // Default to true if not specified
+		const templateKey = data.templateKey || 'default'; // Which template to use
 
 		// Format the date nicely
 		const dateObj = new Date(data.date);
@@ -76,22 +76,33 @@ export async function POST({ request }) {
 <I>${data.gospelQuote}</I><br><br>
 ${truncatedText}`;
 
-		// Prepare the form data for our centralized function
-		const formData = {
+		// Get the active template
+		const { data: template, error: templateError } = await supabase
+			.from('dgr_templates')
+			.select('*')
+			.eq('template_key', templateKey)
+			.eq('is_active', true)
+			.single();
+
+		if (templateError) {
+			throw new Error(`Template not found: ${templateError.message}`);
+		}
+
+		// Prepare template data
+		const templateData = {
 			title: data.title,
+			date: data.date,
+			formattedDate: formattedDate,
 			liturgicalDate: data.liturgicalDate,
 			readings: data.readings,
 			gospelQuote: data.gospelQuote,
-			reflectionText: data.reflectionText,
+			reflectionText: formatReflectionText(data.reflectionText),
 			authorName: data.authorName,
-			date: data.date
+			gospelFullText: data.gospelFullText || '',
+			gospelReference: data.gospelReference || ''
 		};
 
-		// Use gospel text passed from frontend (already fetched and displayed in preview)
-		const gospelFullText = data.gospelFullText || '';
-		const gospelReference = data.gospelReference || '';
-
-		// Fetch promo tiles from database
+		// Fetch promo tiles for templates that support them
 		let promoTiles = [];
 		try {
 			const { data: tiles, error } = await supabase
@@ -102,30 +113,20 @@ ${truncatedText}`;
 
 			if (!error && tiles) {
 				promoTiles = tiles;
-				console.log('Fetched promo tiles:', promoTiles.length);
+				templateData.promoTiles = promoTiles;
 			}
 		} catch (err) {
 			console.warn('Could not fetch promo tiles:', err);
 		}
 
-		// Debug what we're passing to the centralized function
-		console.log('=== API DEBUG ===');
-		console.log('useNewDesign:', useNewDesign);
-		console.log('gospelFullText present:', !!gospelFullText);
-		console.log('gospelReference present:', !!gospelReference);
-		console.log('gospelFullText length:', gospelFullText?.length || 0);
-		console.log('gospelReference value:', gospelReference);
-		console.log('promoTiles count:', promoTiles.length);
-		console.log('=================');
+		console.log('=== Template Rendering ===');
+		console.log('Template key:', templateKey);
+		console.log('Template name:', template.name);
+		console.log('Data keys:', Object.keys(templateData));
+		console.log('=========================');
 
-		// Generate content using our centralized function
-		const content = await generateDGRHTML(formData, {
-			useNewDesign,
-			gospelFullText,
-			gospelReference,
-			includeWordPressCSS: true,
-			promoTiles
-		});
+		// Render template
+		const content = renderTemplate(template.html, templateData);
 
 		// Get random featured image from featured-images.txt
 		let featuredImageId;

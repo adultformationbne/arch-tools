@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Shield, Mail, Edit2, Save, X } from 'lucide-svelte';
+	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound } from 'lucide-svelte';
 
 	export let data;
 	let { supabase, users, currentUser } = data;
@@ -8,6 +8,24 @@
 	let editingRole = '';
 	let loading = false;
 	let message = '';
+
+	// New user form
+	let showNewUserForm = false;
+	let newUser = {
+		email: '',
+		password: '',
+		full_name: '',
+		role: 'viewer'
+	};
+	let createUserLoading = false;
+	let createUserError = '';
+
+	// Password reset functionality
+	let showPasswordResetModal = false;
+	let resetPasswordUserId = null;
+	let resetPasswordLoading = false;
+	let newPassword = '';
+	let resetPasswordError = '';
 
 	function startEdit(userId: string, currentRole: string) {
 		editingUserId = userId;
@@ -54,6 +72,92 @@
 		contributor: 'bg-green-100 text-green-800',
 		viewer: 'bg-gray-100 text-gray-800'
 	};
+
+	async function createNewUser() {
+		createUserLoading = true;
+		createUserError = '';
+
+		try {
+			// Create user via API endpoint
+			const response = await fetch('/api/admin/users', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(newUser)
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || 'Failed to create user');
+			}
+
+			// Add new user to the list
+			users = [result.user, ...users];
+
+			// Reset form
+			newUser = {
+				email: '',
+				password: '',
+				full_name: '',
+				role: 'viewer'
+			};
+			showNewUserForm = false;
+			message = 'User created successfully';
+			setTimeout(() => message = '', 3000);
+		} catch (error) {
+			console.error('Error creating user:', error);
+			createUserError = error.message || 'Failed to create user';
+		} finally {
+			createUserLoading = false;
+		}
+	}
+
+	function showPasswordReset(userId: string) {
+		resetPasswordUserId = userId;
+		showPasswordResetModal = true;
+		newPassword = '';
+		resetPasswordError = '';
+	}
+
+	async function resetUserPassword() {
+		if (!newPassword || newPassword.length < 6) {
+			resetPasswordError = 'Password must be at least 6 characters';
+			return;
+		}
+
+		resetPasswordLoading = true;
+		resetPasswordError = '';
+
+		try {
+			const response = await fetch('/api/admin/reset-password', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					userId: resetPasswordUserId,
+					newPassword: newPassword
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || 'Failed to reset password');
+			}
+
+			showPasswordResetModal = false;
+			message = 'Password reset successfully';
+			setTimeout(() => message = '', 3000);
+		} catch (error) {
+			console.error('Error resetting password:', error);
+			resetPasswordError = error.message || 'Failed to reset password';
+		} finally {
+			resetPasswordLoading = false;
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50 py-8">
@@ -65,9 +169,18 @@
 						<Shield class="h-6 w-6 mr-2" />
 						User Management
 					</h1>
-					{#if message}
-						<div class="text-sm text-green-600 font-medium">{message}</div>
-					{/if}
+					<div class="flex items-center space-x-4">
+						{#if message}
+							<div class="text-sm text-green-600 font-medium">{message}</div>
+						{/if}
+						<button
+							on:click={() => showNewUserForm = true}
+							class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+						>
+							<UserPlus class="h-4 w-4 mr-2" />
+							Add User
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -152,14 +265,23 @@
 											<X class="h-4 w-4" />
 										</button>
 									{:else}
-										<button
-											on:click={() => startEdit(user.id, user.role)}
-											disabled={user.id === currentUser.id}
-											class="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed"
-											title={user.id === currentUser.id ? "You cannot edit your own role" : "Edit role"}
-										>
-											<Edit2 class="h-4 w-4" />
-										</button>
+										<div class="flex items-center space-x-2">
+											<button
+												on:click={() => startEdit(user.id, user.role)}
+												disabled={user.id === currentUser.id}
+												class="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+												title={user.id === currentUser.id ? "You cannot edit your own role" : "Edit role"}
+											>
+												<Edit2 class="h-4 w-4" />
+											</button>
+											<button
+												on:click={() => showPasswordReset(user.id)}
+												class="text-orange-600 hover:text-orange-900"
+												title="Reset password"
+											>
+												<KeyRound class="h-4 w-4" />
+											</button>
+										</div>
 									{/if}
 								</td>
 							</tr>
@@ -192,3 +314,144 @@
 		</div>
 	</div>
 </div>
+
+<!-- New User Modal -->
+{#if showNewUserForm}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
+
+				<form on:submit|preventDefault={createNewUser} class="space-y-4">
+					<div>
+						<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+						<input
+							type="email"
+							id="email"
+							bind:value={newUser.email}
+							required
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+							placeholder="user@example.com"
+						/>
+					</div>
+
+					<div>
+						<label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+						<input
+							type="password"
+							id="password"
+							bind:value={newUser.password}
+							required
+							minlength="6"
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+							placeholder="Minimum 6 characters"
+						/>
+					</div>
+
+					<div>
+						<label for="full_name" class="block text-sm font-medium text-gray-700">Full Name</label>
+						<input
+							type="text"
+							id="full_name"
+							bind:value={newUser.full_name}
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+							placeholder="John Doe"
+						/>
+					</div>
+
+					<div>
+						<label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+						<select
+							id="role"
+							bind:value={newUser.role}
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						>
+							<option value="viewer">Viewer</option>
+							<option value="contributor">Contributor</option>
+							<option value="editor">Editor</option>
+							<option value="admin">Admin</option>
+						</select>
+					</div>
+
+					{#if createUserError}
+						<div class="text-sm text-red-600">{createUserError}</div>
+					{/if}
+
+					<div class="flex justify-end space-x-3 pt-4">
+						<button
+							type="button"
+							on:click={() => showNewUserForm = false}
+							disabled={createUserLoading}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={createUserLoading}
+							class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+						>
+							{createUserLoading ? 'Creating...' : 'Create User'}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Password Reset Modal -->
+{#if showPasswordResetModal}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+					<KeyRound class="h-5 w-5 mr-2" />
+					Reset User Password
+				</h3>
+
+				<form on:submit|preventDefault={resetUserPassword} class="space-y-4">
+					<div>
+						<label for="new_password" class="block text-sm font-medium text-gray-700">
+							New Password
+						</label>
+						<input
+							type="password"
+							id="new_password"
+							bind:value={newPassword}
+							required
+							minlength="6"
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+							placeholder="Enter new password (minimum 6 characters)"
+						/>
+						<p class="mt-1 text-sm text-gray-500">
+							The user will be able to sign in with this new password immediately.
+						</p>
+					</div>
+
+					{#if resetPasswordError}
+						<div class="text-sm text-red-600">{resetPasswordError}</div>
+					{/if}
+
+					<div class="flex justify-end space-x-3 pt-4">
+						<button
+							type="button"
+							on:click={() => showPasswordResetModal = false}
+							disabled={resetPasswordLoading}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={resetPasswordLoading}
+							class="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+						>
+							{resetPasswordLoading ? 'Resetting...' : 'Reset Password'}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}
