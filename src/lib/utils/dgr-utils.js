@@ -108,9 +108,36 @@ export function parseReadings(readingsStr) {
 	});
 }
 
+// Clean gospel text by removing scripture headings, verse numbers, and footnotes
+export function cleanGospelText(html) {
+	if (!html) return '';
+
+	let cleaned = html;
+
+	// Remove scripture headings (e.g., <h2 class="scripture-heading">The Parable of the Dishonest Manager</h2>)
+	cleaned = cleaned.replace(/<h[1-6][^>]*class="scripture-heading"[^>]*>.*?<\/h[1-6]>/gi, '');
+
+	// Remove verse numbers with spans
+	cleaned = cleaned.replace(/<span[^>]*class="verse-num[^"]*"[^>]*>.*?<\/span>/gi, '');
+
+	// Remove verse numbers with sup tags
+	cleaned = cleaned.replace(/<sup[^>]*class="verse-num[^"]*"[^>]*>.*?<\/sup>/gi, '');
+
+	// Remove footnotes
+	cleaned = cleaned.replace(/<sup[^>]*class="footnote"[^>]*>.*?<\/sup>/gi, '');
+
+	// Clean up any remaining empty paragraphs
+	cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
+
+	// Clean up extra whitespace
+	cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+	return cleaned;
+}
+
 // New template-based DGR HTML generator
 export async function generateDGRHTML(formData, options = {}) {
-	const { templateKey = 'default', gospelFullText = '', gospelReference = '' } = options;
+	const { templateKey = 'default', gospelFullText = '', gospelReference = '', promoTiles = [] } = options;
 
 	// Format the date nicely
 	const dateObj = new Date(formData.date);
@@ -132,7 +159,8 @@ export async function generateDGRHTML(formData, options = {}) {
 		reflectionText: formatReflectionText(formData.reflectionText),
 		authorName: formData.authorName,
 		gospelFullText: gospelFullText,
-		gospelReference: gospelReference
+		gospelReference: gospelReference,
+		promoTiles: promoTiles
 	};
 
 	// Call our template API

@@ -1,10 +1,15 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
 
-const supabase = createClient(
-  process.env.PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+	auth: {
+		autoRefreshToken: false,
+		persistSession: false
+	}
+});
 
 // GET - Retrieve active template for rendering
 export async function GET({ url }) {
@@ -40,34 +45,8 @@ export async function POST({ request }) {
     return json({ error: error.message }, { status: 400 });
   }
 
-  // Process template
-  let html = template.html;
-
-  // Replace variables
-  Object.entries(templateData).forEach(([key, value]) => {
-    // Handle {{variable}}
-    const regex = new RegExp(`{{${key}}}`, 'g');
-    html = html.replace(regex, escapeHtml(value || ''));
-
-    // Handle {{{variable}}} for unescaped HTML
-    const regexTriple = new RegExp(`{{{${key}}}}`, 'g');
-    html = html.replace(regexTriple, value || '');
-  });
-
-  // Handle conditionals
-  html = html.replace(/{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g, (match, variable, content) => {
-    return templateData[variable] ? content : '';
-  });
+  // Process template using the proper renderer
+  const html = renderTemplate(template.html, templateData);
 
   return json({ html, template });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
