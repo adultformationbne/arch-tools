@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { User } from 'lucide-svelte';
 	export let session;
 
 	const routes = [
@@ -32,7 +33,14 @@
 
 			{#if session}
 				<div class="flex items-center space-x-4">
-					<span class="text-sm text-gray-600">{session.user.email}</span>
+					<a
+						href="/profile"
+						class="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+						title="Profile Settings"
+					>
+						<User class="h-5 w-5" />
+						<span>{session.user.email}</span>
+					</a>
 					<form method="post" action="/auth/logout">
 						<button
 							type="submit"
