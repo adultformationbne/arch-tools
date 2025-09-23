@@ -1,7 +1,6 @@
 <script>
 	import { Eye, EyeOff, Edit, ChevronUp, ChevronDown, History } from 'lucide-svelte';
 	import RichTextDisplay from './RichTextDisplay.svelte';
-	import TrafficLight from './TrafficLight.svelte';
 
 	let {
 		blocks = [],
@@ -10,10 +9,7 @@
 		onToggleVisibility = () => {},
 		onMove = () => {},
 		onToggleSelection = () => {},
-		onShowVersionHistory = () => {},
-		getBlockRecommendation = null,
-		getBlockScores = null,
-		evaluations = []
+		onShowVersionHistory = () => {}
 	} = $props();
 
 	// Group blocks by sections (starting with chapters/h1/h2)
@@ -38,11 +34,13 @@
 				groups.push(currentGroup);
 			} else if (isMetadataGroup && currentGroup) {
 				// Check if this should start a new metadata subsection
-				const hasSharedMetadata = block.metadata.some((meta) =>
-					currentGroup.metadata.includes(meta)
-				);
+				const hasSharedMetadata = Array.isArray(currentGroup.metadata) &&
+					Array.isArray(block.metadata) &&
+					block.metadata.some((meta) =>
+						currentGroup.metadata.includes(meta)
+					);
 
-				if (!hasSharedMetadata && block.metadata.includes('prayer page')) {
+				if (!hasSharedMetadata && Array.isArray(block.metadata) && block.metadata.includes('prayer page')) {
 					// Start new prayer page subsection
 					currentGroup = {
 						id: `meta-${block.id}`,
@@ -90,6 +88,9 @@
 
 	// Get metadata section styling
 	function getMetadataGroupClass(metadata) {
+		if (!Array.isArray(metadata)) {
+			return 'bg-gray-50 border border-gray-200 rounded-xl p-6 mb-6';
+		}
 		if (metadata.includes('prayer page')) {
 			return 'bg-green-50 border border-green-200 rounded-xl p-6 mb-6';
 		}
@@ -120,11 +121,11 @@
 					class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-600 uppercase"
 				>
 					{group.title}
-					{#if group.metadata.includes('prayer page')}
+					{#if Array.isArray(group.metadata) && group.metadata.includes('prayer page')}
 						<span class="rounded-full bg-green-200 px-2 py-1 text-xs text-green-800">Prayer</span>
-					{:else if group.metadata.includes('activity')}
+					{:else if Array.isArray(group.metadata) && group.metadata.includes('activity')}
 						<span class="rounded-full bg-blue-200 px-2 py-1 text-xs text-blue-800">Activity</span>
-					{:else if group.metadata.includes('reflection')}
+					{:else if Array.isArray(group.metadata) && group.metadata.includes('reflection')}
 						<span class="rounded-full bg-purple-200 px-2 py-1 text-xs text-purple-800"
 							>Reflection</span
 						>
@@ -151,7 +152,6 @@
 							>
 								<!-- Analytics dot - positioned on right side -->
 								<div class="absolute top-2 right-2 z-10">
-									<TrafficLight blockId={block.id} {evaluations} showTooltip={true} />
 								</div>
 
 								<!-- Block Content with greyed out text -->
@@ -204,10 +204,10 @@
 						class="block-container group/block relative {isSelected
 							? 'bg-blue-50 ring-2 ring-blue-400'
 							: ''}"
+						data-block-id={block.id}
 					>
 						<!-- Analytics dot - positioned on right side -->
 						<div class="absolute top-2 right-2 z-10">
-							<TrafficLight blockId={block.id} {evaluations} showTooltip={true} />
 						</div>
 
 						<!-- Block Content -->

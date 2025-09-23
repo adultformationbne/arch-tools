@@ -64,12 +64,12 @@
 			lastBlockId = block.id;
 			editTag = block.tag;
 			editContent = block.content;
-			editMetadata = [...(block.metadata || [])];
+			editMetadata = Array.isArray(block.metadata) ? [...block.metadata] : [];
 
 			// Store original values for comparison
 			originalTag = block.tag;
 			originalContent = block.content;
-			originalMetadata = [...(block.metadata || [])];
+			originalMetadata = Array.isArray(block.metadata) ? [...block.metadata] : [];
 
 			// Reset change tracking
 			hasUnsavedChanges = false;

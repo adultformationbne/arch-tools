@@ -531,6 +531,7 @@
 		data-placeholder={placeholder}
 		role="textbox"
 		aria-label="Rich text editor"
+		tabindex="0"
 		class="editor-content min-h-[120px] border border-gray-300 p-3 {showToolbar
 			? 'rounded-b-lg'
 			: 'rounded-lg'} outline-none focus:border-transparent focus:ring-2 focus:ring-purple-500"
