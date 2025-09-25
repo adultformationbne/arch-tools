@@ -2,6 +2,8 @@
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRForm from '$lib/components/DGRForm.svelte';
+	import SplitViewLayout from '$lib/components/SplitViewLayout.svelte';
+	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
 	import { generateDGRHTML, parseReadings, cleanGospelText, getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
 	import { formatDGRDate } from '$lib/utils/dgr-common.js';
@@ -495,84 +497,49 @@
 
 </script>
 
-<!-- Split View Layout -->
-<div class="min-h-screen bg-gray-50">
-	<div class="flex flex-col lg:flex-row h-screen">
-		<!-- Left Panel: Form (narrow on large screens, full width on mobile) -->
-		<div class="lg:w-96 w-full bg-white border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col">
-			<!-- Header -->
-			<div class="p-4 border-b border-gray-200 bg-white">
-				<div class="flex items-center justify-between mb-2">
-					<div>
-						<h1 class="text-lg font-bold text-gray-900">DGR Publisher</h1>
-						<p class="text-xs text-gray-600">Daily Gospel Reflection</p>
-					</div>
-					<button
-						onclick={handleSubmit}
-						disabled={publishing}
-						class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						{publishing ? 'Publishing...' : 'Publish'}
-					</button>
+<SplitViewLayout
+	leftWidth="lg:w-96"
+	showRight={formData.title && formData.reflectionText}
+>
+	{#snippet leftPanel()}
+		<!-- Header -->
+		<div class="p-4 border-b border-gray-200 bg-white">
+			<div class="flex items-center justify-between mb-2">
+				<div>
+					<h1 class="text-lg font-bold text-gray-900">DGR Publisher</h1>
+					<p class="text-xs text-gray-600">Daily Gospel Reflection</p>
 				</div>
-			</div>
-			
-			<!-- Form Container (scrollable) -->
-			<div class="flex-1 overflow-y-auto p-4">
-				<DGRForm
-					bind:formData
-					bind:publishing
-					bind:result
-					bind:useNewDesign
-					bind:fetchingGospel
-					bind:gospelFullText
-					bind:gospelReference
-					onPasteFromWord={pasteFromWord}
-				/>
+				<button
+					onclick={handleSubmit}
+					disabled={publishing}
+					class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{publishing ? 'Publishing...' : 'Publish'}
+				</button>
 			</div>
 		</div>
 
-		<!-- Right Panel: Preview (large on desktop, hidden on mobile unless content exists) -->
-		<div class="flex-1 flex flex-col {formData.title && formData.reflectionText ? 'block' : 'hidden lg:flex'}">
-			<!-- Preview Header -->
-			<div class="p-4 border-b border-gray-200 bg-white">
-				<div class="flex items-center justify-between">
-					<h2 class="text-lg font-semibold text-gray-900">Live Preview</h2>
-					<div class="flex items-center gap-2 text-xs text-gray-600">
-						<div class="w-2 h-2 rounded-full {formData.title && formData.reflectionText ? 'bg-green-500' : 'bg-gray-300'}"></div>
-						{formData.title && formData.reflectionText ? 'Ready' : 'Waiting for content'}
-					</div>
-				</div>
-			</div>
-			
-			<!-- Preview Content (scrollable) -->
-			<div class="flex-1 overflow-y-auto bg-white">
-				{#if formData.title && formData.reflectionText}
-					<div class="h-full">
-						{#if previewHtml}
-							{@html previewHtml}
-						{:else}
-							<div class="flex items-center justify-center h-full">
-								<div class="text-gray-500">Generating preview...</div>
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<div class="flex items-center justify-center h-full text-gray-500">
-						<div class="text-center p-8">
-							<div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-								<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-								</svg>
-							</div>
-							<p class="text-sm font-medium">Fill in the form to see preview</p>
-							<p class="text-xs text-gray-400 mt-1">Enter title and reflection text to get started</p>
-						</div>
-					</div>
-				{/if}
-			</div>
+		<!-- Form Container (scrollable) -->
+		<div class="flex-1 overflow-y-auto p-4">
+			<DGRForm
+				bind:formData
+				bind:publishing
+				bind:result
+				bind:useNewDesign
+				bind:fetchingGospel
+				bind:gospelFullText
+				bind:gospelReference
+				onPasteFromWord={pasteFromWord}
+			/>
 		</div>
-	</div>
-</div>
+	{/snippet}
+
+	{#snippet rightPanel()}
+		<PreviewPanel
+			previewHtml={previewHtml || (formData.title && formData.reflectionText ? '<div class="flex items-center justify-center h-full"><div class="text-gray-500">Generating preview...</div></div>' : '')}
+			isReady={formData.title && formData.reflectionText}
+		/>
+	{/snippet}
+</SplitViewLayout>
 
 <ToastContainer />

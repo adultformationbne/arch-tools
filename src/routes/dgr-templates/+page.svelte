@@ -4,7 +4,8 @@
   import ToastContainer from '$lib/components/ToastContainer.svelte';
   import TemplateCard from '$lib/components/TemplateCard.svelte';
   import TemplateEditor from '$lib/components/TemplateEditor.svelte';
-  import { FileText, Plus, Camera } from 'lucide-svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import { FileText, Plus, Camera, Trash2 } from 'lucide-svelte';
   import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
   import { TemplateManager, groupTemplatesByKey } from '$lib/utils/template-actions.js';
   import { generateMissingThumbnails } from '$lib/utils/thumbnail-generator.js';
@@ -28,6 +29,7 @@
   let editingMode = $state(false);
   let showVersions = $state({});
   let generatingThumbnail = $state({});
+  let deleteConfirmModal = $state({ open: false, template: null });
 
   // Sample data for preview
   let sampleData = $state({
@@ -289,8 +291,19 @@
     }
   }
 
-  async function handleDeleteTemplate(template) {
-    if (!confirm(`Delete "${template.name}"? This cannot be undone.`)) return;
+  function openDeleteConfirm(template) {
+    deleteConfirmModal = { open: true, template };
+  }
+
+  function closeDeleteConfirm() {
+    deleteConfirmModal = { open: false, template: null };
+  }
+
+  async function confirmDeleteTemplate() {
+    const template = deleteConfirmModal.template;
+    if (!template) return;
+
+    closeDeleteConfirm();
 
     try {
       await templateManager.deleteTemplate(template);
@@ -429,7 +442,7 @@
               onEdit={() => enterEditMode(latestTemplate)}
               onActivate={() => handleActivateTemplate(latestTemplate)}
               onDuplicate={() => handleDuplicateTemplate(latestTemplate)}
-              onDelete={() => handleDeleteTemplate(latestTemplate)}
+              onDelete={() => openDeleteConfirm(latestTemplate)}
               onGenerateThumbnail={() => handleGenerateThumbnail(latestTemplate)}
               onToggleVersions={() => toggleVersions(templateKey)}
             />
@@ -455,5 +468,48 @@
     </div>
   {/if}
 </div>
+
+<!-- Delete Confirmation Modal -->
+<Modal
+  isOpen={deleteConfirmModal.open}
+  title="Delete Template"
+  onClose={closeDeleteConfirm}
+  size="sm"
+>
+  {#if deleteConfirmModal.template}
+    <div class="flex items-start gap-4">
+      <div class="flex-shrink-0">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+          <Trash2 class="h-5 w-5 text-red-600" />
+        </div>
+      </div>
+      <div class="flex-1">
+        <p class="text-sm text-gray-500">
+          Are you sure you want to delete <strong>"{deleteConfirmModal.template.name}"</strong>?
+        </p>
+        <p class="mt-2 text-sm text-gray-400">
+          This action cannot be undone.
+        </p>
+      </div>
+    </div>
+  {/if}
+
+  {#snippet footer()}
+    <div class="flex gap-3">
+      <button
+        onclick={closeDeleteConfirm}
+        class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+      <button
+        onclick={confirmDeleteTemplate}
+        class="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+      >
+        Delete
+      </button>
+    </div>
+  {/snippet}
+</Modal>
 
 <ToastContainer />

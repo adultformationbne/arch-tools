@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { Save, Lock, Eye, EyeOff } from 'lucide-svelte';
+	import { supabaseRequest, createFormSubmitHandler } from '$lib/utils/api-handler.js';
+	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
 	import { toast } from '$lib/stores/toast.svelte.js';
+	import FormField from '$lib/components/FormField.svelte';
+	import { validators, commonRules, passwordConfirmation, createValidationToastHelper } from '$lib/utils/form-validator.js';
 
 	export let data;
 
@@ -21,95 +25,86 @@
 		confirmPassword: ''
 	};
 
+	const handleProfileSubmit = createFormSubmitHandler(
+		async (data) => {
+			return await supabaseRequest(
+				() => supabase.from('user_profiles').update(data).eq('id', profile.id),
+				{
+					loadingMessage: 'Updating your profile',
+					successMessage: 'Profile updated successfully'
+				}
+			);
+		},
+		null,
+		{
+			loadingTitle: 'Saving...',
+			successTitle: 'Success!'
+		}
+	);
+
 	async function handleSubmit() {
 		loading = true;
-
-		const toastId = toast.loading({
-			title: 'Saving...',
-			message: 'Updating your profile'
-		});
-
 		try {
-			const { error } = await supabase
-				.from('user_profiles')
-				.update(formData)
-				.eq('id', profile.id);
-
-			if (error) throw error;
-
-			toast.updateToast(toastId, {
-				title: 'Success!',
-				message: 'Profile updated successfully',
-				type: 'success',
-				duration: 3000
-			});
+			await handleProfileSubmit(formData);
 		} catch (error) {
 			console.error('Error updating profile:', error);
-			toast.updateToast(toastId, {
-				title: 'Error',
-				message: 'Failed to update profile. Please try again.',
-				type: 'error',
-				duration: 5000
-			});
 		} finally {
 			loading = false;
 		}
 	}
 
+	// Create validation helper with toast integration
+	const validationToast = createValidationToastHelper(toast);
+
+	// Form field references for validation
+	let currentPasswordField;
+	let newPasswordField;
+	let confirmPasswordField;
+
+	// Validate entire password form
+	function validatePasswordForm() {
+		let isValid = true;
+
+		// Validate each field and show errors
+		if (currentPasswordField && !currentPasswordField.validateNow()) {
+			isValid = false;
+		}
+		if (newPasswordField && !newPasswordField.validateNow()) {
+			isValid = false;
+		}
+		if (confirmPasswordField && !confirmPasswordField.validateNow()) {
+			isValid = false;
+		}
+
+		return isValid;
+	}
+
 	async function handlePasswordChange() {
 		passwordLoading = true;
 
-		// Validate passwords
-		if (!passwordData.currentPassword) {
-			toast.error({
-				title: 'Validation Error',
-				message: 'Current password is required',
-				duration: 4000
-			});
+		// Validate passwords using new system
+		if (!validatePasswordForm()) {
 			passwordLoading = false;
 			return;
 		}
 
-		if (passwordData.newPassword.length < 6) {
-			toast.error({
-				title: 'Validation Error',
-				message: 'New password must be at least 6 characters',
-				duration: 4000
-			});
-			passwordLoading = false;
-			return;
-		}
-
-		if (passwordData.newPassword !== passwordData.confirmPassword) {
-			toast.error({
-				title: 'Validation Error',
-				message: 'New passwords do not match',
-				duration: 4000
-			});
-			passwordLoading = false;
-			return;
-		}
-
-		const toastId = toast.multiStep({
-			steps: [
-				{
-					title: 'Verifying...',
-					message: 'Checking current password',
-					type: 'info'
-				},
-				{
-					title: 'Updating...',
-					message: 'Setting new password',
-					type: 'loading'
-				},
-				{
-					title: 'Complete!',
-					message: 'Password updated successfully',
-					type: 'success'
-				}
-			],
-			closeable: false
-		});
+		const toastId = toastMultiStep([
+			{
+				title: 'Verifying...',
+				message: 'Checking current password',
+				type: 'info'
+			},
+			{
+				title: 'Updating...',
+				message: 'Setting new password',
+				type: 'loading'
+			},
+			{
+				title: 'Complete!',
+				message: 'Password updated successfully',
+				type: 'success'
+			}
+		], false);
 
 		try {
 			// First verify current password by attempting to sign in
@@ -122,7 +117,7 @@
 				throw new Error('Current password is incorrect');
 			}
 
-			toast.nextStep(toastId);
+			toastNextStep(toastId);
 
 			// Update password
 			const { error: updateError } = await supabase.auth.updateUser({
@@ -131,7 +126,7 @@
 
 			if (updateError) throw updateError;
 
-			toast.nextStep(toastId);
+			toastNextStep(toastId);
 
 			// Reset form and close section
 			passwordData = {
@@ -142,7 +137,7 @@
 			showPasswordSection = false;
 
 			// Auto-dismiss success toast after 3 seconds
-			setTimeout(() => toast.dismiss(toastId), 3000);
+			setTimeout(() => dismissToast(toastId), 3000);
 		} catch (error) {
 			console.error('Error updating password:', error);
 			toast.updateToast(toastId, {

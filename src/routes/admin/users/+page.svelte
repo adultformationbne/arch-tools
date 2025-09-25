@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound } from 'lucide-svelte';
-	import { toast } from '$lib/stores/toast.svelte.js';
+	import { apiPost, supabaseRequest } from '$lib/utils/api-handler.js';
+	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
 
 	export let data;
 	let { supabase, users, currentUser } = data;
@@ -38,18 +39,19 @@
 	async function saveRole(userId: string) {
 		loading = true;
 
-		const toastId = toast.loading({
-			title: 'Updating role...',
-			message: 'Saving user permissions'
-		});
-
 		try {
-			const { error } = await supabase
-				.from('user_profiles')
-				.update({ role: editingRole })
-				.eq('id', userId);
-
-			if (error) throw error;
+			await supabaseRequest(
+				() => supabase
+					.from('user_profiles')
+					.update({ role: editingRole })
+					.eq('id', userId),
+				{
+					loadingMessage: 'Saving user permissions',
+					loadingTitle: 'Updating role...',
+					successMessage: 'User role updated successfully',
+					successTitle: 'Success!'
+				}
+			);
 
 			// Update local state
 			const userIndex = users.findIndex(u => u.id === userId);
@@ -58,20 +60,8 @@
 			}
 
 			cancelEdit();
-			toast.updateToast(toastId, {
-				title: 'Success!',
-				message: 'User role updated successfully',
-				type: 'success',
-				duration: 3000
-			});
 		} catch (error) {
 			console.error('Error updating role:', error);
-			toast.updateToast(toastId, {
-				title: 'Update Failed',
-				message: 'Failed to update user role',
-				type: 'error',
-				duration: 5000
-			});
 		} finally {
 			loading = false;
 		}
@@ -87,49 +77,36 @@
 	async function createNewUser() {
 		createUserLoading = true;
 
-		const toastId = toast.multiStep({
-			steps: [
-				{
-					title: 'Creating user...',
-					message: 'Setting up new account',
-					type: 'info'
-				},
-				{
-					title: 'Configuring permissions...',
-					message: 'Applying user role',
-					type: 'loading'
-				},
-				{
-					title: 'Complete!',
-					message: 'New user created successfully',
-					type: 'success'
-				}
-			],
-			closeable: false
-		});
+		const toastId = toastMultiStep([
+			{
+				title: 'Creating user...',
+				message: 'Setting up new account',
+				type: 'info'
+			},
+			{
+				title: 'Configuring permissions...',
+				message: 'Applying user role',
+				type: 'loading'
+			},
+			{
+				title: 'Complete!',
+				message: 'New user created successfully',
+				type: 'success'
+			}
+		], false);
 
 		try {
 			// Create user via API endpoint
-			const response = await fetch('/api/admin/users', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(newUser)
+			const result = await apiPost('/api/admin/users', newUser, {
+				showToast: false // We're handling the multi-step toast manually
 			});
 
-			const result = await response.json();
-
-			if (!response.ok) {
-				throw new Error(result.error || 'Failed to create user');
-			}
-
-			toast.nextStep(toastId);
+			toastNextStep(toastId);
 
 			// Add new user to the list
 			users = [result.user, ...users];
 
-			toast.nextStep(toastId);
+			toastNextStep(toastId);
 
 			// Reset form
 			newUser = {
@@ -141,16 +118,16 @@
 			showNewUserForm = false;
 
 			// Auto-dismiss success toast after 3 seconds
-			setTimeout(() => toast.dismiss(toastId), 3000);
+			setTimeout(() => dismissToast(toastId), 3000);
 		} catch (error) {
 			console.error('Error creating user:', error);
-			toast.updateToast(toastId, {
-				title: 'User Creation Failed',
-				message: error.message || 'Failed to create user',
-				type: 'error',
-				closeable: true,
-				duration: 5000
-			});
+			updateToastStatus(
+				toastId,
+				'error',
+				error.message || 'Failed to create user',
+				'User Creation Failed',
+				5000
+			);
 		} finally {
 			createUserLoading = false;
 		}
@@ -164,54 +141,30 @@
 
 	async function resetUserPassword() {
 		if (!newPassword || newPassword.length < 6) {
-			toast.error({
-				title: 'Validation Error',
-				message: 'Password must be at least 6 characters',
-				duration: 4000
-			});
+			toastValidationError('Password', 'must be at least 6 characters');
 			return;
 		}
 
 		resetPasswordLoading = true;
 
-		const toastId = toast.loading({
-			title: 'Resetting password...',
-			message: 'Updating user credentials'
-		});
-
 		try {
-			const response = await fetch('/api/admin/reset-password', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+			await apiPost(
+				'/api/admin/reset-password',
+				{
 					userId: resetPasswordUserId,
 					newPassword: newPassword
-				})
-			});
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				throw new Error(result.error || 'Failed to reset password');
-			}
+				},
+				{
+					loadingMessage: 'Updating user credentials',
+					loadingTitle: 'Resetting password...',
+					successMessage: 'Password reset successfully',
+					successTitle: 'Success!'
+				}
+			);
 
 			showPasswordResetModal = false;
-			toast.updateToast(toastId, {
-				title: 'Success!',
-				message: 'Password reset successfully',
-				type: 'success',
-				duration: 3000
-			});
 		} catch (error) {
 			console.error('Error resetting password:', error);
-			toast.updateToast(toastId, {
-				title: 'Reset Failed',
-				message: error.message || 'Failed to reset password',
-				type: 'error',
-				duration: 5000
-			});
 		} finally {
 			resetPasswordLoading = false;
 		}
