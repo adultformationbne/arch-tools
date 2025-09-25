@@ -4,6 +4,7 @@
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	export let data;
 
@@ -41,3 +42,5 @@
 		</footer>
 	{/if}
 </div>
+
+<ToastContainer />

@@ -1,10 +1,12 @@
 <script>
-	import { toast } from '$lib/stores/toast.svelte.js';
+	import { toast, DURATIONS } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRReviewModal from '$lib/components/DGRReviewModal.svelte';
+	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
+	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
 	import { onMount } from 'svelte';
-	import { Eye, Send, ExternalLink } from 'lucide-svelte';
+	import { Eye, Send, ExternalLink, Trash2 } from 'lucide-svelte';
 
 	let schedule = $state([]);
 	let contributors = $state([]);
@@ -12,6 +14,7 @@
 	let activeTab = $state('schedule');
 	let reviewModalOpen = $state(false);
 	let selectedReflection = $state(null);
+	let confirmDeleteModal = $state({ open: false, entry: null });
 	
 	// Promo tiles state - start with 1 tile, can add up to 3
 	let promoTiles = $state([
@@ -64,7 +67,7 @@
 			toast.error({
 				title: 'Failed to load schedule',
 				message: error.message,
-				duration: 5000
+				duration: DURATIONS.medium
 			});
 		}
 	}
@@ -239,7 +242,7 @@
 			toast.success({
 				title: 'Assignment updated',
 				message: 'Contributor assignment changed successfully',
-				duration: 3000
+				duration: DURATIONS.short
 			});
 
 			await loadSchedule();
@@ -270,7 +273,7 @@
 			toast.success({
 				title: 'Reflection approved',
 				message: 'Reflection has been approved and is ready for publishing',
-				duration: 3000
+				duration: DURATIONS.short
 			});
 
 			await loadSchedule();
@@ -309,7 +312,7 @@
 			toast.success({
 				title: 'Status updated',
 				message: `Reflection ${statusLabels[newStatus]}`,
-				duration: 3000
+				duration: DURATIONS.short
 			});
 
 			await loadSchedule();
@@ -327,7 +330,7 @@
 			toast.warning({
 				title: 'Missing information',
 				message: 'Name and email are required',
-				duration: 3000
+				duration: DURATIONS.short
 			});
 			return;
 		}
@@ -346,7 +349,7 @@
 			toast.success({
 				title: 'Contributor added',
 				message: `${newContributor.name} has been added successfully`,
-				duration: 3000
+				duration: DURATIONS.short
 			});
 
 			newContributor = { name: '', email: '', preferred_days: [], day_of_month: null, notes: '' };
@@ -433,9 +436,15 @@
 		const url = getSubmissionUrl(token);
 		navigator.clipboard.writeText(url).then(() => {
 			toast.success({
-				title: 'Link copied',
+				title: 'Copied!',
 				message: 'Submission link copied to clipboard',
-				duration: 2000
+				duration: DURATIONS.short
+			});
+		}).catch(() => {
+			toast.error({
+				title: 'Copy Failed',
+				message: 'Could not access clipboard',
+				duration: DURATIONS.short
 			});
 		});
 	}
@@ -455,6 +464,63 @@
 		} else {
 			newContributor.preferred_days = [...newContributor.preferred_days, day];
 		}
+	}
+
+	function hasScheduleData(entry) {
+		return entry.reflection_title || entry.reflection_content || entry.status !== 'pending';
+	}
+
+	function openDeleteConfirm(entry) {
+		confirmDeleteModal = { open: true, entry };
+	}
+
+	function closeDeleteConfirm() {
+		confirmDeleteModal = { open: false, entry: null };
+	}
+
+	async function deleteScheduleEntry(scheduleId) {
+		// Optimistically remove from UI
+		const originalSchedule = [...schedule];
+		const deletedEntry = schedule.find(entry => entry.id === scheduleId);
+		schedule = schedule.filter(entry => entry.id !== scheduleId);
+
+		const loadingId = toast.loading({
+			title: 'Removing entry...',
+			message: 'Deleting schedule entry'
+		});
+
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'delete_schedule',
+					scheduleId
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Removed!',
+				message: `Entry for ${formatDate(deletedEntry.date)} deleted`,
+				type: 'success',
+				duration: DURATIONS.short
+			});
+		} catch (error) {
+			// Revert optimistic update on error
+			schedule = originalSchedule;
+			toast.updateToast(loadingId, {
+				title: 'Delete Failed',
+				message: error.message,
+				type: 'error',
+				duration: DURATIONS.medium
+			});
+		}
+
+		closeDeleteConfirm();
 	}
 
 </script>
@@ -658,6 +724,13 @@
 														Send to WordPress
 													</button>
 												{/if}
+												<button
+													onclick={() => openDeleteConfirm(entry)}
+													class="inline-flex items-center gap-1 text-red-600 hover:text-red-900"
+												>
+													<Trash2 class="h-3 w-3" />
+													Remove
+												</button>
 											</td>
 										</tr>
 									{/each}
@@ -986,6 +1059,76 @@
 	onSave={saveReflection}
 	onApprove={approveReflection}
 	onSendToWordPress={sendToWordPress}
+/>
+
+<!-- Delete Confirmation Modal -->
+{#if confirmDeleteModal.open}
+	<div class="fixed inset-0 z-50 overflow-y-auto">
+		<div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+			<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick={closeDeleteConfirm}></div>
+
+			<div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+				<div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+					<div class="sm:flex sm:items-start">
+						<div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+							<Trash2 class="h-6 w-6 text-red-600" />
+						</div>
+						<div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+							<h3 class="text-base font-semibold leading-6 text-gray-900">
+								Remove Schedule Entry
+							</h3>
+							<div class="mt-2">
+								<p class="text-sm text-gray-500">
+									Are you sure you want to remove the schedule entry for
+									<strong>{confirmDeleteModal.entry ? formatDate(confirmDeleteModal.entry.date) : ''}</strong>?
+								</p>
+								{#if confirmDeleteModal.entry && hasScheduleData(confirmDeleteModal.entry)}
+									<div class="mt-3 rounded-md bg-yellow-50 p-3">
+										<div class="flex">
+											<div class="ml-3">
+												<h3 class="text-sm font-medium text-yellow-800">
+													This entry contains data
+												</h3>
+												<div class="mt-1 text-sm text-yellow-700">
+													<p>This schedule entry has reflection content or has been submitted. Removing it will permanently delete this data.</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								{/if}
+								<p class="mt-3 text-sm text-gray-500">
+									This action cannot be undone. You can regenerate the schedule entry later.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+					<button
+						onclick={() => deleteScheduleEntry(confirmDeleteModal.entry.id)}
+						class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+					>
+						Remove Entry
+					</button>
+					<button
+						onclick={closeDeleteConfirm}
+						class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Contextual Help -->
+<ContextualHelp
+	helpContent={getHelpForPage('/dgr')}
+	pageTitle={getPageTitle('/dgr')}
+	mode="sidebar"
+	position="right"
+	autoShow={true}
 />
 
 <ToastContainer />

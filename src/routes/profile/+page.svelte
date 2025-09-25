@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Save, Lock, Eye, EyeOff } from 'lucide-svelte';
+	import { toast } from '$lib/stores/toast.svelte.js';
 
 	export let data;
 
 	let { supabase, profile } = data;
 	let loading = false;
-	let saveMessage = '';
 
 	let formData = {
 		full_name: profile?.full_name || ''
@@ -14,7 +14,6 @@
 	// Password change functionality
 	let showPasswordSection = false;
 	let passwordLoading = false;
-	let passwordMessage = '';
 	let showPassword = false;
 	let passwordData = {
 		currentPassword: '',
@@ -24,7 +23,11 @@
 
 	async function handleSubmit() {
 		loading = true;
-		saveMessage = '';
+
+		const toastId = toast.loading({
+			title: 'Saving...',
+			message: 'Updating your profile'
+		});
 
 		try {
 			const { error } = await supabase
@@ -34,11 +37,20 @@
 
 			if (error) throw error;
 
-			saveMessage = 'Profile updated successfully!';
-			setTimeout(() => saveMessage = '', 3000);
+			toast.updateToast(toastId, {
+				title: 'Success!',
+				message: 'Profile updated successfully',
+				type: 'success',
+				duration: 3000
+			});
 		} catch (error) {
 			console.error('Error updating profile:', error);
-			saveMessage = 'Error updating profile. Please try again.';
+			toast.updateToast(toastId, {
+				title: 'Error',
+				message: 'Failed to update profile. Please try again.',
+				type: 'error',
+				duration: 5000
+			});
 		} finally {
 			loading = false;
 		}
@@ -46,26 +58,58 @@
 
 	async function handlePasswordChange() {
 		passwordLoading = true;
-		passwordMessage = '';
 
 		// Validate passwords
 		if (!passwordData.currentPassword) {
-			passwordMessage = 'Current password is required';
+			toast.error({
+				title: 'Validation Error',
+				message: 'Current password is required',
+				duration: 4000
+			});
 			passwordLoading = false;
 			return;
 		}
 
 		if (passwordData.newPassword.length < 6) {
-			passwordMessage = 'New password must be at least 6 characters';
+			toast.error({
+				title: 'Validation Error',
+				message: 'New password must be at least 6 characters',
+				duration: 4000
+			});
 			passwordLoading = false;
 			return;
 		}
 
 		if (passwordData.newPassword !== passwordData.confirmPassword) {
-			passwordMessage = 'New passwords do not match';
+			toast.error({
+				title: 'Validation Error',
+				message: 'New passwords do not match',
+				duration: 4000
+			});
 			passwordLoading = false;
 			return;
 		}
+
+		const toastId = toast.multiStep({
+			steps: [
+				{
+					title: 'Verifying...',
+					message: 'Checking current password',
+					type: 'info'
+				},
+				{
+					title: 'Updating...',
+					message: 'Setting new password',
+					type: 'loading'
+				},
+				{
+					title: 'Complete!',
+					message: 'Password updated successfully',
+					type: 'success'
+				}
+			],
+			closeable: false
+		});
 
 		try {
 			// First verify current password by attempting to sign in
@@ -78,6 +122,8 @@
 				throw new Error('Current password is incorrect');
 			}
 
+			toast.nextStep(toastId);
+
 			// Update password
 			const { error: updateError } = await supabase.auth.updateUser({
 				password: passwordData.newPassword
@@ -85,7 +131,9 @@
 
 			if (updateError) throw updateError;
 
-			passwordMessage = 'Password updated successfully!';
+			toast.nextStep(toastId);
+
+			// Reset form and close section
 			passwordData = {
 				currentPassword: '',
 				newPassword: '',
@@ -93,10 +141,17 @@
 			};
 			showPasswordSection = false;
 
-			setTimeout(() => passwordMessage = '', 3000);
+			// Auto-dismiss success toast after 3 seconds
+			setTimeout(() => toast.dismiss(toastId), 3000);
 		} catch (error) {
 			console.error('Error updating password:', error);
-			passwordMessage = error.message || 'Error updating password';
+			toast.updateToast(toastId, {
+				title: 'Password Update Failed',
+				message: error.message || 'Failed to update password',
+				type: 'error',
+				closeable: true,
+				duration: 5000
+			});
 		} finally {
 			passwordLoading = false;
 		}
@@ -123,12 +178,6 @@
 						placeholder="Your name"
 					/>
 				</div>
-
-				{#if saveMessage}
-					<div class="rounded-md bg-green-50 p-4">
-						<p class="text-sm font-medium text-green-800">{saveMessage}</p>
-					</div>
-				{/if}
 
 				<div class="flex justify-end">
 					<button
@@ -219,11 +268,6 @@
 						/>
 					</div>
 
-					{#if passwordMessage}
-						<div class="rounded-md p-4 {passwordMessage.includes('successfully') ? 'bg-green-50' : 'bg-red-50'}">
-							<p class="text-sm font-medium {passwordMessage.includes('successfully') ? 'text-green-800' : 'text-red-800'}">{passwordMessage}</p>
-						</div>
-					{/if}
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button

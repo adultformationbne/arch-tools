@@ -4,7 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { decodeHtmlEntities } from '$lib/utils/html.js';
-import { renderTemplate, formatReflectionText } from '$lib/utils/dgr-template-renderer.js';
+import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
+import { formatDGRDate, formatReflectionText } from '$lib/utils/dgr-common.js';
+import { minifyHTML } from '$lib/utils/wordpress-safe-html.js';
 
 // Initialize Supabase client
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
@@ -54,13 +56,7 @@ export async function POST({ request }) {
 		const templateKey = data.templateKey || 'default'; // Which template to use
 
 		// Format the date nicely
-		const dateObj = new Date(data.date);
-		const formattedDate = dateObj.toLocaleDateString('en-GB', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		const formattedDate = formatDGRDate(data.date);
 
 		// Generate the excerpt for email (first ~50 words + ellipsis)
 		// Normalize text: remove extra whitespace, line breaks, and multiple spaces
@@ -126,7 +122,16 @@ ${truncatedText}`;
 		console.log('=========================');
 
 		// Render template
-		const content = renderTemplate(template.html, templateData);
+		let content = renderTemplate(template.html, templateData);
+
+		// Add CSS to hide WordPress post title and fix potential styling issues
+		const wordpressCSS = `<style>h1.entry-title {display: none !important;}</style>`;
+		content = wordpressCSS + content;
+
+		// Minify HTML to prevent WordPress wpautop from adding unwanted <br> tags
+		// This removes all line breaks that were added by beautification
+		content = minifyHTML(content);
+		console.log('HTML minified for WordPress - removed line breaks to prevent wpautop issues');
 
 		// Get random featured image from featured-images.txt
 		let featuredImageId;

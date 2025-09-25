@@ -1,6 +1,7 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { extractGospelReference } from '$lib/utils/scripture.js';
+	import { formatDGRDate } from '$lib/utils/dgr-common.js';
 
 	// Props
 	let {
@@ -16,13 +17,7 @@
 
 	function formatDateDisplay(dateStr) {
 		if (!dateStr) return '';
-		const date = new Date(dateStr + 'T00:00:00');
-		return date.toLocaleDateString('en-GB', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		return formatDGRDate(dateStr + 'T00:00:00');
 	}
 </script>
 

@@ -181,6 +181,8 @@ export async function POST({ request, locals }) {
 				return await approveReflection(data);
 			case 'update_status':
 				return await updateStatus(data);
+			case 'delete_schedule':
+				return await deleteSchedule(data);
 			default:
 				return json({ error: 'Invalid action' }, { status: 400 });
 		}
@@ -356,6 +358,23 @@ async function saveReflection({ id, reflection_title, reflection_content }) {
 		if (error) throw error;
 
 		return json({ success: true, schedule: data });
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function deleteSchedule({ scheduleId }) {
+	try {
+		const { data, error } = await supabase
+			.from('dgr_schedule')
+			.delete()
+			.eq('id', scheduleId)
+			.select()
+			.single();
+
+		if (error) throw error;
+
+		return json({ success: true, deleted: data });
 	} catch (error) {
 		throw error;
 	}

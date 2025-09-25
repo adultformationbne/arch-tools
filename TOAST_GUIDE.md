@@ -9,7 +9,7 @@ The toast notification system provides a centralized way to display user feedbac
 The toast system is already set up in the project. To use it in any component:
 
 ```javascript
-import { toast } from '$lib/stores/toast.js';
+import { toast } from '$lib/stores/toast.svelte.js';
 import ToastContainer from '$lib/components/ToastContainer.svelte';
 ```
 
@@ -171,13 +171,13 @@ toast.success({
 ### Duration Constants
 
 ```javascript
-import { DURATIONS } from '$lib/stores/toast.js';
+import { DURATIONS } from '$lib/stores/toast.svelte.js';
 
 toast.success({
 	title: 'Quick message',
 	duration: DURATIONS.short // 3000ms
 });
-
+ c 
 // Available durations:
 // DURATIONS.short    = 3000ms
 // DURATIONS.medium   = 5000ms (default)

@@ -3,11 +3,12 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRForm from '$lib/components/DGRForm.svelte';
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
-	import { generateDGRHTML, parseReadings, cleanGospelText } from '$lib/utils/dgr-utils.js';
+	import { generateDGRHTML, parseReadings, cleanGospelText, getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
+	import { formatDGRDate } from '$lib/utils/dgr-common.js';
 	import { onMount } from 'svelte';
 
-	// Initialize with defaults
-	const getInitialFormData = () => {
+	// Initialize form with defaults (with localStorage support in dev)
+	const initializeFormData = () => {
 		// Only use localStorage in development
 		if (import.meta.env.DEV && typeof window !== 'undefined') {
 			const saved = localStorage.getItem('dgr-form-data-dev');
@@ -20,20 +21,12 @@
 				}
 			}
 		}
-		
-		// Default values
-		return {
-			date: new Date().toISOString().split('T')[0],
-			liturgicalDate: '',
-			readings: '', // All readings (1st, 2nd, psalm, gospel)
-			title: '',
-			gospelQuote: '', // Author's selected quote/highlight
-			reflectionText: '',
-			authorName: ''
-		};
+
+		// Use the common default values
+		return getInitialDGRFormData();
 	};
 
-	let formData = $state(getInitialFormData());
+	let formData = $state(initializeFormData());
 
 	let publishing = $state(false);
 	let result = $state(null);
@@ -125,15 +118,7 @@
 						console.log('Cleared saved form data (dev mode)');
 					}
 					// Reset form to prevent double submission
-					formData = {
-						date: new Date().toISOString().split('T')[0],
-						liturgicalDate: '',
-						readings: '',
-						title: '',
-						gospelQuote: '',
-						reflectionText: '',
-						authorName: ''
-					};
+					formData = getInitialDGRFormData();
 					gospelFullText = '';
 					gospelReference = '';
 					// Clear the result message after a delay
@@ -163,15 +148,8 @@
 		}
 	}
 
-	function formatDateDisplay(dateString) {
-		const date = new Date(dateString);
-		return date.toLocaleDateString('en-US', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
-	}
+	// Using the common date formatter from dgr-common.js
+	const formatDateDisplay = formatDGRDate;
 
 	// Gospel reference extraction is now handled by shared utility
 

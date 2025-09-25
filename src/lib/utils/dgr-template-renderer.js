@@ -2,20 +2,13 @@
 // Processes database templates with data
 
 import { parseReadings } from './dgr-utils.js';
+import { formatReflectionText, escapeHtml } from './dgr-common.js';
+import { generateSubscribeSection } from './dgr-subscribe-section.js';
 
 export function renderTemplate(templateHtml, data) {
   let processed = templateHtml;
 
-  // Escape HTML for safe rendering (except for designated HTML fields)
-  const escapeHtml = (text) => {
-    if (!text) return '';
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  };
+  // escapeHtml is now imported from dgr-common.js
 
   // Process special template helpers first
   processed = processSpecialHelpers(processed, data);
@@ -104,34 +97,44 @@ function processSpecialHelpers(template, data) {
     const activeTiles = tilesValue.filter(tile => tile.active && tile.image_url);
     if (activeTiles.length === 0) return '';
 
+    // Adjust tile size based on count - bigger when fewer tiles
+    const tileMaxWidth = activeTiles.length === 1 ? '300px' :
+                         activeTiles.length === 2 ? '250px' :
+                         activeTiles.length === 3 ? '200px' : '180px';
+
     return `
     <div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:16px; padding:24px; margin:40px 0;">
       <h3 style="font-size:16px; color:#495057; margin:0 0 20px 0; font-weight:600; text-align:center;">Upcoming Events</h3>
-      <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center;">
+      <div style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center;">
         ${activeTiles.map(tile => `
-          <a href="${tile.link_url}" target="_blank" style="text-decoration:none; display:block; max-width:200px;">
+          <a href="${tile.link_url}" target="_blank" style="text-decoration:none; display:block; max-width:${tileMaxWidth};">
             <img src="${tile.image_url}" alt="${tile.title || 'Event'}" style="width:100%; height:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); transition:transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            ${tile.title ? `<div style="text-align:center; margin-top:8px; font-size:12px; color:#666; font-weight:500;">${tile.title}</div>` : ''}
+            ${tile.title ? `<div style="text-align:center; margin-top:8px; font-size:13px; color:#666; font-weight:500;">${tile.title}</div>` : ''}
           </a>
         `).join('')}
       </div>
     </div>`;
   });
 
+  // Handle random header image helper {{randomHeaderImage}}
+  processed = processed.replace(/{{randomHeaderImage}}/g, () => {
+    // Simple fallback for browser compatibility
+    return 'https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Asset-6-1.png';
+  });
+
+  // Handle random icon helper {{randomIcon}}
+  processed = processed.replace(/{{randomIcon}}/g, () => {
+    // Simple fallback for browser compatibility
+    return 'https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Asset-6.png';
+  });
+
+  // Handle Subscribe section helper {{subscribeSection}}
+  processed = processed.replace(/{{subscribeSection}}/g, () => {
+    return generateSubscribeSection();
+  });
+
   return processed;
 }
 
-// Format the reflection text into paragraphs
-export function formatReflectionText(text) {
-  if (!text) return '';
-
-  return text
-    .split('\n\n')
-    .filter(p => p.trim())
-    .map(paragraph => {
-      const content = paragraph.trim().replace(/\n/g, '<br>');
-      return content ? `<p style="margin:0 0 18px 0;">${content}</p>` : '';
-    })
-    .filter(p => p)
-    .join('');
-}
+// Re-export formatReflectionText from common utilities
+export { formatReflectionText } from './dgr-common.js';
