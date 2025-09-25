@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound } from 'lucide-svelte';
+	import { toast } from '$lib/stores/toast.svelte.js';
 
 	export let data;
 	let { supabase, users, currentUser } = data;
@@ -7,7 +8,6 @@
 	let editingUserId = null;
 	let editingRole = '';
 	let loading = false;
-	let message = '';
 
 	// New user form
 	let showNewUserForm = false;
@@ -18,14 +18,12 @@
 		role: 'viewer'
 	};
 	let createUserLoading = false;
-	let createUserError = '';
 
 	// Password reset functionality
 	let showPasswordResetModal = false;
 	let resetPasswordUserId = null;
 	let resetPasswordLoading = false;
 	let newPassword = '';
-	let resetPasswordError = '';
 
 	function startEdit(userId: string, currentRole: string) {
 		editingUserId = userId;
@@ -39,7 +37,11 @@
 
 	async function saveRole(userId: string) {
 		loading = true;
-		message = '';
+
+		const toastId = toast.loading({
+			title: 'Updating role...',
+			message: 'Saving user permissions'
+		});
 
 		try {
 			const { error } = await supabase
@@ -56,11 +58,20 @@
 			}
 
 			cancelEdit();
-			message = 'Role updated successfully';
-			setTimeout(() => message = '', 3000);
+			toast.updateToast(toastId, {
+				title: 'Success!',
+				message: 'User role updated successfully',
+				type: 'success',
+				duration: 3000
+			});
 		} catch (error) {
 			console.error('Error updating role:', error);
-			message = 'Error updating role';
+			toast.updateToast(toastId, {
+				title: 'Update Failed',
+				message: 'Failed to update user role',
+				type: 'error',
+				duration: 5000
+			});
 		} finally {
 			loading = false;
 		}
@@ -75,7 +86,27 @@
 
 	async function createNewUser() {
 		createUserLoading = true;
-		createUserError = '';
+
+		const toastId = toast.multiStep({
+			steps: [
+				{
+					title: 'Creating user...',
+					message: 'Setting up new account',
+					type: 'info'
+				},
+				{
+					title: 'Configuring permissions...',
+					message: 'Applying user role',
+					type: 'loading'
+				},
+				{
+					title: 'Complete!',
+					message: 'New user created successfully',
+					type: 'success'
+				}
+			],
+			closeable: false
+		});
 
 		try {
 			// Create user via API endpoint
@@ -93,8 +124,12 @@
 				throw new Error(result.error || 'Failed to create user');
 			}
 
+			toast.nextStep(toastId);
+
 			// Add new user to the list
 			users = [result.user, ...users];
+
+			toast.nextStep(toastId);
 
 			// Reset form
 			newUser = {
@@ -104,11 +139,18 @@
 				role: 'viewer'
 			};
 			showNewUserForm = false;
-			message = 'User created successfully';
-			setTimeout(() => message = '', 3000);
+
+			// Auto-dismiss success toast after 3 seconds
+			setTimeout(() => toast.dismiss(toastId), 3000);
 		} catch (error) {
 			console.error('Error creating user:', error);
-			createUserError = error.message || 'Failed to create user';
+			toast.updateToast(toastId, {
+				title: 'User Creation Failed',
+				message: error.message || 'Failed to create user',
+				type: 'error',
+				closeable: true,
+				duration: 5000
+			});
 		} finally {
 			createUserLoading = false;
 		}
@@ -118,17 +160,24 @@
 		resetPasswordUserId = userId;
 		showPasswordResetModal = true;
 		newPassword = '';
-		resetPasswordError = '';
 	}
 
 	async function resetUserPassword() {
 		if (!newPassword || newPassword.length < 6) {
-			resetPasswordError = 'Password must be at least 6 characters';
+			toast.error({
+				title: 'Validation Error',
+				message: 'Password must be at least 6 characters',
+				duration: 4000
+			});
 			return;
 		}
 
 		resetPasswordLoading = true;
-		resetPasswordError = '';
+
+		const toastId = toast.loading({
+			title: 'Resetting password...',
+			message: 'Updating user credentials'
+		});
 
 		try {
 			const response = await fetch('/api/admin/reset-password', {
@@ -149,11 +198,20 @@
 			}
 
 			showPasswordResetModal = false;
-			message = 'Password reset successfully';
-			setTimeout(() => message = '', 3000);
+			toast.updateToast(toastId, {
+				title: 'Success!',
+				message: 'Password reset successfully',
+				type: 'success',
+				duration: 3000
+			});
 		} catch (error) {
 			console.error('Error resetting password:', error);
-			resetPasswordError = error.message || 'Failed to reset password';
+			toast.updateToast(toastId, {
+				title: 'Reset Failed',
+				message: error.message || 'Failed to reset password',
+				type: 'error',
+				duration: 5000
+			});
 		} finally {
 			resetPasswordLoading = false;
 		}
@@ -170,9 +228,6 @@
 						User Management
 					</h1>
 					<div class="flex items-center space-x-4">
-						{#if message}
-							<div class="text-sm text-green-600 font-medium">{message}</div>
-						{/if}
 						<button
 							on:click={() => showNewUserForm = true}
 							class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -373,9 +428,6 @@
 						</select>
 					</div>
 
-					{#if createUserError}
-						<div class="text-sm text-red-600">{createUserError}</div>
-					{/if}
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
@@ -429,9 +481,6 @@
 						</p>
 					</div>
 
-					{#if resetPasswordError}
-						<div class="text-sm text-red-600">{resetPasswordError}</div>
-					{/if}
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
