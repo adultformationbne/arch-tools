@@ -6,7 +6,6 @@
 		{ name: 'Home', path: '/', description: 'Dashboard home' },
 		{ name: 'Editor', path: '/editor', description: 'Main content editor' },
 		{ name: 'DGR', path: '/dgr', description: 'DGR tools' },
-		{ name: 'QR Code', path: '/qr', description: 'QR code generator' }
 	];
 </script>
 

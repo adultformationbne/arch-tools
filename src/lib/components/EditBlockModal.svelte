@@ -1,6 +1,7 @@
 <script>
 	import RichTextEditor from './RichTextEditor.svelte';
-	import { Save, X, Plus, Trash2, Tag, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import Modal from './Modal.svelte';
+	import { Save, X, Plus, Trash2, Tag, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-svelte';
 
 	let {
 		isOpen = false,
@@ -18,6 +19,7 @@
 	let saveStatus = $state('saved');
 	let newMetadataTag = $state('');
 	let showMetadata = $state(false);
+	let unsavedChangesModal = $state(false);
 
 	// Change tracking only
 	let hasUnsavedChanges = $state(false);
@@ -120,14 +122,13 @@
 	function handleClose() {
 		// Check for unsaved changes
 		if (hasUnsavedChanges) {
-			const confirmClose = confirm(
-				'You have unsaved changes. Are you sure you want to close without saving?'
-			);
-			if (!confirmClose) {
-				return; // Don't close
-			}
+			unsavedChangesModal = true;
+			return; // Don't close yet
 		}
+		closeModal();
+	}
 
+	function closeModal() {
 		onClose();
 		// Reset form
 		editTag = '';
@@ -138,6 +139,15 @@
 		showMetadata = false;
 		lastBlockId = '';
 		hasUnsavedChanges = false;
+	}
+
+	function confirmCloseWithoutSaving() {
+		unsavedChangesModal = false;
+		closeModal();
+	}
+
+	function cancelClose() {
+		unsavedChangesModal = false;
 	}
 
 	function addCustomMetadata() {
@@ -342,6 +352,44 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Unsaved Changes Confirmation Modal -->
+<Modal
+	isOpen={unsavedChangesModal}
+	title="Unsaved Changes"
+	onClose={cancelClose}
+	size="sm"
+>
+	<div class="flex items-start gap-4">
+		<div class="flex-shrink-0">
+			<div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+				<AlertTriangle class="h-5 w-5 text-amber-600" />
+			</div>
+		</div>
+		<div class="flex-1">
+			<p class="text-sm text-gray-500">
+				You have unsaved changes. Are you sure you want to close without saving?
+			</p>
+		</div>
+	</div>
+
+	{#snippet footer()}
+		<div class="flex gap-3">
+			<button
+				onclick={cancelClose}
+				class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+			>
+				Keep Editing
+			</button>
+			<button
+				onclick={confirmCloseWithoutSaving}
+				class="flex-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-500"
+			>
+				Close Without Saving
+			</button>
+		</div>
+	{/snippet}
+</Modal>
 
 <style>
 	kbd {

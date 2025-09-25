@@ -1,6 +1,5 @@
 <script>
 	import RichTextDisplay from './RichTextDisplay.svelte';
-	import BlockAnalytics from './BlockAnalytics.svelte';
 	import BlockActionsBar from './BlockActionsBar.svelte';
 	import Card from '$lib/design-system/Card.svelte';
 	import { getTagColorClass } from '$lib/design-system/tokens.js';
@@ -14,9 +13,7 @@
 		onMove = () => {},
 		onToggleSelection = () => {},
 		onShowVersionHistory = () => {},
-		onDuplicate = () => {},
-		getBlockRecommendation = null,
-		getBlockScores = null
+		onDuplicate = () => {}
 	} = $props();
 </script>
 
@@ -54,13 +51,6 @@
 								{block.tag}
 							</span>
 
-							<!-- Analytics Traffic Light -->
-							<BlockAnalytics
-								blockId={block.id}
-								{getBlockRecommendation}
-								{getBlockScores}
-								compact={true}
-							/>
 
 							<!-- Metadata Badges -->
 							{#if block.metadata && block.metadata.length > 0}
