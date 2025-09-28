@@ -12,6 +12,8 @@ declare global {
 		interface PageData {
 			session: Session | null;
 			user: User | null;
+			userProfile: any | null;
+			isACCFDomain: boolean;
 		}
 		// interface PageState {}
 		// interface Platform {}

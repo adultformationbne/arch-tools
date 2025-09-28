@@ -15,6 +15,34 @@
 			description: 'DGR tools and utilities',
 			color: 'bg-blue-600 hover:bg-blue-700',
 			icon: '🔧'
+		},
+		{
+			name: 'ACCF Admin',
+			path: '/admin/cohorts',
+			description: 'ACCF course administration and student management',
+			color: 'bg-amber-700 hover:bg-amber-800',
+			icon: '🎓'
+		},
+		{
+			name: 'ACCF Student Login',
+			path: '/login',
+			description: 'Student platform preview (login page)',
+			color: 'bg-orange-600 hover:bg-orange-700',
+			icon: '👨‍🎓'
+		},
+		{
+			name: 'ACCF Dashboard',
+			path: '/dashboard',
+			description: 'Student dashboard with course progress',
+			color: 'bg-teal-600 hover:bg-teal-700',
+			icon: '📊'
+		},
+		{
+			name: 'ACCF Setup',
+			path: '/admin/setup',
+			description: 'Setup ACCF platform (admin permissions)',
+			color: 'bg-purple-600 hover:bg-purple-700',
+			icon: '⚙️'
 		}
 	];
 </script>
