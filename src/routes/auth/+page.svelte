@@ -24,13 +24,27 @@
 				if (error) throw error;
 				errorMessage = 'Check your email for the confirmation link!';
 			} else {
-				const { error } = await supabase.auth.signInWithPassword({
+				const { data: authData, error } = await supabase.auth.signInWithPassword({
 					email,
 					password
 				});
 				if (error) throw error;
 
-				const next = $page.url.searchParams.get('next') ?? '/';
+				// Check user role after login for proper routing
+				const { data: profile, error: profileError } = await supabase
+					.from('user_profiles')
+					.select('role')
+					.eq('id', authData.user.id)
+					.single();
+
+				let defaultRedirect = '/';
+				if (profile && ['accf_admin', 'admin'].includes(profile.role)) {
+					defaultRedirect = '/admin/cohorts';
+				} else if (profile && profile.role === 'accf_student') {
+					defaultRedirect = '/dashboard';
+				}
+
+				const next = $page.url.searchParams.get('next') ?? defaultRedirect;
 				goto(next);
 			}
 		} catch (error) {

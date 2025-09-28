@@ -1,1 +1,10 @@
 @import 'tailwindcss';
+
+/* ACCF Color Variables */
+:root {
+  --accf-darkest: #1e2322;
+  --accf-dark: #334642;
+  --accf-accent: #c59a6b;
+  --accf-light: #eae2d9;
+  --accf-lightest: #ffffff;
+}
