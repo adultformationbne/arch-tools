@@ -1,9 +1,15 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) => {
 	try {
+		// Authentication check - students can read questions
+		const { session } = await safeGetSession();
+		if (!session) {
+			throw error(401, 'Unauthorized');
+		}
+
 		const moduleId = url.searchParams.get('module_id');
 		const sessionNumber = url.searchParams.get('session_number');
 		const sessionId = url.searchParams.get('session_id');
@@ -56,8 +62,25 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
 	try {
+		// Authentication check - only admins can create questions
+		const { session, user } = await safeGetSession();
+		if (!session) {
+			throw error(401, 'Unauthorized');
+		}
+
+		// Check if user has admin role
+		const { data: profile } = await supabase
+			.from('user_profiles')
+			.select('role')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+			throw error(403, 'Forbidden - Admin access required');
+		}
+
 		const body = await request.json();
 		const { session_id, question_text } = body;
 
@@ -90,8 +113,25 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
 	try {
+		// Authentication check - only admins can update questions
+		const { session, user } = await safeGetSession();
+		if (!session) {
+			throw error(401, 'Unauthorized');
+		}
+
+		// Check if user has admin role
+		const { data: profile } = await supabase
+			.from('user_profiles')
+			.select('role')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+			throw error(403, 'Forbidden - Admin access required');
+		}
+
 		const body = await request.json();
 		const { id, question_text } = body;
 
@@ -122,8 +162,25 @@ export const PUT: RequestHandler = async ({ request }) => {
 	}
 };
 
-export const DELETE: RequestHandler = async ({ request }) => {
+export const DELETE: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
 	try {
+		// Authentication check - only admins can delete questions
+		const { session, user } = await safeGetSession();
+		if (!session) {
+			throw error(401, 'Unauthorized');
+		}
+
+		// Check if user has admin role
+		const { data: profile } = await supabase
+			.from('user_profiles')
+			.select('role')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+			throw error(403, 'Forbidden - Admin access required');
+		}
+
 		const body = await request.json();
 		const { id } = body;
 

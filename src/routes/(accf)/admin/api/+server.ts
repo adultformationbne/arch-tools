@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAdmin } from '$lib/server/auth.js';
 import { sendBulkInvitations } from '$lib/server/resend.js';
 import type { RequestHandler } from './$types';
 
@@ -23,23 +23,18 @@ async function logActivity(
 	});
 }
 
-export const POST: RequestHandler = async ({ request }) => {
-	// Get current user from dev mode cookies - in production this would come from auth
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
-
-	// Verify admin access
-	if (devUser.role !== 'accf_admin') {
-		throw error(403, 'Unauthorized: Admin access required');
-	}
+export const POST: RequestHandler = async (event) => {
+	// Require admin authentication
+	const { user, profile } = await requireAdmin(event);
 
 	try {
-		const { action, ...data } = await request.json();
+		const { action, ...data } = await event.request.json();
 
 		switch (action) {
 			case 'create_cohort':
 				return await createCohort(data);
 			case 'update_cohort':
-				return await updateCohort(data, devUser.full_name || 'Admin');
+				return await updateCohort(data, profile.full_name || user.email || 'Admin');
 			case 'delete_cohort':
 				return await deleteCohort(data.cohortId);
 			case 'duplicate_cohort':
@@ -47,7 +42,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			case 'update_cohort_status':
 				return await updateCohortStatus(data.cohortId, data.status);
 			case 'upload_csv':
-				return await uploadCSV(data, devUser.id);
+				return await uploadCSV(data, user.id);
 			case 'update_accf_user':
 				return await updateAccfUser(data);
 			case 'delete_accf_user':
@@ -55,7 +50,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			case 'send_invitations':
 				return await sendInvitations(data.userIds);
 			case 'advance_students':
-				return await advanceStudents(data, devUser.full_name || 'Admin');
+				return await advanceStudents(data, profile.full_name || user.email || 'Admin');
 			default:
 				throw error(400, 'Invalid action');
 		}
@@ -707,15 +702,11 @@ async function sendInvitations(userIds: string[]) {
 	});
 }
 
-export const GET: RequestHandler = async ({ request, url }) => {
-	// Get current user from dev mode cookies
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
+export const GET: RequestHandler = async (event) => {
+	// Require admin authentication
+	await requireAdmin(event);
 
-	// Verify admin access
-	if (devUser.role !== 'accf_admin') {
-		throw error(403, 'Unauthorized: Admin access required');
-	}
-
+	const { url } = event;
 	const endpoint = url.searchParams.get('endpoint');
 	const cohortId = url.searchParams.get('cohort_id');
 

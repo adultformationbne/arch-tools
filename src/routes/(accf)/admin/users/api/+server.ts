@@ -1,16 +1,13 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAdmin } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ request, url }) => {
-	// Get current user from dev mode cookies
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
+export const GET: RequestHandler = async (event) => {
+	// Require admin authentication
+	await requireAdmin(event);
 
-	// Verify admin access
-	if (devUser.role !== 'accf_admin') {
-		throw error(403, 'Unauthorized: Admin access required');
-	}
+	const { url } = event;
 
 	const role = url.searchParams.get('role');
 
