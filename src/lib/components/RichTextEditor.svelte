@@ -532,9 +532,10 @@
 		role="textbox"
 		aria-label="Rich text editor"
 		tabindex="0"
-		class="editor-content min-h-[120px] border border-gray-300 p-3 {showToolbar
+		class="editor-content min-h-[300px] max-h-[600px] overflow-y-auto border border-gray-300 p-4 text-base leading-relaxed {showToolbar
 			? 'rounded-b-lg'
-			: 'rounded-lg'} outline-none focus:border-transparent focus:ring-2 focus:ring-purple-500"
+			: 'rounded-lg'} outline-none focus:border-transparent focus:ring-2"
+		style="focus:ring-color: #c59a6b;"
 	></div>
 
 	<!-- Help text -->
@@ -590,15 +591,21 @@
 
 	/* Block-level styling */
 	:global(.editor-content h1) {
-		@apply mb-4 text-3xl font-bold text-gray-900;
+		@apply mb-4 text-3xl font-bold text-gray-900 leading-tight;
+		font-size: 2rem !important;
+		line-height: 1.2 !important;
 	}
 
 	:global(.editor-content h2) {
-		@apply mb-3 text-2xl font-semibold text-gray-800;
+		@apply mb-3 text-2xl font-semibold text-gray-800 leading-tight;
+		font-size: 1.5rem !important;
+		line-height: 1.3 !important;
 	}
 
 	:global(.editor-content h3) {
-		@apply mb-2 text-xl font-medium text-gray-800;
+		@apply mb-2 text-xl font-medium text-gray-800 leading-tight;
+		font-size: 1.25rem !important;
+		line-height: 1.4 !important;
 	}
 
 	:global(.editor-content ul) {
@@ -614,6 +621,12 @@
 	}
 
 	:global(.editor-content p) {
-		@apply leading-relaxed text-gray-700;
+		@apply leading-relaxed text-gray-700 mb-3;
+		min-height: 1.5em;
+	}
+
+	:global(.editor-content p:empty) {
+		@apply mb-3;
+		min-height: 1.5em;
 	}
 </style>

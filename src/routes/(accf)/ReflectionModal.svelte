@@ -14,7 +14,7 @@
 	};
 
 	const handleNavigate = (direction) => {
-		onNavigate(reflection.week, direction);
+		onNavigate(reflection.session, direction);
 	};
 
 	const getGradeColor = (grade) => {
@@ -33,20 +33,29 @@
 
 {#if isVisible && reflection}
 	<!-- Modal Backdrop -->
-	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50" on:click={handleClose}>
+	<div
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50"
+		onclick={handleClose}
+		role="button"
+		tabindex="0"
+		onkeydown={(e) => e.key === 'Escape' && handleClose()}
+		aria-label="Close modal"
+	>
 		<!-- Modal Content -->
 		<div
 			class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
-			on:click|stopPropagation
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
 		>
 			<!-- Modal Header -->
 			<div class="flex items-center justify-between p-8 border-b border-gray-200 bg-gray-50">
 				<div class="flex items-center gap-4">
 					<div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl text-white" style="background-color: #c59a6b;">
-						{reflection.week}
+						{reflection.session}
 					</div>
 					<div>
-						<h2 class="text-2xl font-bold text-gray-800">Week {reflection.week}: {reflection.title}</h2>
+						<h2 class="text-2xl font-bold text-gray-800">Session {reflection.session}: {reflection.title}</h2>
 						<p class="text-gray-600">Submitted {reflection.submittedDate}</p>
 					</div>
 				</div>
@@ -54,21 +63,21 @@
 				<!-- Navigation and Close -->
 				<div class="flex items-center gap-2">
 					<button
-						on:click={() => handleNavigate('prev')}
+						onclick={() => handleNavigate('prev')}
 						class="p-2 rounded-xl hover:bg-gray-100 transition-colors"
-						title="Previous Week"
+						title="Previous Session"
 					>
 						<ChevronLeft size="20" class="text-gray-600" />
 					</button>
 					<button
-						on:click={() => handleNavigate('next')}
+						onclick={() => handleNavigate('next')}
 						class="p-2 rounded-xl hover:bg-gray-100 transition-colors"
-						title="Next Week"
+						title="Next Session"
 					>
 						<ChevronRight size="20" class="text-gray-600" />
 					</button>
 					<button
-						on:click={handleClose}
+						onclick={handleClose}
 						class="p-2 rounded-xl hover:bg-gray-100 transition-colors ml-2"
 					>
 						<X size="20" class="text-gray-600" />
@@ -167,7 +176,7 @@
 				<!-- Navigation Buttons -->
 				<div class="flex items-center gap-2">
 					<button
-						on:click={() => handleNavigate('prev')}
+						onclick={() => handleNavigate('prev')}
 						class="flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-xl transition-colors hover:opacity-90"
 						style="background-color: #334642;"
 					>
@@ -175,7 +184,7 @@
 						Previous
 					</button>
 					<button
-						on:click={() => handleNavigate('next')}
+						onclick={() => handleNavigate('next')}
 						class="flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-xl transition-colors hover:opacity-90"
 						style="background-color: #334642;"
 					>
