@@ -65,14 +65,7 @@ Complete Daily Gospel Reflection management:
 - `dgr_schedule` - Daily assignments
 - `dgr_email_queue` - Email management
 
-## Environment Variables
-Your `.env` file is configured with:
-```bash
-PUBLIC_SUPABASE_URL=https://snuifqzfezxqnkzizija.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=sb_publishable_aULBLUWJCWG8DMeTBDlvcw_r4GTqoOy
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_rG777vQ8wQUxuzqEzBa1Tg_R0P_eHXo
-SUPABASE_DB_PASSWORD=sbp_c5e6648c98320b70ffb01f2ea43400227ab0ed4a
-```
+
 
 ## Supabase CLI Setup
 - **CLI Version**: 2.40.7 (installed via Homebrew)
@@ -88,11 +81,6 @@ supabase gen types typescript --project-id snuifqzfezxqnkzizija
 # Check local status
 supabase status
 
-# Test API connection
-curl -H "apikey: sb_secret_rG777vQ8wQUxuzqEzBa1Tg_R0P_eHXo" \
-     -H "Authorization: Bearer sb_secret_rG777vQ8wQUxuzqEzBa1Tg_R0P_eHXo" \
-     "https://snuifqzfezxqnkzizija.supabase.co/rest/v1/"
-```
 
 ## Development Commands
 

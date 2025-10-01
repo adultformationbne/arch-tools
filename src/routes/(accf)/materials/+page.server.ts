@@ -1,11 +1,12 @@
+import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAccfUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ request }) => {
-	// Get current user from dev mode cookies - in production this would come from auth
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
-	const currentUserId = devUser.id;
+export const load: PageServerLoad = async (event) => {
+	// Require ACCF user authentication
+	const { user } = await requireAccfUser(event);
+	const currentUserId = user.id;
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin

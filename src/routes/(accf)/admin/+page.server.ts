@@ -1,15 +1,10 @@
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ request }) => {
-	// Get current user from dev mode cookies - in production this would come from auth
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
-
-	// Verify admin access
-	if (devUser.role !== 'accf_admin') {
-		throw new Error('Unauthorized: Admin access required');
-	}
+export const load: PageServerLoad = async (event) => {
+	// Require admin authentication
+	const { user } = await requireAdmin(event);
 
 	try {
 		// Fetch all modules
@@ -93,7 +88,7 @@ export const load: PageServerLoad = async ({ request }) => {
 		return {
 			modules: modules || [],
 			cohorts: processedCohorts,
-			currentUserId: devUser.id
+			currentUserId: user.id
 		};
 
 	} catch (error) {
@@ -101,7 +96,7 @@ export const load: PageServerLoad = async ({ request }) => {
 		return {
 			modules: [],
 			cohorts: [],
-			currentUserId: devUser.id,
+			currentUserId: user.id,
 			error: 'Failed to load cohorts data'
 		};
 	}

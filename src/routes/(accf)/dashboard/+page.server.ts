@@ -1,26 +1,26 @@
+import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAccfUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ request }) => {
-	// Get current user from dev mode cookies - in production this would come from auth
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
-	const currentUserId = devUser.id;
+export const load: PageServerLoad = async (event) => {
+	// Require ACCF user authentication
+	const { user } = await requireAccfUser(event);
+	const currentUserId = user.id;
 
 	// Get user's enrollment to determine cohort and current session
-	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+	const { data: enrollment, error: enrollmentError} = await supabaseAdmin
 		.from('accf_users')
 		.select('cohort_id, current_session')
 		.eq('user_profile_id', currentUserId)
 		.single();
 
-	let cohortId = '2cb2b8a1-d2f2-4994-b5ca-ede68b29c231'; // fallback
-	let currentSession = devUser.current_session || 3; // fallback
-
-	if (enrollment && !enrollmentError) {
-		cohortId = enrollment.cohort_id;
-		currentSession = enrollment.current_session;
+	if (!enrollment || enrollmentError) {
+		throw error(404, 'User enrollment not found. Please contact an administrator.');
 	}
+
+	const cohortId = enrollment.cohort_id;
+	const currentSession = enrollment.current_session;
 
 	try {
 		// First get the cohort to find its module_id

@@ -1,22 +1,17 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getDevUserFromRequest, defaultDevUser } from '$lib/server/dev-user.js';
+import { requireAccfUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	console.log('=== API ENDPOINT HIT ===');
 
-	// Get current user from dev mode cookies - in production this would come from auth
-	const devUser = getDevUserFromRequest(request) || defaultDevUser;
-	console.log('Dev user:', { id: devUser?.id, email: devUser?.email, name: devUser?.name });
-
-	if (!devUser) {
-		console.error('No dev user found');
-		throw error(401, 'Unauthorized');
-	}
+	// Require ACCF user authentication
+	const { user } = await requireAccfUser(event);
+	console.log('Authenticated user:', { id: user.id, email: user.email });
 
 	try {
-		const body = await request.json();
+		const body = await event.request.json();
 		console.log('Request body:', body);
 
 		const { action, reflection_question_id, content, is_public, status } = body;
@@ -27,7 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			throw error(400, 'Missing required fields');
 		}
 
-		const userId = devUser.id;
+		const userId = user.id;
 		console.log('Using userId:', userId);
 
 		// Get question details to extract session_number from linked session
