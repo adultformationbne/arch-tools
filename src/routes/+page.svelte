@@ -18,7 +18,7 @@
 		},
 		{
 			name: 'ACCF Admin',
-			path: '/admin/cohorts',
+			path: '/admin',
 			description: 'ACCF course administration and student management',
 			color: 'bg-amber-700 hover:bg-amber-800',
 			icon: '🎓'

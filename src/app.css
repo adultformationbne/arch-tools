@@ -1,10 +1,61 @@
 @import 'tailwindcss';
 
-/* ACCF Color Variables */
+@utility bg-white {
+  background-color: #ffffff;
+}
+
+@theme {
+  --color-accf-darkest: #1e2322;
+  --color-accf-dark: #334642;
+  --color-accf-accent: #c59a6b;
+  --color-accf-light: #eae2d9;
+  --color-accf-lightest: #ffffff;
+
+  /* Add standard white color */
+  --color-white: #ffffff;
+
+  /* Add standard gray colors */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Add green colors for privacy toggle */
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-300: #86efac;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+
+  /* Add red colors for privacy toggle */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-300: #fca5a5;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+
+  /* Add blue colors for status */
+  --color-blue-600: #2563eb;
+
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ACCF Color Variables for CSS custom properties */
 :root {
   --accf-darkest: #1e2322;
   --accf-dark: #334642;
   --accf-accent: #c59a6b;
   --accf-light: #eae2d9;
   --accf-lightest: #ffffff;
+}
+
+/* Global font setting */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }

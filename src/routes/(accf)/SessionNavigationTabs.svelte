@@ -1,46 +1,47 @@
 <script>
 	// Svelte 5 syntax with runes
 	let {
-		currentWeek = $bindable(),
-		totalWeeks = 8,
-		availableWeeks = 8,
-		onWeekChange = () => {}
+		currentSession = $bindable(),
+		totalSessions = 8,
+		availableSessions = 8,
+		onSessionChange = () => {},
+		children
 	} = $props();
 
 	// Derived state for tab styling
-	const isWeekAvailable = (weekNum) => weekNum <= availableWeeks;
-	const isCurrentWeek = (weekNum) => weekNum === currentWeek;
-	const isCompletedWeek = (weekNum) => weekNum < currentWeek;
+	const isSessionAvailable = (sessionNum) => sessionNum <= availableSessions;
+	const isCurrentSession = (sessionNum) => sessionNum === currentSession;
+	const isCompletedSession = (sessionNum) => sessionNum < currentSession;
 
-	const handleWeekClick = (weekNum) => {
-		if (isWeekAvailable(weekNum)) {
-			currentWeek = weekNum;
-			onWeekChange(weekNum);
+	const handleSessionClick = (sessionNum) => {
+		if (isSessionAvailable(sessionNum)) {
+			currentSession = sessionNum;
+			onSessionChange(sessionNum);
 		}
 	};
 </script>
 
 <div class="flex min-h-[600px]">
-	<!-- Week Navigation Tabs -->
+	<!-- Session Navigation Tabs -->
 	<div class="flex flex-col rounded-l-3xl overflow-hidden min-h-full">
-		{#each Array.from({ length: totalWeeks }, (_, i) => i + 1) as weekNum}
+		{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as sessionNum}
 			<button
 				class="w-20 flex-1 flex items-center justify-center text-2xl font-bold cursor-pointer transition-colors duration-200"
-				class:current={isCurrentWeek(weekNum)}
-				class:completed={isCompletedWeek(weekNum)}
-				class:available={isWeekAvailable(weekNum) && !isCurrentWeek(weekNum) && !isCompletedWeek(weekNum)}
-				class:locked={!isWeekAvailable(weekNum)}
-				on:click={() => handleWeekClick(weekNum)}
-				disabled={!isWeekAvailable(weekNum)}
+				class:current={isCurrentSession(sessionNum)}
+				class:completed={isCompletedSession(sessionNum)}
+				class:available={isSessionAvailable(sessionNum) && !isCurrentSession(sessionNum) && !isCompletedSession(sessionNum)}
+				class:locked={!isSessionAvailable(sessionNum)}
+				onclick={() => handleSessionClick(sessionNum)}
+				disabled={!isSessionAvailable(sessionNum)}
 			>
-				{weekNum}
+				{sessionNum}
 			</button>
 		{/each}
 	</div>
 
 	<!-- Main Content Area -->
 	<div class="flex-1 rounded-r-3xl" style="background-color: #eae2d9;">
-		<slot />
+		{@render children()}
 	</div>
 </div>
 
@@ -54,7 +55,7 @@
 		border-bottom: none;
 	}
 
-	/* Current week - matches central area */
+	/* Current session - matches central area */
 	button.current {
 		background-color: #eae2d9;
 		color: #1e2322;
@@ -62,7 +63,7 @@
 		z-index: 2;
 	}
 
-	/* Completed weeks - darker brown */
+	/* Completed sessions - darker brown */
 	button.completed {
 		background-color: #c59a6b;
 		color: #1e2322;
@@ -72,7 +73,7 @@
 		background-color: #d4a574;
 	}
 
-	/* Available weeks - medium brown */
+	/* Available sessions - medium brown */
 	button.available {
 		background-color: #d4a574;
 		color: #2c3938;
@@ -82,7 +83,7 @@
 		background-color: #c59a6b;
 	}
 
-	/* Locked weeks - lightest brown and disabled */
+	/* Locked sessions - lightest brown and disabled */
 	button.locked {
 		background-color: #e8d5c4;
 		color: #999;

@@ -12,7 +12,7 @@
 	const hubData = $state({
 		hubName: "St. Mary's Parish Hub",
 		coordinatorName: "Maria Rodriguez",
-		currentWeek: 8,
+		currentSession: 8,
 		students: [
 			{ id: 1, name: "Sarah Johnson", attendance: [true, true, false, true, true, true, false, true], reflectionStatus: 'submitted', email: 'sarah@email.com' },
 			{ id: 2, name: "Michael Chen", attendance: [true, true, true, true, false, true, true, false], reflectionStatus: 'not_started', email: 'michael@email.com' },
@@ -28,8 +28,8 @@
 
 	const markAttendance = (studentId, present) => {
 		const student = hubData.students.find(s => s.id === studentId);
-		if (student && student.attendance.length === hubData.currentWeek) {
-			student.attendance[hubData.currentWeek - 1] = present;
+		if (student && student.attendance.length === hubData.currentSession) {
+			student.attendance[hubData.currentSession - 1] = present;
 		}
 	};
 </script>
@@ -55,10 +55,10 @@
 
 			<div class="flex items-center gap-4">
 				<div class="text-sm" style="color: #334642;">
-					Week {hubData.currentWeek} attendance & reflections
+					Session {hubData.currentSession} attendance & reflections
 				</div>
 				<button
-					on:click={toggleExpanded}
+					onclick={toggleExpanded}
 					class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors hover:opacity-90"
 					style="background-color: #334642; color: white;"
 				>
@@ -80,7 +80,7 @@
 					<div class="px-8 py-3" style="background-color: #d4c4b0;">
 						<div class="flex gap-6">
 						<button
-							on:click={() => activeTab = 'attendance'}
+							onclick={() => activeTab = 'attendance'}
 							class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
 							class:active-tab={activeTab === 'attendance'}
 							class:inactive-tab={activeTab !== 'attendance'}
@@ -89,7 +89,7 @@
 							Mark Attendance
 						</button>
 						<button
-							on:click={() => activeTab = 'progress'}
+							onclick={() => activeTab = 'progress'}
 							class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
 							class:active-tab={activeTab === 'progress'}
 							class:inactive-tab={activeTab !== 'progress'}
@@ -98,7 +98,7 @@
 							Student Progress
 						</button>
 						<button
-							on:click={() => activeTab = 'reflections'}
+							onclick={() => activeTab = 'reflections'}
 							class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
 							class:active-tab={activeTab === 'reflections'}
 							class:inactive-tab={activeTab !== 'reflections'}
@@ -125,7 +125,7 @@
 					{#if activeTab === 'attendance'}
 						<!-- Attendance Marking -->
 						<div>
-							<h3 class="text-xl font-bold mb-4" style="color: #334642;">Week {hubData.currentWeek} Attendance</h3>
+							<h3 class="text-xl font-bold mb-4" style="color: #334642;">Session {hubData.currentSession} Attendance</h3>
 							<div class="bg-white rounded-2xl p-6 shadow-sm">
 								<div class="space-y-4">
 									{#each hubData.students as student}
@@ -141,22 +141,22 @@
 											</div>
 											<div class="flex items-center gap-3">
 												<button
-													on:click={() => markAttendance(student.id, true)}
+													onclick={() => markAttendance(student.id, true)}
 													class="px-6 py-2 rounded-lg font-medium transition-colors"
-													class:bg-green-500={student.attendance[hubData.currentWeek - 1] === true}
-													class:text-white={student.attendance[hubData.currentWeek - 1] === true}
-													class:bg-gray-200={student.attendance[hubData.currentWeek - 1] !== true}
-													class:text-gray-700={student.attendance[hubData.currentWeek - 1] !== true}
+													class:bg-green-500={student.attendance[hubData.currentSession - 1] === true}
+													class:text-white={student.attendance[hubData.currentSession - 1] === true}
+													class:bg-gray-200={student.attendance[hubData.currentSession - 1] !== true}
+													class:text-gray-700={student.attendance[hubData.currentSession - 1] !== true}
 												>
 													Present
 												</button>
 												<button
-													on:click={() => markAttendance(student.id, false)}
+													onclick={() => markAttendance(student.id, false)}
 													class="px-6 py-2 rounded-lg font-medium transition-colors"
-													class:bg-red-500={student.attendance[hubData.currentWeek - 1] === false}
-													class:text-white={student.attendance[hubData.currentWeek - 1] === false}
-													class:bg-gray-200={student.attendance[hubData.currentWeek - 1] !== false}
-													class:text-gray-700={student.attendance[hubData.currentWeek - 1] !== false}
+													class:bg-red-500={student.attendance[hubData.currentSession - 1] === false}
+													class:text-white={student.attendance[hubData.currentSession - 1] === false}
+													class:bg-gray-200={student.attendance[hubData.currentSession - 1] !== false}
+													class:text-gray-700={student.attendance[hubData.currentSession - 1] !== false}
 												>
 													Absent
 												</button>
@@ -191,7 +191,7 @@
 													</div>
 												</div>
 												<div class="text-right">
-													<div class="text-sm text-gray-600 mb-1">Week 8 Reflection</div>
+													<div class="text-sm text-gray-600 mb-1">Session 8 Reflection</div>
 													<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
 														class:bg-green-100={student.reflectionStatus === 'submitted'}
 														class:text-green-700={student.reflectionStatus === 'submitted'}
@@ -214,16 +214,16 @@
 											<div>
 												<div class="text-sm font-medium text-gray-700 mb-2">Attendance Record</div>
 												<div class="flex gap-1">
-													{#each student.attendance as attended, weekIndex}
+													{#each student.attendance as attended, sessionIndex}
 														<div
 															class="w-8 h-8 rounded flex items-center justify-center text-xs font-medium"
 															class:bg-green-500={attended}
 															class:text-white={attended}
 															class:bg-red-200={!attended}
 															class:text-red-700={!attended}
-															title="Week {weekIndex + 1}: {attended ? 'Present' : 'Absent'}"
+															title="Session {sessionIndex + 1}: {attended ? 'Present' : 'Absent'}"
 														>
-															{weekIndex + 1}
+															{sessionIndex + 1}
 														</div>
 													{/each}
 												</div>

@@ -24,11 +24,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return { session: null, user: null };
 		}
 
-		const {
-			data: { session }
-		} = await event.locals.supabase.auth.getSession();
-
-		return { session, user };
+		// Create a minimal session object with authenticated user
+		// Instead of using the potentially insecure getSession()
+		return {
+			session: { user },
+			user
+		};
 	};
 
 	return resolve(event, {

@@ -120,7 +120,7 @@ export function getDefaultRedirect(role: string | null): string {
 			return '/dashboard';
 		case 'accf_admin':
 		case 'admin':
-			return '/admin/cohorts';
+			return '/admin';
 		case 'hub_coordinator':
 			return '/dashboard'; // For now, hub coordinators use student interface
 		default:

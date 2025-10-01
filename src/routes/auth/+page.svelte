@@ -39,7 +39,7 @@
 
 				let defaultRedirect = '/';
 				if (profile && ['accf_admin', 'admin'].includes(profile.role)) {
-					defaultRedirect = '/admin/cohorts';
+					defaultRedirect = '/admin';
 				} else if (profile && profile.role === 'accf_student') {
 					defaultRedirect = '/dashboard';
 				}

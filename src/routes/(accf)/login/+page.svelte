@@ -64,7 +64,7 @@
 <div class="max-w-md mx-auto">
 	<div class="bg-white border rounded-lg shadow-sm p-6" style="border-color: var(--accf-light);">
 		<div class="text-center mb-6">
-			<h1 class="text-2xl mb-2 tracking-wide" style="color: var(--accf-dark); font-family: 'Bebas Neue', cursive;">
+			<h1 class="text-2xl mb-2 tracking-wide" style="color: var(--accf-dark); font-weight: 700;">
 				ACCF Student Login
 			</h1>
 			<p class="text-sm" style="color: var(--accf-darkest);">
