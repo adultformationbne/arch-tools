@@ -2,12 +2,22 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ url, parent }) => {
-	const { userProfile, devUser } = await parent();
+	console.log('=== ACCF LAYOUT SERVER LOAD ===');
+	console.log('URL:', url.pathname);
+
+	const parentData = await parent();
+	console.log('Parent data keys:', Object.keys(parentData));
+	console.log('Has userProfile:', !!parentData.userProfile);
+	console.log('Has devUser:', !!parentData.devUser);
+
+	const { userProfile, devUser } = parentData;
 
 	// Get the current user (dev user or real user)
 	const user = devUser || userProfile;
+	console.log('Final user:', user ? user.email || user.full_name : 'none');
 
 	if (!user) {
+		console.log('No user found in ACCF layout, returning empty');
 		// No user found, let parent layout handle auth
 		return {};
 	}
@@ -50,6 +60,12 @@ export const load: LayoutServerLoad = async ({ url, parent }) => {
 		// Allow admins to view student pages with ?view=student parameter
 		throw redirect(303, '/admin');
 	}
+
+	console.log('ACCF layout returning:', {
+		userRole,
+		userName: user.full_name || user.name || 'User',
+		currentPath
+	});
 
 	return {
 		userRole,

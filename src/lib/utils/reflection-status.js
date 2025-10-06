@@ -43,13 +43,25 @@ export function getReflectionStatus(reflection) {
 		return ReflectionStatus.NOT_SUBMITTED;
 	}
 
+	const dbStatus = reflection.status;
+
 	// Skip draft status (not yet submitted)
-	if (reflection.status === 'draft') {
+	if (dbStatus === 'draft') {
 		return ReflectionStatus.NOT_SUBMITTED;
 	}
 
-	// Check if overdue (submitted but not marked within deadline)
-	if (reflection.status === 'submitted' && !reflection.marked_at) {
+	// Passed - marked successfully
+	if (dbStatus === 'passed') {
+		return ReflectionStatus.MARKED_PASS;
+	}
+
+	// Needs revision - marked but needs work
+	if (dbStatus === 'needs_revision') {
+		return ReflectionStatus.NEEDS_REVISION;
+	}
+
+	// Check if overdue (submitted or resubmitted but not marked within deadline)
+	if ((dbStatus === 'submitted' || dbStatus === 'resubmitted') && !reflection.marked_at) {
 		const submittedDate = new Date(reflection.created_at);
 		const daysSinceSubmission = (Date.now() - submittedDate.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -57,21 +69,6 @@ export function getReflectionStatus(reflection) {
 			return ReflectionStatus.OVERDUE;
 		}
 		return ReflectionStatus.SUBMITTED;
-	}
-
-	// Check marked statuses (when marked_at is set and grade is present)
-	if (reflection.marked_at && reflection.grade) {
-		if (reflection.grade === 'pass') {
-			return ReflectionStatus.MARKED_PASS;
-		}
-		if (reflection.grade === 'fail' || reflection.grade === 'incomplete') {
-			return ReflectionStatus.MARKED_FAIL;
-		}
-	}
-
-	// Needs revision (marked but no grade, or explicitly needs_revision status)
-	if (reflection.status === 'needs_revision') {
-		return ReflectionStatus.NEEDS_REVISION;
 	}
 
 	// Default to submitted if status is present

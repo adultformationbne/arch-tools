@@ -1,15 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
+import { requireAdmin } from '$lib/server/auth';
 
-export const GET: RequestHandler = async ({ url, locals }) => {
-	const session = await locals.safeGetSession();
+export const GET: RequestHandler = async (event) => {
+	// Require admin authentication
+	await requireAdmin(event);
 
-	if (!session) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
-	const cohortId = url.searchParams.get('cohortId');
+	const cohortId = event.url.searchParams.get('cohortId');
 
 	if (!cohortId) {
 		return json({ error: 'Cohort ID required' }, { status: 400 });
@@ -98,14 +96,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	});
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-	const session = await locals.safeGetSession();
+export const POST: RequestHandler = async (event) => {
+	// Require admin authentication
+	const { user } = await requireAdmin(event);
 
-	if (!session) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
-	const { userId, cohortId, sessionNumber, present } = await request.json();
+	const { userId, cohortId, sessionNumber, present } = await event.request.json();
 
 	if (!userId || !cohortId || sessionNumber === undefined || present === undefined) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
@@ -126,7 +121,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.from('attendance')
 			.update({
 				present,
-				marked_by: session.user.id,
+				marked_by: user.id,
 				attendance_type: 'flagship',
 				updated_at: new Date().toISOString()
 			})
@@ -145,7 +140,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				cohort_id: cohortId,
 				session_number: sessionNumber,
 				present,
-				marked_by: session.user.id,
+				marked_by: user.id,
 				attendance_type: 'flagship'
 			});
 

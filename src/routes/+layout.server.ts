@@ -3,11 +3,19 @@ import { getDevUserFromRequest } from '$lib/server/dev-user.js';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, url, request }) => {
+	console.log('=== ROOT LAYOUT SERVER LOAD ===');
+	console.log('URL:', url.pathname);
+	console.log('Hostname:', url.hostname);
+
 	const { session, user } = await safeGetSession();
+	console.log('Session exists:', !!session);
+	console.log('User exists:', !!user);
 
 	// Check for dev mode user in development
 	const devUser = getDevUserFromRequest(request);
 	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
+	console.log('Dev mode:', isDevMode);
+	console.log('Dev user:', devUser ? devUser.email : 'none');
 
 	// Domain-based authentication logic (moved up to use in other checks)
 	const hostname = url.hostname;
@@ -70,6 +78,15 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 			}
 		}
 	}
+
+	console.log('Returning from root layout server:', {
+		hasSession: !!session,
+		hasUser: !!user,
+		hasUserProfile: !!userProfile,
+		userRole: userProfile?.role,
+		isACCFDomain,
+		hasDevUser: !!devUser
+	});
 
 	return {
 		session,

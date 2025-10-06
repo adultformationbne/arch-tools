@@ -4,9 +4,21 @@ import { requireAccfUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	console.log('=== DASHBOARD PAGE SERVER LOAD ===');
+	console.log('URL:', event.url.pathname);
+
 	// Require ACCF user authentication
 	const { user } = await requireAccfUser(event);
-	const currentUserId = user.id;
+	console.log('Dashboard authenticated user:', user.email);
+
+	// Check for dev mode user
+	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
+	const devUser = getDevUserFromRequest(event.request);
+	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
+
+	// Use dev user ID if in dev mode, otherwise use authenticated user ID
+	const currentUserId = isDevMode ? devUser.id : user.id;
+	console.log('Using user ID for enrollment lookup:', currentUserId, isDevMode ? '(dev mode)' : '(real user)');
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError} = await supabaseAdmin
@@ -15,7 +27,10 @@ export const load: PageServerLoad = async (event) => {
 		.eq('user_profile_id', currentUserId)
 		.single();
 
+	console.log('Enrollment query result:', { enrollment, enrollmentError });
+
 	if (!enrollment || enrollmentError) {
+		console.error('Enrollment error:', enrollmentError);
 		throw error(404, 'User enrollment not found. Please contact an administrator.');
 	}
 
@@ -215,11 +230,11 @@ export const load: PageServerLoad = async (event) => {
 				session: response.module_reflection_questions?.session_number || response.session_number || 0,
 				title: `Session ${response.module_reflection_questions?.session_number || response.session_number || 0} Reflection`,
 				question: response.module_reflection_questions?.question_text || '',
-				status: response.status === 'marked' ? 'graded' : response.status,
+				status: response.status === 'passed' ? 'graded' : response.status,
 				submittedDate: response.created_at ? formatDate(response.created_at) : 'Not submitted',
 				response: response.response_text || '',
 				feedback: response.feedback || null,
-				grade: response.grade ? (response.grade === 'pass' ? 'Pass' : 'Needs Work') : null,
+				grade: response.status === 'passed' ? 'Pass' : (response.status === 'needs_revision' ? 'Needs Work' : null),
 				instructor: response.marked_by_user?.full_name || null
 			};
 		}) || [];
@@ -302,6 +317,7 @@ export const load: PageServerLoad = async (event) => {
 
 	} catch (error) {
 		console.error('Error in dashboard load function:', error);
+		console.error('Dashboard load error:', error);
 		return {
 			materials: [],
 			materialsBySession: {},
@@ -315,6 +331,8 @@ export const load: PageServerLoad = async (event) => {
 			error: 'Failed to load course data'
 		};
 	}
+
+	console.log('Dashboard load successful');
 };
 
 function getDefaultCourseData(currentSession: number) {

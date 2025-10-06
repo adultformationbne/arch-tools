@@ -17,15 +17,15 @@ export const load: LayoutLoad = async ({ fetch, data, depends, url }) => {
 				},
 				cookies: {
 					getAll() {
-						return data.cookies;
+						return data?.cookies || [];
 					}
 				}
 			});
 
 	return {
 		supabase,
-		session: data.session,
-		user: data.user,
+		session: data?.session || null,
+		user: data?.user || null,
 		url: url.origin
 	};
 };

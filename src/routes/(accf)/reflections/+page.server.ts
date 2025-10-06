@@ -7,7 +7,14 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	// Require ACCF user authentication
 	const { user } = await requireAccfUser(event);
-	const currentUserId = user.id;
+
+	// Check for dev mode user
+	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
+	const devUser = getDevUserFromRequest(event.request);
+	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
+
+	// Use dev user ID if in dev mode, otherwise use authenticated user ID
+	const currentUserId = isDevMode ? devUser.id : user.id;
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
@@ -33,6 +40,16 @@ export const load: PageServerLoad = async (event) => {
 
 		const moduleId = cohort?.module_id;
 
+		// Get student's accf_users ID (not user_profile_id)
+		const { data: studentRecord } = await supabaseAdmin
+			.from('accf_users')
+			.select('id')
+			.eq('user_profile_id', currentUserId)
+			.single();
+
+		const accfUserId = studentRecord?.id;
+		console.log('Looking up reflections for accf_user_id:', accfUserId, 'from user_profile_id:', currentUserId);
+
 		// Fetch user's reflection responses (using correct field names)
 		const { data: myReflectionResponses, error: myResponsesError } = await supabaseAdmin
 			.from('reflection_responses')
@@ -48,8 +65,10 @@ export const load: PageServerLoad = async (event) => {
 					full_name
 				)
 			`)
-			.eq('accf_user_id', currentUserId)
+			.eq('accf_user_id', accfUserId)
 			.order('created_at', { ascending: false });
+
+		console.log('Found reflections:', myReflectionResponses?.length || 0);
 
 		if (myResponsesError) {
 			console.error('Error fetching my reflection responses:', myResponsesError);

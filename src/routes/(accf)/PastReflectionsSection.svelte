@@ -15,10 +15,11 @@
 	const getStatusIcon = (status) => {
 		switch (status) {
 			case 'submitted': return Clock;
-			case 'marked': return CheckCircle;
-			case 'graded': return CheckCircle;
+			case 'passed': return CheckCircle;
+			case 'graded': return CheckCircle; // Legacy support
 			case 'draft': return AlertCircle;
 			case 'needs_revision': return AlertCircle;
+			case 'resubmitted': return Clock;
 			default: return AlertCircle;
 		}
 	};
@@ -26,10 +27,11 @@
 	const getStatusColor = (status) => {
 		switch (status) {
 			case 'submitted': return 'text-blue-600 bg-blue-100';
-			case 'marked': return 'text-green-700 bg-green-50';
-			case 'graded': return 'text-green-700 bg-green-50';
+			case 'passed': return 'text-green-700 bg-green-50';
+			case 'graded': return 'text-green-700 bg-green-50'; // Legacy support
 			case 'draft': return 'text-gray-600 bg-gray-100';
 			case 'needs_revision': return 'text-amber-700 bg-amber-50';
+			case 'resubmitted': return 'text-blue-600 bg-blue-100';
 			default: return 'text-gray-600 bg-gray-50';
 		}
 	};
@@ -37,10 +39,11 @@
 	const getStatusText = (status) => {
 		switch (status) {
 			case 'submitted': return 'Submitted';
-			case 'marked': return 'Feedback received';
-			case 'graded': return 'Feedback received';
+			case 'passed': return 'Feedback received';
+			case 'graded': return 'Feedback received'; // Legacy support
 			case 'draft': return 'Draft';
 			case 'needs_revision': return 'Needs revision';
+			case 'resubmitted': return 'Resubmitted';
 			default: return 'Pending';
 		}
 	};

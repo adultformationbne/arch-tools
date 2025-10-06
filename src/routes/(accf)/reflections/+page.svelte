@@ -30,6 +30,11 @@
 	const openReflectionWriter = (reflection = null) => {
 		selectedReflection = reflection;
 		showReflectionWriter = true;
+
+		// Scroll to top to show the reflection writer
+		setTimeout(() => {
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}, 100);
 	};
 
 	const closeReflectionWriter = () => {
@@ -37,10 +42,13 @@
 		selectedReflection = null;
 	};
 
-	const handleReflectionSave = () => {
-		// Refresh page data after save
-		goto('/reflections', { invalidateAll: true });
+	const handleReflectionSave = async () => {
+		console.log('Reflection saved, refreshing page data...');
 		closeReflectionWriter();
+
+		// Invalidate and reload the page data
+		await goto('/reflections', { invalidateAll: true });
+		console.log('Page data refreshed');
 	};
 
 	const formatDate = (dateString) => {
@@ -156,38 +164,49 @@
 								<div class="flex-1">
 									<div class="flex items-center gap-3 mb-2">
 										<h3 class="text-xl font-bold text-gray-800">Session {reflection.sessionNumber}</h3>
-										<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
-											class:bg-green-100={reflection.status === ReflectionStatus.MARKED_PASS}
-											class:text-green-700={reflection.status === ReflectionStatus.MARKED_PASS}
-											class:bg-red-100={reflection.status === ReflectionStatus.OVERDUE || reflection.status === ReflectionStatus.MARKED_FAIL}
-											class:text-red-700={reflection.status === ReflectionStatus.OVERDUE || reflection.status === ReflectionStatus.MARKED_FAIL}
-											class:bg-blue-100={reflection.status === ReflectionStatus.SUBMITTED}
-											class:text-blue-700={reflection.status === ReflectionStatus.SUBMITTED}
-											class:bg-orange-100={reflection.status === ReflectionStatus.NEEDS_REVISION}
-											class:text-orange-700={reflection.status === ReflectionStatus.NEEDS_REVISION}
-											class:bg-yellow-100={reflection.status === ReflectionStatus.NOT_SUBMITTED}
-											class:text-yellow-700={reflection.status === ReflectionStatus.NOT_SUBMITTED}
-										>
-											{#if reflection.status === ReflectionStatus.MARKED_PASS}
+
+										<!-- Dual Badge System -->
+										{#if reflection.status === ReflectionStatus.SUBMITTED}
+											<!-- Submitted and awaiting feedback -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border-2 border-green-300 bg-green-50 text-green-700">
 												<CheckCircle size="14" />
-												Pass
-											{:else if reflection.status === ReflectionStatus.MARKED_FAIL}
-												<AlertCircle size="14" />
-												Needs Work
-											{:else if reflection.status === ReflectionStatus.NEEDS_REVISION}
-												<AlertCircle size="14" />
-												Needs Revision
-											{:else if reflection.status === ReflectionStatus.SUBMITTED}
+												Submitted
+											</div>
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700">
 												<Clock size="14" />
 												Awaiting Feedback
-											{:else if reflection.status === ReflectionStatus.OVERDUE}
+											</div>
+										{:else if reflection.status === ReflectionStatus.MARKED_PASS}
+											<!-- Passed -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-600 text-white">
+												<CheckCircle size="14" />
+												Passed
+											</div>
+										{:else if reflection.status === ReflectionStatus.NEEDS_REVISION}
+											<!-- Needs revision -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
+												<AlertCircle size="14" />
+												Needs Revision
+											</div>
+										{:else if reflection.status === ReflectionStatus.MARKED_FAIL}
+											<!-- Failed -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
+												<AlertCircle size="14" />
+												Needs Work
+											</div>
+										{:else if reflection.status === ReflectionStatus.OVERDUE}
+											<!-- Overdue -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
 												<AlertCircle size="14" />
 												Overdue
-											{:else}
+											</div>
+										{:else}
+											<!-- Not started -->
+											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
 												<Edit3 size="14" />
 												Not Started
-											{/if}
-										</div>
+											</div>
+										{/if}
 									</div>
 									<p class="text-gray-700 font-medium mb-3">{reflection.question}</p>
 								</div>

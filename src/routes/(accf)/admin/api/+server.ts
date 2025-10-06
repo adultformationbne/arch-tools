@@ -739,7 +739,7 @@ export const GET: RequestHandler = async (event) => {
 		if (endpoint === 'attendance' && cohortId) {
 			const { data: attendance, error: fetchError } = await supabaseAdmin
 				.from('attendance')
-				.select('user_id, session_number, present')
+				.select('accf_user_id, session_number, present')
 				.eq('cohort_id', cohortId)
 				.order('session_number', { ascending: true });
 
@@ -758,7 +758,7 @@ export const GET: RequestHandler = async (event) => {
 		if (endpoint === 'reflection_responses' && cohortId) {
 			const { data: reflections, error: fetchError } = await supabaseAdmin
 				.from('reflection_responses')
-				.select('user_id, session_number, status, grade, marked_at, created_at')
+				.select('accf_user_id, session_number, status, marked_at, created_at, feedback')
 				.eq('cohort_id', cohortId)
 				.order('session_number', { ascending: true });
 

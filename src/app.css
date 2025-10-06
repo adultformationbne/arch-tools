@@ -1,18 +1,16 @@
 @import 'tailwindcss';
 
-@utility bg-white {
-  background-color: #ffffff;
-}
-
 @theme {
+  /* Core white/black */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* ACCF Brand Colors */
   --color-accf-darkest: #1e2322;
   --color-accf-dark: #334642;
   --color-accf-accent: #c59a6b;
   --color-accf-light: #eae2d9;
   --color-accf-lightest: #ffffff;
-
-  /* Add standard white color */
-  --color-white: #ffffff;
 
   /* Add standard gray colors */
   --color-gray-50: #f9fafb;

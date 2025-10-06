@@ -6,7 +6,14 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	// Require ACCF user authentication
 	const { user } = await requireAccfUser(event);
-	const currentUserId = user.id;
+
+	// Check for dev mode user
+	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
+	const devUser = getDevUserFromRequest(event.request);
+	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
+
+	// Use dev user ID if in dev mode, otherwise use authenticated user ID
+	const currentUserId = isDevMode ? devUser.id : user.id;
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin

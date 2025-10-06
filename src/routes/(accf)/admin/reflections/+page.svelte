@@ -1,78 +1,26 @@
 <script>
-	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star } from 'lucide-svelte';
+	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X } from 'lucide-svelte';
+	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import { goto, invalidateAll } from '$app/navigation';
+
+	let { data } = $props();
 
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
 	let searchQuery = $state('');
 	let selectedReflection = $state(null);
 	let showMarkingModal = $state(false);
+	let isSaving = $state(false);
 
-	// Mock reflection data
-	let reflections = $state([
-		{
-			id: 1,
-			student: { name: 'Sarah Johnson', email: 'sarah.j@email.com', hub: 'St. Mary\'s Parish' },
-			cohort: 'February 2025 - Foundations of Faith',
-			session: 3,
-			question: 'What does faith mean to you personally, and how has your understanding evolved throughout your life?',
-			content: 'Faith, to me, has been a journey of discovery that began in childhood but has deepened significantly through my adult experiences. Initially, faith was something I inherited from my family - attending Sunday Mass, saying prayers before meals, and learning Bible stories. However, as I\'ve navigated life\'s challenges, particularly during difficult times like the loss of my father last year, my understanding has evolved from a passive acceptance to an active, living relationship with God.\n\nWhat strikes me most about faith is how it provides both comfort and challenge. It comforts me in knowing that I\'m not alone in my struggles, but it also challenges me to live differently - to be more forgiving, more generous, and more hopeful than I might naturally be. I\'ve come to understand that faith isn\'t about having all the answers, but about trusting in God\'s love even when questions remain.\n\nThrough this course, I\'m beginning to see how the Church\'s teachings connect to these personal experiences, providing a framework that both validates my journey and guides my continued growth.',
-			isPublic: true,
-			submittedAt: '2025-01-15T14:30:00Z',
-			status: 'pending',
-			assignedTo: 'admin1',
-			feedback: '',
-			passStatus: null
-		},
-		{
-			id: 2,
-			student: { name: 'Michael Chen', email: 'mchen@email.com', hub: 'Sacred Heart Parish' },
-			cohort: 'February 2025 - Foundations of Faith',
-			session: 3,
-			question: 'What does faith mean to you personally, and how has your understanding evolved throughout your life?',
-			content: 'My faith journey has been quite different from many of my peers, as I came to Catholicism as an adult convert. Growing up in a non-religious household, I initially approached faith with skepticism and many questions. It wasn\'t until college, when I began studying philosophy and encountered Catholic intellectual tradition through authors like Thomas Aquinas and C.S. Lewis, that I began to see faith not as blind belief, but as a reasonable response to ultimate questions.\n\nThe conversion process taught me that faith is both personal and communal. While my relationship with God is deeply personal, I\'ve discovered that faith flourishes in community. The Catholic Church provides not just individual spiritual nourishment, but a place where I can contribute to something larger than myself.',
-			isPublic: false,
-			submittedAt: '2025-01-14T09:15:00Z',
-			status: 'marked',
-			assignedTo: 'admin1',
-			feedback: 'Excellent reflection, Michael. Your journey from skepticism to faith through intellectual inquiry is inspiring. You demonstrate a mature understanding of how personal faith intersects with community. Consider exploring how the sacraments might deepen your sense of belonging to the Church community.',
-			passStatus: 'pass'
-		},
-		{
-			id: 3,
-			student: { name: 'Maria Rodriguez', email: 'maria.r@email.com', hub: 'St. Joseph\'s Parish' },
-			cohort: 'August 2024 - Moral Teaching',
-			session: 7,
-			question: 'How can Catholic social teaching guide our response to current social issues?',
-			content: 'Catholic social teaching offers a unique perspective on current social issues because it emphasizes the dignity of every human person as the foundation for social action. When I look at issues like poverty, immigration, and healthcare access, the principle of human dignity calls us to see beyond statistics to the real people affected.\n\nThe principle of solidarity particularly resonates with me. It\'s not enough to simply feel bad about injustice; we\'re called to act. This has motivated me to volunteer at our local food bank and advocate for better housing policies in our community.',
-			isPublic: true,
-			submittedAt: '2025-01-13T16:45:00Z',
-			status: 'overdue',
-			assignedTo: 'admin2',
-			feedback: '',
-			passStatus: null
-		},
-		{
-			id: 4,
-			student: { name: 'David Thompson', email: 'dthompson@email.com', hub: 'Holy Spirit Parish' },
-			cohort: 'February 2025 - Scripture & Tradition',
-			session: 4,
-			question: 'How do Scripture and Tradition work together to inform our faith?',
-			content: 'Scripture and Tradition work together like two sides of the same coin in informing our faith. Scripture provides us with the written Word of God, the foundational texts that reveal God\'s plan of salvation. However, Tradition helps us understand and interpret these texts correctly, ensuring that we don\'t fall into personal interpretations that might lead us astray.',
-			isPublic: false,
-			submittedAt: '2025-01-16T11:20:00Z',
-			status: 'pending',
-			assignedTo: 'admin1',
-			feedback: '',
-			passStatus: null
-		}
-	]);
+	// Real reflection data from server
+	let reflections = $state(data.reflections || []);
+	let cohorts = $state(data.cohorts || []);
 
-	let cohorts = $state([
-		'February 2025 - Foundations of Faith',
-		'February 2025 - Scripture & Tradition',
-		'August 2024 - Moral Teaching',
-		'August 2024 - Sacraments & Liturgy'
-	]);
+	// Sync data when it changes (after invalidateAll)
+	$effect(() => {
+		reflections = data.reflections || [];
+		cohorts = data.cohorts || [];
+	});
 
 	let markingForm = $state({
 		feedback: '',
@@ -80,12 +28,12 @@
 		isPublic: false
 	});
 
-	const filterOptions = [
+	const filterOptions = $derived.by(() => [
 		{ value: 'all', label: 'All Reflections', count: reflections.length },
 		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => r.status === 'pending').length },
 		{ value: 'overdue', label: 'Overdue', count: reflections.filter(r => r.status === 'overdue').length },
 		{ value: 'marked', label: 'Recently Marked', count: reflections.filter(r => r.status === 'marked').length }
-	];
+	]);
 
 	const getStatusColor = (status) => {
 		switch (status) {
@@ -108,8 +56,13 @@
 		return 'text-orange-600';
 	};
 
-	const filteredReflections = $derived(() => {
-		let filtered = reflections;
+	const getCohortDisplayName = (cohort) => {
+		if (typeof cohort === 'string') return cohort;
+		return cohort?.name || 'Unknown Cohort';
+	};
+
+	const filteredReflections = $derived.by(() => {
+		let filtered = [...reflections]; // Create a copy to avoid mutating state
 
 		// Filter by status
 		if (selectedFilter !== 'all') {
@@ -118,7 +71,7 @@
 
 		// Filter by cohort
 		if (selectedCohort !== 'all') {
-			filtered = filtered.filter(r => r.cohort === selectedCohort);
+			filtered = filtered.filter(r => r.cohort?.id === selectedCohort || r.cohort === selectedCohort);
 		}
 
 		// Search filter
@@ -146,7 +99,7 @@
 		selectedReflection = reflection;
 		markingForm = {
 			feedback: reflection.feedback || '',
-			passStatus: reflection.passStatus || 'pass',
+			passStatus: reflection.grade || 'pass',
 			isPublic: reflection.isPublic
 		};
 		showMarkingModal = true;
@@ -158,22 +111,42 @@
 		markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
 	};
 
-	const submitMarking = () => {
-		if (!selectedReflection) return;
+	const submitMarking = async () => {
+		if (!selectedReflection || isSaving) return;
 
-		// Update the reflection
-		const index = reflections.findIndex(r => r.id === selectedReflection.id);
-		if (index !== -1) {
-			reflections[index] = {
-				...reflections[index],
-				feedback: markingForm.feedback,
-				passStatus: markingForm.passStatus,
-				status: 'marked',
-				markedAt: new Date().toISOString()
-			};
+		isSaving = true;
+
+		try {
+			const response = await fetch('/admin/reflections/api', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					reflection_id: selectedReflection.id,
+					feedback: markingForm.feedback.trim(),
+					grade: markingForm.passStatus,
+					status: markingForm.passStatus === 'pass' ? 'marked' : 'needs_revision'
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to mark reflection');
+			}
+
+			const result = await response.json();
+			toastSuccess(result.message || 'Reflection marked successfully');
+
+			// Refresh data
+			await invalidateAll();
+			closeMarkingModal();
+
+		} catch (error) {
+			console.error('Marking error:', error);
+			toastError('Failed to mark reflection. Please try again.');
+		} finally {
+			isSaving = false;
 		}
-
-		closeMarkingModal();
 	};
 
 	const formatDate = (dateString) => {
@@ -238,7 +211,7 @@
 						>
 							<option value="all">All Cohorts</option>
 							{#each cohorts as cohort}
-								<option value={cohort}>{cohort}</option>
+								<option value={cohort.id}>{cohort.name} - {cohort.moduleName}</option>
 							{/each}
 						</select>
 					</div>
@@ -273,20 +246,35 @@
 								<div>
 									<h3 class="font-bold text-lg text-gray-800">{reflection.student.name}</h3>
 									<p class="text-sm text-gray-600">{reflection.student.email} • {reflection.student.hub}</p>
-									<p class="text-sm text-gray-500">{reflection.cohort} • Session {reflection.session}</p>
+									<p class="text-sm text-gray-500">{getCohortDisplayName(reflection.cohort)} • Session {reflection.session}</p>
 								</div>
 							</div>
 							<div class="flex items-center gap-3">
-								<span class="px-3 py-1 rounded-full text-sm font-semibold {getStatusColor(reflection.status)}">
-									{reflection.status}
-								</span>
-								{#if reflection.passStatus}
-									<svelte:component
-										this={getPassStatusIcon(reflection.passStatus)}
-										size="20"
-										class={getPassStatusColor(reflection.passStatus)}
-									/>
+								<!-- Dual Badge System -->
+								{#if reflection.status === 'pending' || reflection.status === 'overdue'}
+									<!-- Student has submitted, awaiting feedback -->
+									<span class="px-3 py-1 rounded-full text-sm font-semibold border-2 border-green-300 bg-green-50 text-green-700 flex items-center gap-1">
+										<CheckCircle size="14" />
+										Submitted
+									</span>
+									<span class="px-3 py-1 rounded-full text-sm font-semibold {reflection.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
+										{reflection.status === 'overdue' ? 'Overdue Review' : 'Awaiting Feedback'}
+									</span>
+								{:else if reflection.status === 'marked'}
+									<!-- Marked as passed or needs revision -->
+									{#if reflection.grade === 'pass'}
+										<span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white flex items-center gap-1">
+											<CheckCircle size="14" />
+											Passed
+										</span>
+									{:else if reflection.grade === 'fail'}
+										<span class="px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800 flex items-center gap-1">
+											<XCircle size="14" />
+											Needs Revision
+										</span>
+									{/if}
 								{/if}
+
 								<div class="text-right text-sm text-gray-500">
 									<div>{formatDate(reflection.submittedAt)}</div>
 									<div>{getWordCount(reflection.content)} words</div>
@@ -440,10 +428,11 @@
 					<div class="flex gap-4 pt-4">
 						<button
 							onclick={submitMarking}
-							class="flex-1 py-3 px-6 font-semibold rounded-lg transition-colors"
+							disabled={isSaving}
+							class="flex-1 py-3 px-6 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							style="background-color: #c59a6b; color: white;"
 						>
-							Submit Marking
+							{isSaving ? 'Submitting...' : 'Submit Marking'}
 						</button>
 						<button
 							onclick={closeMarkingModal}

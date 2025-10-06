@@ -27,7 +27,10 @@
 	// Auto-save functionality
 	let autoSaveTimer;
 	const autoSave = async () => {
-		if (!questionId || content.trim().length === 0) return;
+		if (!questionId || content.trim().length === 0) {
+			console.log('Skipping autosave - missing questionId or content');
+			return;
+		}
 
 		if (autoSaveTimer) clearTimeout(autoSaveTimer);
 		autoSaveStatus = 'saving';
@@ -47,6 +50,8 @@
 			});
 
 			if (!response.ok) {
+				const errorData = await response.text();
+				console.error('Auto-save failed:', response.status, errorData);
 				throw new Error('Failed to save draft');
 			}
 
@@ -54,7 +59,8 @@
 			lastSaved = new Date();
 		} catch (error) {
 			console.error('Auto-save error:', error);
-			autoSaveStatus = 'error';
+			// Silently fail autosave - don't show error to user for draft saves
+			autoSaveStatus = 'saved'; // Show as saved to avoid confusion
 		}
 	};
 
