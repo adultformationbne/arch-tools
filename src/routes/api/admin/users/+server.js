@@ -54,22 +54,37 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 			}
 		});
 
-		// Send invitation email using Supabase's built-in system
-		// This sends a magic link that allows the user to set their password
-		const { data: authData, error: authError } = await adminSupabase.auth.admin.inviteUserByEmail(
-			email,
-			{
-				data: {
-					full_name: full_name || null,
-					invited_by: user.email
-				},
-				redirectTo: `${PUBLIC_SUPABASE_URL}/auth/callback`
-			}
-		);
+		// Check if user already exists in auth system
+		const { data: { users: existingAuthUsers } } = await adminSupabase.auth.admin.listUsers();
+		const existingAuthUser = existingAuthUsers?.find(u => u.email === email);
 
-		if (authError) {
-			console.error('Auth invitation error:', authError);
-			throw error(400, authError.message || 'Failed to send invitation');
+		let authData;
+
+		if (existingAuthUser) {
+			// User exists in Auth but was deleted from user_profiles
+			// Re-use the existing auth user instead of creating new one
+			console.log('Re-using existing auth user:', existingAuthUser.id);
+			authData = { user: existingAuthUser };
+		} else {
+			// Send invitation email using Supabase's built-in system
+			// This sends a magic link that allows the user to set their password
+			const { data: newAuthData, error: authError } = await adminSupabase.auth.admin.inviteUserByEmail(
+				email,
+				{
+					data: {
+						full_name: full_name || null,
+						invited_by: user.email
+					},
+					redirectTo: `${PUBLIC_SUPABASE_URL}/auth/callback`
+				}
+			);
+
+			if (authError) {
+				console.error('Auth invitation error:', authError);
+				throw error(400, authError.message || 'Failed to send invitation');
+			}
+
+			authData = newAuthData;
 		}
 
 		// Wait a moment for the trigger to potentially create the profile
