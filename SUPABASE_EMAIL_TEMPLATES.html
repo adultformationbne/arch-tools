@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase Email Templates - Archdiocesan Ministry Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .template-section {
+            background: white;
+            margin: 30px 0;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .template-header {
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .template-header h2 {
+            margin: 0;
+            color: #1e293b;
+        }
+        .template-header .subject {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .preview h3 {
+            margin-top: 0;
+            color: #64748b;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .instructions {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .variable-list {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .variable-list h4 {
+            margin-top: 0;
+            color: #475569;
+        }
+        .variable-list code {
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📧 Supabase Email Templates</h1>
+    <p><strong>Archdiocesan Ministry Tools Platform</strong></p>
+
+    <div class="instructions">
+        <h3>⚙️ Setup Instructions</h3>
+        <ol>
+            <li><strong>Upload Logo to Supabase Storage:</strong>
+                <ul>
+                    <li>Go to Supabase Dashboard → Storage → Create bucket "public-assets"</li>
+                    <li>Upload <code>static/archmin-logo.png</code></li>
+                    <li>Make bucket public: Settings → Public bucket = ON</li>
+                    <li>Logo URL will be: <code>https://[project-ref].supabase.co/storage/v1/object/public/public-assets/archmin-logo.png</code></li>
+                    <li>Replace <code>https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png</code> in templates below with your actual URL</li>
+                </ul>
+            </li>
+            <li><strong>Copy Templates to Supabase:</strong>
+                <ul>
+                    <li>Go to Authentication → Email Templates</li>
+                    <li>For each template below, copy the HTML into the corresponding Supabase template</li>
+                    <li>Update subject lines as provided</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <!-- TEMPLATE 1: INVITE USER -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>1. Invite User</h2>
+            <div class="subject">Subject: Welcome to Archdiocesan Tools - Set Up Your Account</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - Magic link for account setup<br>
+            <code>{{ .Email }}</code> - User's email address<br>
+            <code>{{ .Data.full_name }}</code> - User's full name (custom data)<br>
+            <code>{{ .Data.invited_by }}</code> - Email of admin who sent invite<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header with Logo --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Welcome to the Team!&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body Content --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello {{ if .Data.full_name }}{{ .Data.full_name }}{{ else }}there{{ end }},&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                You've been invited by {{ if .Data.invited_by }}&lt;strong&gt;{{ .Data.invited_by }}&lt;/strong&gt;{{ else }}an administrator{{ end }} to join the Archdiocesan Ministry Tools platform.
+                            &lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 30px; line-height: 1.6;"&gt;
+                                Click the button below to set up your account and create your password:
+                            &lt;/p&gt;
+
+                            &lt;!-- CTA Button --&gt;
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);"&gt;
+                                            Set Up My Account
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;!-- Alternative Link --&gt;
+                            &lt;div style="background-color: #f9fafb; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"&gt;&lt;strong&gt;Or copy and paste this link:&lt;/strong&gt;&lt;/p&gt;
+                                &lt;p style="font-size: 12px; color: #3b82f6; word-break: break-all; margin: 0;"&gt;{{ .ConfirmationURL }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 30px 0 0; line-height: 1.6;"&gt;
+                                &lt;strong&gt;Note:&lt;/strong&gt; This invitation link will expire in 24 hours. If you didn't expect this invitation, you can safely ignore this email.
+                            &lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- TEMPLATE 2: CONFIRM SIGNUP -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>2. Confirm Signup</h2>
+            <div class="subject">Subject: Confirm Your Email - Archdiocesan Tools</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - Email confirmation link<br>
+            <code>{{ .Email }}</code> - User's email address<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Confirm Your Email&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello,&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                Thank you for signing up! Please confirm your email address to complete your registration.
+                            &lt;/p&gt;
+
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;"&gt;
+                                            Confirm Email Address
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;div style="background-color: #f9fafb; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"&gt;&lt;strong&gt;Or copy this link:&lt;/strong&gt;&lt;/p&gt;
+                                &lt;p style="font-size: 12px; color: #10b981; word-break: break-all; margin: 0;"&gt;{{ .ConfirmationURL }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 30px 0 0;"&gt;
+                                If you didn't create an account, you can safely ignore this email.
+                            &lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- TEMPLATE 3: MAGIC LINK -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>3. Magic Link (Passwordless Login)</h2>
+            <div class="subject">Subject: Your Login Link - Archdiocesan Tools</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - One-time login link<br>
+            <code>{{ .Email }}</code> - User's email address<br>
+            <code>{{ .Token }}</code> - The magic link token (6-digit code)<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Your Login Link&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello,&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                Click the button below to securely log in to your account. This link will expire in 1 hour.
+                            &lt;/p&gt;
+
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #8b5cf6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;"&gt;
+                                            Log In to Account
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;!-- Token Code --&gt;
+                            &lt;div style="background-color: #faf5ff; border: 2px solid #8b5cf6; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 10px; text-transform: uppercase; font-weight: 600;"&gt;Or use this code:&lt;/p&gt;
+                                &lt;p style="font-size: 32px; color: #8b5cf6; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;"&gt;{{ .Token }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;div style="background-color: #f9fafb; border-left: 4px solid #8b5cf6; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"&gt;&lt;strong&gt;Or copy this link:&lt;/strong&gt;&lt;/p&gt;
+                                &lt;p style="font-size: 12px; color: #8b5cf6; word-break: break-all; margin: 0;"&gt;{{ .ConfirmationURL }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 30px 0 0;"&gt;
+                                &lt;strong&gt;Security Note:&lt;/strong&gt; If you didn't request this login link, please ignore this email and ensure your account is secure.
+                            &lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- TEMPLATE 4: RESET PASSWORD -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>4. Reset Password</h2>
+            <div class="subject">Subject: Reset Your Password - Archdiocesan Tools</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - Password reset link<br>
+            <code>{{ .Email }}</code> - User's email address<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Reset Your Password&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello,&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                We received a request to reset your password. Click the button below to create a new password:
+                            &lt;/p&gt;
+
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #f59e0b; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;"&gt;
+                                            Reset Password
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;div style="background-color: #f9fafb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"&gt;&lt;strong&gt;Or copy this link:&lt;/strong&gt;&lt;/p&gt;
+                                &lt;p style="font-size: 12px; color: #f59e0b; word-break: break-all; margin: 0;"&gt;{{ .ConfirmationURL }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 6px;"&gt;
+                                &lt;p style="font-size: 14px; color: #92400e; margin: 0; line-height: 1.6;"&gt;
+                                    ⚠️ &lt;strong&gt;Security Notice:&lt;/strong&gt; This link will expire in 1 hour. If you didn't request a password reset, please ignore this email or contact support if you're concerned about your account security.
+                                &lt;/p&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- TEMPLATE 5: CHANGE EMAIL -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>5. Change Email Address</h2>
+            <div class="subject">Subject: Confirm Your New Email - Archdiocesan Tools</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - Email change confirmation link<br>
+            <code>{{ .Email }}</code> - New email address<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Confirm Email Change&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello,&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                We received a request to change your account email address to:
+                            &lt;/p&gt;
+
+                            &lt;div style="background-color: #ecfeff; border: 2px solid #06b6d4; padding: 15px; margin: 20px 0; border-radius: 6px; text-align: center;"&gt;
+                                &lt;p style="font-size: 16px; color: #0891b2; font-weight: 600; margin: 0;"&gt;{{ .Email }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                Click the button below to confirm this change:
+                            &lt;/p&gt;
+
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #06b6d4; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;"&gt;
+                                            Confirm New Email
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;div style="background-color: #f9fafb; border-left: 4px solid #06b6d4; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"&gt;&lt;strong&gt;Or copy this link:&lt;/strong&gt;&lt;/p&gt;
+                                &lt;p style="font-size: 12px; color: #06b6d4; word-break: break-all; margin: 0;"&gt;{{ .ConfirmationURL }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 30px 0 0;"&gt;
+                                &lt;strong&gt;Note:&lt;/strong&gt; If you didn't request this email change, please contact support immediately to secure your account.
+                            &lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- TEMPLATE 6: REAUTHENTICATION -->
+    <div class="template-section">
+        <div class="template-header">
+            <h2>6. Reauthentication</h2>
+            <div class="subject">Subject: Verify It's You - Archdiocesan Tools</div>
+        </div>
+
+        <div class="variable-list">
+            <h4>Available Variables:</h4>
+            <p><code>{{ .ConfirmationURL }}</code> - Reauthentication link<br>
+            <code>{{ .Email }}</code> - User's email address<br>
+            <code>{{ .Token }}</code> - Verification code<br>
+            <code>{{ .SiteURL }}</code> - Your site URL</p>
+        </div>
+
+        <div class="code-block"><pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;/head&gt;
+&lt;body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;"&gt;
+    &lt;table role="presentation" style="width: 100%; border-collapse: collapse;"&gt;
+        &lt;tr&gt;
+            &lt;td align="center" style="padding: 40px 0;"&gt;
+                &lt;table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+
+                    &lt;!-- Header --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;"&gt;
+                            &lt;img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;"&gt;
+                            &lt;h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"&gt;Verify It's You&lt;/h1&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Body --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="padding: 40px 30px;"&gt;
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px;"&gt;Hello,&lt;/p&gt;
+
+                            &lt;p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6;"&gt;
+                                We need to verify your identity for this sensitive operation. Click the button below to confirm it's you:
+                            &lt;/p&gt;
+
+                            &lt;table role="presentation" style="width: 100%;"&gt;
+                                &lt;tr&gt;
+                                    &lt;td align="center" style="padding: 10px 0 30px;"&gt;
+                                        &lt;a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;"&gt;
+                                            Verify Identity
+                                        &lt;/a&gt;
+                                    &lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;
+
+                            &lt;!-- Verification Code --&gt;
+                            &lt;div style="background-color: #fef2f2; border: 2px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;"&gt;
+                                &lt;p style="font-size: 13px; color: #6b7280; margin: 0 0 10px; text-transform: uppercase; font-weight: 600;"&gt;Verification Code:&lt;/p&gt;
+                                &lt;p style="font-size: 32px; color: #ef4444; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;"&gt;{{ .Token }}&lt;/p&gt;
+                            &lt;/div&gt;
+
+                            &lt;div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;"&gt;
+                                &lt;p style="font-size: 14px; color: #991b1b; margin: 0; line-height: 1.6;"&gt;
+                                    🔒 &lt;strong&gt;Security Alert:&lt;/strong&gt; This verification link expires in 15 minutes. If you didn't request this verification, please secure your account immediately.
+                                &lt;/p&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                    &lt;!-- Footer --&gt;
+                    &lt;tr&gt;
+                        &lt;td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;"&gt;
+                            &lt;p style="font-size: 14px; color: #6b7280; margin: 0 0 10px;"&gt;&lt;strong&gt;Archdiocesan Ministry Tools&lt;/strong&gt;&lt;/p&gt;
+                            &lt;p style="font-size: 13px; color: #9ca3af; margin: 0;"&gt;Catholic Archdiocese of Brisbane&lt;/p&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+
+                &lt;/table&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="background: white; padding: 30px; border-radius: 8px; margin: 30px 0; text-align: center;">
+        <h3>📝 Quick Implementation Checklist</h3>
+        <ol style="text-align: left; max-width: 600px; margin: 20px auto;">
+            <li>Upload logo to Supabase Storage (create "public-assets" bucket)</li>
+            <li>Get logo URL and replace <code>https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png</code> in all templates</li>
+            <li>Copy each template to corresponding section in Supabase → Authentication → Email Templates</li>
+            <li>Update subject lines as specified</li>
+            <li>Test each template by triggering the corresponding action</li>
+        </ol>
+        <p style="margin-top: 30px; color: #6b7280;">
+            <strong>Pro Tip:</strong> Save this file for future reference and template updates!
+        </p>
+    </div>
+
+</body>
+</html>

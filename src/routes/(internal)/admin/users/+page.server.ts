@@ -8,21 +8,24 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		throw redirect(303, '/auth');
 	}
 
-	// Check if user is admin
+	// Check if user has user_management module access
 	const { data: currentUserProfile } = await supabase
 		.from('user_profiles')
-		.select('role')
+		.select('role, modules')
 		.eq('id', user.id)
 		.single();
 
-	if (currentUserProfile?.role !== 'admin') {
+	const hasUserManagement = currentUserProfile?.modules?.includes('user_management');
+
+	if (!hasUserManagement) {
 		throw redirect(303, '/profile');
 	}
 
-	// Fetch all users
+	// Fetch all admin users only (exclude students/coordinators)
 	const { data: users, error } = await supabase
 		.from('user_profiles')
 		.select('*')
+		.eq('role', 'admin')
 		.order('created_at', { ascending: false });
 
 	if (error) {
@@ -31,6 +34,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 	return {
 		users: users || [],
-		currentUser: user
+		currentUser: user,
+		currentUserProfile
 	};
 };

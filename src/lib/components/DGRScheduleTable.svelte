@@ -1,5 +1,5 @@
 <script>
-	import { Send, Eye, Trash2 } from 'lucide-svelte';
+	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check } from 'lucide-svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 
 	let {
@@ -12,8 +12,37 @@
 		onOpenReviewModal = () => {},
 		onSendToWordPress = () => {},
 		onOpenDeleteConfirm = () => {},
-		onCopySubmissionUrl = () => {}
+		onCopySubmissionUrl = () => {},
+		onGetReadings = () => {},
+		onEditReadings = () => {},
+		onApproveReflection = () => {},
+		onQuickAddReflection = () => {},
+		onSendReminder = () => {}
 	} = $props();
+
+	let openMenuId = $state(null);
+	let hoveredReminderId = $state(null);
+
+	function toggleMenu(entryId) {
+		openMenuId = openMenuId === entryId ? null : entryId;
+	}
+
+	function closeMenu() {
+		openMenuId = null;
+	}
+
+	// Close menu when clicking outside
+	$effect(() => {
+		function handleClickOutside(event) {
+			if (openMenuId !== null) {
+				closeMenu();
+			}
+		}
+		if (openMenuId !== null) {
+			document.addEventListener('click', handleClickOutside);
+			return () => document.removeEventListener('click', handleClickOutside);
+		}
+	});
 
 	function formatDate(dateStr) {
 		const date = new Date(dateStr + 'T00:00:00');
@@ -24,6 +53,40 @@
 			year: 'numeric'
 		};
 		return date.toLocaleDateString('en-AU', options);
+	}
+
+	// Liturgical season colors for left border bar
+	const seasonBarColors = {
+		'Advent': 'bg-purple-500',
+		'Christmas': 'bg-yellow-500',
+		'Lent': 'bg-violet-500',
+		'Holy Week': 'bg-red-600',
+		'Easter': 'bg-amber-500',
+		'Ordinary Time': 'bg-green-600'
+	};
+
+	function getSeasonBarColor(season) {
+		return seasonBarColors[season] || 'bg-gray-400';
+	}
+
+	// Check if entry date is within 14 days of today
+	function isWithin14Days(dateStr) {
+		const entryDate = new Date(dateStr + 'T00:00:00');
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const diffTime = entryDate - today;
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		return diffDays >= 0 && diffDays <= 14;
+	}
+
+	// Get days until entry
+	function getDaysUntil(dateStr) {
+		const entryDate = new Date(dateStr + 'T00:00:00');
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const diffTime = entryDate - today;
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		return diffDays;
 	}
 </script>
 
@@ -41,11 +104,12 @@
 			<table class="min-w-full divide-y divide-gray-200">
 				<thead class="bg-gray-50">
 					<tr>
+						<th class="w-8"></th>
 						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
 							Date
 						</th>
 						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-							Gospel Reference
+							Liturgical Day
 						</th>
 						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
 							Contributor
@@ -53,86 +117,251 @@
 						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
 							Status
 						</th>
-						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-							Actions
-						</th>
+						<th class="px-6 py-3"></th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">
-					{#each schedule as entry (entry.id)}
-						<tr>
+					{#each schedule as entry (entry.id || entry.date)}
+						<tr class:bg-blue-50={entry.from_pattern}>
+							<!-- Liturgical Season Color Bar -->
+							<td class="relative p-0">
+								{#if entry.liturgical_season}
+									<div
+										class="absolute inset-y-0 left-0 w-1 {getSeasonBarColor(entry.liturgical_season)}"
+										title={entry.liturgical_season}
+									></div>
+								{/if}
+							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
 								<div class="text-sm font-medium text-gray-900">
 									{formatDate(entry.date)}
 								</div>
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap">
+							<td class="px-6 py-4">
 								<div class="text-sm text-gray-700">
-									{entry.gospel_reference ? decodeHtmlEntities(entry.gospel_reference) : '—'}
+									{#if entry.liturgical_name}
+										<div class="max-w-xs truncate" title={entry.liturgical_name}>
+											{decodeHtmlEntities(entry.liturgical_name)}
+										</div>
+										{#if entry.liturgical_rank && entry.liturgical_rank !== 'Feria'}
+											<span class="text-xs text-gray-500">({entry.liturgical_rank})</span>
+										{/if}
+									{:else}
+										—
+									{/if}
 								</div>
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
-								<select
-									value={entry.contributor_id || ''}
-									onchange={(e) => onUpdateAssignment(entry.id, e.target.value)}
-									class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								>
-									<option value="">Unassigned</option>
-									{#each contributors as contributor}
-										<option value={contributor.id}>
-											{contributor.name}
-										</option>
-									{/each}
-								</select>
+								{#if entry.from_pattern}
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-gray-700">
+											{entry.contributor?.name || 'Unknown'}
+										</span>
+										<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+											Pattern
+										</span>
+									</div>
+								{:else}
+									<select
+										value={entry.contributor_id || ''}
+										onchange={(e) => onUpdateAssignment(entry.id, e.target.value)}
+										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+									>
+										<option value="">Unassigned</option>
+										{#each contributors as contributor}
+											<option value={contributor.id}>
+												{contributor.name}
+											</option>
+										{/each}
+									</select>
+								{/if}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
-								<select
-									value={entry.status}
-									onchange={(e) => onUpdateStatus(entry.id, e.target.value)}
-									class="rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none {statusColors[
-										entry.status
-									]} font-medium"
-								>
-									{#each statusOptions as option}
-										<option value={option.value}>{option.label}</option>
-									{/each}
-								</select>
+								{#if entry.from_pattern}
+									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+										Not Started
+									</span>
+								{:else}
+									<select
+										value={entry.status}
+										onchange={(e) => onUpdateStatus(entry.id, e.target.value)}
+										class="rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none {statusColors[
+											entry.status
+										]} font-medium"
+									>
+										{#each statusOptions as option}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</select>
+								{/if}
 							</td>
-							<td class="space-x-3 px-6 py-4 text-sm font-medium whitespace-nowrap">
-								{#if entry.submission_token && entry.status === 'pending'}
-									<button
-										onclick={() => onCopySubmissionUrl(entry.submission_token)}
-										class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900"
-									>
-										<Send class="h-3 w-3" />
-										Copy Link
-									</button>
-								{/if}
-								{#if entry.status === 'submitted' || entry.status === 'approved'}
-									<button
-										onclick={() => onOpenReviewModal(entry)}
-										class="inline-flex items-center gap-1 text-purple-600 hover:text-purple-900"
-									>
-										<Eye class="h-3 w-3" />
-										{entry.status === 'approved' ? 'Edit' : 'Review'}
-									</button>
-								{/if}
-								{#if entry.status === 'approved'}
-									<button
-										onclick={() => onSendToWordPress(entry.id)}
-										class="inline-flex items-center gap-1 text-green-600 hover:text-green-900"
-									>
-										<Send class="h-3 w-3" />
-										Send to WordPress
-									</button>
-								{/if}
-								<button
-									onclick={() => onOpenDeleteConfirm(entry)}
-									class="inline-flex items-center gap-1 text-red-600 hover:text-red-900"
-								>
-									<Trash2 class="h-3 w-3" />
-									Remove
-								</button>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<div class="flex items-center justify-between gap-2">
+									<div class="flex items-center gap-2">
+										<!-- Send Reminder Button (for entries within 14 days - includes pattern entries) -->
+										{#if entry.contributor_id && (entry.status === 'pending' || entry.from_pattern) && isWithin14Days(entry.date)}
+											{@const daysUntil = getDaysUntil(entry.date)}
+											{@const reminderCount = entry.reminder_history?.length || 0}
+											{@const entryKey = entry.id || entry.date}
+											{@const isHovered = hoveredReminderId === entryKey}
+											{#if reminderCount > 0}
+												<!-- Reminder Already Sent - Show Green Check, changes to "Resend" on hover -->
+												<button
+													onclick={() => onSendReminder(entry)}
+													onmouseenter={() => hoveredReminderId = entryKey}
+													onmouseleave={() => hoveredReminderId = null}
+													class="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+												>
+													{#if isHovered}
+														<Mail class="h-3.5 w-3.5" />
+														Resend Reminder
+													{:else}
+														<Check class="h-3.5 w-3.5" />
+														Reminder Sent
+													{/if}
+												</button>
+											{:else}
+												<!-- No Reminder Sent Yet - Show Orange Mail Icon -->
+												<button
+													onclick={() => onSendReminder(entry)}
+													class="inline-flex items-center gap-1.5 rounded-md bg-orange-50 px-2.5 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100 transition-colors"
+													title={daysUntil === 0 ? 'Due today - send reminder' : daysUntil === 1 ? 'Due tomorrow - send reminder' : `Due in ${daysUntil} days - send reminder`}
+												>
+													<Mail class="h-3.5 w-3.5" />
+													Remind ({daysUntil}d)
+												</button>
+											{/if}
+										{/if}
+
+										<!-- Key Action Buttons (Non-pattern entries) -->
+										{#if !entry.from_pattern}
+											{#if entry.status === 'submitted' || entry.status === 'approved'}
+												<button
+													onclick={() => onOpenReviewModal(entry)}
+													class="inline-flex items-center gap-1.5 rounded-md bg-purple-50 px-2.5 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+												>
+													<Eye class="h-3.5 w-3.5" />
+													{entry.status === 'approved' ? 'Edit' : 'Review'}
+												</button>
+											{/if}
+											{#if entry.status === 'submitted'}
+												<button
+													onclick={() => onApproveReflection(entry.id)}
+													class="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+													title="Quick approve without opening review modal"
+												>
+													<CheckCircle class="h-3.5 w-3.5" />
+													Approve
+												</button>
+											{/if}
+											{#if entry.status === 'approved'}
+												<button
+													onclick={() => onSendToWordPress(entry.id)}
+													class="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+												>
+													<Send class="h-3.5 w-3.5" />
+													Publish
+												</button>
+											{/if}
+										{/if}
+									</div>
+
+									<!-- Three-dots Menu (Always on far right) -->
+									<div class="relative ml-auto">
+										<button
+											onclick={(e) => {
+												e.stopPropagation();
+												toggleMenu(entry.id || entry.date);
+											}}
+											class="rounded p-1.5 text-gray-500 hover:bg-gray-100 transition-colors"
+											title="More actions"
+										>
+											<MoreVertical class="h-4 w-4" />
+										</button>
+
+										{#if openMenuId === (entry.id || entry.date)}
+											<div
+												class="absolute right-0 z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+												onclick={(e) => e.stopPropagation()}
+											>
+												<div class="py-1">
+													<!-- Copy Contributor Link -->
+													{#if entry.contributor?.access_token}
+														<button
+															onclick={(e) => {
+																e.stopPropagation();
+																onCopySubmissionUrl(entry.contributor.access_token);
+																closeMenu();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-blue-700 hover:bg-blue-50"
+														>
+															<Copy class="h-4 w-4" />
+															Copy Contributor Link
+														</button>
+													{/if}
+
+													<!-- Get Readings -->
+													{#if !entry.readings_data || entry.from_pattern}
+														<button
+															onclick={(e) => {
+																e.stopPropagation();
+																onGetReadings(entry);
+																closeMenu();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-indigo-700 hover:bg-indigo-50"
+														>
+															<Download class="h-4 w-4" />
+															Get Readings
+														</button>
+													{/if}
+
+													<!-- Quick Add (Always available) -->
+													<button
+														onclick={(e) => {
+															e.stopPropagation();
+															onQuickAddReflection(entry);
+															closeMenu();
+														}}
+														class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-teal-700 hover:bg-teal-50"
+													>
+														<PlusCircle class="h-4 w-4" />
+														Quick Add Reflection
+													</button>
+
+													<!-- Edit Readings (Only if entry has ID) -->
+													{#if entry.id}
+														<button
+															onclick={(e) => {
+																e.stopPropagation();
+																onEditReadings(entry);
+																closeMenu();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+														>
+															<FileText class="h-4 w-4" />
+															Edit Readings
+														</button>
+													{/if}
+
+													<!-- Delete Entry (Only if entry has ID) -->
+													{#if entry.id}
+														<button
+															onclick={(e) => {
+																e.stopPropagation();
+																onOpenDeleteConfirm(entry);
+																closeMenu();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+														>
+															<Trash2 class="h-4 w-4" />
+															Delete Entry
+														</button>
+													{/if}
+												</div>
+											</div>
+										{/if}
+									</div>
+								</div>
 							</td>
 						</tr>
 					{/each}

@@ -36,7 +36,8 @@ This plan addresses the need to break down large route files into smaller, reusa
 
 #### DGRDeleteConfirmModal.svelte
 - Lines: ~40-60
-- Contains: Delete confirmation modal
+- Contains: Delete confirmation modal 
+
 - Props: `open`, `entry`, `onConfirm`, `onCancel`
 
 #### DGRTabNavigation.svelte

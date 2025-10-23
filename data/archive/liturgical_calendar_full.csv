@@ -1,0 +1,2192 @@
+calendar_date,year,liturgical_season,liturgical_week,day_of_week,liturgical_name,liturgical_rank
+2025-01-01,2025,Christmas,,Wednesday,"1 January – Mary, Mother of God",Feast
+2025-01-02,2025,Christmas,,Thursday,2nd January,Feast
+2025-01-03,2025,Christmas,,Friday,3rd January,Feast
+2025-01-04,2025,Christmas,,Saturday,4th January,Feast
+2025-01-05,2025,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2025-01-06,2025,Christmas,,Monday,6th January,Feast
+2025-01-07,2025,Christmas,,Tuesday,7th January,Feast
+2025-01-08,2025,Christmas,,Wednesday,Wednesday of Christmas Season,Feria
+2025-01-09,2025,Christmas,,Thursday,Thursday of Christmas Season,Feria
+2025-01-10,2025,Christmas,,Friday,Friday of Christmas Season,Feria
+2025-01-11,2025,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2025-01-12,2025,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2025-01-13,2025,Ordinary Time,1,Monday,13 January – St Hilary,Feast
+2025-01-14,2025,Ordinary Time,1,Tuesday,Tuesday of Week 1 in Ordinary Time,Feria
+2025-01-15,2025,Ordinary Time,1,Wednesday,Wednesday of Week 1 in Ordinary Time,Feria
+2025-01-16,2025,Ordinary Time,1,Thursday,Thursday of Week 1 in Ordinary Time,Feria
+2025-01-17,2025,Ordinary Time,1,Friday,17 January – St Anthony,Feast
+2025-01-18,2025,Ordinary Time,1,Saturday,Saturday of Week 1 in Ordinary Time,Feria
+2025-01-19,2025,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2025-01-20,2025,Ordinary Time,2,Monday,20 January – St Sebastian,Feast
+2025-01-21,2025,Ordinary Time,2,Tuesday,21 January – St Agnes,Feast
+2025-01-22,2025,Ordinary Time,2,Wednesday,22 January – St Vincent,Feast
+2025-01-23,2025,Ordinary Time,2,Thursday,Thursday of Week 2 in Ordinary Time,Feria
+2025-01-24,2025,Ordinary Time,2,Friday,24 January – St Francis de Sales,Feast
+2025-01-25,2025,Ordinary Time,2,Saturday,"25 January – Conversion of St Paul, Apsotle",Feast
+2025-01-26,2025,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2025-01-27,2025,Ordinary Time,3,Monday,27 January – St Angela Merici,Feast
+2025-01-28,2025,Ordinary Time,3,Tuesday,28 January – St Thomas Aquinas,Feast
+2025-01-29,2025,Ordinary Time,3,Wednesday,Wednesday of Week 3 in Ordinary Time,Feria
+2025-01-30,2025,Ordinary Time,3,Thursday,Thursday of Week 3 in Ordinary Time,Feria
+2025-01-31,2025,Ordinary Time,3,Friday,31 January – St John Bosco,Feast
+2025-02-01,2025,Ordinary Time,3,Saturday,Saturday of Week 3 in Ordinary Time,Feria
+2025-02-02,2025,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2025-02-03,2025,Ordinary Time,4,Monday,3 February – St Ansgar,Feast
+2025-02-04,2025,Ordinary Time,4,Tuesday,Tuesday of Week 4 in Ordinary Time,Feria
+2025-02-05,2025,Ordinary Time,4,Wednesday,5 February – St Agatha,Feast
+2025-02-06,2025,Ordinary Time,4,Thursday,6 February – Ss Paul Miki and companions,Feast
+2025-02-07,2025,Ordinary Time,4,Friday,Friday of Week 4 in Ordinary Time,Feria
+2025-02-08,2025,Ordinary Time,4,Saturday,8 February – St Josephine Bakhita,Feast
+2025-02-09,2025,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2025-02-10,2025,Ordinary Time,5,Monday,10 February – St Scholastica,Feast
+2025-02-11,2025,Ordinary Time,5,Tuesday,11 February – Our Lady of Lourdes,Feast
+2025-02-12,2025,Ordinary Time,5,Wednesday,Wednesday of Week 5 in Ordinary Time,Feria
+2025-02-13,2025,Ordinary Time,5,Thursday,Thursday of Week 5 in Ordinary Time,Feria
+2025-02-14,2025,Ordinary Time,5,Friday,14 February – Ss Cyril and Methodius,Feast
+2025-02-15,2025,Ordinary Time,5,Saturday,Saturday of Week 5 in Ordinary Time,Feria
+2025-02-16,2025,Ordinary Time,6,Sunday,Sixth Sunday in Ordinary Time,Sunday
+2025-02-17,2025,Ordinary Time,6,Monday,17 February – Seven Founders of the Order of Servites,Feast
+2025-02-18,2025,Ordinary Time,6,Tuesday,Tuesday of Week 6 in Ordinary Time,Feria
+2025-02-19,2025,Ordinary Time,6,Wednesday,Wednesday of Week 6 in Ordinary Time,Feria
+2025-02-20,2025,Ordinary Time,6,Thursday,Thursday of Week 6 in Ordinary Time,Feria
+2025-02-21,2025,Ordinary Time,6,Friday,21 February – St Peter Damian,Feast
+2025-02-22,2025,Ordinary Time,6,Saturday,22 February – Chair of Peter,Feast
+2025-02-23,2025,Ordinary Time,7,Sunday,Seventh Sunday in Ordinary Time,Sunday
+2025-02-24,2025,Ordinary Time,7,Monday,Monday of Week 7 in Ordinary Time,Feria
+2025-02-25,2025,Ordinary Time,7,Tuesday,Tuesday of Week 7 in Ordinary Time,Feria
+2025-02-26,2025,Ordinary Time,7,Wednesday,Wednesday of Week 7 in Ordinary Time,Feria
+2025-02-27,2025,Ordinary Time,7,Thursday,Thursday of Week 7 in Ordinary Time,Feria
+2025-02-28,2025,Ordinary Time,7,Friday,Friday of Week 7 in Ordinary Time,Feria
+2025-03-01,2025,Ordinary Time,7,Saturday,Saturday of Week 7 in Ordinary Time,Feria
+2025-03-02,2025,Ordinary Time,8,Sunday,8 Sunday in Ordinary Time,Sunday
+2025-03-03,2025,Ordinary Time,8,Monday,Monday of Week 8 in Ordinary Time,Feria
+2025-03-04,2025,Ordinary Time,8,Tuesday,4 March – St Casimir,Feast
+2025-03-05,2025,Lent,1,Wednesday,Ash Wednesday,Ash Wednesday
+2025-03-06,2025,Lent,1,Thursday,Thursday after Ash Wednesday,Feria
+2025-03-07,2025,Lent,1,Friday,7 March – Ss Perpetua and Felicity,Feast
+2025-03-08,2025,Lent,1,Saturday,8 March – St John of God,Feast
+2025-03-09,2025,Lent,1,Sunday,First Sunday of Lent,Sunday
+2025-03-10,2025,Lent,1,Monday,Monday of First week of Lent,Feria
+2025-03-11,2025,Lent,1,Tuesday,Tuesday of First week of Lent,Feria
+2025-03-12,2025,Lent,1,Wednesday,Wednesday of First week of Lent,Feria
+2025-03-13,2025,Lent,1,Thursday,Thursday of First week of Lent,Feria
+2025-03-14,2025,Lent,1,Friday,Friday of First week of Lent,Feria
+2025-03-15,2025,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2025-03-16,2025,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2025-03-17,2025,Lent,2,Monday,17 March – St Patrick,Feast
+2025-03-18,2025,Lent,2,Tuesday,18 March – St Cyril of Jerusalem,Feast
+2025-03-19,2025,Lent,2,Wednesday,19 March – St Joseph,Solemnity
+2025-03-20,2025,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2025-03-21,2025,Lent,2,Friday,Friday of Second week of Lent,Feria
+2025-03-22,2025,Lent,2,Saturday,Saturday of Second week of Lent,Feria
+2025-03-23,2025,Lent,3,Sunday,Third Sunday of Lent,Sunday
+2025-03-24,2025,Lent,3,Monday,Monday of Third week of Lent,Feria
+2025-03-25,2025,Lent,3,Tuesday,25 March – Annunciation,Solemnity
+2025-03-26,2025,Lent,3,Wednesday,Wednesday of Third week of Lent,Feria
+2025-03-27,2025,Lent,3,Thursday,Thursday of Third week of Lent,Feria
+2025-03-28,2025,Lent,3,Friday,Friday of Third week of Lent,Feria
+2025-03-29,2025,Lent,3,Saturday,Saturday of Third week of Lent,Feria
+2025-03-30,2025,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2025-03-31,2025,Lent,4,Monday,Monday of Fourth week of Lent,Feria
+2025-04-01,2025,Lent,4,Tuesday,Tuesday of Fourth week of Lent,Feria
+2025-04-02,2025,Lent,4,Wednesday,2 April – St Francis of Paola,Feast
+2025-04-03,2025,Lent,4,Thursday,Thursday of Fourth week of Lent,Feria
+2025-04-04,2025,Lent,4,Friday,4 April – St Isidore,Feast
+2025-04-05,2025,Lent,4,Saturday,5 April – St Vincent Ferrer,Feast
+2025-04-06,2025,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2025-04-07,2025,Lent,5,Monday,7 April – St John Baptist de la Salle,Feast
+2025-04-08,2025,Lent,5,Tuesday,Tuesday of Fifth week of Lent,Feria
+2025-04-09,2025,Lent,5,Wednesday,Wednesday of Fifth week of Lent,Feria
+2025-04-10,2025,Lent,5,Thursday,Thursday of Fifth week of Lent,Feria
+2025-04-11,2025,Lent,5,Friday,11 April – St Stanislaus,Feast
+2025-04-12,2025,Lent,5,Saturday,Saturday of Fifth week of Lent,Feria
+2025-04-13,2025,Holy Week,,Sunday,Palm Sunday,Sunday
+2025-04-14,2025,Holy Week,,Monday,Monday of Holy Week,Feria
+2025-04-15,2025,Holy Week,,Tuesday,Tuesday of Holy Week,Feria
+2025-04-16,2025,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2025-04-17,2025,Holy Week,,Thursday,Holy Thursday,Triduum
+2025-04-18,2025,Holy Week,,Friday,Good Friday,Triduum
+2025-04-19,2025,Holy Week,,Saturday,Holy Saturday,Triduum
+2025-04-20,2025,Easter,1,Sunday,Easter Sunday,Solemnity
+2025-04-21,2025,Easter,1,Monday,21 April – St Anselm,Feast
+2025-04-22,2025,Easter,1,Tuesday,Tuesday of First week of Easter,Feria
+2025-04-23,2025,Easter,1,Wednesday,23 April – St Adalbert,Feast
+2025-04-24,2025,Easter,1,Thursday,24 April – St Fidelis of Sigmaringen,Feast
+2025-04-25,2025,Easter,1,Friday,25 April – Anzac Day,Feast
+2025-04-26,2025,Easter,1,Saturday,"26 April – St Mark, Evangelist",Feast
+2025-04-27,2025,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2025-04-28,2025,Easter,2,Monday,28 April – St Peter Chanel,Feast
+2025-04-29,2025,Easter,2,Tuesday,29 April – St Catherine of Siena,Feast
+2025-04-30,2025,Easter,2,Wednesday,30 April – St Pius V,Feast
+2025-05-01,2025,Easter,2,Thursday,1 May – St Joseph the Worker,Feast
+2025-05-02,2025,Easter,2,Friday,2 May – St Athanasius,Feast
+2025-05-03,2025,Easter,2,Saturday,3 May – Ss Philip and James,Feast
+2025-05-04,2025,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2025-05-05,2025,Easter,3,Monday,Monday of Third week of Easter,Feria
+2025-05-06,2025,Easter,3,Tuesday,Tuesday of Third week of Easter,Feria
+2025-05-07,2025,Easter,3,Wednesday,Wednesday of Third week of Easter,Feria
+2025-05-08,2025,Easter,3,Thursday,Thursday of Third week of Easter,Feria
+2025-05-09,2025,Easter,3,Friday,Friday of Third week of Easter,Feria
+2025-05-10,2025,Easter,3,Saturday,Saturday of Third week of Easter,Feria
+2025-05-11,2025,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2025-05-12,2025,Easter,4,Monday,12 May – St Pancras,Feast
+2025-05-13,2025,Easter,4,Tuesday,13 May – Our Lady of Fatima,Feast
+2025-05-14,2025,Easter,4,Wednesday,14 May – St Matthias,Feast
+2025-05-15,2025,Easter,4,Thursday,Thursday of Fourth week of Easter,Feria
+2025-05-16,2025,Easter,4,Friday,Friday of Fourth week of Easter,Feria
+2025-05-17,2025,Easter,4,Saturday,Saturday of Fourth week of Easter,Feria
+2025-05-18,2025,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2025-05-19,2025,Easter,5,Monday,Monday of Fifth week of Easter,Feria
+2025-05-20,2025,Easter,5,Tuesday,20 May – St Bernadine of Siena,Feast
+2025-05-21,2025,Easter,5,Wednesday,21 May – Ss Christopher Magallanes and companions,Feast
+2025-05-22,2025,Easter,5,Thursday,22 May – St Rita of Cascia,Feast
+2025-05-23,2025,Easter,5,Friday,Friday of Fifth week of Easter,Feria
+2025-05-24,2025,Easter,5,Saturday,"24 May – Mary Help of Christians, Year C",Feast
+2025-05-25,2025,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2025-05-26,2025,Easter,6,Monday,26 May – St Philip Neri,Feast
+2025-05-27,2025,Easter,6,Tuesday,27 May – St Augustine of Canterbury,Feast
+2025-05-28,2025,Easter,6,Wednesday,Wednesday of Sixth week of Easter,Feria
+2025-05-29,2025,Easter,6,Thursday,Thursday of Sixth week of Easter,Feria
+2025-05-30,2025,Easter,6,Friday,Friday of Sixth week of Easter,Feria
+2025-05-31,2025,Easter,6,Saturday,31 May – Visitation,Feast
+2025-06-01,2025,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2025-06-02,2025,Easter,7,Monday,2 June – Ss Marcellinus and Peter,Feast
+2025-06-03,2025,Easter,7,Tuesday,3 June – St Charles Lwanga and companions,Feast
+2025-06-04,2025,Easter,7,Wednesday,Wednesday of Seventh week of Easter,Feria
+2025-06-05,2025,Easter,7,Thursday,5 June – St Boniface,Feast
+2025-06-06,2025,Easter,7,Friday,6 June – St Norbert,Feast
+2025-06-07,2025,Easter,7,Saturday,Saturday of Seventh week of Easter,Feria
+2025-06-08,2025,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2025-06-09,2025,Ordinary Time,10,Monday,9 June – St Ephrem,Feast
+2025-06-10,2025,Ordinary Time,10,Tuesday,Tuesday of Week 10 in Ordinary Time,Feria
+2025-06-11,2025,Ordinary Time,10,Wednesday,11 June – St Barnabas,Feast
+2025-06-12,2025,Ordinary Time,10,Thursday,Thursday of Week 10 in Ordinary Time,Feria
+2025-06-13,2025,Ordinary Time,10,Friday,13 June – St Anthony of Padua,Feast
+2025-06-14,2025,Ordinary Time,10,Saturday,Saturday of Week 10 in Ordinary Time,Feria
+2025-06-15,2025,Ordinary Time,11,Sunday,Trinity Sunday,Solemnity
+2025-06-16,2025,Ordinary Time,11,Monday,Monday of Week 11 in Ordinary Time,Feria
+2025-06-17,2025,Ordinary Time,11,Tuesday,Tuesday of Week 11 in Ordinary Time,Feria
+2025-06-18,2025,Ordinary Time,11,Wednesday,Wednesday of Week 11 in Ordinary Time,Feria
+2025-06-19,2025,Ordinary Time,11,Thursday,19 June – St Romuald,Feast
+2025-06-20,2025,Ordinary Time,11,Friday,Friday of Week 11 in Ordinary Time,Feria
+2025-06-21,2025,Ordinary Time,11,Saturday,21 June – St Aloysius Gonzaga,Feast
+2025-06-22,2025,Ordinary Time,12,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2025-06-23,2025,Ordinary Time,12,Monday,23 June – St Paulinus of Nola,Feast
+2025-06-24,2025,Ordinary Time,12,Tuesday,24 June – Birth of John the Baptist,Solemnity
+2025-06-25,2025,Ordinary Time,12,Wednesday,Wednesday of Week 12 in Ordinary Time,Feria
+2025-06-26,2025,Ordinary Time,12,Thursday,Thursday of Week 12 in Ordinary Time,Feria
+2025-06-27,2025,Ordinary Time,12,Friday,Sacred Heart of Jesus,Solemnity
+2025-06-28,2025,Ordinary Time,12,Saturday,28 June – St Irenaeus,Feast
+2025-06-29,2025,Ordinary Time,13,Sunday,29 June – Ss Peter and Paul,Solemnity
+2025-06-30,2025,Ordinary Time,13,Monday,30 June – First Martyrs of Rome,Feast
+2025-07-01,2025,Ordinary Time,13,Tuesday,Tuesday of Week 13 in Ordinary Time,Feria
+2025-07-02,2025,Ordinary Time,13,Wednesday,Wednesday of Week 13 in Ordinary Time,Feria
+2025-07-03,2025,Ordinary Time,13,Thursday,3 July – St Thomas,Feast
+2025-07-04,2025,Ordinary Time,13,Friday,4 July – St Elizabeth of Portugal,Feast
+2025-07-05,2025,Ordinary Time,13,Saturday,5 July – St Anthony Zaccaria,Feast
+2025-07-06,2025,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2025-07-07,2025,Ordinary Time,14,Monday,7 July – St Peter To Rot,Feast
+2025-07-08,2025,Ordinary Time,14,Tuesday,Tuesday of Week 14 in Ordinary Time,Feria
+2025-07-09,2025,Ordinary Time,14,Wednesday,9 July – St Augustine Zhao Rong and companions,Feast
+2025-07-10,2025,Ordinary Time,14,Thursday,Thursday of Week 14 in Ordinary Time,Feria
+2025-07-11,2025,Ordinary Time,14,Friday,11 July – St Benedict,Feast
+2025-07-12,2025,Ordinary Time,14,Saturday,Saturday of Week 14 in Ordinary Time,Feria
+2025-07-13,2025,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2025-07-14,2025,Ordinary Time,15,Monday,14 July – St Camillus de Lellis,Feast
+2025-07-15,2025,Ordinary Time,15,Tuesday,15 July – St Bonaventure,Feast
+2025-07-16,2025,Ordinary Time,15,Wednesday,16 July – Our Lady of Mount Carmel,Feast
+2025-07-17,2025,Ordinary Time,15,Thursday,Thursday of Week 15 in Ordinary Time,Feria
+2025-07-18,2025,Ordinary Time,15,Friday,Friday of Week 15 in Ordinary Time,Feria
+2025-07-19,2025,Ordinary Time,15,Saturday,Saturday of Week 15 in Ordinary Time,Feria
+2025-07-20,2025,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2025-07-21,2025,Ordinary Time,16,Monday,21 July – St Lawrence of Brindisi,Feast
+2025-07-22,2025,Ordinary Time,16,Tuesday,22 July – St Mary Magdalene,Feast
+2025-07-23,2025,Ordinary Time,16,Wednesday,23 July – St Bridget,Feast
+2025-07-24,2025,Ordinary Time,16,Thursday,24 July – St Charbel Makhlouf,Feast
+2025-07-25,2025,Ordinary Time,16,Friday,25 July – St James,Feast
+2025-07-26,2025,Ordinary Time,16,Saturday,26 July – Ss Joachim and Ann,Feast
+2025-07-27,2025,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2025-07-28,2025,Ordinary Time,17,Monday,Monday of Week 17 in Ordinary Time,Feria
+2025-07-29,2025,Ordinary Time,17,Tuesday,29 July – St Martha,Feast
+2025-07-30,2025,Ordinary Time,17,Wednesday,30 July – St Peter Chrysologus,Feast
+2025-07-31,2025,Ordinary Time,17,Thursday,31 July – St Ignatius of Loyola,Feast
+2025-08-01,2025,Ordinary Time,17,Friday,1 August – St Alphonsus Ligouri,Feast
+2025-08-02,2025,Ordinary Time,17,Saturday,2 August – St Peter Julian Eymard,Feast
+2025-08-03,2025,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2025-08-04,2025,Ordinary Time,18,Monday,4 August – St John Vianney,Feast
+2025-08-05,2025,Ordinary Time,18,Tuesday,5 August – Dedication of St Mary Major,Feast
+2025-08-06,2025,Ordinary Time,18,Wednesday,6 August – Transfiguration (Year C),Feast
+2025-08-07,2025,Ordinary Time,18,Thursday,7 August – St Cajetan,Feast
+2025-08-08,2025,Ordinary Time,18,Friday,8 August – St Mary of the Cross MacKillop,Feast
+2025-08-09,2025,Ordinary Time,18,Saturday,9 August – St Teresa Benedicta of the Cross,Feast
+2025-08-10,2025,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2025-08-11,2025,Ordinary Time,19,Monday,11 August – St Clare,Feast
+2025-08-12,2025,Ordinary Time,19,Tuesday,12 August – St Jane Frances de Chantal,Feast
+2025-08-13,2025,Ordinary Time,19,Wednesday,13 August – Ss Pontian and Hippolytus,Feast
+2025-08-14,2025,Ordinary Time,19,Thursday,14 August – St Maximilian Mary Kolbe,Feast
+2025-08-15,2025,Ordinary Time,19,Friday,15 August – Assumption,Solemnity
+2025-08-16,2025,Ordinary Time,19,Saturday,16 August – St Stephen of Hungary,Feast
+2025-08-17,2025,Ordinary Time,20,Sunday,20 Sunday in Ordinary Time,Sunday
+2025-08-18,2025,Ordinary Time,20,Monday,Monday of Week 20 in Ordinary Time,Feria
+2025-08-19,2025,Ordinary Time,20,Tuesday,19 August – St John Eudes,Feast
+2025-08-20,2025,Ordinary Time,20,Wednesday,20 August – St Bernard,Feast
+2025-08-21,2025,Ordinary Time,20,Thursday,21 August – Pope St Pius X,Feast
+2025-08-22,2025,Ordinary Time,20,Friday,22 August – Queenship of Mary,Feast
+2025-08-23,2025,Ordinary Time,20,Saturday,23 August – St Rose of Lima,Feast
+2025-08-24,2025,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2025-08-25,2025,Ordinary Time,21,Monday,25 August – St Joseph Calasanz,Feast
+2025-08-26,2025,Ordinary Time,21,Tuesday,Tuesday of Week 21 in Ordinary Time,Feria
+2025-08-27,2025,Ordinary Time,21,Wednesday,27 August – St Monica,Feast
+2025-08-28,2025,Ordinary Time,21,Thursday,28 August – St Augustine,Feast
+2025-08-29,2025,Ordinary Time,21,Friday,29 August – Beheading of John the Baptist,Feast
+2025-08-30,2025,Ordinary Time,21,Saturday,Saturday of Week 21 in Ordinary Time,Feria
+2025-08-31,2025,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2025-09-01,2025,Ordinary Time,22,Monday,Monday of Week 22 in Ordinary Time,Feria
+2025-09-02,2025,Ordinary Time,22,Tuesday,Tuesday of Week 22 in Ordinary Time,Feria
+2025-09-03,2025,Ordinary Time,22,Wednesday,3 September – St Gregory the Great,Feast
+2025-09-04,2025,Ordinary Time,22,Thursday,Thursday of Week 22 in Ordinary Time,Feria
+2025-09-05,2025,Ordinary Time,22,Friday,Friday of Week 22 in Ordinary Time,Feria
+2025-09-06,2025,Ordinary Time,22,Saturday,Saturday of Week 22 in Ordinary Time,Feria
+2025-09-07,2025,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2025-09-08,2025,Ordinary Time,23,Monday,8 September – Birth of Mary,Feast
+2025-09-09,2025,Ordinary Time,23,Tuesday,9 September – St Peter Claver,Feast
+2025-09-10,2025,Ordinary Time,23,Wednesday,Wednesday of Week 23 in Ordinary Time,Feria
+2025-09-11,2025,Ordinary Time,23,Thursday,Thursday of Week 23 in Ordinary Time,Feria
+2025-09-12,2025,Ordinary Time,23,Friday,12 September – The Most Holy Name of Mary,Feast
+2025-09-13,2025,Ordinary Time,23,Saturday,13 September – St John Chrysostom,Feast
+2025-09-14,2025,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2025-09-15,2025,Ordinary Time,24,Monday,15 September – Our Lady of Sorrows,Feast
+2025-09-16,2025,Ordinary Time,24,Tuesday,16 September – Ss Cornelius and Cyprian,Feast
+2025-09-17,2025,Ordinary Time,24,Wednesday,17 September – St Robert Bellarmine,Feast
+2025-09-18,2025,Ordinary Time,24,Thursday,Thursday of Week 24 in Ordinary Time,Feria
+2025-09-19,2025,Ordinary Time,24,Friday,19 September – St Januarius,Feast
+2025-09-20,2025,Ordinary Time,24,Saturday,"20 September – Ss Andrew Kim Taegon, Paul Chong Hasang and companions",Feast
+2025-09-21,2025,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2025-09-22,2025,Ordinary Time,25,Monday,Monday of Week 25 in Ordinary Time,Feria
+2025-09-23,2025,Ordinary Time,25,Tuesday,23 September – Pio of Pietrelcina,Feast
+2025-09-24,2025,Ordinary Time,25,Wednesday,Wednesday of Week 25 in Ordinary Time,Feria
+2025-09-25,2025,Ordinary Time,25,Thursday,Thursday of Week 25 in Ordinary Time,Feria
+2025-09-26,2025,Ordinary Time,25,Friday,26 September – Ss Cosmas and Damian,Feast
+2025-09-27,2025,Ordinary Time,25,Saturday,27 September – St Vincent de Paul,Feast
+2025-09-28,2025,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2025-09-29,2025,Ordinary Time,26,Monday,"29 September – Ss Michael, Gabriel and Raphael",Feast
+2025-09-30,2025,Ordinary Time,26,Tuesday,30 September – St Jerome,Feast
+2025-10-01,2025,Ordinary Time,26,Wednesday,1 October – St Therese of the Child Jesus,Feast
+2025-10-02,2025,Ordinary Time,26,Thursday,2 October – Holy Guardian Angels,Feast
+2025-10-03,2025,Ordinary Time,26,Friday,Friday of Week 26 in Ordinary Time,Feria
+2025-10-04,2025,Ordinary Time,26,Saturday,4 October – St Francis of Assisi,Feast
+2025-10-05,2025,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2025-10-06,2025,Ordinary Time,27,Monday,6 October – St Bruno,Feast
+2025-10-07,2025,Ordinary Time,27,Tuesday,7 October – Our Lady of the Rosary,Feast
+2025-10-08,2025,Ordinary Time,27,Wednesday,Wednesday of Week 27 in Ordinary Time,Feria
+2025-10-09,2025,Ordinary Time,27,Thursday,9 October – St John Leonardi,Feast
+2025-10-10,2025,Ordinary Time,27,Friday,Friday of Week 27 in Ordinary Time,Feria
+2025-10-11,2025,Ordinary Time,27,Saturday,Saturday of Week 27 in Ordinary Time,Feria
+2025-10-12,2025,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2025-10-13,2025,Ordinary Time,28,Monday,Monday of Week 28 in Ordinary Time,Feria
+2025-10-14,2025,Ordinary Time,28,Tuesday,14 October – St Callistus I,Feast
+2025-10-15,2025,Ordinary Time,28,Wednesday,15 October – St Teresa of Jesus,Feast
+2025-10-16,2025,Ordinary Time,28,Thursday,16 October – St Margaret Mary Alacoque,Feast
+2025-10-17,2025,Ordinary Time,28,Friday,17 October – St Ignatius of Antioch,Feast
+2025-10-18,2025,Ordinary Time,28,Saturday,18 October – St Luke,Feast
+2025-10-19,2025,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2025-10-20,2025,Ordinary Time,29,Monday,Monday of Week 29 in Ordinary Time,Feria
+2025-10-21,2025,Ordinary Time,29,Tuesday,Tuesday of Week 29 in Ordinary Time,Feria
+2025-10-22,2025,Ordinary Time,29,Wednesday,Wednesday of Week 29 in Ordinary Time,Feria
+2025-10-23,2025,Ordinary Time,29,Thursday,23 October – St John of Capistrano,Feast
+2025-10-24,2025,Ordinary Time,29,Friday,24 October – St Anthony Claret,Feast
+2025-10-25,2025,Ordinary Time,29,Saturday,Saturday of Week 29 in Ordinary Time,Feria
+2025-10-26,2025,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2025-10-27,2025,Ordinary Time,30,Monday,Monday of Week 30 in Ordinary Time,Feria
+2025-10-28,2025,Ordinary Time,30,Tuesday,28 October – Ss Simon and Jude,Feast
+2025-10-29,2025,Ordinary Time,30,Wednesday,Wednesday of Week 30 in Ordinary Time,Feria
+2025-10-30,2025,Ordinary Time,30,Thursday,Thursday of Week 30 in Ordinary Time,Feria
+2025-10-31,2025,Ordinary Time,30,Friday,Friday of Week 30 in Ordinary Time,Feria
+2025-11-01,2025,Ordinary Time,30,Saturday,1 November – All Saints,Solemnity
+2025-11-02,2025,Ordinary Time,31,Sunday,31 Sunday in Ordinary Time,Sunday
+2025-11-03,2025,Ordinary Time,31,Monday,3 November – St Martin de Porres,Feast
+2025-11-04,2025,Ordinary Time,31,Tuesday,4 November – St Charles Borromeo,Feast
+2025-11-05,2025,Ordinary Time,31,Wednesday,Wednesday of Week 31 in Ordinary Time,Feria
+2025-11-06,2025,Ordinary Time,31,Thursday,Thursday of Week 31 in Ordinary Time,Feria
+2025-11-07,2025,Ordinary Time,31,Friday,Friday of Week 31 in Ordinary Time,Feria
+2025-11-08,2025,Ordinary Time,31,Saturday,Saturday of Week 31 in Ordinary Time,Feria
+2025-11-09,2025,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2025-11-10,2025,Ordinary Time,32,Monday,10 November – St Leo the Great,Feast
+2025-11-11,2025,Ordinary Time,32,Tuesday,11 November – St Martin of Tours,Feast
+2025-11-12,2025,Ordinary Time,32,Wednesday,12 November – St Josaphat,Feast
+2025-11-13,2025,Ordinary Time,32,Thursday,Thursday of Week 32 in Ordinary Time,Feria
+2025-11-14,2025,Ordinary Time,32,Friday,Friday of Week 32 in Ordinary Time,Feria
+2025-11-15,2025,Ordinary Time,32,Saturday,15 November – St Albert the Great,Feast
+2025-11-16,2025,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2025-11-17,2025,Ordinary Time,33,Monday,17 November – St Elizabeth of Hungary,Feast
+2025-11-18,2025,Ordinary Time,33,Tuesday,18 November – Dedication of the basilicas of Peter and Paul,Feast
+2025-11-19,2025,Ordinary Time,33,Wednesday,Wednesday of Week 33 in Ordinary Time,Feria
+2025-11-20,2025,Ordinary Time,33,Thursday,Thursday of Week 33 in Ordinary Time,Feria
+2025-11-21,2025,Ordinary Time,33,Friday,21 November – Presentation of Mary,Feast
+2025-11-22,2025,Ordinary Time,33,Saturday,22 November – St Cecilia,Feast
+2025-11-23,2025,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2025-11-24,2025,Ordinary Time,34,Monday,24 November – Ss Andrew Dung Lac and companions,Feast
+2025-11-25,2025,Ordinary Time,34,Tuesday,25 November – St Catherine of Alexandria,Feast
+2025-11-26,2025,Ordinary Time,34,Wednesday,Wednesday of Week 34 in Ordinary Time,Feria
+2025-11-27,2025,Ordinary Time,34,Thursday,Thursday of Week 34 in Ordinary Time,Feria
+2025-11-28,2025,Ordinary Time,34,Friday,Friday of Week 34 in Ordinary Time,Feria
+2025-11-29,2025,Ordinary Time,34,Saturday,Saturday of Week 34 in Ordinary Time,Feria
+2025-11-30,2025,Advent,1,Sunday,First Sunday of Advent,Sunday
+2025-12-01,2025,Advent,1,Monday,Monday of First week of Advent,Feria
+2025-12-02,2025,Advent,1,Tuesday,Tuesday of First week of Advent,Feria
+2025-12-03,2025,Advent,1,Wednesday,3 December – St Francis Xavier,Feast
+2025-12-04,2025,Advent,1,Thursday,4 December – St John Damascene,Feast
+2025-12-05,2025,Advent,1,Friday,Friday of First week of Advent,Feria
+2025-12-06,2025,Advent,1,Saturday,6 December – St Nicholas,Feast
+2025-12-07,2025,Advent,2,Sunday,Second Sunday of Advent,Sunday
+2025-12-08,2025,Advent,2,Monday,8 December – Immaculate Conception,Solemnity
+2025-12-09,2025,Advent,2,Tuesday,9 December – St Juan Diego,Feast
+2025-12-10,2025,Advent,2,Wednesday,Wednesday of Second week of Advent,Feria
+2025-12-11,2025,Advent,2,Thursday,11 December – St Damasus I,Feast
+2025-12-12,2025,Advent,2,Friday,12 December – Our Lady of Guadalupe,Feast
+2025-12-13,2025,Advent,2,Saturday,13 December – St Lucy,Feast
+2025-12-14,2025,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2025-12-15,2025,Advent,3,Monday,Monday of Third week of Advent,Feria
+2025-12-16,2025,Advent,3,Tuesday,Tuesday of Third week of Advent,Feria
+2025-12-17,2025,Advent,3,Wednesday,17th December,Feast
+2025-12-18,2025,Advent,3,Thursday,18th December,Feast
+2025-12-19,2025,Advent,3,Friday,19th December,Feast
+2025-12-20,2025,Advent,3,Saturday,20th December,Feast
+2025-12-21,2025,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2025-12-22,2025,Advent,4,Monday,22nd December,Feast
+2025-12-23,2025,Advent,4,Tuesday,23rd December,Feast
+2025-12-24,2025,Advent,4,Wednesday,24th December,Feast
+2025-12-25,2025,Christmas,,Thursday,Christmas Day,Solemnity
+2025-12-26,2025,Christmas,,Friday,26 December – St Stephen,Feast
+2025-12-27,2025,Christmas,,Saturday,"27 December – St John, Apostle, Evangelist",Feast
+2025-12-28,2025,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2025-12-29,2025,Christmas,,Monday,29 December – St Thomas Becket,Feast
+2025-12-30,2025,Christmas,,Tuesday,Tuesday of Christmas Season,Feria
+2025-12-31,2025,Christmas,,Wednesday,31 December – St Sylvester I,Feast
+2026-01-01,2026,Christmas,,Thursday,"1 January – Mary, Mother of God",Feast
+2026-01-02,2026,Christmas,,Friday,2nd January,Feast
+2026-01-03,2026,Christmas,,Saturday,3rd January,Feast
+2026-01-04,2026,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2026-01-05,2026,Christmas,,Monday,5th January,Feast
+2026-01-06,2026,Christmas,,Tuesday,6th January,Feast
+2026-01-07,2026,Christmas,,Wednesday,7th January,Feast
+2026-01-08,2026,Christmas,,Thursday,Thursday of Christmas Season,Feria
+2026-01-09,2026,Christmas,,Friday,Friday of Christmas Season,Feria
+2026-01-10,2026,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2026-01-11,2026,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2026-01-12,2026,Ordinary Time,1,Monday,Monday of Week 1 in Ordinary Time,Feria
+2026-01-13,2026,Ordinary Time,1,Tuesday,13 January – St Hilary,Feast
+2026-01-14,2026,Ordinary Time,1,Wednesday,Wednesday of Week 1 in Ordinary Time,Feria
+2026-01-15,2026,Ordinary Time,1,Thursday,Thursday of Week 1 in Ordinary Time,Feria
+2026-01-16,2026,Ordinary Time,1,Friday,Friday of Week 1 in Ordinary Time,Feria
+2026-01-17,2026,Ordinary Time,1,Saturday,17 January – St Anthony,Feast
+2026-01-18,2026,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2026-01-19,2026,Ordinary Time,2,Monday,Monday of Week 2 in Ordinary Time,Feria
+2026-01-20,2026,Ordinary Time,2,Tuesday,20 January – St Sebastian,Feast
+2026-01-21,2026,Ordinary Time,2,Wednesday,21 January – St Agnes,Feast
+2026-01-22,2026,Ordinary Time,2,Thursday,22 January – St Vincent,Feast
+2026-01-23,2026,Ordinary Time,2,Friday,Friday of Week 2 in Ordinary Time,Feria
+2026-01-24,2026,Ordinary Time,2,Saturday,24 January – St Francis de Sales,Feast
+2026-01-25,2026,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2026-01-26,2026,Ordinary Time,3,Monday,26 January – Australia Day,Feast
+2026-01-27,2026,Ordinary Time,3,Tuesday,27 January – St Angela Merici,Feast
+2026-01-28,2026,Ordinary Time,3,Wednesday,28 January – St Thomas Aquinas,Feast
+2026-01-29,2026,Ordinary Time,3,Thursday,Thursday of Week 3 in Ordinary Time,Feria
+2026-01-30,2026,Ordinary Time,3,Friday,Friday of Week 3 in Ordinary Time,Feria
+2026-01-31,2026,Ordinary Time,3,Saturday,31 January – St John Bosco,Feast
+2026-02-01,2026,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2026-02-02,2026,Ordinary Time,4,Monday,2 February – Presentation of the Lord,Feast
+2026-02-03,2026,Ordinary Time,4,Tuesday,3 February – St Ansgar,Feast
+2026-02-04,2026,Ordinary Time,4,Wednesday,Wednesday of Week 4 in Ordinary Time,Feria
+2026-02-05,2026,Ordinary Time,4,Thursday,5 February – St Agatha,Feast
+2026-02-06,2026,Ordinary Time,4,Friday,6 February – Ss Paul Miki and companions,Feast
+2026-02-07,2026,Ordinary Time,4,Saturday,Saturday of Week 4 in Ordinary Time,Feria
+2026-02-08,2026,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2026-02-09,2026,Ordinary Time,5,Monday,Monday of Week 5 in Ordinary Time,Feria
+2026-02-10,2026,Ordinary Time,5,Tuesday,10 February – St Scholastica,Feast
+2026-02-11,2026,Ordinary Time,5,Wednesday,11 February – Our Lady of Lourdes,Feast
+2026-02-12,2026,Ordinary Time,5,Thursday,Thursday of Week 5 in Ordinary Time,Feria
+2026-02-13,2026,Ordinary Time,5,Friday,Friday of Week 5 in Ordinary Time,Feria
+2026-02-14,2026,Ordinary Time,5,Saturday,14 February – Ss Cyril and Methodius,Feast
+2026-02-15,2026,Ordinary Time,6,Sunday,Sixth Sunday in Ordinary Time,Sunday
+2026-02-16,2026,Ordinary Time,6,Monday,Monday of Week 6 in Ordinary Time,Feria
+2026-02-17,2026,Ordinary Time,6,Tuesday,17 February – Seven Founders of the Order of Servites,Feast
+2026-02-18,2026,Lent,1,Wednesday,Ash Wednesday,Ash Wednesday
+2026-02-19,2026,Lent,1,Thursday,Thursday after Ash Wednesday,Feria
+2026-02-20,2026,Lent,1,Friday,Friday after Ash Wednesday,Feria
+2026-02-21,2026,Lent,1,Saturday,21 February – St Peter Damian,Feast
+2026-02-22,2026,Lent,1,Sunday,First Sunday of Lent,Sunday
+2026-02-23,2026,Lent,1,Monday,23 February – St Polycarp,Feast
+2026-02-24,2026,Lent,1,Tuesday,Tuesday of First week of Lent,Feria
+2026-02-25,2026,Lent,1,Wednesday,Wednesday of First week of Lent,Feria
+2026-02-26,2026,Lent,1,Thursday,Thursday of First week of Lent,Feria
+2026-02-27,2026,Lent,1,Friday,Friday of First week of Lent,Feria
+2026-02-28,2026,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2026-03-01,2026,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2026-03-02,2026,Lent,2,Monday,Monday of Second week of Lent,Feria
+2026-03-03,2026,Lent,2,Tuesday,Tuesday of Second week of Lent,Feria
+2026-03-04,2026,Lent,2,Wednesday,4 March – St Casimir,Feast
+2026-03-05,2026,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2026-03-06,2026,Lent,2,Friday,Friday of Second week of Lent,Feria
+2026-03-07,2026,Lent,2,Saturday,7 March – Ss Perpetua and Felicity,Feast
+2026-03-08,2026,Lent,3,Sunday,Third Sunday of Lent,Sunday
+2026-03-09,2026,Lent,3,Monday,9 March – St Frances of Rome,Feast
+2026-03-10,2026,Lent,3,Tuesday,Tuesday of Third week of Lent,Feria
+2026-03-11,2026,Lent,3,Wednesday,Wednesday of Third week of Lent,Feria
+2026-03-12,2026,Lent,3,Thursday,Thursday of Third week of Lent,Feria
+2026-03-13,2026,Lent,3,Friday,Friday of Third week of Lent,Feria
+2026-03-14,2026,Lent,3,Saturday,Saturday of Third week of Lent,Feria
+2026-03-15,2026,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2026-03-16,2026,Lent,4,Monday,Monday of Fourth week of Lent,Feria
+2026-03-17,2026,Lent,4,Tuesday,17 March – St Patrick,Feast
+2026-03-18,2026,Lent,4,Wednesday,18 March – St Cyril of Jerusalem,Feast
+2026-03-19,2026,Lent,4,Thursday,19 March – St Joseph,Solemnity
+2026-03-20,2026,Lent,4,Friday,Friday of Fourth week of Lent,Feria
+2026-03-21,2026,Lent,4,Saturday,Saturday of Fourth week of Lent,Feria
+2026-03-22,2026,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2026-03-23,2026,Lent,5,Monday,23 March – St Turibius de Mogrovejo,Feast
+2026-03-24,2026,Lent,5,Tuesday,Tuesday of Fifth week of Lent,Feria
+2026-03-25,2026,Lent,5,Wednesday,25 March – Annunciation,Solemnity
+2026-03-26,2026,Lent,5,Thursday,Thursday of Fifth week of Lent,Feria
+2026-03-27,2026,Lent,5,Friday,Friday of Fifth week of Lent,Feria
+2026-03-28,2026,Lent,5,Saturday,Saturday of Fifth week of Lent,Feria
+2026-03-29,2026,Holy Week,,Sunday,Palm Sunday,Sunday
+2026-03-30,2026,Holy Week,,Monday,Monday of Holy Week,Feria
+2026-03-31,2026,Holy Week,,Tuesday,Tuesday of Holy Week,Feria
+2026-04-01,2026,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2026-04-02,2026,Holy Week,,Thursday,2 April – St Francis of Paola,Feast
+2026-04-03,2026,Holy Week,,Friday,Good Friday,Triduum
+2026-04-04,2026,Holy Week,,Saturday,4 April – St Isidore,Feast
+2026-04-05,2026,Easter,1,Sunday,Easter Sunday,Solemnity
+2026-04-06,2026,Easter,1,Monday,Monday of First week of Easter,Feria
+2026-04-07,2026,Easter,1,Tuesday,7 April – St John Baptist de la Salle,Feast
+2026-04-08,2026,Easter,1,Wednesday,Wednesday of First week of Easter,Feria
+2026-04-09,2026,Easter,1,Thursday,Thursday of First week of Easter,Feria
+2026-04-10,2026,Easter,1,Friday,Friday of First week of Easter,Feria
+2026-04-11,2026,Easter,1,Saturday,11 April – St Stanislaus,Feast
+2026-04-12,2026,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2026-04-13,2026,Easter,2,Monday,13 April – St Martin I,Feast
+2026-04-14,2026,Easter,2,Tuesday,Tuesday of Second week of Easter,Feria
+2026-04-15,2026,Easter,2,Wednesday,Wednesday of Second week of Easter,Feria
+2026-04-16,2026,Easter,2,Thursday,Thursday of Second week of Easter,Feria
+2026-04-17,2026,Easter,2,Friday,Friday of Second week of Easter,Feria
+2026-04-18,2026,Easter,2,Saturday,Saturday of Second week of Easter,Feria
+2026-04-19,2026,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2026-04-20,2026,Easter,3,Monday,Monday of Third week of Easter,Feria
+2026-04-21,2026,Easter,3,Tuesday,21 April – St Anselm,Feast
+2026-04-22,2026,Easter,3,Wednesday,Wednesday of Third week of Easter,Feria
+2026-04-23,2026,Easter,3,Thursday,23 April – St Adalbert,Feast
+2026-04-24,2026,Easter,3,Friday,24 April – St Fidelis of Sigmaringen,Feast
+2026-04-25,2026,Easter,3,Saturday,25 April – Anzac Day,Feast
+2026-04-26,2026,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2026-04-27,2026,Easter,4,Monday,Monday of Fourth week of Easter,Feria
+2026-04-28,2026,Easter,4,Tuesday,28 April – St Peter Chanel,Feast
+2026-04-29,2026,Easter,4,Wednesday,29 April – St Catherine of Siena,Feast
+2026-04-30,2026,Easter,4,Thursday,30 April – St Pius V,Feast
+2026-05-01,2026,Easter,4,Friday,1 May – St Joseph the Worker,Feast
+2026-05-02,2026,Easter,4,Saturday,2 May – St Athanasius,Feast
+2026-05-03,2026,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2026-05-04,2026,Easter,5,Monday,Monday of Fifth week of Easter,Feria
+2026-05-05,2026,Easter,5,Tuesday,Tuesday of Fifth week of Easter,Feria
+2026-05-06,2026,Easter,5,Wednesday,Wednesday of Fifth week of Easter,Feria
+2026-05-07,2026,Easter,5,Thursday,Thursday of Fifth week of Easter,Feria
+2026-05-08,2026,Easter,5,Friday,Friday of Fifth week of Easter,Feria
+2026-05-09,2026,Easter,5,Saturday,Saturday of Fifth week of Easter,Feria
+2026-05-10,2026,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2026-05-11,2026,Easter,6,Monday,Monday of Sixth week of Easter,Feria
+2026-05-12,2026,Easter,6,Tuesday,12 May – St Pancras,Feast
+2026-05-13,2026,Easter,6,Wednesday,13 May – Our Lady of Fatima,Feast
+2026-05-14,2026,Easter,6,Thursday,14 May – St Matthias,Feast
+2026-05-15,2026,Easter,6,Friday,Friday of Sixth week of Easter,Feria
+2026-05-16,2026,Easter,6,Saturday,Saturday of Sixth week of Easter,Feria
+2026-05-17,2026,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2026-05-18,2026,Easter,7,Monday,18 May – St John I,Feast
+2026-05-19,2026,Easter,7,Tuesday,Tuesday of Seventh week of Easter,Feria
+2026-05-20,2026,Easter,7,Wednesday,20 May – St Bernadine of Siena,Feast
+2026-05-21,2026,Easter,7,Thursday,21 May – Ss Christopher Magallanes and companions,Feast
+2026-05-22,2026,Easter,7,Friday,22 May – St Rita of Cascia,Feast
+2026-05-23,2026,Easter,7,Saturday,Saturday of Seventh week of Easter,Feria
+2026-05-24,2026,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2026-05-25,2026,Ordinary Time,8,Monday,25 May – St Mary Magdalene de Pazzi,Feast
+2026-05-26,2026,Ordinary Time,8,Tuesday,26 May – St Philip Neri,Feast
+2026-05-27,2026,Ordinary Time,8,Wednesday,27 May – St Augustine of Canterbury,Feast
+2026-05-28,2026,Ordinary Time,8,Thursday,Thursday of Week 8 in Ordinary Time,Feria
+2026-05-29,2026,Ordinary Time,8,Friday,Friday of Week 8 in Ordinary Time,Feria
+2026-05-30,2026,Ordinary Time,8,Saturday,Saturday of Week 8 in Ordinary Time,Feria
+2026-05-31,2026,Ordinary Time,9,Sunday,Trinity Sunday,Solemnity
+2026-06-01,2026,Ordinary Time,9,Monday,"1 June – St Justin, Martyr",Feast
+2026-06-02,2026,Ordinary Time,9,Tuesday,2 June – Ss Marcellinus and Peter,Feast
+2026-06-03,2026,Ordinary Time,9,Wednesday,3 June – St Charles Lwanga and companions,Feast
+2026-06-04,2026,Ordinary Time,9,Thursday,Thursday of Week 9 in Ordinary Time,Feria
+2026-06-05,2026,Ordinary Time,9,Friday,5 June – St Boniface,Feast
+2026-06-06,2026,Ordinary Time,9,Saturday,6 June – St Norbert,Feast
+2026-06-07,2026,Ordinary Time,10,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2026-06-08,2026,Ordinary Time,10,Monday,Monday of Week 10 in Ordinary Time,Feria
+2026-06-09,2026,Ordinary Time,10,Tuesday,9 June – St Ephrem,Feast
+2026-06-10,2026,Ordinary Time,10,Wednesday,Wednesday of Week 10 in Ordinary Time,Feria
+2026-06-11,2026,Ordinary Time,10,Thursday,11 June – St Barnabas,Feast
+2026-06-12,2026,Ordinary Time,10,Friday,Sacred Heart of Jesus,Solemnity
+2026-06-13,2026,Ordinary Time,10,Saturday,13 June – St Anthony of Padua,Feast
+2026-06-14,2026,Ordinary Time,11,Sunday,11 Sunday in Ordinary Time,Sunday
+2026-06-15,2026,Ordinary Time,11,Monday,Monday of Week 11 in Ordinary Time,Feria
+2026-06-16,2026,Ordinary Time,11,Tuesday,Tuesday of Week 11 in Ordinary Time,Feria
+2026-06-17,2026,Ordinary Time,11,Wednesday,Wednesday of Week 11 in Ordinary Time,Feria
+2026-06-18,2026,Ordinary Time,11,Thursday,Thursday of Week 11 in Ordinary Time,Feria
+2026-06-19,2026,Ordinary Time,11,Friday,19 June – St Romuald,Feast
+2026-06-20,2026,Ordinary Time,11,Saturday,Saturday of Week 11 in Ordinary Time,Feria
+2026-06-21,2026,Ordinary Time,12,Sunday,12 Sunday in Ordinary Time,Sunday
+2026-06-22,2026,Ordinary Time,12,Monday,22 June – Ss John Fisher and Thomas More,Feast
+2026-06-23,2026,Ordinary Time,12,Tuesday,23 June – St Paulinus of Nola,Feast
+2026-06-24,2026,Ordinary Time,12,Wednesday,24 June – Birth of John the Baptist,Solemnity
+2026-06-25,2026,Ordinary Time,12,Thursday,Thursday of Week 12 in Ordinary Time,Feria
+2026-06-26,2026,Ordinary Time,12,Friday,Friday of Week 12 in Ordinary Time,Feria
+2026-06-27,2026,Ordinary Time,12,Saturday,27 June – St Cyril of Alexandria,Feast
+2026-06-28,2026,Ordinary Time,13,Sunday,13 Sunday in Ordinary Time,Sunday
+2026-06-29,2026,Ordinary Time,13,Monday,29 June – Ss Peter and Paul,Solemnity
+2026-06-30,2026,Ordinary Time,13,Tuesday,30 June – First Martyrs of Rome,Feast
+2026-07-01,2026,Ordinary Time,13,Wednesday,Wednesday of Week 13 in Ordinary Time,Feria
+2026-07-02,2026,Ordinary Time,13,Thursday,Thursday of Week 13 in Ordinary Time,Feria
+2026-07-03,2026,Ordinary Time,13,Friday,3 July – St Thomas,Feast
+2026-07-04,2026,Ordinary Time,13,Saturday,4 July – St Elizabeth of Portugal,Feast
+2026-07-05,2026,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2026-07-06,2026,Ordinary Time,14,Monday,6 July – St Maria Goretti,Feast
+2026-07-07,2026,Ordinary Time,14,Tuesday,7 July – St Peter To Rot,Feast
+2026-07-08,2026,Ordinary Time,14,Wednesday,Wednesday of Week 14 in Ordinary Time,Feria
+2026-07-09,2026,Ordinary Time,14,Thursday,9 July – St Augustine Zhao Rong and companions,Feast
+2026-07-10,2026,Ordinary Time,14,Friday,Friday of Week 14 in Ordinary Time,Feria
+2026-07-11,2026,Ordinary Time,14,Saturday,11 July – St Benedict,Feast
+2026-07-12,2026,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2026-07-13,2026,Ordinary Time,15,Monday,13 July – St Henry,Feast
+2026-07-14,2026,Ordinary Time,15,Tuesday,14 July – St Camillus de Lellis,Feast
+2026-07-15,2026,Ordinary Time,15,Wednesday,15 July – St Bonaventure,Feast
+2026-07-16,2026,Ordinary Time,15,Thursday,16 July – Our Lady of Mount Carmel,Feast
+2026-07-17,2026,Ordinary Time,15,Friday,Friday of Week 15 in Ordinary Time,Feria
+2026-07-18,2026,Ordinary Time,15,Saturday,Saturday of Week 15 in Ordinary Time,Feria
+2026-07-19,2026,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2026-07-20,2026,Ordinary Time,16,Monday,20 July – St Apollonaris,Feast
+2026-07-21,2026,Ordinary Time,16,Tuesday,21 July – St Lawrence of Brindisi,Feast
+2026-07-22,2026,Ordinary Time,16,Wednesday,22 July – St Mary Magdalene,Feast
+2026-07-23,2026,Ordinary Time,16,Thursday,23 July – St Bridget,Feast
+2026-07-24,2026,Ordinary Time,16,Friday,24 July – St Charbel Makhlouf,Feast
+2026-07-25,2026,Ordinary Time,16,Saturday,25 July – St James,Feast
+2026-07-26,2026,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2026-07-27,2026,Ordinary Time,17,Monday,Monday of Week 17 in Ordinary Time,Feria
+2026-07-28,2026,Ordinary Time,17,Tuesday,Tuesday of Week 17 in Ordinary Time,Feria
+2026-07-29,2026,Ordinary Time,17,Wednesday,29 July – St Martha,Feast
+2026-07-30,2026,Ordinary Time,17,Thursday,30 July – St Peter Chrysologus,Feast
+2026-07-31,2026,Ordinary Time,17,Friday,31 July – St Ignatius of Loyola,Feast
+2026-08-01,2026,Ordinary Time,17,Saturday,1 August – St Alphonsus Ligouri,Feast
+2026-08-02,2026,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2026-08-03,2026,Ordinary Time,18,Monday,3 August (Australia) – St Dominic,Feast
+2026-08-04,2026,Ordinary Time,18,Tuesday,4 August – St John Vianney,Feast
+2026-08-05,2026,Ordinary Time,18,Wednesday,5 August – Dedication of St Mary Major,Feast
+2026-08-06,2026,Ordinary Time,18,Thursday,6 August – Transfiguration (Year C),Feast
+2026-08-07,2026,Ordinary Time,18,Friday,7 August – St Cajetan,Feast
+2026-08-08,2026,Ordinary Time,18,Saturday,8 August – St Mary of the Cross MacKillop,Feast
+2026-08-09,2026,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2026-08-10,2026,Ordinary Time,19,Monday,10 August – St Lawrence,Feast
+2026-08-11,2026,Ordinary Time,19,Tuesday,11 August – St Clare,Feast
+2026-08-12,2026,Ordinary Time,19,Wednesday,12 August – St Jane Frances de Chantal,Feast
+2026-08-13,2026,Ordinary Time,19,Thursday,13 August – Ss Pontian and Hippolytus,Feast
+2026-08-14,2026,Ordinary Time,19,Friday,14 August – St Maximilian Mary Kolbe,Feast
+2026-08-15,2026,Ordinary Time,19,Saturday,15 August – Assumption,Solemnity
+2026-08-16,2026,Ordinary Time,20,Sunday,20 Sunday in Ordinary Time,Sunday
+2026-08-17,2026,Ordinary Time,20,Monday,Monday of Week 20 in Ordinary Time,Feria
+2026-08-18,2026,Ordinary Time,20,Tuesday,Tuesday of Week 20 in Ordinary Time,Feria
+2026-08-19,2026,Ordinary Time,20,Wednesday,19 August – St John Eudes,Feast
+2026-08-20,2026,Ordinary Time,20,Thursday,20 August – St Bernard,Feast
+2026-08-21,2026,Ordinary Time,20,Friday,21 August – Pope St Pius X,Feast
+2026-08-22,2026,Ordinary Time,20,Saturday,22 August – Queenship of Mary,Feast
+2026-08-23,2026,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2026-08-24,2026,Ordinary Time,21,Monday,24 August – St Bartholomew,Feast
+2026-08-25,2026,Ordinary Time,21,Tuesday,25 August – St Joseph Calasanz,Feast
+2026-08-26,2026,Ordinary Time,21,Wednesday,Wednesday of Week 21 in Ordinary Time,Feria
+2026-08-27,2026,Ordinary Time,21,Thursday,27 August – St Monica,Feast
+2026-08-28,2026,Ordinary Time,21,Friday,28 August – St Augustine,Feast
+2026-08-29,2026,Ordinary Time,21,Saturday,29 August – Beheading of John the Baptist,Feast
+2026-08-30,2026,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2026-08-31,2026,Ordinary Time,22,Monday,Monday of Week 22 in Ordinary Time,Feria
+2026-09-01,2026,Ordinary Time,22,Tuesday,Tuesday of Week 22 in Ordinary Time,Feria
+2026-09-02,2026,Ordinary Time,22,Wednesday,Wednesday of Week 22 in Ordinary Time,Feria
+2026-09-03,2026,Ordinary Time,22,Thursday,3 September – St Gregory the Great,Feast
+2026-09-04,2026,Ordinary Time,22,Friday,Friday of Week 22 in Ordinary Time,Feria
+2026-09-05,2026,Ordinary Time,22,Saturday,Saturday of Week 22 in Ordinary Time,Feria
+2026-09-06,2026,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2026-09-07,2026,Ordinary Time,23,Monday,Monday of Week 23 in Ordinary Time,Feria
+2026-09-08,2026,Ordinary Time,23,Tuesday,8 September – Birth of Mary,Feast
+2026-09-09,2026,Ordinary Time,23,Wednesday,9 September – St Peter Claver,Feast
+2026-09-10,2026,Ordinary Time,23,Thursday,Thursday of Week 23 in Ordinary Time,Feria
+2026-09-11,2026,Ordinary Time,23,Friday,Friday of Week 23 in Ordinary Time,Feria
+2026-09-12,2026,Ordinary Time,23,Saturday,12 September – The Most Holy Name of Mary,Feast
+2026-09-13,2026,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2026-09-14,2026,Ordinary Time,24,Monday,14 September – Exaltation of the Cross,Feast
+2026-09-15,2026,Ordinary Time,24,Tuesday,15 September – Our Lady of Sorrows,Feast
+2026-09-16,2026,Ordinary Time,24,Wednesday,16 September – Ss Cornelius and Cyprian,Feast
+2026-09-17,2026,Ordinary Time,24,Thursday,17 September – St Robert Bellarmine,Feast
+2026-09-18,2026,Ordinary Time,24,Friday,Friday of Week 24 in Ordinary Time,Feria
+2026-09-19,2026,Ordinary Time,24,Saturday,19 September – St Januarius,Feast
+2026-09-20,2026,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2026-09-21,2026,Ordinary Time,25,Monday,21 September – St Matthew,Feast
+2026-09-22,2026,Ordinary Time,25,Tuesday,Tuesday of Week 25 in Ordinary Time,Feria
+2026-09-23,2026,Ordinary Time,25,Wednesday,23 September – Pio of Pietrelcina,Feast
+2026-09-24,2026,Ordinary Time,25,Thursday,Thursday of Week 25 in Ordinary Time,Feria
+2026-09-25,2026,Ordinary Time,25,Friday,Friday of Week 25 in Ordinary Time,Feria
+2026-09-26,2026,Ordinary Time,25,Saturday,26 September – Ss Cosmas and Damian,Feast
+2026-09-27,2026,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2026-09-28,2026,Ordinary Time,26,Monday,28 September – Ss Lawrence Ruiz and companions,Feast
+2026-09-29,2026,Ordinary Time,26,Tuesday,"29 September – Ss Michael, Gabriel and Raphael",Feast
+2026-09-30,2026,Ordinary Time,26,Wednesday,30 September – St Jerome,Feast
+2026-10-01,2026,Ordinary Time,26,Thursday,1 October – St Therese of the Child Jesus,Feast
+2026-10-02,2026,Ordinary Time,26,Friday,2 October – Holy Guardian Angels,Feast
+2026-10-03,2026,Ordinary Time,26,Saturday,Saturday of Week 26 in Ordinary Time,Feria
+2026-10-04,2026,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2026-10-05,2026,Ordinary Time,27,Monday,Monday of Week 27 in Ordinary Time,Feria
+2026-10-06,2026,Ordinary Time,27,Tuesday,6 October – St Bruno,Feast
+2026-10-07,2026,Ordinary Time,27,Wednesday,7 October – Our Lady of the Rosary,Feast
+2026-10-08,2026,Ordinary Time,27,Thursday,Thursday of Week 27 in Ordinary Time,Feria
+2026-10-09,2026,Ordinary Time,27,Friday,9 October – St John Leonardi,Feast
+2026-10-10,2026,Ordinary Time,27,Saturday,Saturday of Week 27 in Ordinary Time,Feria
+2026-10-11,2026,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2026-10-12,2026,Ordinary Time,28,Monday,Monday of Week 28 in Ordinary Time,Feria
+2026-10-13,2026,Ordinary Time,28,Tuesday,Tuesday of Week 28 in Ordinary Time,Feria
+2026-10-14,2026,Ordinary Time,28,Wednesday,14 October – St Callistus I,Feast
+2026-10-15,2026,Ordinary Time,28,Thursday,15 October – St Teresa of Jesus,Feast
+2026-10-16,2026,Ordinary Time,28,Friday,16 October – St Margaret Mary Alacoque,Feast
+2026-10-17,2026,Ordinary Time,28,Saturday,17 October – St Ignatius of Antioch,Feast
+2026-10-18,2026,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2026-10-19,2026,Ordinary Time,29,Monday,19 October – St Paul of the Cross,Feast
+2026-10-20,2026,Ordinary Time,29,Tuesday,Tuesday of Week 29 in Ordinary Time,Feria
+2026-10-21,2026,Ordinary Time,29,Wednesday,Wednesday of Week 29 in Ordinary Time,Feria
+2026-10-22,2026,Ordinary Time,29,Thursday,Thursday of Week 29 in Ordinary Time,Feria
+2026-10-23,2026,Ordinary Time,29,Friday,23 October – St John of Capistrano,Feast
+2026-10-24,2026,Ordinary Time,29,Saturday,24 October – St Anthony Claret,Feast
+2026-10-25,2026,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2026-10-26,2026,Ordinary Time,30,Monday,Monday of Week 30 in Ordinary Time,Feria
+2026-10-27,2026,Ordinary Time,30,Tuesday,Tuesday of Week 30 in Ordinary Time,Feria
+2026-10-28,2026,Ordinary Time,30,Wednesday,28 October – Ss Simon and Jude,Feast
+2026-10-29,2026,Ordinary Time,30,Thursday,Thursday of Week 30 in Ordinary Time,Feria
+2026-10-30,2026,Ordinary Time,30,Friday,Friday of Week 30 in Ordinary Time,Feria
+2026-10-31,2026,Ordinary Time,30,Saturday,Saturday of Week 30 in Ordinary Time,Feria
+2026-11-01,2026,Ordinary Time,31,Sunday,1 November – All Saints,Solemnity
+2026-11-02,2026,Ordinary Time,31,Monday,2 November – All Souls (Year C),Feast
+2026-11-03,2026,Ordinary Time,31,Tuesday,3 November – St Martin de Porres,Feast
+2026-11-04,2026,Ordinary Time,31,Wednesday,4 November – St Charles Borromeo,Feast
+2026-11-05,2026,Ordinary Time,31,Thursday,Thursday of Week 31 in Ordinary Time,Feria
+2026-11-06,2026,Ordinary Time,31,Friday,Friday of Week 31 in Ordinary Time,Feria
+2026-11-07,2026,Ordinary Time,31,Saturday,Saturday of Week 31 in Ordinary Time,Feria
+2026-11-08,2026,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2026-11-09,2026,Ordinary Time,32,Monday,9 November – Dedication of St John Lateran,Feast
+2026-11-10,2026,Ordinary Time,32,Tuesday,10 November – St Leo the Great,Feast
+2026-11-11,2026,Ordinary Time,32,Wednesday,11 November – St Martin of Tours,Feast
+2026-11-12,2026,Ordinary Time,32,Thursday,12 November – St Josaphat,Feast
+2026-11-13,2026,Ordinary Time,32,Friday,Friday of Week 32 in Ordinary Time,Feria
+2026-11-14,2026,Ordinary Time,32,Saturday,Saturday of Week 32 in Ordinary Time,Feria
+2026-11-15,2026,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2026-11-16,2026,Ordinary Time,33,Monday,16 November – St Gertrude,Feast
+2026-11-17,2026,Ordinary Time,33,Tuesday,17 November – St Elizabeth of Hungary,Feast
+2026-11-18,2026,Ordinary Time,33,Wednesday,18 November – Dedication of the basilicas of Peter and Paul,Feast
+2026-11-19,2026,Ordinary Time,33,Thursday,Thursday of Week 33 in Ordinary Time,Feria
+2026-11-20,2026,Ordinary Time,33,Friday,Friday of Week 33 in Ordinary Time,Feria
+2026-11-21,2026,Ordinary Time,33,Saturday,21 November – Presentation of Mary,Feast
+2026-11-22,2026,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2026-11-23,2026,Ordinary Time,34,Monday,23 November – St Columban,Feast
+2026-11-24,2026,Ordinary Time,34,Tuesday,24 November – Ss Andrew Dung Lac and companions,Feast
+2026-11-25,2026,Ordinary Time,34,Wednesday,25 November – St Catherine of Alexandria,Feast
+2026-11-26,2026,Ordinary Time,34,Thursday,Thursday of Week 34 in Ordinary Time,Feria
+2026-11-27,2026,Ordinary Time,34,Friday,Friday of Week 34 in Ordinary Time,Feria
+2026-11-28,2026,Ordinary Time,34,Saturday,Saturday of Week 34 in Ordinary Time,Feria
+2026-11-29,2026,Advent,1,Sunday,First Sunday of Advent,Sunday
+2026-11-30,2026,Advent,1,Monday,30 November – St Andrew,Feast
+2026-12-01,2026,Advent,1,Tuesday,Tuesday of First week of Advent,Feria
+2026-12-02,2026,Advent,1,Wednesday,Wednesday of First week of Advent,Feria
+2026-12-03,2026,Advent,1,Thursday,3 December – St Francis Xavier,Feast
+2026-12-04,2026,Advent,1,Friday,4 December – St John Damascene,Feast
+2026-12-05,2026,Advent,1,Saturday,Saturday of First week of Advent,Feria
+2026-12-06,2026,Advent,2,Sunday,Second Sunday of Advent,Sunday
+2026-12-07,2026,Advent,2,Monday,7 December – St Ambrose,Feast
+2026-12-08,2026,Advent,2,Tuesday,8 December – Immaculate Conception,Solemnity
+2026-12-09,2026,Advent,2,Wednesday,9 December – St Juan Diego,Feast
+2026-12-10,2026,Advent,2,Thursday,Thursday of Second week of Advent,Feria
+2026-12-11,2026,Advent,2,Friday,11 December – St Damasus I,Feast
+2026-12-12,2026,Advent,2,Saturday,12 December – Our Lady of Guadalupe,Feast
+2026-12-13,2026,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2026-12-14,2026,Advent,3,Monday,14 December – St John of the Cross,Feast
+2026-12-15,2026,Advent,3,Tuesday,Tuesday of Third week of Advent,Feria
+2026-12-16,2026,Advent,3,Wednesday,Wednesday of Third week of Advent,Feria
+2026-12-17,2026,Advent,3,Thursday,17th December,Feast
+2026-12-18,2026,Advent,3,Friday,18th December,Feast
+2026-12-19,2026,Advent,3,Saturday,19th December,Feast
+2026-12-20,2026,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2026-12-21,2026,Advent,4,Monday,21st December,Feast
+2026-12-22,2026,Advent,4,Tuesday,22nd December,Feast
+2026-12-23,2026,Advent,4,Wednesday,23rd December,Feast
+2026-12-24,2026,Advent,4,Thursday,24th December,Feast
+2026-12-25,2026,Christmas,,Friday,Christmas Day,Solemnity
+2026-12-26,2026,Christmas,,Saturday,26 December – St Stephen,Feast
+2026-12-27,2026,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2026-12-28,2026,Christmas,,Monday,28 December – Holy Innocents,Feast
+2026-12-29,2026,Christmas,,Tuesday,29 December – St Thomas Becket,Feast
+2026-12-30,2026,Christmas,,Wednesday,Wednesday of Christmas Season,Feria
+2026-12-31,2026,Christmas,,Thursday,31 December – St Sylvester I,Feast
+2027-01-01,2027,Christmas,,Friday,"1 January – Mary, Mother of God",Feast
+2027-01-02,2027,Christmas,,Saturday,2nd January,Feast
+2027-01-03,2027,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2027-01-04,2027,Christmas,,Monday,4th January,Feast
+2027-01-05,2027,Christmas,,Tuesday,5th January,Feast
+2027-01-06,2027,Christmas,,Wednesday,6th January,Feast
+2027-01-07,2027,Christmas,,Thursday,7th January,Feast
+2027-01-08,2027,Christmas,,Friday,Friday of Christmas Season,Feria
+2027-01-09,2027,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2027-01-10,2027,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2027-01-11,2027,Ordinary Time,1,Monday,Monday of Week 1 in Ordinary Time,Feria
+2027-01-12,2027,Ordinary Time,1,Tuesday,Tuesday of Week 1 in Ordinary Time,Feria
+2027-01-13,2027,Ordinary Time,1,Wednesday,13 January – St Hilary,Feast
+2027-01-14,2027,Ordinary Time,1,Thursday,Thursday of Week 1 in Ordinary Time,Feria
+2027-01-15,2027,Ordinary Time,1,Friday,Friday of Week 1 in Ordinary Time,Feria
+2027-01-16,2027,Ordinary Time,1,Saturday,Saturday of Week 1 in Ordinary Time,Feria
+2027-01-17,2027,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2027-01-18,2027,Ordinary Time,2,Monday,Monday of Week 2 in Ordinary Time,Feria
+2027-01-19,2027,Ordinary Time,2,Tuesday,Tuesday of Week 2 in Ordinary Time,Feria
+2027-01-20,2027,Ordinary Time,2,Wednesday,20 January – St Sebastian,Feast
+2027-01-21,2027,Ordinary Time,2,Thursday,21 January – St Agnes,Feast
+2027-01-22,2027,Ordinary Time,2,Friday,22 January – St Vincent,Feast
+2027-01-23,2027,Ordinary Time,2,Saturday,Saturday of Week 2 in Ordinary Time,Feria
+2027-01-24,2027,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2027-01-25,2027,Ordinary Time,3,Monday,"25 January – Conversion of St Paul, Apsotle",Feast
+2027-01-26,2027,Ordinary Time,3,Tuesday,26 January – Australia Day,Feast
+2027-01-27,2027,Ordinary Time,3,Wednesday,27 January – St Angela Merici,Feast
+2027-01-28,2027,Ordinary Time,3,Thursday,28 January – St Thomas Aquinas,Feast
+2027-01-29,2027,Ordinary Time,3,Friday,Friday of Week 3 in Ordinary Time,Feria
+2027-01-30,2027,Ordinary Time,3,Saturday,Saturday of Week 3 in Ordinary Time,Feria
+2027-01-31,2027,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2027-02-01,2027,Ordinary Time,4,Monday,Monday of Week 4 in Ordinary Time,Feria
+2027-02-02,2027,Ordinary Time,4,Tuesday,2 February – Presentation of the Lord,Feast
+2027-02-03,2027,Ordinary Time,4,Wednesday,3 February – St Ansgar,Feast
+2027-02-04,2027,Ordinary Time,4,Thursday,Thursday of Week 4 in Ordinary Time,Feria
+2027-02-05,2027,Ordinary Time,4,Friday,5 February – St Agatha,Feast
+2027-02-06,2027,Ordinary Time,4,Saturday,6 February – Ss Paul Miki and companions,Feast
+2027-02-07,2027,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2027-02-08,2027,Ordinary Time,5,Monday,8 February – St Josephine Bakhita,Feast
+2027-02-09,2027,Ordinary Time,5,Tuesday,Tuesday of Week 5 in Ordinary Time,Feria
+2027-02-10,2027,Lent,1,Wednesday,10 February – St Scholastica,Feast
+2027-02-11,2027,Lent,1,Thursday,11 February – Our Lady of Lourdes,Feast
+2027-02-12,2027,Lent,1,Friday,Friday after Ash Wednesday,Feria
+2027-02-13,2027,Lent,1,Saturday,Saturday after Ash Wednesday,Feria
+2027-02-14,2027,Lent,1,Sunday,First Sunday of Lent,Sunday
+2027-02-15,2027,Lent,1,Monday,Monday of First week of Lent,Feria
+2027-02-16,2027,Lent,1,Tuesday,Tuesday of First week of Lent,Feria
+2027-02-17,2027,Lent,1,Wednesday,17 February – Seven Founders of the Order of Servites,Feast
+2027-02-18,2027,Lent,1,Thursday,Thursday of First week of Lent,Feria
+2027-02-19,2027,Lent,1,Friday,Friday of First week of Lent,Feria
+2027-02-20,2027,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2027-02-21,2027,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2027-02-22,2027,Lent,2,Monday,22 February – Chair of Peter,Feast
+2027-02-23,2027,Lent,2,Tuesday,23 February – St Polycarp,Feast
+2027-02-24,2027,Lent,2,Wednesday,Wednesday of Second week of Lent,Feria
+2027-02-25,2027,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2027-02-26,2027,Lent,2,Friday,Friday of Second week of Lent,Feria
+2027-02-27,2027,Lent,2,Saturday,Saturday of Second week of Lent,Feria
+2027-02-28,2027,Lent,3,Sunday,Third Sunday of Lent,Sunday
+2027-03-01,2027,Lent,3,Monday,Monday of Third week of Lent,Feria
+2027-03-02,2027,Lent,3,Tuesday,Tuesday of Third week of Lent,Feria
+2027-03-03,2027,Lent,3,Wednesday,Wednesday of Third week of Lent,Feria
+2027-03-04,2027,Lent,3,Thursday,4 March – St Casimir,Feast
+2027-03-05,2027,Lent,3,Friday,Friday of Third week of Lent,Feria
+2027-03-06,2027,Lent,3,Saturday,Saturday of Third week of Lent,Feria
+2027-03-07,2027,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2027-03-08,2027,Lent,4,Monday,8 March – St John of God,Feast
+2027-03-09,2027,Lent,4,Tuesday,9 March – St Frances of Rome,Feast
+2027-03-10,2027,Lent,4,Wednesday,Wednesday of Fourth week of Lent,Feria
+2027-03-11,2027,Lent,4,Thursday,Thursday of Fourth week of Lent,Feria
+2027-03-12,2027,Lent,4,Friday,Friday of Fourth week of Lent,Feria
+2027-03-13,2027,Lent,4,Saturday,Saturday of Fourth week of Lent,Feria
+2027-03-14,2027,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2027-03-15,2027,Lent,5,Monday,Monday of Fifth week of Lent,Feria
+2027-03-16,2027,Lent,5,Tuesday,Tuesday of Fifth week of Lent,Feria
+2027-03-17,2027,Lent,5,Wednesday,17 March – St Patrick,Feast
+2027-03-18,2027,Lent,5,Thursday,18 March – St Cyril of Jerusalem,Feast
+2027-03-19,2027,Lent,5,Friday,19 March – St Joseph,Solemnity
+2027-03-20,2027,Lent,5,Saturday,Saturday of Fifth week of Lent,Feria
+2027-03-21,2027,Holy Week,,Sunday,Palm Sunday,Sunday
+2027-03-22,2027,Holy Week,,Monday,Monday of Holy Week,Feria
+2027-03-23,2027,Holy Week,,Tuesday,23 March – St Turibius de Mogrovejo,Feast
+2027-03-24,2027,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2027-03-25,2027,Holy Week,,Thursday,25 March – Annunciation,Solemnity
+2027-03-26,2027,Holy Week,,Friday,Good Friday,Triduum
+2027-03-27,2027,Holy Week,,Saturday,Holy Saturday,Triduum
+2027-03-28,2027,Easter,1,Sunday,Easter Sunday,Solemnity
+2027-03-29,2027,Easter,1,Monday,Monday of First week of Easter,Feria
+2027-03-30,2027,Easter,1,Tuesday,Tuesday of First week of Easter,Feria
+2027-03-31,2027,Easter,1,Wednesday,Wednesday of First week of Easter,Feria
+2027-04-01,2027,Easter,1,Thursday,Thursday of First week of Easter,Feria
+2027-04-02,2027,Easter,1,Friday,2 April – St Francis of Paola,Feast
+2027-04-03,2027,Easter,1,Saturday,Saturday of First week of Easter,Feria
+2027-04-04,2027,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2027-04-05,2027,Easter,2,Monday,5 April – St Vincent Ferrer,Feast
+2027-04-06,2027,Easter,2,Tuesday,Tuesday of Second week of Easter,Feria
+2027-04-07,2027,Easter,2,Wednesday,7 April – St John Baptist de la Salle,Feast
+2027-04-08,2027,Easter,2,Thursday,Thursday of Second week of Easter,Feria
+2027-04-09,2027,Easter,2,Friday,Friday of Second week of Easter,Feria
+2027-04-10,2027,Easter,2,Saturday,Saturday of Second week of Easter,Feria
+2027-04-11,2027,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2027-04-12,2027,Easter,3,Monday,Monday of Third week of Easter,Feria
+2027-04-13,2027,Easter,3,Tuesday,13 April – St Martin I,Feast
+2027-04-14,2027,Easter,3,Wednesday,Wednesday of Third week of Easter,Feria
+2027-04-15,2027,Easter,3,Thursday,Thursday of Third week of Easter,Feria
+2027-04-16,2027,Easter,3,Friday,Friday of Third week of Easter,Feria
+2027-04-17,2027,Easter,3,Saturday,Saturday of Third week of Easter,Feria
+2027-04-18,2027,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2027-04-19,2027,Easter,4,Monday,Monday of Fourth week of Easter,Feria
+2027-04-20,2027,Easter,4,Tuesday,Tuesday of Fourth week of Easter,Feria
+2027-04-21,2027,Easter,4,Wednesday,21 April – St Anselm,Feast
+2027-04-22,2027,Easter,4,Thursday,Thursday of Fourth week of Easter,Feria
+2027-04-23,2027,Easter,4,Friday,23 April – St Adalbert,Feast
+2027-04-24,2027,Easter,4,Saturday,24 April – St Fidelis of Sigmaringen,Feast
+2027-04-25,2027,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2027-04-26,2027,Easter,5,Monday,"26 April – St Mark, Evangelist",Feast
+2027-04-27,2027,Easter,5,Tuesday,Tuesday of Fifth week of Easter,Feria
+2027-04-28,2027,Easter,5,Wednesday,28 April – St Peter Chanel,Feast
+2027-04-29,2027,Easter,5,Thursday,29 April – St Catherine of Siena,Feast
+2027-04-30,2027,Easter,5,Friday,30 April – St Pius V,Feast
+2027-05-01,2027,Easter,5,Saturday,1 May – St Joseph the Worker,Feast
+2027-05-02,2027,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2027-05-03,2027,Easter,6,Monday,3 May – Ss Philip and James,Feast
+2027-05-04,2027,Easter,6,Tuesday,Tuesday of Sixth week of Easter,Feria
+2027-05-05,2027,Easter,6,Wednesday,Wednesday of Sixth week of Easter,Feria
+2027-05-06,2027,Easter,6,Thursday,Thursday of Sixth week of Easter,Feria
+2027-05-07,2027,Easter,6,Friday,Friday of Sixth week of Easter,Feria
+2027-05-08,2027,Easter,6,Saturday,Saturday of Sixth week of Easter,Feria
+2027-05-09,2027,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2027-05-10,2027,Easter,7,Monday,Monday of Seventh week of Easter,Feria
+2027-05-11,2027,Easter,7,Tuesday,Tuesday of Seventh week of Easter,Feria
+2027-05-12,2027,Easter,7,Wednesday,12 May – St Pancras,Feast
+2027-05-13,2027,Easter,7,Thursday,13 May – Our Lady of Fatima,Feast
+2027-05-14,2027,Easter,7,Friday,14 May – St Matthias,Feast
+2027-05-15,2027,Easter,7,Saturday,Saturday of Seventh week of Easter,Feria
+2027-05-16,2027,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2027-05-17,2027,Ordinary Time,7,Monday,Monday of Week 7 in Ordinary Time,Feria
+2027-05-18,2027,Ordinary Time,7,Tuesday,18 May – St John I,Feast
+2027-05-19,2027,Ordinary Time,7,Wednesday,Wednesday of Week 7 in Ordinary Time,Feria
+2027-05-20,2027,Ordinary Time,7,Thursday,20 May – St Bernadine of Siena,Feast
+2027-05-21,2027,Ordinary Time,7,Friday,21 May – Ss Christopher Magallanes and companions,Feast
+2027-05-22,2027,Ordinary Time,7,Saturday,22 May – St Rita of Cascia,Feast
+2027-05-23,2027,Ordinary Time,8,Sunday,Trinity Sunday,Solemnity
+2027-05-24,2027,Ordinary Time,8,Monday,"24 May – Mary Help of Christians, Year C",Feast
+2027-05-25,2027,Ordinary Time,8,Tuesday,25 May – St Mary Magdalene de Pazzi,Feast
+2027-05-26,2027,Ordinary Time,8,Wednesday,26 May – St Philip Neri,Feast
+2027-05-27,2027,Ordinary Time,8,Thursday,27 May – St Augustine of Canterbury,Feast
+2027-05-28,2027,Ordinary Time,8,Friday,Friday of Week 8 in Ordinary Time,Feria
+2027-05-29,2027,Ordinary Time,8,Saturday,Saturday of Week 8 in Ordinary Time,Feria
+2027-05-30,2027,Ordinary Time,9,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2027-05-31,2027,Ordinary Time,9,Monday,31 May – Visitation,Feast
+2027-06-01,2027,Ordinary Time,9,Tuesday,"1 June – St Justin, Martyr",Feast
+2027-06-02,2027,Ordinary Time,9,Wednesday,2 June – Ss Marcellinus and Peter,Feast
+2027-06-03,2027,Ordinary Time,9,Thursday,3 June – St Charles Lwanga and companions,Feast
+2027-06-04,2027,Ordinary Time,9,Friday,Sacred Heart of Jesus,Solemnity
+2027-06-05,2027,Ordinary Time,9,Saturday,5 June – St Boniface,Feast
+2027-06-06,2027,Ordinary Time,10,Sunday,10 Sunday in Ordinary Time,Sunday
+2027-06-07,2027,Ordinary Time,10,Monday,Monday of Week 10 in Ordinary Time,Feria
+2027-06-08,2027,Ordinary Time,10,Tuesday,Tuesday of Week 10 in Ordinary Time,Feria
+2027-06-09,2027,Ordinary Time,10,Wednesday,9 June – St Ephrem,Feast
+2027-06-10,2027,Ordinary Time,10,Thursday,Thursday of Week 10 in Ordinary Time,Feria
+2027-06-11,2027,Ordinary Time,10,Friday,11 June – St Barnabas,Feast
+2027-06-12,2027,Ordinary Time,10,Saturday,Saturday of Week 10 in Ordinary Time,Feria
+2027-06-13,2027,Ordinary Time,11,Sunday,11 Sunday in Ordinary Time,Sunday
+2027-06-14,2027,Ordinary Time,11,Monday,Monday of Week 11 in Ordinary Time,Feria
+2027-06-15,2027,Ordinary Time,11,Tuesday,Tuesday of Week 11 in Ordinary Time,Feria
+2027-06-16,2027,Ordinary Time,11,Wednesday,Wednesday of Week 11 in Ordinary Time,Feria
+2027-06-17,2027,Ordinary Time,11,Thursday,Thursday of Week 11 in Ordinary Time,Feria
+2027-06-18,2027,Ordinary Time,11,Friday,Friday of Week 11 in Ordinary Time,Feria
+2027-06-19,2027,Ordinary Time,11,Saturday,19 June – St Romuald,Feast
+2027-06-20,2027,Ordinary Time,12,Sunday,12 Sunday in Ordinary Time,Sunday
+2027-06-21,2027,Ordinary Time,12,Monday,21 June – St Aloysius Gonzaga,Feast
+2027-06-22,2027,Ordinary Time,12,Tuesday,22 June – Ss John Fisher and Thomas More,Feast
+2027-06-23,2027,Ordinary Time,12,Wednesday,23 June – St Paulinus of Nola,Feast
+2027-06-24,2027,Ordinary Time,12,Thursday,24 June – Birth of John the Baptist,Solemnity
+2027-06-25,2027,Ordinary Time,12,Friday,Friday of Week 12 in Ordinary Time,Feria
+2027-06-26,2027,Ordinary Time,12,Saturday,Saturday of Week 12 in Ordinary Time,Feria
+2027-06-27,2027,Ordinary Time,13,Sunday,13 Sunday in Ordinary Time,Sunday
+2027-06-28,2027,Ordinary Time,13,Monday,28 June – St Irenaeus,Feast
+2027-06-29,2027,Ordinary Time,13,Tuesday,29 June – Ss Peter and Paul,Solemnity
+2027-06-30,2027,Ordinary Time,13,Wednesday,30 June – First Martyrs of Rome,Feast
+2027-07-01,2027,Ordinary Time,13,Thursday,Thursday of Week 13 in Ordinary Time,Feria
+2027-07-02,2027,Ordinary Time,13,Friday,Friday of Week 13 in Ordinary Time,Feria
+2027-07-03,2027,Ordinary Time,13,Saturday,3 July – St Thomas,Feast
+2027-07-04,2027,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2027-07-05,2027,Ordinary Time,14,Monday,5 July – St Anthony Zaccaria,Feast
+2027-07-06,2027,Ordinary Time,14,Tuesday,6 July – St Maria Goretti,Feast
+2027-07-07,2027,Ordinary Time,14,Wednesday,7 July – St Peter To Rot,Feast
+2027-07-08,2027,Ordinary Time,14,Thursday,Thursday of Week 14 in Ordinary Time,Feria
+2027-07-09,2027,Ordinary Time,14,Friday,9 July – St Augustine Zhao Rong and companions,Feast
+2027-07-10,2027,Ordinary Time,14,Saturday,Saturday of Week 14 in Ordinary Time,Feria
+2027-07-11,2027,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2027-07-12,2027,Ordinary Time,15,Monday,Monday of Week 15 in Ordinary Time,Feria
+2027-07-13,2027,Ordinary Time,15,Tuesday,13 July – St Henry,Feast
+2027-07-14,2027,Ordinary Time,15,Wednesday,14 July – St Camillus de Lellis,Feast
+2027-07-15,2027,Ordinary Time,15,Thursday,15 July – St Bonaventure,Feast
+2027-07-16,2027,Ordinary Time,15,Friday,16 July – Our Lady of Mount Carmel,Feast
+2027-07-17,2027,Ordinary Time,15,Saturday,Saturday of Week 15 in Ordinary Time,Feria
+2027-07-18,2027,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2027-07-19,2027,Ordinary Time,16,Monday,Monday of Week 16 in Ordinary Time,Feria
+2027-07-20,2027,Ordinary Time,16,Tuesday,20 July – St Apollonaris,Feast
+2027-07-21,2027,Ordinary Time,16,Wednesday,21 July – St Lawrence of Brindisi,Feast
+2027-07-22,2027,Ordinary Time,16,Thursday,22 July – St Mary Magdalene,Feast
+2027-07-23,2027,Ordinary Time,16,Friday,23 July – St Bridget,Feast
+2027-07-24,2027,Ordinary Time,16,Saturday,24 July – St Charbel Makhlouf,Feast
+2027-07-25,2027,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2027-07-26,2027,Ordinary Time,17,Monday,26 July – Ss Joachim and Ann,Feast
+2027-07-27,2027,Ordinary Time,17,Tuesday,Tuesday of Week 17 in Ordinary Time,Feria
+2027-07-28,2027,Ordinary Time,17,Wednesday,Wednesday of Week 17 in Ordinary Time,Feria
+2027-07-29,2027,Ordinary Time,17,Thursday,29 July – St Martha,Feast
+2027-07-30,2027,Ordinary Time,17,Friday,30 July – St Peter Chrysologus,Feast
+2027-07-31,2027,Ordinary Time,17,Saturday,31 July – St Ignatius of Loyola,Feast
+2027-08-01,2027,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2027-08-02,2027,Ordinary Time,18,Monday,2 August – St Peter Julian Eymard,Feast
+2027-08-03,2027,Ordinary Time,18,Tuesday,3 August (Australia) – St Dominic,Feast
+2027-08-04,2027,Ordinary Time,18,Wednesday,4 August – St John Vianney,Feast
+2027-08-05,2027,Ordinary Time,18,Thursday,5 August – Dedication of St Mary Major,Feast
+2027-08-06,2027,Ordinary Time,18,Friday,6 August – Transfiguration (Year C),Feast
+2027-08-07,2027,Ordinary Time,18,Saturday,7 August – St Cajetan,Feast
+2027-08-08,2027,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2027-08-09,2027,Ordinary Time,19,Monday,9 August – St Teresa Benedicta of the Cross,Feast
+2027-08-10,2027,Ordinary Time,19,Tuesday,10 August – St Lawrence,Feast
+2027-08-11,2027,Ordinary Time,19,Wednesday,11 August – St Clare,Feast
+2027-08-12,2027,Ordinary Time,19,Thursday,12 August – St Jane Frances de Chantal,Feast
+2027-08-13,2027,Ordinary Time,19,Friday,13 August – Ss Pontian and Hippolytus,Feast
+2027-08-14,2027,Ordinary Time,19,Saturday,14 August – St Maximilian Mary Kolbe,Feast
+2027-08-15,2027,Ordinary Time,20,Sunday,15 August – Assumption,Solemnity
+2027-08-16,2027,Ordinary Time,20,Monday,16 August – St Stephen of Hungary,Feast
+2027-08-17,2027,Ordinary Time,20,Tuesday,Tuesday of Week 20 in Ordinary Time,Feria
+2027-08-18,2027,Ordinary Time,20,Wednesday,Wednesday of Week 20 in Ordinary Time,Feria
+2027-08-19,2027,Ordinary Time,20,Thursday,19 August – St John Eudes,Feast
+2027-08-20,2027,Ordinary Time,20,Friday,20 August – St Bernard,Feast
+2027-08-21,2027,Ordinary Time,20,Saturday,21 August – Pope St Pius X,Feast
+2027-08-22,2027,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2027-08-23,2027,Ordinary Time,21,Monday,23 August – St Rose of Lima,Feast
+2027-08-24,2027,Ordinary Time,21,Tuesday,24 August – St Bartholomew,Feast
+2027-08-25,2027,Ordinary Time,21,Wednesday,25 August – St Joseph Calasanz,Feast
+2027-08-26,2027,Ordinary Time,21,Thursday,Thursday of Week 21 in Ordinary Time,Feria
+2027-08-27,2027,Ordinary Time,21,Friday,27 August – St Monica,Feast
+2027-08-28,2027,Ordinary Time,21,Saturday,28 August – St Augustine,Feast
+2027-08-29,2027,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2027-08-30,2027,Ordinary Time,22,Monday,Monday of Week 22 in Ordinary Time,Feria
+2027-08-31,2027,Ordinary Time,22,Tuesday,Tuesday of Week 22 in Ordinary Time,Feria
+2027-09-01,2027,Ordinary Time,22,Wednesday,Wednesday of Week 22 in Ordinary Time,Feria
+2027-09-02,2027,Ordinary Time,22,Thursday,Thursday of Week 22 in Ordinary Time,Feria
+2027-09-03,2027,Ordinary Time,22,Friday,3 September – St Gregory the Great,Feast
+2027-09-04,2027,Ordinary Time,22,Saturday,Saturday of Week 22 in Ordinary Time,Feria
+2027-09-05,2027,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2027-09-06,2027,Ordinary Time,23,Monday,Monday of Week 23 in Ordinary Time,Feria
+2027-09-07,2027,Ordinary Time,23,Tuesday,Tuesday of Week 23 in Ordinary Time,Feria
+2027-09-08,2027,Ordinary Time,23,Wednesday,8 September – Birth of Mary,Feast
+2027-09-09,2027,Ordinary Time,23,Thursday,9 September – St Peter Claver,Feast
+2027-09-10,2027,Ordinary Time,23,Friday,Friday of Week 23 in Ordinary Time,Feria
+2027-09-11,2027,Ordinary Time,23,Saturday,Saturday of Week 23 in Ordinary Time,Feria
+2027-09-12,2027,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2027-09-13,2027,Ordinary Time,24,Monday,13 September – St John Chrysostom,Feast
+2027-09-14,2027,Ordinary Time,24,Tuesday,14 September – Exaltation of the Cross,Feast
+2027-09-15,2027,Ordinary Time,24,Wednesday,15 September – Our Lady of Sorrows,Feast
+2027-09-16,2027,Ordinary Time,24,Thursday,16 September – Ss Cornelius and Cyprian,Feast
+2027-09-17,2027,Ordinary Time,24,Friday,17 September – St Robert Bellarmine,Feast
+2027-09-18,2027,Ordinary Time,24,Saturday,Saturday of Week 24 in Ordinary Time,Feria
+2027-09-19,2027,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2027-09-20,2027,Ordinary Time,25,Monday,"20 September – Ss Andrew Kim Taegon, Paul Chong Hasang and companions",Feast
+2027-09-21,2027,Ordinary Time,25,Tuesday,21 September – St Matthew,Feast
+2027-09-22,2027,Ordinary Time,25,Wednesday,Wednesday of Week 25 in Ordinary Time,Feria
+2027-09-23,2027,Ordinary Time,25,Thursday,23 September – Pio of Pietrelcina,Feast
+2027-09-24,2027,Ordinary Time,25,Friday,Friday of Week 25 in Ordinary Time,Feria
+2027-09-25,2027,Ordinary Time,25,Saturday,Saturday of Week 25 in Ordinary Time,Feria
+2027-09-26,2027,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2027-09-27,2027,Ordinary Time,26,Monday,27 September – St Vincent de Paul,Feast
+2027-09-28,2027,Ordinary Time,26,Tuesday,28 September – Ss Lawrence Ruiz and companions,Feast
+2027-09-29,2027,Ordinary Time,26,Wednesday,"29 September – Ss Michael, Gabriel and Raphael",Feast
+2027-09-30,2027,Ordinary Time,26,Thursday,30 September – St Jerome,Feast
+2027-10-01,2027,Ordinary Time,26,Friday,1 October – St Therese of the Child Jesus,Feast
+2027-10-02,2027,Ordinary Time,26,Saturday,2 October – Holy Guardian Angels,Feast
+2027-10-03,2027,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2027-10-04,2027,Ordinary Time,27,Monday,4 October – St Francis of Assisi,Feast
+2027-10-05,2027,Ordinary Time,27,Tuesday,Tuesday of Week 27 in Ordinary Time,Feria
+2027-10-06,2027,Ordinary Time,27,Wednesday,6 October – St Bruno,Feast
+2027-10-07,2027,Ordinary Time,27,Thursday,7 October – Our Lady of the Rosary,Feast
+2027-10-08,2027,Ordinary Time,27,Friday,Friday of Week 27 in Ordinary Time,Feria
+2027-10-09,2027,Ordinary Time,27,Saturday,9 October – St John Leonardi,Feast
+2027-10-10,2027,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2027-10-11,2027,Ordinary Time,28,Monday,Monday of Week 28 in Ordinary Time,Feria
+2027-10-12,2027,Ordinary Time,28,Tuesday,Tuesday of Week 28 in Ordinary Time,Feria
+2027-10-13,2027,Ordinary Time,28,Wednesday,Wednesday of Week 28 in Ordinary Time,Feria
+2027-10-14,2027,Ordinary Time,28,Thursday,14 October – St Callistus I,Feast
+2027-10-15,2027,Ordinary Time,28,Friday,15 October – St Teresa of Jesus,Feast
+2027-10-16,2027,Ordinary Time,28,Saturday,16 October – St Margaret Mary Alacoque,Feast
+2027-10-17,2027,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2027-10-18,2027,Ordinary Time,29,Monday,18 October – St Luke,Feast
+2027-10-19,2027,Ordinary Time,29,Tuesday,19 October – St Paul of the Cross,Feast
+2027-10-20,2027,Ordinary Time,29,Wednesday,Wednesday of Week 29 in Ordinary Time,Feria
+2027-10-21,2027,Ordinary Time,29,Thursday,Thursday of Week 29 in Ordinary Time,Feria
+2027-10-22,2027,Ordinary Time,29,Friday,Friday of Week 29 in Ordinary Time,Feria
+2027-10-23,2027,Ordinary Time,29,Saturday,23 October – St John of Capistrano,Feast
+2027-10-24,2027,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2027-10-25,2027,Ordinary Time,30,Monday,Monday of Week 30 in Ordinary Time,Feria
+2027-10-26,2027,Ordinary Time,30,Tuesday,Tuesday of Week 30 in Ordinary Time,Feria
+2027-10-27,2027,Ordinary Time,30,Wednesday,Wednesday of Week 30 in Ordinary Time,Feria
+2027-10-28,2027,Ordinary Time,30,Thursday,28 October – Ss Simon and Jude,Feast
+2027-10-29,2027,Ordinary Time,30,Friday,Friday of Week 30 in Ordinary Time,Feria
+2027-10-30,2027,Ordinary Time,30,Saturday,Saturday of Week 30 in Ordinary Time,Feria
+2027-10-31,2027,Ordinary Time,31,Sunday,31 Sunday in Ordinary Time,Sunday
+2027-11-01,2027,Ordinary Time,31,Monday,1 November – All Saints,Solemnity
+2027-11-02,2027,Ordinary Time,31,Tuesday,2 November – All Souls (Year C),Feast
+2027-11-03,2027,Ordinary Time,31,Wednesday,3 November – St Martin de Porres,Feast
+2027-11-04,2027,Ordinary Time,31,Thursday,4 November – St Charles Borromeo,Feast
+2027-11-05,2027,Ordinary Time,31,Friday,Friday of Week 31 in Ordinary Time,Feria
+2027-11-06,2027,Ordinary Time,31,Saturday,Saturday of Week 31 in Ordinary Time,Feria
+2027-11-07,2027,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2027-11-08,2027,Ordinary Time,32,Monday,Monday of Week 32 in Ordinary Time,Feria
+2027-11-09,2027,Ordinary Time,32,Tuesday,9 November – Dedication of St John Lateran,Feast
+2027-11-10,2027,Ordinary Time,32,Wednesday,10 November – St Leo the Great,Feast
+2027-11-11,2027,Ordinary Time,32,Thursday,11 November – St Martin of Tours,Feast
+2027-11-12,2027,Ordinary Time,32,Friday,12 November – St Josaphat,Feast
+2027-11-13,2027,Ordinary Time,32,Saturday,Saturday of Week 32 in Ordinary Time,Feria
+2027-11-14,2027,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2027-11-15,2027,Ordinary Time,33,Monday,15 November – St Albert the Great,Feast
+2027-11-16,2027,Ordinary Time,33,Tuesday,16 November – St Gertrude,Feast
+2027-11-17,2027,Ordinary Time,33,Wednesday,17 November – St Elizabeth of Hungary,Feast
+2027-11-18,2027,Ordinary Time,33,Thursday,18 November – Dedication of the basilicas of Peter and Paul,Feast
+2027-11-19,2027,Ordinary Time,33,Friday,Friday of Week 33 in Ordinary Time,Feria
+2027-11-20,2027,Ordinary Time,33,Saturday,Saturday of Week 33 in Ordinary Time,Feria
+2027-11-21,2027,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2027-11-22,2027,Ordinary Time,34,Monday,22 November – St Cecilia,Feast
+2027-11-23,2027,Ordinary Time,34,Tuesday,23 November – St Columban,Feast
+2027-11-24,2027,Ordinary Time,34,Wednesday,24 November – Ss Andrew Dung Lac and companions,Feast
+2027-11-25,2027,Ordinary Time,34,Thursday,25 November – St Catherine of Alexandria,Feast
+2027-11-26,2027,Ordinary Time,34,Friday,Friday of Week 34 in Ordinary Time,Feria
+2027-11-27,2027,Ordinary Time,34,Saturday,Saturday of Week 34 in Ordinary Time,Feria
+2027-11-28,2027,Advent,1,Sunday,First Sunday of Advent,Sunday
+2027-11-29,2027,Advent,1,Monday,Monday of First week of Advent,Feria
+2027-11-30,2027,Advent,1,Tuesday,30 November – St Andrew,Feast
+2027-12-01,2027,Advent,1,Wednesday,Wednesday of First week of Advent,Feria
+2027-12-02,2027,Advent,1,Thursday,Thursday of First week of Advent,Feria
+2027-12-03,2027,Advent,1,Friday,3 December – St Francis Xavier,Feast
+2027-12-04,2027,Advent,1,Saturday,4 December – St John Damascene,Feast
+2027-12-05,2027,Advent,2,Sunday,Second Sunday of Advent,Sunday
+2027-12-06,2027,Advent,2,Monday,6 December – St Nicholas,Feast
+2027-12-07,2027,Advent,2,Tuesday,7 December – St Ambrose,Feast
+2027-12-08,2027,Advent,2,Wednesday,8 December – Immaculate Conception,Solemnity
+2027-12-09,2027,Advent,2,Thursday,9 December – St Juan Diego,Feast
+2027-12-10,2027,Advent,2,Friday,Friday of Second week of Advent,Feria
+2027-12-11,2027,Advent,2,Saturday,11 December – St Damasus I,Feast
+2027-12-12,2027,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2027-12-13,2027,Advent,3,Monday,13 December – St Lucy,Feast
+2027-12-14,2027,Advent,3,Tuesday,14 December – St John of the Cross,Feast
+2027-12-15,2027,Advent,3,Wednesday,Wednesday of Third week of Advent,Feria
+2027-12-16,2027,Advent,3,Thursday,Thursday of Third week of Advent,Feria
+2027-12-17,2027,Advent,3,Friday,17th December,Feast
+2027-12-18,2027,Advent,3,Saturday,18th December,Feast
+2027-12-19,2027,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2027-12-20,2027,Advent,4,Monday,20th December,Feast
+2027-12-21,2027,Advent,4,Tuesday,21st December,Feast
+2027-12-22,2027,Advent,4,Wednesday,22nd December,Feast
+2027-12-23,2027,Advent,4,Thursday,23rd December,Feast
+2027-12-24,2027,Advent,4,Friday,24th December,Feast
+2027-12-25,2027,Christmas,,Saturday,Christmas Day,Solemnity
+2027-12-26,2027,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2027-12-27,2027,Christmas,,Monday,"27 December – St John, Apostle, Evangelist",Feast
+2027-12-28,2027,Christmas,,Tuesday,28 December – Holy Innocents,Feast
+2027-12-29,2027,Christmas,,Wednesday,29 December – St Thomas Becket,Feast
+2027-12-30,2027,Christmas,,Thursday,Thursday of Christmas Season,Feria
+2027-12-31,2027,Christmas,,Friday,31 December – St Sylvester I,Feast
+2028-01-01,2028,Christmas,,Saturday,"1 January – Mary, Mother of God",Feast
+2028-01-02,2028,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2028-01-03,2028,Christmas,,Monday,3rd January,Feast
+2028-01-04,2028,Christmas,,Tuesday,4th January,Feast
+2028-01-05,2028,Christmas,,Wednesday,5th January,Feast
+2028-01-06,2028,Christmas,,Thursday,6th January,Feast
+2028-01-07,2028,Christmas,,Friday,7th January,Feast
+2028-01-08,2028,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2028-01-09,2028,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2028-01-10,2028,Ordinary Time,1,Monday,Monday of Week 1 in Ordinary Time,Feria
+2028-01-11,2028,Ordinary Time,1,Tuesday,Tuesday of Week 1 in Ordinary Time,Feria
+2028-01-12,2028,Ordinary Time,1,Wednesday,Wednesday of Week 1 in Ordinary Time,Feria
+2028-01-13,2028,Ordinary Time,1,Thursday,13 January – St Hilary,Feast
+2028-01-14,2028,Ordinary Time,1,Friday,Friday of Week 1 in Ordinary Time,Feria
+2028-01-15,2028,Ordinary Time,1,Saturday,Saturday of Week 1 in Ordinary Time,Feria
+2028-01-16,2028,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2028-01-17,2028,Ordinary Time,2,Monday,17 January – St Anthony,Feast
+2028-01-18,2028,Ordinary Time,2,Tuesday,Tuesday of Week 2 in Ordinary Time,Feria
+2028-01-19,2028,Ordinary Time,2,Wednesday,Wednesday of Week 2 in Ordinary Time,Feria
+2028-01-20,2028,Ordinary Time,2,Thursday,20 January – St Sebastian,Feast
+2028-01-21,2028,Ordinary Time,2,Friday,21 January – St Agnes,Feast
+2028-01-22,2028,Ordinary Time,2,Saturday,22 January – St Vincent,Feast
+2028-01-23,2028,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2028-01-24,2028,Ordinary Time,3,Monday,24 January – St Francis de Sales,Feast
+2028-01-25,2028,Ordinary Time,3,Tuesday,"25 January – Conversion of St Paul, Apsotle",Feast
+2028-01-26,2028,Ordinary Time,3,Wednesday,26 January – Australia Day,Feast
+2028-01-27,2028,Ordinary Time,3,Thursday,27 January – St Angela Merici,Feast
+2028-01-28,2028,Ordinary Time,3,Friday,28 January – St Thomas Aquinas,Feast
+2028-01-29,2028,Ordinary Time,3,Saturday,Saturday of Week 3 in Ordinary Time,Feria
+2028-01-30,2028,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2028-01-31,2028,Ordinary Time,4,Monday,31 January – St John Bosco,Feast
+2028-02-01,2028,Ordinary Time,4,Tuesday,Tuesday of Week 4 in Ordinary Time,Feria
+2028-02-02,2028,Ordinary Time,4,Wednesday,2 February – Presentation of the Lord,Feast
+2028-02-03,2028,Ordinary Time,4,Thursday,3 February – St Ansgar,Feast
+2028-02-04,2028,Ordinary Time,4,Friday,Friday of Week 4 in Ordinary Time,Feria
+2028-02-05,2028,Ordinary Time,4,Saturday,5 February – St Agatha,Feast
+2028-02-06,2028,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2028-02-07,2028,Ordinary Time,5,Monday,Monday of Week 5 in Ordinary Time,Feria
+2028-02-08,2028,Ordinary Time,5,Tuesday,8 February – St Josephine Bakhita,Feast
+2028-02-09,2028,Ordinary Time,5,Wednesday,Wednesday of Week 5 in Ordinary Time,Feria
+2028-02-10,2028,Ordinary Time,5,Thursday,10 February – St Scholastica,Feast
+2028-02-11,2028,Ordinary Time,5,Friday,11 February – Our Lady of Lourdes,Feast
+2028-02-12,2028,Ordinary Time,5,Saturday,Saturday of Week 5 in Ordinary Time,Feria
+2028-02-13,2028,Ordinary Time,6,Sunday,Sixth Sunday in Ordinary Time,Sunday
+2028-02-14,2028,Ordinary Time,6,Monday,14 February – Ss Cyril and Methodius,Feast
+2028-02-15,2028,Ordinary Time,6,Tuesday,Tuesday of Week 6 in Ordinary Time,Feria
+2028-02-16,2028,Ordinary Time,6,Wednesday,Wednesday of Week 6 in Ordinary Time,Feria
+2028-02-17,2028,Ordinary Time,6,Thursday,17 February – Seven Founders of the Order of Servites,Feast
+2028-02-18,2028,Ordinary Time,6,Friday,Friday of Week 6 in Ordinary Time,Feria
+2028-02-19,2028,Ordinary Time,6,Saturday,Saturday of Week 6 in Ordinary Time,Feria
+2028-02-20,2028,Ordinary Time,7,Sunday,Seventh Sunday in Ordinary Time,Sunday
+2028-02-21,2028,Ordinary Time,7,Monday,21 February – St Peter Damian,Feast
+2028-02-22,2028,Ordinary Time,7,Tuesday,22 February – Chair of Peter,Feast
+2028-02-23,2028,Ordinary Time,7,Wednesday,23 February – St Polycarp,Feast
+2028-02-24,2028,Ordinary Time,7,Thursday,Thursday of Week 7 in Ordinary Time,Feria
+2028-02-25,2028,Ordinary Time,7,Friday,Friday of Week 7 in Ordinary Time,Feria
+2028-02-26,2028,Ordinary Time,7,Saturday,Saturday of Week 7 in Ordinary Time,Feria
+2028-02-27,2028,Ordinary Time,8,Sunday,8 Sunday in Ordinary Time,Sunday
+2028-02-28,2028,Ordinary Time,8,Monday,Monday of Week 8 in Ordinary Time,Feria
+2028-02-29,2028,Ordinary Time,8,Tuesday,Tuesday of Week 8 in Ordinary Time,Feria
+2028-03-01,2028,Lent,1,Wednesday,Ash Wednesday,Ash Wednesday
+2028-03-02,2028,Lent,1,Thursday,Thursday after Ash Wednesday,Feria
+2028-03-03,2028,Lent,1,Friday,Friday after Ash Wednesday,Feria
+2028-03-04,2028,Lent,1,Saturday,4 March – St Casimir,Feast
+2028-03-05,2028,Lent,1,Sunday,First Sunday of Lent,Sunday
+2028-03-06,2028,Lent,1,Monday,Monday of First week of Lent,Feria
+2028-03-07,2028,Lent,1,Tuesday,7 March – Ss Perpetua and Felicity,Feast
+2028-03-08,2028,Lent,1,Wednesday,8 March – St John of God,Feast
+2028-03-09,2028,Lent,1,Thursday,9 March – St Frances of Rome,Feast
+2028-03-10,2028,Lent,1,Friday,Friday of First week of Lent,Feria
+2028-03-11,2028,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2028-03-12,2028,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2028-03-13,2028,Lent,2,Monday,Monday of Second week of Lent,Feria
+2028-03-14,2028,Lent,2,Tuesday,Tuesday of Second week of Lent,Feria
+2028-03-15,2028,Lent,2,Wednesday,Wednesday of Second week of Lent,Feria
+2028-03-16,2028,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2028-03-17,2028,Lent,2,Friday,17 March – St Patrick,Feast
+2028-03-18,2028,Lent,2,Saturday,18 March – St Cyril of Jerusalem,Feast
+2028-03-19,2028,Lent,3,Sunday,19 March – St Joseph,Solemnity
+2028-03-20,2028,Lent,3,Monday,Monday of Third week of Lent,Feria
+2028-03-21,2028,Lent,3,Tuesday,Tuesday of Third week of Lent,Feria
+2028-03-22,2028,Lent,3,Wednesday,Wednesday of Third week of Lent,Feria
+2028-03-23,2028,Lent,3,Thursday,23 March – St Turibius de Mogrovejo,Feast
+2028-03-24,2028,Lent,3,Friday,Friday of Third week of Lent,Feria
+2028-03-25,2028,Lent,3,Saturday,25 March – Annunciation,Solemnity
+2028-03-26,2028,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2028-03-27,2028,Lent,4,Monday,Monday of Fourth week of Lent,Feria
+2028-03-28,2028,Lent,4,Tuesday,Tuesday of Fourth week of Lent,Feria
+2028-03-29,2028,Lent,4,Wednesday,Wednesday of Fourth week of Lent,Feria
+2028-03-30,2028,Lent,4,Thursday,Thursday of Fourth week of Lent,Feria
+2028-03-31,2028,Lent,4,Friday,Friday of Fourth week of Lent,Feria
+2028-04-01,2028,Lent,4,Saturday,Saturday of Fourth week of Lent,Feria
+2028-04-02,2028,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2028-04-03,2028,Lent,5,Monday,Monday of Fifth week of Lent,Feria
+2028-04-04,2028,Lent,5,Tuesday,4 April – St Isidore,Feast
+2028-04-05,2028,Lent,5,Wednesday,5 April – St Vincent Ferrer,Feast
+2028-04-06,2028,Lent,5,Thursday,Thursday of Fifth week of Lent,Feria
+2028-04-07,2028,Lent,5,Friday,7 April – St John Baptist de la Salle,Feast
+2028-04-08,2028,Lent,5,Saturday,Saturday of Fifth week of Lent,Feria
+2028-04-09,2028,Holy Week,,Sunday,Palm Sunday,Sunday
+2028-04-10,2028,Holy Week,,Monday,Monday of Holy Week,Feria
+2028-04-11,2028,Holy Week,,Tuesday,11 April – St Stanislaus,Feast
+2028-04-12,2028,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2028-04-13,2028,Holy Week,,Thursday,13 April – St Martin I,Feast
+2028-04-14,2028,Holy Week,,Friday,Good Friday,Triduum
+2028-04-15,2028,Holy Week,,Saturday,Holy Saturday,Triduum
+2028-04-16,2028,Easter,1,Sunday,Easter Sunday,Solemnity
+2028-04-17,2028,Easter,1,Monday,Monday of First week of Easter,Feria
+2028-04-18,2028,Easter,1,Tuesday,Tuesday of First week of Easter,Feria
+2028-04-19,2028,Easter,1,Wednesday,Wednesday of First week of Easter,Feria
+2028-04-20,2028,Easter,1,Thursday,Thursday of First week of Easter,Feria
+2028-04-21,2028,Easter,1,Friday,21 April – St Anselm,Feast
+2028-04-22,2028,Easter,1,Saturday,Saturday of First week of Easter,Feria
+2028-04-23,2028,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2028-04-24,2028,Easter,2,Monday,24 April – St Fidelis of Sigmaringen,Feast
+2028-04-25,2028,Easter,2,Tuesday,25 April – Anzac Day,Feast
+2028-04-26,2028,Easter,2,Wednesday,"26 April – St Mark, Evangelist",Feast
+2028-04-27,2028,Easter,2,Thursday,Thursday of Second week of Easter,Feria
+2028-04-28,2028,Easter,2,Friday,28 April – St Peter Chanel,Feast
+2028-04-29,2028,Easter,2,Saturday,29 April – St Catherine of Siena,Feast
+2028-04-30,2028,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2028-05-01,2028,Easter,3,Monday,1 May – St Joseph the Worker,Feast
+2028-05-02,2028,Easter,3,Tuesday,2 May – St Athanasius,Feast
+2028-05-03,2028,Easter,3,Wednesday,3 May – Ss Philip and James,Feast
+2028-05-04,2028,Easter,3,Thursday,Thursday of Third week of Easter,Feria
+2028-05-05,2028,Easter,3,Friday,Friday of Third week of Easter,Feria
+2028-05-06,2028,Easter,3,Saturday,Saturday of Third week of Easter,Feria
+2028-05-07,2028,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2028-05-08,2028,Easter,4,Monday,Monday of Fourth week of Easter,Feria
+2028-05-09,2028,Easter,4,Tuesday,Tuesday of Fourth week of Easter,Feria
+2028-05-10,2028,Easter,4,Wednesday,Wednesday of Fourth week of Easter,Feria
+2028-05-11,2028,Easter,4,Thursday,Thursday of Fourth week of Easter,Feria
+2028-05-12,2028,Easter,4,Friday,12 May – St Pancras,Feast
+2028-05-13,2028,Easter,4,Saturday,13 May – Our Lady of Fatima,Feast
+2028-05-14,2028,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2028-05-15,2028,Easter,5,Monday,Monday of Fifth week of Easter,Feria
+2028-05-16,2028,Easter,5,Tuesday,Tuesday of Fifth week of Easter,Feria
+2028-05-17,2028,Easter,5,Wednesday,Wednesday of Fifth week of Easter,Feria
+2028-05-18,2028,Easter,5,Thursday,18 May – St John I,Feast
+2028-05-19,2028,Easter,5,Friday,Friday of Fifth week of Easter,Feria
+2028-05-20,2028,Easter,5,Saturday,20 May – St Bernadine of Siena,Feast
+2028-05-21,2028,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2028-05-22,2028,Easter,6,Monday,22 May – St Rita of Cascia,Feast
+2028-05-23,2028,Easter,6,Tuesday,Tuesday of Sixth week of Easter,Feria
+2028-05-24,2028,Easter,6,Wednesday,"24 May – Mary Help of Christians, Year C",Feast
+2028-05-25,2028,Easter,6,Thursday,25 May – St Mary Magdalene de Pazzi,Feast
+2028-05-26,2028,Easter,6,Friday,26 May – St Philip Neri,Feast
+2028-05-27,2028,Easter,6,Saturday,27 May – St Augustine of Canterbury,Feast
+2028-05-28,2028,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2028-05-29,2028,Easter,7,Monday,Monday of Seventh week of Easter,Feria
+2028-05-30,2028,Easter,7,Tuesday,Tuesday of Seventh week of Easter,Feria
+2028-05-31,2028,Easter,7,Wednesday,31 May – Visitation,Feast
+2028-06-01,2028,Easter,7,Thursday,"1 June – St Justin, Martyr",Feast
+2028-06-02,2028,Easter,7,Friday,2 June – Ss Marcellinus and Peter,Feast
+2028-06-03,2028,Easter,7,Saturday,3 June – St Charles Lwanga and companions,Feast
+2028-06-04,2028,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2028-06-05,2028,Ordinary Time,9,Monday,5 June – St Boniface,Feast
+2028-06-06,2028,Ordinary Time,9,Tuesday,6 June – St Norbert,Feast
+2028-06-07,2028,Ordinary Time,9,Wednesday,Wednesday of Week 9 in Ordinary Time,Feria
+2028-06-08,2028,Ordinary Time,9,Thursday,Thursday of Week 9 in Ordinary Time,Feria
+2028-06-09,2028,Ordinary Time,9,Friday,9 June – St Ephrem,Feast
+2028-06-10,2028,Ordinary Time,9,Saturday,Saturday of Week 9 in Ordinary Time,Feria
+2028-06-11,2028,Ordinary Time,10,Sunday,Trinity Sunday,Solemnity
+2028-06-12,2028,Ordinary Time,10,Monday,Monday of Week 10 in Ordinary Time,Feria
+2028-06-13,2028,Ordinary Time,10,Tuesday,13 June – St Anthony of Padua,Feast
+2028-06-14,2028,Ordinary Time,10,Wednesday,Wednesday of Week 10 in Ordinary Time,Feria
+2028-06-15,2028,Ordinary Time,10,Thursday,Thursday of Week 10 in Ordinary Time,Feria
+2028-06-16,2028,Ordinary Time,10,Friday,Friday of Week 10 in Ordinary Time,Feria
+2028-06-17,2028,Ordinary Time,10,Saturday,Saturday of Week 10 in Ordinary Time,Feria
+2028-06-18,2028,Ordinary Time,11,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2028-06-19,2028,Ordinary Time,11,Monday,19 June – St Romuald,Feast
+2028-06-20,2028,Ordinary Time,11,Tuesday,Tuesday of Week 11 in Ordinary Time,Feria
+2028-06-21,2028,Ordinary Time,11,Wednesday,21 June – St Aloysius Gonzaga,Feast
+2028-06-22,2028,Ordinary Time,11,Thursday,22 June – Ss John Fisher and Thomas More,Feast
+2028-06-23,2028,Ordinary Time,11,Friday,Sacred Heart of Jesus,Solemnity
+2028-06-24,2028,Ordinary Time,11,Saturday,24 June – Birth of John the Baptist,Solemnity
+2028-06-25,2028,Ordinary Time,12,Sunday,12 Sunday in Ordinary Time,Sunday
+2028-06-26,2028,Ordinary Time,12,Monday,Monday of Week 12 in Ordinary Time,Feria
+2028-06-27,2028,Ordinary Time,12,Tuesday,27 June – St Cyril of Alexandria,Feast
+2028-06-28,2028,Ordinary Time,12,Wednesday,28 June – St Irenaeus,Feast
+2028-06-29,2028,Ordinary Time,12,Thursday,29 June – Ss Peter and Paul,Solemnity
+2028-06-30,2028,Ordinary Time,12,Friday,30 June – First Martyrs of Rome,Feast
+2028-07-01,2028,Ordinary Time,12,Saturday,Saturday of Week 12 in Ordinary Time,Feria
+2028-07-02,2028,Ordinary Time,13,Sunday,13 Sunday in Ordinary Time,Sunday
+2028-07-03,2028,Ordinary Time,13,Monday,3 July – St Thomas,Feast
+2028-07-04,2028,Ordinary Time,13,Tuesday,4 July – St Elizabeth of Portugal,Feast
+2028-07-05,2028,Ordinary Time,13,Wednesday,5 July – St Anthony Zaccaria,Feast
+2028-07-06,2028,Ordinary Time,13,Thursday,6 July – St Maria Goretti,Feast
+2028-07-07,2028,Ordinary Time,13,Friday,7 July – St Peter To Rot,Feast
+2028-07-08,2028,Ordinary Time,13,Saturday,Saturday of Week 13 in Ordinary Time,Feria
+2028-07-09,2028,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2028-07-10,2028,Ordinary Time,14,Monday,Monday of Week 14 in Ordinary Time,Feria
+2028-07-11,2028,Ordinary Time,14,Tuesday,11 July – St Benedict,Feast
+2028-07-12,2028,Ordinary Time,14,Wednesday,Wednesday of Week 14 in Ordinary Time,Feria
+2028-07-13,2028,Ordinary Time,14,Thursday,13 July – St Henry,Feast
+2028-07-14,2028,Ordinary Time,14,Friday,14 July – St Camillus de Lellis,Feast
+2028-07-15,2028,Ordinary Time,14,Saturday,15 July – St Bonaventure,Feast
+2028-07-16,2028,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2028-07-17,2028,Ordinary Time,15,Monday,Monday of Week 15 in Ordinary Time,Feria
+2028-07-18,2028,Ordinary Time,15,Tuesday,Tuesday of Week 15 in Ordinary Time,Feria
+2028-07-19,2028,Ordinary Time,15,Wednesday,Wednesday of Week 15 in Ordinary Time,Feria
+2028-07-20,2028,Ordinary Time,15,Thursday,20 July – St Apollonaris,Feast
+2028-07-21,2028,Ordinary Time,15,Friday,21 July – St Lawrence of Brindisi,Feast
+2028-07-22,2028,Ordinary Time,15,Saturday,22 July – St Mary Magdalene,Feast
+2028-07-23,2028,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2028-07-24,2028,Ordinary Time,16,Monday,24 July – St Charbel Makhlouf,Feast
+2028-07-25,2028,Ordinary Time,16,Tuesday,25 July – St James,Feast
+2028-07-26,2028,Ordinary Time,16,Wednesday,26 July – Ss Joachim and Ann,Feast
+2028-07-27,2028,Ordinary Time,16,Thursday,Thursday of Week 16 in Ordinary Time,Feria
+2028-07-28,2028,Ordinary Time,16,Friday,Friday of Week 16 in Ordinary Time,Feria
+2028-07-29,2028,Ordinary Time,16,Saturday,29 July – St Martha,Feast
+2028-07-30,2028,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2028-07-31,2028,Ordinary Time,17,Monday,31 July – St Ignatius of Loyola,Feast
+2028-08-01,2028,Ordinary Time,17,Tuesday,1 August – St Alphonsus Ligouri,Feast
+2028-08-02,2028,Ordinary Time,17,Wednesday,2 August – St Peter Julian Eymard,Feast
+2028-08-03,2028,Ordinary Time,17,Thursday,3 August (Australia) – St Dominic,Feast
+2028-08-04,2028,Ordinary Time,17,Friday,4 August – St John Vianney,Feast
+2028-08-05,2028,Ordinary Time,17,Saturday,5 August – Dedication of St Mary Major,Feast
+2028-08-06,2028,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2028-08-07,2028,Ordinary Time,18,Monday,7 August – St Cajetan,Feast
+2028-08-08,2028,Ordinary Time,18,Tuesday,8 August – St Mary of the Cross MacKillop,Feast
+2028-08-09,2028,Ordinary Time,18,Wednesday,9 August – St Teresa Benedicta of the Cross,Feast
+2028-08-10,2028,Ordinary Time,18,Thursday,10 August – St Lawrence,Feast
+2028-08-11,2028,Ordinary Time,18,Friday,11 August – St Clare,Feast
+2028-08-12,2028,Ordinary Time,18,Saturday,12 August – St Jane Frances de Chantal,Feast
+2028-08-13,2028,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2028-08-14,2028,Ordinary Time,19,Monday,14 August – St Maximilian Mary Kolbe,Feast
+2028-08-15,2028,Ordinary Time,19,Tuesday,15 August – Assumption,Solemnity
+2028-08-16,2028,Ordinary Time,19,Wednesday,16 August – St Stephen of Hungary,Feast
+2028-08-17,2028,Ordinary Time,19,Thursday,Thursday of Week 19 in Ordinary Time,Feria
+2028-08-18,2028,Ordinary Time,19,Friday,Friday of Week 19 in Ordinary Time,Feria
+2028-08-19,2028,Ordinary Time,19,Saturday,19 August – St John Eudes,Feast
+2028-08-20,2028,Ordinary Time,20,Sunday,20 Sunday in Ordinary Time,Sunday
+2028-08-21,2028,Ordinary Time,20,Monday,21 August – Pope St Pius X,Feast
+2028-08-22,2028,Ordinary Time,20,Tuesday,22 August – Queenship of Mary,Feast
+2028-08-23,2028,Ordinary Time,20,Wednesday,23 August – St Rose of Lima,Feast
+2028-08-24,2028,Ordinary Time,20,Thursday,24 August – St Bartholomew,Feast
+2028-08-25,2028,Ordinary Time,20,Friday,25 August – St Joseph Calasanz,Feast
+2028-08-26,2028,Ordinary Time,20,Saturday,Saturday of Week 20 in Ordinary Time,Feria
+2028-08-27,2028,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2028-08-28,2028,Ordinary Time,21,Monday,28 August – St Augustine,Feast
+2028-08-29,2028,Ordinary Time,21,Tuesday,29 August – Beheading of John the Baptist,Feast
+2028-08-30,2028,Ordinary Time,21,Wednesday,Wednesday of Week 21 in Ordinary Time,Feria
+2028-08-31,2028,Ordinary Time,21,Thursday,Thursday of Week 21 in Ordinary Time,Feria
+2028-09-01,2028,Ordinary Time,21,Friday,Friday of Week 21 in Ordinary Time,Feria
+2028-09-02,2028,Ordinary Time,21,Saturday,Saturday of Week 21 in Ordinary Time,Feria
+2028-09-03,2028,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2028-09-04,2028,Ordinary Time,22,Monday,Monday of Week 22 in Ordinary Time,Feria
+2028-09-05,2028,Ordinary Time,22,Tuesday,Tuesday of Week 22 in Ordinary Time,Feria
+2028-09-06,2028,Ordinary Time,22,Wednesday,Wednesday of Week 22 in Ordinary Time,Feria
+2028-09-07,2028,Ordinary Time,22,Thursday,Thursday of Week 22 in Ordinary Time,Feria
+2028-09-08,2028,Ordinary Time,22,Friday,8 September – Birth of Mary,Feast
+2028-09-09,2028,Ordinary Time,22,Saturday,9 September – St Peter Claver,Feast
+2028-09-10,2028,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2028-09-11,2028,Ordinary Time,23,Monday,Monday of Week 23 in Ordinary Time,Feria
+2028-09-12,2028,Ordinary Time,23,Tuesday,12 September – The Most Holy Name of Mary,Feast
+2028-09-13,2028,Ordinary Time,23,Wednesday,13 September – St John Chrysostom,Feast
+2028-09-14,2028,Ordinary Time,23,Thursday,14 September – Exaltation of the Cross,Feast
+2028-09-15,2028,Ordinary Time,23,Friday,15 September – Our Lady of Sorrows,Feast
+2028-09-16,2028,Ordinary Time,23,Saturday,16 September – Ss Cornelius and Cyprian,Feast
+2028-09-17,2028,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2028-09-18,2028,Ordinary Time,24,Monday,Monday of Week 24 in Ordinary Time,Feria
+2028-09-19,2028,Ordinary Time,24,Tuesday,19 September – St Januarius,Feast
+2028-09-20,2028,Ordinary Time,24,Wednesday,"20 September – Ss Andrew Kim Taegon, Paul Chong Hasang and companions",Feast
+2028-09-21,2028,Ordinary Time,24,Thursday,21 September – St Matthew,Feast
+2028-09-22,2028,Ordinary Time,24,Friday,Friday of Week 24 in Ordinary Time,Feria
+2028-09-23,2028,Ordinary Time,24,Saturday,23 September – Pio of Pietrelcina,Feast
+2028-09-24,2028,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2028-09-25,2028,Ordinary Time,25,Monday,Monday of Week 25 in Ordinary Time,Feria
+2028-09-26,2028,Ordinary Time,25,Tuesday,26 September – Ss Cosmas and Damian,Feast
+2028-09-27,2028,Ordinary Time,25,Wednesday,27 September – St Vincent de Paul,Feast
+2028-09-28,2028,Ordinary Time,25,Thursday,28 September – Ss Lawrence Ruiz and companions,Feast
+2028-09-29,2028,Ordinary Time,25,Friday,"29 September – Ss Michael, Gabriel and Raphael",Feast
+2028-09-30,2028,Ordinary Time,25,Saturday,30 September – St Jerome,Feast
+2028-10-01,2028,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2028-10-02,2028,Ordinary Time,26,Monday,2 October – Holy Guardian Angels,Feast
+2028-10-03,2028,Ordinary Time,26,Tuesday,Tuesday of Week 26 in Ordinary Time,Feria
+2028-10-04,2028,Ordinary Time,26,Wednesday,4 October – St Francis of Assisi,Feast
+2028-10-05,2028,Ordinary Time,26,Thursday,Thursday of Week 26 in Ordinary Time,Feria
+2028-10-06,2028,Ordinary Time,26,Friday,6 October – St Bruno,Feast
+2028-10-07,2028,Ordinary Time,26,Saturday,7 October – Our Lady of the Rosary,Feast
+2028-10-08,2028,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2028-10-09,2028,Ordinary Time,27,Monday,9 October – St John Leonardi,Feast
+2028-10-10,2028,Ordinary Time,27,Tuesday,Tuesday of Week 27 in Ordinary Time,Feria
+2028-10-11,2028,Ordinary Time,27,Wednesday,Wednesday of Week 27 in Ordinary Time,Feria
+2028-10-12,2028,Ordinary Time,27,Thursday,Thursday of Week 27 in Ordinary Time,Feria
+2028-10-13,2028,Ordinary Time,27,Friday,Friday of Week 27 in Ordinary Time,Feria
+2028-10-14,2028,Ordinary Time,27,Saturday,14 October – St Callistus I,Feast
+2028-10-15,2028,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2028-10-16,2028,Ordinary Time,28,Monday,16 October – St Margaret Mary Alacoque,Feast
+2028-10-17,2028,Ordinary Time,28,Tuesday,17 October – St Ignatius of Antioch,Feast
+2028-10-18,2028,Ordinary Time,28,Wednesday,18 October – St Luke,Feast
+2028-10-19,2028,Ordinary Time,28,Thursday,19 October – St Paul of the Cross,Feast
+2028-10-20,2028,Ordinary Time,28,Friday,Friday of Week 28 in Ordinary Time,Feria
+2028-10-21,2028,Ordinary Time,28,Saturday,Saturday of Week 28 in Ordinary Time,Feria
+2028-10-22,2028,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2028-10-23,2028,Ordinary Time,29,Monday,23 October – St John of Capistrano,Feast
+2028-10-24,2028,Ordinary Time,29,Tuesday,24 October – St Anthony Claret,Feast
+2028-10-25,2028,Ordinary Time,29,Wednesday,Wednesday of Week 29 in Ordinary Time,Feria
+2028-10-26,2028,Ordinary Time,29,Thursday,Thursday of Week 29 in Ordinary Time,Feria
+2028-10-27,2028,Ordinary Time,29,Friday,Friday of Week 29 in Ordinary Time,Feria
+2028-10-28,2028,Ordinary Time,29,Saturday,28 October – Ss Simon and Jude,Feast
+2028-10-29,2028,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2028-10-30,2028,Ordinary Time,30,Monday,Monday of Week 30 in Ordinary Time,Feria
+2028-10-31,2028,Ordinary Time,30,Tuesday,Tuesday of Week 30 in Ordinary Time,Feria
+2028-11-01,2028,Ordinary Time,30,Wednesday,1 November – All Saints,Solemnity
+2028-11-02,2028,Ordinary Time,30,Thursday,2 November – All Souls (Year C),Feast
+2028-11-03,2028,Ordinary Time,30,Friday,3 November – St Martin de Porres,Feast
+2028-11-04,2028,Ordinary Time,30,Saturday,4 November – St Charles Borromeo,Feast
+2028-11-05,2028,Ordinary Time,31,Sunday,31 Sunday in Ordinary Time,Sunday
+2028-11-06,2028,Ordinary Time,31,Monday,Monday of Week 31 in Ordinary Time,Feria
+2028-11-07,2028,Ordinary Time,31,Tuesday,Tuesday of Week 31 in Ordinary Time,Feria
+2028-11-08,2028,Ordinary Time,31,Wednesday,Wednesday of Week 31 in Ordinary Time,Feria
+2028-11-09,2028,Ordinary Time,31,Thursday,9 November – Dedication of St John Lateran,Feast
+2028-11-10,2028,Ordinary Time,31,Friday,10 November – St Leo the Great,Feast
+2028-11-11,2028,Ordinary Time,31,Saturday,11 November – St Martin of Tours,Feast
+2028-11-12,2028,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2028-11-13,2028,Ordinary Time,32,Monday,Monday of Week 32 in Ordinary Time,Feria
+2028-11-14,2028,Ordinary Time,32,Tuesday,Tuesday of Week 32 in Ordinary Time,Feria
+2028-11-15,2028,Ordinary Time,32,Wednesday,15 November – St Albert the Great,Feast
+2028-11-16,2028,Ordinary Time,32,Thursday,16 November – St Gertrude,Feast
+2028-11-17,2028,Ordinary Time,32,Friday,17 November – St Elizabeth of Hungary,Feast
+2028-11-18,2028,Ordinary Time,32,Saturday,18 November – Dedication of the basilicas of Peter and Paul,Feast
+2028-11-19,2028,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2028-11-20,2028,Ordinary Time,33,Monday,Monday of Week 33 in Ordinary Time,Feria
+2028-11-21,2028,Ordinary Time,33,Tuesday,21 November – Presentation of Mary,Feast
+2028-11-22,2028,Ordinary Time,33,Wednesday,22 November – St Cecilia,Feast
+2028-11-23,2028,Ordinary Time,33,Thursday,23 November – St Columban,Feast
+2028-11-24,2028,Ordinary Time,33,Friday,24 November – Ss Andrew Dung Lac and companions,Feast
+2028-11-25,2028,Ordinary Time,33,Saturday,25 November – St Catherine of Alexandria,Feast
+2028-11-26,2028,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2028-11-27,2028,Ordinary Time,34,Monday,Monday of Week 34 in Ordinary Time,Feria
+2028-11-28,2028,Ordinary Time,34,Tuesday,Tuesday of Week 34 in Ordinary Time,Feria
+2028-11-29,2028,Ordinary Time,34,Wednesday,Wednesday of Week 34 in Ordinary Time,Feria
+2028-11-30,2028,Ordinary Time,34,Thursday,30 November – St Andrew,Feast
+2028-12-01,2028,Ordinary Time,34,Friday,Friday of Week 34 in Ordinary Time,Feria
+2028-12-02,2028,Ordinary Time,34,Saturday,Saturday of Week 34 in Ordinary Time,Feria
+2028-12-03,2028,Advent,1,Sunday,First Sunday of Advent,Sunday
+2028-12-04,2028,Advent,1,Monday,4 December – St John Damascene,Feast
+2028-12-05,2028,Advent,1,Tuesday,Tuesday of First week of Advent,Feria
+2028-12-06,2028,Advent,1,Wednesday,6 December – St Nicholas,Feast
+2028-12-07,2028,Advent,1,Thursday,7 December – St Ambrose,Feast
+2028-12-08,2028,Advent,1,Friday,8 December – Immaculate Conception,Solemnity
+2028-12-09,2028,Advent,1,Saturday,9 December – St Juan Diego,Feast
+2028-12-10,2028,Advent,2,Sunday,Second Sunday of Advent,Sunday
+2028-12-11,2028,Advent,2,Monday,11 December – St Damasus I,Feast
+2028-12-12,2028,Advent,2,Tuesday,12 December – Our Lady of Guadalupe,Feast
+2028-12-13,2028,Advent,2,Wednesday,13 December – St Lucy,Feast
+2028-12-14,2028,Advent,2,Thursday,14 December – St John of the Cross,Feast
+2028-12-15,2028,Advent,2,Friday,Friday of Second week of Advent,Feria
+2028-12-16,2028,Advent,2,Saturday,Saturday of Second week of Advent,Feria
+2028-12-17,2028,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2028-12-18,2028,Advent,3,Monday,18th December,Feast
+2028-12-19,2028,Advent,3,Tuesday,19th December,Feast
+2028-12-20,2028,Advent,3,Wednesday,20th December,Feast
+2028-12-21,2028,Advent,3,Thursday,21st December,Feast
+2028-12-22,2028,Advent,3,Friday,22nd December,Feast
+2028-12-23,2028,Advent,3,Saturday,23rd December,Feast
+2028-12-24,2028,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2028-12-25,2028,Christmas,,Monday,Christmas Day,Solemnity
+2028-12-26,2028,Christmas,,Tuesday,26 December – St Stephen,Feast
+2028-12-27,2028,Christmas,,Wednesday,"27 December – St John, Apostle, Evangelist",Feast
+2028-12-28,2028,Christmas,,Thursday,28 December – Holy Innocents,Feast
+2028-12-29,2028,Christmas,,Friday,29 December – St Thomas Becket,Feast
+2028-12-30,2028,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2028-12-31,2028,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2029-01-01,2029,Christmas,,Monday,"1 January – Mary, Mother of God",Feast
+2029-01-02,2029,Christmas,,Tuesday,2nd January,Feast
+2029-01-03,2029,Christmas,,Wednesday,3rd January,Feast
+2029-01-04,2029,Christmas,,Thursday,4th January,Feast
+2029-01-05,2029,Christmas,,Friday,5th January,Feast
+2029-01-06,2029,Christmas,,Saturday,6th January,Feast
+2029-01-07,2029,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2029-01-08,2029,Christmas,,Monday,Monday of Christmas Season,Feria
+2029-01-09,2029,Christmas,,Tuesday,Tuesday of Christmas Season,Feria
+2029-01-10,2029,Christmas,,Wednesday,Wednesday of Christmas Season,Feria
+2029-01-11,2029,Christmas,,Thursday,Thursday of Christmas Season,Feria
+2029-01-12,2029,Christmas,,Friday,Friday of Christmas Season,Feria
+2029-01-13,2029,Christmas,,Saturday,13 January – St Hilary,Feast
+2029-01-14,2029,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2029-01-15,2029,Ordinary Time,1,Monday,Monday of Week 1 in Ordinary Time,Feria
+2029-01-16,2029,Ordinary Time,1,Tuesday,Tuesday of Week 1 in Ordinary Time,Feria
+2029-01-17,2029,Ordinary Time,1,Wednesday,17 January – St Anthony,Feast
+2029-01-18,2029,Ordinary Time,1,Thursday,Thursday of Week 1 in Ordinary Time,Feria
+2029-01-19,2029,Ordinary Time,1,Friday,Friday of Week 1 in Ordinary Time,Feria
+2029-01-20,2029,Ordinary Time,1,Saturday,20 January – St Sebastian,Feast
+2029-01-21,2029,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2029-01-22,2029,Ordinary Time,2,Monday,22 January – St Vincent,Feast
+2029-01-23,2029,Ordinary Time,2,Tuesday,Tuesday of Week 2 in Ordinary Time,Feria
+2029-01-24,2029,Ordinary Time,2,Wednesday,24 January – St Francis de Sales,Feast
+2029-01-25,2029,Ordinary Time,2,Thursday,"25 January – Conversion of St Paul, Apsotle",Feast
+2029-01-26,2029,Ordinary Time,2,Friday,26 January – Australia Day,Feast
+2029-01-27,2029,Ordinary Time,2,Saturday,27 January – St Angela Merici,Feast
+2029-01-28,2029,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2029-01-29,2029,Ordinary Time,3,Monday,Monday of Week 3 in Ordinary Time,Feria
+2029-01-30,2029,Ordinary Time,3,Tuesday,Tuesday of Week 3 in Ordinary Time,Feria
+2029-01-31,2029,Ordinary Time,3,Wednesday,31 January – St John Bosco,Feast
+2029-02-01,2029,Ordinary Time,3,Thursday,Thursday of Week 3 in Ordinary Time,Feria
+2029-02-02,2029,Ordinary Time,3,Friday,2 February – Presentation of the Lord,Feast
+2029-02-03,2029,Ordinary Time,3,Saturday,3 February – St Ansgar,Feast
+2029-02-04,2029,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2029-02-05,2029,Ordinary Time,4,Monday,5 February – St Agatha,Feast
+2029-02-06,2029,Ordinary Time,4,Tuesday,6 February – Ss Paul Miki and companions,Feast
+2029-02-07,2029,Ordinary Time,4,Wednesday,Wednesday of Week 4 in Ordinary Time,Feria
+2029-02-08,2029,Ordinary Time,4,Thursday,8 February – St Josephine Bakhita,Feast
+2029-02-09,2029,Ordinary Time,4,Friday,Friday of Week 4 in Ordinary Time,Feria
+2029-02-10,2029,Ordinary Time,4,Saturday,10 February – St Scholastica,Feast
+2029-02-11,2029,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2029-02-12,2029,Ordinary Time,5,Monday,Monday of Week 5 in Ordinary Time,Feria
+2029-02-13,2029,Ordinary Time,5,Tuesday,Tuesday of Week 5 in Ordinary Time,Feria
+2029-02-14,2029,Lent,1,Wednesday,14 February – Ss Cyril and Methodius,Feast
+2029-02-15,2029,Lent,1,Thursday,Thursday after Ash Wednesday,Feria
+2029-02-16,2029,Lent,1,Friday,Friday after Ash Wednesday,Feria
+2029-02-17,2029,Lent,1,Saturday,17 February – Seven Founders of the Order of Servites,Feast
+2029-02-18,2029,Lent,1,Sunday,First Sunday of Lent,Sunday
+2029-02-19,2029,Lent,1,Monday,Monday of First week of Lent,Feria
+2029-02-20,2029,Lent,1,Tuesday,Tuesday of First week of Lent,Feria
+2029-02-21,2029,Lent,1,Wednesday,21 February – St Peter Damian,Feast
+2029-02-22,2029,Lent,1,Thursday,22 February – Chair of Peter,Feast
+2029-02-23,2029,Lent,1,Friday,23 February – St Polycarp,Feast
+2029-02-24,2029,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2029-02-25,2029,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2029-02-26,2029,Lent,2,Monday,Monday of Second week of Lent,Feria
+2029-02-27,2029,Lent,2,Tuesday,Tuesday of Second week of Lent,Feria
+2029-02-28,2029,Lent,2,Wednesday,Wednesday of Second week of Lent,Feria
+2029-03-01,2029,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2029-03-02,2029,Lent,2,Friday,Friday of Second week of Lent,Feria
+2029-03-03,2029,Lent,2,Saturday,Saturday of Second week of Lent,Feria
+2029-03-04,2029,Lent,3,Sunday,Third Sunday of Lent,Sunday
+2029-03-05,2029,Lent,3,Monday,Monday of Third week of Lent,Feria
+2029-03-06,2029,Lent,3,Tuesday,Tuesday of Third week of Lent,Feria
+2029-03-07,2029,Lent,3,Wednesday,7 March – Ss Perpetua and Felicity,Feast
+2029-03-08,2029,Lent,3,Thursday,8 March – St John of God,Feast
+2029-03-09,2029,Lent,3,Friday,9 March – St Frances of Rome,Feast
+2029-03-10,2029,Lent,3,Saturday,Saturday of Third week of Lent,Feria
+2029-03-11,2029,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2029-03-12,2029,Lent,4,Monday,Monday of Fourth week of Lent,Feria
+2029-03-13,2029,Lent,4,Tuesday,Tuesday of Fourth week of Lent,Feria
+2029-03-14,2029,Lent,4,Wednesday,Wednesday of Fourth week of Lent,Feria
+2029-03-15,2029,Lent,4,Thursday,Thursday of Fourth week of Lent,Feria
+2029-03-16,2029,Lent,4,Friday,Friday of Fourth week of Lent,Feria
+2029-03-17,2029,Lent,4,Saturday,17 March – St Patrick,Feast
+2029-03-18,2029,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2029-03-19,2029,Lent,5,Monday,19 March – St Joseph,Solemnity
+2029-03-20,2029,Lent,5,Tuesday,Tuesday of Fifth week of Lent,Feria
+2029-03-21,2029,Lent,5,Wednesday,Wednesday of Fifth week of Lent,Feria
+2029-03-22,2029,Lent,5,Thursday,Thursday of Fifth week of Lent,Feria
+2029-03-23,2029,Lent,5,Friday,23 March – St Turibius de Mogrovejo,Feast
+2029-03-24,2029,Lent,5,Saturday,Saturday of Fifth week of Lent,Feria
+2029-03-25,2029,Holy Week,,Sunday,25 March – Annunciation,Solemnity
+2029-03-26,2029,Holy Week,,Monday,Monday of Holy Week,Feria
+2029-03-27,2029,Holy Week,,Tuesday,Tuesday of Holy Week,Feria
+2029-03-28,2029,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2029-03-29,2029,Holy Week,,Thursday,Holy Thursday,Triduum
+2029-03-30,2029,Holy Week,,Friday,Good Friday,Triduum
+2029-03-31,2029,Holy Week,,Saturday,Holy Saturday,Triduum
+2029-04-01,2029,Easter,1,Sunday,Easter Sunday,Solemnity
+2029-04-02,2029,Easter,1,Monday,2 April – St Francis of Paola,Feast
+2029-04-03,2029,Easter,1,Tuesday,Tuesday of First week of Easter,Feria
+2029-04-04,2029,Easter,1,Wednesday,4 April – St Isidore,Feast
+2029-04-05,2029,Easter,1,Thursday,5 April – St Vincent Ferrer,Feast
+2029-04-06,2029,Easter,1,Friday,Friday of First week of Easter,Feria
+2029-04-07,2029,Easter,1,Saturday,7 April – St John Baptist de la Salle,Feast
+2029-04-08,2029,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2029-04-09,2029,Easter,2,Monday,Monday of Second week of Easter,Feria
+2029-04-10,2029,Easter,2,Tuesday,Tuesday of Second week of Easter,Feria
+2029-04-11,2029,Easter,2,Wednesday,11 April – St Stanislaus,Feast
+2029-04-12,2029,Easter,2,Thursday,Thursday of Second week of Easter,Feria
+2029-04-13,2029,Easter,2,Friday,13 April – St Martin I,Feast
+2029-04-14,2029,Easter,2,Saturday,Saturday of Second week of Easter,Feria
+2029-04-15,2029,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2029-04-16,2029,Easter,3,Monday,Monday of Third week of Easter,Feria
+2029-04-17,2029,Easter,3,Tuesday,Tuesday of Third week of Easter,Feria
+2029-04-18,2029,Easter,3,Wednesday,Wednesday of Third week of Easter,Feria
+2029-04-19,2029,Easter,3,Thursday,Thursday of Third week of Easter,Feria
+2029-04-20,2029,Easter,3,Friday,Friday of Third week of Easter,Feria
+2029-04-21,2029,Easter,3,Saturday,21 April – St Anselm,Feast
+2029-04-22,2029,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2029-04-23,2029,Easter,4,Monday,23 April – St Adalbert,Feast
+2029-04-24,2029,Easter,4,Tuesday,24 April – St Fidelis of Sigmaringen,Feast
+2029-04-25,2029,Easter,4,Wednesday,25 April – Anzac Day,Feast
+2029-04-26,2029,Easter,4,Thursday,"26 April – St Mark, Evangelist",Feast
+2029-04-27,2029,Easter,4,Friday,Friday of Fourth week of Easter,Feria
+2029-04-28,2029,Easter,4,Saturday,28 April – St Peter Chanel,Feast
+2029-04-29,2029,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2029-04-30,2029,Easter,5,Monday,30 April – St Pius V,Feast
+2029-05-01,2029,Easter,5,Tuesday,1 May – St Joseph the Worker,Feast
+2029-05-02,2029,Easter,5,Wednesday,2 May – St Athanasius,Feast
+2029-05-03,2029,Easter,5,Thursday,3 May – Ss Philip and James,Feast
+2029-05-04,2029,Easter,5,Friday,Friday of Fifth week of Easter,Feria
+2029-05-05,2029,Easter,5,Saturday,Saturday of Fifth week of Easter,Feria
+2029-05-06,2029,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2029-05-07,2029,Easter,6,Monday,Monday of Sixth week of Easter,Feria
+2029-05-08,2029,Easter,6,Tuesday,Tuesday of Sixth week of Easter,Feria
+2029-05-09,2029,Easter,6,Wednesday,Wednesday of Sixth week of Easter,Feria
+2029-05-10,2029,Easter,6,Thursday,Thursday of Sixth week of Easter,Feria
+2029-05-11,2029,Easter,6,Friday,Friday of Sixth week of Easter,Feria
+2029-05-12,2029,Easter,6,Saturday,12 May – St Pancras,Feast
+2029-05-13,2029,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2029-05-14,2029,Easter,7,Monday,14 May – St Matthias,Feast
+2029-05-15,2029,Easter,7,Tuesday,Tuesday of Seventh week of Easter,Feria
+2029-05-16,2029,Easter,7,Wednesday,Wednesday of Seventh week of Easter,Feria
+2029-05-17,2029,Easter,7,Thursday,Thursday of Seventh week of Easter,Feria
+2029-05-18,2029,Easter,7,Friday,18 May – St John I,Feast
+2029-05-19,2029,Easter,7,Saturday,Saturday of Seventh week of Easter,Feria
+2029-05-20,2029,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2029-05-21,2029,Ordinary Time,7,Monday,21 May – Ss Christopher Magallanes and companions,Feast
+2029-05-22,2029,Ordinary Time,7,Tuesday,22 May – St Rita of Cascia,Feast
+2029-05-23,2029,Ordinary Time,7,Wednesday,Wednesday of Week 7 in Ordinary Time,Feria
+2029-05-24,2029,Ordinary Time,7,Thursday,"24 May – Mary Help of Christians, Year C",Feast
+2029-05-25,2029,Ordinary Time,7,Friday,25 May – St Mary Magdalene de Pazzi,Feast
+2029-05-26,2029,Ordinary Time,7,Saturday,26 May – St Philip Neri,Feast
+2029-05-27,2029,Ordinary Time,8,Sunday,Trinity Sunday,Solemnity
+2029-05-28,2029,Ordinary Time,8,Monday,Monday of Week 8 in Ordinary Time,Feria
+2029-05-29,2029,Ordinary Time,8,Tuesday,Tuesday of Week 8 in Ordinary Time,Feria
+2029-05-30,2029,Ordinary Time,8,Wednesday,Wednesday of Week 8 in Ordinary Time,Feria
+2029-05-31,2029,Ordinary Time,8,Thursday,31 May – Visitation,Feast
+2029-06-01,2029,Ordinary Time,8,Friday,"1 June – St Justin, Martyr",Feast
+2029-06-02,2029,Ordinary Time,8,Saturday,2 June – Ss Marcellinus and Peter,Feast
+2029-06-03,2029,Ordinary Time,9,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2029-06-04,2029,Ordinary Time,9,Monday,Monday of Week 9 in Ordinary Time,Feria
+2029-06-05,2029,Ordinary Time,9,Tuesday,5 June – St Boniface,Feast
+2029-06-06,2029,Ordinary Time,9,Wednesday,6 June – St Norbert,Feast
+2029-06-07,2029,Ordinary Time,9,Thursday,Thursday of Week 9 in Ordinary Time,Feria
+2029-06-08,2029,Ordinary Time,9,Friday,Sacred Heart of Jesus,Solemnity
+2029-06-09,2029,Ordinary Time,9,Saturday,9 June – St Ephrem,Feast
+2029-06-10,2029,Ordinary Time,10,Sunday,10 Sunday in Ordinary Time,Sunday
+2029-06-11,2029,Ordinary Time,10,Monday,11 June – St Barnabas,Feast
+2029-06-12,2029,Ordinary Time,10,Tuesday,Tuesday of Week 10 in Ordinary Time,Feria
+2029-06-13,2029,Ordinary Time,10,Wednesday,13 June – St Anthony of Padua,Feast
+2029-06-14,2029,Ordinary Time,10,Thursday,Thursday of Week 10 in Ordinary Time,Feria
+2029-06-15,2029,Ordinary Time,10,Friday,Friday of Week 10 in Ordinary Time,Feria
+2029-06-16,2029,Ordinary Time,10,Saturday,Saturday of Week 10 in Ordinary Time,Feria
+2029-06-17,2029,Ordinary Time,11,Sunday,11 Sunday in Ordinary Time,Sunday
+2029-06-18,2029,Ordinary Time,11,Monday,Monday of Week 11 in Ordinary Time,Feria
+2029-06-19,2029,Ordinary Time,11,Tuesday,19 June – St Romuald,Feast
+2029-06-20,2029,Ordinary Time,11,Wednesday,Wednesday of Week 11 in Ordinary Time,Feria
+2029-06-21,2029,Ordinary Time,11,Thursday,21 June – St Aloysius Gonzaga,Feast
+2029-06-22,2029,Ordinary Time,11,Friday,22 June – Ss John Fisher and Thomas More,Feast
+2029-06-23,2029,Ordinary Time,11,Saturday,23 June – St Paulinus of Nola,Feast
+2029-06-24,2029,Ordinary Time,12,Sunday,24 June – Birth of John the Baptist,Solemnity
+2029-06-25,2029,Ordinary Time,12,Monday,Monday of Week 12 in Ordinary Time,Feria
+2029-06-26,2029,Ordinary Time,12,Tuesday,Tuesday of Week 12 in Ordinary Time,Feria
+2029-06-27,2029,Ordinary Time,12,Wednesday,27 June – St Cyril of Alexandria,Feast
+2029-06-28,2029,Ordinary Time,12,Thursday,28 June – St Irenaeus,Feast
+2029-06-29,2029,Ordinary Time,12,Friday,29 June – Ss Peter and Paul,Solemnity
+2029-06-30,2029,Ordinary Time,12,Saturday,30 June – First Martyrs of Rome,Feast
+2029-07-01,2029,Ordinary Time,13,Sunday,13 Sunday in Ordinary Time,Sunday
+2029-07-02,2029,Ordinary Time,13,Monday,Monday of Week 13 in Ordinary Time,Feria
+2029-07-03,2029,Ordinary Time,13,Tuesday,3 July – St Thomas,Feast
+2029-07-04,2029,Ordinary Time,13,Wednesday,4 July – St Elizabeth of Portugal,Feast
+2029-07-05,2029,Ordinary Time,13,Thursday,5 July – St Anthony Zaccaria,Feast
+2029-07-06,2029,Ordinary Time,13,Friday,6 July – St Maria Goretti,Feast
+2029-07-07,2029,Ordinary Time,13,Saturday,7 July – St Peter To Rot,Feast
+2029-07-08,2029,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2029-07-09,2029,Ordinary Time,14,Monday,9 July – St Augustine Zhao Rong and companions,Feast
+2029-07-10,2029,Ordinary Time,14,Tuesday,Tuesday of Week 14 in Ordinary Time,Feria
+2029-07-11,2029,Ordinary Time,14,Wednesday,11 July – St Benedict,Feast
+2029-07-12,2029,Ordinary Time,14,Thursday,Thursday of Week 14 in Ordinary Time,Feria
+2029-07-13,2029,Ordinary Time,14,Friday,13 July – St Henry,Feast
+2029-07-14,2029,Ordinary Time,14,Saturday,14 July – St Camillus de Lellis,Feast
+2029-07-15,2029,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2029-07-16,2029,Ordinary Time,15,Monday,16 July – Our Lady of Mount Carmel,Feast
+2029-07-17,2029,Ordinary Time,15,Tuesday,Tuesday of Week 15 in Ordinary Time,Feria
+2029-07-18,2029,Ordinary Time,15,Wednesday,Wednesday of Week 15 in Ordinary Time,Feria
+2029-07-19,2029,Ordinary Time,15,Thursday,Thursday of Week 15 in Ordinary Time,Feria
+2029-07-20,2029,Ordinary Time,15,Friday,20 July – St Apollonaris,Feast
+2029-07-21,2029,Ordinary Time,15,Saturday,21 July – St Lawrence of Brindisi,Feast
+2029-07-22,2029,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2029-07-23,2029,Ordinary Time,16,Monday,23 July – St Bridget,Feast
+2029-07-24,2029,Ordinary Time,16,Tuesday,24 July – St Charbel Makhlouf,Feast
+2029-07-25,2029,Ordinary Time,16,Wednesday,25 July – St James,Feast
+2029-07-26,2029,Ordinary Time,16,Thursday,26 July – Ss Joachim and Ann,Feast
+2029-07-27,2029,Ordinary Time,16,Friday,Friday of Week 16 in Ordinary Time,Feria
+2029-07-28,2029,Ordinary Time,16,Saturday,Saturday of Week 16 in Ordinary Time,Feria
+2029-07-29,2029,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2029-07-30,2029,Ordinary Time,17,Monday,30 July – St Peter Chrysologus,Feast
+2029-07-31,2029,Ordinary Time,17,Tuesday,31 July – St Ignatius of Loyola,Feast
+2029-08-01,2029,Ordinary Time,17,Wednesday,1 August – St Alphonsus Ligouri,Feast
+2029-08-02,2029,Ordinary Time,17,Thursday,2 August – St Peter Julian Eymard,Feast
+2029-08-03,2029,Ordinary Time,17,Friday,3 August (Australia) – St Dominic,Feast
+2029-08-04,2029,Ordinary Time,17,Saturday,4 August – St John Vianney,Feast
+2029-08-05,2029,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2029-08-06,2029,Ordinary Time,18,Monday,6 August – Transfiguration (Year C),Feast
+2029-08-07,2029,Ordinary Time,18,Tuesday,7 August – St Cajetan,Feast
+2029-08-08,2029,Ordinary Time,18,Wednesday,8 August – St Mary of the Cross MacKillop,Feast
+2029-08-09,2029,Ordinary Time,18,Thursday,9 August – St Teresa Benedicta of the Cross,Feast
+2029-08-10,2029,Ordinary Time,18,Friday,10 August – St Lawrence,Feast
+2029-08-11,2029,Ordinary Time,18,Saturday,11 August – St Clare,Feast
+2029-08-12,2029,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2029-08-13,2029,Ordinary Time,19,Monday,13 August – Ss Pontian and Hippolytus,Feast
+2029-08-14,2029,Ordinary Time,19,Tuesday,14 August – St Maximilian Mary Kolbe,Feast
+2029-08-15,2029,Ordinary Time,19,Wednesday,15 August – Assumption,Solemnity
+2029-08-16,2029,Ordinary Time,19,Thursday,16 August – St Stephen of Hungary,Feast
+2029-08-17,2029,Ordinary Time,19,Friday,Friday of Week 19 in Ordinary Time,Feria
+2029-08-18,2029,Ordinary Time,19,Saturday,Saturday of Week 19 in Ordinary Time,Feria
+2029-08-19,2029,Ordinary Time,20,Sunday,20 Sunday in Ordinary Time,Sunday
+2029-08-20,2029,Ordinary Time,20,Monday,20 August – St Bernard,Feast
+2029-08-21,2029,Ordinary Time,20,Tuesday,21 August – Pope St Pius X,Feast
+2029-08-22,2029,Ordinary Time,20,Wednesday,22 August – Queenship of Mary,Feast
+2029-08-23,2029,Ordinary Time,20,Thursday,23 August – St Rose of Lima,Feast
+2029-08-24,2029,Ordinary Time,20,Friday,24 August – St Bartholomew,Feast
+2029-08-25,2029,Ordinary Time,20,Saturday,25 August – St Joseph Calasanz,Feast
+2029-08-26,2029,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2029-08-27,2029,Ordinary Time,21,Monday,27 August – St Monica,Feast
+2029-08-28,2029,Ordinary Time,21,Tuesday,28 August – St Augustine,Feast
+2029-08-29,2029,Ordinary Time,21,Wednesday,29 August – Beheading of John the Baptist,Feast
+2029-08-30,2029,Ordinary Time,21,Thursday,Thursday of Week 21 in Ordinary Time,Feria
+2029-08-31,2029,Ordinary Time,21,Friday,Friday of Week 21 in Ordinary Time,Feria
+2029-09-01,2029,Ordinary Time,21,Saturday,Saturday of Week 21 in Ordinary Time,Feria
+2029-09-02,2029,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2029-09-03,2029,Ordinary Time,22,Monday,3 September – St Gregory the Great,Feast
+2029-09-04,2029,Ordinary Time,22,Tuesday,Tuesday of Week 22 in Ordinary Time,Feria
+2029-09-05,2029,Ordinary Time,22,Wednesday,Wednesday of Week 22 in Ordinary Time,Feria
+2029-09-06,2029,Ordinary Time,22,Thursday,Thursday of Week 22 in Ordinary Time,Feria
+2029-09-07,2029,Ordinary Time,22,Friday,Friday of Week 22 in Ordinary Time,Feria
+2029-09-08,2029,Ordinary Time,22,Saturday,8 September – Birth of Mary,Feast
+2029-09-09,2029,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2029-09-10,2029,Ordinary Time,23,Monday,Monday of Week 23 in Ordinary Time,Feria
+2029-09-11,2029,Ordinary Time,23,Tuesday,Tuesday of Week 23 in Ordinary Time,Feria
+2029-09-12,2029,Ordinary Time,23,Wednesday,12 September – The Most Holy Name of Mary,Feast
+2029-09-13,2029,Ordinary Time,23,Thursday,13 September – St John Chrysostom,Feast
+2029-09-14,2029,Ordinary Time,23,Friday,14 September – Exaltation of the Cross,Feast
+2029-09-15,2029,Ordinary Time,23,Saturday,15 September – Our Lady of Sorrows,Feast
+2029-09-16,2029,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2029-09-17,2029,Ordinary Time,24,Monday,17 September – St Robert Bellarmine,Feast
+2029-09-18,2029,Ordinary Time,24,Tuesday,Tuesday of Week 24 in Ordinary Time,Feria
+2029-09-19,2029,Ordinary Time,24,Wednesday,19 September – St Januarius,Feast
+2029-09-20,2029,Ordinary Time,24,Thursday,"20 September – Ss Andrew Kim Taegon, Paul Chong Hasang and companions",Feast
+2029-09-21,2029,Ordinary Time,24,Friday,21 September – St Matthew,Feast
+2029-09-22,2029,Ordinary Time,24,Saturday,Saturday of Week 24 in Ordinary Time,Feria
+2029-09-23,2029,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2029-09-24,2029,Ordinary Time,25,Monday,Monday of Week 25 in Ordinary Time,Feria
+2029-09-25,2029,Ordinary Time,25,Tuesday,Tuesday of Week 25 in Ordinary Time,Feria
+2029-09-26,2029,Ordinary Time,25,Wednesday,26 September – Ss Cosmas and Damian,Feast
+2029-09-27,2029,Ordinary Time,25,Thursday,27 September – St Vincent de Paul,Feast
+2029-09-28,2029,Ordinary Time,25,Friday,28 September – Ss Lawrence Ruiz and companions,Feast
+2029-09-29,2029,Ordinary Time,25,Saturday,"29 September – Ss Michael, Gabriel and Raphael",Feast
+2029-09-30,2029,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2029-10-01,2029,Ordinary Time,26,Monday,1 October – St Therese of the Child Jesus,Feast
+2029-10-02,2029,Ordinary Time,26,Tuesday,2 October – Holy Guardian Angels,Feast
+2029-10-03,2029,Ordinary Time,26,Wednesday,Wednesday of Week 26 in Ordinary Time,Feria
+2029-10-04,2029,Ordinary Time,26,Thursday,4 October – St Francis of Assisi,Feast
+2029-10-05,2029,Ordinary Time,26,Friday,Friday of Week 26 in Ordinary Time,Feria
+2029-10-06,2029,Ordinary Time,26,Saturday,6 October – St Bruno,Feast
+2029-10-07,2029,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2029-10-08,2029,Ordinary Time,27,Monday,Monday of Week 27 in Ordinary Time,Feria
+2029-10-09,2029,Ordinary Time,27,Tuesday,9 October – St John Leonardi,Feast
+2029-10-10,2029,Ordinary Time,27,Wednesday,Wednesday of Week 27 in Ordinary Time,Feria
+2029-10-11,2029,Ordinary Time,27,Thursday,Thursday of Week 27 in Ordinary Time,Feria
+2029-10-12,2029,Ordinary Time,27,Friday,Friday of Week 27 in Ordinary Time,Feria
+2029-10-13,2029,Ordinary Time,27,Saturday,Saturday of Week 27 in Ordinary Time,Feria
+2029-10-14,2029,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2029-10-15,2029,Ordinary Time,28,Monday,15 October – St Teresa of Jesus,Feast
+2029-10-16,2029,Ordinary Time,28,Tuesday,16 October – St Margaret Mary Alacoque,Feast
+2029-10-17,2029,Ordinary Time,28,Wednesday,17 October – St Ignatius of Antioch,Feast
+2029-10-18,2029,Ordinary Time,28,Thursday,18 October – St Luke,Feast
+2029-10-19,2029,Ordinary Time,28,Friday,19 October – St Paul of the Cross,Feast
+2029-10-20,2029,Ordinary Time,28,Saturday,Saturday of Week 28 in Ordinary Time,Feria
+2029-10-21,2029,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2029-10-22,2029,Ordinary Time,29,Monday,Monday of Week 29 in Ordinary Time,Feria
+2029-10-23,2029,Ordinary Time,29,Tuesday,23 October – St John of Capistrano,Feast
+2029-10-24,2029,Ordinary Time,29,Wednesday,24 October – St Anthony Claret,Feast
+2029-10-25,2029,Ordinary Time,29,Thursday,Thursday of Week 29 in Ordinary Time,Feria
+2029-10-26,2029,Ordinary Time,29,Friday,Friday of Week 29 in Ordinary Time,Feria
+2029-10-27,2029,Ordinary Time,29,Saturday,Saturday of Week 29 in Ordinary Time,Feria
+2029-10-28,2029,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2029-10-29,2029,Ordinary Time,30,Monday,Monday of Week 30 in Ordinary Time,Feria
+2029-10-30,2029,Ordinary Time,30,Tuesday,Tuesday of Week 30 in Ordinary Time,Feria
+2029-10-31,2029,Ordinary Time,30,Wednesday,Wednesday of Week 30 in Ordinary Time,Feria
+2029-11-01,2029,Ordinary Time,30,Thursday,1 November – All Saints,Solemnity
+2029-11-02,2029,Ordinary Time,30,Friday,2 November – All Souls (Year C),Feast
+2029-11-03,2029,Ordinary Time,30,Saturday,3 November – St Martin de Porres,Feast
+2029-11-04,2029,Ordinary Time,31,Sunday,31 Sunday in Ordinary Time,Sunday
+2029-11-05,2029,Ordinary Time,31,Monday,Monday of Week 31 in Ordinary Time,Feria
+2029-11-06,2029,Ordinary Time,31,Tuesday,Tuesday of Week 31 in Ordinary Time,Feria
+2029-11-07,2029,Ordinary Time,31,Wednesday,Wednesday of Week 31 in Ordinary Time,Feria
+2029-11-08,2029,Ordinary Time,31,Thursday,Thursday of Week 31 in Ordinary Time,Feria
+2029-11-09,2029,Ordinary Time,31,Friday,9 November – Dedication of St John Lateran,Feast
+2029-11-10,2029,Ordinary Time,31,Saturday,10 November – St Leo the Great,Feast
+2029-11-11,2029,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2029-11-12,2029,Ordinary Time,32,Monday,12 November – St Josaphat,Feast
+2029-11-13,2029,Ordinary Time,32,Tuesday,Tuesday of Week 32 in Ordinary Time,Feria
+2029-11-14,2029,Ordinary Time,32,Wednesday,Wednesday of Week 32 in Ordinary Time,Feria
+2029-11-15,2029,Ordinary Time,32,Thursday,15 November – St Albert the Great,Feast
+2029-11-16,2029,Ordinary Time,32,Friday,16 November – St Gertrude,Feast
+2029-11-17,2029,Ordinary Time,32,Saturday,17 November – St Elizabeth of Hungary,Feast
+2029-11-18,2029,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2029-11-19,2029,Ordinary Time,33,Monday,Monday of Week 33 in Ordinary Time,Feria
+2029-11-20,2029,Ordinary Time,33,Tuesday,Tuesday of Week 33 in Ordinary Time,Feria
+2029-11-21,2029,Ordinary Time,33,Wednesday,21 November – Presentation of Mary,Feast
+2029-11-22,2029,Ordinary Time,33,Thursday,22 November – St Cecilia,Feast
+2029-11-23,2029,Ordinary Time,33,Friday,23 November – St Columban,Feast
+2029-11-24,2029,Ordinary Time,33,Saturday,24 November – Ss Andrew Dung Lac and companions,Feast
+2029-11-25,2029,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2029-11-26,2029,Ordinary Time,34,Monday,Monday of Week 34 in Ordinary Time,Feria
+2029-11-27,2029,Ordinary Time,34,Tuesday,Tuesday of Week 34 in Ordinary Time,Feria
+2029-11-28,2029,Ordinary Time,34,Wednesday,Wednesday of Week 34 in Ordinary Time,Feria
+2029-11-29,2029,Ordinary Time,34,Thursday,Thursday of Week 34 in Ordinary Time,Feria
+2029-11-30,2029,Ordinary Time,34,Friday,30 November – St Andrew,Feast
+2029-12-01,2029,Ordinary Time,34,Saturday,Saturday of Week 34 in Ordinary Time,Feria
+2029-12-02,2029,Advent,1,Sunday,First Sunday of Advent,Sunday
+2029-12-03,2029,Advent,1,Monday,3 December – St Francis Xavier,Feast
+2029-12-04,2029,Advent,1,Tuesday,4 December – St John Damascene,Feast
+2029-12-05,2029,Advent,1,Wednesday,Wednesday of First week of Advent,Feria
+2029-12-06,2029,Advent,1,Thursday,6 December – St Nicholas,Feast
+2029-12-07,2029,Advent,1,Friday,7 December – St Ambrose,Feast
+2029-12-08,2029,Advent,1,Saturday,8 December – Immaculate Conception,Solemnity
+2029-12-09,2029,Advent,2,Sunday,Second Sunday of Advent,Sunday
+2029-12-10,2029,Advent,2,Monday,Monday of Second week of Advent,Feria
+2029-12-11,2029,Advent,2,Tuesday,11 December – St Damasus I,Feast
+2029-12-12,2029,Advent,2,Wednesday,12 December – Our Lady of Guadalupe,Feast
+2029-12-13,2029,Advent,2,Thursday,13 December – St Lucy,Feast
+2029-12-14,2029,Advent,2,Friday,14 December – St John of the Cross,Feast
+2029-12-15,2029,Advent,2,Saturday,Saturday of Second week of Advent,Feria
+2029-12-16,2029,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2029-12-17,2029,Advent,3,Monday,17th December,Feast
+2029-12-18,2029,Advent,3,Tuesday,18th December,Feast
+2029-12-19,2029,Advent,3,Wednesday,19th December,Feast
+2029-12-20,2029,Advent,3,Thursday,20th December,Feast
+2029-12-21,2029,Advent,3,Friday,21st December,Feast
+2029-12-22,2029,Advent,3,Saturday,22nd December,Feast
+2029-12-23,2029,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2029-12-24,2029,Advent,4,Monday,24th December,Feast
+2029-12-25,2029,Christmas,,Tuesday,Christmas Day,Solemnity
+2029-12-26,2029,Christmas,,Wednesday,26 December – St Stephen,Feast
+2029-12-27,2029,Christmas,,Thursday,"27 December – St John, Apostle, Evangelist",Feast
+2029-12-28,2029,Christmas,,Friday,28 December – Holy Innocents,Feast
+2029-12-29,2029,Christmas,,Saturday,29 December – St Thomas Becket,Feast
+2029-12-30,2029,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2029-12-31,2029,Christmas,,Monday,31 December – St Sylvester I,Feast
+2030-01-01,2030,Christmas,,Tuesday,"1 January – Mary, Mother of God",Feast
+2030-01-02,2030,Christmas,,Wednesday,2nd January,Feast
+2030-01-03,2030,Christmas,,Thursday,3rd January,Feast
+2030-01-04,2030,Christmas,,Friday,4th January,Feast
+2030-01-05,2030,Christmas,,Saturday,5th January,Feast
+2030-01-06,2030,Christmas,,Sunday,Epiphany of the Lord,Solemnity
+2030-01-07,2030,Christmas,,Monday,7th January,Feast
+2030-01-08,2030,Christmas,,Tuesday,Tuesday of Christmas Season,Feria
+2030-01-09,2030,Christmas,,Wednesday,Wednesday of Christmas Season,Feria
+2030-01-10,2030,Christmas,,Thursday,Thursday of Christmas Season,Feria
+2030-01-11,2030,Christmas,,Friday,Friday of Christmas Season,Feria
+2030-01-12,2030,Christmas,,Saturday,Saturday of Christmas Season,Feria
+2030-01-13,2030,Ordinary Time,1,Sunday,Baptism of the Lord,Feast
+2030-01-14,2030,Ordinary Time,1,Monday,Monday of Week 1 in Ordinary Time,Feria
+2030-01-15,2030,Ordinary Time,1,Tuesday,Tuesday of Week 1 in Ordinary Time,Feria
+2030-01-16,2030,Ordinary Time,1,Wednesday,Wednesday of Week 1 in Ordinary Time,Feria
+2030-01-17,2030,Ordinary Time,1,Thursday,17 January – St Anthony,Feast
+2030-01-18,2030,Ordinary Time,1,Friday,Friday of Week 1 in Ordinary Time,Feria
+2030-01-19,2030,Ordinary Time,1,Saturday,Saturday of Week 1 in Ordinary Time,Feria
+2030-01-20,2030,Ordinary Time,2,Sunday,Second Sunday in Ordinary Time,Sunday
+2030-01-21,2030,Ordinary Time,2,Monday,21 January – St Agnes,Feast
+2030-01-22,2030,Ordinary Time,2,Tuesday,22 January – St Vincent,Feast
+2030-01-23,2030,Ordinary Time,2,Wednesday,Wednesday of Week 2 in Ordinary Time,Feria
+2030-01-24,2030,Ordinary Time,2,Thursday,24 January – St Francis de Sales,Feast
+2030-01-25,2030,Ordinary Time,2,Friday,"25 January – Conversion of St Paul, Apsotle",Feast
+2030-01-26,2030,Ordinary Time,2,Saturday,26 January – Australia Day,Feast
+2030-01-27,2030,Ordinary Time,3,Sunday,Third Sunday in Ordinary Time,Sunday
+2030-01-28,2030,Ordinary Time,3,Monday,28 January – St Thomas Aquinas,Feast
+2030-01-29,2030,Ordinary Time,3,Tuesday,Tuesday of Week 3 in Ordinary Time,Feria
+2030-01-30,2030,Ordinary Time,3,Wednesday,Wednesday of Week 3 in Ordinary Time,Feria
+2030-01-31,2030,Ordinary Time,3,Thursday,31 January – St John Bosco,Feast
+2030-02-01,2030,Ordinary Time,3,Friday,Friday of Week 3 in Ordinary Time,Feria
+2030-02-02,2030,Ordinary Time,3,Saturday,2 February – Presentation of the Lord,Feast
+2030-02-03,2030,Ordinary Time,4,Sunday,Fourth Sunday in Ordinary Time,Sunday
+2030-02-04,2030,Ordinary Time,4,Monday,Monday of Week 4 in Ordinary Time,Feria
+2030-02-05,2030,Ordinary Time,4,Tuesday,5 February – St Agatha,Feast
+2030-02-06,2030,Ordinary Time,4,Wednesday,6 February – Ss Paul Miki and companions,Feast
+2030-02-07,2030,Ordinary Time,4,Thursday,Thursday of Week 4 in Ordinary Time,Feria
+2030-02-08,2030,Ordinary Time,4,Friday,8 February – St Josephine Bakhita,Feast
+2030-02-09,2030,Ordinary Time,4,Saturday,Saturday of Week 4 in Ordinary Time,Feria
+2030-02-10,2030,Ordinary Time,5,Sunday,Fifth Sunday in Ordinary Time,Sunday
+2030-02-11,2030,Ordinary Time,5,Monday,11 February – Our Lady of Lourdes,Feast
+2030-02-12,2030,Ordinary Time,5,Tuesday,Tuesday of Week 5 in Ordinary Time,Feria
+2030-02-13,2030,Ordinary Time,5,Wednesday,Wednesday of Week 5 in Ordinary Time,Feria
+2030-02-14,2030,Ordinary Time,5,Thursday,14 February – Ss Cyril and Methodius,Feast
+2030-02-15,2030,Ordinary Time,5,Friday,Friday of Week 5 in Ordinary Time,Feria
+2030-02-16,2030,Ordinary Time,5,Saturday,Saturday of Week 5 in Ordinary Time,Feria
+2030-02-17,2030,Ordinary Time,6,Sunday,Sixth Sunday in Ordinary Time,Sunday
+2030-02-18,2030,Ordinary Time,6,Monday,Monday of Week 6 in Ordinary Time,Feria
+2030-02-19,2030,Ordinary Time,6,Tuesday,Tuesday of Week 6 in Ordinary Time,Feria
+2030-02-20,2030,Ordinary Time,6,Wednesday,Wednesday of Week 6 in Ordinary Time,Feria
+2030-02-21,2030,Ordinary Time,6,Thursday,21 February – St Peter Damian,Feast
+2030-02-22,2030,Ordinary Time,6,Friday,22 February – Chair of Peter,Feast
+2030-02-23,2030,Ordinary Time,6,Saturday,23 February – St Polycarp,Feast
+2030-02-24,2030,Ordinary Time,7,Sunday,Seventh Sunday in Ordinary Time,Sunday
+2030-02-25,2030,Ordinary Time,7,Monday,Monday of Week 7 in Ordinary Time,Feria
+2030-02-26,2030,Ordinary Time,7,Tuesday,Tuesday of Week 7 in Ordinary Time,Feria
+2030-02-27,2030,Ordinary Time,7,Wednesday,Wednesday of Week 7 in Ordinary Time,Feria
+2030-02-28,2030,Ordinary Time,7,Thursday,Thursday of Week 7 in Ordinary Time,Feria
+2030-03-01,2030,Ordinary Time,7,Friday,Friday of Week 7 in Ordinary Time,Feria
+2030-03-02,2030,Ordinary Time,7,Saturday,Saturday of Week 7 in Ordinary Time,Feria
+2030-03-03,2030,Ordinary Time,8,Sunday,8 Sunday in Ordinary Time,Sunday
+2030-03-04,2030,Ordinary Time,8,Monday,4 March – St Casimir,Feast
+2030-03-05,2030,Ordinary Time,8,Tuesday,Tuesday of Week 8 in Ordinary Time,Feria
+2030-03-06,2030,Lent,1,Wednesday,Ash Wednesday,Ash Wednesday
+2030-03-07,2030,Lent,1,Thursday,7 March – Ss Perpetua and Felicity,Feast
+2030-03-08,2030,Lent,1,Friday,8 March – St John of God,Feast
+2030-03-09,2030,Lent,1,Saturday,9 March – St Frances of Rome,Feast
+2030-03-10,2030,Lent,1,Sunday,First Sunday of Lent,Sunday
+2030-03-11,2030,Lent,1,Monday,Monday of First week of Lent,Feria
+2030-03-12,2030,Lent,1,Tuesday,Tuesday of First week of Lent,Feria
+2030-03-13,2030,Lent,1,Wednesday,Wednesday of First week of Lent,Feria
+2030-03-14,2030,Lent,1,Thursday,Thursday of First week of Lent,Feria
+2030-03-15,2030,Lent,1,Friday,Friday of First week of Lent,Feria
+2030-03-16,2030,Lent,1,Saturday,Saturday of First week of Lent,Feria
+2030-03-17,2030,Lent,2,Sunday,Second Sunday of Lent,Sunday
+2030-03-18,2030,Lent,2,Monday,18 March – St Cyril of Jerusalem,Feast
+2030-03-19,2030,Lent,2,Tuesday,19 March – St Joseph,Solemnity
+2030-03-20,2030,Lent,2,Wednesday,Wednesday of Second week of Lent,Feria
+2030-03-21,2030,Lent,2,Thursday,Thursday of Second week of Lent,Feria
+2030-03-22,2030,Lent,2,Friday,Friday of Second week of Lent,Feria
+2030-03-23,2030,Lent,2,Saturday,23 March – St Turibius de Mogrovejo,Feast
+2030-03-24,2030,Lent,3,Sunday,Third Sunday of Lent,Sunday
+2030-03-25,2030,Lent,3,Monday,25 March – Annunciation,Solemnity
+2030-03-26,2030,Lent,3,Tuesday,Tuesday of Third week of Lent,Feria
+2030-03-27,2030,Lent,3,Wednesday,Wednesday of Third week of Lent,Feria
+2030-03-28,2030,Lent,3,Thursday,Thursday of Third week of Lent,Feria
+2030-03-29,2030,Lent,3,Friday,Friday of Third week of Lent,Feria
+2030-03-30,2030,Lent,3,Saturday,Saturday of Third week of Lent,Feria
+2030-03-31,2030,Lent,4,Sunday,Fourth Sunday of Lent,Sunday
+2030-04-01,2030,Lent,4,Monday,Monday of Fourth week of Lent,Feria
+2030-04-02,2030,Lent,4,Tuesday,2 April – St Francis of Paola,Feast
+2030-04-03,2030,Lent,4,Wednesday,Wednesday of Fourth week of Lent,Feria
+2030-04-04,2030,Lent,4,Thursday,4 April – St Isidore,Feast
+2030-04-05,2030,Lent,4,Friday,5 April – St Vincent Ferrer,Feast
+2030-04-06,2030,Lent,4,Saturday,Saturday of Fourth week of Lent,Feria
+2030-04-07,2030,Lent,5,Sunday,Fifth Sunday of Lent,Sunday
+2030-04-08,2030,Lent,5,Monday,Monday of Fifth week of Lent,Feria
+2030-04-09,2030,Lent,5,Tuesday,Tuesday of Fifth week of Lent,Feria
+2030-04-10,2030,Lent,5,Wednesday,Wednesday of Fifth week of Lent,Feria
+2030-04-11,2030,Lent,5,Thursday,11 April – St Stanislaus,Feast
+2030-04-12,2030,Lent,5,Friday,Friday of Fifth week of Lent,Feria
+2030-04-13,2030,Lent,5,Saturday,13 April – St Martin I,Feast
+2030-04-14,2030,Holy Week,,Sunday,Palm Sunday,Sunday
+2030-04-15,2030,Holy Week,,Monday,Monday of Holy Week,Feria
+2030-04-16,2030,Holy Week,,Tuesday,Tuesday of Holy Week,Feria
+2030-04-17,2030,Holy Week,,Wednesday,Wednesday of Holy Week,Feria
+2030-04-18,2030,Holy Week,,Thursday,Holy Thursday,Triduum
+2030-04-19,2030,Holy Week,,Friday,Good Friday,Triduum
+2030-04-20,2030,Holy Week,,Saturday,Holy Saturday,Triduum
+2030-04-21,2030,Easter,1,Sunday,Easter Sunday,Solemnity
+2030-04-22,2030,Easter,1,Monday,Monday of First week of Easter,Feria
+2030-04-23,2030,Easter,1,Tuesday,23 April – St Adalbert,Feast
+2030-04-24,2030,Easter,1,Wednesday,24 April – St Fidelis of Sigmaringen,Feast
+2030-04-25,2030,Easter,1,Thursday,25 April – Anzac Day,Feast
+2030-04-26,2030,Easter,1,Friday,"26 April – St Mark, Evangelist",Feast
+2030-04-27,2030,Easter,1,Saturday,Saturday of First week of Easter,Feria
+2030-04-28,2030,Easter,2,Sunday,Second Sunday of Easter,Sunday
+2030-04-29,2030,Easter,2,Monday,29 April – St Catherine of Siena,Feast
+2030-04-30,2030,Easter,2,Tuesday,30 April – St Pius V,Feast
+2030-05-01,2030,Easter,2,Wednesday,1 May – St Joseph the Worker,Feast
+2030-05-02,2030,Easter,2,Thursday,2 May – St Athanasius,Feast
+2030-05-03,2030,Easter,2,Friday,3 May – Ss Philip and James,Feast
+2030-05-04,2030,Easter,2,Saturday,Saturday of Second week of Easter,Feria
+2030-05-05,2030,Easter,3,Sunday,Third Sunday of Easter,Sunday
+2030-05-06,2030,Easter,3,Monday,Monday of Third week of Easter,Feria
+2030-05-07,2030,Easter,3,Tuesday,Tuesday of Third week of Easter,Feria
+2030-05-08,2030,Easter,3,Wednesday,Wednesday of Third week of Easter,Feria
+2030-05-09,2030,Easter,3,Thursday,Thursday of Third week of Easter,Feria
+2030-05-10,2030,Easter,3,Friday,Friday of Third week of Easter,Feria
+2030-05-11,2030,Easter,3,Saturday,Saturday of Third week of Easter,Feria
+2030-05-12,2030,Easter,4,Sunday,Fourth Sunday of Easter,Sunday
+2030-05-13,2030,Easter,4,Monday,13 May – Our Lady of Fatima,Feast
+2030-05-14,2030,Easter,4,Tuesday,14 May – St Matthias,Feast
+2030-05-15,2030,Easter,4,Wednesday,Wednesday of Fourth week of Easter,Feria
+2030-05-16,2030,Easter,4,Thursday,Thursday of Fourth week of Easter,Feria
+2030-05-17,2030,Easter,4,Friday,Friday of Fourth week of Easter,Feria
+2030-05-18,2030,Easter,4,Saturday,18 May – St John I,Feast
+2030-05-19,2030,Easter,5,Sunday,Fifth Sunday of Easter,Sunday
+2030-05-20,2030,Easter,5,Monday,20 May – St Bernadine of Siena,Feast
+2030-05-21,2030,Easter,5,Tuesday,21 May – Ss Christopher Magallanes and companions,Feast
+2030-05-22,2030,Easter,5,Wednesday,22 May – St Rita of Cascia,Feast
+2030-05-23,2030,Easter,5,Thursday,Thursday of Fifth week of Easter,Feria
+2030-05-24,2030,Easter,5,Friday,"24 May – Mary Help of Christians, Year C",Feast
+2030-05-25,2030,Easter,5,Saturday,25 May – St Mary Magdalene de Pazzi,Feast
+2030-05-26,2030,Easter,6,Sunday,Sixth Sunday of Easter,Sunday
+2030-05-27,2030,Easter,6,Monday,27 May – St Augustine of Canterbury,Feast
+2030-05-28,2030,Easter,6,Tuesday,Tuesday of Sixth week of Easter,Feria
+2030-05-29,2030,Easter,6,Wednesday,Wednesday of Sixth week of Easter,Feria
+2030-05-30,2030,Easter,6,Thursday,Thursday of Sixth week of Easter,Feria
+2030-05-31,2030,Easter,6,Friday,31 May – Visitation,Feast
+2030-06-01,2030,Easter,6,Saturday,"1 June – St Justin, Martyr",Feast
+2030-06-02,2030,Easter,7,Sunday,Ascension of the Lord,Solemnity
+2030-06-03,2030,Easter,7,Monday,3 June – St Charles Lwanga and companions,Feast
+2030-06-04,2030,Easter,7,Tuesday,Tuesday of Seventh week of Easter,Feria
+2030-06-05,2030,Easter,7,Wednesday,5 June – St Boniface,Feast
+2030-06-06,2030,Easter,7,Thursday,6 June – St Norbert,Feast
+2030-06-07,2030,Easter,7,Friday,Friday of Seventh week of Easter,Feria
+2030-06-08,2030,Easter,7,Saturday,Saturday of Seventh week of Easter,Feria
+2030-06-09,2030,Easter,8,Sunday,Pentecost Sunday,Solemnity
+2030-06-10,2030,Ordinary Time,10,Monday,Monday of Week 10 in Ordinary Time,Feria
+2030-06-11,2030,Ordinary Time,10,Tuesday,11 June – St Barnabas,Feast
+2030-06-12,2030,Ordinary Time,10,Wednesday,Wednesday of Week 10 in Ordinary Time,Feria
+2030-06-13,2030,Ordinary Time,10,Thursday,13 June – St Anthony of Padua,Feast
+2030-06-14,2030,Ordinary Time,10,Friday,Friday of Week 10 in Ordinary Time,Feria
+2030-06-15,2030,Ordinary Time,10,Saturday,Saturday of Week 10 in Ordinary Time,Feria
+2030-06-16,2030,Ordinary Time,11,Sunday,Trinity Sunday,Solemnity
+2030-06-17,2030,Ordinary Time,11,Monday,Monday of Week 11 in Ordinary Time,Feria
+2030-06-18,2030,Ordinary Time,11,Tuesday,Tuesday of Week 11 in Ordinary Time,Feria
+2030-06-19,2030,Ordinary Time,11,Wednesday,19 June – St Romuald,Feast
+2030-06-20,2030,Ordinary Time,11,Thursday,Thursday of Week 11 in Ordinary Time,Feria
+2030-06-21,2030,Ordinary Time,11,Friday,21 June – St Aloysius Gonzaga,Feast
+2030-06-22,2030,Ordinary Time,11,Saturday,22 June – Ss John Fisher and Thomas More,Feast
+2030-06-23,2030,Ordinary Time,12,Sunday,THE BODY AND BLOOD OF CHRIST,Solemnity
+2030-06-24,2030,Ordinary Time,12,Monday,24 June – Birth of John the Baptist,Solemnity
+2030-06-25,2030,Ordinary Time,12,Tuesday,Tuesday of Week 12 in Ordinary Time,Feria
+2030-06-26,2030,Ordinary Time,12,Wednesday,Wednesday of Week 12 in Ordinary Time,Feria
+2030-06-27,2030,Ordinary Time,12,Thursday,27 June – St Cyril of Alexandria,Feast
+2030-06-28,2030,Ordinary Time,12,Friday,Sacred Heart of Jesus,Solemnity
+2030-06-29,2030,Ordinary Time,12,Saturday,29 June – Ss Peter and Paul,Solemnity
+2030-06-30,2030,Ordinary Time,13,Sunday,13 Sunday in Ordinary Time,Sunday
+2030-07-01,2030,Ordinary Time,13,Monday,Monday of Week 13 in Ordinary Time,Feria
+2030-07-02,2030,Ordinary Time,13,Tuesday,Tuesday of Week 13 in Ordinary Time,Feria
+2030-07-03,2030,Ordinary Time,13,Wednesday,3 July – St Thomas,Feast
+2030-07-04,2030,Ordinary Time,13,Thursday,4 July – St Elizabeth of Portugal,Feast
+2030-07-05,2030,Ordinary Time,13,Friday,5 July – St Anthony Zaccaria,Feast
+2030-07-06,2030,Ordinary Time,13,Saturday,6 July – St Maria Goretti,Feast
+2030-07-07,2030,Ordinary Time,14,Sunday,14 Sunday in Ordinary Time,Sunday
+2030-07-08,2030,Ordinary Time,14,Monday,Monday of Week 14 in Ordinary Time,Feria
+2030-07-09,2030,Ordinary Time,14,Tuesday,9 July – St Augustine Zhao Rong and companions,Feast
+2030-07-10,2030,Ordinary Time,14,Wednesday,Wednesday of Week 14 in Ordinary Time,Feria
+2030-07-11,2030,Ordinary Time,14,Thursday,11 July – St Benedict,Feast
+2030-07-12,2030,Ordinary Time,14,Friday,Friday of Week 14 in Ordinary Time,Feria
+2030-07-13,2030,Ordinary Time,14,Saturday,13 July – St Henry,Feast
+2030-07-14,2030,Ordinary Time,15,Sunday,15 Sunday in Ordinary Time,Sunday
+2030-07-15,2030,Ordinary Time,15,Monday,15 July – St Bonaventure,Feast
+2030-07-16,2030,Ordinary Time,15,Tuesday,16 July – Our Lady of Mount Carmel,Feast
+2030-07-17,2030,Ordinary Time,15,Wednesday,Wednesday of Week 15 in Ordinary Time,Feria
+2030-07-18,2030,Ordinary Time,15,Thursday,Thursday of Week 15 in Ordinary Time,Feria
+2030-07-19,2030,Ordinary Time,15,Friday,Friday of Week 15 in Ordinary Time,Feria
+2030-07-20,2030,Ordinary Time,15,Saturday,20 July – St Apollonaris,Feast
+2030-07-21,2030,Ordinary Time,16,Sunday,16 Sunday in Ordinary Time,Sunday
+2030-07-22,2030,Ordinary Time,16,Monday,22 July – St Mary Magdalene,Feast
+2030-07-23,2030,Ordinary Time,16,Tuesday,23 July – St Bridget,Feast
+2030-07-24,2030,Ordinary Time,16,Wednesday,24 July – St Charbel Makhlouf,Feast
+2030-07-25,2030,Ordinary Time,16,Thursday,25 July – St James,Feast
+2030-07-26,2030,Ordinary Time,16,Friday,26 July – Ss Joachim and Ann,Feast
+2030-07-27,2030,Ordinary Time,16,Saturday,Saturday of Week 16 in Ordinary Time,Feria
+2030-07-28,2030,Ordinary Time,17,Sunday,17 Sunday in Ordinary Time,Sunday
+2030-07-29,2030,Ordinary Time,17,Monday,29 July – St Martha,Feast
+2030-07-30,2030,Ordinary Time,17,Tuesday,30 July – St Peter Chrysologus,Feast
+2030-07-31,2030,Ordinary Time,17,Wednesday,31 July – St Ignatius of Loyola,Feast
+2030-08-01,2030,Ordinary Time,17,Thursday,1 August – St Alphonsus Ligouri,Feast
+2030-08-02,2030,Ordinary Time,17,Friday,2 August – St Peter Julian Eymard,Feast
+2030-08-03,2030,Ordinary Time,17,Saturday,3 August (Australia) – St Dominic,Feast
+2030-08-04,2030,Ordinary Time,18,Sunday,18 Sunday in Ordinary Time,Sunday
+2030-08-05,2030,Ordinary Time,18,Monday,5 August – Dedication of St Mary Major,Feast
+2030-08-06,2030,Ordinary Time,18,Tuesday,6 August – Transfiguration (Year C),Feast
+2030-08-07,2030,Ordinary Time,18,Wednesday,7 August – St Cajetan,Feast
+2030-08-08,2030,Ordinary Time,18,Thursday,8 August – St Mary of the Cross MacKillop,Feast
+2030-08-09,2030,Ordinary Time,18,Friday,9 August – St Teresa Benedicta of the Cross,Feast
+2030-08-10,2030,Ordinary Time,18,Saturday,10 August – St Lawrence,Feast
+2030-08-11,2030,Ordinary Time,19,Sunday,19 Sunday in Ordinary Time,Sunday
+2030-08-12,2030,Ordinary Time,19,Monday,12 August – St Jane Frances de Chantal,Feast
+2030-08-13,2030,Ordinary Time,19,Tuesday,13 August – Ss Pontian and Hippolytus,Feast
+2030-08-14,2030,Ordinary Time,19,Wednesday,14 August – St Maximilian Mary Kolbe,Feast
+2030-08-15,2030,Ordinary Time,19,Thursday,15 August – Assumption,Solemnity
+2030-08-16,2030,Ordinary Time,19,Friday,16 August – St Stephen of Hungary,Feast
+2030-08-17,2030,Ordinary Time,19,Saturday,Saturday of Week 19 in Ordinary Time,Feria
+2030-08-18,2030,Ordinary Time,20,Sunday,20 Sunday in Ordinary Time,Sunday
+2030-08-19,2030,Ordinary Time,20,Monday,19 August – St John Eudes,Feast
+2030-08-20,2030,Ordinary Time,20,Tuesday,20 August – St Bernard,Feast
+2030-08-21,2030,Ordinary Time,20,Wednesday,21 August – Pope St Pius X,Feast
+2030-08-22,2030,Ordinary Time,20,Thursday,22 August – Queenship of Mary,Feast
+2030-08-23,2030,Ordinary Time,20,Friday,23 August – St Rose of Lima,Feast
+2030-08-24,2030,Ordinary Time,20,Saturday,24 August – St Bartholomew,Feast
+2030-08-25,2030,Ordinary Time,21,Sunday,21 Sunday in Ordinary Time,Sunday
+2030-08-26,2030,Ordinary Time,21,Monday,Monday of Week 21 in Ordinary Time,Feria
+2030-08-27,2030,Ordinary Time,21,Tuesday,27 August – St Monica,Feast
+2030-08-28,2030,Ordinary Time,21,Wednesday,28 August – St Augustine,Feast
+2030-08-29,2030,Ordinary Time,21,Thursday,29 August – Beheading of John the Baptist,Feast
+2030-08-30,2030,Ordinary Time,21,Friday,Friday of Week 21 in Ordinary Time,Feria
+2030-08-31,2030,Ordinary Time,21,Saturday,Saturday of Week 21 in Ordinary Time,Feria
+2030-09-01,2030,Ordinary Time,22,Sunday,22 Sunday in Ordinary Time,Sunday
+2030-09-02,2030,Ordinary Time,22,Monday,Monday of Week 22 in Ordinary Time,Feria
+2030-09-03,2030,Ordinary Time,22,Tuesday,3 September – St Gregory the Great,Feast
+2030-09-04,2030,Ordinary Time,22,Wednesday,Wednesday of Week 22 in Ordinary Time,Feria
+2030-09-05,2030,Ordinary Time,22,Thursday,Thursday of Week 22 in Ordinary Time,Feria
+2030-09-06,2030,Ordinary Time,22,Friday,Friday of Week 22 in Ordinary Time,Feria
+2030-09-07,2030,Ordinary Time,22,Saturday,Saturday of Week 22 in Ordinary Time,Feria
+2030-09-08,2030,Ordinary Time,23,Sunday,23 Sunday in Ordinary Time,Sunday
+2030-09-09,2030,Ordinary Time,23,Monday,9 September – St Peter Claver,Feast
+2030-09-10,2030,Ordinary Time,23,Tuesday,Tuesday of Week 23 in Ordinary Time,Feria
+2030-09-11,2030,Ordinary Time,23,Wednesday,Wednesday of Week 23 in Ordinary Time,Feria
+2030-09-12,2030,Ordinary Time,23,Thursday,12 September – The Most Holy Name of Mary,Feast
+2030-09-13,2030,Ordinary Time,23,Friday,13 September – St John Chrysostom,Feast
+2030-09-14,2030,Ordinary Time,23,Saturday,14 September – Exaltation of the Cross,Feast
+2030-09-15,2030,Ordinary Time,24,Sunday,24 Sunday in Ordinary Time,Sunday
+2030-09-16,2030,Ordinary Time,24,Monday,16 September – Ss Cornelius and Cyprian,Feast
+2030-09-17,2030,Ordinary Time,24,Tuesday,17 September – St Robert Bellarmine,Feast
+2030-09-18,2030,Ordinary Time,24,Wednesday,Wednesday of Week 24 in Ordinary Time,Feria
+2030-09-19,2030,Ordinary Time,24,Thursday,19 September – St Januarius,Feast
+2030-09-20,2030,Ordinary Time,24,Friday,"20 September – Ss Andrew Kim Taegon, Paul Chong Hasang and companions",Feast
+2030-09-21,2030,Ordinary Time,24,Saturday,21 September – St Matthew,Feast
+2030-09-22,2030,Ordinary Time,25,Sunday,25 Sunday in Ordinary Time,Sunday
+2030-09-23,2030,Ordinary Time,25,Monday,23 September – Pio of Pietrelcina,Feast
+2030-09-24,2030,Ordinary Time,25,Tuesday,Tuesday of Week 25 in Ordinary Time,Feria
+2030-09-25,2030,Ordinary Time,25,Wednesday,Wednesday of Week 25 in Ordinary Time,Feria
+2030-09-26,2030,Ordinary Time,25,Thursday,26 September – Ss Cosmas and Damian,Feast
+2030-09-27,2030,Ordinary Time,25,Friday,27 September – St Vincent de Paul,Feast
+2030-09-28,2030,Ordinary Time,25,Saturday,28 September – Ss Lawrence Ruiz and companions,Feast
+2030-09-29,2030,Ordinary Time,26,Sunday,26 Sunday in Ordinary Time,Sunday
+2030-09-30,2030,Ordinary Time,26,Monday,30 September – St Jerome,Feast
+2030-10-01,2030,Ordinary Time,26,Tuesday,1 October – St Therese of the Child Jesus,Feast
+2030-10-02,2030,Ordinary Time,26,Wednesday,2 October – Holy Guardian Angels,Feast
+2030-10-03,2030,Ordinary Time,26,Thursday,Thursday of Week 26 in Ordinary Time,Feria
+2030-10-04,2030,Ordinary Time,26,Friday,4 October – St Francis of Assisi,Feast
+2030-10-05,2030,Ordinary Time,26,Saturday,Saturday of Week 26 in Ordinary Time,Feria
+2030-10-06,2030,Ordinary Time,27,Sunday,27 Sunday in Ordinary Time,Sunday
+2030-10-07,2030,Ordinary Time,27,Monday,7 October – Our Lady of the Rosary,Feast
+2030-10-08,2030,Ordinary Time,27,Tuesday,Tuesday of Week 27 in Ordinary Time,Feria
+2030-10-09,2030,Ordinary Time,27,Wednesday,9 October – St John Leonardi,Feast
+2030-10-10,2030,Ordinary Time,27,Thursday,Thursday of Week 27 in Ordinary Time,Feria
+2030-10-11,2030,Ordinary Time,27,Friday,Friday of Week 27 in Ordinary Time,Feria
+2030-10-12,2030,Ordinary Time,27,Saturday,Saturday of Week 27 in Ordinary Time,Feria
+2030-10-13,2030,Ordinary Time,28,Sunday,28 Sunday in Ordinary Time,Sunday
+2030-10-14,2030,Ordinary Time,28,Monday,14 October – St Callistus I,Feast
+2030-10-15,2030,Ordinary Time,28,Tuesday,15 October – St Teresa of Jesus,Feast
+2030-10-16,2030,Ordinary Time,28,Wednesday,16 October – St Margaret Mary Alacoque,Feast
+2030-10-17,2030,Ordinary Time,28,Thursday,17 October – St Ignatius of Antioch,Feast
+2030-10-18,2030,Ordinary Time,28,Friday,18 October – St Luke,Feast
+2030-10-19,2030,Ordinary Time,28,Saturday,19 October – St Paul of the Cross,Feast
+2030-10-20,2030,Ordinary Time,29,Sunday,29 Sunday in Ordinary Time,Sunday
+2030-10-21,2030,Ordinary Time,29,Monday,Monday of Week 29 in Ordinary Time,Feria
+2030-10-22,2030,Ordinary Time,29,Tuesday,Tuesday of Week 29 in Ordinary Time,Feria
+2030-10-23,2030,Ordinary Time,29,Wednesday,23 October – St John of Capistrano,Feast
+2030-10-24,2030,Ordinary Time,29,Thursday,24 October – St Anthony Claret,Feast
+2030-10-25,2030,Ordinary Time,29,Friday,Friday of Week 29 in Ordinary Time,Feria
+2030-10-26,2030,Ordinary Time,29,Saturday,Saturday of Week 29 in Ordinary Time,Feria
+2030-10-27,2030,Ordinary Time,30,Sunday,30 Sunday in Ordinary Time,Sunday
+2030-10-28,2030,Ordinary Time,30,Monday,28 October – Ss Simon and Jude,Feast
+2030-10-29,2030,Ordinary Time,30,Tuesday,Tuesday of Week 30 in Ordinary Time,Feria
+2030-10-30,2030,Ordinary Time,30,Wednesday,Wednesday of Week 30 in Ordinary Time,Feria
+2030-10-31,2030,Ordinary Time,30,Thursday,Thursday of Week 30 in Ordinary Time,Feria
+2030-11-01,2030,Ordinary Time,30,Friday,1 November – All Saints,Solemnity
+2030-11-02,2030,Ordinary Time,30,Saturday,2 November – All Souls (Year C),Feast
+2030-11-03,2030,Ordinary Time,31,Sunday,31 Sunday in Ordinary Time,Sunday
+2030-11-04,2030,Ordinary Time,31,Monday,4 November – St Charles Borromeo,Feast
+2030-11-05,2030,Ordinary Time,31,Tuesday,Tuesday of Week 31 in Ordinary Time,Feria
+2030-11-06,2030,Ordinary Time,31,Wednesday,Wednesday of Week 31 in Ordinary Time,Feria
+2030-11-07,2030,Ordinary Time,31,Thursday,Thursday of Week 31 in Ordinary Time,Feria
+2030-11-08,2030,Ordinary Time,31,Friday,Friday of Week 31 in Ordinary Time,Feria
+2030-11-09,2030,Ordinary Time,31,Saturday,9 November – Dedication of St John Lateran,Feast
+2030-11-10,2030,Ordinary Time,32,Sunday,32 Sunday in Ordinary Time,Sunday
+2030-11-11,2030,Ordinary Time,32,Monday,11 November – St Martin of Tours,Feast
+2030-11-12,2030,Ordinary Time,32,Tuesday,12 November – St Josaphat,Feast
+2030-11-13,2030,Ordinary Time,32,Wednesday,Wednesday of Week 32 in Ordinary Time,Feria
+2030-11-14,2030,Ordinary Time,32,Thursday,Thursday of Week 32 in Ordinary Time,Feria
+2030-11-15,2030,Ordinary Time,32,Friday,15 November – St Albert the Great,Feast
+2030-11-16,2030,Ordinary Time,32,Saturday,16 November – St Gertrude,Feast
+2030-11-17,2030,Ordinary Time,33,Sunday,33 Sunday in Ordinary Time,Sunday
+2030-11-18,2030,Ordinary Time,33,Monday,18 November – Dedication of the basilicas of Peter and Paul,Feast
+2030-11-19,2030,Ordinary Time,33,Tuesday,Tuesday of Week 33 in Ordinary Time,Feria
+2030-11-20,2030,Ordinary Time,33,Wednesday,Wednesday of Week 33 in Ordinary Time,Feria
+2030-11-21,2030,Ordinary Time,33,Thursday,21 November – Presentation of Mary,Feast
+2030-11-22,2030,Ordinary Time,33,Friday,22 November – St Cecilia,Feast
+2030-11-23,2030,Ordinary Time,33,Saturday,23 November – St Columban,Feast
+2030-11-24,2030,Ordinary Time,34,Sunday,"Our Lord Jesus Christ, King of the Universe",Solemnity
+2030-11-25,2030,Ordinary Time,34,Monday,25 November – St Catherine of Alexandria,Feast
+2030-11-26,2030,Ordinary Time,34,Tuesday,Tuesday of Week 34 in Ordinary Time,Feria
+2030-11-27,2030,Ordinary Time,34,Wednesday,Wednesday of Week 34 in Ordinary Time,Feria
+2030-11-28,2030,Ordinary Time,34,Thursday,Thursday of Week 34 in Ordinary Time,Feria
+2030-11-29,2030,Ordinary Time,34,Friday,Friday of Week 34 in Ordinary Time,Feria
+2030-11-30,2030,Ordinary Time,34,Saturday,30 November – St Andrew,Feast
+2030-12-01,2030,Advent,1,Sunday,First Sunday of Advent,Sunday
+2030-12-02,2030,Advent,1,Monday,Monday of First week of Advent,Feria
+2030-12-03,2030,Advent,1,Tuesday,3 December – St Francis Xavier,Feast
+2030-12-04,2030,Advent,1,Wednesday,4 December – St John Damascene,Feast
+2030-12-05,2030,Advent,1,Thursday,Thursday of First week of Advent,Feria
+2030-12-06,2030,Advent,1,Friday,6 December – St Nicholas,Feast
+2030-12-07,2030,Advent,1,Saturday,7 December – St Ambrose,Feast
+2030-12-08,2030,Advent,2,Sunday,8 December – Immaculate Conception,Solemnity
+2030-12-09,2030,Advent,2,Monday,9 December – St Juan Diego,Feast
+2030-12-10,2030,Advent,2,Tuesday,Tuesday of Second week of Advent,Feria
+2030-12-11,2030,Advent,2,Wednesday,11 December – St Damasus I,Feast
+2030-12-12,2030,Advent,2,Thursday,12 December – Our Lady of Guadalupe,Feast
+2030-12-13,2030,Advent,2,Friday,13 December – St Lucy,Feast
+2030-12-14,2030,Advent,2,Saturday,14 December – St John of the Cross,Feast
+2030-12-15,2030,Advent,3,Sunday,Third Sunday of Advent,Sunday
+2030-12-16,2030,Advent,3,Monday,Monday of Third week of Advent,Feria
+2030-12-17,2030,Advent,3,Tuesday,17th December,Feast
+2030-12-18,2030,Advent,3,Wednesday,18th December,Feast
+2030-12-19,2030,Advent,3,Thursday,19th December,Feast
+2030-12-20,2030,Advent,3,Friday,20th December,Feast
+2030-12-21,2030,Advent,3,Saturday,21st December,Feast
+2030-12-22,2030,Advent,4,Sunday,Fourth Sunday of Advent,Sunday
+2030-12-23,2030,Advent,4,Monday,23rd December,Feast
+2030-12-24,2030,Advent,4,Tuesday,24th December,Feast
+2030-12-25,2030,Christmas,,Wednesday,Christmas Day,Solemnity
+2030-12-26,2030,Christmas,,Thursday,26 December – St Stephen,Feast
+2030-12-27,2030,Christmas,,Friday,"27 December – St John, Apostle, Evangelist",Feast
+2030-12-28,2030,Christmas,,Saturday,28 December – Holy Innocents,Feast
+2030-12-29,2030,Christmas,,Sunday,Sunday of Christmas Season,Feria
+2030-12-30,2030,Christmas,,Monday,Monday of Christmas Season,Feria
+2030-12-31,2030,Christmas,,Tuesday,31 December – St Sylvester I,Feast

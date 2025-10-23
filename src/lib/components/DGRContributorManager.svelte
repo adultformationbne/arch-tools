@@ -1,5 +1,6 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
+	import { Copy, ExternalLink, RefreshCw, Plus, ChevronDown, ChevronUp } from 'lucide-svelte';
 
 	let {
 		contributors = [],
@@ -11,19 +12,12 @@
 	let newContributor = $state({
 		name: '',
 		email: '',
-		preferred_days: [],
-		day_of_month: null,
+		schedule_pattern: null,
+		pattern_value: null,
 		notes: ''
 	});
 
-	function togglePreferredDay(day) {
-		const index = newContributor.preferred_days.indexOf(day);
-		if (index > -1) {
-			newContributor.preferred_days.splice(index, 1);
-		} else {
-			newContributor.preferred_days.push(day);
-		}
-	}
+	let formExpanded = $state(false);
 
 	async function handleAddContributor() {
 		if (!newContributor.name || !newContributor.email) {
@@ -35,105 +29,183 @@
 			return;
 		}
 
-		await onAddContributor(newContributor);
+		// Build schedule_pattern JSON if pattern is selected
+		let schedule_pattern = null;
+		if (newContributor.schedule_pattern === 'day_of_month' && newContributor.pattern_value) {
+			schedule_pattern = { type: 'day_of_month', value: parseInt(newContributor.pattern_value) };
+		} else if (newContributor.schedule_pattern === 'day_of_week' && newContributor.pattern_value !== null) {
+			schedule_pattern = { type: 'day_of_week', value: parseInt(newContributor.pattern_value) };
+		}
 
-		// Reset form
+		await onAddContributor({ ...newContributor, schedule_pattern });
+
+		// Reset form and collapse
 		newContributor = {
 			name: '',
 			email: '',
-			preferred_days: [],
-			day_of_month: null,
+			schedule_pattern: null,
+			pattern_value: null,
 			notes: ''
 		};
+		formExpanded = false;
 	}
 
-	async function handleDayOfMonthChange(contributor, newValue) {
-		const newDayOfMonth = newValue ? parseInt(newValue) : null;
-		await onUpdateContributor(contributor.id, { day_of_month: newDayOfMonth });
+	async function handlePatternChange(contributor, patternType, patternValue) {
+		let schedule_pattern = null;
+		if (patternType === 'day_of_month' && patternValue) {
+			schedule_pattern = { type: 'day_of_month', value: parseInt(patternValue) };
+		} else if (patternType === 'day_of_week' && patternValue !== null) {
+			schedule_pattern = { type: 'day_of_week', value: parseInt(patternValue) };
+		}
+		await onUpdateContributor(contributor.id, { schedule_pattern });
+	}
+
+	function getContributorLink(contributor) {
+		if (!contributor.access_token) return null;
+		return `${window.location.origin}/dgr/write/${contributor.access_token}`;
+	}
+
+	function copyLink(contributor) {
+		const link = getContributorLink(contributor);
+		if (link) {
+			navigator.clipboard.writeText(link).then(() => {
+				toast.success({
+					title: 'Link Copied!',
+					message: 'Contributor link copied to clipboard',
+					duration: 2000
+				});
+			});
+		}
+	}
+
+	function getPatternDescription(pattern) {
+		if (!pattern) return 'Manual assignment only';
+		if (pattern.type === 'day_of_month') return `Every ${pattern.value}${getOrdinalSuffix(pattern.value)} of month`;
+		if (pattern.type === 'day_of_week') return `Every ${dayNames[pattern.value]}`;
+		return 'Manual assignment';
+	}
+
+	function getOrdinalSuffix(num) {
+		const j = num % 10;
+		const k = num % 100;
+		if (j === 1 && k !== 11) return 'st';
+		if (j === 2 && k !== 12) return 'nd';
+		if (j === 3 && k !== 13) return 'rd';
+		return 'th';
 	}
 </script>
 
 <div class="space-y-6">
 	<!-- Add Contributor Form -->
-	<div class="rounded-lg bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-lg font-semibold">Add New Contributor</h2>
-		<div class="space-y-4">
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<div>
-					<label for="contributor-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
-					<input
-						id="contributor-name"
-						type="text"
-						bind:value={newContributor.name}
-						class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-						placeholder="Sr. Mary Catherine"
-					/>
+	<div class="rounded-lg bg-white shadow-sm">
+		<button
+			onclick={() => (formExpanded = !formExpanded)}
+			class="flex w-full items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors"
+		>
+			<div class="flex items-center gap-3">
+				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+					<Plus class="h-5 w-5 text-green-600" />
 				</div>
 				<div>
-					<label for="contributor-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-					<input
-						id="contributor-email"
-						type="email"
-						bind:value={newContributor.email}
-						class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-						placeholder="contributor@example.com"
-					/>
+					<h2 class="text-lg font-semibold text-gray-900">Add New Contributor</h2>
+					<p class="text-sm text-gray-500">Click to expand form</p>
 				</div>
 			</div>
+			{#if formExpanded}
+				<ChevronUp class="h-5 w-5 text-gray-400" />
+			{:else}
+				<ChevronDown class="h-5 w-5 text-gray-400" />
+			{/if}
+		</button>
 
-			<fieldset>
-				<legend class="mb-2 block text-sm font-medium text-gray-700">Preferred Days</legend>
-				<div class="flex flex-wrap gap-2">
-					{#each dayNames as day, index}
-						<button
-							onclick={() => togglePreferredDay(index)}
-							class="rounded px-3 py-1 text-sm {newContributor.preferred_days.includes(index)
-								? 'bg-blue-600 text-white'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-						>
-							{day}
-						</button>
-					{/each}
+		{#if formExpanded}
+			<div class="border-t border-gray-200 p-6">
+				<div class="space-y-4">
+					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<div>
+							<label for="contributor-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+							<input
+								id="contributor-name"
+								type="text"
+								bind:value={newContributor.name}
+								class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								placeholder="Sr. Mary Catherine"
+							/>
+						</div>
+						<div>
+							<label for="contributor-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+							<input
+								id="contributor-email"
+								type="email"
+								bind:value={newContributor.email}
+								class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								placeholder="contributor@example.com"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label for="pattern-type" class="mb-1 block text-sm font-medium text-gray-700">
+							Schedule Pattern
+						</label>
+						<div class="grid grid-cols-2 gap-4">
+							<select
+								id="pattern-type"
+								bind:value={newContributor.schedule_pattern}
+								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={null}>Manual assignment only</option>
+								<option value="day_of_month">Day of Month</option>
+								<option value="day_of_week">Day of Week</option>
+							</select>
+
+							{#if newContributor.schedule_pattern === 'day_of_month'}
+								<select
+									bind:value={newContributor.pattern_value}
+									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								>
+									<option value={null}>Select day...</option>
+									{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+										<option value={day}>{day}{getOrdinalSuffix(day)}</option>
+									{/each}
+								</select>
+							{:else if newContributor.schedule_pattern === 'day_of_week'}
+								<select
+									bind:value={newContributor.pattern_value}
+									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								>
+									<option value={null}>Select day...</option>
+									{#each dayNames as day, index}
+										<option value={index}>{day}</option>
+									{/each}
+								</select>
+							{/if}
+						</div>
+						<p class="mt-1 text-xs text-gray-500">
+							Set a recurring schedule pattern, or leave as manual for ad-hoc assignments
+						</p>
+					</div>
+
+					<div>
+						<label for="contributor-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+						<textarea
+							id="contributor-notes"
+							bind:value={newContributor.notes}
+							rows="2"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							placeholder="Any additional notes or preferences..."
+						></textarea>
+					</div>
+
+					<button
+						onclick={handleAddContributor}
+						class="rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
+					>
+						Add Contributor
+					</button>
 				</div>
-			</fieldset>
-
-			<div>
-				<label for="contributor-day-of-month" class="mb-1 block text-sm font-medium text-gray-700">
-					Day of Month Assignment (1-31)
-				</label>
-				<select
-					id="contributor-day-of-month"
-					bind:value={newContributor.day_of_month}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				>
-					<option value={null}>No specific day</option>
-					{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
-						<option value={day}>{day}</option>
-					{/each}
-				</select>
-				<p class="mt-1 text-xs text-gray-500">
-					Assign this contributor to write on a specific day each month (e.g., always the 15th)
-				</p>
 			</div>
-
-			<div>
-				<label for="contributor-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes</label>
-				<textarea
-					id="contributor-notes"
-					bind:value={newContributor.notes}
-					rows="2"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-					placeholder="Any additional notes or preferences..."
-				></textarea>
-			</div>
-
-			<button
-				onclick={handleAddContributor}
-				class="rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
-			>
-				Add Contributor
-			</button>
-		</div>
+		{/if}
 	</div>
 
 	<!-- Contributors List -->
@@ -158,16 +230,13 @@
 								Email
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-								Preferred Days
+								Schedule Pattern
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-								Day of Month
+								Access Link
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
 								Status
-							</th>
-							<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-								Notes
 							</th>
 						</tr>
 					</thead>
@@ -180,34 +249,41 @@
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="text-sm text-gray-500">{contributor.email}</div>
 								</td>
-								<td class="px-6 py-4 whitespace-nowrap">
-									<div class="text-sm text-gray-500">
-										{contributor.preferred_days?.map((d) => dayNames[d]).join(', ') || 'Any day'}
+								<td class="px-6 py-4">
+									<div class="text-sm text-gray-700">
+										{getPatternDescription(contributor.schedule_pattern)}
 									</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap">
-									<select
-										value={contributor.day_of_month || ''}
-										onchange={(e) => handleDayOfMonthChange(contributor, e.target.value)}
-										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
-									>
-										<option value="">None</option>
-										{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
-											<option value={day}>{day}</option>
-										{/each}
-									</select>
+									{#if contributor.access_token}
+										<div class="flex items-center gap-2">
+											<button
+												onclick={() => copyLink(contributor)}
+												class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+												title="Copy contributor link"
+											>
+												<Copy class="h-4 w-4" />
+												<span class="text-xs">Copy Link</span>
+											</button>
+											<a
+												href={getContributorLink(contributor)}
+												target="_blank"
+												class="inline-flex items-center text-gray-500 hover:text-gray-700"
+												title="Open link"
+											>
+												<ExternalLink class="h-4 w-4" />
+											</a>
+										</div>
+									{:else}
+										<span class="text-xs text-gray-400">No token</span>
+									{/if}
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap">
-									<span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 {contributor.is_active
+									<span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 {contributor.active
 										? 'bg-green-100 text-green-800'
 										: 'bg-gray-100 text-gray-800'}">
-										{contributor.is_active ? 'Active' : 'Inactive'}
+										{contributor.active ? 'Active' : 'Inactive'}
 									</span>
-								</td>
-								<td class="px-6 py-4">
-									<div class="max-w-xs truncate text-sm text-gray-500">
-										{contributor.notes || '—'}
-									</div>
 								</td>
 							</tr>
 						{/each}

@@ -1,0 +1,731 @@
+date,year,season,week,name,rank,match_status,match_confidence,match_method,match_count,lectionary_day,year_cycle,admin_order,first_reading,psalm,second_reading,gospel
+2025-01-01,2025,,,"SOLEMNITY OF MARY, THE HOLY MOTHER OF GOD",Solemnity,NO_MATCH,,,,,,,,,,
+2025-01-02,2025,,,Saint Basil and Gregory,Memorial,NO_MATCH,,,,,,,,,,
+2025-01-03,2025,Christmas,,Friday before Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-04,2025,Christmas,,Saturday before Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-05,2025,,,THE EPIPHANY OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2025-01-06,2025,Christmas,,Monday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-07,2025,Christmas,,Tuesday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-08,2025,Christmas,,Wednesday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-09,2025,Christmas,,Thursday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-10,2025,Christmas,,Friday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-11,2025,Christmas,,Saturday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2025-01-12,2025,,,THE BAPTISM OF THE LORD,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,2,BAPTISM OF THE LORD,C,69,"Isaiah 40:1-5, 9-11","Psalm 103:1-2, 3-4, 24-25, 27-30",Titus 2:11-14; 3:4-7,"Luke 3:15-16, 21-22"
+2025-01-13,2025,Ordinary Time,1,Monday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the first week,1,112,Hebrews 1:1-6,"Psalm 96:1-2, 6-7, 9",,Mark 1:14-20
+2025-01-14,2025,Ordinary Time,1,Tuesday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,1,113,Hebrews 2:5-12,"Psalm 8:2, 5-9",,Mark 1:21-28
+2025-01-15,2025,Ordinary Time,1,Wednesday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the first week,1,114,Hebrews 2:14-18,"Psalm 104:1-4, 6-9",,Mark 1:29-39
+2025-01-16,2025,Ordinary Time,1,Thursday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the first week,1,115,Hebrews 3:7-14,Psalm 94:6-11,,Mark 1:40-45
+2025-01-17,2025,,,Saint Anthony,Memorial,NO_MATCH,,,,,,,,,,
+2025-01-18,2025,Ordinary Time,1,Saturday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the first week,1,117,Hebrews 4:12-16,"Psalm 18:8-10, 15",,Mark 2:13-17
+2025-01-19,2025,Ordinary Time,2,2 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 2 Sunday,,SECOND SUNDAY,C,70,Isaiah 62:1-5,"Psalm 95:1-3, 7-10",1 Corinthians 12:4-11,John 2:1-11
+2025-01-20,2025,Ordinary Time,2,Monday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the second week,1,118,Hebrews 5:1-10,Psalm 109:1-4,,Mark 2:18-22
+2025-01-21,2025,,,Saint Agnes,Memorial,NO_MATCH,,,,,,,,,,
+2025-01-22,2025,Ordinary Time,2,Wednesday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,1,120,"Hebrews 7:1-3, 15-17",Psalm 109:1-4,,Mark 3:1-6
+2025-01-23,2025,Ordinary Time,2,Thursday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,1,121,Hebrews 7:25 – 8:6,"Psalm 39:7-10, 17",,Mark 3:7-12
+2025-01-24,2025,,,Saint Francis de Sales,Memorial,NO_MATCH,,,,,,,,,,
+2025-01-25,2025,,,The Conversion of Saint Paul,Memorial,NO_MATCH,,,,,,,,,,
+2025-01-26,2025,Ordinary Time,3,3 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 3 Sunday,,THIRD SUNDAY,C,71,"Nehemiah 8:2-6, 8-10","Psalm 18:8-10, 15",1 Corinthians 12:12-30,Luke 1:1-4; 4:14-21
+2025-01-27,2025,Ordinary Time,3,Monday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,1,124,"Hebrews 9:15, 24-28",Psalm 97:1-6,,Mark 3:22-30
+2025-01-28,2025,,,Thomas Aquinas,Feast,NO_MATCH,,,,,,,,,,
+2025-01-29,2025,Ordinary Time,3,Wednesday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,1,126,Hebrews 10:11-18,Psalm 109:1-4,,Mark 4:1-20
+2025-01-30,2025,Ordinary Time,3,Thursday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,1,127,Hebrews 10:19-25,Psalm 23:1-6,,Mark 4:21-25
+2025-01-31,2025,,,Saint John Bosco,Memorial,NO_MATCH,,,,,,,,,,
+2025-02-01,2025,Ordinary Time,3,Saturday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the third week,1,129,"Hebrews 11:1-2, 8-19",Luke 1:69-75,,Mark 4:35-41
+2025-02-02,2025,,,THE PRESENTATION OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2025-02-03,2025,Ordinary Time,4,Monday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourth week,1,130,Hebrews 11:32-40,Psalm 30:20-24,,Mark 5:1-20
+2025-02-04,2025,Ordinary Time,4,Tuesday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourth week,1,131,Hebrews 12:1-4,"Psalm 21:26-28, 30-32",,Mark 5:21-43
+2025-02-05,2025,,,Saint Agatha,Memorial,NO_MATCH,,,,,,,,,,
+2025-02-06,2025,,,Saints Paul Miki and Companions,Memorial,NO_MATCH,,,,,,,,,,
+2025-02-07,2025,Ordinary Time,4,Friday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourth week,1,134,Hebrews 13:1-8,"Psalm 26:1, 3, 5, 8-9",,Mark 6:14-29
+2025-02-08,2025,Ordinary Time,4,Saturday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourth week,1,135,"Hebrews 13:15-17, 20-21",Psalm 22,,Mark 6:30-34
+2025-02-09,2025,Ordinary Time,5,5 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 5 Sunday,,FIFTH SUNDAY,C,73,Isaiah 6:1-8,"Psalm 137:1-5, 7-8",1 Corinthians 15:1-11,Luke 5:1-11
+2025-02-10,2025,,,Saint Scholastica,Memorial,NO_MATCH,,,,,,,,,,
+2025-02-11,2025,Ordinary Time,5,Tuesday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifth week,1,137,Genesis 1:20 – 2:4,Psalm 8:4-9,,Mark 7:1-13
+2025-02-12,2025,Ordinary Time,5,Wednesday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifth week,1,138,"Genesis 2:4-9, 15-17","Psalm 103:1-2, 27-30",,Mark 7:14-23
+2025-02-13,2025,Ordinary Time,5,Thursday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,1,139,Genesis 2:18-25,Psalm 127:1-5,,Mark 7:24-30
+2025-02-14,2025,,,Saints Cyril and Methodius,Memorial,NO_MATCH,,,,,,,,,,
+2025-02-15,2025,Ordinary Time,5,Saturday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifth week,1,141,Genesis 3:9-24,"Psalm 89:2-6, 12-13",,Mark 8:1-10
+2025-02-16,2025,Ordinary Time,6,6 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 6 Sunday,,SIXTH SUNDAY,C,74,Jeremiah 17:5-8,Psalm 1:1-4,"1 Corinthians 15:12, 16-20","Luke 6:17, 20-26"
+2025-02-17,2025,Ordinary Time,6,Monday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the sixth week,1,142,"Genesis 4:1-15, 25","Psalm 49:1, 8, 16-17, 20-21",,Mark 8:11-13
+2025-02-18,2025,Ordinary Time,6,Tuesday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the sixth week,1,143,"Genesis 6:5-8, 7:1-5, 10","Psalm 28:1-4, 9-10",,Mark 8:14-21
+2025-02-19,2025,Ordinary Time,6,Wednesday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the sixth week,1,144,"Genesis 8:6-13, 20-22","Psalm 115:12-15, 18-19",,Mark 8:22-26
+2025-02-20,2025,Ordinary Time,6,Thursday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the sixth week,1,145,Genesis 9:1-13,"Psalm 101:16-21, 29, 22-23",,Mark 8:27-33
+2025-02-21,2025,Ordinary Time,6,Friday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the sixth week,1,146,Genesis 11:1-9,Psalm 32:10-15,,Mark 8:34 – 9:1
+2025-02-22,2025,,,The Chair of St Peter,Feast,NO_MATCH,,,,,,,,,,
+2025-02-23,2025,Ordinary Time,7,7 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 7 Sunday,,SEVENTH SUNDAY,C,75,"1 Samuel 26:2, 7-9, 12-13, 22-23","Psalm 102:1-4, 8, 10, 12-13",1 Corinthians 15:45-49,Luke 6:27-38
+2025-02-24,2025,Ordinary Time,7,Monday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the seventh week,1,148,Sirach 1:1-10,"Psalm 92:1-2, 5",,Mark 9:14-29
+2025-02-25,2025,Ordinary Time,7,Tuesday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the seventh week,1,149,Sirach 2:1-11,"Psalm 36:3-4, 18-19, 27-28, 39-40",,Mark 9:30-37
+2025-02-26,2025,Ordinary Time,7,Wednesday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the seventh week,1,150,Sirach 4:11-19,"Psalm 118:165, 168, 171-2, 174-5",,Mark 9:38-40
+2025-02-27,2025,Ordinary Time,7,Thursday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the seventh week,1,151,Sirach 5:1-8,"Psalm 1:1-4, 6",,Mark 9:41-50
+2025-02-28,2025,Ordinary Time,7,Friday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the seventh week,1,152,Sirach 6:5-17,"Psalm 118:12, 16, 18, 27, 34-35",,Mark 10:1-12
+2025-03-01,2025,Ordinary Time,7,Saturday of the seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the seventh week,1,153,Sirach 17:1-15,Psalm 102:13-18,,Mark 10:13-16
+2025-03-02,2025,Ordinary Time,8,8 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 8 Sunday,,EIGHTH SUNDAY,C,76,Sirach 27:4-7,"Psalm 91:2-3, 13-16",1 Corinthians 15:54-58,Luke 6:39-45
+2025-03-03,2025,Ordinary Time,8,Monday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the eighth week,1,154,Sirach 17:24-29,"Psalm 31:1-2, 5-7",,Mark 10:17-27
+2025-03-04,2025,Ordinary Time,8,Tuesday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the eighth week,1,155,Sirach 35:1-12,"Psalm 49:5-8, 14, 23",,Mark 10:28-31
+2025-03-05,2025,,,Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2025-03-06,2025,,,Thursday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2025-03-07,2025,,,Friday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2025-03-08,2025,,,Saturday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2025-03-09,2025,Lent,1,1 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2025-03-10,2025,Lent,1,Monday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the first week,1,112,Hebrews 1:1-6,"Psalm 96:1-2, 6-7, 9",,Mark 1:14-20
+2025-03-11,2025,Lent,1,Tuesday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,1,113,Hebrews 2:5-12,"Psalm 8:2, 5-9",,Mark 1:21-28
+2025-03-12,2025,Lent,1,Wednesday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the first week,1,114,Hebrews 2:14-18,"Psalm 104:1-4, 6-9",,Mark 1:29-39
+2025-03-13,2025,Lent,1,Thursday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the first week,1,115,Hebrews 3:7-14,Psalm 94:6-11,,Mark 1:40-45
+2025-03-14,2025,Lent,1,Friday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the first week,1,116,"Hebrews 4:1-5, 11","Psalm 77:3-4, 6-8",,Mark 2:1-12
+2025-03-15,2025,Lent,1,Saturday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the first week,1,117,Hebrews 4:12-16,"Psalm 18:8-10, 15",,Mark 2:13-17
+2025-03-16,2025,Lent,2,2 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2025-03-17,2025,,,SAINT PATRICK (NZ: Feast),Feast,NO_MATCH,,,,,,,,,,
+2025-03-18,2025,Lent,2,Tuesday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the second week,1,119,Hebrews 6:10-20,"Psalm 110:1-2, 4-5, 9, 10",,Mark 2:23-28
+2025-03-19,2025,,,SAINT JOSEPH,Solemnity,NO_MATCH,,,,,,,,,,
+2025-03-20,2025,Lent,2,Thursday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,1,121,Hebrews 7:25 – 8:6,"Psalm 39:7-10, 17",,Mark 3:7-12
+2025-03-21,2025,Lent,2,Friday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,1,122,Hebrews 8:6-13,"Psalm 84:8, 10-14",,Mark 3:13-19
+2025-03-22,2025,Lent,2,Saturday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the second week,1,123,"Hebrews 9:2-3, 11-14","Psalm 46:2-3, 6-9",,Mark 3:20-21
+2025-03-23,2025,Lent,3,3 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2025-03-24,2025,Lent,3,Monday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,1,124,"Hebrews 9:15, 24-28",Psalm 97:1-6,,Mark 3:22-30
+2025-03-25,2025,,,THE ANNUNCIATION OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2025-03-26,2025,Lent,3,Wednesday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,1,126,Hebrews 10:11-18,Psalm 109:1-4,,Mark 4:1-20
+2025-03-27,2025,Lent,3,Thursday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,1,127,Hebrews 10:19-25,Psalm 23:1-6,,Mark 4:21-25
+2025-03-28,2025,Lent,3,Friday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the third week,1,128,Hebrews 10:32-39,"Psalm 36:3-6, 23-24, 39-40",,Mark 4:26-34
+2025-03-29,2025,Lent,3,Saturday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the third week,1,129,"Hebrews 11:1-2, 8-19",Luke 1:69-75,,Mark 4:35-41
+2025-03-30,2025,Lent,4,4 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2025-03-31,2025,Lent,4,Monday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourth week,1,130,Hebrews 11:32-40,Psalm 30:20-24,,Mark 5:1-20
+2025-04-01,2025,Lent,4,Tuesday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourth week,1,131,Hebrews 12:1-4,"Psalm 21:26-28, 30-32",,Mark 5:21-43
+2025-04-02,2025,Lent,4,Wednesday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fourth week,1,132,"Hebrews 12:4-7, 11-15","Psalm 102:1-2, 13-14, 17-18",,Mark 6:1-6
+2025-04-03,2025,Lent,4,Thursday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fourth week,1,133,"Hebrews 12:18-19, 21-24","Psalm 47:2-4, 9-11",,Mark 6:7-13
+2025-04-04,2025,Lent,4,Friday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourth week,1,134,Hebrews 13:1-8,"Psalm 26:1, 3, 5, 8-9",,Mark 6:14-29
+2025-04-05,2025,Lent,4,Saturday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourth week,1,135,"Hebrews 13:15-17, 20-21",Psalm 22,,Mark 6:30-34
+2025-04-06,2025,Lent,5,5 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2025-04-07,2025,Lent,5,Monday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifth week,1,136,Genesis 1:1-19,"Psalm 103:1-2, 5-6, 10, 12, 24, 35",,Mark 6:53-56
+2025-04-08,2025,Lent,5,Tuesday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifth week,1,137,Genesis 1:20 – 2:4,Psalm 8:4-9,,Mark 7:1-13
+2025-04-09,2025,Lent,5,Wednesday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifth week,1,138,"Genesis 2:4-9, 15-17","Psalm 103:1-2, 27-30",,Mark 7:14-23
+2025-04-10,2025,Lent,5,Thursday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,1,139,Genesis 2:18-25,Psalm 127:1-5,,Mark 7:24-30
+2025-04-11,2025,Lent,5,Friday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifth week,1,140,Genesis 3:1-8,"Psalm 31:1-2, 5-7",,Mark 7:31-37
+2025-04-12,2025,Lent,5,Saturday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifth week,1,141,Genesis 3:9-24,"Psalm 89:2-6, 12-13",,Mark 8:1-10
+2025-04-13,2025,,,PASSION SUNDAY (PALM SUNDAY),Solemnity,MATCHED,EXACT_NAME,Name match,,"PASSION SUNDAY (PALM SUNDAY), Year C",C,868,Isaiah 50:4-7,Psalm 21:8-9.17-20.23-24,Philippians 2:6-11,Luke 22:14-23:56
+2025-04-14,2025,Holy Week,,Monday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2025-04-15,2025,Holy Week,,Tuesday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2025-04-16,2025,Holy Week,,Wednesday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2025-04-17,2025,,,HOLY THURSDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-04-18,2025,,,GOOD FRIDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-04-19,2025,,,THE EASTER VIGIL,Solemnity,MATCHED,EXACT_NAME,Name match,,THE EASTER VIGIL - Year C,C,877,Genesis 1:1-2:2,Psalm 103:1-2.5-6.10.12-14.24.35,Genesis 22:1-18,Luke 24:1-12
+2025-04-20,2025,,,EASTER SUNDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-04-21,2025,Easter,,Easter Monday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-22,2025,Easter,,Easter Tuesday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-23,2025,Easter,,Easter Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-24,2025,Easter,,Easter Thursday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-25,2025,Easter,,Easter Friday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-26,2025,Easter,,Easter Saturday,Feast,NO_MATCH,,,,,,,,,,
+2025-04-27,2025,Easter,2,2 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2025-04-28,2025,,,Saint Peter Chanel,Memorial,NO_MATCH,,,,,,,,,,
+2025-04-29,2025,,,Saint Catherine of Siena,Memorial,NO_MATCH,,,,,,,,,,
+2025-04-30,2025,Easter,2,Wednesday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,1,120,"Hebrews 7:1-3, 15-17",Psalm 109:1-4,,Mark 3:1-6
+2025-05-01,2025,Easter,2,Thursday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,1,121,Hebrews 7:25 – 8:6,"Psalm 39:7-10, 17",,Mark 3:7-12
+2025-05-02,2025,,,Saint Athanasius,Memorial,NO_MATCH,,,,,,,,,,
+2025-05-03,2025,,,Saints Philip and James,Memorial,NO_MATCH,,,,,,,,,,
+2025-05-04,2025,Easter,3,3 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2025-05-05,2025,Easter,3,Monday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,1,124,"Hebrews 9:15, 24-28",Psalm 97:1-6,,Mark 3:22-30
+2025-05-06,2025,Easter,3,Tuesday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,1,125,Hebrews 10:1-10,"Psalm 39:2, 4, 7-8, 10-11",,Mark 3:31-35
+2025-05-07,2025,Easter,3,Wednesday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,1,126,Hebrews 10:11-18,Psalm 109:1-4,,Mark 4:1-20
+2025-05-08,2025,Easter,3,Thursday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,1,127,Hebrews 10:19-25,Psalm 23:1-6,,Mark 4:21-25
+2025-05-09,2025,Easter,3,Friday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the third week,1,128,Hebrews 10:32-39,"Psalm 36:3-6, 23-24, 39-40",,Mark 4:26-34
+2025-05-10,2025,Easter,3,Saturday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the third week,1,129,"Hebrews 11:1-2, 8-19",Luke 1:69-75,,Mark 4:35-41
+2025-05-11,2025,Easter,4,4 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2025-05-12,2025,Easter,4,Monday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourth week,1,130,Hebrews 11:32-40,Psalm 30:20-24,,Mark 5:1-20
+2025-05-13,2025,Easter,4,Tuesday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourth week,1,131,Hebrews 12:1-4,"Psalm 21:26-28, 30-32",,Mark 5:21-43
+2025-05-14,2025,,,Saint Matthias,Memorial,NO_MATCH,,,,,,,,,,
+2025-05-15,2025,Easter,4,Thursday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fourth week,1,133,"Hebrews 12:18-19, 21-24","Psalm 47:2-4, 9-11",,Mark 6:7-13
+2025-05-16,2025,Easter,4,Friday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourth week,1,134,Hebrews 13:1-8,"Psalm 26:1, 3, 5, 8-9",,Mark 6:14-29
+2025-05-17,2025,Easter,4,Saturday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourth week,1,135,"Hebrews 13:15-17, 20-21",Psalm 22,,Mark 6:30-34
+2025-05-18,2025,Easter,5,5 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2025-05-19,2025,Easter,5,Monday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifth week,1,136,Genesis 1:1-19,"Psalm 103:1-2, 5-6, 10, 12, 24, 35",,Mark 6:53-56
+2025-05-20,2025,Easter,5,Tuesday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifth week,1,137,Genesis 1:20 – 2:4,Psalm 8:4-9,,Mark 7:1-13
+2025-05-21,2025,Easter,5,Wednesday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifth week,1,138,"Genesis 2:4-9, 15-17","Psalm 103:1-2, 27-30",,Mark 7:14-23
+2025-05-22,2025,Easter,5,Thursday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,1,139,Genesis 2:18-25,Psalm 127:1-5,,Mark 7:24-30
+2025-05-23,2025,Easter,5,Friday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifth week,1,140,Genesis 3:1-8,"Psalm 31:1-2, 5-7",,Mark 7:31-37
+2025-05-24,2025,,,"OUR LADY, HELP OF CHRISTIANS  (NZ: memorial)",Feast,NO_MATCH,,,,,,,,,,
+2025-05-25,2025,Easter,6,6 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2025-05-26,2025,,,Saint Philip Neri,Memorial,NO_MATCH,,,,,,,,,,
+2025-05-27,2025,Easter,6,Tuesday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the sixth week,1,143,"Genesis 6:5-8, 7:1-5, 10","Psalm 28:1-4, 9-10",,Mark 8:14-21
+2025-05-28,2025,Easter,6,Wednesday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the sixth week,1,144,"Genesis 8:6-13, 20-22","Psalm 115:12-15, 18-19",,Mark 8:22-26
+2025-05-29,2025,Easter,6,Thursday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the sixth week,1,145,Genesis 9:1-13,"Psalm 101:16-21, 29, 22-23",,Mark 8:27-33
+2025-05-30,2025,Easter,6,Friday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the sixth week,1,146,Genesis 11:1-9,Psalm 32:10-15,,Mark 8:34 – 9:1
+2025-05-31,2025,,,The Visitation of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2025-06-01,2025,,,THE ASCENSION OF THE LORD,Solemnity,MATCHED,EXACT_NAME,Name match,,"THE ASCENSION OF THE LORD, Year C",C,934,Acts 1:1-11,Psalm 46:2-3.6-9,Hebrews 9:24-28.10:19-23,Luke 24:46-53
+2025-06-02,2025,Easter,7,Monday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the seventh week,1,148,Sirach 1:1-10,"Psalm 92:1-2, 5",,Mark 9:14-29
+2025-06-03,2025,,,Saint Charles Lwanga and companions,Memorial,NO_MATCH,,,,,,,,,,
+2025-06-04,2025,Easter,7,Wednesday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the seventh week,1,150,Sirach 4:11-19,"Psalm 118:165, 168, 171-2, 174-5",,Mark 9:38-40
+2025-06-05,2025,,,Saint Boniface,Memorial,NO_MATCH,,,,,,,,,,
+2025-06-06,2025,Easter,7,Friday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the seventh week,1,152,Sirach 6:5-17,"Psalm 118:12, 16, 18, 27, 34-35",,Mark 10:1-12
+2025-06-07,2025,Easter,7,Saturday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the seventh week,1,153,Sirach 17:1-15,Psalm 102:13-18,,Mark 10:13-16
+2025-06-08,2025,,,PENTECOST,Solemnity,NO_MATCH,,,,,,,,,,
+2025-06-09,2025,,,"Mary, Mother of the Church",Feria,NO_MATCH,,,,,,,,,,
+2025-06-10,2025,Ordinary Time,10,Tuesday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the tenth week,1,167,2 Corinthians 1:18-22,"Psalm 118:129-133, 135",,Matthew 5:13-16
+2025-06-11,2025,,,Saint Barnabas,Memorial,NO_MATCH,,,,,,,,,,
+2025-06-12,2025,Ordinary Time,10,Thursday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the tenth week,1,169,"2 Corinthians 3:15 – 4:1, 3-6",Psalm 84:9-14,,Matthew 5:20-26
+2025-06-13,2025,,,Saint Anthony of Padua,Memorial,NO_MATCH,,,,,,,,,,
+2025-06-14,2025,Ordinary Time,10,Saturday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the tenth week,1,171,2 Corinthians 5:14-21,"Psalm 102:1-4, 8-9, 11-12",,Matthew 5:33-37
+2025-06-15,2025,,,THE MOST HOLY TRINITY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-06-16,2025,Ordinary Time,11,Monday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the eleventh week,1,172,2 Corinthians 6:1-10,Psalm 97:1-4,,Matthew 5:38-42
+2025-06-17,2025,Ordinary Time,11,Tuesday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the eleventh week,1,173,2 Corinthians 8:1-9,"Psalm 145:2, 5-9",,Matthew 5:43-48
+2025-06-18,2025,Ordinary Time,11,Wednesday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the eleventh week,1,174,2 Corinthians 9:6-11,"Psalm 111:1-4, 9",,"Matthew 6:1-6, 16-18"
+2025-06-19,2025,Ordinary Time,11,Thursday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the eleventh week,1,175,2 Corinthians 11:1-11,"Psalm 110:1-4, 7-8",,Matthew 6:7-15
+2025-06-20,2025,Ordinary Time,11,Friday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the eleventh week,1,176,"2 Corinthians 11:18, 21-30",Psalm 33:2-7,,Matthew 6:19-23
+2025-06-21,2025,,,Saint Aloysius Gonzaga,Memorial,NO_MATCH,,,,,,,,,,
+2025-06-22,2025,,,THE MOST HOLY BODY AND BLOOD OF CHRIST,Solemnity,NO_MATCH,,,,,,,,,,
+2025-06-23,2025,Ordinary Time,12,Monday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twelfth week,1,178,Genesis 12:1-9,"Psalm 32:12-13, 18-20, 22",,Matthew 7:1-5
+2025-06-24,2025,,,THE NATIVITY OF SAINT JOHN THE BAPTIST,Solemnity,NO_MATCH,,,,,,,,,,
+2025-06-25,2025,Ordinary Time,12,Wednesday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twelfth week,1,180,"Genesis 15:1-12, 17-18","Psalm 104:1-4, 6-9",,Matthew 7:15-20
+2025-06-26,2025,Ordinary Time,12,Thursday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twelfth week,1,181,"Genesis 16:1-12, 15-16",Psalm 105:1-5,,Matthew 7:21-29
+2025-06-27,2025,,,THE MOST SACRED HEART OF JESUS,Solemnity,MATCHED,EXACT_NAME,Name match,,"MOST SACRED HEART OF JESUS, Year C",C,111,Ezekiel 34:11-16,Psalm 22,Romans 5:5-11,Luke 15:3-7
+2025-06-28,2025,Ordinary Time,12,Saturday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twelfth week,1,183,Genesis 18:1-15,"Luke 1:46-50, 53-55",,Matthew 8:5-17
+2025-06-29,2025,,,SAINTS PETER AND PAUL,Solemnity,NO_MATCH,,,,,,,,,,
+2025-06-30,2025,Ordinary Time,13,Monday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirteenth week,1,184,Genesis 18:16-33,"Psalm 102:1-4, 8-11",,Matthew 8:18-22
+2025-07-01,2025,Ordinary Time,13,Tuesday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirteenth week,1,185,Genesis 19:15-29,"Psalm 25:2-3, 9-12",,Matthew 8:23-27
+2025-07-02,2025,Ordinary Time,13,Wednesday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirteenth week,1,186,"Genesis 21:5, 8-20","Psalm 33:7-8, 10-13",,Matthew 8:28-34
+2025-07-03,2025,,,Saint Thomas,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-04,2025,Ordinary Time,13,Friday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirteenth week,1,188,"Genesis 23:1-4, 19; 24:1-8, 62-67",Psalm 105:1-5,,Matthew 9:9-13
+2025-07-05,2025,Ordinary Time,13,Saturday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirteenth week,1,189,"Genesis 27:1-5, 15-29",Psalm 134:1-6,,Matthew 9:14-17
+2025-07-06,2025,Ordinary Time,14,14 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 14 Sunday,,FOURTEENTH SUNDAY,C,82,Isaiah 66:10-14,"Psalm 65:1-7, 16, 20",Galatians 6:14-18,"Luke 10:1-12, 17-20"
+2025-07-07,2025,Ordinary Time,14,Monday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourteenth week,1,190,Genesis 28:10-22,"Psalm 90:1-4, 14-15",,Matthew 9:18-26
+2025-07-08,2025,Ordinary Time,14,Tuesday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourteenth week,1,191,Genesis 32:23-33,"Psalm 16:1-3, 6-8, 15",,Matthew 9:32-38
+2025-07-09,2025,Ordinary Time,14,Wednesday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fourteenth week,1,192,"Genesis 41:55-57; 42:5-7, 17-24","Psalm 32:2-3, 10-11, 18-19",,Matthew 10:1-7
+2025-07-10,2025,Ordinary Time,14,Thursday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fourteenth week,1,193,"Genesis 44:18-21, 23-29; 45:1-5",Psalm 104:16-21,,Matthew 10:7-15
+2025-07-11,2025,,,Saint Benedict,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-12,2025,Ordinary Time,14,Saturday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourteenth week,1,195,Genesis 49:29-33; 50:15-26,"Psalm 104:1-4, 6-7",,Matthew 10:24-33
+2025-07-13,2025,Ordinary Time,15,15 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 15 Sunday,,FIFTEENTH SUNDAY,C,83,Deuteronomy 30:10-14,"Psalm 68:14, 17, 30-31, 33-34, 36-37",Colossians 1:15-20,Luke 10:25-37
+2025-07-14,2025,Ordinary Time,15,Monday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifteenth week,1,196,"Exodus 1:8-14, 22",Psalm 123,,Matthew 10:34 – 11:1
+2025-07-15,2025,,,Saint Bonaventure,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-16,2025,Ordinary Time,15,Wednesday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifteenth week,1,198,"Exodus 3:1-6, 9-12","Psalm 102:1-4, 6-7",,Matthew 11:25-27
+2025-07-17,2025,Ordinary Time,15,Thursday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifteenth week,1,199,Exodus 3:13-20,"Psalm 104:1, 5, 8-9, 24-27",,Matthew 11:28-30
+2025-07-18,2025,Ordinary Time,15,Friday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifteenth week,1,200,Exodus 11:10 – 12:14,"Psalm 115:12-13, 15-18",,Matthew 12:1-8
+2025-07-19,2025,Ordinary Time,15,Saturday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifteenth week,1,201,Exodus 12:37-42,"Psalm 135:1, 10-15, 23-24",,Matthew 12:14-21
+2025-07-20,2025,Ordinary Time,16,16 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 16 Sunday,,SIXTEENTH SUNDAY,C,84,Genesis 18:1-10,Psalm 14:2-5,Colossians 1:24-28,Luke 10:38-42
+2025-07-21,2025,Ordinary Time,16,Monday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the sixteenth week,1,202,Exodus 14:5-18,Exodus 15:1-6,,Matthew 12:38-42
+2025-07-22,2025,,,Saint Mary Magdalene,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-23,2025,Ordinary Time,16,Wednesday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the sixteenth week,1,204,"Exodus 16:1-5, 9-15","Psalm 77:18-19, 23-28",,Matthew 13:1-9
+2025-07-24,2025,Ordinary Time,16,Thursday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the sixteenth week,1,205,"Exodus 19:1-2, 9-11, 16-20",Daniel 3:52-56,,Matthew 13:10-17
+2025-07-25,2025,,,Saint James,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-26,2025,,,Saints Joachim and Anne,Memorial,NO_MATCH,,,,,,,,,,
+2025-07-27,2025,Ordinary Time,17,17 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 17 Sunday,,SEVENTEENTH SUNDAY,C,85,Genesis 18:20-32,"Psalm 137:1-3, 6-8",Colossians 2:12-14,Luke 11:1-13
+2025-07-28,2025,Ordinary Time,17,Monday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the seventeenth week,1,208,"Exodus 32:15-24, 30-34",Psalm 105:19-23,,Matthew 13:31-35
+2025-07-29,2025,,,"Saints Martha, Mary and Lazarus",Memorial,NO_MATCH,,,,,,,,,,
+2025-07-30,2025,Ordinary Time,17,Wednesday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the seventeenth week,1,210,Exodus 34:29-35,"Psalm 98:5-7, 9",,Matthew 13:44-46
+2025-07-31,2025,,,Saint Ignatius Loyola,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-01,2025,,,Saint Alphonsus Liguori,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-02,2025,Ordinary Time,17,Saturday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the seventeenth week,1,213,"Leviticus 25:1, 8-17","Psalm 66:2-3, 5, 7-8",,Matthew 14:1-12
+2025-08-03,2025,Ordinary Time,18,18 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 18 Sunday,,EIGHTEENTH SUNDAY,C,86,Ecclesiastes 1:2; 2:21-23,"Psalm 89:3-6, 12-14, 17","Colossians 3:1-5, 9-11",Luke 12:13-21
+2025-08-04,2025,,,Saint John Vianney,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-05,2025,Ordinary Time,18,Tuesday of the eighteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the eighteenth week,1,215,Numbers 12:1-13,"Psalm 50:3-7, 12-13",,Matthew 14:22-36
+2025-08-06,2025,,,The Transfiguration of the Lord,Feria,NO_MATCH,,,,,,,,,,
+2025-08-07,2025,Ordinary Time,18,Thursday of the eighteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the eighteenth week,1,217,Numbers 20:1-13,"Psalm 94:1-2, 6-9",,Matthew 16:13-23
+2025-08-08,2025,,,SAINT MARY OF THE CROSS,Solemnity,NO_MATCH,,,,,,,,,,
+2025-08-09,2025,Ordinary Time,18,Saturday of the eighteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the eighteenth week,1,219,Deuteronomy 6:4-13,"Psalm 17:2-4, 47, 51",,Matthew 17:14-20
+2025-08-10,2025,Ordinary Time,19,19 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 19 Sunday,,NINETEENTH SUNDAY,C,87,Wisdom 18:6-9,"Psalm 32:1, 12, 18-20, 22","Hebrews 11:1-2, 8-19",Luke 12:32-48
+2025-08-11,2025,,,Saint Clare,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-12,2025,Ordinary Time,19,Tuesday of the nineteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the nineteenth week,1,221,Deuteronomy 31:1-8,"Deuteronomy 32:3-4, 7-9",,"Matthew 18:1-5, 10, 12-14"
+2025-08-13,2025,Ordinary Time,19,Wednesday of the nineteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the nineteenth week,1,222,Deuteronomy 34:1-12,"Psalm 65:1-3, 5, 16-17",,Matthew 18:15-20
+2025-08-14,2025,,,Saint Maximilian Kolbe,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-15,2025,,,THE ASSUMPTION OF THE BLESSED VIRGIN MARY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-08-16,2025,Ordinary Time,19,Saturday of the nineteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the nineteenth week,1,225,Joshua 24:14-29,"Psalm 15:1-2, 5, 7-8, 11",,Matthew 19:13-15
+2025-08-17,2025,Ordinary Time,20,20 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 20 Sunday,,TWENTIETH SUNDAY,C,88,"Jeremiah 38:4-6, 8-10","Psalm 39:2-4, 18",Hebrews 12:1-4,Luke 12:49-53
+2025-08-18,2025,Ordinary Time,20,Monday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twentieth week,1,226,Judges 2:11-19,"Psalm 105:34-37, 39-40, 43-44",,Matthew 19:16-22
+2025-08-19,2025,Ordinary Time,20,Tuesday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twentieth week,1,227,Judges 6:11-24,"Psalm 84:9, 11-14",,Matthew 19:23-30
+2025-08-20,2025,,,Saint Bernard,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-21,2025,,,Saint Pius X,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-22,2025,,,The Queenship of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2025-08-23,2025,Ordinary Time,20,Saturday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twentieth week,1,231,"Ruth 2:1-3, 8-11; 4:13-17",Psalm 127:1-5,,Matthew 23:1-12
+2025-08-24,2025,Ordinary Time,21,21 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 21 Sunday,,TWENTY-FIRST SUNDAY,C,89,Isaiah 66:18-21,Psalm 116,"Hebrews 12:5-7, 11-13",Luke 13:22-30
+2025-08-25,2025,Ordinary Time,21,Monday of the twenty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-first week,1,232,"1 Thessalonians 1:1-5, 8-10","Psalm 149:1-6, 9",,Matthew 23:13-22
+2025-08-26,2025,Ordinary Time,21,Tuesday of the twenty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-first week,1,233,1 Thessalonians 2:1-8,"Psalm 138:1-3, 4-6",,Matthew 23:23-26
+2025-08-27,2025,,,Saint Monica,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-28,2025,,,Saint Augustine,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-29,2025,,,The Passion of Saint John the Baptist,Memorial,NO_MATCH,,,,,,,,,,
+2025-08-30,2025,Ordinary Time,21,Saturday of the twenty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-first week,1,237,1 Thessalonians 4:9-11,"Psalm 97:1, 7-9",,Matthew 25:14-30
+2025-08-31,2025,Ordinary Time,22,22 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 22 Sunday,,TWENTY-SECOND SUNDAY,C,90,"Sirach 3:17-20, 28-29","Psalm 67:4-7, 10-11","Hebrews 12:18-19, 22-24","Luke 14:1, 7-14"
+2025-09-01,2025,Ordinary Time,22,Monday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-second week,1,238,1 Thessalonians 4:13-18,"Psalm 95:1, 3, 5, 11-13",,Luke 4:16-30
+2025-09-02,2025,Ordinary Time,22,Tuesday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-second week,1,239,"1 Thessalonians 5:1-6, 9-11","Psalm 26:1, 4, 13-14",,Luke 4:31-37
+2025-09-03,2025,,,Saint Gregory the Great,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-04,2025,Ordinary Time,22,Thursday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-second week,1,241,Colossians 1:9-14,Psalm 97:2-6,,Luke 5:1-11
+2025-09-05,2025,Ordinary Time,22,Friday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-second week,1,242,Colossians 1:15-20,Psalm 99:2-5,,Luke 5:33-39
+2025-09-06,2025,Ordinary Time,22,Saturday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-second week,1,243,Colossians 1:21-23,"Psalm 53:3-4, 6, 8",,Luke 6:1-5
+2025-09-07,2025,Ordinary Time,23,23 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 23 Sunday,,TWENTY-THIRD SUNDAY,C,91,Wisdom 9:13-18,"Psalm 89:3-6, 12-14, 17","Philemon 9-10, 12-17",Luke 14:25-33
+2025-09-08,2025,,,The Nativity of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2025-09-09,2025,Ordinary Time,23,Tuesday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-third week,1,245,Colossians 2:6-15,"Psalm 144:1-2, 8-11",,Luke 6:12-19
+2025-09-10,2025,Ordinary Time,23,Wednesday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-third week,1,246,Colossians 3:1-11,"Psalm 144:2-3, 10-13",,Luke 6:20-26
+2025-09-11,2025,Ordinary Time,23,Thursday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-third week,1,247,Colossians 3:12-17,Psalm 150:1-6,,Luke 6:27-38
+2025-09-12,2025,Ordinary Time,23,Friday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-third week,1,248,"1 Timothy 1:1-2, 12-14","Psalm 15:1-2, 5, 7-8, 11",,Luke 6:39-42
+2025-09-13,2025,,,Saint John Chrysostom,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-14,2025,,,THE EXALTATION OF THE HOLY CROSS,Solemnity,NO_MATCH,,,,,,,,,,
+2025-09-15,2025,,,Our Lady of Sorrows,Feast,NO_MATCH,,,,,,,,,,
+2025-09-16,2025,,,Saints Cornelius and Cyprian,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-17,2025,Ordinary Time,24,Wednesday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-fourth week,1,252,1 Timothy 3:14-16,Psalm 110:1-6,,Luke 7:31-35
+2025-09-18,2025,Ordinary Time,24,Thursday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-fourth week,1,253,1 Timothy 4:12-16,Psalm 110:7-10,,Luke 7:36-50
+2025-09-19,2025,Ordinary Time,24,Friday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-fourth week,1,254,1 Timothy 6:2-12,"Psalm 48:6-10, 17-20",,Luke 8:1-3
+2025-09-20,2025,,,Saints Andrew Kim Taegon and Paul Chong Hasang and companions,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-21,2025,Ordinary Time,25,25 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 25 Sunday,,TWENTY-FIFTH SUNDAY,C,93,Amos 8:4-7,"Psalm 112:1-2, 4-8",1 Timothy 2:1-8,Luke 16:1-13
+2025-09-22,2025,Ordinary Time,25,Monday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-fifth week,1,256,Ezra 1:1-6,Psalm 125,,Luke 8:16-18
+2025-09-23,2025,,,Saint Pius of Pietrelcina,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-24,2025,Ordinary Time,25,Wednesday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-fifth week,1,258,Ezra 9:5-9,"Tobit 13:2, 4, 6-8",,Luke 9:1-6
+2025-09-25,2025,Ordinary Time,25,Thursday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-fifth week,1,259,Haggai 1:1-8,"Psalm 149:1-6, 9",,Luke 9:7-9
+2025-09-26,2025,Ordinary Time,25,Friday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-fifth week,1,260,Haggai 1:15 – 2:9,Psalm 42:1-4,,Luke 9:18-22
+2025-09-27,2025,,,Saint Vincent de Paul,Memorial,NO_MATCH,,,,,,,,,,
+2025-09-28,2025,Ordinary Time,26,26 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 26 Sunday,,TWENTY-SIXTH SUNDAY,C,94,"Amos 6:1, 4-7",Psalm 145:6-10,1 Timothy 6:11-16,Luke 16:19-31
+2025-09-29,2025,,,"Saints Michael, Gabriel and Raphael",Memorial,NO_MATCH,,,,,,,,,,
+2025-09-30,2025,,,Saint Jerome,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-01,2025,,,Saint Thérèse of the Child Jesus,Feria,NO_MATCH,,,,,,,,,,
+2025-10-02,2025,,,The Holy Guardian Angels,Feast,NO_MATCH,,,,,,,,,,
+2025-10-03,2025,Ordinary Time,26,Friday of the twenty-sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-sixth week,1,266,Baruch 1:15-22,"Psalm 78:1-5, 8-9",,Luke 10:13-16
+2025-10-04,2025,,,Saint Francis of Assisi,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-05,2025,Ordinary Time,27,27 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 27 Sunday,,TWENTY-SEVENTH SUNDAY,C,95,Habakkuk 1:2-3; 2:2-4,"Psalm 94:1-2, 6-9","2 Timothy 1:6-8, 13-14",Luke 17:5-10
+2025-10-06,2025,Ordinary Time,27,Monday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-seventh week,1,268,"Jonah 1:1 – 2:1, 11","Jonah 2:3-5, 8",,Luke 10:25-37
+2025-10-07,2025,,,Our Lady of the Rosary,Feria,NO_MATCH,,,,,,,,,,
+2025-10-08,2025,Ordinary Time,27,Wednesday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-seventh week,1,270,Jonah 4:1-11,"Psalm 85:3-6, 9-10",,Luke 11:1-4
+2025-10-09,2025,Ordinary Time,27,Thursday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-seventh week,1,271,Malachi 3:13-20,Psalm 1,,Luke 11:5-13
+2025-10-10,2025,Ordinary Time,27,Friday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-seventh week,1,272,Joel 1:13-15; 2:1-2,"Psalm 9:2-3, 6, 16, 8-9",,Luke 11:15-26
+2025-10-11,2025,Ordinary Time,27,Saturday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-seventh week,1,273,Joel 4:12-21,"Psalm 96:1-2, 5-6, 11-12",,Luke 11:27-28
+2025-10-12,2025,Ordinary Time,28,28 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 28 Sunday,,TWENTY-EIGHTH SUNDAY,C,96,2 Kings 5:14-17,Psalm 97:1-4,2 Timothy 2:8-13,Luke 17:11-19
+2025-10-13,2025,Ordinary Time,28,Monday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-eighth week,1,274,Romans 1:1-7,Psalm 97:1-4,,Luke 11:29-32
+2025-10-14,2025,Ordinary Time,28,Tuesday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-eighth week,1,275,Romans 1:16-25,Psalm 18:2-5,,Luke 11:37-41
+2025-10-15,2025,,,Saint Teresa of Jesus,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-16,2025,Ordinary Time,28,Thursday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-eighth week,1,277,Romans 3:21-30,Psalm 129:1-6,,Luke 11:47-54
+2025-10-17,2025,,,Saint Ignatius of Antioch,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-18,2025,,,Saint Luke,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-19,2025,Ordinary Time,29,29 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 29 Sunday,,TWENTY-NINTH SUNDAY,C,97,Exodus 17:8-13,Psalm 120,2 Timothy 3:14 – 4:2,Luke 18:1-8
+2025-10-20,2025,Ordinary Time,29,Monday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-ninth week,1,280,Romans 4:20-25,Luke 1:69-75,,Luke 12:13-21
+2025-10-21,2025,Ordinary Time,29,Tuesday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-ninth week,1,281,"Romans 5:12, 15, 17-21","Psalm 39:7-10, 17",,Luke 12:35-38
+2025-10-22,2025,Ordinary Time,29,Wednesday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-ninth week,1,282,Romans 6:12-18,Psalm 123,,Luke 12:39-48
+2025-10-23,2025,Ordinary Time,29,Thursday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-ninth week,1,283,Romans 6:19-23,"Psalm 1:1-4, 6",,Luke 12:49-53
+2025-10-24,2025,Ordinary Time,29,Friday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-ninth week,1,284,Romans 7:18-25,"Psalm 118:66, 68, 76-77, 93-94",,Luke 12:54-59
+2025-10-25,2025,Ordinary Time,29,Saturday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-ninth week,1,285,Romans 8:1-11,Psalm 23:1-6,,Luke 13:1-9
+2025-10-26,2025,Ordinary Time,30,30 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 30 Sunday,,THIRTIETH SUNDAY,C,98,"Sirach 35:12-14, 16-19","Psalm 32:2-3, 17-19, 23","2 Timothy 4:6-8, 16-18",Luke 18:9-14
+2025-10-27,2025,,,Monday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirtieth week,1,286,Romans 8:12-17,"Psalm 67:2, 4, 6-7, 20-21",,Luke 13:10-17
+2025-10-28,2025,,,Saints Simon and Jude,Memorial,NO_MATCH,,,,,,,,,,
+2025-10-29,2025,,,Wednesday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirtieth week,1,288,Romans 8:26-30,Psalm 12:4-6,,Luke 13:22-30
+2025-10-30,2025,,,Thursday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirtieth week,1,289,Romans 8:31-39,"Psalm 108:21-22, 26-27, 30-31",,Luke 13:31-35
+2025-10-31,2025,,,Friday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirtieth week,1,290,Romans 9:1-5,"Psalm 147:12-15, 19-20",,Luke 14:1-6
+2025-11-01,2025,,,ALL SAINTS,Solemnity,NO_MATCH,,,,,,,,,,
+2025-11-02,2025,,,THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,Solemnity,NO_MATCH,,,,,,,,,,
+2025-11-03,2025,Ordinary Time,31,Monday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirty-first week,1,292,Romans 11:29-36,"Psalm 68:30-31, 33-34, 36-37",,Luke 14:12-14
+2025-11-04,2025,,,Saint Charles Borromeo,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-05,2025,Ordinary Time,31,Wednesday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirty-first week,1,294,Romans 13:8-10,"Psalm 111:1-2, 4-5, 9",,Luke 14:25-33
+2025-11-06,2025,Ordinary Time,31,Thursday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-first week,1,295,Romans 14:7-12,"Psalm 26:1, 4, 13-14",,Luke 15:1-10
+2025-11-07,2025,Ordinary Time,31,Friday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-first week,1,296,Romans 15:14-21,Psalm 97:1-4,,Luke 16:1-8
+2025-11-08,2025,Ordinary Time,31,Saturday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-first week,1,297,"Romans 16:3-9, 16, 22-27","Psalm 144:2-5, 10-11",,Luke 16:9-15
+2025-11-09,2025,,,THE DEDICATION OF THE LATERAN BASILICA,Solemnity,NO_MATCH,,,,,,,,,,
+2025-11-10,2025,,,Saint Leo the Great,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-11,2025,,,Saint Martin of Tours,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-12,2025,,,Saint Josaphat,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-13,2025,Ordinary Time,32,Thursday of the thirty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-second week,1,301,Wisdom 7:22 – 8:1,"Psalm 118:89-91, 130, 135, 175",,Luke 17:20-25
+2025-11-14,2025,Ordinary Time,32,Friday of the thirty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-second week,1,302,Wisdom 13:1-9,Psalm 18:2-5,,Luke 17:26-37
+2025-11-15,2025,Ordinary Time,32,Saturday of the thirty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-second week,1,303,Wisdom 18:14-16; 19:6-9,"Psalm 104:2-3, 36-37, 42-43",,Luke 18:1-8
+2025-11-16,2025,Ordinary Time,33,33 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 33 Sunday,,THIRTY-THIRD SUNDAY,C,101,Malachi 3:19-20,Psalm 97:5-9,2 Thessalonians 3:7-12,Luke 21:5-19
+2025-11-17,2025,,,Saint Elizabeth of Hungary,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-18,2025,Ordinary Time,33,Tuesday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirty-third week,1,305,2 Maccabees 6:18-31,Psalm 3:2-7,,Luke 19:1-10
+2025-11-19,2025,Ordinary Time,33,Wednesday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirty-third week,1,306,"2 Maccabees 7:1, 20-31","Psalm 16:1, 5-6, 8, 15",,Luke 19:11-28
+2025-11-20,2025,Ordinary Time,33,Thursday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-third week,1,307,1 Maccabees 2:15-29,"Psalm 49:1-2, 5-6, 14-15",,Luke 19:41-44
+2025-11-21,2025,,,The Presentation of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2025-11-22,2025,,,Saint Cecilia,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-23,2025,,,"OUR LORD JESUS CHRIST, KING OF THE UNIVERSE",Solemnity,MATCHED,EXACT_NAME,Name match,,"OUR LORD JESUS CHRIST, KING OF THE UNIVERSE",C,102,2 Samuel 5:1-3,Psalm 121:1-5,Colossians 1:12-20,Luke 23:35-43
+2025-11-24,2025,,,Saint Andrew Dũng-Lạc and Companions,Memorial,NO_MATCH,,,,,,,,,,
+2025-11-25,2025,Ordinary Time,34,Tuesday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirty-fourth week,1,311,Daniel 2:31-45,Daniel 3:57-61,,Luke 21:5-11
+2025-11-26,2025,Ordinary Time,34,Wednesday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirty-fourth week,1,312,"Daniel 5:1-6, 13-14, 16-17, 23-28",Daniel 3:62-67,,Luke 21:12-19
+2025-11-27,2025,Ordinary Time,34,Thursday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-fourth week,1,313,Daniel 6:12-28,Daniel 3:68-74,,Luke 21:20-28
+2025-11-28,2025,Ordinary Time,34,Friday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-fourth week,1,314,Daniel 7:2-14,Daniel 3:75-81,,Luke 21:29-33
+2025-11-29,2025,Ordinary Time,34,Saturday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-fourth week,1,315,Daniel 7:15-27,Daniel 3:82-87,,Luke 21:34-36
+2025-11-30,2025,,,FIRST SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,2,"FIRST SUNDAY OF ADVENT, Year C",C,747,Jeremiah 33:14-16,Psalm 24:4-5.8-9.10.14,1 Thessalonians 3:12-4:2,Luke 21:25-28.34-36
+2025-12-01,2025,Advent,1,Monday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the first week,1,112,Hebrews 1:1-6,"Psalm 96:1-2, 6-7, 9",,Mark 1:14-20
+2025-12-02,2025,Advent,1,Tuesday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,1,113,Hebrews 2:5-12,"Psalm 8:2, 5-9",,Mark 1:21-28
+2025-12-03,2025,,,Saint Francis Xavier,Memorial,NO_MATCH,,,,,,,,,,
+2025-12-04,2025,Advent,1,Thursday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the first week,1,115,Hebrews 3:7-14,Psalm 94:6-11,,Mark 1:40-45
+2025-12-05,2025,Advent,1,Friday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the first week,1,116,"Hebrews 4:1-5, 11","Psalm 77:3-4, 6-8",,Mark 2:1-12
+2025-12-06,2025,Advent,1,Saturday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the first week,1,117,Hebrews 4:12-16,"Psalm 18:8-10, 15",,Mark 2:13-17
+2025-12-07,2025,,,SECOND SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,SECOND SUNDAY,C,70,Isaiah 62:1-5,"Psalm 95:1-3, 7-10",1 Corinthians 12:4-11,John 2:1-11
+2025-12-08,2025,,,THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,Solemnity,NO_MATCH,,,,,,,,,,
+2025-12-09,2025,Advent,2,Tuesday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the second week,1,119,Hebrews 6:10-20,"Psalm 110:1-2, 4-5, 9, 10",,Mark 2:23-28
+2025-12-10,2025,Advent,2,Wednesday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,1,120,"Hebrews 7:1-3, 15-17",Psalm 109:1-4,,Mark 3:1-6
+2025-12-11,2025,Advent,2,Thursday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,1,121,Hebrews 7:25 – 8:6,"Psalm 39:7-10, 17",,Mark 3:7-12
+2025-12-12,2025,Advent,2,Friday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,1,122,Hebrews 8:6-13,"Psalm 84:8, 10-14",,Mark 3:13-19
+2025-12-13,2025,,,Saint Lucy,Memorial,NO_MATCH,,,,,,,,,,
+2025-12-14,2025,,,THIRD SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,THIRD SUNDAY,C,71,"Nehemiah 8:2-6, 8-10","Psalm 18:8-10, 15",1 Corinthians 12:12-30,Luke 1:1-4; 4:14-21
+2025-12-15,2025,Advent,3,Monday of the third week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,1,124,"Hebrews 9:15, 24-28",Psalm 97:1-6,,Mark 3:22-30
+2025-12-16,2025,Advent,3,Tuesday of the third week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,1,125,Hebrews 10:1-10,"Psalm 39:2, 4, 7-8, 10-11",,Mark 3:31-35
+2025-12-17,2025,,,17 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-18,2025,,,18 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-19,2025,,,19 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-20,2025,,,20 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-21,2025,,,FOURTH SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,FOURTH SUNDAY,C,72,"Jeremiah 1:4-5, 17-19","Psalm 70:1-6, 15, 17",1 Corinthians 12:31 – 13:13,Luke 4:21-30
+2025-12-22,2025,,,22 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-23,2025,,,23 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-24,2025,,,24 December,Feria,NO_MATCH,,,,,,,,,,
+2025-12-25,2025,,,THE NATIVITY OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2025-12-26,2025,,,Saint Stephen,Memorial,NO_MATCH,,,,,,,,,,
+2025-12-27,2025,,,Saint John,Memorial,NO_MATCH,,,,,,,,,,
+2025-12-28,2025,,,"THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",Solemnity,NO_MATCH,,,,,,,,,,
+2025-12-29,2025,Christmas,,Fifth day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,
+2025-12-30,2025,Christmas,,Sixth day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,
+2025-12-31,2025,Christmas,,Seventh day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,
+2026-01-01,2026,,,"SOLEMNITY OF MARY, THE HOLY MOTHER OF GOD",Solemnity,NO_MATCH,,,,,,,,,,
+2026-01-02,2026,,,Saint Basil and Gregory,Memorial,NO_MATCH,,,,,,,,,,
+2026-01-03,2026,Christmas,,Saturday before Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-04,2026,,,THE EPIPHANY OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2026-01-05,2026,Christmas,,Monday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-06,2026,Christmas,,Tuesday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-07,2026,Christmas,,Wednesday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-08,2026,Christmas,,Thursday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-09,2026,Christmas,,Friday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-10,2026,Christmas,,Saturday after Epiphany,Feast,NO_MATCH,,,,,,,,,,
+2026-01-11,2026,,,THE BAPTISM OF THE LORD,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,2,BAPTISM OF THE LORD,A,1,"Isaiah 42:1-4, 6-7","Psalm 28:1-4, 9-10",Acts 10:34-38,Matthew 3:13-17
+2026-01-12,2026,Ordinary Time,1,Monday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the first week,2,316,1 Samuel 1:1-8,Psalm 115:12-19,,Mark 1:14-20
+2026-01-13,2026,Ordinary Time,1,Tuesday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,2,317,1 Samuel 1:9-20,"1 Samuel 2:1, 4-8",,Mark 1:21-28
+2026-01-14,2026,Ordinary Time,1,Wednesday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the first week,2,318,"1 Samuel 3:1-10, 19-20","Psalm 39:2, 5, 7-10",,Mark 1:29-39
+2026-01-15,2026,Ordinary Time,1,Thursday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the first week,2,319,1 Samuel 4:1-11,"Psalm 43:10-11, 14-15, 24-25",,Mark 1:40-45
+2026-01-16,2026,Ordinary Time,1,Friday of the first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the first week,2,320,"1 Samuel 8:4-7, 10-22",Psalm 88:16-19,,Mark 2:1-12
+2026-01-17,2026,,,Saint Anthony,Memorial,NO_MATCH,,,,,,,,,,
+2026-01-18,2026,Ordinary Time,2,2 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 2 Sunday,,SECOND SUNDAY,A,2,"Isaiah 49:3, 5-6","Psalm 39:2, 4, 7-10",1 Corinthians 1:1-3,John 1:29-34
+2026-01-19,2026,Ordinary Time,2,Monday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the second week,2,322,1 Samuel 15:16-23,"Psalm 49:8-9, 16-17, 21, 23",,Mark 2:18-22
+2026-01-20,2026,Ordinary Time,2,Tuesday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the second week,2,323,1 Samuel 16:1-13,"Psalm 88:20-22, 27-28",,Mark 2:23-28
+2026-01-21,2026,,,Saint Agnes,Memorial,NO_MATCH,,,,,,,,,,
+2026-01-22,2026,Ordinary Time,2,Thursday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,2,325,1 Samuel 18:6-9; 19:1-7,"Psalm 55:2-3, 9-14",,Mark 3:7-12
+2026-01-23,2026,Ordinary Time,2,Friday of the second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,2,326,1 Samuel 24:3-21,"Psalm 56:2-4, 6, 11",,Mark 3:13-19
+2026-01-24,2026,,,Saint Francis de Sales,Memorial,NO_MATCH,,,,,,,,,,
+2026-01-25,2026,Ordinary Time,3,3 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 3 Sunday,,THIRD SUNDAY,A,3,Isaiah 8:23 – 9:3,"Psalm 26:1, 4, 13-14","1 Corinthians 1:10-13, 17",Matthew 4:12-23
+2026-01-26,2026,,,Australia Day,Feast,NO_MATCH,,,,,,,,,,
+2026-01-27,2026,Ordinary Time,3,Tuesday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,2,329,"2 Samuel 6:12-15, 17-19",Psalm 23:7-10,,Mark 3:31-35
+2026-01-28,2026,,,Saint Thomas Aquinas,Memorial,NO_MATCH,,,,,,,,,,
+2026-01-29,2026,Ordinary Time,3,Thursday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,2,331,"2 Samuel 7:18-19, 24-29","Psalm 131:1-5, 11-14",,Mark 4:21-25
+2026-01-30,2026,Ordinary Time,3,Friday of the third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the third week,2,332,"2 Samuel 11:1-10, 13-17","Psalm 50:3-7, 10-11",,Mark 4:26-34
+2026-01-31,2026,,,Saint John Bosco,Memorial,NO_MATCH,,,,,,,,,,
+2026-02-01,2026,Ordinary Time,4,4 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 4 Sunday,,FOURTH SUNDAY,A,4,Zephaniah 2:3; 3:12-13,Psalm 145:7-10,1 Corinthians 1:26-31,Matthew 5:1-12
+2026-02-02,2026,,,The Presentation of the Lord,Feria,NO_MATCH,,,,,,,,,,
+2026-02-03,2026,Ordinary Time,4,Tuesday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourth week,2,335,"2 Samuel 18:9-10, 14, 24-25",Psalm 85:1-6,,Mark 5:21-43
+2026-02-04,2026,Ordinary Time,4,Wednesday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fourth week,2,336,"2 Samuel 24:2, 9-17","Psalm 31:1-2, 5-7",,Mark 6:1-6
+2026-02-05,2026,,,Saint Agatha,Memorial,NO_MATCH,,,,,,,,,,
+2026-02-06,2026,,,Saints Paul Miki and Companions,Memorial,NO_MATCH,,,,,,,,,,
+2026-02-07,2026,Ordinary Time,4,Saturday of the fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourth week,2,339,1 Kings 3:4-13,Psalm 118:9-14,,Mark 6:30-34
+2026-02-08,2026,Ordinary Time,5,5 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 5 Sunday,,FIFTH SUNDAY,A,5,Isaiah 58:7-10,Psalm 111:4-9,1 Corinthians 2:1-5,Matthew 5:13-16
+2026-02-09,2026,Ordinary Time,5,Monday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifth week,2,340,"1 Kings 8:1-7, 9-13",Psalm 131:6-10,,Mark 6:53-56
+2026-02-10,2026,,,Saint Scholastica,Memorial,NO_MATCH,,,,,,,,,,
+2026-02-11,2026,Ordinary Time,5,Wednesday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifth week,2,342,1 Kings 10:1-10,"Psalm 36:5-6, 30-3 1, 39-40",,Mark 7:14-23
+2026-02-12,2026,Ordinary Time,5,Thursday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,2,343,1 Kings 11:4-13,"Psalm 105:3-4, 35-37, 40",,Mark 7:24-30
+2026-02-13,2026,Ordinary Time,5,Friday of the fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifth week,2,344,1 Kings 11:29-32; 12:19,Psalm 80:10-15,,Mark 7:31-37
+2026-02-14,2026,,,Saints Cyril and Methodius,Memorial,NO_MATCH,,,,,,,,,,
+2026-02-15,2026,Ordinary Time,6,6 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 6 Sunday,,SIXTH SUNDAY,A,6,Sirach 15:15-20,"Psalm 118:1-2, 4-5, 17-18, 33-34",1 Corinthians 2:6-10,Matthew 5:17-37
+2026-02-16,2026,Ordinary Time,6,Monday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the sixth week,2,346,James 1:1-11,"Psalm 118:67-68, 71-72, 75-76",,Mark 8:11-13
+2026-02-17,2026,Ordinary Time,6,Tuesday of the sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the sixth week,2,347,James 1:12-18,"Psalm 93:12-15, 18-19",,Mark 8:14-21
+2026-02-18,2026,,,Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2026-02-19,2026,,,Thursday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2026-02-20,2026,,,Friday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2026-02-21,2026,,,Saturday after Ash Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2026-02-22,2026,Lent,1,1 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2026-02-23,2026,Lent,1,Monday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the first week,2,316,1 Samuel 1:1-8,Psalm 115:12-19,,Mark 1:14-20
+2026-02-24,2026,Lent,1,Tuesday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,2,317,1 Samuel 1:9-20,"1 Samuel 2:1, 4-8",,Mark 1:21-28
+2026-02-25,2026,Lent,1,Wednesday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the first week,2,318,"1 Samuel 3:1-10, 19-20","Psalm 39:2, 5, 7-10",,Mark 1:29-39
+2026-02-26,2026,Lent,1,Thursday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the first week,2,319,1 Samuel 4:1-11,"Psalm 43:10-11, 14-15, 24-25",,Mark 1:40-45
+2026-02-27,2026,Lent,1,Friday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the first week,2,320,"1 Samuel 8:4-7, 10-22",Psalm 88:16-19,,Mark 2:1-12
+2026-02-28,2026,Lent,1,Saturday of the first week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the first week,2,321,"1 Samuel 9:1-4, 17-19; 10:1",Psalm 20:2-7,,Mark 2:13-17
+2026-03-01,2026,Lent,2,2 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2026-03-02,2026,Lent,2,Monday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the second week,2,322,1 Samuel 15:16-23,"Psalm 49:8-9, 16-17, 21, 23",,Mark 2:18-22
+2026-03-03,2026,Lent,2,Tuesday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the second week,2,323,1 Samuel 16:1-13,"Psalm 88:20-22, 27-28",,Mark 2:23-28
+2026-03-04,2026,Lent,2,Wednesday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,2,324,"1 Samuel 17:32-33, 37, 40-51","Psalm 143:1-2, 9-10",,Mark 3:1-6
+2026-03-05,2026,Lent,2,Thursday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,2,325,1 Samuel 18:6-9; 19:1-7,"Psalm 55:2-3, 9-14",,Mark 3:7-12
+2026-03-06,2026,Lent,2,Friday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,2,326,1 Samuel 24:3-21,"Psalm 56:2-4, 6, 11",,Mark 3:13-19
+2026-03-07,2026,Lent,2,Saturday of the second week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the second week,2,327,"2 Samuel 1:1-4, 11-12, 17, 19, 23-27","Psalm 79:2-3, 5-7",,Mark 3:20-21
+2026-03-08,2026,Lent,3,3 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2026-03-09,2026,Lent,3,Monday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,2,328,"2 Samuel 5:1-7, 10","Psalm 88:20-22, 25-26",,Mark 3:22-30
+2026-03-10,2026,Lent,3,Tuesday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,2,329,"2 Samuel 6:12-15, 17-19",Psalm 23:7-10,,Mark 3:31-35
+2026-03-11,2026,Lent,3,Wednesday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,2,330,2 Samuel 7:4-17,"Psalm 88:4-5, 27-30",,Mark 4:1-20
+2026-03-12,2026,Lent,3,Thursday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,2,331,"2 Samuel 7:18-19, 24-29","Psalm 131:1-5, 11-14",,Mark 4:21-25
+2026-03-13,2026,Lent,3,Friday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the third week,2,332,"2 Samuel 11:1-10, 13-17","Psalm 50:3-7, 10-11",,Mark 4:26-34
+2026-03-14,2026,Lent,3,Saturday of the third week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the third week,2,333,"2 Samuel 12:1-7, 10-17",Psalm 50:12-17,,Mark 4:35-41
+2026-03-15,2026,Lent,4,4 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2026-03-16,2026,Lent,4,Monday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourth week,2,334,"2 Samuel 15:13-14, 30; 16:5-13",Psalm 3:2-8,,Mark 5:1-20
+2026-03-17,2026,,,SAINT PATRICK  (NZ: feast),Feast,NO_MATCH,,,,,,,,,,
+2026-03-18,2026,Lent,4,Wednesday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fourth week,2,336,"2 Samuel 24:2, 9-17","Psalm 31:1-2, 5-7",,Mark 6:1-6
+2026-03-19,2026,,,"SAINT JOSEPH, SPOUSE OF THE BLESSED VIRGIN MARY",Solemnity,NO_MATCH,,,,,,,,,,
+2026-03-20,2026,Lent,4,Friday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourth week,2,338,Sirach 47:2-11,"Psalm 17:31, 47, 50-51",,Mark 6:14-29
+2026-03-21,2026,Lent,4,Saturday of the fourth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fourth week,2,339,1 Kings 3:4-13,Psalm 118:9-14,,Mark 6:30-34
+2026-03-22,2026,Lent,5,5 LENT,Sunday,NO_MATCH,,,,,,,,,,
+2026-03-23,2026,Lent,5,Monday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifth week,2,340,"1 Kings 8:1-7, 9-13",Psalm 131:6-10,,Mark 6:53-56
+2026-03-24,2026,Lent,5,Tuesday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifth week,2,341,"1 Kings 8:22-23, 27-30","Psalm 83:3-5, 10-11",,Mark 7:1-13
+2026-03-25,2026,,,THE ANNUNCIATION OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2026-03-26,2026,Lent,5,Thursday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,2,343,1 Kings 11:4-13,"Psalm 105:3-4, 35-37, 40",,Mark 7:24-30
+2026-03-27,2026,Lent,5,Friday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifth week,2,344,1 Kings 11:29-32; 12:19,Psalm 80:10-15,,Mark 7:31-37
+2026-03-28,2026,Lent,5,Saturday of the fifth week of Lent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifth week,2,345,1 Kings 12:26-32; 13:33-34,"Psalm 105:6-7, 19-22",,Mark 8:1-10
+2026-03-29,2026,,,PASSION SUNDAY (PALM SUNDAY),Solemnity,MATCHED,EXACT_NAME,Name match,,"PASSION SUNDAY (PALM SUNDAY), Year A",A,866,Isaiah 50:4-7,Psalm 21:8-9.17-20.23-24,Philippians 2:6-11,Matthew 26:14-27:66
+2026-03-30,2026,Holy Week,,Monday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2026-03-31,2026,Holy Week,,Tuesday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2026-04-01,2026,Holy Week,,Wednesday of Holy Week,Feast,NO_MATCH,,,,,,,,,,
+2026-04-02,2026,,,HOLY THURSDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-04-03,2026,,,GOOD FRIDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-04-04,2026,,,THE EASTER VIGIL,Solemnity,MATCHED,EXACT_NAME,Name match,,THE EASTER VIGIL - Year A,A,875,Genesis 1:1-2:2,Psalm 103:1-2.5-6.10.12-14.24.35,Genesis 22:1-18,Matthew 28:1-10
+2026-04-05,2026,,,EASTER SUNDAY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-04-06,2026,Easter,,Easter Monday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-07,2026,Easter,,Easter Tuesday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-08,2026,Easter,,Easter Wednesday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-09,2026,Easter,,Easter Thursday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-10,2026,Easter,,Easter Friday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-11,2026,Easter,,Easter Saturday,Feast,NO_MATCH,,,,,,,,,,
+2026-04-12,2026,Easter,2,2 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2026-04-13,2026,Easter,2,Monday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the second week,2,322,1 Samuel 15:16-23,"Psalm 49:8-9, 16-17, 21, 23",,Mark 2:18-22
+2026-04-14,2026,Easter,2,Tuesday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the second week,2,323,1 Samuel 16:1-13,"Psalm 88:20-22, 27-28",,Mark 2:23-28
+2026-04-15,2026,Easter,2,Wednesday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,2,324,"1 Samuel 17:32-33, 37, 40-51","Psalm 143:1-2, 9-10",,Mark 3:1-6
+2026-04-16,2026,Easter,2,Thursday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,2,325,1 Samuel 18:6-9; 19:1-7,"Psalm 55:2-3, 9-14",,Mark 3:7-12
+2026-04-17,2026,Easter,2,Friday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,2,326,1 Samuel 24:3-21,"Psalm 56:2-4, 6, 11",,Mark 3:13-19
+2026-04-18,2026,Easter,2,Saturday of the second week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the second week,2,327,"2 Samuel 1:1-4, 11-12, 17, 19, 23-27","Psalm 79:2-3, 5-7",,Mark 3:20-21
+2026-04-19,2026,Easter,3,3 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2026-04-20,2026,Easter,3,Monday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the third week,2,328,"2 Samuel 5:1-7, 10","Psalm 88:20-22, 25-26",,Mark 3:22-30
+2026-04-21,2026,Easter,3,Tuesday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,2,329,"2 Samuel 6:12-15, 17-19",Psalm 23:7-10,,Mark 3:31-35
+2026-04-22,2026,Easter,3,Wednesday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,2,330,2 Samuel 7:4-17,"Psalm 88:4-5, 27-30",,Mark 4:1-20
+2026-04-23,2026,Easter,3,Thursday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the third week,2,331,"2 Samuel 7:18-19, 24-29","Psalm 131:1-5, 11-14",,Mark 4:21-25
+2026-04-24,2026,Easter,3,Friday of the third week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the third week,2,332,"2 Samuel 11:1-10, 13-17","Psalm 50:3-7, 10-11",,Mark 4:26-34
+2026-04-25,2026,,,Anzac Day,Feast,NO_MATCH,,,,,,,,,,
+2026-04-26,2026,Easter,4,4 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2026-04-27,2026,Easter,4,Monday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourth week,2,334,"2 Samuel 15:13-14, 30; 16:5-13",Psalm 3:2-8,,Mark 5:1-20
+2026-04-28,2026,,,Saint Peter Chanel,Memorial,NO_MATCH,,,,,,,,,,
+2026-04-29,2026,,,Saint Catherine of Siena,Memorial,NO_MATCH,,,,,,,,,,
+2026-04-30,2026,Easter,4,Thursday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fourth week,2,337,"1 Kings 2:1-4, 10-12",1 Chronicles 29:10-12,,Mark 6:7-13
+2026-05-01,2026,Easter,4,Friday of the fourth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourth week,2,338,Sirach 47:2-11,"Psalm 17:31, 47, 50-51",,Mark 6:14-29
+2026-05-02,2026,,,Saint Athanasius,Memorial,NO_MATCH,,,,,,,,,,
+2026-05-03,2026,Easter,5,5 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2026-05-04,2026,Easter,5,Monday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifth week,2,340,"1 Kings 8:1-7, 9-13",Psalm 131:6-10,,Mark 6:53-56
+2026-05-05,2026,Easter,5,Tuesday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifth week,2,341,"1 Kings 8:22-23, 27-30","Psalm 83:3-5, 10-11",,Mark 7:1-13
+2026-05-06,2026,Easter,5,Wednesday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fifth week,2,342,1 Kings 10:1-10,"Psalm 36:5-6, 30-3 1, 39-40",,Mark 7:14-23
+2026-05-07,2026,Easter,5,Thursday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifth week,2,343,1 Kings 11:4-13,"Psalm 105:3-4, 35-37, 40",,Mark 7:24-30
+2026-05-08,2026,Easter,5,Friday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifth week,2,344,1 Kings 11:29-32; 12:19,Psalm 80:10-15,,Mark 7:31-37
+2026-05-09,2026,Easter,5,Saturday of the fifth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifth week,2,345,1 Kings 12:26-32; 13:33-34,"Psalm 105:6-7, 19-22",,Mark 8:1-10
+2026-05-10,2026,Easter,6,6 EASTER,Sunday,NO_MATCH,,,,,,,,,,
+2026-05-11,2026,Easter,6,Monday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the sixth week,2,346,James 1:1-11,"Psalm 118:67-68, 71-72, 75-76",,Mark 8:11-13
+2026-05-12,2026,Easter,6,Tuesday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the sixth week,2,347,James 1:12-18,"Psalm 93:12-15, 18-19",,Mark 8:14-21
+2026-05-13,2026,Easter,6,Wednesday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the sixth week,2,348,James 1:19-27,Psalm 14:2-5,,Mark 8:22-26
+2026-05-14,2026,,,Saint Matthias,Memorial,NO_MATCH,,,,,,,,,,
+2026-05-15,2026,Easter,6,Friday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the sixth week,2,350,"James 2:14-24, 26",Psalm 111:1-6,,Mark 8:34-9:1
+2026-05-16,2026,Easter,6,Saturday of the sixth week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the sixth week,2,351,James 3:1-10,"Psalm 11:2-5, 7-8",,Mark 9:2-13
+2026-05-17,2026,,,THE ASCENSION OF THE LORD,Solemnity,MATCHED,EXACT_NAME,Name match,,"THE ASCENSION OF THE LORD, Year A",A,932,Acts 1:1-11,Psalm 46:2-3.6-9,Ephesians 1:17-23,Matthew 28:16-20
+2026-05-18,2026,Easter,7,Monday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the seventh week,2,352,James 3:13-18,"Psalm 18:8-10, 15",,Mark 9:14-29
+2026-05-19,2026,Easter,7,Tuesday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the seventh week,2,353,James 4:1-10,"Psalm 54:7-11, 23",,Mark 9:30-37
+2026-05-20,2026,Easter,7,Wednesday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the seventh week,2,354,James 4:13-17,"Psalm 48:2-3, 6-11",,Mark 9:38-40
+2026-05-21,2026,Easter,7,Thursday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the seventh week,2,355,James 5:1-6,Psalm 48:14-20,,Mark 9:41-50
+2026-05-22,2026,Easter,7,Friday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the seventh week,2,356,James 5:9-12,"Psalm 102:1-4, 8-9, 11-12",,Mark 10:1-12
+2026-05-23,2026,Easter,7,Saturday of the seventh week of Easter,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the seventh week,2,357,James 5:13-20,"Psalm 140:1-3, 8",,Mark 10:13-16
+2026-05-24,2026,,,PENTECOST,Solemnity,NO_MATCH,,,,,,,,,,
+2026-05-25,2026,,,"OUR LADY, HELP OF CHRISTIANS  (NZ: memorial)",Feast,NO_MATCH,,,,,,,,,,
+2026-05-26,2026,,,Saint Philip Neri,Memorial,NO_MATCH,,,,,,,,,,
+2026-05-27,2026,Ordinary Time,8,Wednesday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the eighth week,2,360,1 Peter 1:18-25,"Psalm 147:12-15, 19-20",,Mark 10:32-45
+2026-05-28,2026,Ordinary Time,8,Thursday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the eighth week,2,361,"1 Peter 2:2-5, 9-12",Psalm 99:2-5,,Mark 10:46-52
+2026-05-29,2026,Ordinary Time,8,Friday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the eighth week,2,362,1 Peter 4:7-13,Psalm 95:10-13,,Mark 11:11-26
+2026-05-30,2026,Ordinary Time,8,Saturday of the eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the eighth week,2,363,"Jude 17, 20-25",Psalm 62:2-6,,Mark 11:27-33
+2026-05-31,2026,,,THE MOST HOLY TRINITY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-06-01,2026,,,Saint Justin,Memorial,NO_MATCH,,,,,,,,,,
+2026-06-02,2026,Ordinary Time,9,Tuesday of the ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the ninth week,2,365,"2 Peter 3:11-15, 17-18","Psalm 89 2-4, 10, 14, 16",,Mark 12:13-17
+2026-06-03,2026,,,Saint Charles Lwanga,Memorial,NO_MATCH,,,,,,,,,,
+2026-06-04,2026,Ordinary Time,9,Thursday of the ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the ninth week,2,367,2 Timothy 2:8-15,"Psalm 24:4-5, 8-10, 14",,Mark 12:28-34
+2026-06-05,2026,,,Saint Boniface,Memorial,NO_MATCH,,,,,,,,,,
+2026-06-06,2026,Ordinary Time,9,Saturday of the ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the ninth week,2,369,2 Timothy 4:1-8,"Psalm 70:8-9, 14-17, 22",,Mark 12:38-44
+2026-06-07,2026,,,THE MOST HOLY BODY AND BLOOD OF CHRIST,Solemnity,NO_MATCH,,,,,,,,,,
+2026-06-08,2026,Ordinary Time,10,Monday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the tenth week,2,370,1 Kings 17:1-6,Psalm 120:1-8,,Matthew 5:1-12
+2026-06-09,2026,Ordinary Time,10,Tuesday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the tenth week,2,371,1 Kings 17:7-16,"Psalm 4:2-5, 7-8",,Matthew 5:13-16
+2026-06-10,2026,Ordinary Time,10,Wednesday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the tenth week,2,372,1 Kings 18:20-39,"Psalm 15:1-2, 4-5, 8, 11",,Matthew 5:17-19
+2026-06-11,2026,,,Saint Barnabas,Memorial,NO_MATCH,,,,,,,,,,
+2026-06-12,2026,,,THE MOST SACRED HEART OF JESUS,Solemnity,MATCHED,EXACT_NAME,Name match,,"MOST SACRED HEART OF JESUS, Year A",A,105,Deuteronomy 7:6-11,"Psalm 102:1-4, 6-8, 10",1 John 4:7-16,Matthew 11:25-30
+2026-06-13,2026,Ordinary Time,10,Saturday of the tenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the tenth week,2,375,1 Kings 19:19-21,"Psalm 15:1-2, 5, 7-10",,Matthew 5:33-37
+2026-06-14,2026,Ordinary Time,11,11 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 11 Sunday,,ELEVENTH SUNDAY,A,11,Exodus 19:2-6,"Psalm 99:2-3, 5",Romans 5:6-11,Matthew 9:36 – 10:8
+2026-06-15,2026,Ordinary Time,11,Monday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the eleventh week,2,376,1 Kings 21:1-16,"Psalm 5:2-3, 5-7",,Matthew 5:38-42
+2026-06-16,2026,Ordinary Time,11,Tuesday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the eleventh week,2,377,1 Kings 21:17-29,"Psalm 50:3-6, 11, 16",,Matthew 5:43-48
+2026-06-17,2026,Ordinary Time,11,Wednesday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the eleventh week,2,378,"2 Kings 2:1, 6-14","Psalm 30:20, 21, 24",,"Matthew 6:1-6, 16-18"
+2026-06-18,2026,Ordinary Time,11,Thursday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the eleventh week,2,379,Sirach 48:1-14,Psalm 96:1-7,,Matthew 6:7-15
+2026-06-19,2026,Ordinary Time,11,Friday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the eleventh week,2,380,"2 Kings 11:1-4, 9-18, 20","Psalm 131:11-14, 17-18",,Matthew 6:19-23
+2026-06-20,2026,Ordinary Time,11,Saturday of the eleventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the eleventh week,2,381,2 Chronicles 24:17-25,"Psalm 88:4-5, 29-34",,Matthew 6:24-34
+2026-06-21,2026,Ordinary Time,12,12 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 12 Sunday,,TWELFTH SUNDAY,A,12,Jeremiah 20:10-13,"Psalm 68:8-10, 14, 17, 33-35",Romans 5:12-15,Matthew 10:26-33
+2026-06-22,2026,,,Saints John Fisher and Thomas More,Memorial,NO_MATCH,,,,,,,,,,
+2026-06-23,2026,Ordinary Time,12,Tuesday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twelfth week,2,383,"2 Kings 19:9-11, 14-21, 31-36","Psalm 47:2-4, 10-11",,"Matthew 7:6, 12-14"
+2026-06-24,2026,,,THE NATIVITY OF SAINT JOHN THE BAPTIST,Solemnity,NO_MATCH,,,,,,,,,,
+2026-06-25,2026,Ordinary Time,12,Thursday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twelfth week,2,385,2 Kings 24:8-17,"Psalm 78:1-5, 8-9",,Matthew 7:21-29
+2026-06-26,2026,Ordinary Time,12,Friday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twelfth week,2,386,2 Kings 25:1-12,Psalm 136:1-6,,Matthew 8:1-4
+2026-06-27,2026,Ordinary Time,12,Saturday of the twelfth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twelfth week,2,387,"Lamentations 2:2, 10-14, 18-19","Psalm 73:1-7, 20-21",,Matthew 8:5-17
+2026-06-28,2026,Ordinary Time,13,13 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 13 Sunday,,THIRTEENTH SUNDAY,A,13,"2 Kings 4:8-11, 14-16","Psalm 88:2-3, 16-19","Romans 6:3-4, 8-11",Matthew 10:37-42
+2026-06-29,2026,,,SAINTS PETER AND PAUL,Solemnity,NO_MATCH,,,,,,,,,,
+2026-06-30,2026,Ordinary Time,13,Tuesday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirteenth week,2,389,Amos 3:1-8; 4:11-12,Psalm 5:5-8,,Matthew 8:23-27
+2026-07-01,2026,Ordinary Time,13,Wednesday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirteenth week,2,390,"Amos 5:14-15, 21-24","Psalm 49:7-13, 16-17",,Matthew 8:28-34
+2026-07-02,2026,Ordinary Time,13,Thursday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirteenth week,2,391,Amos 7:10-17,Psalm 18:8-11,,Matthew 9:1-8
+2026-07-03,2026,,,Saint Thomas,Memorial,NO_MATCH,,,,,,,,,,
+2026-07-04,2026,Ordinary Time,13,Saturday of the thirteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirteenth week,2,393,Amos 9:11-15,"Psalm 84:9, 11-14",,Matthew 9:14-17
+2026-07-05,2026,Ordinary Time,14,14 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 14 Sunday,,FOURTEENTH SUNDAY,A,14,Zechariah 9:9-10,"Psalm 144:1-2, 8-11, 13-14","Romans 8:9, 11-13",Matthew 11:25-30
+2026-07-06,2026,Ordinary Time,14,Monday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fourteenth week,2,394,"Hosea 2:16-18, 21-22",Psalm 144:2-9,,Matthew 9:18-26
+2026-07-07,2026,Ordinary Time,14,Tuesday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fourteenth week,2,395,"Hosea 8:4-7, 11-13",Psalm 113B:3-10,,Matthew 9:32-38
+2026-07-08,2026,Ordinary Time,14,Wednesday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the fourteenth week,2,396,"Hosea 10:1-3, 7-8, 12",Psalm 104:2-7,,Matthew 10:1-7
+2026-07-09,2026,Ordinary Time,14,Thursday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fourteenth week,2,397,"Hosea 11:1-4, 8-9","Psalm 79:2-3, 15-16",,Matthew 10:7-15
+2026-07-10,2026,Ordinary Time,14,Friday of the fourteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fourteenth week,2,398,Hosea 14:2-10,"Psalm 50:3-4, 8-9, 12-14, 17",,Matthew 10:16-23
+2026-07-11,2026,,,Saint Benedict,Memorial,NO_MATCH,,,,,,,,,,
+2026-07-12,2026,Ordinary Time,15,15 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 15 Sunday,,FIFTEENTH SUNDAY,A,15,Isaiah 55:10-11,Psalm 64:10-14,Romans 8:18-23,Matthew 13:1-23
+2026-07-13,2026,Ordinary Time,15,Monday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the fifteenth week,2,400,Isaiah 1:10-17,"Psalm 49:8-9, 16-17, 21, 23",,Matthew 10:34 – 11:1
+2026-07-14,2026,Ordinary Time,15,Tuesday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the fifteenth week,2,401,Isaiah 7:1-9,Psalm 47:2-8,,Matthew 11:20-24
+2026-07-15,2026,,,Saint Bonaventure,Memorial,NO_MATCH,,,,,,,,,,
+2026-07-16,2026,Ordinary Time,15,Thursday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the fifteenth week,2,403,"Isaiah 26:7-9, 12, 16-19",Psalm 101:13-21,,Matthew 11:28-30
+2026-07-17,2026,Ordinary Time,15,Friday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the fifteenth week,2,404,"Isaiah 38:1-6, 21-22, 7-8","Is 38:10-12, 16",,Matthew 12:1-8
+2026-07-18,2026,Ordinary Time,15,Saturday of the fifteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the fifteenth week,2,405,Micah 2:1-5,"Psalm 9B:1-4, 7-8, 14",,Matthew 12:14-21
+2026-07-19,2026,Ordinary Time,16,16 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 16 Sunday,,SIXTEENTH SUNDAY,A,16,"Wisdom 12:13, 16-19","Psalm 85:5-6, 9-10, 15-16",Romans 8:26-27,Matthew 13:24-43
+2026-07-20,2026,Ordinary Time,16,Monday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the sixteenth week,2,406,"Micah 6:1-4, 6-8","Psalm 49:5-6, 8-9, 16-17, 21, 23",,Matthew 12:38-42
+2026-07-21,2026,Ordinary Time,16,Tuesday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the sixteenth week,2,407,"Micah 7:14-15, 18-20",Psalm 84:2-8,,Matthew 12:46-50
+2026-07-22,2026,,,Saint Mary Magdalene,Memorial,NO_MATCH,,,,,,,,,,
+2026-07-23,2026,Ordinary Time,16,Thursday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the sixteenth week,2,409,"Jeremiah 2:1-3, 7-8, 12-13",Psalm 35:6-11,,Matthew 13:10-17
+2026-07-24,2026,Ordinary Time,16,Friday of the sixteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the sixteenth week,2,410,Jeremiah 3:14-17,Jeremiah 31:10-13,,Matthew 13:18-23
+2026-07-25,2026,,,Saint James,Memorial,NO_MATCH,,,,,,,,,,
+2026-07-26,2026,Ordinary Time,17,17 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 17 Sunday,,SEVENTEENTH SUNDAY,A,17,"1 Kings 3:5, 7-12","Psalm 118:57, 72, 76-77, 127-130",Romans 8:28-30,Matthew 13:44-52
+2026-07-27,2026,Ordinary Time,17,Monday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the seventeenth week,2,412,Jeremiah 13:1-11,Deuteronomy 32:18-21,,Matthew 13:31-35
+2026-07-28,2026,Ordinary Time,17,Tuesday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the seventeenth week,2,413,Jeremiah 14:17-22,"Psalm 78:8-9, 11, 13",,Matthew 13:36-43
+2026-07-29,2026,,,"Saints Martha, Mary and Lazarus",Memorial,NO_MATCH,,,,,,,,,,
+2026-07-30,2026,Ordinary Time,17,Thursday of the seventeenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the seventeenth week,2,415,Jeremiah 18:1-6,Psalm 145:2-6,,"Matthew 13:47, 53"
+2026-07-31,2026,,,Saint Ignatius Loyola,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-01,2026,,,Saint Alphonsus Liguori,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-02,2026,Ordinary Time,18,18 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 18 Sunday,,EIGHTEENTH SUNDAY,A,18,Isaiah 55:1-3,"Psalm 144:8-9, 15-18","Romans 8:35, 37-39",Matthew 14:13-21
+2026-08-03,2026,,,Saint Dominic,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-04,2026,,,Saint John Vianney,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-05,2026,Ordinary Time,18,Wednesday of the eighteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the eighteenth week,2,420,Jeremiah 31:1-7,Jeremiah 31:10-13,,Matthew 15:21-28
+2026-08-06,2026,,,The Transfiguration of the Lord,Feria,NO_MATCH,,,,,,,,,,
+2026-08-07,2026,Ordinary Time,18,Friday of the eighteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the eighteenth week,2,422,"Nahum 2:1, 3; 3:1-3, 6-7","Deuteronomy 32:35-36, 39, 41",,Matthew 16:24-28
+2026-08-08,2026,,,SAINT MARY OF THE CROSS,Solemnity,NO_MATCH,,,,,,,,,,
+2026-08-09,2026,Ordinary Time,19,19 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 19 Sunday,,NINETEENTH SUNDAY,A,19,"1 Kings 19:9, 11-13",Psalm 84:9-14,Romans 9:1-5,Matthew 14:22-33
+2026-08-10,2026,,,Saint Lawrence,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-11,2026,,,Saint Clare,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-12,2026,Ordinary Time,19,Wednesday of the nineteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the nineteenth week,2,426,Ezekiel 9:1-7; 10:18-22,Psalm 112:1-6,,Matthew 18:15-20
+2026-08-13,2026,Ordinary Time,19,Thursday of the nineteenth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the nineteenth week,2,427,Ezekiel 12:1-12,"Psalm 77:56-59, 61-62",,Matthew 18:21-9:1
+2026-08-14,2026,,,Saint Maximilian Kolbe,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-15,2026,,,THE ASSUMPTION OF THE BLESSED VIRGIN MARY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-08-16,2026,Ordinary Time,20,20 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 20 Sunday,,TWENTIETH SUNDAY,A,20,"Isaiah 56:1, 6-7","Psalm 66:2-3, 5-6, 8","Romans 11:13-15, 29-32",Matthew 15:21-28
+2026-08-17,2026,Ordinary Time,20,Monday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twentieth week,2,430,Ezekiel 24:15-24,Deuteronomy 32:18-21,,Matthew 19:16-22
+2026-08-18,2026,Ordinary Time,20,Tuesday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twentieth week,2,431,Ezekiel 28:1-10,"Deuteronomy 32:26-28, 30, 35-36",,Matthew 19:23-30
+2026-08-19,2026,Ordinary Time,20,Wednesday of the twentieth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twentieth week,2,432,Ezekiel 34:1-11,Psalm 22,,Matthew 20:1-16
+2026-08-20,2026,,,Saint Bernard,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-21,2026,,,Saint Pius X,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-22,2026,,,The Queenship of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2026-08-23,2026,Ordinary Time,21,21 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 21 Sunday,,TWENTY-FIRST SUNDAY,A,21,Isaiah 22:19-23,"Psalm 137:1-3, 6, 8",Romans 11:33-36,Matthew 16:13-20
+2026-08-24,2026,,,Saint Bartholomew,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-25,2026,Ordinary Time,21,Tuesday of the twenty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-first week,2,437,"2 Thessalonians 2:1-3,14-17",Psalm 95:10-13,,Matthew 23:23-26
+2026-08-26,2026,Ordinary Time,21,Wednesday of the twenty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-first week,2,438,"2 Thessalonians 3:6-10,16-18","Psalm 127:1-2, 4-5",,Matthew 23:27-32
+2026-08-27,2026,,,Saint Monica,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-28,2026,,,Saint Augustine,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-29,2026,,,The Passion of Saint John the Baptist,Memorial,NO_MATCH,,,,,,,,,,
+2026-08-30,2026,Ordinary Time,22,22 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 22 Sunday,,TWENTY-SECOND SUNDAY,A,22,Jeremiah 20:7-9,"Psalm 62:2-6, 8-9",Romans 12:1-2,Matthew 16:21-27
+2026-08-31,2026,Ordinary Time,22,Monday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-second week,2,442,1 Corinthians 2:1-5,Psalm 118:97-102,,Luke 4:16-30
+2026-09-01,2026,Ordinary Time,22,Tuesday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-second week,2,443,1 Corinthians 2:10-16,Psalm 144:8-14,,Luke 4:31-37
+2026-09-02,2026,Ordinary Time,22,Wednesday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-second week,2,444,1 Corinthians 3:1-9,"Psalm 32:12-15, 20-21",,Luke 4:38-44
+2026-09-03,2026,,,Saint Gregory the Great,Memorial,NO_MATCH,,,,,,,,,,
+2026-09-04,2026,Ordinary Time,22,Friday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-second week,2,446,1 Corinthians 4:1-5,"Psalm 36:3-6, 27-28, 39-40",,Luke 5:33-39
+2026-09-05,2026,Ordinary Time,22,Saturday of the twenty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-second week,2,447,1 Corinthians 4:6-15,Psalm 144:17-21,,Luke 6:1-5
+2026-09-06,2026,Ordinary Time,23,23 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 23 Sunday,,TWENTY-THIRD SUNDAY,A,23,Ezekiel 33:7-9,"Psalm 94:1-2, 6-9",Romans 13:8-10,Matthew 18:15-20
+2026-09-07,2026,Ordinary Time,23,Monday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-third week,2,448,1 Corinthians 5:1-8,"Psalm 5:5-7, 12",,Luke 6:6-11
+2026-09-08,2026,,,The Nativity of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2026-09-09,2026,Ordinary Time,23,Wednesday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-third week,2,450,1 Corinthians 7:25-31,"Psalm 44:11-12, 14-17",,Luke 6:20-26
+2026-09-10,2026,Ordinary Time,23,Thursday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-third week,2,451,"1 Corinthians 8:1-7,11-13","Psalm 138:1-3, 13-14, 23-24",,Luke 6:27-38
+2026-09-11,2026,Ordinary Time,23,Friday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-third week,2,452,"1 Corinthians 9:16-19, 22-27","Psalm 83:3-6, 12",,Luke 6:39-42
+2026-09-12,2026,Ordinary Time,23,Saturday of the twenty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-third week,2,453,1 Corinthians 10:14-22,"Psalm 115:12-13, 17-18",,Luke 6:43-49
+2026-09-13,2026,Ordinary Time,24,24 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 24 Sunday,,TWENTY-FOURTH SUNDAY,A,24,Sirach 27:30 – 28:7,"Psalm 102:1-4, 9-12",Romans 14:7-9,Matthew 18:21-35
+2026-09-14,2026,,,The Exaltation of the Holy Cross,Feria,NO_MATCH,,,,,,,,,,
+2026-09-15,2026,,,Our Lady of Sorrows,Feast,NO_MATCH,,,,,,,,,,
+2026-09-16,2026,,,Saints Cornelius and Cyprian,Memorial,NO_MATCH,,,,,,,,,,
+2026-09-17,2026,Ordinary Time,24,Thursday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-fourth week,2,457,1 Corinthians 15:1-11,"Psalm 117:1-2, 15-17, 28",,Luke 7:36-50
+2026-09-18,2026,Ordinary Time,24,Friday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-fourth week,2,458,1 Corinthians 15:12-20,"Psalm 16:1, 6-8, 15",,Luke 8:1-3
+2026-09-19,2026,Ordinary Time,24,Saturday of the twenty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-fourth week,2,459,"1 Corinthians 15:35-37, 42-49",Psalm 55:10-14,,Luke 8:4-15
+2026-09-20,2026,Ordinary Time,25,25 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 25 Sunday,,TWENTY-FIFTH SUNDAY,A,25,Isaiah 55:6-9,"Psalm 144:2-3, 8-9, 17-18","Philippians 1:20-24, 27",Matthew 20:1-16
+2026-09-21,2026,,,Saint Matthew,Memorial,NO_MATCH,,,,,,,,,,
+2026-09-22,2026,Ordinary Time,25,Tuesday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-fifth week,2,461,"Proverbs 21:1-6, 10-13","Psalm 118:1, 27, 30, 34-35, 44",,Luke 8:19-21
+2026-09-23,2026,,,Saint Pius of Pietrelcina,Memorial,NO_MATCH,,,,,,,,,,
+2026-09-24,2026,Ordinary Time,25,Thursday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-fifth week,2,463,Ecclesiastes 1:2-11,"Psalm 89:3-6, 12-14, 17",,Luke 9:7-9
+2026-09-25,2026,Ordinary Time,25,Friday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-fifth week,2,464,Ecclesiastes 3:1-11,Psalm 143:1-4,,Luke 9:18-22
+2026-09-26,2026,Ordinary Time,25,Saturday of the twenty-fifth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-fifth week,2,465,Ecclesiastes 11:9-12:8,"Psalm 89:3-6, 12-14, 17",,Luke 9:43-45
+2026-09-27,2026,Ordinary Time,26,26 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 26 Sunday,,TWENTY-SIXTH SUNDAY,A,26,Ezekiel 18:25-28,Psalm 24:4-9,Philippians 2:1-11,Matthew 21:28-32
+2026-09-28,2026,Ordinary Time,26,Monday of the twenty-sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-sixth week,2,466,Job 1:6-22,"Psalm 16:1-3, 6-7",,Luke 9:46-50
+2026-09-29,2026,,,"Saints Michael, Gabriel and Raphael",Memorial,NO_MATCH,,,,,,,,,,
+2026-09-30,2026,,,Saint Jerome,Memorial,NO_MATCH,,,,,,,,,,
+2026-10-01,2026,,,Saint Thérèse of the Child Jesus,Feria,NO_MATCH,,,,,,,,,,
+2026-10-02,2026,,,The Holy Guardian Angels,Feast,NO_MATCH,,,,,,,,,,
+2026-10-03,2026,Ordinary Time,26,Saturday of the twenty-sixth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-sixth week,2,471,"Job 42:1-3, 5-6, 12-17","Psalm 118:66, 71, 75, 91, 125, 130",,Luke 10:17-24
+2026-10-04,2026,Ordinary Time,27,27 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 27 Sunday,,TWENTY-SEVENTH SUNDAY,A,27,Isaiah 5:1-7,"Psalm 79:9, 12-16, 19-20",Philippians 4:6-9,Matthew 21:33-43
+2026-10-05,2026,Ordinary Time,27,Monday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-seventh week,2,472,Galatians 1:6-12,"Psalm 110:1-2, 7-10",,Luke 10:25-37
+2026-10-06,2026,Ordinary Time,27,Tuesday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-seventh week,2,473,Galatians 1:13-24,"Psalm 138:1-3, 13-15",,Luke 10:38-42
+2026-10-07,2026,,,Our Lady of the Rosary,Feria,NO_MATCH,,,,,,,,,,
+2026-10-08,2026,Ordinary Time,27,Thursday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-seventh week,2,475,Galatians 3:1-5,Luke 1:69-75,,Luke 11:5-13
+2026-10-09,2026,Ordinary Time,27,Friday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-seventh week,2,476,Galatians 3:7-14,Psalm 110:1-6,,Luke 11:15-26
+2026-10-10,2026,Ordinary Time,27,Saturday of the twenty-seventh week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-seventh week,2,477,Galatians 3:22-29,Psalm 104:2-7,,Luke 11:27-28
+2026-10-11,2026,Ordinary Time,28,28 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 28 Sunday,,TWENTY-EIGHTH SUNDAY,A,28,Isaiah 25:6-10,Psalm 22,"Philippians 4:12-14, 19-20",Matthew 22:1-14
+2026-10-12,2026,Ordinary Time,28,Monday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-eighth week,2,478,"Galatians 4:22-24, 26-27, 31 – 5:1",Psalm 112:1-7,,Luke 11:29-32
+2026-10-13,2026,Ordinary Time,28,Tuesday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-eighth week,2,479,Galatians 5:1-6,"Psalm 118:41, 43-45, 47-48",,Luke 11:37-41
+2026-10-14,2026,Ordinary Time,28,Wednesday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-eighth week,2,480,Galatians 5:18-25,"Psalm 1:1-4, 6",,Luke 11:42-46
+2026-10-15,2026,,,Saint Teresa of Jesus,Memorial,NO_MATCH,,,,,,,,,,
+2026-10-16,2026,Ordinary Time,28,Friday of the twenty-eighth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-eighth week,2,482,Ephesians 1:11-14,"Psalm 32:1-2, 4-5, 12-13",,Luke 12:1-7
+2026-10-17,2026,,,Saint Ignatius of Antioch,Memorial,NO_MATCH,,,,,,,,,,
+2026-10-18,2026,Ordinary Time,29,29 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 29 Sunday,,TWENTY-NINTH SUNDAY,A,29,"Isaiah 45:1, 4-6","Psalm 95:1, 3-5, 7-10",1 Thessalonians 1:1-5,Matthew 22:15-21
+2026-10-19,2026,Ordinary Time,29,Monday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the twenty-ninth week,2,484,Ephesians 2:1-10,Psalm 99,,Luke 12:13-21
+2026-10-20,2026,Ordinary Time,29,Tuesday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the twenty-ninth week,2,485,Ephesians 2:12-22,Psalm 84:9-14,,Luke 12:35-38
+2026-10-21,2026,Ordinary Time,29,Wednesday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the twenty-ninth week,2,486,Ephesians 3:2-12,Isaiah 12:2-6,,Luke 12:39-48
+2026-10-22,2026,Ordinary Time,29,Thursday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the twenty-ninth week,2,487,Ephesians 3:14-21,"Psalm 32:1-2, 4-5, 11-12, 18-19",,Luke 12:49-53
+2026-10-23,2026,Ordinary Time,29,Friday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the twenty-ninth week,2,488,Ephesians 4:1-6,Psalm 23:1-6,,Luke 12:54-59
+2026-10-24,2026,Ordinary Time,29,Saturday of the twenty-ninth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the twenty-ninth week,2,489,Ephesians 4:7-16,Psalm 121:1-5,,Luke 13:1-9
+2026-10-25,2026,Ordinary Time,30,30 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 30 Sunday,,THIRTIETH SUNDAY,A,30,Exodus 22:20-26,"Psalm 17:2-4, 47, 51",1 Thessalonians 1:5-10,Matthew 22:34-40
+2026-10-26,2026,,,Monday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirtieth week,2,490,Ephesians 4:32 – 5:8,"Psalm 1:1-4, 6",,Luke 13:10-17
+2026-10-27,2026,,,Tuesday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirtieth week,2,491,Ephesians 5:21-33,Psalm 127:1-5,,Luke 13:18-21
+2026-10-28,2026,,,Saints Simon and Jude,Memorial,NO_MATCH,,,,,,,,,,
+2026-10-29,2026,,,Thursday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirtieth week,2,493,Ephesians 6:10-20,"Psalm 143:1-2, 9-10",,Luke 13:31-35
+2026-10-30,2026,,,Friday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirtieth week,2,494,Philippians 1:1-11,Psalm 110:1-6,,Luke 14:1-6
+2026-10-31,2026,,,Saturday of the thirtieth week,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirtieth week,2,495,Philippians 1:18-26,"Psalm 42:2-3, 5",,"Luke 14:1, 7-11"
+2026-11-01,2026,,,ALL SAINTS,Solemnity,NO_MATCH,,,,,,,,,,
+2026-11-02,2026,,,THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,Solemnity,NO_MATCH,,,,,,,,,,
+2026-11-03,2026,Ordinary Time,31,Tuesday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the thirty-first week,2,497,Philippians 2:5-11,Psalm 21:26-32,,Luke 14:15-24
+2026-11-04,2026,,,Saint Charles Borromeo,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-05,2026,Ordinary Time,31,Thursday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-first week,2,499,Philippians 3:3-8,Psalm 104:2-7,,Luke 15:1-10
+2026-11-06,2026,Ordinary Time,31,Friday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-first week,2,500,Philippians 3:17 – 4:1,Psalm 121:1-5,,Luke 16:1-8
+2026-11-07,2026,Ordinary Time,31,Saturday of the thirty-first week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-first week,2,501,Philippians 4:10-19,"Psalm 111:1-2, 5-6, 8, 9",,Luke 16:9-15
+2026-11-08,2026,Ordinary Time,32,32 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 32 Sunday,,THIRTY-SECOND SUNDAY,A,32,Wisdom 6:12-16,Psalm 62:2-8,1 Thessalonians 4:13-18,Matthew 25:1-13
+2026-11-09,2026,,,The Dedication of the Lateran Basilica,Feria,NO_MATCH,,,,,,,,,,
+2026-11-10,2026,,,Saint Leo the Great,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-11,2026,,,Saint Martin of Tours,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-12,2026,,,Saint Josaphat,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-13,2026,Ordinary Time,32,Friday of the thirty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-second week,2,506,2 John 1:4-9,"Psalm 118:1-2, 10-11, 17-18",,Luke 17:26-37
+2026-11-14,2026,Ordinary Time,32,Saturday of the thirty-second week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-second week,2,507,3 John 5-8,Psalm 111:1-6,,Luke 18:1-8
+2026-11-15,2026,Ordinary Time,33,33 ORDINARY,Sunday,MATCHED,SEASON_WEEK_DAY,Ordinary Week 33 Sunday,,THIRTY-THIRD SUNDAY,A,33,"Proverbs 31:10-13, 19-20, 30-31",Psalm 127:1-5,1 Thessalonians 5:1-6,Matthew 25:14-30
+2026-11-16,2026,Ordinary Time,33,Monday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirty-third week,2,508,Revelation 1:1-4; 2:1-5,"Psalm 1:1-4, 6",,Luke 18:35-43
+2026-11-17,2026,,,Saint Elizabeth of Hungary,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-18,2026,Ordinary Time,33,Wednesday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirty-third week,2,510,Revelation 4:1-11,Psalm 150,,Luke 19:11-28
+2026-11-19,2026,Ordinary Time,33,Thursday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-third week,2,511,Revelation 5:1-10,"Psalm 149:1-6, 9",,Luke 19:41-44
+2026-11-20,2026,Ordinary Time,33,Friday of the thirty-third week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-third week,2,512,Revelation 10:8-11,"Psalm 118:14, 24, 72, 103, 111, 131",,Luke 19:45-48
+2026-11-21,2026,,,The Presentation of the Blessed Virgin Mary,Feria,NO_MATCH,,,,,,,,,,
+2026-11-22,2026,,,"OUR LORD JESUS CHRIST, KING OF THE UNIVERSE",Solemnity,MATCHED,EXACT_NAME,Name match,,"OUR LORD JESUS CHRIST, KING OF THE UNIVERSE",A,34,"Ezekiel 34:11-12, 15-17","Psalm 22:1-3, 5-6","1 Corinthians 15:20-26, 28",Matthew 25:31-46
+2026-11-23,2026,Ordinary Time,34,Monday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Monday of the thirty-fourth week,2,514,Revelation 14:1-5,Psalm 23:1-6,,Luke 21:1-4
+2026-11-24,2026,,,Saint Andrew Dũng-Lạc and Companions,Memorial,NO_MATCH,,,,,,,,,,
+2026-11-25,2026,Ordinary Time,34,Wednesday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the thirty-fourth week,2,516,Revelation 15:1-4,"Psalm 97:1-3, 7-9",,Luke 21:12-19
+2026-11-26,2026,Ordinary Time,34,Thursday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the thirty-fourth week,2,517,"Revelation 18:1-2, 21-23; 19:1-3, 9",Psalm 99:2-5,,Luke 21:20-28
+2026-11-27,2026,Ordinary Time,34,Friday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the thirty-fourth week,2,518,"Revelation 20:1-4, 11-21:2","Psalm 83:3-6, 8",,Luke 21:29-33
+2026-11-28,2026,Ordinary Time,34,Saturday of the thirty-fourth week in Ordinary Time,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the thirty-fourth week,2,519,Revelation 22:1-7,Psalm 94:1-7,,Luke 21:34-36
+2026-11-29,2026,,,FIRST SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,2,"FIRST SUNDAY OF ADVENT, Year A",A,745,Isaiah 2:1-5,Psalm 121:1-2.4-5.6-9,Romans 13:11-14,Matthew 24:37-44
+2026-11-30,2026,,,Saint Andrew,Memorial,NO_MATCH,,,,,,,,,,
+2026-12-01,2026,Advent,1,Tuesday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the first week,2,317,1 Samuel 1:9-20,"1 Samuel 2:1, 4-8",,Mark 1:21-28
+2026-12-02,2026,Advent,1,Wednesday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the first week,2,318,"1 Samuel 3:1-10, 19-20","Psalm 39:2, 5, 7-10",,Mark 1:29-39
+2026-12-03,2026,,,Saint Francis Xavier,Memorial,NO_MATCH,,,,,,,,,,
+2026-12-04,2026,Advent,1,Friday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the first week,2,320,"1 Samuel 8:4-7, 10-22",Psalm 88:16-19,,Mark 2:1-12
+2026-12-05,2026,Advent,1,Saturday of the first week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the first week,2,321,"1 Samuel 9:1-4, 17-19; 10:1",Psalm 20:2-7,,Mark 2:13-17
+2026-12-06,2026,,,SECOND SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,SECOND SUNDAY,A,2,"Isaiah 49:3, 5-6","Psalm 39:2, 4, 7-10",1 Corinthians 1:1-3,John 1:29-34
+2026-12-07,2026,,,Saint Ambrose,Memorial,NO_MATCH,,,,,,,,,,
+2026-12-08,2026,,,THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,Solemnity,NO_MATCH,,,,,,,,,,
+2026-12-09,2026,Advent,2,Wednesday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the second week,2,324,"1 Samuel 17:32-33, 37, 40-51","Psalm 143:1-2, 9-10",,Mark 3:1-6
+2026-12-10,2026,Advent,2,Thursday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Thursday of the second week,2,325,1 Samuel 18:6-9; 19:1-7,"Psalm 55:2-3, 9-14",,Mark 3:7-12
+2026-12-11,2026,Advent,2,Friday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Friday of the second week,2,326,1 Samuel 24:3-21,"Psalm 56:2-4, 6, 11",,Mark 3:13-19
+2026-12-12,2026,Advent,2,Saturday of the second week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Saturday of the second week,2,327,"2 Samuel 1:1-4, 11-12, 17, 19, 23-27","Psalm 79:2-3, 5-7",,Mark 3:20-21
+2026-12-13,2026,,,THIRD SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,THIRD SUNDAY,A,3,Isaiah 8:23 – 9:3,"Psalm 26:1, 4, 13-14","1 Corinthians 1:10-13, 17",Matthew 4:12-23
+2026-12-14,2026,,,Saint John of the Cross,Feria,NO_MATCH,,,,,,,,,,
+2026-12-15,2026,Advent,3,Tuesday of the third week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Tuesday of the third week,2,329,"2 Samuel 6:12-15, 17-19",Psalm 23:7-10,,Mark 3:31-35
+2026-12-16,2026,Advent,3,Wednesday of the third week of Advent,Feria,MATCHED,EXACT_NAME,Name match,,Wednesday of the third week,2,330,2 Samuel 7:4-17,"Psalm 88:4-5, 27-30",,Mark 4:1-20
+2026-12-17,2026,,,17 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-18,2026,,,18 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-19,2026,,,19 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-20,2026,,,FOURTH SUNDAY OF ADVENT,Solemnity,MULTIPLE_MATCHES,EXACT_NAME,Name match,4,FOURTH SUNDAY,A,4,Zephaniah 2:3; 3:12-13,Psalm 145:7-10,1 Corinthians 1:26-31,Matthew 5:1-12
+2026-12-21,2026,,,21 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-22,2026,,,22 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-23,2026,,,23 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-24,2026,,,24 December,Feria,NO_MATCH,,,,,,,,,,
+2026-12-25,2026,,,THE NATIVITY OF THE LORD,Solemnity,NO_MATCH,,,,,,,,,,
+2026-12-26,2026,,,Saint Stephen,Memorial,NO_MATCH,,,,,,,,,,
+2026-12-27,2026,,,"THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",Solemnity,NO_MATCH,,,,,,,,,,
+2026-12-28,2026,,,The Holy Innocents,Feast,NO_MATCH,,,,,,,,,,
+2026-12-29,2026,Christmas,,Fifth day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,
+2026-12-30,2026,Christmas,,Sixth day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,
+2026-12-31,2026,Christmas,,Seventh day in the octave of Christmas,Feast,NO_MATCH,,,,,,,,,,

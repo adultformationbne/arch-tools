@@ -3,9 +3,11 @@
 	import { onMount } from 'svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 
-	export let data;
+	let { data } = $props();
 
-	$: ({ supabase, session } = data);
+	let supabase = $derived(data.supabase);
+	let session = $derived(data.session);
+	let userRole = $derived(data.userRole);
 
 	onMount(() => {
 		const {
@@ -22,7 +24,7 @@
 
 <div class="min-h-screen bg-gray-100 flex flex-col">
 	{#if session}
-		<AppNavigation {session} />
+		<AppNavigation {session} {userRole} />
 	{/if}
 	<main class="flex-1">
 		<slot />

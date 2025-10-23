@@ -2,6 +2,16 @@ import { decodeHtmlEntities } from './html.js';
 
 /**
  * Shared scripture and gospel utilities
+ *
+ * IMPORTANT DISTINCTION:
+ * - For READING REFERENCES (citations like "Matthew 5:1-10"): Use DATABASE LECTIONARY
+ *   - DGR schedule generation uses: /api/dgr/readings -> get_readings_for_date() RPC
+ *   - Fast, local, no external API calls
+ *
+ * - For GOSPEL TEXT (actual scripture content): Use UNIVERSALIS + OREMUS
+ *   - ScriptureReader component uses: fetchGospelTextForDate() -> Universalis -> Oremus
+ *   - Universalis gives reference, Oremus gives full formatted text
+ *   - This is for displaying actual Bible text to users
  */
 
 // Parse and clean scripture HTML from oremus.org
@@ -103,7 +113,17 @@ export async function fetchScripturePassage(passage, version = 'NRSVAE') {
 	};
 }
 
+// ========================================================================
+// UNIVERSALIS API FUNCTIONS - FOR GOSPEL TEXT ONLY (WITH OREMUS)
+// ========================================================================
+// These functions fetch from Universalis API to get gospel references,
+// which are then used with Oremus API to get the full gospel TEXT.
+// DO NOT use these for getting reading REFERENCES - use database instead!
+// ========================================================================
+
 // Fetch all readings for a specific date using Universalis API
+// NOTE: This is ONLY used for getting gospel text in ScriptureReader component
+// For DGR reading references, use database lectionary instead
 export async function fetchAllReadingsForDate(dateInput, region = 'australia.brisbane') {
 	return new Promise((resolve, reject) => {
 		try {
@@ -159,7 +179,9 @@ export async function fetchAllReadingsForDate(dateInput, region = 'australia.bri
 	});
 }
 
-// Fetch gospel reading for a specific date using Universalis (legacy function for backward compatibility)
+// Fetch gospel reference for a specific date using Universalis
+// NOTE: This is for getting the gospel REFERENCE to then fetch TEXT from Oremus
+// For DGR reading references, use database lectionary instead
 export async function fetchGospelForDate(dateInput, region = 'australia.brisbane') {
 	try {
 		const result = await fetchAllReadingsForDate(dateInput, region);
@@ -182,7 +204,9 @@ export async function fetchGospelForDate(dateInput, region = 'australia.brisbane
 	}
 }
 
-// Fetch gospel reading for date and then get the full text
+// Fetch gospel reading for date and then get the full TEXT from Oremus
+// This is the CORRECT function for getting gospel text to display
+// Flow: Universalis (get reference) -> Oremus (get full text)
 export async function fetchGospelTextForDate(dateInput, version = 'NRSVAE', region = 'australia.brisbane') {
 	try {
 		console.log('Fetching gospel for date:', dateInput);
@@ -232,7 +256,9 @@ export function extractGospelReference(readings) {
 	return '';
 }
 
-// Normalize Universalis API readings data into structured format for database storage
+// Normalize Universalis API readings data into structured format
+// NOTE: This is ONLY used by Universalis-based gospel text functions above
+// DGR schedule generation now uses database lectionary instead
 export function normalizeUniversalisReadings(universalisData) {
 	const readings = {};
 
