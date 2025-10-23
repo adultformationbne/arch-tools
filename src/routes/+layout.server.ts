@@ -23,7 +23,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	const isInternalDomain = hostname.includes('arch-tools') || url.pathname.startsWith('/admin');
 
 	// Allow access to auth routes and DGR submission routes without authentication
-	const publicRoutes = ['/auth', '/dgr/submit', '/login'];
+	const publicRoutes = ['/auth', '/dgr/submit', '/login', '/readings', '/api/v1/readings'];
 	const isPublicRoute = publicRoutes.some((route) => url.pathname.startsWith(route));
 
 	// Also allow access to ACCF root page for dev mode setup
