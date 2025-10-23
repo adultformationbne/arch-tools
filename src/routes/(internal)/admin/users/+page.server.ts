@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { requireModule } from '$lib/utils/auth-helpers';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	const { session, user } = await safeGetSession();
@@ -9,17 +10,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 	}
 
 	// Check if user has user_management module access
-	const { data: currentUserProfile } = await supabase
-		.from('user_profiles')
-		.select('role, modules')
-		.eq('id', user.id)
-		.single();
-
-	const hasUserManagement = currentUserProfile?.modules?.includes('user_management');
-
-	if (!hasUserManagement) {
-		throw redirect(303, '/profile');
-	}
+	const currentUserProfile = await requireModule(supabase, user.id, 'user_management');
 
 	// Fetch all admin users only (exclude students/coordinators)
 	const { data: users, error } = await supabase
