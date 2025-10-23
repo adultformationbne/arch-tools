@@ -2,6 +2,7 @@
 	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send } from 'lucide-svelte';
 	import { apiPost, apiDelete, apiPut, supabaseRequest } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { invalidateAll } from '$app/navigation';
 
 	export let data;
 	let { supabase, users, currentUser, currentUserProfile } = data;
@@ -75,13 +76,10 @@
 				}
 			);
 
-			// Update local state
-			const userIndex = users.findIndex(u => u.id === userId);
-			if (userIndex !== -1) {
-				users[userIndex].modules = editingModules;
-			}
-
 			cancelEdit();
+
+			// Refresh data from server
+			await invalidateAll();
 		} catch (error) {
 			console.error('Error updating permissions:', error);
 		} finally {
@@ -123,15 +121,11 @@
 
 		try {
 			// Create user via API endpoint (sends invitation)
-			const result = await apiPost('/api/admin/users', newUser, {
+			await apiPost('/api/admin/users', newUser, {
 				showToast: false // We're handling the multi-step toast manually
 			});
 
 			toastNextStep(toastId);
-
-			// Add new user to the list
-			users = [result.user, ...users];
-
 			toastNextStep(toastId);
 
 			// Reset form
@@ -141,6 +135,9 @@
 				modules: []
 			};
 			showNewUserForm = false;
+
+			// Refresh data from server
+			await invalidateAll();
 
 			// Auto-dismiss success toast after 5 seconds
 			setTimeout(() => dismissToast(toastId), 5000);
@@ -188,6 +185,9 @@
 			);
 
 			showPasswordResetModal = false;
+
+			// Refresh data from server
+			await invalidateAll();
 		} catch (error) {
 			console.error('Error resetting password:', error);
 		} finally {
@@ -216,9 +216,10 @@
 				}
 			);
 
-			// Remove from local state
-			users = users.filter(u => u.id !== deleteUserId);
 			showDeleteModal = false;
+
+			// Refresh data from server
+			await invalidateAll();
 		} catch (error) {
 			console.error('Error deleting user:', error);
 		} finally {
@@ -238,6 +239,9 @@
 					successTitle: 'Invitation Sent'
 				}
 			);
+
+			// Refresh data from server
+			await invalidateAll();
 		} catch (error) {
 			console.error('Error resending invitation:', error);
 		}
@@ -292,10 +296,15 @@
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="flex items-center">
 										<div>
-											<div class="text-sm font-medium text-gray-900">
+											<div class="text-sm font-medium text-gray-900 flex items-center gap-2">
 												{user.full_name || user.display_name || 'No name'}
 												{#if user.id === currentUser.id}
-													<span class="ml-2 text-xs text-gray-500">(You)</span>
+													<span class="text-xs text-gray-500">(You)</span>
+												{/if}
+												{#if user.isPending}
+													<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+														Pending
+													</span>
 												{/if}
 											</div>
 											<div class="text-sm text-gray-500 flex items-center">
@@ -371,20 +380,23 @@
 											>
 												<Edit2 class="h-4 w-4" />
 											</button>
-											<button
-												on:click={() => resendInvitation(user.id, user.email)}
-												class="text-green-600 hover:text-green-900"
-												title="Resend invitation"
-											>
-												<Send class="h-4 w-4" />
-											</button>
-											<button
-												on:click={() => showPasswordReset(user.id)}
-												class="text-orange-600 hover:text-orange-900"
-												title="Reset password"
-											>
-												<KeyRound class="h-4 w-4" />
-											</button>
+											{#if user.isPending}
+												<button
+													on:click={() => resendInvitation(user.id, user.email)}
+													class="text-green-600 hover:text-green-900"
+													title="Resend invitation"
+												>
+													<Send class="h-4 w-4" />
+												</button>
+											{:else}
+												<button
+													on:click={() => showPasswordReset(user.id)}
+													class="text-orange-600 hover:text-orange-900"
+													title="Reset password"
+												>
+													<KeyRound class="h-4 w-4" />
+												</button>
+											{/if}
 											<button
 												on:click={() => confirmDelete(user.id, user.email)}
 												disabled={user.id === currentUser.id}

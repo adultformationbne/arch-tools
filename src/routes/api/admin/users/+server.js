@@ -180,8 +180,29 @@ export async function DELETE({ request, locals: { supabase, safeGetSession } }) 
 			}
 		});
 
-		// Delete from Supabase Auth (this will cascade to user_profiles via RLS)
+		// Try to delete from Supabase Auth first
 		const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+
+		// If user not found in auth, they might be a pending invite - just delete from user_profiles
+		if (deleteError && deleteError.code === 'user_not_found') {
+			console.log('User not found in auth, deleting from user_profiles only');
+
+			// Delete directly from user_profiles (will cascade to related tables)
+			const { error: profileDeleteError } = await adminSupabase
+				.from('user_profiles')
+				.delete()
+				.eq('id', userId);
+
+			if (profileDeleteError) {
+				console.error('Error deleting user profile:', profileDeleteError);
+				throw error(400, 'Failed to delete user profile');
+			}
+
+			return json({
+				success: true,
+				message: 'User profile deleted successfully'
+			});
+		}
 
 		if (deleteError) {
 			console.error('Delete error:', deleteError);
