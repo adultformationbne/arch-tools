@@ -13,20 +13,24 @@
 	let loading = $state(false);
 
 	let formData = $state({
-		full_name: profile?.full_name || '',
-		role: profile?.role || 'viewer'
+		full_name: profile?.full_name || ''
 	});
 
-	// Available roles
-	const roles = [
-		{ value: 'admin', label: 'Admin', description: 'Full platform access' },
-		{ value: 'editor', label: 'Editor', description: 'Content editor access' },
-		{ value: 'contributor', label: 'Contributor', description: 'Limited contributor access' },
-		{ value: 'viewer', label: 'Viewer', description: 'Read-only access' },
-		{ value: 'accf_admin', label: 'ACCF Admin', description: 'ACCF course administrator' },
-		{ value: 'accf_student', label: 'ACCF Student', description: 'ACCF course student' },
-		{ value: 'hub_coordinator', label: 'Hub Coordinator', description: 'ACCF hub coordinator' }
-	];
+	// Module labels for display
+	const moduleLabels = {
+		user_management: 'User Management',
+		dgr: 'Daily Gospel Reflections',
+		editor: 'Content Editor',
+		courses: 'Courses',
+		accf_admin: 'ACCF Admin'
+	};
+
+	// Role labels for display
+	const roleLabels = {
+		admin: 'Admin',
+		student: 'ACCF Student',
+		hub_coordinator: 'Hub Coordinator'
+	};
 
 	// Password change functionality
 	let showPasswordSection = $state(false);
@@ -192,27 +196,37 @@
 				</div>
 
 				<div>
-					<label for="role" class="block text-sm font-medium text-gray-700 mb-1">
+					<label class="block text-sm font-medium text-gray-700 mb-1">
 						<div class="flex items-center">
 							<Shield class="h-4 w-4 mr-1.5" />
 							Role
 						</div>
 					</label>
-					<select
-						id="role"
-						bind:value={formData.role}
-						class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-					>
-						{#each roles as role}
-							<option value={role.value}>
-								{role.label} - {role.description}
-							</option>
-						{/each}
-					</select>
+					<div class="mt-1 px-3 py-2 bg-gray-50 rounded-md border border-gray-300 text-sm text-gray-700">
+						{roleLabels[profile?.role] || profile?.role || 'No role assigned'}
+					</div>
 					<p class="mt-1 text-sm text-gray-500">
-						Changing your role will update your navigation menu and access permissions.
+						Your role determines your access level. Contact an administrator to request changes.
 					</p>
 				</div>
+
+				{#if profile?.role === 'admin' && profile?.modules?.length > 0}
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Module Access
+						</label>
+						<div class="flex flex-wrap gap-2">
+							{#each profile.modules as module}
+								<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+									{moduleLabels[module] || module}
+								</span>
+							{/each}
+						</div>
+						<p class="mt-2 text-sm text-gray-500">
+							These modules are available to you in the admin panel.
+						</p>
+					</div>
+				{/if}
 
 				<div class="flex justify-end">
 					<button

@@ -1071,11 +1071,3 @@ JOIN user_profiles up ON au.user_profile_id = up.id;
 5. **Consistent URLs** - `/courses/{program_slug}/...` for all programs
 6. **Program-scoped auth** - Check program access, not just authentication
 7. **Flexible permissions** - Role + optional granular permissions in JSONB
-
----
-
-Would you like me to:
-1. Build the program selector page?
-2. Create the platform admin dashboard?
-3. Build the course creator workflow?
-4. Implement the smart login routing?
