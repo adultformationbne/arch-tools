@@ -17,7 +17,13 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+.supabase_config
 
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Generated data (safe to regenerate)
+data/generated/
+# Keep source data in git
+!data/source/
