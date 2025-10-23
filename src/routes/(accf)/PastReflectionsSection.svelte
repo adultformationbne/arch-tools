@@ -72,7 +72,7 @@
 				<div class="w-3 h-3 rounded-full bg-green-400"></div>
 				<span class="opacity-75">
 					{reflectionsList.length} reflection{reflectionsList.length !== 1 ? 's' : ''} ·
-					{reflectionsList.filter(r => r.status === 'graded' || r.status === 'marked').length} with feedback
+					{reflectionsList.filter(r => r.status === 'graded' || r.status === 'passed').length} with feedback
 				</span>
 			</div>
 		</div>

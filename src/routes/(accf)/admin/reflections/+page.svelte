@@ -125,8 +125,7 @@
 				body: JSON.stringify({
 					reflection_id: selectedReflection.id,
 					feedback: markingForm.feedback.trim(),
-					grade: markingForm.passStatus,
-					status: markingForm.passStatus === 'pass' ? 'marked' : 'needs_revision'
+					grade: markingForm.passStatus
 				})
 			});
 

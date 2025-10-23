@@ -1,0 +1,275 @@
+action,ordo_date,ordo_name,ordo_season,ordo_week,ordo_rank,lectionary_admin_order,lectionary_current_name,lectionary_proposed_name,similarity,confidence
+RENAME,2025-01-03,Friday before Epiphany,Christmas,,Feast,134,Friday of the fourth week,Friday before Epiphany,0.55,MEDIUM
+RENAME,2025-01-04,Saturday before Epiphany,Christmas,,Feast,135,Saturday of the fourth week,Saturday before Epiphany,0.59,MEDIUM
+RENAME,2025-01-05,THE EPIPHANY OF THE LORD,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE EPIPHANY OF THE LORD,0.67,MEDIUM
+RENAME,2025-01-06,Monday after Epiphany,Christmas,,Feast,154,Monday of the eighth week,Monday after Epiphany,0.61,MEDIUM
+RENAME,2025-01-07,Tuesday after Epiphany,Christmas,,Feast,155,Tuesday of the eighth week,Tuesday after Epiphany,0.62,MEDIUM
+RENAME,2025-01-08,Wednesday after Epiphany,Christmas,,Feast,156,Wednesday of the eighth week,Wednesday after Epiphany,0.65,MEDIUM
+RENAME,2025-01-09,Thursday after Epiphany,Christmas,,Feast,157,Thursday of the eighth week,Thursday after Epiphany,0.64,MEDIUM
+RENAME,2025-01-10,Friday after Epiphany,Christmas,,Feast,158,Friday of the eighth week,Friday after Epiphany,0.61,MEDIUM
+RENAME,2025-01-11,Saturday after Epiphany,Christmas,,Feast,159,Saturday of the eighth week,Saturday after Epiphany,0.64,MEDIUM
+RENAME,2025-02-02,THE PRESENTATION OF THE LORD,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE PRESENTATION OF THE LORD,0.72,HIGH
+RENAME,2025-02-22,The Chair of St Peter,,,Feast,934,"THE ASCENSION OF THE LORD, Year C",The Chair of St Peter,0.52,MEDIUM
+RENAME,2025-03-05,Ash Wednesday,,,Feast,74,SIXTH SUNDAY,Ash Wednesday,0.56,MEDIUM
+RENAME,2025-03-06,Thursday after Ash Wednesday,,,Feast,145,Thursday of the sixth week,Thursday after Ash Wednesday,0.70,HIGH
+RENAME,2025-03-07,Friday after Ash Wednesday,,,Feast,146,Friday of the sixth week,Friday after Ash Wednesday,0.68,MEDIUM
+RENAME,2025-03-08,Saturday after Ash Wednesday,,,Feast,147,Saturday of the sixth week,Saturday after Ash Wednesday,0.70,HIGH
+RENAME,2025-03-25,THE ANNUNCIATION OF THE LORD,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE ANNUNCIATION OF THE LORD,0.69,MEDIUM
+RENAME,2025-04-14,Monday of Holy Week,Holy Week,,Feast,118,Monday of the second week,Monday of Holy Week,0.77,HIGH
+RENAME,2025-04-15,Tuesday of Holy Week,Holy Week,,Feast,119,Tuesday of the second week,Tuesday of Holy Week,0.78,HIGH
+RENAME,2025-04-16,Wednesday of Holy Week,Holy Week,,Feast,120,Wednesday of the second week,Wednesday of Holy Week,0.80,HIGH
+RENAME,2025-04-17,HOLY THURSDAY,,,Solemnity,72,FOURTH SUNDAY,HOLY THURSDAY,0.54,MEDIUM
+RENAME,2025-04-20,EASTER SUNDAY,,,Solemnity,71,THIRD SUNDAY,EASTER SUNDAY,0.72,HIGH
+RENAME,2025-04-21,Easter Monday,Easter,,Feast,944,"PENTECOST SUNDAY, Year C",Easter Monday,0.63,MEDIUM
+RENAME,2025-04-22,Easter Tuesday,Easter,,Feast,944,"PENTECOST SUNDAY, Year C",Easter Tuesday,0.62,MEDIUM
+RENAME,2025-04-23,Easter Wednesday,Easter,,Feast,944,"PENTECOST SUNDAY, Year C",Easter Wednesday,0.60,MEDIUM
+RENAME,2025-04-24,Easter Thursday,Easter,,Feast,934,"THE ASCENSION OF THE LORD, Year C",Easter Thursday,0.62,MEDIUM
+RENAME,2025-04-25,Easter Friday,Easter,,Feast,944,"PENTECOST SUNDAY, Year C",Easter Friday,0.58,MEDIUM
+RENAME,2025-04-26,Easter Saturday,Easter,,Feast,944,"PENTECOST SUNDAY, Year C",Easter Saturday,0.66,MEDIUM
+RENAME,2025-04-27,2 EASTER,Easter,2,Sunday,896,"THIRD SUNDAY OF EASTER, Year C",2 EASTER,0.57,MEDIUM
+RENAME,2025-05-04,3 EASTER,Easter,3,Sunday,896,"THIRD SUNDAY OF EASTER, Year C",3 EASTER,0.57,MEDIUM
+RENAME,2025-05-11,4 EASTER,Easter,4,Sunday,896,"THIRD SUNDAY OF EASTER, Year C",4 EASTER,0.57,MEDIUM
+RENAME,2025-05-18,5 EASTER,Easter,5,Sunday,896,"THIRD SUNDAY OF EASTER, Year C",5 EASTER,0.57,MEDIUM
+RENAME,2025-05-25,6 EASTER,Easter,6,Sunday,896,"THIRD SUNDAY OF EASTER, Year C",6 EASTER,0.57,MEDIUM
+RENAME,2025-06-08,PENTECOST,,,Solemnity,944,"PENTECOST SUNDAY, Year C",PENTECOST,0.55,MEDIUM
+RENAME,2025-06-09,"Mary, Mother of the Church",,,Feria,133,Thursday of the fourth week,"Mary, Mother of the Church",0.53,MEDIUM
+RENAME,2025-06-22,THE MOST HOLY BODY AND BLOOD OF CHRIST,,,Solemnity,110,"THE BODY AND BLOOD OF CHRIST, Year C",THE MOST HOLY BODY AND BLOOD OF CHRIST,0.76,HIGH
+RENAME,2025-08-06,The Transfiguration of the Lord,,,Feria,127,Thursday of the third week,The Transfiguration of the Lord,0.53,MEDIUM
+RENAME,2025-08-08,SAINT MARY OF THE CROSS,,,Solemnity,117,Saturday of the first week,SAINT MARY OF THE CROSS,0.61,MEDIUM
+RENAME,2025-08-15,THE ASSUMPTION OF THE BLESSED VIRGIN MARY,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE ASSUMPTION OF THE BLESSED VIRGIN MARY,0.59,MEDIUM
+RENAME,2025-09-14,THE EXALTATION OF THE HOLY CROSS,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE EXALTATION OF THE HOLY CROSS,0.62,MEDIUM
+RENAME,2025-09-15,Our Lady of Sorrows,,,Feast,905,"FOURTH SUNDAY OF EASTER, Year C",Our Lady of Sorrows,0.52,MEDIUM
+RENAME,2025-10-01,Saint Thérèse of the Child Jesus,,,Feria,127,Thursday of the third week,Saint Thérèse of the Child Jesus,0.59,MEDIUM
+RENAME,2025-10-07,Our Lady of the Rosary,,,Feria,115,Thursday of the first week,Our Lady of the Rosary,0.58,MEDIUM
+RENAME,2025-11-02,THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,0.56,MEDIUM
+RENAME,2025-11-09,THE DEDICATION OF THE LATERAN BASILICA,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE DEDICATION OF THE LATERAN BASILICA,0.59,MEDIUM
+RENAME,2025-11-10,Saint Leo the Great,,,Memorial,117,Saturday of the first week,Saint Leo the Great,0.53,MEDIUM
+RENAME,2025-12-08,THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,,,Solemnity,934,"THE ASCENSION OF THE LORD, Year C",THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,0.52,MEDIUM
+RENAME,2025-12-25,THE NATIVITY OF THE LORD,,,Solemnity,69,BAPTISM OF THE LORD,THE NATIVITY OF THE LORD,0.70,MEDIUM
+RENAME,2025-12-28,"THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",,,Solemnity,789,"HOLY FAMILY, Year C","THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",0.52,MEDIUM
+RENAME,2025-12-29,Fifth day in the octave of Christmas,Christmas,,Feast,858,"FIFTH SUNDAY IN LENT, Year C",Fifth day in the octave of Christmas,0.56,MEDIUM
+RENAME,2025-12-30,Sixth day in the octave of Christmas,Christmas,,Feast,813,"BAPTISM OF THE LORD, Year C",Sixth day in the octave of Christmas,0.55,MEDIUM
+RENAME,2025-12-31,Seventh day in the octave of Christmas,Christmas,,Feast,813,"BAPTISM OF THE LORD, Year C",Seventh day in the octave of Christmas,0.54,MEDIUM
+RENAME,2026-01-03,Saturday before Epiphany,Christmas,,Feast,135,Saturday of the fourth week,Saturday before Epiphany,0.59,MEDIUM
+RENAME,2026-01-04,THE EPIPHANY OF THE LORD,,,Solemnity,932,"THE ASCENSION OF THE LORD, Year A",THE EPIPHANY OF THE LORD,0.67,MEDIUM
+RENAME,2026-01-05,Monday after Epiphany,Christmas,,Feast,154,Monday of the eighth week,Monday after Epiphany,0.61,MEDIUM
+RENAME,2026-01-06,Tuesday after Epiphany,Christmas,,Feast,155,Tuesday of the eighth week,Tuesday after Epiphany,0.62,MEDIUM
+RENAME,2026-01-07,Wednesday after Epiphany,Christmas,,Feast,156,Wednesday of the eighth week,Wednesday after Epiphany,0.65,MEDIUM
+RENAME,2026-01-08,Thursday after Epiphany,Christmas,,Feast,157,Thursday of the eighth week,Thursday after Epiphany,0.64,MEDIUM
+RENAME,2026-01-09,Friday after Epiphany,Christmas,,Feast,158,Friday of the eighth week,Friday after Epiphany,0.61,MEDIUM
+RENAME,2026-01-10,Saturday after Epiphany,Christmas,,Feast,159,Saturday of the eighth week,Saturday after Epiphany,0.64,MEDIUM
+RENAME,2026-02-02,The Presentation of the Lord,,,Feria,127,Thursday of the third week,The Presentation of the Lord,0.56,MEDIUM
+RENAME,2026-02-18,Ash Wednesday,,,Feast,6,SIXTH SUNDAY,Ash Wednesday,0.56,MEDIUM
+RENAME,2026-02-19,Thursday after Ash Wednesday,,,Feast,145,Thursday of the sixth week,Thursday after Ash Wednesday,0.70,HIGH
+RENAME,2026-02-20,Friday after Ash Wednesday,,,Feast,146,Friday of the sixth week,Friday after Ash Wednesday,0.68,MEDIUM
+RENAME,2026-02-21,Saturday after Ash Wednesday,,,Feast,147,Saturday of the sixth week,Saturday after Ash Wednesday,0.70,HIGH
+RENAME,2026-03-25,THE ANNUNCIATION OF THE LORD,,,Solemnity,932,"THE ASCENSION OF THE LORD, Year A",THE ANNUNCIATION OF THE LORD,0.69,MEDIUM
+RENAME,2026-03-30,Monday of Holy Week,Holy Week,,Feast,118,Monday of the second week,Monday of Holy Week,0.77,HIGH
+RENAME,2026-03-31,Tuesday of Holy Week,Holy Week,,Feast,119,Tuesday of the second week,Tuesday of Holy Week,0.78,HIGH
+RENAME,2026-04-01,Wednesday of Holy Week,Holy Week,,Feast,120,Wednesday of the second week,Wednesday of Holy Week,0.80,HIGH
+RENAME,2026-04-02,HOLY THURSDAY,,,Solemnity,4,FOURTH SUNDAY,HOLY THURSDAY,0.54,MEDIUM
+RENAME,2026-04-05,EASTER SUNDAY,,,Solemnity,3,THIRD SUNDAY,EASTER SUNDAY,0.72,HIGH
+RENAME,2026-04-06,Easter Monday,Easter,,Feast,942,"PENTECOST SUNDAY, Year A",Easter Monday,0.63,MEDIUM
+RENAME,2026-04-07,Easter Tuesday,Easter,,Feast,942,"PENTECOST SUNDAY, Year A",Easter Tuesday,0.62,MEDIUM
+RENAME,2026-04-08,Easter Wednesday,Easter,,Feast,942,"PENTECOST SUNDAY, Year A",Easter Wednesday,0.60,MEDIUM
+RENAME,2026-04-09,Easter Thursday,Easter,,Feast,932,"THE ASCENSION OF THE LORD, Year A",Easter Thursday,0.62,MEDIUM
+RENAME,2026-04-10,Easter Friday,Easter,,Feast,894,"THIRD SUNDAY OF EASTER, Year A",Easter Friday,0.62,MEDIUM
+RENAME,2026-04-11,Easter Saturday,Easter,,Feast,942,"PENTECOST SUNDAY, Year A",Easter Saturday,0.66,MEDIUM
+RENAME,2026-04-12,2 EASTER,Easter,2,Sunday,894,"THIRD SUNDAY OF EASTER, Year A",2 EASTER,0.57,MEDIUM
+RENAME,2026-04-19,3 EASTER,Easter,3,Sunday,894,"THIRD SUNDAY OF EASTER, Year A",3 EASTER,0.57,MEDIUM
+RENAME,2026-04-26,4 EASTER,Easter,4,Sunday,894,"THIRD SUNDAY OF EASTER, Year A",4 EASTER,0.57,MEDIUM
+RENAME,2026-05-03,5 EASTER,Easter,5,Sunday,894,"THIRD SUNDAY OF EASTER, Year A",5 EASTER,0.57,MEDIUM
+RENAME,2026-05-10,6 EASTER,Easter,6,Sunday,894,"THIRD SUNDAY OF EASTER, Year A",6 EASTER,0.57,MEDIUM
+RENAME,2026-05-24,PENTECOST,,,Solemnity,942,"PENTECOST SUNDAY, Year A",PENTECOST,0.55,MEDIUM
+RENAME,2026-06-07,THE MOST HOLY BODY AND BLOOD OF CHRIST,,,Solemnity,104,"THE BODY AND BLOOD OF CHRIST, Year A",THE MOST HOLY BODY AND BLOOD OF CHRIST,0.76,HIGH
+RENAME,2026-08-06,The Transfiguration of the Lord,,,Feria,127,Thursday of the third week,The Transfiguration of the Lord,0.53,MEDIUM
+RENAME,2026-08-08,SAINT MARY OF THE CROSS,,,Solemnity,117,Saturday of the first week,SAINT MARY OF THE CROSS,0.61,MEDIUM
+RENAME,2026-08-15,THE ASSUMPTION OF THE BLESSED VIRGIN MARY,,,Solemnity,932,"THE ASCENSION OF THE LORD, Year A",THE ASSUMPTION OF THE BLESSED VIRGIN MARY,0.59,MEDIUM
+RENAME,2026-09-15,Our Lady of Sorrows,,,Feast,903,"FOURTH SUNDAY OF EASTER, Year A",Our Lady of Sorrows,0.52,MEDIUM
+RENAME,2026-10-01,Saint Thérèse of the Child Jesus,,,Feria,127,Thursday of the third week,Saint Thérèse of the Child Jesus,0.59,MEDIUM
+RENAME,2026-10-07,Our Lady of the Rosary,,,Feria,115,Thursday of the first week,Our Lady of the Rosary,0.58,MEDIUM
+RENAME,2026-11-02,THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,,,Solemnity,932,"THE ASCENSION OF THE LORD, Year A",THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED,0.56,MEDIUM
+RENAME,2026-11-09,The Dedication of the Lateran Basilica,,,Feria,167,Tuesday of the tenth week,The Dedication of the Lateran Basilica,0.51,MEDIUM
+RENAME,2026-11-10,Saint Leo the Great,,,Memorial,117,Saturday of the first week,Saint Leo the Great,0.53,MEDIUM
+RENAME,2026-12-08,THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,,,Solemnity,932,"THE ASCENSION OF THE LORD, Year A",THE IMMACULATE CONCEPTION OF THE BLESSED VIRGIN MARY,0.52,MEDIUM
+RENAME,2026-12-14,Saint John of the Cross,,,Feria,117,Saturday of the first week,Saint John of the Cross,0.53,MEDIUM
+RENAME,2026-12-25,THE NATIVITY OF THE LORD,,,Solemnity,1,BAPTISM OF THE LORD,THE NATIVITY OF THE LORD,0.70,MEDIUM
+RENAME,2026-12-27,"THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",,,Solemnity,787,"HOLY FAMILY, Year A","THE HOLY FAMILY OF JESUS, MARY, AND JOSEPH",0.56,MEDIUM
+RENAME,2026-12-29,Fifth day in the octave of Christmas,Christmas,,Feast,856,"FIFTH SUNDAY IN LENT, Year A",Fifth day in the octave of Christmas,0.53,MEDIUM
+RENAME,2026-12-30,Sixth day in the octave of Christmas,Christmas,,Feast,811,"BAPTISM OF THE LORD, Year A",Sixth day in the octave of Christmas,0.55,MEDIUM
+RENAME,2026-12-31,Seventh day in the octave of Christmas,Christmas,,Feast,811,"BAPTISM OF THE LORD, Year A",Seventh day in the octave of Christmas,0.54,MEDIUM
+,,,,,,,,,,
+ADD,2025-01-01,"SOLEMNITY OF MARY, THE HOLY MOTHER OF GOD",,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-01-02,Saint Basil and Gregory,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-01-17,Saint Anthony,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-01-21,Saint Agnes,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-01-24,Saint Francis de Sales,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-01-25,The Conversion of Saint Paul,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-01-28,Thomas Aquinas,,,Feast,C,Missing from Lectionary - needs manual addition
+ADD,2025-01-31,Saint John Bosco,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-02-05,Saint Agatha,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-02-06,Saints Paul Miki and Companions,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-02-10,Saint Scholastica,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-02-14,Saints Cyril and Methodius,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-03-09,1 LENT,Lent,1,Sunday,C,Missing from Lectionary - needs manual addition
+ADD,2025-03-16,2 LENT,Lent,2,Sunday,C,Missing from Lectionary - needs manual addition
+ADD,2025-03-17,SAINT PATRICK (NZ: Feast),,,Feast,C,Missing from Lectionary - needs manual addition
+ADD,2025-03-19,SAINT JOSEPH,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-03-23,3 LENT,Lent,3,Sunday,C,Missing from Lectionary - needs manual addition
+ADD,2025-03-30,4 LENT,Lent,4,Sunday,C,Missing from Lectionary - needs manual addition
+ADD,2025-04-06,5 LENT,Lent,5,Sunday,C,Missing from Lectionary - needs manual addition
+ADD,2025-04-18,GOOD FRIDAY,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-04-28,Saint Peter Chanel,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-04-29,Saint Catherine of Siena,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-05-02,Saint Athanasius,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-05-03,Saints Philip and James,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-05-14,Saint Matthias,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-05-24,"OUR LADY, HELP OF CHRISTIANS  (NZ: memorial)",,,Feast,C,Missing from Lectionary - needs manual addition
+ADD,2025-05-26,Saint Philip Neri,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-05-31,The Visitation of the Blessed Virgin Mary,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-03,Saint Charles Lwanga and companions,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-05,Saint Boniface,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-11,Saint Barnabas,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-13,Saint Anthony of Padua,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-15,THE MOST HOLY TRINITY,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-06-21,Saint Aloysius Gonzaga,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-06-24,THE NATIVITY OF SAINT JOHN THE BAPTIST,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-06-29,SAINTS PETER AND PAUL,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-07-03,Saint Thomas,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-11,Saint Benedict,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-15,Saint Bonaventure,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-22,Saint Mary Magdalene,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-25,Saint James,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-26,Saints Joachim and Anne,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-29,"Saints Martha, Mary and Lazarus",,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-07-31,Saint Ignatius Loyola,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-01,Saint Alphonsus Liguori,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-04,Saint John Vianney,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-11,Saint Clare,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-14,Saint Maximilian Kolbe,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-20,Saint Bernard,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-21,Saint Pius X,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-22,The Queenship of the Blessed Virgin Mary,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-27,Saint Monica,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-28,Saint Augustine,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-08-29,The Passion of Saint John the Baptist,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-03,Saint Gregory the Great,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-08,The Nativity of the Blessed Virgin Mary,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-13,Saint John Chrysostom,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-16,Saints Cornelius and Cyprian,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-20,Saints Andrew Kim Taegon and Paul Chong Hasang and companions,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-23,Saint Pius of Pietrelcina,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-27,Saint Vincent de Paul,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-29,"Saints Michael, Gabriel and Raphael",,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-09-30,Saint Jerome,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-10-02,The Holy Guardian Angels,,,Feast,C,Missing from Lectionary - needs manual addition
+ADD,2025-10-04,Saint Francis of Assisi,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-10-15,Saint Teresa of Jesus,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-10-17,Saint Ignatius of Antioch,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-10-18,Saint Luke,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-10-28,Saints Simon and Jude,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-01,ALL SAINTS,,,Solemnity,C,Missing from Lectionary - needs manual addition
+ADD,2025-11-04,Saint Charles Borromeo,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-11,Saint Martin of Tours,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-12,Saint Josaphat,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-17,Saint Elizabeth of Hungary,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-21,The Presentation of the Blessed Virgin Mary,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-22,Saint Cecilia,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-11-24,Saint Andrew Dũng-Lạc and Companions,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-03,Saint Francis Xavier,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-13,Saint Lucy,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-17,17 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-18,18 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-19,19 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-20,20 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-22,22 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-23,23 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-24,24 December,,,Feria,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-26,Saint Stephen,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2025-12-27,Saint John,,,Memorial,1,Missing from Lectionary - needs manual addition
+ADD,2026-01-01,"SOLEMNITY OF MARY, THE HOLY MOTHER OF GOD",,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-01-02,Saint Basil and Gregory,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-01-17,Saint Anthony,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-01-21,Saint Agnes,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-01-24,Saint Francis de Sales,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-01-26,Australia Day,,,Feast,A,Missing from Lectionary - needs manual addition
+ADD,2026-01-28,Saint Thomas Aquinas,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-01-31,Saint John Bosco,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-02-05,Saint Agatha,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-02-06,Saints Paul Miki and Companions,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-02-10,Saint Scholastica,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-02-14,Saints Cyril and Methodius,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-02-22,1 LENT,Lent,1,Sunday,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-01,2 LENT,Lent,2,Sunday,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-08,3 LENT,Lent,3,Sunday,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-15,4 LENT,Lent,4,Sunday,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-17,SAINT PATRICK  (NZ: feast),,,Feast,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-19,"SAINT JOSEPH, SPOUSE OF THE BLESSED VIRGIN MARY",,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-03-22,5 LENT,Lent,5,Sunday,A,Missing from Lectionary - needs manual addition
+ADD,2026-04-03,GOOD FRIDAY,,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-04-25,Anzac Day,,,Feast,A,Missing from Lectionary - needs manual addition
+ADD,2026-04-28,Saint Peter Chanel,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-04-29,Saint Catherine of Siena,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-05-02,Saint Athanasius,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-05-14,Saint Matthias,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-05-25,"OUR LADY, HELP OF CHRISTIANS  (NZ: memorial)",,,Feast,A,Missing from Lectionary - needs manual addition
+ADD,2026-05-26,Saint Philip Neri,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-05-31,THE MOST HOLY TRINITY,,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-06-01,Saint Justin,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-06-03,Saint Charles Lwanga,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-06-05,Saint Boniface,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-06-11,Saint Barnabas,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-06-22,Saints John Fisher and Thomas More,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-06-24,THE NATIVITY OF SAINT JOHN THE BAPTIST,,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-06-29,SAINTS PETER AND PAUL,,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-07-03,Saint Thomas,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-11,Saint Benedict,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-15,Saint Bonaventure,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-22,Saint Mary Magdalene,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-25,Saint James,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-29,"Saints Martha, Mary and Lazarus",,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-07-31,Saint Ignatius Loyola,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-01,Saint Alphonsus Liguori,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-03,Saint Dominic,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-04,Saint John Vianney,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-10,Saint Lawrence,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-11,Saint Clare,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-14,Saint Maximilian Kolbe,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-20,Saint Bernard,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-21,Saint Pius X,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-22,The Queenship of the Blessed Virgin Mary,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-24,Saint Bartholomew,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-27,Saint Monica,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-28,Saint Augustine,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-08-29,The Passion of Saint John the Baptist,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-03,Saint Gregory the Great,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-08,The Nativity of the Blessed Virgin Mary,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-14,The Exaltation of the Holy Cross,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-16,Saints Cornelius and Cyprian,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-21,Saint Matthew,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-23,Saint Pius of Pietrelcina,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-29,"Saints Michael, Gabriel and Raphael",,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-09-30,Saint Jerome,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-10-02,The Holy Guardian Angels,,,Feast,A,Missing from Lectionary - needs manual addition
+ADD,2026-10-15,Saint Teresa of Jesus,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-10-17,Saint Ignatius of Antioch,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-10-28,Saints Simon and Jude,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-01,ALL SAINTS,,,Solemnity,A,Missing from Lectionary - needs manual addition
+ADD,2026-11-04,Saint Charles Borromeo,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-11,Saint Martin of Tours,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-12,Saint Josaphat,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-17,Saint Elizabeth of Hungary,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-21,The Presentation of the Blessed Virgin Mary,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-24,Saint Andrew Dũng-Lạc and Companions,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-11-30,Saint Andrew,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-03,Saint Francis Xavier,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-07,Saint Ambrose,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-17,17 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-18,18 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-19,19 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-21,21 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-22,22 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-23,23 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-24,24 December,,,Feria,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-26,Saint Stephen,,,Memorial,2,Missing from Lectionary - needs manual addition
+ADD,2026-12-28,The Holy Innocents,,,Feast,A,Missing from Lectionary - needs manual addition

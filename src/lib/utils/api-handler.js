@@ -205,13 +205,20 @@ export async function apiPut(url, data, config = {}) {
 /**
  * Convenience method for DELETE requests
  * @param {string} url - The URL to fetch
+ * @param {Object} data - Optional data to send in request body
  * @param {Object} config - Configuration options
  * @returns {Promise<any>} The response data
  */
-export async function apiDelete(url, config = {}) {
+export async function apiDelete(url, data = null, config = {}) {
+	const options = { method: 'DELETE' };
+
+	if (data) {
+		options.body = JSON.stringify(data);
+	}
+
 	return apiRequest(
 		url,
-		{ method: 'DELETE' },
+		options,
 		{
 			loadingMessage: 'Deleting...',
 			successMessage: 'Deleted successfully',

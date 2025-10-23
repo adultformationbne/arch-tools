@@ -1,22 +1,30 @@
 <script lang="ts">
-	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound } from 'lucide-svelte';
-	import { apiPost, supabaseRequest } from '$lib/utils/api-handler.js';
-	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
+	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send } from 'lucide-svelte';
+	import { apiPost, apiDelete, apiPut, supabaseRequest } from '$lib/utils/api-handler.js';
+	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus, toastSuccess } from '$lib/utils/toast-helpers.js';
 
 	export let data;
-	let { supabase, users, currentUser } = data;
+	let { supabase, users, currentUser, currentUserProfile } = data;
 
 	let editingUserId = null;
-	let editingRole = '';
+	let editingModules = [];
 	let loading = false;
+
+	// Available modules for selection
+	const availableModules = [
+		{ id: 'user_management', name: 'User Management', description: 'Create and manage admin users' },
+		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
+		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
+		{ id: 'courses', name: 'Courses', description: 'Manage course content' },
+		{ id: 'accf_admin', name: 'ACCF Admin', description: 'Manage ACCF cohorts and students' }
+	];
 
 	// New user form
 	let showNewUserForm = false;
 	let newUser = {
 		email: '',
-		password: '',
 		full_name: '',
-		role: 'viewer'
+		modules: []
 	};
 	let createUserLoading = false;
 
@@ -26,29 +34,43 @@
 	let resetPasswordLoading = false;
 	let newPassword = '';
 
-	function startEdit(userId: string, currentRole: string) {
+	// Delete confirmation
+	let showDeleteModal = false;
+	let deleteUserId = null;
+	let deleteUserEmail = '';
+	let deleteLoading = false;
+
+	function startEdit(userId: string, currentModules: string[]) {
 		editingUserId = userId;
-		editingRole = currentRole;
+		editingModules = [...currentModules];
 	}
 
 	function cancelEdit() {
 		editingUserId = null;
-		editingRole = '';
+		editingModules = [];
 	}
 
-	async function saveRole(userId: string) {
+	function toggleModule(moduleId: string) {
+		if (editingModules.includes(moduleId)) {
+			editingModules = editingModules.filter(m => m !== moduleId);
+		} else {
+			editingModules = [...editingModules, moduleId];
+		}
+	}
+
+	async function savePermissions(userId: string) {
 		loading = true;
 
 		try {
 			await supabaseRequest(
 				() => supabase
 					.from('user_profiles')
-					.update({ role: editingRole })
+					.update({ modules: editingModules })
 					.eq('id', userId),
 				{
 					loadingMessage: 'Saving user permissions',
-					loadingTitle: 'Updating role...',
-					successMessage: 'User role updated successfully',
+					loadingTitle: 'Updating permissions...',
+					successMessage: 'User permissions updated successfully',
 					successTitle: 'Success!'
 				}
 			);
@@ -56,47 +78,51 @@
 			// Update local state
 			const userIndex = users.findIndex(u => u.id === userId);
 			if (userIndex !== -1) {
-				users[userIndex].role = editingRole;
+				users[userIndex].modules = editingModules;
 			}
 
 			cancelEdit();
 		} catch (error) {
-			console.error('Error updating role:', error);
+			console.error('Error updating permissions:', error);
 		} finally {
 			loading = false;
 		}
 	}
 
-	const roleColors = {
-		admin: 'bg-red-100 text-red-800',
-		editor: 'bg-blue-100 text-blue-800',
-		contributor: 'bg-green-100 text-green-800',
-		viewer: 'bg-gray-100 text-gray-800'
-	};
+	function getModuleBadgeColor(moduleId: string) {
+		const colors = {
+			'user_management': 'bg-purple-100 text-purple-800',
+			'dgr': 'bg-blue-100 text-blue-800',
+			'editor': 'bg-green-100 text-green-800',
+			'courses': 'bg-yellow-100 text-yellow-800',
+			'accf_admin': 'bg-red-100 text-red-800'
+		};
+		return colors[moduleId] || 'bg-gray-100 text-gray-800';
+	}
 
 	async function createNewUser() {
 		createUserLoading = true;
 
 		const toastId = toastMultiStep([
 			{
-				title: 'Creating user...',
+				title: 'Creating invitation...',
 				message: 'Setting up new account',
 				type: 'info'
 			},
 			{
-				title: 'Configuring permissions...',
-				message: 'Applying user role',
+				title: 'Sending email...',
+				message: 'Sending magic link to user',
 				type: 'loading'
 			},
 			{
-				title: 'Complete!',
-				message: 'New user created successfully',
+				title: 'Invitation sent!',
+				message: `Magic link sent to ${newUser.email}`,
 				type: 'success'
 			}
 		], false);
 
 		try {
-			// Create user via API endpoint
+			// Create user via API endpoint (sends invitation)
 			const result = await apiPost('/api/admin/users', newUser, {
 				showToast: false // We're handling the multi-step toast manually
 			});
@@ -111,21 +137,20 @@
 			// Reset form
 			newUser = {
 				email: '',
-				password: '',
 				full_name: '',
-				role: 'viewer'
+				modules: []
 			};
 			showNewUserForm = false;
 
-			// Auto-dismiss success toast after 3 seconds
-			setTimeout(() => dismissToast(toastId), 3000);
+			// Auto-dismiss success toast after 5 seconds
+			setTimeout(() => dismissToast(toastId), 5000);
 		} catch (error) {
 			console.error('Error creating user:', error);
 			updateToastStatus(
 				toastId,
 				'error',
-				error.message || 'Failed to create user',
-				'User Creation Failed',
+				error.message || 'Failed to send invitation',
+				'Invitation Failed',
 				5000
 			);
 		} finally {
@@ -169,6 +194,54 @@
 			resetPasswordLoading = false;
 		}
 	}
+
+	function confirmDelete(userId: string, userEmail: string) {
+		deleteUserId = userId;
+		deleteUserEmail = userEmail;
+		showDeleteModal = true;
+	}
+
+	async function deleteUser() {
+		deleteLoading = true;
+
+		try {
+			await apiDelete(
+				'/api/admin/users',
+				{ userId: deleteUserId },
+				{
+					loadingMessage: 'Removing user from system',
+					loadingTitle: 'Deleting user...',
+					successMessage: `User ${deleteUserEmail} deleted successfully`,
+					successTitle: 'User Deleted'
+				}
+			);
+
+			// Remove from local state
+			users = users.filter(u => u.id !== deleteUserId);
+			showDeleteModal = false;
+		} catch (error) {
+			console.error('Error deleting user:', error);
+		} finally {
+			deleteLoading = false;
+		}
+	}
+
+	async function resendInvitation(userId: string, userEmail: string) {
+		try {
+			await apiPut(
+				'/api/admin/users',
+				{ userId, action: 'resend_invitation' },
+				{
+					loadingMessage: 'Resending invitation email',
+					loadingTitle: 'Sending...',
+					successMessage: `Invitation resent to ${userEmail}`,
+					successTitle: 'Invitation Sent'
+				}
+			);
+		} catch (error) {
+			console.error('Error resending invitation:', error);
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50 py-8">
@@ -200,7 +273,7 @@
 								User
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Role
+								Module Access
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Organization
@@ -232,22 +305,35 @@
 										</div>
 									</div>
 								</td>
-								<td class="px-6 py-4 whitespace-nowrap">
+								<td class="px-6 py-4">
 									{#if editingUserId === user.id}
-										<select
-											bind:value={editingRole}
-											class="text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-											disabled={user.id === currentUser.id}
-										>
-											<option value="admin">Admin</option>
-											<option value="editor">Editor</option>
-											<option value="contributor">Contributor</option>
-											<option value="viewer">Viewer</option>
-										</select>
+										<div class="space-y-2">
+											{#each availableModules as module}
+												<label class="flex items-center space-x-2 cursor-pointer">
+													<input
+														type="checkbox"
+														checked={editingModules.includes(module.id)}
+														on:change={() => toggleModule(module.id)}
+														disabled={user.id === currentUser.id && module.id === 'user_management'}
+														class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+													/>
+													<span class="text-sm text-gray-700">{module.name}</span>
+												</label>
+											{/each}
+										</div>
 									{:else}
-										<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {roleColors[user.role]}">
-											{user.role}
-										</span>
+										<div class="flex flex-wrap gap-1">
+											{#if user.modules && user.modules.length > 0}
+												{#each user.modules as moduleId}
+													{@const module = availableModules.find(m => m.id === moduleId)}
+													<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getModuleBadgeColor(moduleId)}">
+														{module?.name || moduleId}
+													</span>
+												{/each}
+											{:else}
+												<span class="text-sm text-gray-400 italic">No modules</span>
+											{/if}
+										</div>
 									{/if}
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -258,29 +344,39 @@
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
 									{#if editingUserId === user.id}
-										<button
-											on:click={() => saveRole(user.id)}
-											disabled={loading}
-											class="text-green-600 hover:text-green-900 mr-3"
-										>
-											<Save class="h-4 w-4" />
-										</button>
-										<button
-											on:click={cancelEdit}
-											disabled={loading}
-											class="text-gray-600 hover:text-gray-900"
-										>
-											<X class="h-4 w-4" />
-										</button>
+										<div class="flex items-center space-x-2">
+											<button
+												on:click={() => savePermissions(user.id)}
+												disabled={loading}
+												class="text-green-600 hover:text-green-900"
+												title="Save permissions"
+											>
+												<Save class="h-4 w-4" />
+											</button>
+											<button
+												on:click={cancelEdit}
+												disabled={loading}
+												class="text-gray-600 hover:text-gray-900"
+												title="Cancel"
+											>
+												<X class="h-4 w-4" />
+											</button>
+										</div>
 									{:else}
 										<div class="flex items-center space-x-2">
 											<button
-												on:click={() => startEdit(user.id, user.role)}
-												disabled={user.id === currentUser.id}
-												class="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed"
-												title={user.id === currentUser.id ? "You cannot edit your own role" : "Edit role"}
+												on:click={() => startEdit(user.id, user.modules || [])}
+												class="text-blue-600 hover:text-blue-900"
+												title="Edit permissions"
 											>
 												<Edit2 class="h-4 w-4" />
+											</button>
+											<button
+												on:click={() => resendInvitation(user.id, user.email)}
+												class="text-green-600 hover:text-green-900"
+												title="Resend invitation"
+											>
+												<Send class="h-4 w-4" />
 											</button>
 											<button
 												on:click={() => showPasswordReset(user.id)}
@@ -288,6 +384,14 @@
 												title="Reset password"
 											>
 												<KeyRound class="h-4 w-4" />
+											</button>
+											<button
+												on:click={() => confirmDelete(user.id, user.email)}
+												disabled={user.id === currentUser.id}
+												class="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+												title={user.id === currentUser.id ? "Cannot delete yourself" : "Delete user"}
+											>
+												<Trash2 class="h-4 w-4" />
 											</button>
 										</div>
 									{/if}
@@ -300,25 +404,20 @@
 		</div>
 
 		<div class="mt-8 bg-white shadow rounded-lg p-6">
-			<h2 class="text-lg font-semibold text-gray-900 mb-4">Role Permissions</h2>
+			<h2 class="text-lg font-semibold text-gray-900 mb-4">Available Modules</h2>
 			<div class="space-y-3">
-				<div>
-					<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>
-					<span class="ml-2 text-sm text-gray-600">Full system access, user management, all features</span>
-				</div>
-				<div>
-					<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Editor</span>
-					<span class="ml-2 text-sm text-gray-600">Edit content, manage DGR, create and publish</span>
-				</div>
-				<div>
-					<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Contributor</span>
-					<span class="ml-2 text-sm text-gray-600">Submit DGR reflections, view content</span>
-				</div>
-				<div>
-					<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Viewer</span>
-					<span class="ml-2 text-sm text-gray-600">Read-only access to public content</span>
-				</div>
+				{#each availableModules as module}
+					<div>
+						<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getModuleBadgeColor(module.id)}">
+							{module.name}
+						</span>
+						<span class="ml-2 text-sm text-gray-600">{module.description}</span>
+					</div>
+				{/each}
 			</div>
+			<p class="mt-4 text-sm text-gray-500">
+				Users can be granted access to one or more modules. Each module grants full admin access to that feature area.
+			</p>
 		</div>
 	</div>
 </div>
@@ -328,11 +427,14 @@
 	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
 		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 			<div class="mt-3">
-				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
+				<h3 class="text-lg font-medium text-gray-900 mb-2">Invite New Admin User</h3>
+				<p class="text-sm text-gray-600 mb-4">
+					An invitation email with a magic link will be sent to set up their account.
+				</p>
 
 				<form on:submit|preventDefault={createNewUser} class="space-y-4">
 					<div>
-						<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+						<label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
 						<input
 							type="email"
 							id="email"
@@ -341,19 +443,7 @@
 							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
 							placeholder="user@example.com"
 						/>
-					</div>
-
-					<div>
-						<label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-						<input
-							type="password"
-							id="password"
-							bind:value={newUser.password}
-							required
-							minlength="6"
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-							placeholder="Minimum 6 characters"
-						/>
+						<p class="mt-1 text-xs text-gray-500">They'll receive a magic link to set their password</p>
 					</div>
 
 					<div>
@@ -368,19 +458,30 @@
 					</div>
 
 					<div>
-						<label for="role" class="block text-sm font-medium text-gray-700">Role</label>
-						<select
-							id="role"
-							bind:value={newUser.role}
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-						>
-							<option value="viewer">Viewer</option>
-							<option value="contributor">Contributor</option>
-							<option value="editor">Editor</option>
-							<option value="admin">Admin</option>
-						</select>
+						<label class="block text-sm font-medium text-gray-700 mb-2">Module Access</label>
+						<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
+							{#each availableModules as module}
+								<label class="flex items-start space-x-2 cursor-pointer">
+									<input
+										type="checkbox"
+										checked={newUser.modules.includes(module.id)}
+										on:change={() => {
+											if (newUser.modules.includes(module.id)) {
+												newUser.modules = newUser.modules.filter(m => m !== module.id);
+											} else {
+												newUser.modules = [...newUser.modules, module.id];
+											}
+										}}
+										class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+									/>
+									<div>
+										<div class="text-sm font-medium text-gray-700">{module.name}</div>
+										<div class="text-xs text-gray-500">{module.description}</div>
+									</div>
+								</label>
+							{/each}
+						</div>
 					</div>
-
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
@@ -396,7 +497,7 @@
 							disabled={createUserLoading}
 							class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 						>
-							{createUserLoading ? 'Creating...' : 'Create User'}
+							{createUserLoading ? 'Sending Invitation...' : 'Send Invitation'}
 						</button>
 					</div>
 				</form>
@@ -453,6 +554,45 @@
 						</button>
 					</div>
 				</form>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteModal}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+					<Trash2 class="h-6 w-6 text-red-600" />
+				</div>
+				<h3 class="text-lg font-medium text-gray-900 text-center mb-2">Delete User</h3>
+				<p class="text-sm text-gray-600 text-center mb-4">
+					Are you sure you want to delete <strong>{deleteUserEmail}</strong>?
+				</p>
+				<p class="text-sm text-red-600 text-center mb-6">
+					This action cannot be undone. All user data will be permanently removed.
+				</p>
+
+				<div class="flex justify-end space-x-3">
+					<button
+						type="button"
+						on:click={() => showDeleteModal = false}
+						disabled={deleteLoading}
+						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						on:click={deleteUser}
+						disabled={deleteLoading}
+						class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+					>
+						{deleteLoading ? 'Deleting...' : 'Delete User'}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>

@@ -1,6 +1,5 @@
 <script>
 	import { X, Save, CheckCircle, FileText, Calendar, User, Send } from 'lucide-svelte';
-	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 
@@ -13,12 +12,14 @@
 	} = $props();
 
 	let editedTitle = $state('');
+	let editedGospelQuote = $state('');
 	let editedContent = $state('');
 	let isSaving = $state(false);
 
 	$effect(() => {
 		if (reflection) {
 			editedTitle = reflection.reflection_title || '';
+			editedGospelQuote = reflection.gospel_quote || '';
 			editedContent = reflection.reflection_content || '';
 		}
 	});
@@ -29,6 +30,7 @@
 			await onSave({
 				id: reflection.id,
 				reflection_title: editedTitle,
+				gospel_quote: editedGospelQuote,
 				reflection_content: editedContent
 			});
 
@@ -148,39 +150,73 @@
 
 		<!-- Content area -->
 		<div class="flex-1 overflow-y-auto p-6">
-			<!-- Gospel Reading Display -->
-			{#if reflection.liturgical_date || reflection.gospel_reference}
-				<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-					<h3 class="mb-2 font-semibold text-gray-800">Gospel Context</h3>
+			<!-- Readings Context Display -->
+			{#if reflection.liturgical_date || reflection.readings_data}
+				<div class="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+					<h3 class="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+						<FileText class="h-5 w-5 text-indigo-600" />
+						Liturgical Readings
+					</h3>
+
 					{#if reflection.liturgical_date}
-						<p class="text-sm font-medium text-purple-700">{reflection.liturgical_date}</p>
+						<p class="mb-2 text-sm font-medium text-indigo-900">{reflection.liturgical_date}</p>
 					{/if}
-					{#if reflection.gospel_reference}
-						<p class="mt-1 text-sm text-gray-700">
-							{decodeHtmlEntities(reflection.gospel_reference)}
-						</p>
+
+					{#if reflection.readings_data}
+						<div class="mt-2 space-y-1 text-sm text-gray-700">
+							{#if reflection.readings_data.combined_sources}
+								<p><span class="font-medium">Readings:</span> {decodeHtmlEntities(reflection.readings_data.combined_sources)}</p>
+							{/if}
+							{#if reflection.readings_data.gospel?.source}
+								<p><span class="font-medium">Gospel:</span> {decodeHtmlEntities(reflection.readings_data.gospel.source)}</p>
+							{/if}
+						</div>
 					{/if}
 				</div>
 			{/if}
 
 			<!-- Title field -->
-			<div class="mb-6">
-				<label for="reflection-title" class="mb-2 block text-sm font-medium text-gray-700"> Reflection Title </label>
+			<div class="mb-4">
+				<label for="reflection-title" class="mb-2 block text-sm font-medium text-gray-700">
+					Reflection Title <span class="text-red-500">*</span>
+				</label>
 				<input
 					id="reflection-title"
 					type="text"
 					bind:value={editedTitle}
+					required
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#009199] focus:outline-none"
 					placeholder="Enter a title for the reflection..."
 				/>
 			</div>
 
+			<!-- Gospel Quote field -->
+			<div class="mb-4">
+				<label for="gospel-quote" class="mb-2 block text-sm font-medium text-gray-700">
+					Gospel Quote <span class="text-red-500">*</span>
+				</label>
+				<input
+					id="gospel-quote"
+					type="text"
+					bind:value={editedGospelQuote}
+					required
+					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#009199] focus:outline-none"
+					placeholder="e.g., 'Woe to you!' (Luke 11:47)"
+				/>
+				<p class="mt-1 text-xs text-gray-500">
+					Short quote from the Gospel reading selected by the author
+				</p>
+			</div>
+
 			<!-- Content editor -->
 			<div class="mb-6">
-				<label for="reflection-content" class="mb-2 block text-sm font-medium text-gray-700"> Reflection Content </label>
+				<label for="reflection-content" class="mb-2 block text-sm font-medium text-gray-700">
+					Reflection Content <span class="text-red-500">*</span>
+				</label>
 				<textarea
 					id="reflection-content"
 					bind:value={editedContent}
+					required
 					placeholder="Edit the reflection content..."
 					class="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 leading-relaxed text-gray-800 focus:border-transparent focus:ring-2 focus:ring-[#009199] focus:outline-none"
 					rows="15"
@@ -213,9 +249,6 @@
 				</button>
 
 				<div class="flex gap-3">
-					<!-- Debug info (remove later) -->
-					<span class="text-xs text-gray-500">Status: {reflection.status}</span>
-					
 					{#if reflection.status === 'approved' || reflection.status === 'Approved'}
 						<!-- Approved reflections can be edited and sent to WordPress -->
 						<button

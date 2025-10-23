@@ -3,34 +3,61 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRReviewModal from '$lib/components/DGRReviewModal.svelte';
 	import DGRScheduleTable from '$lib/components/DGRScheduleTable.svelte';
-	import DGRScheduleGenerator from '$lib/components/DGRScheduleGenerator.svelte';
 	import DGRContributorManager from '$lib/components/DGRContributorManager.svelte';
 	import DGRPromoTilesEditor from '$lib/components/DGRPromoTilesEditor.svelte';
+	import DGRAssignmentRules from '$lib/components/DGRAssignmentRules.svelte';
+	import DGRForm from '$lib/components/DGRForm.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
+	import { getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
+	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
 	import { onMount } from 'svelte';
-	import { Eye, Send, ExternalLink, Trash2 } from 'lucide-svelte';
+	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
 
 	let schedule = $state([]);
 	let contributors = $state([]);
+	let assignmentRules = $state([]);
 	let loading = $state(true);
 	let activeTab = $state('schedule');
 	let reviewModalOpen = $state(false);
 	let selectedReflection = $state(null);
 	let confirmDeleteModal = $state({ open: false, entry: null });
-	
+	let editReadingsModal = $state({
+		open: false,
+		entry: null,
+		firstReading: '',
+		psalm: '',
+		secondReading: '',
+		gospel: ''
+	});
+
+	// Quick Add modal state
+	let quickAddModalOpen = $state(false);
+	let quickAddEntry = $state(null);
+	let quickAddFormData = $state(getInitialDGRFormData());
+	let quickAddSaving = $state(false);
+	let quickAddResult = $state(null);
+	let quickAddUseNewDesign = $state(true);
+	let quickAddFetchingGospel = $state(false);
+	let quickAddGospelFullText = $state('');
+	let quickAddGospelReference = $state('');
+
 	// Promo tiles state - start with 1 tile, can add up to 3
 	let promoTiles = $state([
 		{ position: 1, image_url: '', title: '', link_url: '' }
 	]);
 	let savingTiles = $state(false);
 
+	// Filter state
+	let scheduleFilter = $state('all'); // 'all' or 'submissions'
+	let scheduleDays = $state(90); // Show 90 days by default
+
 	// Form states
 	let generateForm = $state({
 		startDate: new Date().toISOString().split('T')[0],
-		days: 14
+		days: 30
 	});
 
 	let newContributor = $state({
@@ -57,13 +84,13 @@
 	];
 
 	onMount(async () => {
-		await Promise.all([loadSchedule(), loadContributors(), loadPromoTiles()]);
+		await Promise.all([loadSchedule(), loadContributors(), loadPromoTiles(), loadAssignmentRules()]);
 		loading = false;
 	});
 
 	async function loadSchedule() {
 		try {
-			const response = await fetch('/api/dgr-admin/schedule?days=30');
+			const response = await fetch(`/api/dgr-admin/schedule?days=${scheduleDays}`);
 			const data = await response.json();
 
 			if (data.error) throw new Error(data.error);
@@ -76,6 +103,16 @@
 			});
 		}
 	}
+
+	// Computed filtered schedule based on filter selection
+	let filteredSchedule = $derived(
+		scheduleFilter === 'submissions'
+			? schedule.filter(
+					(entry) =>
+						entry.reflection_content || entry.status === 'submitted' || entry.status === 'approved' || entry.status === 'published'
+				)
+			: schedule
+	);
 
 	async function loadContributors() {
 		try {
@@ -99,7 +136,7 @@
 			const data = await response.json();
 
 			if (data.error) throw new Error(data.error);
-			
+
 			// Update the promoTiles array with fetched data
 			if (data.tiles && data.tiles.length > 0) {
 				// Only include tiles that have image URLs (not empty ones)
@@ -118,6 +155,23 @@
 			}
 		} catch (error) {
 			console.error('Failed to load promo tiles:', error);
+		}
+	}
+
+	async function loadAssignmentRules() {
+		try {
+			const response = await fetch('/api/dgr-admin/assignment-rules');
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+			assignmentRules = data.rules || [];
+		} catch (error) {
+			console.error('Failed to load assignment rules:', error);
+			toast.error({
+				title: 'Failed to load rules',
+				message: error.message,
+				duration: 3000
+			});
 		}
 	}
 
@@ -433,8 +487,58 @@
 		reviewModalOpen = true;
 	}
 
+	async function getReadingsForSchedule(entry) {
+		const loadingId = toast.loading({
+			title: 'Fetching readings...',
+			message: 'Loading liturgical readings for ' + formatDate(entry.date)
+		});
+
+		try {
+			const requestBody = {
+				date: entry.date
+			};
+
+			// For existing entries, pass schedule_id
+			if (entry.id) {
+				requestBody.schedule_id = entry.id;
+			}
+
+			// For pattern-based entries, pass contributor_id to create new entry
+			if (entry.from_pattern && entry.contributor_id) {
+				requestBody.contributor_id = entry.contributor_id;
+			}
+
+			const response = await fetch('/api/dgr/readings', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(requestBody)
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Readings loaded!',
+				message: `${data.readings.liturgical_name || data.readings.liturgical_day || 'Readings'} fetched successfully`,
+				type: 'success',
+				duration: 3000
+			});
+
+			// Reload schedule to show updated readings
+			await loadSchedule();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Failed to fetch readings',
+				message: error.message,
+				type: 'error',
+				duration: 5000
+			});
+		}
+	}
+
 	function getSubmissionUrl(token) {
-		return `${window.location.origin}/dgr/submit/${token}`;
+		return `${window.location.origin}/dgr/write/${token}`;
 	}
 
 	function copySubmissionUrl(token) {
@@ -442,7 +546,7 @@
 		navigator.clipboard.writeText(url).then(() => {
 			toast.success({
 				title: 'Copied!',
-				message: 'Submission link copied to clipboard',
+				message: 'Contributor link copied to clipboard',
 				duration: DURATIONS.short
 			});
 		}).catch(() => {
@@ -481,6 +585,90 @@
 
 	function closeDeleteConfirm() {
 		confirmDeleteModal = { open: false, entry: null };
+	}
+
+	function openEditReadings(entry) {
+		// Extract readings from readings_data if available
+		const readingsData = entry.readings_data || {};
+
+		editReadingsModal = {
+			open: true,
+			entry,
+			firstReading: readingsData.first_reading?.source || '',
+			psalm: readingsData.psalm?.source || '',
+			secondReading: readingsData.second_reading?.source || '',
+			gospel: readingsData.gospel?.source || entry.gospel_reference || ''
+		};
+	}
+
+	function closeEditReadings() {
+		editReadingsModal = {
+			open: false,
+			entry: null,
+			firstReading: '',
+			psalm: '',
+			secondReading: '',
+			gospel: ''
+		};
+	}
+
+	async function saveReadings() {
+		if (!editReadingsModal.entry) {
+			return;
+		}
+
+		// At least gospel is usually required
+		if (!editReadingsModal.gospel.trim()) {
+			toast.warning({
+				title: 'Gospel required',
+				message: 'Please enter at least the gospel reading',
+				duration: DURATIONS.short
+			});
+			return;
+		}
+
+		const loadingId = toast.loading({
+			title: 'Updating readings...',
+			message: 'Saving liturgical readings'
+		});
+
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'update_readings',
+					scheduleId: editReadingsModal.entry.id,
+					readings: {
+						firstReading: editReadingsModal.firstReading.trim(),
+						psalm: editReadingsModal.psalm.trim(),
+						secondReading: editReadingsModal.secondReading.trim(),
+						gospel: editReadingsModal.gospel.trim()
+					}
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Readings updated!',
+				message: 'Liturgical readings saved successfully',
+				type: 'success',
+				duration: DURATIONS.short
+			});
+
+			await loadSchedule();
+			closeEditReadings();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Update failed',
+				message: error.message,
+				type: 'error',
+				duration: DURATIONS.medium
+			});
+		}
 	}
 
 	async function deleteScheduleEntry(scheduleId) {
@@ -528,6 +716,363 @@
 		closeDeleteConfirm();
 	}
 
+	function openQuickAddModal(entry) {
+		quickAddEntry = entry;
+
+		// Pre-populate the form with date and any existing readings
+		quickAddFormData = {
+			...getInitialDGRFormData(),
+			date: entry.date,
+			liturgicalDate: entry.liturgical_name || '',
+			readings: entry.readings_data ?
+				[
+					entry.readings_data.first_reading?.source,
+					entry.readings_data.psalm?.source,
+					entry.readings_data.second_reading?.source,
+					entry.readings_data.gospel?.source
+				].filter(Boolean).join('; ') : '',
+			title: entry.reflection_title || '',
+			gospelQuote: entry.gospel_quote || '',
+			reflectionText: entry.reflection_content || '',
+			authorName: ''
+		};
+
+		quickAddModalOpen = true;
+	}
+
+	function closeQuickAddModal() {
+		quickAddModalOpen = false;
+		quickAddEntry = null;
+		quickAddFormData = getInitialDGRFormData();
+		quickAddResult = null;
+		quickAddGospelFullText = '';
+		quickAddGospelReference = '';
+	}
+
+	async function pasteFromWordQuickAdd() {
+		const loadingId = toast.loading({
+			title: 'Reading clipboard...',
+			message: 'Getting text from clipboard'
+		});
+
+		try {
+			// Check for clipboard permission first
+			if (navigator.permissions) {
+				const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+				if (permission.state === 'denied') {
+					toast.dismiss(loadingId);
+					toast.error({
+						title: 'Clipboard access denied',
+						message: 'Please enable clipboard permissions in your browser settings',
+						duration: 5000
+					});
+					return;
+				}
+			}
+
+			const text = await navigator.clipboard.readText();
+			toast.dismiss(loadingId);
+
+			if (!text || text.trim().length === 0) {
+				toast.warning({
+					title: 'Clipboard is empty',
+					message: 'Please copy the text from Word first',
+					duration: 4000
+				});
+				return;
+			}
+
+			parseWordDocumentQuickAdd(text);
+
+			toast.success({
+				title: 'Content pasted!',
+				message: 'Form fields have been populated',
+				duration: 3000
+			});
+		} catch (err) {
+			console.error('Clipboard error:', err);
+			toast.dismiss(loadingId);
+			toast.error({
+				title: 'Clipboard access denied',
+				message: 'Please allow clipboard access or paste manually',
+				duration: 5000
+			});
+		}
+	}
+
+	function parseWordDocumentQuickAdd(text) {
+		const lines = text.split('\n').filter((line) => line.length > 0);
+
+		const sections = {};
+		let reflectionStartIndex = -1;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+
+			if (line.endsWith(':')) {
+				const label = line.slice(0, -1).trim();
+				const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+
+				switch (label) {
+					case 'Date':
+						if (line.includes(':\t') || line.match(/Date:\s+\S/)) {
+							const parts = lines[i].split(/Date:\s*/);
+							sections.date = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.date = nextLine;
+						}
+						break;
+
+					case 'Liturgical Date':
+						if (line.includes(':\t') || line.match(/Liturgical Date:\s+\S/)) {
+							const parts = lines[i].split(/Liturgical Date:\s*/);
+							sections.liturgicalDate = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.liturgicalDate = nextLine;
+						}
+						break;
+
+					case 'Readings':
+						if (line.includes(':\t') || line.match(/Readings:\s+\S/)) {
+							const parts = lines[i].split(/Readings:\s*/);
+							sections.readings = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.readings = nextLine;
+						}
+						break;
+
+					case 'Title':
+						if (line.includes(':\t') || line.match(/Title:\s+\S/)) {
+							const parts = lines[i].split(/Title:\s*/);
+							sections.title = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.title = nextLine;
+						}
+						break;
+
+					case 'Gospel quote':
+					case 'Gospel Quote':
+						if (line.includes(':\t') || line.match(/Gospel [Qq]uote:\s+\S/)) {
+							const parts = lines[i].split(/Gospel [Qq]uote:\s*/);
+							sections.gospelQuote = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.gospelQuote = nextLine;
+						}
+						break;
+
+					case 'Reflection written by':
+						if (line.includes(':\t') || line.match(/Reflection written by:\s+\S/)) {
+							const parts = lines[i].split(/Reflection written by:\s*/);
+							sections.author = parts[1]?.trim() || '';
+						} else if (nextLine && !nextLine.endsWith(':')) {
+							sections.author = nextLine;
+						}
+						reflectionStartIndex = sections.author && nextLine === sections.author ? i + 2 : i + 1;
+						break;
+				}
+			} else if (line.startsWith('By ') && i > lines.length - 5) {
+				sections.author = line.substring(3).trim();
+			}
+		}
+
+		// Find reflection text
+		if (reflectionStartIndex > 0 && reflectionStartIndex < lines.length) {
+			const reflectionLines = [];
+			let inReflection = true;
+
+			for (let i = reflectionStartIndex; i < lines.length && inReflection; i++) {
+				const line = lines[i].trim();
+
+				if (line.startsWith('By ') && i > reflectionStartIndex + 3) {
+					inReflection = false;
+					continue;
+				}
+
+				if (line === '') {
+					if (reflectionLines.length > 0 && reflectionLines[reflectionLines.length - 1] !== '') {
+						reflectionLines.push('');
+					}
+					continue;
+				}
+
+				reflectionLines.push(line);
+			}
+
+			sections.reflection = reflectionLines
+				.join('\n')
+				.split(/\n\n+/)
+				.filter(para => para.trim())
+				.join('\n\n');
+		}
+
+		// Parse the date
+		if (sections.date) {
+			const dateMatch = sections.date.match(/\w+\s+(\d+)\w*\s+(\w+)/);
+			if (dateMatch) {
+				const day = dateMatch[1];
+				const month = dateMatch[2];
+				const year = new Date().getFullYear();
+				const dateStr = `${month} ${day}, ${year}`;
+				const dateObj = new Date(dateStr + ' UTC');
+				if (!isNaN(dateObj)) {
+					const utcYear = dateObj.getUTCFullYear();
+					const utcMonth = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+					const utcDay = String(dateObj.getUTCDate()).padStart(2, '0');
+					quickAddFormData.date = `${utcYear}-${utcMonth}-${utcDay}`;
+				}
+			}
+		}
+
+		// Update form data
+		quickAddFormData.liturgicalDate = sections.liturgicalDate || quickAddFormData.liturgicalDate;
+		quickAddFormData.readings = sections.readings || quickAddFormData.readings;
+		quickAddFormData.title = sections.title || '';
+		quickAddFormData.gospelQuote = sections.gospelQuote || '';
+		quickAddFormData.reflectionText = sections.reflection || '';
+		quickAddFormData.authorName = sections.author || '';
+
+		// Extract gospel reference from readings
+		if (quickAddFormData.readings) {
+			quickAddGospelReference = extractGospelReference(quickAddFormData.readings);
+		}
+	}
+
+	async function saveQuickAddReflection() {
+		// Form validation
+		if (!quickAddFormData.date || !quickAddFormData.liturgicalDate || !quickAddFormData.readings ||
+			!quickAddFormData.title || !quickAddFormData.gospelQuote || !quickAddFormData.reflectionText ||
+			!quickAddFormData.authorName) {
+			toast.error({
+				title: 'Form incomplete',
+				message: 'Please fill in all required fields',
+				duration: 4000
+			});
+			return;
+		}
+
+		quickAddSaving = true;
+
+		const loadingId = toast.loading({
+			title: 'Saving reflection...',
+			message: 'Creating approved reflection'
+		});
+
+		try {
+			const requestBody = {
+				action: 'save_reflection',
+				date: quickAddFormData.date,
+				liturgicalDate: quickAddFormData.liturgicalDate,
+				readings: quickAddFormData.readings,
+				title: quickAddFormData.title,
+				gospelQuote: quickAddFormData.gospelQuote,
+				content: quickAddFormData.reflectionText,
+				authorName: quickAddFormData.authorName,
+				status: 'approved' // Save as approved, not published
+			};
+
+			// For existing entries, pass schedule_id
+			if (quickAddEntry?.id) {
+				requestBody.scheduleId = quickAddEntry.id;
+			}
+
+			// For pattern-based entries without id, pass contributor_id to create new entry
+			if (quickAddEntry?.from_pattern && quickAddEntry?.contributor_id) {
+				requestBody.contributorId = quickAddEntry.contributor_id;
+			}
+
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(requestBody)
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			toast.updateToast(loadingId, {
+				title: 'Reflection saved!',
+				message: 'Reflection has been approved and is ready for publishing',
+				type: 'success',
+				duration: DURATIONS.short
+			});
+
+			await loadSchedule();
+			closeQuickAddModal();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Save failed',
+				message: error.message,
+				type: 'error',
+				duration: DURATIONS.medium
+			});
+		} finally {
+			quickAddSaving = false;
+		}
+	}
+
+	async function sendReminderEmail(entry) {
+		// Confirmation dialog
+		const contributor = entry.contributor || contributors.find(c => c.id === entry.contributor_id);
+		const daysUntil = Math.ceil((new Date(entry.date) - new Date()) / (1000 * 60 * 60 * 24));
+		const daysText = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
+		const reminderCount = entry.reminder_history?.length || 0;
+
+		const confirmMessage = entry.from_pattern
+			? `Send reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.\n\nNote: This will create a schedule entry for this date.`
+			: reminderCount > 0
+			? `Send another reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.\n${reminderCount} reminder${reminderCount > 1 ? 's' : ''} already sent.`
+			: `Send reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.`;
+
+		const confirmed = confirm(confirmMessage);
+
+		if (!confirmed) return;
+
+		const loadingId = toast.loading({
+			title: 'Sending reminder...',
+			message: `Emailing ${contributor?.name}`
+		});
+
+		try {
+			const response = await fetch('/api/dgr/reminder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					scheduleId: entry.id || null, // null for pattern entries
+					contributorId: entry.contributor_id,
+					date: entry.date
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			const message = entry.from_pattern
+				? `Reminder sent and schedule entry created!`
+				: data.reminderCount > 1
+				? `Reminder ${data.reminderCount} sent to ${contributor?.name}`
+				: `Reminder sent to ${contributor?.name}`;
+
+			toast.updateToast(loadingId, {
+				title: 'Reminder sent!',
+				message,
+				type: 'success',
+				duration: DURATIONS.short
+			});
+
+			// Reload schedule to show updated reminder history or new entry
+			await loadSchedule();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Failed to send reminder',
+				message: error.message,
+				type: 'error',
+				duration: DURATIONS.medium
+			});
+		}
+	}
+
 </script>
 
 <div class="mx-auto max-w-7xl p-6">
@@ -571,6 +1116,14 @@
 				>
 					Promo Tiles
 				</button>
+				<button
+					onclick={() => (activeTab = 'rules')}
+					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'rules'
+						? 'border-blue-500 text-blue-600'
+						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+				>
+					Assignment Rules
+				</button>
 				<a
 					href="/dgr-publish"
 					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
@@ -585,19 +1138,70 @@
 					<ExternalLink class="w-4 h-4 mr-1" />
 					Templates
 				</a>
+				<a
+					href="/dgr/liturgical-calendar"
+					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
+				>
+					<Calendar class="w-4 h-4 mr-1" />
+					Liturgical Calendar
+				</a>
 			</nav>
 		</div>
 
 		{#if activeTab === 'schedule'}
 			<!-- Schedule Tab -->
 			<div class="space-y-6">
-				<DGRScheduleGenerator
-					formData={generateForm}
-					onGenerate={generateSchedule}
-				/>
+				<!-- Filters -->
+				<div class="rounded-lg bg-white p-4 shadow-sm">
+					<div class="flex items-center gap-6">
+						<div class="flex items-center gap-4">
+							<label class="text-sm font-medium text-gray-700">View:</label>
+							<div class="flex gap-2">
+								<button
+									onclick={() => (scheduleFilter = 'all')}
+									class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'all'
+										? 'bg-blue-600 text-white'
+										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+								>
+									All Dates ({schedule.length})
+								</button>
+								<button
+									onclick={() => (scheduleFilter = 'submissions')}
+									class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'submissions'
+										? 'bg-blue-600 text-white'
+										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+								>
+									Submissions Only ({schedule.filter(
+										(e) =>
+											e.reflection_content ||
+											e.status === 'submitted' ||
+											e.status === 'approved' ||
+											e.status === 'published'
+									).length})
+								</button>
+							</div>
+						</div>
+
+						<div class="flex items-center gap-2">
+							<label for="days-range" class="text-sm font-medium text-gray-700">Days Ahead:</label>
+							<select
+								id="days-range"
+								bind:value={scheduleDays}
+								onchange={loadSchedule}
+								class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={30}>30 days</option>
+								<option value={60}>60 days</option>
+								<option value={90}>90 days</option>
+								<option value={180}>180 days</option>
+								<option value={365}>1 year</option>
+							</select>
+						</div>
+					</div>
+				</div>
 
 				<DGRScheduleTable
-					{schedule}
+					schedule={filteredSchedule}
 					{contributors}
 					{statusColors}
 					{statusOptions}
@@ -607,6 +1211,11 @@
 					onSendToWordPress={sendToWordPress}
 					onOpenDeleteConfirm={openDeleteConfirm}
 					onCopySubmissionUrl={copySubmissionUrl}
+					onGetReadings={getReadingsForSchedule}
+					onEditReadings={openEditReadings}
+					onApproveReflection={approveReflection}
+					onQuickAddReflection={openQuickAddModal}
+					onSendReminder={sendReminderEmail}
 				/>
 			</div>
 		{:else if activeTab === 'contributors'}
@@ -653,6 +1262,9 @@
 				onAddTile={addTile}
 				onRemoveTile={removeTile}
 			/>
+		{:else if activeTab === 'rules'}
+			<!-- Assignment Rules Tab -->
+			<DGRAssignmentRules bind:rules={assignmentRules} />
 		{/if}
 	{/if}
 </div>
@@ -721,6 +1333,147 @@
 				class="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
 			>
 				Remove Entry
+			</button>
+		</div>
+	{/snippet}
+</Modal>
+
+<!-- Edit Readings Modal -->
+<Modal
+	isOpen={editReadingsModal.open}
+	title="Edit Liturgical Readings"
+	onClose={closeEditReadings}
+	size="lg"
+>
+	{#if editReadingsModal.entry}
+		<div class="space-y-4">
+			<p class="text-sm text-gray-600">
+				Edit the liturgical readings for <strong>{formatDate(editReadingsModal.entry.date)}</strong>
+			</p>
+
+			<div class="grid gap-4">
+				<!-- First Reading -->
+				<div>
+					<label for="first-reading" class="mb-2 block text-sm font-semibold text-gray-700">
+						First Reading
+					</label>
+					<input
+						id="first-reading"
+						type="text"
+						bind:value={editReadingsModal.firstReading}
+						placeholder="e.g., Genesis 1:1-5"
+						class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					/>
+				</div>
+
+				<!-- Responsorial Psalm -->
+				<div>
+					<label for="psalm" class="mb-2 block text-sm font-semibold text-gray-700">
+						Responsorial Psalm
+					</label>
+					<input
+						id="psalm"
+						type="text"
+						bind:value={editReadingsModal.psalm}
+						placeholder="e.g., Psalm 19:2-5"
+						class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					/>
+				</div>
+
+				<!-- Second Reading (Optional) -->
+				<div>
+					<label for="second-reading" class="mb-2 block text-sm font-medium text-gray-700">
+						Second Reading <span class="text-xs text-gray-500">(Optional - Sundays/Solemnities)</span>
+					</label>
+					<input
+						id="second-reading"
+						type="text"
+						bind:value={editReadingsModal.secondReading}
+						placeholder="e.g., 1 Corinthians 12:4-11"
+						class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					/>
+				</div>
+
+				<!-- Gospel -->
+				<div>
+					<label for="gospel" class="mb-2 block text-sm font-semibold text-gray-700">
+						Gospel <span class="text-red-500">*</span>
+					</label>
+					<input
+						id="gospel"
+						type="text"
+						bind:value={editReadingsModal.gospel}
+						placeholder="e.g., Mark 1:14-20"
+						class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					/>
+					<p class="mt-1.5 text-xs text-gray-500">
+						Gospel reading is required for all dates
+					</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#snippet footer()}
+		<div class="flex gap-3">
+			<button
+				onclick={closeEditReadings}
+				class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+			>
+				Cancel
+			</button>
+			<button
+				onclick={saveReadings}
+				class="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+			>
+				Save Readings
+			</button>
+		</div>
+	{/snippet}
+</Modal>
+
+<!-- Quick Add Reflection Modal -->
+<Modal
+	isOpen={quickAddModalOpen}
+	title="Quick Add Reflection"
+	onClose={closeQuickAddModal}
+	size="xl"
+>
+	{#if quickAddEntry}
+		<div class="space-y-4">
+			<p class="text-sm text-gray-600">
+				Manually add a reflection for <strong>{formatDate(quickAddEntry.date)}</strong>
+			</p>
+
+			<div class="max-h-[calc(100vh-300px)] overflow-y-auto">
+				<DGRForm
+					bind:formData={quickAddFormData}
+					bind:publishing={quickAddSaving}
+					bind:result={quickAddResult}
+					bind:useNewDesign={quickAddUseNewDesign}
+					bind:fetchingGospel={quickAddFetchingGospel}
+					bind:gospelFullText={quickAddGospelFullText}
+					bind:gospelReference={quickAddGospelReference}
+					onPasteFromWord={pasteFromWordQuickAdd}
+				/>
+			</div>
+		</div>
+	{/if}
+
+	{#snippet footer()}
+		<div class="flex gap-3">
+			<button
+				onclick={closeQuickAddModal}
+				class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+			>
+				Cancel
+			</button>
+			<button
+				onclick={saveQuickAddReflection}
+				disabled={quickAddSaving}
+				class="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+			>
+				{quickAddSaving ? 'Saving...' : 'Save as Approved'}
 			</button>
 		</div>
 	{/snippet}

@@ -1,12 +1,25 @@
 <script lang="ts">
 	import { User } from 'lucide-svelte';
-	export let session;
 
-	const routes = [
-		{ name: 'Home', path: '/', description: 'Dashboard home' },
-		{ name: 'Editor', path: '/editor', description: 'Main content editor' },
-		{ name: 'DGR', path: '/dgr', description: 'DGR tools' },
+	let { session, userRole = null } = $props<{
+		session: any;
+		userRole?: string | null;
+	}>();
+
+	// Define all possible routes with role requirements
+	const allRoutes = [
+		{ name: 'Home', path: '/', description: 'Dashboard home', roles: ['admin', 'editor', 'contributor', 'viewer', 'accf_admin', 'accf_student', 'hub_coordinator'] },
+		{ name: 'Editor', path: '/editor', description: 'Main content editor', roles: ['admin', 'editor'] },
+		{ name: 'DGR', path: '/dgr', description: 'DGR management', roles: ['admin'] },
+		{ name: 'DGR Templates', path: '/dgr-templates', description: 'Email template management', roles: ['admin'] },
 	];
+
+	// Filter routes based on user role
+	let visibleRoutes = $derived(
+		userRole
+			? allRoutes.filter(route => route.roles.includes(userRole))
+			: allRoutes // Show all if no role specified (for backward compatibility)
+	);
 </script>
 
 <nav class="border-b bg-white shadow-sm">
@@ -16,7 +29,7 @@
 				<a href="/" class="text-xl font-semibold text-gray-900">Archdiocesan Ministry Tools</a>
 
 				<div class="hidden items-center space-x-4 md:flex">
-					{#each routes as route}
+					{#each visibleRoutes as route}
 						<a
 							href={route.path}
 							class="rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
@@ -52,7 +65,7 @@
 
 		<!-- Mobile menu -->
 		<div class="space-y-1 pt-2 pb-3 md:hidden">
-			{#each routes as route}
+			{#each visibleRoutes as route}
 				<a
 					href={route.path}
 					class="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"

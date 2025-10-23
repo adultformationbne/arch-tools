@@ -98,7 +98,7 @@ export const POST: RequestHandler = async (event) => {
 			console.log('Update payload:', updates);
 
 			// Note: marked_at is only set by admin when marking, not on submission
-			// Status stays 'submitted' until admin changes to 'marked' or 'needs_revision'
+			// Status stays 'submitted' until admin changes to 'passed' or 'needs_revision'
 
 			const { data: updatedResponse, error: updateError } = await supabaseAdmin
 				.from('reflection_responses')

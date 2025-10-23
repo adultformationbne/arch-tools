@@ -1,0 +1,450 @@
+<!-- ============================================= -->
+<!-- 1. CONFIRM SIGNUP -->
+<!-- ============================================= -->
+<!-- Subject: Confirm Your Email - Archdiocesan Tools -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Confirm Your Email</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello,</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                Thank you for signing up for Archdiocesan Ministry Platform! Please confirm your email address to complete your registration and get started.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);">
+                                            Confirm Email Address
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <p style="font-size: 14px; color: #6b7280; margin: 30px 0 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                <strong>Note:</strong> This confirmation link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+<!-- ============================================= -->
+<!-- 2. INVITE USER -->
+<!-- ============================================= -->
+<!-- Subject: Welcome to Archdiocesan Tools - Set Up Your Account -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .Data.full_name }}, {{ .Data.invited_by }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Welcome to the Team!</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello {{ if .Data.full_name }}{{ .Data.full_name }}{{ else }}there{{ end }},</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                You've been invited by {{ if .Data.invited_by }}<strong>{{ .Data.invited_by }}</strong>{{ else }}an administrator{{ end }} to join the Archdiocesan Ministry platform.
+                            </p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 30px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                Click the button below to set up your account and create your password:
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                                            Set Up My Account
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <p style="font-size: 14px; color: #6b7280; margin: 30px 0 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                <strong>Note:</strong> This invitation link will expire in 24 hours. If you didn't expect this invitation, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+<!-- ============================================= -->
+<!-- 3. MAGIC LINK -->
+<!-- ============================================= -->
+<!-- Subject: Your Login Link - Archdiocesan Tools -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .Token }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Your Login Link</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello,</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                Click the button below to securely log in to your account. This link will expire in 1 hour.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #8b5cf6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);">
+                                            Log In to Account
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Token Code -->
+                            <div style="background-color: #faf5ff; border: 2px solid #8b5cf6; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+                                <p style="font-size: 13px; color: #6b7280; margin: 0 0 10px; text-transform: uppercase; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or use this code:</p>
+                                <p style="font-size: 32px; color: #8b5cf6; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', Monaco, monospace;">{{ .Token }}</p>
+                            </div>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <p style="font-size: 14px; color: #6b7280; margin: 30px 0 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                <strong>Security Note:</strong> If you didn't request this login link, please ignore this email and ensure your account is secure.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+<!-- ============================================= -->
+<!-- 4. CHANGE EMAIL ADDRESS -->
+<!-- ============================================= -->
+<!-- Subject: Confirm Your New Email - Archdiocesan Tools -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Confirm Email Change</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello,</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                We received a request to change your account email address to:
+                            </p>
+
+                            <!-- New Email Display -->
+                            <div style="background-color: #ecfeff; border: 2px solid #06b6d4; padding: 15px; margin: 20px 0; border-radius: 6px; text-align: center;">
+                                <p style="font-size: 16px; color: #0891b2; font-weight: 600; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">{{ .Email }}</p>
+                            </div>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                Click the button below to confirm this change:
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #06b6d4; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(6, 182, 212, 0.3);">
+                                            Confirm New Email
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <p style="font-size: 14px; color: #6b7280; margin: 30px 0 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                <strong>Note:</strong> If you didn't request this email change, please contact support immediately to secure your account.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+<!-- ============================================= -->
+<!-- 5. RESET PASSWORD -->
+<!-- ============================================= -->
+<!-- Subject: Reset Your Password - Archdiocesan Tools -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Reset Your Password</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello,</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                We received a request to reset your password. Click the button below to create a new password:
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #f59e0b; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);">
+                                            Reset Password
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <!-- Security Warning -->
+                            <div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 6px;">
+                                <p style="font-size: 14px; color: #92400e; margin: 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                    <strong>⚠️ Security Notice:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email or contact support if you're concerned about your account security.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+<!-- ============================================= -->
+<!-- 6. REAUTHENTICATION -->
+<!-- ============================================= -->
+<!-- Subject: Verify It's You - Archdiocesan Tools -->
+<!-- Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .Token }}, {{ .SiteURL }} -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="padding: 40px 30px 20px; text-align: center;">
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-logo.png" alt="Archdiocesan Ministry Tools" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                            <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Verify It's You</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Hello,</p>
+
+                            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                We need to verify your identity for this sensitive operation. Click the button below to confirm it's you:
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);">
+                                            Verify Identity
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Verification Code -->
+                            <div style="background-color: #fef2f2; border: 2px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+                                <p style="font-size: 13px; color: #6b7280; margin: 0 0 10px; text-transform: uppercase; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Verification Code:</p>
+                                <p style="font-size: 32px; color: #ef4444; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', Monaco, monospace;">{{ .Token }}</p>
+                            </div>
+
+                            <!-- Alternative Link -->
+                            <p style="font-size: 12px; color: #6b7280; margin: 20px 0; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Or copy and paste this link:</p>
+                            <p style="font-size: 11px; color: #9ca3af; word-break: break-all; margin: 0 0 20px; text-align: center; font-family: 'Courier New', Monaco, monospace;">{{ .ConfirmationURL }}</p>
+
+                            <!-- Security Alert -->
+                            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                                <p style="font-size: 14px; color: #991b1b; margin: 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                    <strong>🔒 Security Alert:</strong> This verification link expires in 15 minutes. If you didn't request this verification, please secure your account immediately.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"><strong>Archdiocesan Ministries Platform</strong></p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
