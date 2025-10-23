@@ -7,6 +7,7 @@
 	import DGRPromoTilesEditor from '$lib/components/DGRPromoTilesEditor.svelte';
 	import DGRAssignmentRules from '$lib/components/DGRAssignmentRules.svelte';
 	import DGRForm from '$lib/components/DGRForm.svelte';
+	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
@@ -20,7 +21,8 @@
 	let contributors = $state([]);
 	let assignmentRules = $state([]);
 	let loading = $state(true);
-	let activeTab = $state('schedule');
+	let activeSection = $state('schedule');
+	let activeSubSection = $state('schedule');
 	let reviewModalOpen = $state(false);
 	let selectedReflection = $state(null);
 	let confirmDeleteModal = $state({ open: false, entry: null });
@@ -1078,10 +1080,9 @@
 <div class="mx-auto max-w-7xl p-6">
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold text-gray-900">Daily Gospel Reflections</h1>
-			<p class="mt-1 text-sm text-gray-600">Unified management platform with full liturgical readings integration</p>
+			<h1 class="text-3xl font-bold text-gray-900">Schedule Management</h1>
+			<p class="mt-1 text-sm text-gray-600">Manage daily assignments, submissions, and reflections</p>
 		</div>
-		<div class="text-sm text-gray-600">Admin Dashboard</div>
 	</div>
 
 	{#if loading}
@@ -1089,70 +1090,10 @@
 			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
 		</div>
 	{:else}
-		<!-- Tabs -->
-		<div class="mb-6 border-b border-gray-200">
-			<nav class="-mb-px flex space-x-8">
-				<button
-					onclick={() => (activeTab = 'schedule')}
-					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'schedule'
-						? 'border-blue-500 text-blue-600'
-						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
-				>
-					Schedule ({schedule.length})
-				</button>
-				<button
-					onclick={() => (activeTab = 'contributors')}
-					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'contributors'
-						? 'border-blue-500 text-blue-600'
-						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
-				>
-					Contributors ({contributors.length})
-				</button>
-				<button
-					onclick={() => (activeTab = 'promo')}
-					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'promo'
-						? 'border-blue-500 text-blue-600'
-						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
-				>
-					Promo Tiles
-				</button>
-				<button
-					onclick={() => (activeTab = 'rules')}
-					class="border-b-2 px-1 py-2 text-sm font-medium {activeTab === 'rules'
-						? 'border-blue-500 text-blue-600'
-						: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
-				>
-					Assignment Rules
-				</button>
-				<a
-					href="/dgr-publish"
-					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
-				>
-					<ExternalLink class="w-4 h-4 mr-1" />
-					Quick Publish
-				</a>
-				<a
-					href="/dgr-templates"
-					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
-				>
-					<ExternalLink class="w-4 h-4 mr-1" />
-					Templates
-				</a>
-				<a
-					href="/dgr/liturgical-calendar"
-					class="border-b-2 px-1 py-2 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center"
-				>
-					<Calendar class="w-4 h-4 mr-1" />
-					Liturgical Calendar
-				</a>
-			</nav>
-		</div>
-
-		{#if activeTab === 'schedule'}
-			<!-- Schedule Tab -->
-			<div class="space-y-6">
-				<!-- Filters -->
-				<div class="rounded-lg bg-white p-4 shadow-sm">
+		<!-- Schedule View -->
+		<div class="space-y-6">
+			<!-- Filters -->
+			<div class="rounded-lg bg-white p-4 shadow-sm">
 					<div class="flex items-center gap-6">
 						<div class="flex items-center gap-4">
 							<label class="text-sm font-medium text-gray-700">View:</label>
@@ -1217,55 +1158,7 @@
 					onQuickAddReflection={openQuickAddModal}
 					onSendReminder={sendReminderEmail}
 				/>
-			</div>
-		{:else if activeTab === 'contributors'}
-			<!-- Contributors Tab -->
-			<DGRContributorManager
-				{contributors}
-				{dayNames}
-				onAddContributor={addContributor}
-				onUpdateContributor={async (contributorId, updates) => {
-					try {
-						const response = await fetch('/api/dgr-admin/contributors', {
-							method: 'PUT',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({ id: contributorId, ...updates })
-						});
-						if (!response.ok) throw new Error('Update failed');
-
-						// Update local state
-						const contributorIndex = contributors.findIndex(c => c.id === contributorId);
-						if (contributorIndex !== -1) {
-							Object.assign(contributors[contributorIndex], updates);
-						}
-
-						toast.success({
-							title: 'Contributor updated',
-							message: `Settings saved successfully`,
-							duration: 2000
-						});
-					} catch (error) {
-						toast.error({
-							title: 'Update failed',
-							message: error.message,
-							duration: 3000
-						});
-					}
-				}}
-			/>
-		{:else if activeTab === 'promo'}
-			<!-- Promo Tiles Tab -->
-			<DGRPromoTilesEditor
-				tiles={promoTiles}
-				savingState={savingTiles}
-				onSave={savePromoTiles}
-				onAddTile={addTile}
-				onRemoveTile={removeTile}
-			/>
-		{:else if activeTab === 'rules'}
-			<!-- Assignment Rules Tab -->
-			<DGRAssignmentRules bind:rules={assignmentRules} />
-		{/if}
+		</div>
 	{/if}
 </div>
 
