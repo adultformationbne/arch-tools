@@ -24,17 +24,21 @@
 
 		loading.invite = true;
 		try {
-			const { data: session } = await supabase.auth.getSession();
-			const currentUser = session?.session?.user;
-
-			const { data, error } = await supabase.auth.admin.inviteUserByEmail(inviteEmail, {
-				data: {
-					full_name: inviteName || undefined,
-					invited_by: currentUser?.email || 'Administrator'
-				}
+			const response = await fetch('/api/test-emails/invite', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email: inviteEmail,
+					full_name: inviteName || undefined
+				})
 			});
 
-			if (error) throw error;
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || 'Failed to send invite');
+			}
+
 			toastSuccess('Invite email sent to ' + inviteEmail);
 			inviteEmail = '';
 			inviteName = '';
