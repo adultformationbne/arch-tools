@@ -12,6 +12,7 @@
 
 	let currentPage = $derived(() => {
 		const pathname = $page.url.pathname;
+		if (pathname.includes('/admin/courses')) return 'courses';
 		if (pathname.includes('/admin/modules')) return 'modules';
 		if (pathname.includes('/admin/reflections')) return 'reflections';
 		if (pathname.includes('/admin/attendance')) return 'attendance';
