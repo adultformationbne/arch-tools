@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 			.from('courses_materials')
 			.select(`
 				*,
-				module_sessions!inner (
+				courses_sessions!inner (
 					id,
 					session_number,
 					module_id,
@@ -36,10 +36,10 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 		if (sessionId) {
 			query = query.eq('session_id', sessionId);
 		} else if (moduleId) {
-			query = query.eq('module_sessions.module_id', moduleId);
+			query = query.eq('courses_sessions.module_id', moduleId);
 
 			if (sessionNumber) {
-				query = query.eq('module_sessions.session_number', parseInt(sessionNumber));
+				query = query.eq('courses_sessions.session_number', parseInt(sessionNumber));
 			}
 		}
 
@@ -47,7 +47,7 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 
 		// Sort by session number in code (can't order by joined columns in Supabase)
 		materials?.sort((a, b) => {
-			const sessionDiff = a.module_sessions.session_number - b.module_sessions.session_number;
+			const sessionDiff = a.courses_sessions.session_number - b.courses_sessions.session_number;
 			if (sessionDiff !== 0) return sessionDiff;
 			return a.display_order - b.display_order;
 		});
@@ -80,7 +80,7 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 
@@ -142,7 +142,7 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 
@@ -204,7 +204,7 @@ export const DELETE: RequestHandler = async ({ request, locals: { safeGetSession
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['accf_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 

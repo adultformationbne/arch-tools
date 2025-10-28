@@ -55,7 +55,7 @@
 	async function loadStudents() {
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/admin/api?endpoint=accf_users&cohort_id=${cohort.id}`);
+			const response = await fetch(`/admin/api?endpoint=courses_users&cohort_id=${cohort.id}`);
 			const result = await response.json();
 
 			// Fetch attendance data for all students
@@ -299,9 +299,9 @@
 
 	const getRoleBadgeClass = (role) => {
 		switch (role) {
-			case 'accf_admin': return 'bg-blue-100 text-blue-800';
+			case 'courses_admin': return 'bg-blue-100 text-blue-800';
 			case 'hub_coordinator': return 'bg-purple-100 text-purple-800';
-			case 'accf_student': return 'bg-green-100 text-green-800';
+			case 'courses_student': return 'bg-green-100 text-green-800';
 			default: return 'bg-gray-100 text-gray-800';
 		}
 	};

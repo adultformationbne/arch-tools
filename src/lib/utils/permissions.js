@@ -11,7 +11,7 @@ export const MODULES = {
 	DGR: 'dgr',
 	EDITOR: 'editor',
 	COURSES: 'courses',
-	ACCF_ADMIN: 'accf_admin'
+	ACCF_ADMIN: 'courses_admin'
 };
 
 /**

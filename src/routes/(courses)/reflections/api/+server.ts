@@ -1,13 +1,13 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAccfUser } from '$lib/server/auth.js';
+import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
 	console.log('=== API ENDPOINT HIT ===');
 
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 	console.log('Authenticated user:', { id: user.id, email: user.email });
 
 	// Check for dev mode user
@@ -55,10 +55,10 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Invalid reflection question');
 		}
 
-		// Get student's accf_users record (need id and cohort_id)
+		// Get student's courses_users record (need id and cohort_id)
 		console.log('Looking up student by user_profile_id:', userId);
 		const { data: studentData, error: studentError } = await supabaseAdmin
-			.from('accf_users')
+			.from('courses_users')
 			.select('id, cohort_id')
 			.eq('user_profile_id', userId)
 			.single();

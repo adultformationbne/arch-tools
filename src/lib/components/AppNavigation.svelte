@@ -9,7 +9,7 @@
 
 	// Define all possible routes with role requirements
 	const allRoutes = [
-		{ name: 'Home', path: '/', description: 'Dashboard home', roles: ['admin', 'editor', 'contributor', 'viewer', 'accf_admin', 'accf_student', 'hub_coordinator'] },
+		{ name: 'Home', path: '/', description: 'Dashboard home', roles: ['admin', 'editor', 'contributor', 'viewer', 'courses_admin', 'courses_student', 'hub_coordinator'] },
 		{ name: 'Editor', path: '/editor', description: 'Main content editor', roles: ['admin', 'editor'] },
 		{ name: 'DGR', path: '/dgr', description: 'DGR management', roles: ['admin'] },
 	];

@@ -38,9 +38,9 @@
 					.single();
 
 				let defaultRedirect = '/';
-				if (profile && ['accf_admin', 'admin'].includes(profile.role)) {
+				if (profile && ['courses_admin', 'admin'].includes(profile.role)) {
 					defaultRedirect = '/admin';
-				} else if (profile && profile.role === 'accf_student') {
+				} else if (profile && profile.role === 'courses_student') {
 					defaultRedirect = '/dashboard';
 				}
 

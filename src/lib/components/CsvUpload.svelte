@@ -155,27 +155,27 @@
 
 				// Normalize role with expanded variations
 				const roleMap = {
-					'participant': 'accf_student',
-					'participants': 'accf_student',
-					'student': 'accf_student',
-					'students': 'accf_student',
-					'attendee': 'accf_student',
-					'member': 'accf_student',
+					'participant': 'courses_student',
+					'participants': 'courses_student',
+					'student': 'courses_student',
+					'students': 'courses_student',
+					'attendee': 'courses_student',
+					'member': 'courses_student',
 					'hub coordinator': 'hub_coordinator',
 					'hub-coordinator': 'hub_coordinator',
 					'coordinator': 'hub_coordinator',
 					'hub leader': 'hub_coordinator',
 					'leader': 'hub_coordinator',
 					'facilitator': 'hub_coordinator',
-					'admin': 'accf_admin',
-					'administrator': 'accf_admin',
-					'staff': 'accf_admin'
+					'admin': 'courses_admin',
+					'administrator': 'courses_admin',
+					'staff': 'courses_admin'
 				};
 
 				const roleLower = row.role.toLowerCase().trim();
 				const normalizedRole = roleMap[roleLower] || roleLower;
 
-				if (!['accf_student', 'hub_coordinator', 'accf_admin'].includes(normalizedRole)) {
+				if (!['courses_student', 'hub_coordinator', 'courses_admin'].includes(normalizedRole)) {
 					errors.push(`Row ${i + 1}: Invalid role "${row.role}". Must be "Participant", "Hub Coordinator", or "Admin"`);
 					continue;
 				}

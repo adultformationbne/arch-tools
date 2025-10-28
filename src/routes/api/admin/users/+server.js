@@ -38,7 +38,7 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 		}
 
 		// Validate modules
-		const validModules = ['user_management', 'dgr', 'editor', 'courses', 'accf_admin'];
+		const validModules = ['user_management', 'dgr', 'editor', 'courses', 'courses_admin'];
 		if (modules && !Array.isArray(modules)) {
 			throw error(400, 'Modules must be an array');
 		}

@@ -51,8 +51,8 @@
 	// Get user role badge color
 	const getRoleColor = (role) => {
 		switch(role) {
-			case 'accf_admin': return 'bg-red-100 text-red-700';
-			case 'accf_student': return 'bg-blue-100 text-blue-700';
+			case 'courses_admin': return 'bg-red-100 text-red-700';
+			case 'courses_student': return 'bg-blue-100 text-blue-700';
 			case 'hub_coordinator': return 'bg-green-100 text-green-700';
 			default: return 'bg-gray-100 text-gray-700';
 		}
@@ -109,7 +109,7 @@
 												Session {user.current_session}
 											</span>
 										{/if}
-										{#if user.role === 'accf_student'}
+										{#if user.role === 'courses_student'}
 											<span class="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded">
 												Student
 											</span>

@@ -62,7 +62,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	if ((session && userProfile) || (isDevMode && userProfile)) {
 		// ACCF student routes - require accf_student role
 		if (isACCFDomain && !url.pathname.startsWith('/admin') && !url.pathname.startsWith('/login')) {
-			if (!['accf_student', 'accf_admin', 'admin'].includes(userProfile.role)) {
+			if (!['courses_student', 'courses_admin', 'admin'].includes(userProfile.role)) {
 				if (!isDevMode) {
 					throw redirect(303, '/login?error=insufficient_permissions');
 				}
@@ -71,7 +71,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 
 		// ACCF admin routes - require admin roles
 		if (url.pathname.startsWith('/admin')) {
-			if (!['accf_admin', 'admin'].includes(userProfile.role)) {
+			if (!['courses_admin', 'admin'].includes(userProfile.role)) {
 				if (!isDevMode) {
 					throw redirect(303, '/auth?error=insufficient_permissions');
 				}

@@ -64,7 +64,7 @@ export function createDevUserCookie(user) {
 export const defaultDevUser = {
 	id: '33e35496-c46a-4633-8ff9-c73672141f56',
 	name: 'Jennifer Davis',
-	role: 'accf_student',
+	role: 'courses_student',
 	email: 'student5@example.com',
 	full_name: 'Jennifer Davis',
 	current_session: 3,

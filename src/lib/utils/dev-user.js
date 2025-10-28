@@ -60,7 +60,7 @@ export const realDevUsers = [
 	{
 		id: 'c4bf9f0b-b7e6-4331-b787-3cc8a1e07830',
 		name: 'Desi Cleary',
-		role: 'accf_admin',
+		role: 'courses_admin',
 		email: 'desicl@bne.catholic.net.au',
 		full_name: 'Desi Cleary',
 		current_week: null,
@@ -69,7 +69,7 @@ export const realDevUsers = [
 	{
 		id: '33e35496-c46a-4633-8ff9-c73672141f56',
 		name: 'Jennifer Davis',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student5@example.com',
 		full_name: 'Jennifer Davis',
 		current_week: 3,
@@ -78,7 +78,7 @@ export const realDevUsers = [
 	{
 		id: '4b69f1d6-453f-405c-9d91-25f91e04439f',
 		name: 'Lisa Anderson',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student7@example.com',
 		full_name: 'Lisa Anderson',
 		current_week: 3,
@@ -87,7 +87,7 @@ export const realDevUsers = [
 	{
 		id: '5ed629a4-614b-476e-a1da-8e3f0ad0915c',
 		name: 'David Miller',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student6@example.com',
 		full_name: 'David Miller',
 		current_week: 3,
@@ -96,7 +96,7 @@ export const realDevUsers = [
 	{
 		id: '65deff22-b9a8-4278-b3bc-e9923affe424',
 		name: 'Christopher Lee',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student10@example.com',
 		full_name: 'Christopher Lee',
 		current_week: 2,
@@ -105,7 +105,7 @@ export const realDevUsers = [
 	{
 		id: 'd25d06ef-7fb6-4031-9aaa-8e78cd908194',
 		name: 'Amanda White',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student9@example.com',
 		full_name: 'Amanda White',
 		current_week: 2,
@@ -114,7 +114,7 @@ export const realDevUsers = [
 	{
 		id: 'e7633cd0-5609-4094-901c-272403828e68',
 		name: 'Andrew Wilson',
-		role: 'accf_student',
+		role: 'courses_student',
 		email: 'student16@example.com',
 		full_name: 'Andrew Wilson',
 		current_week: 1,

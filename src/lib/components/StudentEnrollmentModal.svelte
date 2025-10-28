@@ -16,7 +16,7 @@
 	let studentData = $state({
 		full_name: '',
 		email: '',
-		role: 'accf_student',
+		role: 'courses_student',
 		hub: ''
 	});
 
@@ -110,7 +110,7 @@
 
 	function handleClose() {
 		mode = 'choice';
-		studentData = { full_name: '', email: '', role: 'accf_student', hub: '' };
+		studentData = { full_name: '', email: '', role: 'courses_student', hub: '' };
 		error = '';
 		uploadResult = null;
 		isLoading = false;
