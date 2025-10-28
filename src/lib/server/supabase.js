@@ -17,7 +17,7 @@ export const supabaseAdmin = createClient(
 // Get the latest version of a block
 export async function getLatestBlock(blockId) {
 	const { data, error } = await supabaseAdmin
-		.from('blocks')
+		.from('editor_blocks')
 		.select(
 			`
             id,
@@ -26,7 +26,7 @@ export async function getLatestBlock(blockId) {
             tag,
             metadata,
             created_at,
-            chapters(id, title, chapter_number)
+            editor_chapters(id, title, chapter_number)
         `
 		)
 		.eq('block_id', blockId)
@@ -41,7 +41,7 @@ export async function getLatestBlock(blockId) {
 // Get the current book structure
 export async function getCurrentBook() {
 	const { data, error } = await supabaseAdmin
-		.from('books')
+		.from('editor_books')
 		.select(
 			`
             id,
@@ -65,7 +65,7 @@ export async function getCurrentBook() {
 // Create a new block version
 export async function createBlockVersion(blockData, userId) {
 	const { data, error } = await supabaseAdmin
-		.from('blocks')
+		.from('editor_blocks')
 		.insert({
 			block_id: blockData.block_id,
 			content: blockData.content,
@@ -86,7 +86,7 @@ export async function createBookVersion(bookData, userId) {
 	const currentBook = await getCurrentBook().catch(() => null);
 
 	const { data, error } = await supabaseAdmin
-		.from('books')
+		.from('editor_books')
 		.insert({
 			document_title: bookData.document_title,
 			blocks: bookData.blocks,
@@ -116,7 +116,7 @@ export async function logEditorAction(action) {
 // Get blocks by chapter
 export async function getBlocksByChapter(chapterId, withLatestVersions = true) {
 	let query = supabaseAdmin
-		.from('blocks')
+		.from('editor_blocks')
 		.select(
 			`
             id,
@@ -125,7 +125,7 @@ export async function getBlocksByChapter(chapterId, withLatestVersions = true) {
             tag,
             metadata,
             created_at,
-            chapters(id, title, chapter_number)
+            editor_chapters(id, title, chapter_number)
         `
 		)
 		.eq('chapter_id', chapterId);

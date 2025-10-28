@@ -35,7 +35,7 @@ export async function GET({ url, locals }) {
 
 		// Get all versions of the block ordered by creation date (newest first)
 		const { data: versions, error: versionsError } = await supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.select(
 				`
                 id,
@@ -107,7 +107,7 @@ export async function POST({ request, locals }) {
 
 		// Get the specific version to restore
 		const { data: versionToRestore, error: versionError } = await supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.select('content, tag, metadata')
 			.eq('id', versionId)
 			.eq('block_id', blockId)
@@ -129,7 +129,7 @@ export async function POST({ request, locals }) {
 
 		// Create a new version with the restored content
 		const { data: restoredBlock, error: insertError } = await supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.insert({
 				block_id: blockId,
 				content: versionToRestore.content,

@@ -16,7 +16,7 @@ export async function GET() {
 	try {
 		// Get all chapters
 		const { data: chapters, error: chaptersError } = await supabase
-			.from('chapters')
+			.from('editor_chapters')
 			.select(
 				`
                 id,
@@ -36,7 +36,7 @@ export async function GET() {
 		const chaptersWithCounts = await Promise.all(
 			chapters.map(async (chapter) => {
 				const { count, error: countError } = await supabase
-					.from('blocks')
+					.from('editor_blocks')
 					.select('*', { count: 'exact', head: true })
 					.eq('chapter_id', chapter.id);
 

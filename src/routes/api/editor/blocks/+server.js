@@ -53,7 +53,7 @@ export async function POST({ request, locals }) {
 
 		// Create new block version with processed content
 		const { data: newBlock, error: insertError } = await supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.insert({
 				block_id,
 				content: processedContent.html_content,
@@ -71,7 +71,7 @@ export async function POST({ request, locals }) {
 
 		// Log the block creation/update
 		const { data: existingBlocks } = await supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.select('id')
 			.eq('block_id', block_id)
 			.neq('id', newBlock.id);
@@ -135,7 +135,7 @@ export async function GET({ url }) {
 		}
 
 		let query = supabase
-			.from('blocks')
+			.from('editor_blocks')
 			.select(
 				`
                 id,
@@ -145,7 +145,7 @@ export async function GET({ url }) {
                 metadata,
                 created_at,
                 created_by,
-                chapters(id, title, chapter_number)
+                editor_chapters(id, title, chapter_number)
             `
 			)
 			.eq('block_id', blockId)
@@ -169,11 +169,11 @@ export async function GET({ url }) {
 				tag: block.tag,
 				metadata: block.metadata || [],
 				createdAt: block.created_at,
-				chapter: block.chapters
+				chapter: block.editor_chapters
 					? {
-							id: block.chapters.id,
-							title: block.chapters.title,
-							number: block.chapters.chapter_number
+							id: block.editor_chapters.id,
+							title: block.editor_chapters.title,
+							number: block.editor_chapters.chapter_number
 						}
 					: null
 			});
@@ -189,11 +189,11 @@ export async function GET({ url }) {
 				metadata: block.metadata || [],
 				created_at: block.created_at,
 				created_by: block.created_by,
-				chapter: block.chapters
+				chapter: block.editor_chapters
 					? {
-							id: block.chapters.id,
-							title: block.chapters.title,
-							number: block.chapters.chapter_number
+							id: block.editor_chapters.id,
+							title: block.editor_chapters.title,
+							number: block.editor_chapters.chapter_number
 						}
 					: null
 			}))

@@ -74,7 +74,7 @@
 			// Prepare content based on type
 			const content = newMaterial.type === 'native' ? newMaterial.content : newMaterial.url;
 
-			const response = await fetch('/api/module-materials', {
+			const response = await fetch('/api/courses/module-materials', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -140,7 +140,7 @@
 			// Prepare content based on type
 			const content = editingMaterial.type === 'native' ? editingMaterial.content : editingMaterial.url;
 
-			const response = await fetch('/api/module-materials', {
+			const response = await fetch('/api/courses/module-materials', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -204,7 +204,7 @@
 		try {
 			onSaveStatusChange(true, 'Deleting material...');
 
-			const response = await fetch('/api/module-materials', {
+			const response = await fetch('/api/courses/module-materials', {
 				method: 'DELETE',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ id: materialId })
@@ -255,7 +255,7 @@
 		// Update database with new ordering
 		try {
 			const updatePromises = materialsCopy.map(material =>
-				fetch('/api/module-materials', {
+				fetch('/api/courses/module-materials', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({

@@ -14,7 +14,7 @@ const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 // Helper function to create a default empty book
 async function createDefaultBook(userId) {
 	const { data: newBook, error: createError } = await supabase
-		.from('books')
+		.from('editor_books')
 		.insert({
 			document_title: 'AHWGP',
 			blocks: [],
@@ -129,7 +129,7 @@ export async function POST({ request, locals }) {
 
 		// Get current book to link as parent version
 		const { data: currentBook } = await supabase
-			.from('books')
+			.from('editor_books')
 			.select('id')
 			.order('created_at', { ascending: false })
 			.limit(1)
@@ -147,7 +147,7 @@ export async function POST({ request, locals }) {
 		};
 
 		const { data: newBook, error: insertError } = await supabase
-			.from('books')
+			.from('editor_books')
 			.insert(newBookData)
 			.select()
 			.single();
