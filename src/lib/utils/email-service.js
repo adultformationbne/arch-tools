@@ -102,7 +102,7 @@ export function textToHtml(text) {
  */
 export async function getEmailTemplate(supabase, templateKey) {
 	const { data, error } = await supabase
-		.from('email_templates')
+		.from('platform_email_templates')
 		.select('subject_template, body_template, available_variables')
 		.eq('template_key', templateKey)
 		.eq('is_active', true)
@@ -168,7 +168,7 @@ export async function sendEmail({
 			console.error('Resend error:', error);
 
 			// Log failed email to database
-			await supabase.from('email_log').insert({
+			await supabase.from('platform_email_log').insert({
 				recipient_email: to,
 				email_type: emailType,
 				subject,
@@ -183,7 +183,7 @@ export async function sendEmail({
 		}
 
 		// Log successful email to database
-		await supabase.from('email_log').insert({
+		await supabase.from('platform_email_log').insert({
 			recipient_email: to,
 			email_type: emailType,
 			subject,
@@ -201,7 +201,7 @@ export async function sendEmail({
 
 		// Log error to database
 		try {
-			await supabase.from('email_log').insert({
+			await supabase.from('platform_email_log').insert({
 				recipient_email: to,
 				email_type: emailType,
 				subject,
@@ -273,7 +273,7 @@ export async function getEmailLogs(supabase, filters = {}) {
 	const { emailType, status, referenceId, limit = 100 } = filters;
 
 	let query = supabase
-		.from('email_log')
+		.from('platform_email_log')
 		.select('*')
 		.order('created_at', { ascending: false })
 		.limit(limit);

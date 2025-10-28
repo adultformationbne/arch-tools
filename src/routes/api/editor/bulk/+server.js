@@ -34,7 +34,7 @@ export async function POST({ request, locals }) {
 		}
 
 		// Get current book structure
-		const { data: bookData, error: bookError } = await supabase.from('books').select('*').single();
+		const { data: bookData, error: bookError } = await supabase.from('editor_books').select('*').single();
 
 		if (bookError) {
 			console.error('Error loading book:', bookError);
@@ -128,7 +128,7 @@ export async function POST({ request, locals }) {
 		);
 
 		const { data: updatedBook, error: updateError } = await supabase
-			.from('books')
+			.from('editor_books')
 			.update({ blocks: newBlocks })
 			.eq('id', bookData.id)
 			.select()
