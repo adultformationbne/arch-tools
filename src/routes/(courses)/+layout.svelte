@@ -2,7 +2,6 @@
 	import '../../app.css';
 	import CoursesHeader from './CoursesHeader.svelte';
 	import CoursesFooter from './CoursesFooter.svelte';
-	import DevUserSwitcher from './DevUserSwitcher.svelte';
 
 	// Get current page from URL for header navigation
 	import { page } from '$app/stores';
@@ -26,13 +25,10 @@
 
 	// Use processed user info from layout server
 	let userName = data?.userName || 'User';
-	let userRole = data?.userRole === 'courses_admin' ? 'admin' :
-	               data?.userRole === 'courses_student' ? 'student' :
+	let userRole = data?.userRole === 'admin' ? 'admin' :
+	               data?.userRole === 'student' ? 'student' :
 	               data?.userRole === 'hub_coordinator' ? 'coordinator' : 'student';
 </script>
-
-<!-- Development User Switcher (localhost only) -->
-<DevUserSwitcher />
 
 <div class="min-h-screen" style="background-color: #334642;">
 	<CoursesHeader currentPage={currentPage()} {userName} {userRole} />

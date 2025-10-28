@@ -55,7 +55,7 @@
 	async function loadStudents() {
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/admin/api?endpoint=courses_users&cohort_id=${cohort.id}`);
+			const response = await fetch(`/admin/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`);
 			const result = await response.json();
 
 			// Fetch attendance data for all students

@@ -55,7 +55,7 @@
 	}
 </script>
 
-<nav class="bg-white border-b border-gray-200">
+<nav class="bg-gray-50 border-b border-gray-200">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="flex h-14 items-center justify-center relative">
 			<!-- Center: Section Navigation -->
@@ -95,7 +95,7 @@
 				<!-- Quick Publish Link (in the center with other nav items) -->
 				<a
 					href={quickPublishLink.path}
-					class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors {activeSection === 'publish' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+					class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors {activeSection === 'publish' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
 				>
 					<svelte:component this={quickPublishLink.icon} class="h-4 w-4" />
 					{quickPublishLink.name}

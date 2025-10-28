@@ -25,7 +25,7 @@ export const GET: RequestHandler = async (event) => {
 
 		// Verify user has access to this cohort
 		const { data: accessCheck } = await supabaseAdmin
-			.from('courses_users')
+			.from('courses_enrollments')
 			.select('cohort_id')
 			.eq('user_profile_id', user.id)
 			.eq('cohort_id', cohortId)

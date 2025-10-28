@@ -5,22 +5,14 @@ import { getReflectionStatus } from '$lib/utils/reflection-status.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// Require ACCF user authentication
+	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
-
-	// Check for dev mode user
-	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
-	const devUser = getDevUserFromRequest(event.request);
-	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
-
-	// Use dev user ID if in dev mode, otherwise use authenticated user ID
-	const currentUserId = isDevMode ? devUser.id : user.id;
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('cohort_id, current_session')
-		.eq('user_profile_id', currentUserId)
+		.eq('user_profile_id', user.id)
 		.single();
 
 	if (!enrollment || enrollmentError) {
@@ -40,15 +32,15 @@ export const load: PageServerLoad = async (event) => {
 
 		const moduleId = cohort?.module_id;
 
-		// Get student's courses_users ID (not user_profile_id)
+		// Get student's courses_enrollments ID (not user_profile_id)
 		const { data: studentRecord } = await supabaseAdmin
-			.from('courses_users')
+			.from('courses_enrollments')
 			.select('id')
-			.eq('user_profile_id', currentUserId)
+			.eq('user_profile_id', user.id)
 			.single();
 
 		const accfUserId = studentRecord?.id;
-		console.log('Looking up reflections for accf_user_id:', accfUserId, 'from user_profile_id:', currentUserId);
+		console.log('Looking up reflections for accf_user_id:', accfUserId, 'from user_profile_id:', user.id);
 
 		// Fetch user's reflection responses (using correct field names)
 		const { data: myReflectionResponses, error: myResponsesError } = await supabaseAdmin
@@ -111,7 +103,7 @@ export const load: PageServerLoad = async (event) => {
 			`)
 			.eq('cohort_id', cohortId)
 			.eq('is_public', true)
-			.not('accf_user_id', 'eq', currentUserId) // Exclude current user's reflections
+			.not('accf_user_id', 'eq', user.id) // Exclude current user's reflections
 			.order('created_at', { ascending: false })
 			.limit(20);
 
@@ -207,7 +199,7 @@ export const load: PageServerLoad = async (event) => {
 			myReflections: processedMyReflections,
 			cohortReflections: processedCohortReflections,
 			currentReflectionQuestion: currentQuestion,
-			currentUserId,
+			userId: user.id,
 			cohortId,
 			currentSession
 		};
@@ -218,7 +210,7 @@ export const load: PageServerLoad = async (event) => {
 			myReflections: [],
 			cohortReflections: [],
 			currentReflectionQuestion: null,
-			currentUserId,
+			userId: user.id,
 			cohortId,
 			currentSession,
 			error: 'Failed to load reflections data'

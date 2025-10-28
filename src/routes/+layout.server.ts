@@ -1,21 +1,8 @@
 import { redirect } from '@sveltejs/kit';
-import { getDevUserFromRequest } from '$lib/server/dev-user.js';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, url, request }) => {
-	console.log('=== ROOT LAYOUT SERVER LOAD ===');
-	console.log('URL:', url.pathname);
-	console.log('Hostname:', url.hostname);
-
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, url }) => {
 	const { session, user } = await safeGetSession();
-	console.log('Session exists:', !!session);
-	console.log('User exists:', !!user);
-
-	// Check for dev mode user in development
-	const devUser = getDevUserFromRequest(request);
-	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
-	console.log('Dev mode:', isDevMode);
-	console.log('Dev user:', devUser ? devUser.email : 'none');
 
 	// Domain-based authentication logic (moved up to use in other checks)
 	const hostname = url.hostname;
@@ -29,7 +16,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	// Also allow access to ACCF root page for dev mode setup
 	const isACCFRoot = url.pathname === '/' && isACCFDomain;
 
-	// Get user profile and role if authenticated or in dev mode
+	// Get user profile if authenticated
 	let userProfile = null;
 	if (session && user) {
 		const { data: profile } = await supabase
@@ -38,18 +25,9 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 			.eq('id', user.id)
 			.single();
 		userProfile = profile;
-	} else if (isDevMode) {
-		// In dev mode, get user profile from dev user
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('*')
-			.eq('id', devUser.id)
-			.single();
-		userProfile = profile;
 	}
 
-
-	if (!session && !isPublicRoute && !isDevMode && !isACCFRoot) {
+	if (!session && !isPublicRoute && !isACCFRoot) {
 		// Redirect to appropriate login based on domain/route
 		if (isACCFDomain) {
 			throw redirect(303, '/login?next=' + url.pathname);
@@ -59,40 +37,26 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	}
 
 	// Role-based access control
-	if ((session && userProfile) || (isDevMode && userProfile)) {
-		// ACCF student routes - require accf_student role
+	if (session && userProfile) {
+		// Student routes - require student or admin role
 		if (isACCFDomain && !url.pathname.startsWith('/admin') && !url.pathname.startsWith('/login')) {
-			if (!['courses_student', 'courses_admin', 'admin'].includes(userProfile.role)) {
-				if (!isDevMode) {
-					throw redirect(303, '/login?error=insufficient_permissions');
-				}
+			if (!['student', 'admin', 'hub_coordinator'].includes(userProfile.role)) {
+				throw redirect(303, '/login?error=insufficient_permissions');
 			}
 		}
 
-		// ACCF admin routes - require admin roles
+		// Admin routes - require admin role
 		if (url.pathname.startsWith('/admin')) {
-			if (!['courses_admin', 'admin'].includes(userProfile.role)) {
-				if (!isDevMode) {
-					throw redirect(303, '/auth?error=insufficient_permissions');
-				}
+			if (userProfile.role !== 'admin') {
+				throw redirect(303, '/auth?error=insufficient_permissions');
 			}
 		}
 	}
-
-	console.log('Returning from root layout server:', {
-		hasSession: !!session,
-		hasUser: !!user,
-		hasUserProfile: !!userProfile,
-		userRole: userProfile?.role,
-		isACCFDomain,
-		hasDevUser: !!devUser
-	});
 
 	return {
 		session,
 		user,
 		userProfile,
-		isACCFDomain,
-		devUser: isDevMode ? devUser : null
+		isACCFDomain
 	};
 };

@@ -4,33 +4,17 @@ import { requireCoursesUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	console.log('=== DASHBOARD PAGE SERVER LOAD ===');
-	console.log('URL:', event.url.pathname);
-
-	// Require ACCF user authentication
+	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
-	console.log('Dashboard authenticated user:', user.email);
-
-	// Check for dev mode user
-	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
-	const devUser = getDevUserFromRequest(event.request);
-	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
-
-	// Use dev user ID if in dev mode, otherwise use authenticated user ID
-	const currentUserId = isDevMode ? devUser.id : user.id;
-	console.log('Using user ID for enrollment lookup:', currentUserId, isDevMode ? '(dev mode)' : '(real user)');
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError} = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('cohort_id, current_session')
-		.eq('user_profile_id', currentUserId)
+		.eq('user_profile_id', user.id)
 		.single();
 
-	console.log('Enrollment query result:', { enrollment, enrollmentError });
-
 	if (!enrollment || enrollmentError) {
-		console.error('Enrollment error:', enrollmentError);
 		throw error(404, 'User enrollment not found. Please contact an administrator.');
 	}
 
@@ -118,11 +102,11 @@ export const load: PageServerLoad = async (event) => {
 			throw questionsError;
 		}
 
-		// Get student's courses_users record for reflection queries
+		// Get student's courses_enrollments record for reflection queries
 		const { data: studentRecord } = await supabaseAdmin
-			.from('courses_users')
+			.from('courses_enrollments')
 			.select('id')
-			.eq('user_profile_id', currentUserId)
+			.eq('user_profile_id', user.id)
 			.single();
 
 		const accfUserId = studentRecord?.id;

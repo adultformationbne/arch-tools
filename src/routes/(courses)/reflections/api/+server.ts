@@ -4,20 +4,8 @@ import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
-	console.log('=== API ENDPOINT HIT ===');
-
-	// Require ACCF user authentication
+	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
-	console.log('Authenticated user:', { id: user.id, email: user.email });
-
-	// Check for dev mode user
-	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
-	const devUser = getDevUserFromRequest(event.request);
-	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
-
-	// Use dev user ID if in dev mode, otherwise use authenticated user ID
-	const userId = isDevMode ? devUser.id : user.id;
-	console.log('Using userId for reflection:', userId, isDevMode ? '(dev mode)' : '(real user)');
 
 	try {
 		const body = await event.request.json();
@@ -55,10 +43,10 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Invalid reflection question');
 		}
 
-		// Get student's courses_users record (need id and cohort_id)
+		// Get student's courses_enrollments record (need id and cohort_id)
 		console.log('Looking up student by user_profile_id:', userId);
 		const { data: studentData, error: studentError } = await supabaseAdmin
-			.from('courses_users')
+			.from('courses_enrollments')
 			.select('id, cohort_id')
 			.eq('user_profile_id', userId)
 			.single();

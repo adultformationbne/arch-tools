@@ -15,7 +15,7 @@ export const GET: RequestHandler = async (event) => {
 
 	// Get non-hub students with their attendance
 	const { data: nonHubStudents, error: nonHubError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select(`
 			id,
 			email,
@@ -31,7 +31,7 @@ export const GET: RequestHandler = async (event) => {
 
 	// Get hub students with their hub info
 	const { data: hubStudents, error: hubError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select(`
 			id,
 			email,
@@ -50,7 +50,7 @@ export const GET: RequestHandler = async (event) => {
 		return json({ error: 'Database error' }, { status: 500 });
 	}
 
-	// Get all attendance records for this cohort using courses_users.id
+	// Get all attendance records for this cohort using courses_enrollments.id
 	const allUserIds = [
 		...(nonHubStudents || []).map(s => s.id),
 		...(hubStudents || []).map(s => s.id)
