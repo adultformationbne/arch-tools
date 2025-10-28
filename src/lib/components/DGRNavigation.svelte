@@ -64,7 +64,7 @@
 					<div class="relative">
 						<button
 							onclick={(e) => handleSectionClick(section, e)}
-							class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+							class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
 						>
 							<svelte:component this={section.icon} class="h-4 w-4" />
 							{section.name}
@@ -75,13 +75,13 @@
 
 						<!-- Dropdown menu for subsections -->
 						{#if section.subsections && section.subsections.length > 0 && openDropdown === section.id}
-							<div class="absolute left-0 top-full mt-1 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+							<div class="absolute left-0 top-full mt-1 w-48 rounded-lg bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
 								<div class="py-1">
 									{#each section.subsections as subsection}
 										<a
 											href={subsection.path}
 											onclick={() => openDropdown = null}
-											class="block w-full px-4 py-2 text-left text-sm transition-colors {activeSubSection === subsection.id ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-50'}"
+											class="block w-full px-4 py-2 text-left text-sm transition-colors {activeSubSection === subsection.id ? 'bg-gray-800 text-white font-medium' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
 										>
 											{subsection.name}
 										</a>

@@ -8,6 +8,11 @@
 	let duration_weeks = $state(null);
 	let status = $state('draft');
 
+	// Theme settings
+	let accentLight = $state('#c59a6b');
+	let accentDark = $state('#334642');
+	let fontFamily = $state('Inter');
+
 	let saving = $state(false);
 	let error = $state('');
 
@@ -30,7 +35,14 @@
 					description,
 					duration_weeks: duration_weeks ? parseInt(duration_weeks) : null,
 					status,
-					is_active: status === 'active'
+					is_active: status === 'active',
+					settings: {
+						theme: {
+							accentLight,
+							accentDark,
+							fontFamily
+						}
+					}
 				})
 			});
 
@@ -151,6 +163,102 @@
 			<p class="text-sm text-gray-500 mt-1">
 				Draft courses are hidden from students until activated
 			</p>
+		</div>
+
+		<!-- Theme Settings -->
+		<div class="border-t pt-6" style="border-color: #eae2d9;">
+			<h3 class="text-lg font-semibold mb-4" style="color: #334642;">Theme Settings</h3>
+
+			<!-- Live Preview -->
+			<div
+				class="mb-6 p-8 rounded-lg transition-all duration-300 border-2"
+				style="background-color: {accentDark}; font-family: {fontFamily}, sans-serif; border-color: {accentLight};"
+			>
+				<div class="text-center mb-4">
+					<h4 class="text-2xl font-bold mb-2 text-white">
+						{name || 'Your Course Name'}
+					</h4>
+					<p class="text-sm text-white opacity-80">Live Theme Preview</p>
+				</div>
+				<div
+					class="p-6 rounded-lg text-center"
+					style="background-color: {accentLight};"
+				>
+					<p class="font-semibold text-lg text-gray-900">
+						Accent Light Button/Element
+					</p>
+					<p class="text-sm mt-2 text-gray-800">
+						Buttons, links, and highlights
+					</p>
+				</div>
+			</div>
+
+			<div class="grid grid-cols-2 gap-4">
+				<!-- Accent Light -->
+				<div>
+					<label for="accentLight" class="block text-sm font-semibold mb-2" style="color: #334642;">
+						Accent Light
+					</label>
+					<div class="flex gap-2">
+						<input
+							id="accentLight"
+							type="color"
+							bind:value={accentLight}
+							class="h-12 w-20 border rounded-lg cursor-pointer"
+							style="border-color: #eae2d9;"
+						/>
+						<input
+							type="text"
+							bind:value={accentLight}
+							placeholder="#c59a6b"
+							class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+							style="border-color: #eae2d9; --tw-ring-color: #c59a6b;"
+						/>
+					</div>
+					<p class="text-sm text-gray-500 mt-1">Buttons, links, highlights (warm/bright)</p>
+				</div>
+
+				<!-- Accent Dark -->
+				<div>
+					<label for="accentDark" class="block text-sm font-semibold mb-2" style="color: #334642;">
+						Accent Dark
+					</label>
+					<div class="flex gap-2">
+						<input
+							id="accentDark"
+							type="color"
+							bind:value={accentDark}
+							class="h-12 w-20 border rounded-lg cursor-pointer"
+							style="border-color: #eae2d9;"
+						/>
+						<input
+							type="text"
+							bind:value={accentDark}
+							placeholder="#334642"
+							class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+							style="border-color: #eae2d9; --tw-ring-color: #c59a6b;"
+						/>
+					</div>
+					<p class="text-sm text-gray-500 mt-1">Header/navigation background (dark/rich)</p>
+				</div>
+			</div>
+
+			<!-- Font Family -->
+			<div class="mt-4">
+				<label for="fontFamily" class="block text-sm font-semibold mb-2" style="color: #334642;">
+					Font Family
+				</label>
+				<select
+					id="fontFamily"
+					bind:value={fontFamily}
+					class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+					style="border-color: #eae2d9; --tw-ring-color: #c59a6b;"
+				>
+					<option value="Inter">Inter (Modern Sans-Serif)</option>
+					<option value="Bebas Neue">Bebas Neue (Bold Display)</option>
+					<option value="Merriweather">Merriweather (Classic Serif)</option>
+				</select>
+			</div>
 		</div>
 
 		<!-- Error Message -->

@@ -86,7 +86,7 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 		}
 
 		const body = await request.json();
-		const { name, short_name, description, duration_weeks, is_active, status } = body;
+		const { name, short_name, description, duration_weeks, is_active, status, settings } = body;
 
 		if (!name || !short_name) {
 			throw error(400, 'Name and short_name are required');
@@ -100,7 +100,8 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 				description,
 				duration_weeks,
 				is_active: is_active !== undefined ? is_active : true,
-				status: status || 'draft'
+				status: status || 'draft',
+				settings: settings || {}
 			})
 			.select()
 			.single();
@@ -143,7 +144,7 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 		}
 
 		const body = await request.json();
-		const { id, name, short_name, description, duration_weeks, is_active, status } = body;
+		const { id, name, short_name, description, duration_weeks, is_active, status, settings } = body;
 
 		if (!id) {
 			throw error(400, 'Course id is required');
@@ -156,6 +157,7 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 		if (duration_weeks !== undefined) updates.duration_weeks = duration_weeks;
 		if (is_active !== undefined) updates.is_active = is_active;
 		if (status !== undefined) updates.status = status;
+		if (settings !== undefined) updates.settings = settings;
 
 		const { data: course, error: updateError } = await supabaseAdmin
 			.from('courses')
