@@ -77,7 +77,7 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 
@@ -128,7 +128,7 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 
@@ -177,7 +177,7 @@ export const DELETE: RequestHandler = async ({ request, locals: { safeGetSession
 			.eq('id', user.id)
 			.single();
 
-		if (!profile || !['courses_admin', 'admin'].includes(profile.role)) {
+		if (!profile || !['admin', 'admin'].includes(profile.role)) {
 			throw error(403, 'Forbidden - Admin access required');
 		}
 

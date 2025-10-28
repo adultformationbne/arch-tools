@@ -167,15 +167,15 @@
 					'hub leader': 'hub_coordinator',
 					'leader': 'hub_coordinator',
 					'facilitator': 'hub_coordinator',
-					'admin': 'courses_admin',
-					'administrator': 'courses_admin',
-					'staff': 'courses_admin'
+					'admin': 'admin',
+					'administrator': 'admin',
+					'staff': 'admin'
 				};
 
 				const roleLower = row.role.toLowerCase().trim();
 				const normalizedRole = roleMap[roleLower] || roleLower;
 
-				if (!['courses_student', 'hub_coordinator', 'courses_admin'].includes(normalizedRole)) {
+				if (!['courses_student', 'hub_coordinator', 'admin'].includes(normalizedRole)) {
 					errors.push(`Row ${i + 1}: Invalid role "${row.role}". Must be "Participant", "Hub Coordinator", or "Admin"`);
 					continue;
 				}

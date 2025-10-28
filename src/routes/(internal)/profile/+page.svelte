@@ -21,14 +21,13 @@
 		user_management: 'User Management',
 		dgr: 'Daily Gospel Reflections',
 		editor: 'Content Editor',
-		courses: 'Courses',
-		accf_admin: 'ACCF Admin'
+		courses: 'Courses'
 	};
 
 	// Role labels for display
 	const roleLabels = {
 		admin: 'Admin',
-		student: 'ACCF Student',
+		student: 'Student',
 		hub_coordinator: 'Hub Coordinator'
 	};
 
