@@ -37,6 +37,15 @@
 			{#if userRole === 'admin'}
 				<!-- Admin Navigation -->
 				<a
+					href="/admin/courses"
+					class="glass-link group"
+					class:active-glass={currentPage === 'courses'}
+				>
+					<BookOpen class="transition-transform group-hover:scale-110" size="18" />
+					<span>Courses</span>
+					<div class="glass-shine"></div>
+				</a>
+				<a
 					href="/admin"
 					class="glass-link group"
 					class:active-glass={currentPage === 'admin'}
