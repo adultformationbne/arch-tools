@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAccfUser } from '$lib/server/auth.js';
+import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -12,7 +12,7 @@ import type { RequestHandler } from './$types';
  */
 export const PATCH: RequestHandler = async (event) => {
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 
 	try {
 		// Verify user is admin
@@ -22,7 +22,7 @@ export const PATCH: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'accf_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can pin/unpin feed items');

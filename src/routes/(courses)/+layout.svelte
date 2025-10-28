@@ -1,7 +1,7 @@
 <script>
 	import '../../app.css';
-	import AccfHeader from './AccfHeader.svelte';
-	import AccfFooter from './AccfFooter.svelte';
+	import CoursesHeader from './CoursesHeader.svelte';
+	import CoursesFooter from './CoursesFooter.svelte';
 	import DevUserSwitcher from './DevUserSwitcher.svelte';
 
 	// Get current page from URL for header navigation
@@ -25,8 +25,8 @@
 
 	// Use processed user info from layout server
 	let userName = data?.userName || 'User';
-	let userRole = data?.userRole === 'accf_admin' ? 'admin' :
-	               data?.userRole === 'accf_student' ? 'student' :
+	let userRole = data?.userRole === 'courses_admin' ? 'admin' :
+	               data?.userRole === 'courses_student' ? 'student' :
 	               data?.userRole === 'hub_coordinator' ? 'coordinator' : 'student';
 </script>
 
@@ -34,12 +34,12 @@
 <DevUserSwitcher />
 
 <div class="min-h-screen" style="background-color: #334642;">
-	<AccfHeader currentPage={currentPage()} {userName} {userRole} />
+	<CoursesHeader currentPage={currentPage()} {userName} {userRole} />
 	<!-- Main content area - pages handle their own margins for flexibility -->
 	<main>
 		{@render children()}
 	</main>
-	<AccfFooter />
+	<CoursesFooter />
 </div>
 
 <style>

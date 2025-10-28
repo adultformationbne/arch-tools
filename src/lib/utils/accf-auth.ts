@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type ACCFRole = 'accf_student' | 'accf_admin' | 'hub_coordinator' | 'admin';
+export type ACCFRole = 'courses_student' | 'courses_admin' | 'hub_coordinator' | 'admin';
 
 export interface ACCFUser {
 	id: string;
@@ -101,14 +101,14 @@ export async function getUserRole(supabase: SupabaseClient, userId: string): Pro
  * Check if user has permission for ACCF routes
  */
 export function hasACCFAccess(role: string | null): boolean {
-	return ['accf_student', 'accf_admin', 'admin', 'hub_coordinator'].includes(role || '');
+	return ['courses_student', 'courses_admin', 'admin', 'hub_coordinator'].includes(role || '');
 }
 
 /**
  * Check if user has admin permissions
  */
 export function hasAdminAccess(role: string | null): boolean {
-	return ['accf_admin', 'admin'].includes(role || '');
+	return ['courses_admin', 'admin'].includes(role || '');
 }
 
 /**
@@ -116,9 +116,9 @@ export function hasAdminAccess(role: string | null): boolean {
  */
 export function getDefaultRedirect(role: string | null): string {
 	switch (role) {
-		case 'accf_student':
+		case 'courses_student':
 			return '/dashboard';
-		case 'accf_admin':
+		case 'courses_admin':
 		case 'admin':
 			return '/admin';
 		case 'hub_coordinator':

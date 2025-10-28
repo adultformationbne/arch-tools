@@ -44,7 +44,7 @@
 
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/admin/api?endpoint=accf_users&cohort_id=${selectedCohortId}`);
+			const response = await fetch(`/admin/api?endpoint=courses_users&cohort_id=${selectedCohortId}`);
 			const result = await response.json();
 			students = result.success ? result.data : [];
 		} catch (err) {

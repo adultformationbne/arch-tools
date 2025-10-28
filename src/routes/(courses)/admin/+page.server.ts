@@ -36,12 +36,12 @@ export const load: PageServerLoad = async (event) => {
 			throw cohortsError;
 		}
 
-		// Get student counts for each cohort from accf_users
+		// Get student counts for each cohort from courses_users
 		const cohortIds = cohorts?.map(c => c.id) || [];
 
 		// Count all users in each cohort
 		const { data: userCounts, error: userCountError } = await supabaseAdmin
-			.from('accf_users')
+			.from('courses_users')
 			.select('cohort_id')
 			.in('cohort_id', cohortIds);
 

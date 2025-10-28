@@ -1,11 +1,11 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAccfUser } from '$lib/server/auth.js';
+import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const PUT: RequestHandler = async (event) => {
 	// Require ACCF admin authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 	// TODO: Add admin role check here when role system is implemented
 
 	try {

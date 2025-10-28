@@ -12,10 +12,10 @@ export const GET: RequestHandler = async (event) => {
 
 	try {
 		let query = supabaseAdmin
-			.from('accf_users')
+			.from('courses_users')
 			.select(`
 				*,
-				user_profiles!accf_users_assigned_admin_id_fkey(id, email, full_name, role),
+				user_profiles!courses_users_assigned_admin_id_fkey(id, email, full_name, role),
 				hubs(id, name)
 			`)
 			.order('enrolled_at', { ascending: false });

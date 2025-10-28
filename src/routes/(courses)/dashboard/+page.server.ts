@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAccfUser } from '$lib/server/auth.js';
+import { requireCoursesUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -8,7 +8,7 @@ export const load: PageServerLoad = async (event) => {
 	console.log('URL:', event.url.pathname);
 
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 	console.log('Dashboard authenticated user:', user.email);
 
 	// Check for dev mode user
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError} = await supabaseAdmin
-		.from('accf_users')
+		.from('courses_users')
 		.select('cohort_id, current_session')
 		.eq('user_profile_id', currentUserId)
 		.single();
@@ -118,9 +118,9 @@ export const load: PageServerLoad = async (event) => {
 			throw questionsError;
 		}
 
-		// Get student's accf_users record for reflection queries
+		// Get student's courses_users record for reflection queries
 		const { data: studentRecord } = await supabaseAdmin
-			.from('accf_users')
+			.from('courses_users')
 			.select('id')
 			.eq('user_profile_id', currentUserId)
 			.single();

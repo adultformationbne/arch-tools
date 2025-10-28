@@ -112,10 +112,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			throw error(500, 'Failed to create user profile');
 		}
 
-		// Update accf_users with auth_user_id and activate
+		// Update courses_users with auth_user_id and activate
 		if (pendingUser.pending_cohort_id) {
 			const { error: updateError } = await supabaseAdmin
-				.from('accf_users')
+				.from('courses_users')
 				.update({
 					auth_user_id: authData.user.id,
 					status: 'active',

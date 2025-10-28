@@ -221,9 +221,10 @@ ${truncatedText}`;
 			console.warn('Could not set category:', error);
 		}
 
-		// Set the publish date at 1:00 AM local time (Brisbane/Australia)
-		// WordPress expects the date in the site's timezone
-		const publishDate = new Date(data.date + 'T01:00:00');
+		// Set the publish date at 1:00 AM Brisbane time
+		// WordPress expects ISO format in UTC, so we create a proper Brisbane time
+		// Note: Queensland (Brisbane) does not observe daylight saving, so it's always UTC+10
+		const publishDate = new Date(data.date + 'T01:00:00+10:00'); // Brisbane timezone (UTC+10)
 		const now = new Date();
 		const isScheduled = publishDate > now;
 

@@ -38,6 +38,30 @@
 	let gospelReference = $state(''); // Extracted gospel reference (e.g., "Matthew 1:1-16, 18-23")
 	let promoTiles = $state([]); // Promo tiles for preview
 
+	// Calculate publish times (1am Brisbane = UTC+10)
+	let publishTimes = $derived.by(() => {
+		if (!formData.date) return null;
+
+		// Create date at 1am Brisbane time
+		const brisbaneTime = new Date(formData.date + 'T01:00:00+10:00');
+		const utcTime = brisbaneTime.toISOString();
+
+		return {
+			brisbane: brisbaneTime.toLocaleString('en-AU', {
+				timeZone: 'Australia/Brisbane',
+				dateStyle: 'full',
+				timeStyle: 'short'
+			}),
+			utc: new Date(utcTime).toLocaleString('en-GB', {
+				timeZone: 'UTC',
+				dateStyle: 'full',
+				timeStyle: 'short',
+				hour12: false
+			}) + ' UTC',
+			isScheduled: brisbaneTime > new Date()
+		};
+	});
+
 	// Load promo tiles on mount
 	onMount(async () => {
 		try {
@@ -504,7 +528,7 @@
 	{#snippet leftPanel()}
 		<!-- Header -->
 		<div class="p-4 border-b border-gray-200 bg-white">
-			<div class="flex items-center justify-between mb-2">
+			<div class="flex items-center justify-between">
 				<div>
 					<h1 class="text-lg font-bold text-gray-900">DGR Publisher</h1>
 					<p class="text-xs text-gray-600">Daily Gospel Reflection</p>
@@ -531,6 +555,16 @@
 				bind:gospelReference
 				onPasteFromWord={pasteFromWord}
 			/>
+
+			<!-- Publish Time Display (at bottom of form) -->
+			{#if publishTimes}
+				<div class="mt-4 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+					<span class="font-medium text-gray-700">
+						{publishTimes.isScheduled ? 'Will publish:' : 'Publishing:'}
+					</span>
+					{publishTimes.brisbane} • {publishTimes.utc}
+				</div>
+			{/if}
 		</div>
 	{/snippet}
 

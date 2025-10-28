@@ -36,7 +36,7 @@
 			}
 
 			// Verify user has appropriate role for ACCF platform
-			if (!['accf_student', 'accf_admin', 'admin'].includes(profile.role)) {
+			if (!['courses_student', 'courses_admin', 'admin'].includes(profile.role)) {
 				await supabase.auth.signOut();
 				errorMessage = 'You do not have access to the ACCF platform. Please contact your coordinator.';
 				return;

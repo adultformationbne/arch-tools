@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAccfUser } from '$lib/server/auth.js';
+import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -12,7 +12,7 @@ import type { RequestHandler } from './$types';
  */
 export const GET: RequestHandler = async (event) => {
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 
 	try {
 		const cohortId = event.url.searchParams.get('cohort_id');
@@ -25,7 +25,7 @@ export const GET: RequestHandler = async (event) => {
 
 		// Verify user has access to this cohort
 		const { data: accessCheck } = await supabaseAdmin
-			.from('accf_users')
+			.from('courses_users')
 			.select('cohort_id')
 			.eq('user_profile_id', user.id)
 			.eq('cohort_id', cohortId)
@@ -38,7 +38,7 @@ export const GET: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'accf_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
 
 		if (!accessCheck && !isAdmin) {
 			throw error(403, 'Access denied to this cohort feed');
@@ -91,7 +91,7 @@ export const GET: RequestHandler = async (event) => {
  */
 export const POST: RequestHandler = async (event) => {
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 
 	try {
 		// Verify user is admin
@@ -101,7 +101,7 @@ export const POST: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'accf_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can create feed updates');
@@ -168,7 +168,7 @@ export const POST: RequestHandler = async (event) => {
  */
 export const PATCH: RequestHandler = async (event) => {
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 
 	try {
 		// Verify user is admin
@@ -178,7 +178,7 @@ export const PATCH: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'accf_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can update feed items');
@@ -257,7 +257,7 @@ export const PATCH: RequestHandler = async (event) => {
  */
 export const DELETE: RequestHandler = async (event) => {
 	// Require ACCF user authentication
-	const { user } = await requireAccfUser(event);
+	const { user } = await requireCoursesUser(event);
 
 	try {
 		// Verify user is admin
@@ -267,7 +267,7 @@ export const DELETE: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'accf_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can delete feed items');
