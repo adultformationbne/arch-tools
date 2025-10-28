@@ -115,7 +115,7 @@ async function deleteCohort(cohortId: string) {
 
 	// Check if cohort has any enrollments
 	const { data: enrollments, error: enrollmentCheckError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('id')
 		.eq('cohort_id', cohortId)
 		.limit(1);
@@ -368,9 +368,9 @@ async function uploadCSV(data: any, importedBy: string) {
 	// Process each row
 	for (const row of rows) {
 		try {
-			// Check if already in courses_users for THIS SPECIFIC COHORT
+			// Check if already in courses_enrollments for THIS SPECIFIC COHORT
 			const { data: existingInCohort } = await supabaseAdmin
-				.from('courses_users')
+				.from('courses_enrollments')
 				.select('email')
 				.eq('email', row.email)
 				.eq('cohort_id', cohortId)
@@ -416,8 +416,8 @@ async function uploadCSV(data: any, importedBy: string) {
 				}
 			}
 
-			// Insert into courses_users (invitation_token is auto-generated as UUID by database)
-			const { error: insertError } = await supabaseAdmin.from('courses_users').insert({
+			// Insert into courses_enrollments (invitation_token is auto-generated as UUID by database)
+			const { error: insertError } = await supabaseAdmin.from('courses_enrollments').insert({
 				email: row.email,
 				full_name: row.full_name,
 				role: row.role || 'courses_student',
@@ -513,7 +513,7 @@ async function updateAccfUser(data: any) {
 	}
 
 	const { data: updatedUser, error: updateError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.update(updateData)
 		.eq('id', userId)
 		.select()
@@ -538,7 +538,7 @@ async function deleteAccfUser(userId: string) {
 
 	// Only allow deletion if user hasn't signed up yet (no auth_user_id)
 	const { data: user } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('auth_user_id')
 		.eq('id', userId)
 		.single();
@@ -548,7 +548,7 @@ async function deleteAccfUser(userId: string) {
 	}
 
 	const { error: deleteError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.delete()
 		.eq('id', userId);
 
@@ -580,7 +580,7 @@ async function advanceStudents(data: any, actorName: string) {
 
 	// Update students' current session
 	const { error: updateError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.update({
 			current_session: targetSession,
 			updated_at: new Date().toISOString()
@@ -597,7 +597,7 @@ async function advanceStudents(data: any, actorName: string) {
 	// This will be implemented when email system is ready
 	if (sendEmail) {
 		// const { data: students } = await supabaseAdmin
-		// 	.from('courses_users')
+		// 	.from('courses_enrollments')
 		// 	.select('email, full_name, cohorts(name)')
 		// 	.in('id', studentIds);
 		// await sendSessionNotifications(students, targetSession);
@@ -631,7 +631,7 @@ async function sendInvitations(userIds: string[]) {
 
 	// Get pending users with cohort info
 	const { data: users, error: fetchError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('*, cohorts(name)')
 		.in('id', userIds)
 		.eq('status', 'pending');
@@ -669,7 +669,7 @@ async function sendInvitations(userIds: string[]) {
 
 	if (successfulEmails.length > 0) {
 		await supabaseAdmin
-			.from('courses_users')
+			.from('courses_enrollments')
 			.update({
 				status: 'invited',
 				invitation_sent_at: new Date().toISOString()
@@ -681,7 +681,7 @@ async function sendInvitations(userIds: string[]) {
 	if (emailResults.errors.length > 0) {
 		for (const errorItem of emailResults.errors) {
 			await supabaseAdmin
-				.from('courses_users')
+				.from('courses_enrollments')
 				.update({
 					status: 'error',
 					error_message: errorItem.error
@@ -711,10 +711,10 @@ export const GET: RequestHandler = async (event) => {
 	const cohortId = url.searchParams.get('cohort_id');
 
 	try {
-		// Handle courses_users endpoint
-		if (endpoint === 'courses_users') {
+		// Handle courses_enrollments endpoint
+		if (endpoint === 'courses_enrollments') {
 			let query = supabaseAdmin
-				.from('courses_users')
+				.from('courses_enrollments')
 				.select('*, cohorts(name), hubs(name)')
 				.order('created_at', { ascending: false });
 

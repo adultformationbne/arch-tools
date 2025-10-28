@@ -4,22 +4,14 @@ import { requireCoursesUser } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// Require ACCF user authentication
+	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
-
-	// Check for dev mode user
-	const { getDevUserFromRequest } = await import('$lib/server/dev-user.js');
-	const devUser = getDevUserFromRequest(event.request);
-	const isDevMode = process.env.NODE_ENV === 'development' && devUser;
-
-	// Use dev user ID if in dev mode, otherwise use authenticated user ID
-	const currentUserId = isDevMode ? devUser.id : user.id;
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
-		.from('courses_users')
+		.from('courses_enrollments')
 		.select('cohort_id, current_session')
-		.eq('user_profile_id', currentUserId)
+		.eq('user_profile_id', user.id)
 		.single();
 
 	if (enrollmentError || !enrollment) {
