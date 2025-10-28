@@ -10,8 +10,7 @@ export const MODULES = {
 	USER_MANAGEMENT: 'user_management',
 	DGR: 'dgr',
 	EDITOR: 'editor',
-	COURSES: 'courses',
-	ACCF_ADMIN: 'courses_admin'
+	COURSES: 'courses'
 };
 
 /**
@@ -133,8 +132,7 @@ export function getModuleName(moduleId) {
 		[MODULES.USER_MANAGEMENT]: 'User Management',
 		[MODULES.DGR]: 'Daily Gospel Reflections',
 		[MODULES.EDITOR]: 'Content Editor',
-		[MODULES.COURSES]: 'Courses',
-		[MODULES.ACCF_ADMIN]: 'ACCF Admin'
+		[MODULES.COURSES]: 'Courses'
 	};
 	return names[moduleId] || moduleId;
 }

@@ -22,7 +22,7 @@ export const PATCH: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can pin/unpin feed items');

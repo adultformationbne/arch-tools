@@ -16,7 +16,7 @@
 	let studentData = $state({
 		full_name: '',
 		email: '',
-		role: 'courses_student',
+		role: 'student',
 		hub: ''
 	});
 
@@ -110,7 +110,7 @@
 
 	function handleClose() {
 		mode = 'choice';
-		studentData = { full_name: '', email: '', role: 'courses_student', hub: '' };
+		studentData = { full_name: '', email: '', role: 'student', hub: '' };
 		error = '';
 		uploadResult = null;
 		isLoading = false;
@@ -186,9 +186,9 @@
 						<div class="form-group">
 							<label>Role</label>
 							<select bind:value={studentData.role}>
-								<option value="accf_student">Participant</option>
+								<option value="student">Participant</option>
 								<option value="hub_coordinator">Hub Coordinator</option>
-								<option value="accf_admin">Admin</option>
+								<option value="admin">Admin</option>
 							</select>
 						</div>
 

@@ -175,9 +175,9 @@
 
 	function downloadCSVTemplate() {
 		const csvContent = `full_name,email,role,hub
-John Smith,john.smith@example.com,accf_student,St. Mary's Parish
+John Smith,john.smith@example.com,student,St. Mary's Parish
 Jane Doe,jane.doe@example.com,hub_coordinator,Downtown Hub
-Bob Johnson,bob.j@example.com,accf_student,`;
+Bob Johnson,bob.j@example.com,student,`;
 
 		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 		const link = document.createElement('a');

@@ -38,7 +38,7 @@ export const GET: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
 
 		if (!accessCheck && !isAdmin) {
 			throw error(403, 'Access denied to this cohort feed');
@@ -101,7 +101,7 @@ export const POST: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can create feed updates');
@@ -178,7 +178,7 @@ export const PATCH: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can update feed items');
@@ -267,7 +267,7 @@ export const DELETE: RequestHandler = async (event) => {
 			.eq('id', user.id)
 			.single();
 
-		const isAdmin = profileData?.role === 'courses_admin' || profileData?.role === 'admin';
+		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
 
 		if (!isAdmin) {
 			throw error(403, 'Only admins can delete feed items');

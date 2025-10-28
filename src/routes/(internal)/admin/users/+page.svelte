@@ -16,8 +16,7 @@
 		{ id: 'user_management', name: 'User Management', description: 'Create and manage admin users' },
 		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
 		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
-		{ id: 'courses', name: 'Courses', description: 'Manage course content' },
-		{ id: 'courses_admin', name: 'ACCF Admin', description: 'Manage ACCF cohorts and students' }
+		{ id: 'courses', name: 'Courses', description: 'Manage course content and cohorts' }
 	];
 
 	// New user form
@@ -92,8 +91,7 @@
 			'user_management': 'bg-purple-100 text-purple-800',
 			'dgr': 'bg-blue-100 text-blue-800',
 			'editor': 'bg-green-100 text-green-800',
-			'courses': 'bg-yellow-100 text-yellow-800',
-			'courses_admin': 'bg-red-100 text-red-800'
+			'courses': 'bg-yellow-100 text-yellow-800'
 		};
 		return colors[moduleId] || 'bg-gray-100 text-gray-800';
 	}

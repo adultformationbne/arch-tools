@@ -37,19 +37,19 @@ export async function requireRole(event: RequestEvent, allowedRoles: string[]) {
 }
 
 /**
- * Requires admin or accf_admin role
+ * Requires admin role
  * @throws 401 if not authenticated, 403 if not admin
  */
 export async function requireAdmin(event: RequestEvent) {
-	return requireRole(event, ['courses_admin', 'admin']);
+	return requireRole(event, ['admin']);
 }
 
 /**
- * Requires ACCF student, admin, or coordinator role
- * @throws 401 if not authenticated, 403 if not ACCF user
+ * Requires student, admin, or hub coordinator role
+ * @throws 401 if not authenticated, 403 if not authorized
  */
 export async function requireCoursesUser(event: RequestEvent) {
-	return requireRole(event, ['courses_student', 'courses_admin', 'hub_coordinator', 'admin']);
+	return requireRole(event, ['student', 'admin', 'hub_coordinator']);
 }
 
 /**

@@ -38,7 +38,7 @@
 					.single();
 
 				let defaultRedirect = '/';
-				if (profile && ['courses_admin', 'admin'].includes(profile.role)) {
+				if (profile && ['admin', 'admin'].includes(profile.role)) {
 					defaultRedirect = '/admin';
 				} else if (profile && profile.role === 'courses_student') {
 					defaultRedirect = '/dashboard';
