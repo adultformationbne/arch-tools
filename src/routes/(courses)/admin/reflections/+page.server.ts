@@ -1,14 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCoursesUser } from '$lib/server/auth.js';
+import { requireAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// Require ACCF admin authentication
-	const { user } = await requireCoursesUser(event);
-
-	// TODO: Add admin role check here when role system is implemented
-	// For now, all authenticated ACCF users can access
+	// Restrict to admins only
+	const { user } = await requireAdmin(event);
 
 	try {
 		// Fetch all reflection responses with related data
@@ -16,7 +13,7 @@ export const load: PageServerLoad = async (event) => {
 			.from('courses_reflection_responses')
 			.select(`
 				*,
-				accf_user:accf_user_id (
+				enrollment:enrollment_id (
 					id,
 					user_profile:user_profile_id (
 						full_name,
@@ -33,9 +30,9 @@ export const load: PageServerLoad = async (event) => {
 						name
 					)
 				),
-				module_reflection_questions!question_id (
+				question:courses_reflection_questions!question_id (
 					question_text,
-					module_sessions!inner (
+					courses_sessions!inner (
 						session_number
 					)
 				),
@@ -72,33 +69,33 @@ export const load: PageServerLoad = async (event) => {
 			const dbStatus = r.status || 'submitted';
 			let displayStatus = 'pending';
 
-			if (dbStatus === 'passed') {
-				displayStatus = 'marked';
-			} else if (dbStatus === 'submitted' || dbStatus === 'needs_revision' || dbStatus === 'resubmitted') {
-				// Check if overdue (submitted more than 7 days ago without marking)
-				const submittedDate = new Date(r.created_at);
-				const daysSinceSubmission = (Date.now() - submittedDate.getTime()) / (1000 * 60 * 60 * 24);
-				displayStatus = daysSinceSubmission > 7 ? 'overdue' : 'pending';
-			}
+				if (dbStatus === 'passed') {
+					displayStatus = 'marked';
+				} else if (dbStatus === 'submitted' || dbStatus === 'needs_revision' || dbStatus === 'resubmitted') {
+					// Check if overdue (submitted more than 7 days ago without marking)
+					const submittedDate = new Date(r.created_at);
+					const daysSinceSubmission = (Date.now() - submittedDate.getTime()) / (1000 * 60 * 60 * 24);
+					displayStatus = daysSinceSubmission > 7 ? 'overdue' : 'pending';
+				}
 
-			// Map status to grade for UI compatibility
-			const grade = dbStatus === 'passed' ? 'pass' : (dbStatus === 'needs_revision' ? 'fail' : null);
+				// Map status to grade for UI compatibility
+				const grade = dbStatus === 'passed' ? 'pass' : (dbStatus === 'needs_revision' ? 'fail' : null);
 
 			return {
 				id: r.id,
 				student: {
-					id: r.accf_user?.id,
-					name: r.accf_user?.user_profile?.full_name || 'Unknown',
-					email: r.accf_user?.user_profile?.email || '',
-					hub: r.accf_user?.hub?.name || 'No Hub'
+					id: r.enrollment?.id,
+					name: r.enrollment?.user_profile?.full_name || 'Unknown',
+					email: r.enrollment?.user_profile?.email || '',
+					hub: r.enrollment?.hub?.name || 'No Hub'
 				},
 				cohort: {
 					id: r.cohort?.id,
 					name: r.cohort?.name || 'Unknown Cohort',
 					moduleName: r.cohort?.module?.name || 'Unknown Module'
 				},
-				session: r.module_reflection_questions?.module_sessions?.session_number || r.session_number || 0,
-				question: r.module_reflection_questions?.question_text || '',
+				session: r.question?.courses_sessions?.session_number || r.session_number || 0,
+				question: r.question?.question_text || '',
 				content: r.response_text || '',
 				isPublic: r.is_public || false,
 				submittedAt: r.created_at,

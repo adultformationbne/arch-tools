@@ -39,8 +39,8 @@ export const load: PageServerLoad = async (event) => {
 			.eq('user_profile_id', user.id)
 			.single();
 
-		const accfUserId = studentRecord?.id;
-		console.log('Looking up reflections for accf_user_id:', accfUserId, 'from user_profile_id:', user.id);
+		const enrollmentId = studentRecord?.id;
+		console.log('Looking up reflections for enrollment_id:', enrollmentId, 'from user_profile_id:', user.id);
 
 		// Fetch user's reflection responses (using correct field names)
 		const { data: myReflectionResponses, error: myResponsesError } = await supabaseAdmin
@@ -57,7 +57,7 @@ export const load: PageServerLoad = async (event) => {
 					full_name
 				)
 			`)
-			.eq('accf_user_id', accfUserId)
+			.eq('enrollment_id', enrollmentId)
 			.order('created_at', { ascending: false });
 
 		console.log('Found reflections:', myReflectionResponses?.length || 0);
@@ -97,13 +97,15 @@ export const load: PageServerLoad = async (event) => {
 						session_number
 					)
 				),
-				user_profile:accf_user_id (
-					full_name
+				courses_enrollments!enrollment_id (
+					user_profiles!user_profile_id (
+						full_name
+					)
 				)
 			`)
 			.eq('cohort_id', cohortId)
 			.eq('is_public', true)
-			.not('accf_user_id', 'eq', user.id) // Exclude current user's reflections
+			.not('enrollment_id', 'eq', enrollmentId) // Exclude current user's reflections
 			.order('created_at', { ascending: false })
 			.limit(20);
 

@@ -13,7 +13,7 @@ declare global {
 			session: Session | null;
 			user: User | null;
 			userProfile: any | null;
-			isACCFDomain: boolean;
+			isCoursesRoute: boolean;
 		}
 		// interface PageState {}
 		// interface Platform {}

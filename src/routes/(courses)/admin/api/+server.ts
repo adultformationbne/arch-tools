@@ -43,10 +43,10 @@ export const POST: RequestHandler = async (event) => {
 				return await updateCohortStatus(data.cohortId, data.status);
 			case 'upload_csv':
 				return await uploadCSV(data, user.id);
-			case 'update_accf_user':
-				return await updateAccfUser(data);
-			case 'delete_accf_user':
-				return await deleteAccfUser(data.userId);
+			case 'update_enrollment':
+				return await updateEnrollment(data);
+			case 'delete_enrollment':
+				return await deleteEnrollment(data.userId);
 			case 'send_invitations':
 				return await sendInvitations(data.userIds);
 			case 'advance_students':
@@ -99,7 +99,7 @@ async function createCohort(data: any) {
 	}
 
 	// Create reflection questions for each week
-	await createDefaultReflectionQuestions(newCohort.id, moduleId);
+	await ensureModuleReflectionQuestions(moduleId);
 
 	return json({
 		success: true,
@@ -128,9 +128,6 @@ async function deleteCohort(cohortId: string) {
 	if (enrollments && enrollments.length > 0) {
 		throw error(400, 'Cannot delete cohort with enrolled students');
 	}
-
-	// Delete related data first (reflection questions only - materials belong to modules)
-	await supabaseAdmin.from('reflection_questions').delete().eq('cohort_id', cohortId);
 
 	// Delete the cohort
 	const { error: deleteError } = await supabaseAdmin
@@ -185,8 +182,8 @@ async function duplicateCohort(cohortId: string) {
 		throw error(500, 'Failed to duplicate cohort');
 	}
 
-	// Copy only reflection questions (materials belong to modules)
-	await copyReflectionQuestions(cohortId, newCohort.id);
+	// Ensure module-level reflection questions exist
+	await ensureModuleReflectionQuestions(originalCohort.module_id);
 
 	return json({
 		success: true,
@@ -195,54 +192,69 @@ async function duplicateCohort(cohortId: string) {
 	});
 }
 
-async function copyReflectionQuestions(sourceCohortId: string, targetCohortId: string) {
-	// Copy reflection questions
-	const { data: questions, error: questionsError } = await supabaseAdmin
-		.from('reflection_questions')
-		.select('*')
-		.eq('cohort_id', sourceCohortId);
+async function ensureModuleReflectionQuestions(moduleId: string) {
+	// Default reflection prompts mapped by session index
+	const defaultQuestions = [
+		'What is the reason you look to God for answers over cultural sources and making prayer central to your life?',
+		'How do you see God working in your daily life through small moments and ordinary experiences?',
+		'Reflect on a time when you experienced God\'s mercy in your life.',
+		'How has your understanding of the Trinity deepened through this week\'s materials?',
+		'What does it mean to you to be part of the Body of Christ?',
+		'How has your understanding of the Eucharist deepened through this week\'s materials?',
+		'Describe a moment when you felt particularly close to God in prayer.',
+		'How will you continue to grow in your faith after completing this module?'
+	];
 
-	if (!questionsError && questions) {
-		const questionsCopy = questions.map(question => ({
-			cohort_id: targetCohortId,
-			week_number: question.week_number,
-			question_text: question.question_text,
-			created_at: new Date().toISOString(),
-			updated_at: new Date().toISOString()
+	const { data: sessions, error: sessionsError } = await supabaseAdmin
+		.from('courses_sessions')
+		.select('id, session_number')
+		.eq('module_id', moduleId)
+		.order('session_number', { ascending: true });
+
+	if (sessionsError) {
+		console.error('Error fetching module sessions for reflection questions:', sessionsError);
+		throw error(500, 'Failed to load module sessions');
+	}
+
+	if (!sessions || sessions.length === 0) {
+		return;
+	}
+
+	const sessionIds = sessions.map(session => session.id);
+
+	const { data: existingQuestions, error: existingError } = await supabaseAdmin
+		.from('courses_reflection_questions')
+		.select('session_id')
+		.in('session_id', sessionIds);
+
+	if (existingError) {
+		console.error('Error checking existing reflection questions:', existingError);
+		throw error(500, 'Failed to check reflection questions');
+	}
+
+	const existingSessionIds = new Set((existingQuestions || []).map(q => q.session_id));
+	const now = new Date().toISOString();
+	const questionsToInsert = sessions
+		.filter(session => !existingSessionIds.has(session.id))
+		.map((session, index) => ({
+			session_id: session.id,
+			question_text: defaultQuestions[index] || defaultQuestions[defaultQuestions.length - 1],
+			created_at: now,
+			updated_at: now
 		}));
 
-		await supabaseAdmin.from('reflection_questions').insert(questionsCopy);
+	if (questionsToInsert.length === 0) {
+		return;
 	}
-}
 
-async function createDefaultReflectionQuestions(cohortId: string, moduleId: string) {
-	// Different default questions based on module
-	const moduleQuestions: Record<string, string[]> = {
-		// Foundations of Faith questions
-		'default': [
-			"What is the reason you look to God for answers over cultural sources and making prayer central to your life?",
-			"How do you see God working in your daily life through small moments and ordinary experiences?",
-			"Reflect on a time when you experienced God's mercy in your life.",
-			"How has your understanding of the Trinity deepened through this week's materials?",
-			"What does it mean to you to be part of the Body of Christ?",
-			"How has your understanding of the Eucharist deepened through this week's materials?",
-			"Describe a moment when you felt particularly close to God in prayer.",
-			"How will you continue to grow in your faith after completing this module?"
-		]
-	};
+	const { error: insertError } = await supabaseAdmin
+		.from('courses_reflection_questions')
+		.insert(questionsToInsert);
 
-	// Use default questions for now (can be customized per module later)
-	const selectedQuestions = moduleQuestions['default'];
-
-	const questions = selectedQuestions.map((question, index) => ({
-		cohort_id: cohortId,
-		week_number: index + 1,
-		question_text: question,
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString()
-	}));
-
-	await supabaseAdmin.from('reflection_questions').insert(questions);
+	if (insertError) {
+		console.error('Error inserting default reflection questions:', insertError);
+		throw error(500, 'Failed to insert reflection questions');
+	}
 }
 
 async function updateCohort(data: any, actorName: string) {
@@ -330,7 +342,7 @@ function calculateEndDate(startDate: string): string {
 	return end.toISOString().split('T')[0];
 }
 
-// ACCF Users Management Functions
+// Enrollment Management Functions
 
 async function uploadCSV(data: any, importedBy: string) {
 	const { filename, data: rows, cohortId } = data;
@@ -482,7 +494,7 @@ async function uploadCSV(data: any, importedBy: string) {
 	});
 }
 
-async function updateAccfUser(data: any) {
+async function updateEnrollment(data: any) {
 	const { userId, updates } = data;
 
 	if (!userId) {
@@ -520,7 +532,7 @@ async function updateAccfUser(data: any) {
 		.single();
 
 	if (updateError) {
-		console.error('Error updating accf user:', updateError);
+		console.error('Error updating enrollment:', updateError);
 		throw error(500, 'Failed to update user');
 	}
 
@@ -531,7 +543,7 @@ async function updateAccfUser(data: any) {
 	});
 }
 
-async function deleteAccfUser(userId: string) {
+async function deleteEnrollment(userId: string) {
 	if (!userId) {
 		throw error(400, 'Missing userId');
 	}
@@ -553,7 +565,7 @@ async function deleteAccfUser(userId: string) {
 		.eq('id', userId);
 
 	if (deleteError) {
-		console.error('Error deleting accf user:', deleteError);
+		console.error('Error deleting enrollment:', deleteError);
 		throw error(500, 'Failed to delete user');
 	}
 
@@ -645,13 +657,13 @@ async function sendInvitations(userIds: string[]) {
 		throw error(400, 'No pending users found to invite');
 	}
 
-	// Prepare user data for email sending
-	const usersToInvite = users.map(user => ({
-		email: user.email,
-		full_name: user.full_name,
-		invitation_token: user.invitation_token,
-		cohort_name: user.cohorts?.name || 'ACCF Program'
-	}));
+		// Prepare user data for email sending
+		const usersToInvite = users.map(user => ({
+			email: user.email,
+			full_name: user.full_name,
+			invitation_token: user.invitation_token,
+			cohort_name: user.cohorts?.name || 'Course Cohort'
+		}));
 
 	// Send emails via Resend
 	let emailResults;
@@ -722,10 +734,10 @@ export const GET: RequestHandler = async (event) => {
 				query = query.eq('cohort_id', cohortId);
 			}
 
-			const { data: users, error: fetchError } = await query;
+				const { data: users, error: fetchError } = await query;
 
-			if (fetchError) {
-				console.error('Error fetching accf users:', fetchError);
+				if (fetchError) {
+					console.error('Error fetching enrollments:', fetchError);
 				throw error(500, 'Failed to fetch users');
 			}
 
@@ -739,7 +751,7 @@ export const GET: RequestHandler = async (event) => {
 		if (endpoint === 'attendance' && cohortId) {
 			const { data: attendance, error: fetchError } = await supabaseAdmin
 				.from('courses_attendance')
-				.select('accf_user_id, session_number, present')
+				.select('enrollment_id, session_number, present')
 				.eq('cohort_id', cohortId)
 				.order('session_number', { ascending: true });
 
@@ -758,7 +770,7 @@ export const GET: RequestHandler = async (event) => {
 		if (endpoint === 'reflection_responses' && cohortId) {
 			const { data: reflections, error: fetchError } = await supabaseAdmin
 				.from('courses_reflection_responses')
-				.select('accf_user_id, session_number, status, marked_at, created_at, feedback')
+				.select('enrollment_id, session_number, status, marked_at, created_at, feedback')
 				.eq('cohort_id', cohortId)
 				.order('session_number', { ascending: true });
 
