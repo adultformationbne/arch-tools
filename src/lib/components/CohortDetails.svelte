@@ -6,6 +6,7 @@
 	let {
 		cohort,
 		modules = [],
+		courseSlug,
 		onUpdate = () => {},
 		onDelete = () => {}
 	} = $props();

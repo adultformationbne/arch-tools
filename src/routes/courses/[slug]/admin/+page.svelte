@@ -103,7 +103,7 @@ $effect(() => {
 	async function handleCohortUpdate() {
 		// Fetch updated cohort data directly
 		try {
-			const response = await fetch('/admin/api');
+			const response = await fetch(`/courses/${courseSlug}/admin/api`);
 			const result = await response.json();
 			if (result.success) {
 				cohorts = result.data;
@@ -140,7 +140,7 @@ $effect(() => {
 	async function refreshData() {
 		try {
 			// Fetch fresh data from server
-			const response = await fetch('/admin', {
+			const response = await fetch(`/courses/${courseSlug}/admin`, {
 				headers: {
 					'Accept': 'application/json'
 				}

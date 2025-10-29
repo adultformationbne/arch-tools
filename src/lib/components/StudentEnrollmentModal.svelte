@@ -3,7 +3,7 @@
 	import { X, UserPlus, Upload, Users } from 'lucide-svelte';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { cohort = null, show = false, onClose = () => {} } = $props();
+	let { cohort = null, show = false, courseSlug, onClose = () => {} } = $props();
 
 	const dispatch = createEventDispatcher();
 
