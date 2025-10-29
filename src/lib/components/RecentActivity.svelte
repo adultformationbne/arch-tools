@@ -2,7 +2,7 @@
 	import { MessageSquare, Mail, ArrowRight, UserPlus, UserMinus } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 
-	let { cohort } = $props();
+	let { cohort, courseSlug } = $props();
 
 	let recentActivity = $state([]);
 	let loading = $state(false);
@@ -24,7 +24,7 @@
 
 		loading = true;
 		try {
-			const response = await fetch(`/admin/api?endpoint=recent_activity&cohort_id=${cohort.id}`);
+			const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=recent_activity&cohort_id=${cohort.id}`);
 			if (response.ok) {
 				const data = await response.json();
 				recentActivity = data.data || [];

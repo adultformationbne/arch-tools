@@ -11,6 +11,7 @@
 
 	let { data } = $props();
 
+	const courseSlug = data.courseSlug;
 	let modules = $state(data.modules || []);
 	let cohorts = $state(data.cohorts || []);
 let selectedCohortId = $state(null);
@@ -231,7 +232,7 @@ Bob Johnson,bob.j@example.com,student,`;
 	{#if selectedCohort}
 		<div class="details-activity-row">
 			<!-- Left: Cohort Details -->
-			<CohortDetails
+			<CohortDetails {courseSlug}
 				cohort={selectedCohort}
 				{modules}
 				onUpdate={handleCohortUpdate}
@@ -240,14 +241,14 @@ Bob Johnson,bob.j@example.com,student,`;
 
 			<!-- Right: Recent Activity -->
 			<div class="activity-sidebar">
-				<RecentActivity cohort={selectedCohort} />
+				<RecentActivity cohort={selectedCohort} {courseSlug} />
 			</div>
 		</div>
 	{/if}
 
 	<!-- Full-Width Participants Section -->
 	{#if selectedCohort}
-		<CohortManager
+		<CohortManager {courseSlug}
 			cohort={selectedCohort}
 			{modules}
 			{refreshTrigger}
@@ -259,21 +260,21 @@ Bob Johnson,bob.j@example.com,student,`;
 </div>
 
 <!-- Modals -->
-<CohortCreationWizard
+<CohortCreationWizard {courseSlug}
 	{modules}
 	show={showCohortWizard}
 	onClose={closeCohortWizard}
 	on:complete={handleWizardComplete}
 />
 
-<StudentEnrollmentModal
+<StudentEnrollmentModal {courseSlug}
 	cohort={selectedCohort}
 	show={showStudentEnrollment}
 	onClose={closeStudentEnrollment}
 	on:complete={handleEnrollmentComplete}
 />
 
-<StudentAdvancementModal
+<StudentAdvancementModal {courseSlug}
 	cohort={selectedCohort}
 	{students}
 	bind:show={showAdvancementModal}

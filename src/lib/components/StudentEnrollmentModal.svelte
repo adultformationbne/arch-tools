@@ -43,7 +43,7 @@
 		error = '';
 
 		try {
-			const response = await fetch('/admin/api', {
+			const response = await fetch('/courses/${courseSlug}/admin/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -77,7 +77,7 @@
 		error = '';
 
 		try {
-			const response = await fetch('/admin/api', {
+			const response = await fetch('/courses/${courseSlug}/admin/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
