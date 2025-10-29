@@ -1,6 +1,8 @@
 <script>
-	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
-	import { page } from '$app/stores';
+import DGRNavigation from '$lib/components/DGRNavigation.svelte';
+import { page } from '$app/stores';
+
+let { children } = $props();
 
 	// Determine active section and subsection based on current route
 	let activeSection = $derived.by(() => {
@@ -33,4 +35,4 @@
 <DGRNavigation {activeSection} {activeSubSection} />
 
 <!-- Page Content -->
-<slot />
+{@render children()}

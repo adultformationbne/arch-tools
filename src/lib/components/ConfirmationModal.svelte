@@ -106,7 +106,7 @@
 
 	.modal-loading :global(.spinner) {
 		animation: spin 1s linear infinite;
-		color: var(--accf-accent, #c59a6b);
+		color: var(--course-accent-light, #c59a6b);
 		margin: 0 auto 24px;
 	}
 
@@ -178,7 +178,7 @@
 
 	.modal-body :global(.modal-note) {
 		background: rgba(197, 154, 107, 0.1);
-		border-left: 3px solid var(--accf-accent, #c59a6b);
+		border-left: 3px solid var(--course-accent-light, #c59a6b);
 		padding: 12px 16px;
 		border-radius: 6px;
 		font-size: 0.875rem;
@@ -216,10 +216,10 @@
 		justify-content: center;
 		gap: 8px;
 		padding: 12px 20px;
-		background: var(--accf-accent, #c59a6b);
+		background: var(--course-accent-light, #c59a6b);
 		border: none;
 		border-radius: 10px;
-		color: var(--accf-darkest, #1e2322);
+		color: var(--course-accent-darkest, #1e2322);
 		font-weight: 700;
 		font-size: 0.9375rem;
 		cursor: pointer;

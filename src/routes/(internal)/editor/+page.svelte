@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import EditBlockModal from '$lib/components/EditBlockModal.svelte';
 	import DocumentPreview from '$lib/components/DocumentPreview.svelte';
 	import BlockVersionHistory from '$lib/components/BlockVersionHistory.svelte';
@@ -99,29 +98,31 @@
 	})());
 
 	// Load data directly using EditorAPI
-	onMount(async () => {
-		try {
-			saveStatus = 'loading';
-			const bookData = await EditorAPI.loadBook();
-			
-			// Set blocks directly
-			blocks = (bookData.blocks || []).map(block => ({
-				...block,
-				isVisible: block.isVisible !== undefined ? block.isVisible : true
-			}));
-			
-			// Apply filters
-			applyFilters();
-			
-			documentTitle = bookData.documentTitle || 'Untitled Document';
-			lastSavedTitle = documentTitle;
-			lastSaveTime = bookData.lastSaved;
-			saveStatus = 'saved';
-		} catch (error) {
-			console.error('Error loading data:', error);
-			saveStatus = 'error';
-			errorMessage = error.message || 'Failed to load data';
-		}
+	$effect(() => {
+		(async () => {
+			try {
+				saveStatus = 'loading';
+				const bookData = await EditorAPI.loadBook();
+
+				// Set blocks directly
+				blocks = (bookData.blocks || []).map(block => ({
+					...block,
+					isVisible: block.isVisible !== undefined ? block.isVisible : true
+				}));
+
+				// Apply filters
+				applyFilters();
+
+				documentTitle = bookData.documentTitle || 'Untitled Document';
+				lastSavedTitle = documentTitle;
+				lastSaveTime = bookData.lastSaved;
+				saveStatus = 'saved';
+			} catch (error) {
+				console.error('Error loading data:', error);
+				saveStatus = 'error';
+				errorMessage = error.message || 'Failed to load data';
+			}
+		})();
 	});
 	
 	// Simple filter function

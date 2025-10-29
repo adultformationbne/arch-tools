@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from 'svelte';
   import { toast } from '$lib/stores/toast.svelte.js';
   import ToastContainer from '$lib/components/ToastContainer.svelte';
   import TemplateCard from '$lib/components/TemplateCard.svelte';
@@ -357,7 +356,7 @@
   }
 
   // Initialize
-  onMount(() => {
+  $effect(() => {
     loadTemplates();
   });
 

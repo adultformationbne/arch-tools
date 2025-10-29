@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import { Calendar, Edit, Check, Clock, FileText, BookOpen } from 'lucide-svelte';
@@ -13,7 +12,8 @@
 	let dates = $state([]);
 	let loading = $state(true);
 	let selectedDate = $state(null);
-	let modalOpen = $state(false);
+let modalOpen = $state(false);
+let modalContent = $state(null);
 
 	// Reflection form state
 	let reflectionTitle = $state('');
@@ -29,8 +29,8 @@
 	let loadingGospelText = $state(false);
 	let showGospelText = $state(false);
 
-	onMount(async () => {
-		await loadContributorData();
+	$effect(() => {
+		loadContributorData();
 	});
 
 	async function loadContributorData() {
@@ -350,11 +350,22 @@
 {#if modalOpen && selectedDate}
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) closeModal();
+		onclick={(event) => {
+			if (!modalContent?.contains(event.target)) {
+				closeModal();
+			}
 		}}
+		onkeydown={(event) => {
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				closeModal();
+			}
+		}}
+		role="dialog"
+		aria-modal="true"
+		tabindex="0"
 	>
-		<div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl" onclick={(e) => e.stopPropagation()}>
+		<div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl" bind:this={modalContent}>
 			<!-- Modal Header -->
 			<div class="border-b border-gray-200 px-6 py-4">
 				<div class="flex items-center justify-between">
@@ -372,10 +383,11 @@
 							{/if}
 						</p>
 					</div>
-					<button
-						onclick={closeModal}
-						class="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-					>
+		<button
+			onclick={closeModal}
+			class="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+			aria-label="Close"
+		>
 						<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 						</svg>
@@ -542,6 +554,7 @@
 <ToastContainer />
 
 <style>
+	@reference "../../../../../app.css";
 	/* Gospel text styling */
 	:global(.prose h2.passage-ref) {
 		@apply text-sm font-semibold text-indigo-800 mt-4 mb-2;

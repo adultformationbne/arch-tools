@@ -292,7 +292,7 @@
 	}
 
 	.detail-item :global(svg) {
-		color: var(--accf-accent, #c59a6b);
+		color: var(--course-accent-light, #c59a6b);
 		margin-bottom: 4px;
 	}
 
@@ -393,7 +393,7 @@
 	.btn-icon-glassy.primary {
 		background: rgba(197, 154, 107, 0.2);
 		border-color: rgba(197, 154, 107, 0.4);
-		color: var(--accf-accent, #c59a6b);
+		color: var(--course-accent-light, #c59a6b);
 		font-weight: 700;
 	}
 
@@ -489,14 +489,14 @@
 	.form-group input:focus,
 	.form-group select:focus {
 		outline: none;
-		border-color: var(--accf-accent, #c59a6b);
+		border-color: var(--course-accent-light, #c59a6b);
 		background: rgba(255, 255, 255, 0.1);
 	}
 
 	/* Modal note styling (used in snippet) */
 	:global(.modal-note) {
 		background: rgba(197, 154, 107, 0.1);
-		border-left: 3px solid var(--accf-accent, #c59a6b);
+		border-left: 3px solid var(--course-accent-light, #c59a6b);
 		padding: 12px 16px;
 		border-radius: 6px;
 		font-size: 0.875rem;

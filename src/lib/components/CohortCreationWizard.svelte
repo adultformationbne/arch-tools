@@ -341,14 +341,14 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		padding: 32px 32px 24px 32px;
-		border-bottom: 1px solid var(--accf-light);
+		border-bottom: 1px solid var(--course-surface);
 	}
 
 	.modal-header h2 {
 		margin: 0 0 12px 0;
 		font-weight: 700;
 		font-size: 2rem;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.step-indicator {
@@ -356,7 +356,7 @@
 		align-items: center;
 		gap: 8px;
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.step-indicator span {
@@ -364,7 +364,7 @@
 	}
 
 	.step-indicator span.active {
-		color: var(--accf-accent);
+		color: var(--course-accent-light);
 		font-weight: 600;
 	}
 
@@ -376,14 +376,14 @@
 		padding: 8px;
 		border: none;
 		background: transparent;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		cursor: pointer;
 		border-radius: 4px;
 		transition: all 0.2s ease;
 	}
 
 	.close-button:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.modal-body {
@@ -400,12 +400,12 @@
 		margin: 0 0 8px 0;
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.step-intro p {
 		margin: 0;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.form-group {
@@ -416,7 +416,7 @@
 		display: block;
 		margin-bottom: 8px;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 		font-size: 0.875rem;
 	}
 
@@ -425,7 +425,7 @@
 	.form-group textarea {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 8px;
 		font-size: 1rem;
 		transition: border-color 0.2s ease;
@@ -435,7 +435,7 @@
 	.form-group select:focus,
 	.form-group textarea:focus {
 		outline: none;
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 	}
 
 	.form-group textarea {
@@ -445,11 +445,11 @@
 	.help-text {
 		margin: 8px 0 0 0;
 		font-size: 0.8125rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.review-section {
-		background: var(--accf-light);
+		background: var(--course-surface);
 		border-radius: 8px;
 		padding: 20px;
 		margin-bottom: 24px;
@@ -459,7 +459,7 @@
 		margin: 0 0 16px 0;
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.review-section dl {
@@ -471,12 +471,12 @@
 
 	.review-section dt {
 		font-weight: 600;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.review-section dd {
 		margin: 0;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.participants-summary {
@@ -517,7 +517,7 @@
 	}
 
 	.empty-state {
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		font-style: italic;
 	}
 
@@ -533,12 +533,12 @@
 		padding: 12px;
 		border-radius: 8px;
 		background: white;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		transition: all 0.2s ease;
 	}
 
 	.checkbox-group label:hover {
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 	}
 
 	.checkbox-group input[type='checkbox'] {
@@ -551,7 +551,7 @@
 		display: flex;
 		gap: 12px;
 		padding-top: 24px;
-		border-top: 1px solid var(--accf-light);
+		border-top: 1px solid var(--course-surface);
 		margin-top: 32px;
 	}
 
@@ -571,13 +571,13 @@
 
 	.btn-primary {
 		flex: 1;
-		background: var(--accf-accent);
-		color: var(--accf-darkest);
+		background: var(--course-accent-light);
+		color: var(--course-accent-darkest);
 		justify-content: center;
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background: var(--accf-dark);
+		background: var(--course-accent-dark);
 		color: white;
 	}
 
@@ -588,12 +588,12 @@
 
 	.btn-secondary {
 		background: transparent;
-		color: var(--accf-dark);
-		border: 1px solid var(--accf-light);
+		color: var(--course-accent-dark);
+		border: 1px solid var(--course-surface);
 	}
 
 	.btn-secondary:hover:not(:disabled) {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.btn-secondary:disabled {

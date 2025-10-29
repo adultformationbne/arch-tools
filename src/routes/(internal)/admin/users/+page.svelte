@@ -96,7 +96,8 @@
 		return colors[moduleId] || 'bg-gray-100 text-gray-800';
 	}
 
-	async function createNewUser() {
+async function createNewUser(event) {
+ event?.preventDefault();
 		createUserLoading = true;
 
 		const toastId = toastMultiStep([
@@ -159,7 +160,8 @@
 		newPassword = '';
 	}
 
-	async function resetUserPassword() {
+async function resetUserPassword(event) {
+ event?.preventDefault();
 		if (!newPassword || newPassword.length < 6) {
 			toastValidationError('Password', 'must be at least 6 characters');
 			return;
@@ -257,7 +259,7 @@
 					</h1>
 					<div class="flex items-center space-x-4">
 						<button
-							on:click={() => showNewUserForm = true}
+							onclick={() => showNewUserForm = true}
 							class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
 						>
 							<UserPlus class="h-4 w-4 mr-2" />
@@ -320,7 +322,7 @@
 													<input
 														type="checkbox"
 														checked={editingModules.includes(module.id)}
-														on:change={() => toggleModule(module.id)}
+														onchange={() => toggleModule(module.id)}
 														disabled={user.id === currentUser.id && module.id === 'user_management'}
 														class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 													/>
@@ -353,7 +355,7 @@
 									{#if editingUserId === user.id}
 										<div class="flex items-center space-x-2">
 											<button
-												on:click={() => savePermissions(user.id)}
+												onclick={() => savePermissions(user.id)}
 												disabled={loading}
 												class="text-green-600 hover:text-green-900"
 												title="Save permissions"
@@ -361,7 +363,7 @@
 												<Save class="h-4 w-4" />
 											</button>
 											<button
-												on:click={cancelEdit}
+												onclick={cancelEdit}
 												disabled={loading}
 												class="text-gray-600 hover:text-gray-900"
 												title="Cancel"
@@ -372,7 +374,7 @@
 									{:else}
 										<div class="flex items-center space-x-2">
 											<button
-												on:click={() => startEdit(user.id, user.modules || [])}
+												onclick={() => startEdit(user.id, user.modules || [])}
 												class="text-blue-600 hover:text-blue-900"
 												title="Edit permissions"
 											>
@@ -380,7 +382,7 @@
 											</button>
 											{#if user.isPending}
 												<button
-													on:click={() => resendInvitation(user.id, user.email)}
+													onclick={() => resendInvitation(user.id, user.email)}
 													class="text-green-600 hover:text-green-900"
 													title="Resend invitation"
 												>
@@ -388,7 +390,7 @@
 												</button>
 											{:else}
 												<button
-													on:click={() => showPasswordReset(user.id)}
+													onclick={() => showPasswordReset(user.id)}
 													class="text-orange-600 hover:text-orange-900"
 													title="Reset password"
 												>
@@ -396,7 +398,7 @@
 												</button>
 											{/if}
 											<button
-												on:click={() => confirmDelete(user.id, user.email)}
+												onclick={() => confirmDelete(user.id, user.email)}
 												disabled={user.id === currentUser.id}
 												class="text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed"
 												title={user.id === currentUser.id ? "Cannot delete yourself" : "Delete user"}
@@ -442,7 +444,7 @@
 					An invitation email with a magic link will be sent to set up their account.
 				</p>
 
-				<form on:submit|preventDefault={createNewUser} class="space-y-4">
+				<form onsubmit={createNewUser} class="space-y-4">
 					<div>
 						<label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
 						<input
@@ -467,15 +469,15 @@
 						/>
 					</div>
 
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">Module Access</label>
-						<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
+				<div>
+					<h3 class="block text-sm font-medium text-gray-700 mb-2">Module Access</h3>
+					<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
 							{#each availableModules as module}
-								<label class="flex items-start space-x-2 cursor-pointer">
-									<input
-										type="checkbox"
-										checked={newUser.modules.includes(module.id)}
-										on:change={() => {
+					<label class="flex items-start space-x-2 cursor-pointer">
+						<input
+							type="checkbox"
+							checked={newUser.modules.includes(module.id)}
+							onchange={() => {
 											if (newUser.modules.includes(module.id)) {
 												newUser.modules = newUser.modules.filter(m => m !== module.id);
 											} else {
@@ -496,7 +498,7 @@
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
 							type="button"
-							on:click={() => showNewUserForm = false}
+							onclick={() => showNewUserForm = false}
 							disabled={createUserLoading}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 						>
@@ -526,7 +528,7 @@
 					Reset User Password
 				</h3>
 
-				<form on:submit|preventDefault={resetUserPassword} class="space-y-4">
+				<form onsubmit={resetUserPassword} class="space-y-4">
 					<div>
 						<label for="new_password" class="block text-sm font-medium text-gray-700">
 							New Password
@@ -549,7 +551,7 @@
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
 							type="button"
-							on:click={() => showPasswordResetModal = false}
+							onclick={() => showPasswordResetModal = false}
 							disabled={resetPasswordLoading}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 						>
@@ -588,7 +590,7 @@
 				<div class="flex justify-end space-x-3">
 					<button
 						type="button"
-						on:click={() => showDeleteModal = false}
+						onclick={() => showDeleteModal = false}
 						disabled={deleteLoading}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 					>
@@ -596,7 +598,7 @@
 					</button>
 					<button
 						type="button"
-						on:click={deleteUser}
+						onclick={deleteUser}
 						disabled={deleteLoading}
 						class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
 					>

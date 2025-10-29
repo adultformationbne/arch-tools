@@ -7,7 +7,6 @@
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
 	import { generateDGRHTML, parseReadings, cleanGospelText, getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
 	import { formatDGRDate } from '$lib/utils/dgr-common.js';
-	import { onMount } from 'svelte';
 
 	// Initialize form with defaults (with localStorage support in dev)
 	const initializeFormData = () => {
@@ -63,18 +62,20 @@
 	});
 
 	// Load promo tiles on mount
-	onMount(async () => {
-		try {
-			const response = await fetch('/api/dgr-admin/promo-tiles');
-			const data = await response.json();
-			console.log('Loaded promo tiles:', data);
-			if (data.tiles) {
-				promoTiles = data.tiles;
-				console.log('Set promoTiles to:', promoTiles);
+	$effect(() => {
+		(async () => {
+			try {
+				const response = await fetch('/api/dgr-admin/promo-tiles');
+				const data = await response.json();
+				console.log('Loaded promo tiles:', data);
+				if (data.tiles) {
+					promoTiles = data.tiles;
+					console.log('Set promoTiles to:', promoTiles);
+				}
+			} catch (err) {
+				console.error('Failed to load promo tiles:', err);
 			}
-		} catch (err) {
-			console.error('Failed to load promo tiles:', err);
-		}
+		})();
 	});
 
 	async function handleSubmit(e) {

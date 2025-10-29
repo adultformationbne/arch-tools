@@ -559,6 +559,7 @@
 </div>
 
 <style>
+	@reference "../../app.css";
 	.editor-content:empty:before {
 		content: attr(data-placeholder);
 		color: #9ca3af;

@@ -364,23 +364,23 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 	}
 
 	.upload-area {
-		border: 2px dashed var(--accf-accent);
+		border: 2px dashed var(--course-accent-light);
 		border-radius: 12px;
 		padding: 48px 24px;
 		text-align: center;
-		background: var(--accf-lightest);
+		background: var(--course-lightest);
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
 
 	.upload-area:hover:not(.disabled) {
-		border-color: var(--accf-dark);
-		background: var(--accf-light);
+		border-color: var(--course-accent-dark);
+		background: var(--course-surface);
 	}
 
 	.upload-area.drag-active {
-		border-color: var(--accf-dark);
-		background: var(--accf-light);
+		border-color: var(--course-accent-dark);
+		background: var(--course-surface);
 		transform: scale(1.02);
 	}
 
@@ -395,24 +395,24 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		align-items: center;
 		gap: 12px;
 		cursor: pointer;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.upload-label h3 {
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.upload-label p {
 		margin: 0;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.format-hint {
 		font-size: 0.875rem;
-		color: var(--accf-accent) !important;
+		color: var(--course-accent-light) !important;
 		margin-top: 8px !important;
 	}
 
@@ -429,14 +429,14 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		left: 0;
 		right: 0;
 		height: 1px;
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.divider span {
 		position: relative;
 		background: white;
 		padding: 0 16px;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		font-size: 0.875rem;
 		font-weight: 600;
 	}
@@ -448,9 +448,9 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		justify-content: center;
 		gap: 8px;
 		padding: 14px;
-		border: 2px dashed var(--accf-accent);
+		border: 2px dashed var(--course-accent-light);
 		background: white;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		font-size: 1rem;
 		font-weight: 600;
 		border-radius: 8px;
@@ -459,12 +459,12 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 	}
 
 	.btn-paste:hover {
-		border-color: var(--accf-dark);
-		background: var(--accf-light);
+		border-color: var(--course-accent-dark);
+		background: var(--course-surface);
 	}
 
 	.paste-area {
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 12px;
 		padding: 24px;
 		background: white;
@@ -477,24 +477,24 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		margin: 0 0 12px 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.help-text {
 		margin: 0 0 16px 0;
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		line-height: 1.5;
 	}
 
 	.help-text strong {
-		color: var(--accf-accent);
+		color: var(--course-accent-light);
 	}
 
 	textarea {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 8px;
 		font-family: 'Courier New', monospace;
 		font-size: 0.875rem;
@@ -504,7 +504,7 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 
 	textarea:focus {
 		outline: none;
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 	}
 
 	.paste-actions {
@@ -516,8 +516,8 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		flex: 1;
 		padding: 12px 24px;
 		border: none;
-		background: var(--accf-accent);
-		color: var(--accf-darkest);
+		background: var(--course-accent-light);
+		color: var(--course-accent-darkest);
 		font-size: 1rem;
 		font-weight: 600;
 		border-radius: 8px;
@@ -526,7 +526,7 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background: var(--accf-dark);
+		background: var(--course-accent-dark);
 		color: white;
 	}
 
@@ -540,9 +540,9 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 		align-items: center;
 		gap: 16px;
 		padding: 20px;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 8px;
-		background: var(--accf-lightest);
+		background: var(--course-lightest);
 	}
 
 	.file-info {
@@ -552,13 +552,13 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 	.file-name {
 		margin: 0;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.file-size {
 		margin: 4px 0 0 0;
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.message {
@@ -585,9 +585,9 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 
 	.btn-secondary {
 		padding: 8px 16px;
-		border: 1px solid var(--accf-accent);
+		border: 1px solid var(--course-accent-light);
 		background: transparent;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		border-radius: 6px;
 		font-weight: 600;
 		cursor: pointer;
@@ -595,14 +595,14 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 	}
 
 	.btn-secondary:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.spinner {
 		width: 20px;
 		height: 20px;
 		border: 3px solid rgba(0, 0, 0, 0.1);
-		border-top-color: var(--accf-accent);
+		border-top-color: var(--course-accent-light);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}

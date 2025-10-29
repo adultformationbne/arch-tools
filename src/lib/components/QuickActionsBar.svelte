@@ -90,7 +90,7 @@
 	}
 
 	.action-card:hover {
-		border-color: var(--accf-accent, #c59a6b);
+		border-color: var(--course-accent-light, #c59a6b);
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 		transform: translateY(-2px);
 	}
@@ -130,7 +130,7 @@
 	.action-content h3 {
 		font-size: 1rem;
 		font-weight: 600;
-		color: var(--accf-darkest, #1e2322);
+		color: var(--course-accent-darkest, #1e2322);
 		margin: 0;
 	}
 
@@ -143,7 +143,7 @@
 	.action-button {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: var(--accf-accent, #c59a6b);
+		color: var(--course-accent-light, #c59a6b);
 		margin-top: 0.25rem;
 	}
 

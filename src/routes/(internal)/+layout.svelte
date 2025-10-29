@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 
-	let { data } = $props();
+let { data, children } = $props();
 
 	let supabase = $derived(data.supabase);
 	let session = $derived(data.session);
@@ -27,6 +27,6 @@
 		<AppNavigation {session} {userRole} />
 	{/if}
 	<main class="flex-1">
-		<slot />
+		{@render children()}
 	</main>
 </div>

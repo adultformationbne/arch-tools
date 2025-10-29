@@ -305,9 +305,6 @@
 			margin: 1cm;
 		}
 
-		body {
-			background: white !important;
-		}
 
 		.print\:hidden {
 			display: none !important;

@@ -37,6 +37,7 @@
 		const typeObj = materialTypes.find(t => t.value === type);
 		return typeObj ? typeObj.icon : FileText;
 	};
+	const getFieldId = (prefix, unique) => `${prefix}-${unique ?? 'value'}`;
 
 	const addMaterial = async () => {
 		console.log('Add material clicked', newMaterial);
@@ -342,13 +343,18 @@
 	<!-- Existing Materials -->
 	<div class="space-y-3 mb-6">
 		{#each materials as material, index}
+			{@const MaterialIcon = getMaterialIcon(material.type)}
 			{#if editingMaterial && editingMaterial.id === material.id}
 				<!-- Edit Mode -->
 				<div class="p-4">
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 						<div>
-							<label class="block text-sm font-semibold text-gray-700 mb-1">Type</label>
+							<label
+								for={getFieldId('edit-material-type', material.id ?? index)}
+								class="block text-sm font-semibold text-gray-700 mb-1"
+							>Type</label>
 							<select
+								id={getFieldId('edit-material-type', material.id ?? index)}
 								bind:value={editingMaterial.type}
 								onchange={() => handleTypeChange(false)}
 								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
@@ -360,8 +366,12 @@
 							</select>
 						</div>
 						<div>
-							<label class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
+							<label
+								for={getFieldId('edit-material-title', material.id ?? index)}
+								class="block text-sm font-semibold text-gray-700 mb-1"
+							>Title</label>
 							<input
+								id={getFieldId('edit-material-title', material.id ?? index)}
 								bind:value={editingMaterial.title}
 								type="text"
 								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
@@ -372,16 +382,26 @@
 
 					{#if editingMaterial.type === 'native' && showNativeEditor}
 						<div class="mb-4">
-							<label class="block text-sm font-semibold text-gray-700 mb-1">Content</label>
+							<label
+								id={getFieldId('edit-material-content-label', material.id ?? index)}
+								for={getFieldId('edit-material-content', material.id ?? index)}
+								class="block text-sm font-semibold text-gray-700 mb-1"
+							>Content</label>
 							<SimplifiedRichTextEditor
+								editorId={getFieldId('edit-material-content', material.id ?? index)}
+								labelledBy={getFieldId('edit-material-content-label', material.id ?? index)}
 								bind:content={editingMaterial.content}
 								placeholder="Enter your content..."
 							/>
 						</div>
 					{:else if editingMaterial.type !== 'native'}
 						<div class="mb-4">
-							<label class="block text-sm font-semibold text-gray-700 mb-1">URL</label>
+							<label
+								for={getFieldId('edit-material-url', material.id ?? index)}
+								class="block text-sm font-semibold text-gray-700 mb-1"
+							>URL</label>
 							<input
+								id={getFieldId('edit-material-url', material.id ?? index)}
 								bind:value={editingMaterial.url}
 								type="url"
 								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
@@ -391,8 +411,12 @@
 					{/if}
 
 					<div class="mb-4">
-						<label class="block text-sm font-semibold text-gray-700 mb-1">Description (optional)</label>
+						<label
+							for={getFieldId('edit-material-description', material.id ?? index)}
+							class="block text-sm font-semibold text-gray-700 mb-1"
+						>Description (optional)</label>
 						<textarea
+							id={getFieldId('edit-material-description', material.id ?? index)}
 							bind:value={editingMaterial.description}
 							rows="2"
 							class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent resize-none"
@@ -423,7 +447,7 @@
 					<div class="flex items-center gap-3">
 						<div class="flex items-center gap-2">
 							<span class="text-sm font-semibold text-gray-500 w-6">{index + 1}</span>
-							<svelte:component this={getMaterialIcon(material.type)} size="20" style="color: #c59a6b;" />
+							<MaterialIcon size="20" style="color: #c59a6b;" />
 						</div>
 						<div>
 							<h3 class="font-semibold text-gray-800">{material.title}</h3>
@@ -508,8 +532,12 @@
 		<h3 class="font-semibold text-gray-800 mb-4">Add New Material</h3>
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 			<div>
-				<label class="block text-sm font-semibold text-gray-700 mb-1">Type</label>
+				<label
+					for="new-material-type"
+					class="block text-sm font-semibold text-gray-700 mb-1"
+				>Type</label>
 				<select
+					id="new-material-type"
 					bind:value={newMaterial.type}
 					onchange={() => handleTypeChange(true)}
 					class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
@@ -521,8 +549,12 @@
 				</select>
 			</div>
 			<div>
-				<label class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
+				<label
+					for="new-material-title"
+					class="block text-sm font-semibold text-gray-700 mb-1"
+				>Title</label>
 				<input
+					id="new-material-title"
 					bind:value={newMaterial.title}
 					type="text"
 					placeholder="Material title"
@@ -534,16 +566,26 @@
 
 		{#if newMaterial.type === 'native' && showNativeEditor}
 			<div class="mb-4">
-				<label class="block text-sm font-semibold text-gray-700 mb-1">Content</label>
+				<label
+					id="new-material-content-label"
+					for="new-material-content"
+					class="block text-sm font-semibold text-gray-700 mb-1"
+				>Content</label>
 				<SimplifiedRichTextEditor
+					editorId="new-material-content"
+					labelledBy="new-material-content-label"
 					bind:content={newMaterial.content}
 					placeholder="Enter your content..."
 				/>
 			</div>
 		{:else if newMaterial.type !== 'native' && newMaterial.type !== 'upload'}
 			<div class="mb-4">
-				<label class="block text-sm font-semibold text-gray-700 mb-1">URL</label>
+				<label
+					for="new-material-url"
+					class="block text-sm font-semibold text-gray-700 mb-1"
+				>URL</label>
 				<input
+					id="new-material-url"
 					bind:value={newMaterial.url}
 					type="url"
 					placeholder="https://..."
@@ -554,8 +596,12 @@
 		{/if}
 
 		<div class="mb-4">
-			<label class="block text-sm font-semibold text-gray-700 mb-1">Description (optional)</label>
+			<label
+				for="new-material-description"
+				class="block text-sm font-semibold text-gray-700 mb-1"
+			>Description (optional)</label>
 			<textarea
+				id="new-material-description"
 				bind:value={newMaterial.description}
 				placeholder="Brief description of this material..."
 				rows="2"
