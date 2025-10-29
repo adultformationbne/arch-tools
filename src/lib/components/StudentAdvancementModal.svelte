@@ -3,7 +3,7 @@
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 
-	let { cohort, students, show = $bindable(false), onComplete } = $props();
+	let { cohort, students, show = $bindable(false), onComplete, courseSlug } = $props();
 
 	let selectedSession = $state((cohort?.current_session || 0) + 1);
 	let selectedStudents = $state([]);
@@ -36,7 +36,7 @@
 		isProcessing = true;
 		try {
 			await apiPost(
-				'/admin/api',
+				'/courses/${courseSlug}/admin/api',
 				{
 					action: 'advance_students',
 					cohortId: cohort.id,
