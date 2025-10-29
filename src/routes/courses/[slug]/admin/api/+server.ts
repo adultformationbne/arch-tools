@@ -644,7 +644,7 @@ async function sendInvitations(userIds: string[]) {
 	// Get pending users with cohort info
 	const { data: users, error: fetchError } = await supabaseAdmin
 		.from('courses_enrollments')
-		.select('*, cohorts(name)')
+		.select('*, courses_cohorts(name)')
 		.in('id', userIds)
 		.eq('status', 'pending');
 
@@ -662,7 +662,7 @@ async function sendInvitations(userIds: string[]) {
 			email: user.email,
 			full_name: user.full_name,
 			invitation_token: user.invitation_token,
-			cohort_name: user.cohorts?.name || 'Course Cohort'
+			cohort_name: user.courses_cohorts?.name || 'Course Cohort'
 		}));
 
 	// Send emails via Resend
