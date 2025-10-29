@@ -3,6 +3,7 @@
 
 	let { data } = $props();
 
+	const courseSlug = data.courseSlug;
 	let selectedCohortId = $state(data.cohorts[0]?.id || null);
 	let expandedSession = $state(null);
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
@@ -82,7 +83,7 @@
 		// Debounce the API call (300ms)
 		const timeoutId = setTimeout(async () => {
 			try {
-				const response = await fetch('/admin/attendance/api', {
+				const response = await fetch(`/courses/${courseSlug}/admin/attendance/api`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({

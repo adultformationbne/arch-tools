@@ -5,6 +5,7 @@
 
 	let { data } = $props();
 
+	const courseSlug = data.courseSlug;
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
 	let searchQuery = $state('');
@@ -117,7 +118,7 @@
 		isSaving = true;
 
 		try {
-			const response = await fetch('/admin/reflections/api', {
+			const response = await fetch(`/courses/${courseSlug}/admin/reflections/api`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

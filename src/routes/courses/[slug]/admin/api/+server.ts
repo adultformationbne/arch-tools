@@ -727,7 +727,7 @@ export const GET: RequestHandler = async (event) => {
 		if (endpoint === 'courses_enrollments') {
 			let query = supabaseAdmin
 				.from('courses_enrollments')
-				.select('*, cohorts(name), hubs(name)')
+				.select('*, courses_cohorts(name), courses_hubs(name)')
 				.order('created_at', { ascending: false });
 
 			if (cohortId) {
