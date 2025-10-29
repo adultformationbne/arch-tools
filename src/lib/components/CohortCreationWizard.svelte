@@ -3,7 +3,7 @@
 	import { X, ChevronRight, ChevronLeft, Check } from 'lucide-svelte';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { modules = [], show = false, onClose = () => {} } = $props();
+	let { modules = [], show = false, courseSlug, onClose = () => {} } = $props();
 
 	const dispatch = createEventDispatcher();
 
