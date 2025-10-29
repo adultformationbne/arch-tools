@@ -550,7 +550,7 @@
 
 	.section {
 		background: white;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 12px;
 		padding: 24px;
 	}
@@ -566,7 +566,7 @@
 		margin: 0;
 		font-weight: 700;
 		font-size: 1.75rem;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.header-actions {
@@ -590,7 +590,7 @@
 	.form-group label {
 		font-weight: 600;
 		font-size: 0.875rem;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.section-edit .form-group label {
@@ -609,15 +609,15 @@
 
 	.section .form-group input,
 	.section .form-group select {
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		background: white;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.form-group input:focus,
 	.form-group select:focus {
 		outline: none;
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 		background: rgba(255, 255, 255, 0.15);
 	}
 
@@ -628,10 +628,10 @@
 
 	.readonly-field {
 		padding: 10px 12px;
-		background: var(--accf-light);
-		border: 1px solid var(--accf-light);
+		background: var(--course-surface);
+		border: 1px solid var(--course-surface);
 		border-radius: 6px;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.table-wrapper {
@@ -644,7 +644,7 @@
 	}
 
 	thead {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	th {
@@ -653,8 +653,8 @@
 		font-weight: 600;
 		font-size: 0.75rem;
 		text-transform: uppercase;
-		color: var(--accf-darkest);
-		border-bottom: 2px solid var(--accf-accent);
+		color: var(--course-accent-darkest);
+		border-bottom: 2px solid var(--course-accent-light);
 	}
 
 	th.w-12 {
@@ -667,12 +667,12 @@
 
 	td {
 		padding: 12px;
-		border-bottom: 1px solid var(--accf-light);
+		border-bottom: 1px solid var(--course-surface);
 		font-size: 0.875rem;
 	}
 
 	tr:hover:not(.editing) {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	tr.editing {
@@ -682,7 +682,7 @@
 	.table-input {
 		width: 100%;
 		padding: 4px 8px;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 4px;
 		font-size: 0.875rem;
 	}
@@ -706,7 +706,7 @@
 		padding: 8px;
 		border: none;
 		background: transparent;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		border-radius: 6px;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -715,7 +715,7 @@
 	}
 
 	.btn-icon:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.btn-icon.success {
@@ -739,8 +739,8 @@
 		align-items: center;
 		gap: 6px;
 		padding: 8px 16px;
-		background: var(--accf-accent);
-		color: var(--accf-darkest);
+		background: var(--course-accent-light);
+		color: var(--course-accent-darkest);
 		border: none;
 		border-radius: 6px;
 		font-weight: 600;
@@ -750,7 +750,7 @@
 	}
 
 	.btn-primary-small:hover:not(:disabled) {
-		background: var(--accf-dark);
+		background: var(--course-accent-dark);
 		color: white;
 	}
 
@@ -762,7 +762,7 @@
 	.empty-state {
 		text-align: center;
 		padding: 48px;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	/* New table styles */
@@ -780,7 +780,7 @@
 
 	.student-name {
 		font-weight: 500;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.warning-icon {
@@ -811,7 +811,7 @@
 	}
 
 	.session-display:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.session-edit {
@@ -823,7 +823,7 @@
 	.table-input-small {
 		width: 60px;
 		padding: 4px 8px;
-		border: 1px solid var(--accf-accent);
+		border: 1px solid var(--course-accent-light);
 		border-radius: 4px;
 		font-size: 0.875rem;
 	}
@@ -832,7 +832,7 @@
 		padding: 4px;
 		border: none;
 		background: transparent;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		border-radius: 4px;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -841,7 +841,7 @@
 	}
 
 	.btn-icon-tiny:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.btn-icon-tiny.success {
@@ -854,12 +854,12 @@
 
 	.attendance-display {
 		font-weight: 500;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.reflection-status {
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.actions-dropdown {
@@ -873,7 +873,7 @@
 		top: 100%;
 		margin-top: 4px;
 		background: white;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 8px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 		min-width: 160px;
@@ -889,7 +889,7 @@
 		padding: 10px 12px;
 		border: none;
 		background: white;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 		text-align: left;
 		font-size: 0.875rem;
 		cursor: pointer;
@@ -897,7 +897,7 @@
 	}
 
 	.dropdown-item:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.dropdown-item.danger {
@@ -933,7 +933,7 @@
 		gap: 6px;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.form-actions {
@@ -947,8 +947,8 @@
 		gap: 6px;
 		padding: 8px 16px;
 		background: white;
-		color: var(--accf-darkest);
-		border: 1px solid var(--accf-light);
+		color: var(--course-accent-darkest);
+		border: 1px solid var(--course-surface);
 		border-radius: 6px;
 		font-weight: 600;
 		font-size: 0.875rem;
@@ -957,6 +957,6 @@
 	}
 
 	.btn-secondary-small:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 </style>

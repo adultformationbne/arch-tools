@@ -14,7 +14,6 @@
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
 	import { getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
 	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
-	import { onMount } from 'svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
 
 	let schedule = $state([]);
@@ -85,9 +84,11 @@
 		{ value: 'published', label: 'Published' }
 	];
 
-	onMount(async () => {
-		await Promise.all([loadSchedule(), loadContributors(), loadPromoTiles(), loadAssignmentRules()]);
-		loading = false;
+	$effect(() => {
+		(async () => {
+			await Promise.all([loadSchedule(), loadContributors(), loadPromoTiles(), loadAssignmentRules()]);
+			loading = false;
+		})();
 	});
 
 	async function loadSchedule() {
@@ -1096,7 +1097,7 @@
 			<div class="rounded-lg bg-white p-4 shadow-sm">
 					<div class="flex items-center gap-6">
 						<div class="flex items-center gap-4">
-							<label class="text-sm font-medium text-gray-700">View:</label>
+							<span class="text-sm font-medium text-gray-700">View:</span>
 							<div class="flex gap-2">
 								<button
 									onclick={() => (scheduleFilter = 'all')}

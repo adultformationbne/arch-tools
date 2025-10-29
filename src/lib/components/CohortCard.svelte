@@ -77,7 +77,7 @@
 
 	.cohort-pill.active {
 		background: rgba(255, 255, 255, 0.95);
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 		box-shadow: 0 4px 12px rgba(197, 154, 107, 0.3);
 	}
 
@@ -99,7 +99,7 @@
 	}
 
 	.cohort-pill.active .cohort-name {
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.status-badge {
@@ -127,7 +127,7 @@
 	}
 
 	.cohort-pill.active .status-label {
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.module-name {
@@ -140,7 +140,7 @@
 	}
 
 	.cohort-pill.active .module-name {
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.meta-text {
@@ -152,6 +152,6 @@
 	}
 
 	.cohort-pill.active .meta-text {
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 </style>

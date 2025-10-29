@@ -114,7 +114,7 @@
 	.activity-header h3 {
 		font-size: 1rem;
 		font-weight: 600;
-		color: var(--accf-darkest, #1e2322);
+		color: var(--course-accent-darkest, #1e2322);
 		margin: 0;
 	}
 
@@ -141,7 +141,7 @@
 		height: 32px;
 		border-radius: 8px;
 		background: rgba(197, 154, 107, 0.1);
-		color: var(--accf-accent, #c59a6b);
+		color: var(--course-accent-light, #c59a6b);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -157,7 +157,7 @@
 
 	.activity-text {
 		font-size: 0.9375rem;
-		color: var(--accf-darkest, #1e2322);
+		color: var(--course-accent-darkest, #1e2322);
 		margin: 0;
 	}
 

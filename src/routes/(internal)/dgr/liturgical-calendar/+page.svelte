@@ -249,28 +249,30 @@
 				<h2 class="mb-4 text-xl font-bold text-indigo-900">Upload Ordo Calendar CSV</h2>
 
 				<div class="space-y-4">
-					<!-- Year Selection -->
-					<div>
-						<label class="mb-2 block text-sm font-semibold text-gray-700">Year</label>
-						<input
-							type="number"
-							bind:value={uploadYear}
-							min="2025"
-							max="2050"
-							class="w-32 rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-						/>
-					</div>
+				<!-- Year Selection -->
+				<div>
+					<label class="mb-2 block text-sm font-semibold text-gray-700" for="upload-year">Year</label>
+					<input
+						id="upload-year"
+						type="number"
+						bind:value={uploadYear}
+						min="2025"
+						max="2050"
+						class="w-32 rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+					/>
+				</div>
 
-					<!-- File Upload -->
-					<div>
-						<label class="mb-2 block text-sm font-semibold text-gray-700">CSV File</label>
-						<input
-							type="file"
-							accept=".csv"
-							onchange={handleFileSelect}
-							class="block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100"
-						/>
-					</div>
+				<!-- File Upload -->
+				<div>
+					<label class="mb-2 block text-sm font-semibold text-gray-700" for="upload-file">CSV File</label>
+					<input
+						id="upload-file"
+						type="file"
+						accept=".csv"
+						onchange={handleFileSelect}
+						class="block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100"
+					/>
+				</div>
 
 					{#if uploadPreview}
 						<div class="rounded-lg border border-gray-300 bg-white p-4">
@@ -357,14 +359,15 @@
 			</div>
 		{/if}
 
-		<!-- Year Selector -->
-		<div class="mb-6 flex items-center gap-4">
-			<label class="text-sm font-semibold text-gray-700">View Year:</label>
-			<select
-				bind:value={selectedYear}
-				onchange={() => loadCalendarForYear(selectedYear)}
-				class="rounded-lg border border-gray-300 px-4 py-2 font-semibold focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-			>
+	<!-- Year Selector -->
+	<div class="mb-6 flex items-center gap-4">
+		<label class="text-sm font-semibold text-gray-700" for="year-selector">View Year:</label>
+		<select
+			id="year-selector"
+			bind:value={selectedYear}
+			onchange={() => loadCalendarForYear(selectedYear)}
+			class="rounded-lg border border-gray-300 px-4 py-2 font-semibold focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+		>
 				{#each availableYears as year}
 					<option value={year}>{year}</option>
 				{/each}
@@ -448,32 +451,35 @@
 			<h3 class="mb-4 text-xl font-bold text-gray-900">Edit Calendar Entry</h3>
 
 			<div class="space-y-4">
-				<div>
-					<label class="mb-1 block text-sm font-semibold text-gray-700">Date</label>
-					<input
-						type="text"
-						value={editingEntry.calendar_date}
-						disabled
-						class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2"
-					/>
-				</div>
+			<div>
+				<label class="mb-1 block text-sm font-semibold text-gray-700" for="entry-date">Date</label>
+				<input
+					id="entry-date"
+					type="text"
+					value={editingEntry.calendar_date}
+					disabled
+					class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2"
+				/>
+			</div>
 
-				<div>
-					<label class="mb-1 block text-sm font-semibold text-gray-700">Liturgical Name</label>
-					<input
-						type="text"
-						bind:value={editingEntry.liturgical_name}
-						class="w-full rounded-lg border border-gray-300 px-4 py-2"
-					/>
-				</div>
+			<div>
+				<label class="mb-1 block text-sm font-semibold text-gray-700" for="entry-name">Liturgical Name</label>
+				<input
+					id="entry-name"
+					type="text"
+					bind:value={editingEntry.liturgical_name}
+					class="w-full rounded-lg border border-gray-300 px-4 py-2"
+				/>
+			</div>
 
 				<div class="grid grid-cols-2 gap-4">
-					<div>
-						<label class="mb-1 block text-sm font-semibold text-gray-700">Rank</label>
-						<select
-							bind:value={editingEntry.liturgical_rank}
-							class="w-full rounded-lg border border-gray-300 px-4 py-2"
-						>
+				<div>
+					<label class="mb-1 block text-sm font-semibold text-gray-700" for="entry-rank">Rank</label>
+					<select
+						id="entry-rank"
+						bind:value={editingEntry.liturgical_rank}
+						class="w-full rounded-lg border border-gray-300 px-4 py-2"
+					>
 							<option value="Solemnity">Solemnity</option>
 							<option value="Feast">Feast</option>
 							<option value="Sunday">Sunday</option>
@@ -482,25 +488,27 @@
 						</select>
 					</div>
 
-					<div>
-						<label class="mb-1 block text-sm font-semibold text-gray-700">Season</label>
-						<input
-							type="text"
-							bind:value={editingEntry.liturgical_season}
-							placeholder="e.g., Ordinary Time, Lent"
-							class="w-full rounded-lg border border-gray-300 px-4 py-2"
-						/>
-					</div>
-				</div>
-
 				<div>
-					<label class="mb-1 block text-sm font-semibold text-gray-700">Week</label>
+					<label class="mb-1 block text-sm font-semibold text-gray-700" for="entry-season">Season</label>
 					<input
-						type="number"
-						bind:value={editingEntry.liturgical_week}
+						id="entry-season"
+						type="text"
+						bind:value={editingEntry.liturgical_season}
+						placeholder="e.g., Ordinary Time, Lent"
 						class="w-full rounded-lg border border-gray-300 px-4 py-2"
 					/>
 				</div>
+				</div>
+
+			<div>
+				<label class="mb-1 block text-sm font-semibold text-gray-700" for="entry-week">Week</label>
+				<input
+					id="entry-week"
+					type="number"
+					bind:value={editingEntry.liturgical_week}
+					class="w-full rounded-lg border border-gray-300 px-4 py-2"
+				/>
+			</div>
 			</div>
 
 			<div class="mt-6 flex gap-3">

@@ -19,6 +19,7 @@
 </div>
 
 <style>
+	@reference "../../app.css";
 	/* Rich text formatting styles */
 	:global(.rich-text-display [data-format='scripture']) {
 		@apply rounded bg-teal-50 px-1 font-medium text-teal-700;

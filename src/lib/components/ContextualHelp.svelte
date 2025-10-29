@@ -245,6 +245,7 @@
 {/if}
 
 <style>
+	@reference "../../app.css";
 	.prose :global(ul) {
 		@apply list-disc pl-5 space-y-1;
 	}

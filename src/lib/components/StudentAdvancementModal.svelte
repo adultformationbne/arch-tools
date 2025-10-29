@@ -204,7 +204,7 @@
 	.modal-header h2 {
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--accf-darkest, #1e2322);
+		color: var(--course-accent-darkest, #1e2322);
 		margin: 0;
 	}
 
@@ -226,7 +226,7 @@
 
 	.close-button:hover:not(:disabled) {
 		background: #f3f4f6;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.close-button:disabled {
@@ -247,7 +247,7 @@
 	.form-group label {
 		display: block;
 		font-weight: 500;
-		color: var(--accf-dark, #334642);
+		color: var(--course-accent-dark, #334642);
 		margin-bottom: 0.5rem;
 	}
 
@@ -263,7 +263,7 @@
 
 	.session-select:focus {
 		outline: none;
-		border-color: var(--accf-accent, #c59a6b);
+		border-color: var(--course-accent-light, #c59a6b);
 		box-shadow: 0 0 0 3px rgba(197, 154, 107, 0.1);
 	}
 
@@ -285,7 +285,7 @@
 
 	.select-all-text {
 		font-weight: 500;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.student-list {
@@ -335,7 +335,7 @@
 
 	.student-name {
 		font-weight: 500;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.student-meta {
@@ -383,8 +383,8 @@
 	}
 
 	.btn-primary {
-		background: var(--accf-accent, #c59a6b);
-		color: var(--accf-darkest, #1e2322);
+		background: var(--course-accent-light, #c59a6b);
+		color: var(--course-accent-darkest, #1e2322);
 		flex: 1;
 	}
 
@@ -401,13 +401,13 @@
 
 	.btn-secondary {
 		background: white;
-		color: var(--accf-dark, #334642);
+		color: var(--course-accent-dark, #334642);
 		border: 1px solid #d1d5db;
 	}
 
 	.btn-secondary:hover:not(:disabled) {
 		background: #f9fafb;
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 	}
 
 	.btn-secondary:disabled {

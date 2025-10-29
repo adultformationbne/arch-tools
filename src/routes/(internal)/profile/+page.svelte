@@ -12,9 +12,17 @@
 	let profile = $derived(data.profile);
 	let loading = $state(false);
 
-	let formData = $state({
-		full_name: profile?.full_name || ''
-	});
+let formData = $state({
+    full_name: ''
+  });
+
+$effect(() => {
+    if (profile) {
+      formData = {
+        full_name: profile.full_name ?? ''
+      };
+    }
+  });
 
 	// Module labels for display
 	const moduleLabels = {
@@ -58,10 +66,11 @@
 		}
 	);
 
-	async function handleSubmit() {
-		loading = true;
-		try {
-			await handleProfileSubmit(formData);
+async function handleSubmit(event?: Event) {
+    event?.preventDefault();
+    loading = true;
+    try {
+        await handleProfileSubmit(formData);
 			// Reload page to update navigation with new role
 			setTimeout(() => {
 				window.location.reload();
@@ -99,8 +108,9 @@
 		return isValid;
 	}
 
-	async function handlePasswordChange() {
-		passwordLoading = true;
+async function handlePasswordChange(event?: Event) {
+    event?.preventDefault();
+    passwordLoading = true;
 
 		// Validate passwords using new system
 		if (!validatePasswordForm()) {
@@ -180,7 +190,7 @@
 				<h1 class="text-xl font-semibold text-gray-900">Profile</h1>
 			</div>
 
-			<form on:submit|preventDefault={handleSubmit} class="p-6 space-y-4">
+	<form onsubmit={handleSubmit} class="p-6 space-y-4">
 				<div>
 					<label for="full_name" class="block text-sm font-medium text-gray-700">
 						Name
@@ -209,11 +219,11 @@
 					</p>
 				</div>
 
-				{#if profile?.role === 'admin' && profile?.modules?.length > 0}
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Module Access
-						</label>
+		{#if profile?.role === 'admin' && profile?.modules?.length > 0}
+			<div>
+				<h3 class="block text-sm font-medium text-gray-700 mb-2">
+					Module Access
+				</h3>
 						<div class="flex flex-wrap gap-2">
 							{#each profile.modules as module}
 								<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -248,8 +258,8 @@
 						<Lock class="h-5 w-5 mr-2" />
 						Security Settings
 					</h2>
-					<button
-						on:click={() => showPasswordSection = !showPasswordSection}
+		<button
+			onclick={() => showPasswordSection = !showPasswordSection}
 						class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
 					>
 						{showPasswordSection ? 'Cancel' : 'Change Password'}
@@ -257,8 +267,8 @@
 				</div>
 			</div>
 
-			{#if showPasswordSection}
-				<form on:submit|preventDefault={handlePasswordChange} class="p-6 space-y-4">
+	{#if showPasswordSection}
+		<form onsubmit={handlePasswordChange} class="p-6 space-y-4">
 					<div>
 						<label for="current_password" class="block text-sm font-medium text-gray-700">
 							Current Password
@@ -272,9 +282,9 @@
 								class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
 								placeholder="Enter your current password"
 							/>
-							<button
-								type="button"
-								on:click={() => showPassword = !showPassword}
+			<button
+				type="button"
+				onclick={() => showPassword = !showPassword}
 								class="absolute inset-y-0 right-0 pr-3 flex items-center"
 							>
 								{#if showPassword}
@@ -318,9 +328,9 @@
 
 
 					<div class="flex justify-end space-x-3 pt-4">
-						<button
-							type="button"
-							on:click={() => showPasswordSection = false}
+			<button
+				type="button"
+				onclick={() => showPasswordSection = false}
 							disabled={passwordLoading}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 						>
@@ -358,6 +368,7 @@
 </div>
 
 <style>
+	@reference "../../../app.css";
 	input {
 		@apply border px-3 py-2;
 	}

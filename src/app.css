@@ -5,7 +5,7 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* ACCF Brand Colors */
+  /* Course Brand Colors (defaults) */
   --color-accf-darkest: #1e2322;
   --color-accf-dark: #334642;
   --color-accf-accent: #c59a6b;
@@ -46,14 +46,26 @@
 
 /* ACCF Color Variables for CSS custom properties */
 :root {
-  --accf-darkest: #1e2322;
-  --accf-dark: #334642;
-  --accf-accent: #c59a6b;
-  --accf-light: #eae2d9;
-  --accf-lightest: #ffffff;
+  --course-accent-darkest: #1e2322;
+  --course-accent-dark: #334642;
+  --course-accent-light: #c59a6b;
+  --course-surface: #eae2d9;
+  --course-lightest: #ffffff;
+  --course-text-on-dark: #ffffff;
+  --course-text-on-light: #1e2322;
+  --course-border-muted: rgba(234, 226, 217, 0.3);
+  --course-font-family: 'Inter';
+  --course-nav-bg: rgba(51, 70, 66, 0.85);
+
+  /* Legacy aliases */
+  --course-accent-darkest: var(--course-accent-darkest);
+  --course-accent-dark: var(--course-accent-dark);
+  --course-accent-light: var(--course-accent-light);
+  --course-surface: var(--course-surface);
+  --course-lightest: var(--course-lightest);
 }
 
 /* Global font setting */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--course-font-family, 'Inter'), system-ui, -apple-system, sans-serif;
 }

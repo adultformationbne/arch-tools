@@ -119,7 +119,19 @@
 </script>
 
 {#if show}
-	<div class="modal-overlay" onclick={handleClose}>
+	<div
+		class="modal-overlay"
+		onclick={handleClose}
+		onkeydown={(event) => {
+			if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				handleClose();
+			}
+		}}
+		role="button"
+		tabindex="0"
+		aria-label="Close enrollment modal"
+	>
 		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
 			<!-- Header -->
 			<div class="modal-header">
@@ -289,19 +301,19 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		padding: 32px 32px 24px 32px;
-		border-bottom: 1px solid var(--accf-light);
+		border-bottom: 1px solid var(--course-surface);
 	}
 
 	.modal-header h2 {
 		margin: 0 0 8px 0;
 		font-weight: 700;
 		font-size: 2rem;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.cohort-name {
 		margin: 0;
-		color: var(--accf-accent);
+		color: var(--course-accent-light);
 		font-weight: 600;
 	}
 
@@ -309,14 +321,14 @@
 		padding: 8px;
 		border: none;
 		background: transparent;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		cursor: pointer;
 		border-radius: 4px;
 		transition: all 0.2s ease;
 	}
 
 	.close-button:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.modal-body {
@@ -327,7 +339,7 @@
 
 	.intro-text {
 		margin: 0 0 24px 0;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		text-align: center;
 	}
 
@@ -343,7 +355,7 @@
 		align-items: center;
 		gap: 16px;
 		padding: 32px 24px;
-		border: 2px solid var(--accf-light);
+		border: 2px solid var(--course-surface);
 		background: white;
 		border-radius: 12px;
 		cursor: pointer;
@@ -352,8 +364,8 @@
 	}
 
 	.choice-card:hover {
-		border-color: var(--accf-accent);
-		background: var(--accf-light);
+		border-color: var(--course-accent-light);
+		background: var(--course-surface);
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
@@ -362,13 +374,13 @@
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 	}
 
 	.choice-card p {
 		margin: 0;
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 	}
 
 	.back-link {
@@ -379,7 +391,7 @@
 		padding: 8px 12px;
 		border: none;
 		background: transparent;
-		color: var(--accf-accent);
+		color: var(--course-accent-light);
 		font-weight: 600;
 		cursor: pointer;
 		border-radius: 6px;
@@ -387,7 +399,7 @@
 	}
 
 	.back-link:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 
 	.form-group {
@@ -398,7 +410,7 @@
 		display: block;
 		margin-bottom: 8px;
 		font-weight: 600;
-		color: var(--accf-darkest);
+		color: var(--course-accent-darkest);
 		font-size: 0.875rem;
 	}
 
@@ -406,7 +418,7 @@
 	.form-group select {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--accf-light);
+		border: 1px solid var(--course-surface);
 		border-radius: 8px;
 		font-size: 1rem;
 		transition: border-color 0.2s ease;
@@ -415,13 +427,13 @@
 	.form-group input:focus,
 	.form-group select:focus {
 		outline: none;
-		border-color: var(--accf-accent);
+		border-color: var(--course-accent-light);
 	}
 
 	.upload-result {
 		margin-top: 24px;
 		padding: 20px;
-		background: var(--accf-light);
+		background: var(--course-surface);
 		border-radius: 8px;
 	}
 
@@ -457,7 +469,7 @@
 	.closing-text {
 		margin-top: 12px;
 		font-size: 0.875rem;
-		color: var(--accf-dark);
+		color: var(--course-accent-dark);
 		font-style: italic;
 		text-align: center;
 	}
@@ -476,7 +488,7 @@
 		display: flex;
 		gap: 12px;
 		padding-top: 24px;
-		border-top: 1px solid var(--accf-light);
+		border-top: 1px solid var(--course-surface);
 		margin-top: 24px;
 	}
 
@@ -497,12 +509,12 @@
 
 	.btn-primary {
 		flex: 1;
-		background: var(--accf-accent);
-		color: var(--accf-darkest);
+		background: var(--course-accent-light);
+		color: var(--course-accent-darkest);
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background: var(--accf-dark);
+		background: var(--course-accent-dark);
 		color: white;
 	}
 
@@ -513,11 +525,11 @@
 
 	.btn-secondary {
 		background: transparent;
-		color: var(--accf-dark);
-		border: 1px solid var(--accf-light);
+		color: var(--course-accent-dark);
+		border: 1px solid var(--course-surface);
 	}
 
 	.btn-secondary:hover {
-		background: var(--accf-light);
+		background: var(--course-surface);
 	}
 </style>

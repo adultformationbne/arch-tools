@@ -1,7 +1,12 @@
 <script>
 	import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3 } from 'lucide-svelte';
 
-	let { content = $bindable(''), placeholder = 'Start writing...' } = $props();
+	let {
+		content = $bindable(''),
+		placeholder = 'Start writing...',
+		editorId = undefined,
+		labelledBy = undefined
+	} = $props();
 
 	let editor = $state(null);
 	let isEditing = $state(false);
@@ -413,6 +418,10 @@
 	<div
 		bind:this={editor}
 		contenteditable="true"
+		id={editorId}
+		aria-labelledby={labelledBy}
+		role="textbox"
+		aria-multiline="true"
 		class="p-4 min-h-80 max-h-96 overflow-y-auto focus:outline-none prose prose-sm max-w-none"
 		style="focus:ring-color: #c59a6b;"
 		onkeydown={handleKeyDown}
@@ -424,6 +433,7 @@
 </div>
 
 <style>
+	@reference "../../app.css";
 	.rich-text-editor [contenteditable]:empty:before {
 		content: attr(data-placeholder);
 		color: #9ca3af;
