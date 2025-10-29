@@ -64,7 +64,7 @@
 			const attendanceResult = await attendanceResponse.json();
 
 			// Fetch reflection data for all students
-			reflectionsByUser = await fetchReflectionsByCohort(cohort.id);
+			reflectionsByUser = await fetchReflectionsByCohort(cohort.id, courseSlug);
 
 			// Create attendance map: user_id -> attendance_count
 			const attendanceMap = new Map();

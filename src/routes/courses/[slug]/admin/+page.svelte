@@ -55,7 +55,7 @@ $effect(() => {
 
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/admin/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
+			const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
 			const result = await response.json();
 			students = result.success ? result.data : [];
 		} catch (err) {

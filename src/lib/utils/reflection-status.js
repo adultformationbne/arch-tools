@@ -224,11 +224,12 @@ export function getStatusBadgeClass(status) {
 /**
  * Fetch reflection responses for a cohort
  * @param {string} cohortId - Cohort ID
+ * @param {string} courseSlug - Course slug for API path
  * @returns {Promise<Map>} - Map of user_id -> array of reflections
  */
-export async function fetchReflectionsByCohort(cohortId) {
+export async function fetchReflectionsByCohort(cohortId, courseSlug) {
 	try {
-		const response = await fetch(`/admin/api?endpoint=reflection_responses&cohort_id=${cohortId}`);
+		const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=reflection_responses&cohort_id=${cohortId}`);
 		const result = await response.json();
 
 		if (!result.success) {
