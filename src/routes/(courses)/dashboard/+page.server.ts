@@ -6,9 +6,10 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
+	const currentUserId = user.id;
 
 	// Get user's enrollment to determine cohort and current session
-	const { data: enrollment, error: enrollmentError} = await supabaseAdmin
+	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
 		.from('courses_enrollments')
 		.select('cohort_id, current_session')
 		.eq('user_profile_id', user.id)
@@ -109,11 +110,11 @@ export const load: PageServerLoad = async (event) => {
 			.eq('user_profile_id', user.id)
 			.single();
 
-		const accfUserId = studentRecord?.id;
+		const enrollmentId = studentRecord?.id;
 
 		// Fetch user's reflection responses
 		let reflectionResponses = [];
-		if (accfUserId) {
+		if (enrollmentId) {
 			const { data, error: responsesError } = await supabaseAdmin
 				.from('courses_reflection_responses')
 				.select(`
@@ -126,7 +127,7 @@ export const load: PageServerLoad = async (event) => {
 						full_name
 					)
 				`)
-				.eq('accf_user_id', accfUserId)
+				.eq('enrollment_id', enrollmentId)
 				.order('created_at', { ascending: false });
 
 			if (!responsesError && data) {
@@ -145,13 +146,15 @@ export const load: PageServerLoad = async (event) => {
 						session_number,
 						question_text
 					),
-					student:accf_user_id (
-						full_name
+					courses_enrollments!enrollment_id (
+						user_profiles!user_profile_id (
+							full_name
+						)
 					)
 				`)
 				.eq('cohort_id', cohortId)
 				.eq('is_public', true)
-				.neq('accf_user_id', accfUserId || '')
+				.neq('enrollment_id', enrollmentId || '')
 				.order('created_at', { ascending: false })
 				.limit(20);
 

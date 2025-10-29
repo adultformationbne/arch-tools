@@ -6,6 +6,7 @@ import type { RequestHandler } from './$types';
 export const POST: RequestHandler = async (event) => {
 	// Require authenticated user
 	const { user } = await requireCoursesUser(event);
+	const userId = user.id;
 
 	try {
 		const body = await event.request.json();
@@ -64,7 +65,7 @@ export const POST: RequestHandler = async (event) => {
 		const { data: existingResponse, error: checkError } = await supabaseAdmin
 			.from('courses_reflection_responses')
 			.select('*')
-			.eq('accf_user_id', studentData.id)
+			.eq('enrollment_id', studentData.id)
 			.eq('question_id', reflection_question_id)
 			.maybeSingle();
 
@@ -108,7 +109,7 @@ export const POST: RequestHandler = async (event) => {
 			console.log('Creating new response...');
 			// Create new response with all required fields
 			const newResponse = {
-				accf_user_id: studentData.id,
+				enrollment_id: studentData.id,
 				cohort_id: studentData.cohort_id,
 				question_id: reflection_question_id,
 				session_id: questionData.session_id, // Use session_id from question

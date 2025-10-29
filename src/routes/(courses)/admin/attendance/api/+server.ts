@@ -58,18 +58,18 @@ export const GET: RequestHandler = async (event) => {
 
 	const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
 		.from('courses_attendance')
-		.select('accf_user_id, session_number, present, marked_by, attendance_type')
+		.select('enrollment_id, session_number, present, marked_by, attendance_type')
 		.eq('cohort_id', cohortId)
-		.in('accf_user_id', allUserIds);
+		.in('enrollment_id', allUserIds);
 
 	if (attendanceError) {
 		console.error('Error fetching attendance:', attendanceError);
 	}
 
-	// Map attendance to students using accf_user_id
+	// Map attendance to students using enrollment_id
 	const attendanceMap = (attendanceRecords || []).reduce((acc, record) => {
-		if (!acc[record.accf_user_id]) acc[record.accf_user_id] = [];
-		acc[record.accf_user_id].push(record);
+		if (!acc[record.enrollment_id]) acc[record.enrollment_id] = [];
+		acc[record.enrollment_id].push(record);
 		return acc;
 	}, {});
 
@@ -110,7 +110,7 @@ export const POST: RequestHandler = async (event) => {
 	const { data: existing } = await supabaseAdmin
 		.from('courses_attendance')
 		.select('id')
-		.eq('accf_user_id', userId)
+		.eq('enrollment_id', userId)
 		.eq('cohort_id', cohortId)
 		.eq('session_number', sessionNumber)
 		.single();
@@ -136,7 +136,7 @@ export const POST: RequestHandler = async (event) => {
 		const { error: insertError } = await supabaseAdmin
 			.from('courses_attendance')
 			.insert({
-				accf_user_id: userId,
+				enrollment_id: userId,
 				cohort_id: cohortId,
 				session_number: sessionNumber,
 				present,

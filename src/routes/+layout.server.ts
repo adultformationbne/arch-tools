@@ -3,18 +3,28 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, url }) => {
 	const { session, user } = await safeGetSession();
+	const pathname = url.pathname;
 
-	// Domain-based authentication logic (moved up to use in other checks)
-	const hostname = url.hostname;
-	const isACCFDomain = hostname === 'accf-platform.com' || url.pathname.startsWith('/login') || url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/reflections');
-	const isInternalDomain = hostname.includes('arch-tools') || url.pathname.startsWith('/admin');
+	const coursesRoutePrefixes = [
+		'/dashboard',
+		'/materials',
+		'/reflections',
+		'/login',
+		'/signup',
+		'/privacy-policy',
+		'/accf-profile'
+	];
+	const coursesProtectedPrefixes = ['/dashboard', '/materials', '/reflections', '/accf-profile'];
 
-	// Allow access to auth routes and DGR submission routes without authentication
-	const publicRoutes = ['/auth', '/dgr/submit', '/login', '/readings', '/api/v1/readings'];
-	const isPublicRoute = publicRoutes.some((route) => url.pathname.startsWith(route));
+	// Determine route categories for auth logic
+	const isCoursesRoute =
+		coursesRoutePrefixes.some(route => pathname.startsWith(route)) || pathname === '/';
+	const isCoursesProtectedRoute = coursesProtectedPrefixes.some(route => pathname.startsWith(route));
+	const isAdminRoute = pathname.startsWith('/admin');
 
-	// Also allow access to ACCF root page for dev mode setup
-	const isACCFRoot = url.pathname === '/' && isACCFDomain;
+	// Allow access to auth routes and public endpoints without authentication
+	const publicRoutes = ['/', '/auth', '/dgr/submit', '/login', '/readings', '/api/v1/readings', '/privacy-policy'];
+	const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route));
 
 	// Get user profile if authenticated
 	let userProfile = null;
@@ -27,29 +37,24 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 		userProfile = profile;
 	}
 
-	if (!session && !isPublicRoute && !isACCFRoot) {
-		// Redirect to appropriate login based on domain/route
-		if (isACCFDomain) {
-			throw redirect(303, '/login?next=' + url.pathname);
-		} else {
-			throw redirect(303, '/auth?next=' + url.pathname);
+	if (!session && !isPublicRoute) {
+		// Redirect anonymous users to appropriate auth flow
+		if (isCoursesRoute) {
+			throw redirect(303, '/login?next=' + pathname);
 		}
+		throw redirect(303, '/auth?next=' + pathname);
 	}
 
 	// Role-based access control
 	if (session && userProfile) {
-		// Student routes - require student or admin role
-		if (isACCFDomain && !url.pathname.startsWith('/admin') && !url.pathname.startsWith('/login')) {
-			if (!['student', 'admin', 'hub_coordinator'].includes(userProfile.role)) {
-				throw redirect(303, '/login?error=insufficient_permissions');
-			}
+		// Student-facing routes require student-friendly roles
+		if (isCoursesProtectedRoute && !['student', 'admin', 'hub_coordinator'].includes(userProfile.role)) {
+			throw redirect(303, '/login?error=insufficient_permissions');
 		}
 
-		// Admin routes - require admin role
-		if (url.pathname.startsWith('/admin')) {
-			if (userProfile.role !== 'admin') {
-				throw redirect(303, '/auth?error=insufficient_permissions');
-			}
+		// Admin routes require admin role
+		if (isAdminRoute && userProfile.role !== 'admin') {
+			throw redirect(303, '/auth?error=insufficient_permissions');
 		}
 	}
 
@@ -57,6 +62,6 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 		session,
 		user,
 		userProfile,
-		isACCFDomain
+		isCoursesRoute
 	};
 };

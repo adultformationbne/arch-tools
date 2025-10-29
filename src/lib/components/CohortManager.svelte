@@ -176,7 +176,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					action: 'update_accf_user',
+					action: 'update_enrollment',
 					userId: editingStudent.id,
 					updates: {
 						full_name: editingStudent.full_name,
@@ -205,7 +205,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					action: 'delete_accf_user',
+					action: 'delete_enrollment',
 					userId: studentId
 				})
 			});
@@ -268,7 +268,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					action: 'update_accf_user',
+					action: 'update_enrollment',
 					userId: editingSession.id,
 					updates: {
 						current_session: editingSession.value
