@@ -165,9 +165,9 @@
 							<Edit2 size={16} />
 							<span>Edit Cohort</span>
 						</button>
-						<a href="/admin/materials/{cohort.id}" class="dropdown-item" onclick={() => showDropdown = false}>
+						<a href="/courses/{courseSlug}/admin/modules" class="dropdown-item" onclick={() => showDropdown = false}>
 							<FileText size={16} />
-							<span>Manage Materials</span>
+							<span>Manage Module Materials</span>
 						</a>
 						<button onclick={() => { onDelete(); showDropdown = false; }} class="dropdown-item danger">
 							<Trash2 size={16} />

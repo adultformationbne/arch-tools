@@ -1,20 +1,19 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	// Require admin authentication
-	await requireAdmin(event);
-
-	const courseId = event.params.id;
+	const courseSlug = event.params.slug;
+	await requireCourseAdmin(event, courseSlug);
 
 	try {
-		// Fetch course details
+		// Fetch ONLY the current course
 		const { data: course, error: courseError } = await supabaseAdmin
 			.from('courses')
 			.select('*')
-			.eq('id', courseId)
+			.eq('slug', courseSlug)
 			.single();
 
 		if (courseError || !course) {
@@ -22,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
 			throw error(404, 'Course not found');
 		}
 
-		// Fetch modules for this course
+		// Get modules for this course
 		const { data: modules, error: modulesError } = await supabaseAdmin
 			.from('courses_modules')
 			.select(`
@@ -36,14 +35,14 @@ export const load: PageServerLoad = async (event) => {
 					end_date
 				)
 			`)
-			.eq('course_id', courseId)
+			.eq('course_id', course.id)
 			.order('order_number', { ascending: true });
 
 		if (modulesError) {
 			console.error('Error fetching modules:', modulesError);
 		}
 
-		// Fetch all cohorts for this course's modules
+		// Get all cohorts for this course's modules
 		const moduleIds = modules?.map(m => m.id) || [];
 		let cohorts = [];
 
@@ -52,7 +51,10 @@ export const load: PageServerLoad = async (event) => {
 				.from('courses_cohorts')
 				.select(`
 					*,
-					module:courses_modules(id, name),
+					module:module_id (
+						id,
+						name
+					),
 					enrollments:courses_enrollments(count)
 				`)
 				.in('module_id', moduleIds)
@@ -84,11 +86,13 @@ export const load: PageServerLoad = async (event) => {
 			course,
 			modules: modules || [],
 			cohorts,
-			totalEnrollments
+			totalEnrollments,
+			moduleCount: modules?.length || 0,
+			activeCohorts: cohorts.filter(c => c.status === 'active').length
 		};
 
 	} catch (err) {
-		console.error('Error in course detail page load:', err);
-		throw error(500, 'Failed to load course details');
+		console.error('Error in courses page load:', err);
+		throw error(500, 'Failed to load course data');
 	}
 };

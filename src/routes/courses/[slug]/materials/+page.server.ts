@@ -1,11 +1,12 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCoursesUser } from '$lib/server/auth.js';
+import { requireCourseAccess } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	const courseSlug = event.params.slug;
 	// Require authenticated user
-	const { user } = await requireCoursesUser(event);
+	const { user } = await requireCourseAccess(event, courseSlug);
 
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin

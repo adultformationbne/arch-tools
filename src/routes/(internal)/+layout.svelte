@@ -1,6 +1,5 @@
 <script>
 	import { invalidate } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 
 let { data, children } = $props();
@@ -9,7 +8,7 @@ let { data, children } = $props();
 	let session = $derived(data.session);
 	let userRole = $derived(data.userRole);
 
-	onMount(() => {
+	$effect(() => {
 		const {
 			data: { subscription }
 		} = supabase.auth.onAuthStateChange((event, _session) => {

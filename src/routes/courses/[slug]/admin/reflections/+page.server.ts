@@ -1,14 +1,61 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	const courseSlug = event.params.slug;
+
 	// Restrict to admins only
-	const { user } = await requireAdmin(event);
+	const { user } = await requireCourseAdmin(event, courseSlug);
 
 	try {
-		// Fetch all reflection responses with related data
+		// Get the course ID from slug
+		const { data: course } = await supabaseAdmin
+			.from('courses')
+			.select('id')
+			.eq('slug', courseSlug)
+			.single();
+
+		if (!course) {
+			throw error(404, 'Course not found');
+		}
+
+		// Get module IDs for this course
+		const { data: modules } = await supabaseAdmin
+			.from('courses_modules')
+			.select('id')
+			.eq('course_id', course.id);
+
+		const moduleIds = modules?.map(m => m.id) || [];
+
+		if (moduleIds.length === 0) {
+			return {
+				reflections: [],
+				cohorts: [],
+				currentUserId: user.id,
+				courseSlug
+			};
+		}
+
+		// Get cohort IDs for this course's modules
+		const { data: courseCohorts } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('id')
+			.in('module_id', moduleIds);
+
+		const cohortIds = courseCohorts?.map(c => c.id) || [];
+
+		if (cohortIds.length === 0) {
+			return {
+				reflections: [],
+				cohorts: [],
+				currentUserId: user.id,
+				courseSlug
+			};
+		}
+
+		// Fetch reflection responses for this course's cohorts
 		const { data: reflections, error: reflectionsError } = await supabaseAdmin
 			.from('courses_reflection_responses')
 			.select(`
@@ -40,6 +87,7 @@ export const load: PageServerLoad = async (event) => {
 					full_name
 				)
 			`)
+			.in('cohort_id', cohortIds)
 			.order('created_at', { ascending: false });
 
 		if (reflectionsError) {
@@ -47,7 +95,7 @@ export const load: PageServerLoad = async (event) => {
 			throw error(500, 'Failed to load reflections');
 		}
 
-		// Get all cohorts for filter dropdown
+		// Get cohorts for this course for filter dropdown
 		const { data: cohorts, error: cohortsError } = await supabaseAdmin
 			.from('courses_cohorts')
 			.select(`
@@ -57,6 +105,7 @@ export const load: PageServerLoad = async (event) => {
 					name
 				)
 			`)
+			.in('module_id', moduleIds)
 			.order('start_date', { ascending: false });
 
 		if (cohortsError) {
@@ -119,7 +168,8 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			reflections: processedReflections,
 			cohorts: cohortOptions,
-			currentUserId: user.id
+			currentUserId: user.id,
+			courseSlug
 		};
 
 	} catch (err) {

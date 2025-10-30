@@ -1,22 +1,15 @@
 import { json, error } from '@sveltejs/kit';
-import { requireRole } from '$lib/utils/auth.js';
+import { requirePlatformAdmin } from '$lib/server/auth.js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST({ request, locals: { supabase, safeGetSession } }) {
+export async function POST(event) {
 	try {
-		const { session, user } = await safeGetSession();
+		// Check if user is platform admin
+		await requirePlatformAdmin(event);
 
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
-
-		// Check if user is admin
-		const hasAccess = await requireRole(supabase, user.id, 'admin');
-		if (!hasAccess) {
-			throw error(403, 'Insufficient permissions. Admin role required.');
-		}
+		const { request } = event;
 
 		const { userId, newPassword } = await request.json();
 

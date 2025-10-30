@@ -1,11 +1,12 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async (event) => {
 	// Require admin authentication
-	await requireAdmin(event);
+	const courseSlug = event.params.slug;
+	await requireCourseAdmin(event, courseSlug);
 
 	const { url } = event;
 	const cohortId = url.searchParams.get('cohort_id');

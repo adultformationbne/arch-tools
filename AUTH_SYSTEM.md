@@ -2,285 +2,258 @@
 
 ## Overview
 
-The arch-tools platform has a **unified auth system** that handles both **(internal)** admin routes and **(accf)** student/course routes with different response patterns appropriate for each context.
+The arch-tools platform uses a **unified authentication system** (`$lib/server/auth.ts`) that handles all authentication and authorization with flexible response modes for different route types.
 
 ## System Architecture
 
-### Two Auth Helper Libraries
+### Single Unified Auth Library
 
-#### 1. **`$lib/server/auth.ts`** - For ACCF & API Routes
-**Use for:** `(accf)` routes and API endpoints
-**Behavior:** Throws HTTP errors (401/403) - proper for API responses
-**Import:** `import { requireAuth, requireRole, requireAdmin } from '$lib/server/auth'`
+**Location:** `$lib/server/auth.ts`
 
-#### 2. **`$lib/utils/auth-helpers.ts`** - For Internal Routes
-**Use for:** `(internal)` admin routes
-**Behavior:** Uses redirects (303) - user-friendly for browser navigation
-**Import:** `import { requireModule, requireRole, requireAdmin } from '$lib/utils/auth-helpers'`
+**Features:**
+- Platform-level authorization (admin, modules)
+- Course-level authorization (per-course roles)
+- Flexible response modes (errors vs redirects)
+- Automatic admin access to all modules
+- Clean, consistent API
 
 ---
 
-## Available Functions
+## Response Modes
 
-### Server-Side Auth (`$lib/server/auth.ts`)
+The auth system supports two response modes via the `options` parameter:
 
-For use in `+page.server.ts` or `+server.ts` files in **(accf)** routes:
-
+### 1. `throw_error` (Default)
+Returns HTTP 401/403 errors - perfect for API routes:
 ```typescript
-// Basic authentication check
+// Will throw error(401) or error(403)
+await requirePlatformAdmin(event);
+```
+
+### 2. `redirect`
+Returns 303 redirects - perfect for page routes:
+```typescript
+// Will throw redirect(303, '/profile')
+await requirePlatformAdmin(event, { mode: 'redirect', redirectTo: '/profile' });
+```
+
+---
+
+## Platform-Level Authorization
+
+### Functions
+
+#### `requireAuth(event, options?)`
+Requires user to be authenticated.
+```typescript
 const { session, user } = await requireAuth(event);
+// With redirect:
+const { session, user } = await requireAuth(event, { mode: 'redirect', redirectTo: '/auth' });
+```
 
-// Check for specific roles
-const { user, profile } = await requireRole(event, ['accf_admin', 'admin']);
+#### `requirePlatformAdmin(event, options?)`
+Requires user to have `admin` role in `user_profiles`.
+```typescript
+const { user, profile } = await requirePlatformAdmin(event);
+// For page routes:
+const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' });
+```
 
-// Require admin role (admin or accf_admin)
-const { user, profile } = await requireAdmin(event);
+#### `requirePlatformRole(event, allowedRoles, options?)`
+Requires user to have one of the specified platform roles.
+```typescript
+const { user, profile } = await requirePlatformRole(event, ['admin', 'hub_coordinator']);
+```
 
-// Require ACCF user (student, admin, or coordinator)
-const { user, profile } = await requireAccfUser(event);
-
-// Require specific module access
+#### `requireModule(event, moduleName, options?)`
+Requires user to have specific module access. **Admins automatically pass**.
+```typescript
 const { user, profile } = await requireModule(event, 'user_management');
-```
-
-**Example Usage:**
-```typescript
-// src/routes/(accf)/admin/+page.server.ts
-import { requireAdmin } from '$lib/server/auth';
-
-export const load: PageServerLoad = async (event) => {
-  const { user, profile } = await requireAdmin(event);
-  // ... rest of load function
-};
-```
-
-### Client-Side Auth Helpers (`$lib/utils/auth-helpers.ts`)
-
-For use in `+page.server.ts` files in **(internal)** routes:
-
-```typescript
-// Require specific module
-const userProfile = await requireModule(supabase, user.id, 'dgr_admin');
-
-// Require specific role
-const userProfile = await requireRole(supabase, user.id, ['admin', 'editor']);
-
-// Require admin role
-const userProfile = await requireAdmin(supabase, user.id);
-
-// Get user profile (no auth check)
-const profile = await getUserProfile(supabase, user.id);
-```
-
-**Example Usage:**
-```typescript
-// src/routes/(internal)/admin/users/+page.server.ts
-import { requireModule } from '$lib/utils/auth-helpers';
-
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-  const { session, user } = await safeGetSession();
-
-  if (!session) {
-    throw redirect(303, '/auth');
-  }
-
-  const userProfile = await requireModule(supabase, user.id, 'user_management');
-  // ... rest of load function
-};
-```
-
-### Client-Side Helpers (Both Libraries)
-
-For use in `.svelte` components:
-
-```typescript
-import { hasAnyModule, hasAllModules } from '$lib/server/auth';
-
-// Check if user has ANY of the specified modules
-const canEdit = hasAnyModule(userProfile.modules, ['editor', 'admin']);
-
-// Check if user has ALL of the specified modules
-const fullAccess = hasAllModules(userProfile.modules, ['dgr_admin', 'user_management']);
+const { user, profile } = await requireModule(event, 'dgr', { mode: 'redirect' });
+const { user, profile } = await requireModule(event, 'editor');
 ```
 
 ---
 
-## Role Hierarchy
+## Course-Level Authorization
+
+Course-level permissions are based on enrollments in `courses_enrollments`. Platform admins automatically have access to all courses.
+
+### Functions
+
+#### `requireCourseAccess(event, courseSlug, options?)`
+Requires user to be enrolled in the course (any role: admin, student, or coordinator).
+```typescript
+const courseSlug = event.params.slug;
+const { user, profile, enrollment } = await requireCourseAccess(event, courseSlug);
+```
+
+#### `requireCourseAdmin(event, courseSlug, options?)`
+Requires user to have admin role in the course (or be a platform admin).
+```typescript
+const { user, enrollment, isPlatformAdmin } = await requireCourseAdmin(event, courseSlug);
+```
+
+#### `requireCourseRole(event, courseSlug, allowedRoles, options?)`
+Requires user to have one of the specified roles in the course.
+```typescript
+// Allow both admin and coordinator
+const { user, enrollment } = await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
+```
+
+---
+
+## Role System
 
 ### Platform Roles
+Stored in `user_profiles.role`:
 
-| Role | Description | Access Level |
-|------|-------------|--------------|
-| `admin` | Platform administrator | Full platform access, all modules |
-| `editor` | Content editor | Content editing access |
-| `contributor` | Content contributor | Limited contribution access |
-| `viewer` | Read-only user | View-only access |
+| Role | Description |
+|------|-------------|
+| `admin` | Full platform access, automatic access to all modules and courses |
+| `student` | Regular user, enrolls in courses |
+| `hub_coordinator` | Manages hubs |
 
-### ACCF Roles
+### Course Roles
+Stored in `courses_enrollments.role` (per user per course):
 
-| Role | Description | Access Level |
-|------|-------------|--------------|
-| `accf_admin` | ACCF administrator | Full ACCF admin access |
-| `accf_student` | ACCF course student | Student dashboard, materials, reflections |
-| `hub_coordinator` | Hub coordinator | Hub management, attendance |
+| Role | Description |
+|------|-------------|
+| `admin` | Can manage this specific course |
+| `student` | Enrolled student in this course |
+| `coordinator` | Hub coordinator for this course |
 
----
-
-## Module System
-
-Modules provide granular permissions within roles. Users can have multiple modules assigned.
-
-### Available Modules
+### Module Permissions
+Stored in `user_profiles.modules` (array):
 
 - `user_management` - User administration
-- `dgr_admin` - Daily Gospel Reflection management
-- `editor_access` - Content editor access
-- `accf_admin` - ACCF administration
+- `dgr` - Daily Gospel Reflections management
+- `editor` - Content editor access
 
-### Checking Module Access
+**Note:** Platform admins automatically have access to all modules without needing them listed.
 
+---
+
+## Usage Examples
+
+### Example 1: (internal) Page Route - Redirect on Failure
 ```typescript
-// Server-side (throws error/redirect if no access)
-await requireModule(event, 'user_management');
+// src/routes/(internal)/admin/users/+page.server.ts
+import type { PageServerLoad } from './$types';
+import { requireModule } from '$lib/server/auth';
 
-// Client-side (returns boolean)
-const hasAccess = hasAnyModule(profile.modules, ['user_management']);
+export const load: PageServerLoad = async (event) => {
+  // Redirects to /profile if user doesn't have access
+  const { user, profile } = await requireModule(event, 'user_management', {
+    mode: 'redirect',
+    redirectTo: '/profile'
+  });
+
+  // ... fetch users
+  return { users };
+};
+```
+
+### Example 2: API Route - Throw Errors
+```typescript
+// src/routes/api/admin/users/+server.ts
+import { json } from '@sveltejs/kit';
+import { requireModule } from '$lib/server/auth';
+
+export async function POST(event) {
+  // Throws error(403) if user doesn't have access
+  const { user } = await requireModule(event, 'user_management');
+
+  // ... create user
+  return json({ success: true });
+}
+```
+
+### Example 3: Course Admin Page
+```typescript
+// src/routes/courses/[slug]/admin/+page.server.ts
+import type { PageServerLoad } from './$types';
+import { requireCourseAdmin } from '$lib/server/auth';
+
+export const load: PageServerLoad = async (event) => {
+  const courseSlug = event.params.slug;
+
+  // Platform admins OR course admins can access
+  const { user, enrollment, isPlatformAdmin } = await requireCourseAdmin(event, courseSlug);
+
+  // ... fetch course data
+  return { courseData };
+};
+```
+
+### Example 4: Course Student Page
+```typescript
+// src/routes/courses/[slug]/dashboard/+page.server.ts
+import type { PageServerLoad } from './$types';
+import { requireCourseAccess } from '$lib/server/auth';
+
+export const load: PageServerLoad = async (event) => {
+  const courseSlug = event.params.slug;
+
+  // Any enrolled user (admin, student, coordinator) can access
+  const { user, enrollment } = await requireCourseAccess(event, courseSlug);
+
+  // ... fetch dashboard data
+  return { dashboardData };
+};
 ```
 
 ---
 
-## Layout Auth Flow
+## Client-Side Helpers
 
-### (internal) Routes
+For use in Svelte components to conditionally render UI:
 
-```
-Root Layout (+layout.server.ts)
-  ↓
-(internal) Layout (+layout.server.ts)
-  ├─ Checks session exists
-  ├─ Fetches user profile
-  ├─ Returns: session, user, userProfile, userRole
-  └─ Redirects to /auth if no session
-    ↓
-Page Load (+page.server.ts)
-  ├─ Uses requireModule() or requireRole()
-  └─ Redirects to /profile if unauthorized
-```
-
-### (accf) Routes
-
-```
-Root Layout (+layout.server.ts)
-  ↓
-(accf) Layout (+layout.server.ts)
-  ├─ Gets user from parent
-  ├─ Role-based route protection
-  └─ Returns: userRole, userName
-    ↓
-Page Load (+page.server.ts)
-  ├─ Uses requireAuth(), requireRole(), etc.
-  └─ Throws 401/403 if unauthorized
-```
-
----
-
-## Common Patterns
-
-### Pattern 1: Admin-Only Page (Internal)
-
-```typescript
-// +page.server.ts
-import { redirect } from '@sveltejs/kit';
-import { requireAdmin } from '$lib/utils/auth-helpers';
-
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-  const { session, user } = await safeGetSession();
-
-  if (!session) {
-    throw redirect(303, '/auth');
-  }
-
-  await requireAdmin(supabase, user.id);
-
-  return { /* data */ };
-};
-```
-
-### Pattern 2: Module-Based Access (Internal)
-
-```typescript
-// +page.server.ts
-import { redirect } from '@sveltejs/kit';
-import { requireModule } from '$lib/utils/auth-helpers';
-
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-  const { session, user } = await safeGetSession();
-
-  if (!session) {
-    throw redirect(303, '/auth');
-  }
-
-  const userProfile = await requireModule(supabase, user.id, 'dgr_admin');
-
-  return { userProfile };
-};
-```
-
-### Pattern 3: ACCF Admin Page
-
-```typescript
-// +page.server.ts
-import { requireAdmin } from '$lib/server/auth';
-
-export const load: PageServerLoad = async (event) => {
-  const { user, profile } = await requireAdmin(event);
-
-  return { /* data */ };
-};
-```
-
-### Pattern 4: ACCF Student Page
-
-```typescript
-// +page.server.ts
-import { requireAccfUser } from '$lib/server/auth';
-
-export const load: PageServerLoad = async (event) => {
-  const { user, profile } = await requireAccfUser(event);
-
-  return { /* data */ };
-};
-```
-
-### Pattern 5: Conditional Access in Components
-
+### `hasAnyModule(modules, requiredModules)`
 ```svelte
 <script>
   import { hasAnyModule } from '$lib/server/auth';
 
   let { data } = $props();
-  let profile = $derived(data.userProfile);
-
-  let canManageUsers = $derived(
-    hasAnyModule(profile?.modules, ['user_management'])
-  );
+  let canEdit = $derived(hasAnyModule(data.userProfile?.modules, ['editor', 'admin']));
 </script>
 
-{#if canManageUsers}
-  <UserManagementPanel />
+{#if canEdit}
+  <button>Edit Content</button>
 {/if}
+```
+
+### `hasAllModules(modules, requiredModules)`
+```typescript
+const hasFullAccess = hasAllModules(profile.modules, ['user_management', 'editor']);
+```
+
+### `isPlatformAdmin(role)`
+```typescript
+const isAdmin = isPlatformAdmin(profile.role);
 ```
 
 ---
 
-## Testing Auth
+## Migration from Old System
 
-Test page available at: `/test-emails` (admin only)
+### Old Pattern (REMOVED)
+```typescript
+// ❌ OLD - Don't use
+import { requireAdmin } from '$lib/utils/auth-helpers';
 
-This page demonstrates:
-- Admin-only access pattern
-- Email template testing
-- Proper auth flow
+const { session, user } = await safeGetSession();
+if (!session) throw redirect(303, '/auth');
+const profile = await requireAdmin(supabase, user.id);
+```
+
+### New Pattern
+```typescript
+// ✅ NEW - Use this
+import { requirePlatformAdmin } from '$lib/server/auth';
+
+const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' });
+```
 
 ---
 
@@ -288,77 +261,69 @@ This page demonstrates:
 
 ### ✅ DO
 
-- Use `requireAuth()` / `requireRole()` for ACCF routes
-- Use `requireModule()` / `requireAdmin()` for internal routes
-- Check auth in `+page.server.ts` (server-side)
-- Use client-side helpers (`hasAnyModule()`) for UI visibility
-- Return meaningful user profile data in load functions
+- Use the unified auth system from `$lib/server/auth.ts`
+- Use `mode: 'redirect'` for page routes
+- Use default mode (throw_error) for API routes
+- Let platform admins access everything automatically
+- Check auth in `+page.server.ts` or `+server.ts` (server-side)
+- Use client-side helpers for conditional UI rendering
 
 ### ❌ DON'T
 
-- Don't mix auth helper imports (use correct library for route type)
 - Don't check auth only client-side (security risk)
-- Don't duplicate auth checks (layout handles session)
-- Don't forget to pass user profile to pages that need it
+- Don't duplicate auth logic
+- Don't forget platform admins have automatic access
+- Don't hardcode redirect paths (use the redirectTo option)
 
 ---
 
-## Migration Guide
+## Security Notes
 
-If you have existing pages with custom auth:
+1. **Server-side validation is mandatory** - All auth checks happen server-side
+2. **Platform admins bypass module checks** - They have access to everything
+3. **Course admins are course-specific** - Not the same as platform admins
+4. **RLS policies** in Supabase provide additional database-level security
+5. **Session management** is handled by SvelteKit hooks
 
-### Before (Custom Auth)
-```typescript
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-  const { session, user } = await safeGetSession();
+---
 
-  if (!session) {
-    throw redirect(303, '/auth');
-  }
+## Troubleshooting
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role, modules')
-    .eq('id', user.id)
-    .single();
+### "Forbidden - Admin access required"
+- User needs `role: 'admin'` in `user_profiles` table
+- Check with: `SELECT role FROM user_profiles WHERE id = 'user-id';`
 
-  if (!profile?.modules?.includes('user_management')) {
-    throw redirect(303, '/profile');
-  }
+### "Forbidden - Requires [module] module access"
+- User needs module in `user_profiles.modules` array
+- Or user needs `role: 'admin'` (admins bypass module checks)
+- Check with: `SELECT modules FROM user_profiles WHERE id = 'user-id';`
 
-  return { profile };
-};
-```
-
-### After (Using Helpers)
-```typescript
-import { redirect } from '@sveltejs/kit';
-import { requireModule } from '$lib/utils/auth-helpers';
-
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-  const { session, user } = await safeGetSession();
-
-  if (!session) {
-    throw redirect(303, '/auth');
-  }
-
-  const profile = await requireModule(supabase, user.id, 'user_management');
-
-  return { profile };
-};
-```
+### "Forbidden - Requires [role] role in this course"
+- User needs enrollment in `courses_enrollments` with correct role
+- Or user needs platform admin (`user_profiles.role = 'admin'`)
+- Check with:
+  ```sql
+  SELECT ce.role
+  FROM courses_enrollments ce
+  JOIN courses_cohorts cc ON ce.cohort_id = cc.id
+  JOIN courses_modules cm ON cc.module_id = cm.id
+  JOIN courses c ON cm.course_id = c.id
+  WHERE ce.user_profile_id = 'user-id'
+    AND c.slug = 'course-slug';
+  ```
 
 ---
 
 ## Summary
 
-- **Two auth systems** for different contexts (ACCF vs Internal)
-- **Server-side validation** in all `+page.server.ts` files
-- **Module-based permissions** for granular access control
-- **Consistent patterns** across the entire platform
-- **Client-side helpers** for conditional UI rendering
+- **One auth system** to rule them all (`$lib/server/auth.ts`)
+- **Two response modes** - errors for APIs, redirects for pages
+- **Three permission levels** - platform, module, course
+- **Admins are powerful** - automatic access to everything
+- **Course-scoped roles** - different permissions per course
 
-For questions or issues, refer to this guide or check existing implementations in:
-- `src/routes/(internal)/admin/users/+page.server.ts`
-- `src/routes/(internal)/test-emails/+page.server.ts`
-- `src/routes/(accf)/admin/+page.server.ts`
+For implementation examples, see:
+- `src/routes/(internal)/admin/users/+page.server.ts` - Module-based auth with redirect
+- `src/routes/courses/[slug]/admin/+page.server.ts` - Course admin auth
+- `src/routes/courses/[slug]/dashboard/+page.server.ts` - Course access auth
+- `src/routes/api/admin/users/+server.ts` - API auth with errors

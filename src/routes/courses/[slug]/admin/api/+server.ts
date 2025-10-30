@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import { sendBulkInvitations } from '$lib/server/resend.js';
 import type { RequestHandler } from './$types';
 
@@ -24,8 +24,10 @@ async function logActivity(
 }
 
 export const POST: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+
 	// Require admin authentication
-	const { user, profile } = await requireAdmin(event);
+	const { user, profile } = await requireCourseAdmin(event, courseSlug);
 
 	try {
 		const { action, ...data } = await event.request.json();
@@ -715,8 +717,10 @@ async function sendInvitations(userIds: string[]) {
 }
 
 export const GET: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+
 	// Require admin authentication
-	await requireAdmin(event);
+	await requireCourseAdmin(event, courseSlug);
 
 	const { url } = event;
 	const endpoint = url.searchParams.get('endpoint');

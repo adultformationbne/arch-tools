@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const userId = userProfile.id;
 	const userRole = userProfile.role;
 
-	// If admin, show all active courses
+	// If admin, show all active courses with module count
 	if (userRole === 'admin') {
 		const { data: courses, error: coursesError } = await supabaseAdmin
 			.from('courses')
@@ -30,7 +30,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 					settings,
 					slug,
 					created_at,
-					updated_at
+					updated_at,
+					courses_modules(count)
 				`
 			)
 			.order('created_at', { ascending: false });
@@ -39,8 +40,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 			console.error('Error loading courses for admin view:', coursesError);
 		}
 
+		// Transform the data to include module count
+		const coursesWithCount = courses?.map(course => ({
+			...course,
+			moduleCount: course.courses_modules?.[0]?.count || 0
+		})) ?? [];
+
 		return {
-			courses: courses ?? [],
+			courses: coursesWithCount,
 			userRole: 'admin'
 		};
 	}
@@ -148,40 +155,20 @@ function parseJsonField(value: FormDataEntryValue | null) {
 	}
 }
 
-async function requireAdmin(eventLocals: App.Locals) {
-	const { session, user } = await eventLocals.safeGetSession();
-	if (!session || !user) {
-		return { authorized: false, reason: 'You must be signed in to manage courses.' } as const;
-	}
-
-	const { data: profile, error: profileError } = await eventLocals.supabase
-		.from('user_profiles')
-		.select('id, role')
-		.eq('id', user.id)
-		.maybeSingle();
-
-	if (profileError) {
-		console.error('Error fetching profile for admin validation:', profileError);
-		return { authorized: false, reason: 'Unable to verify permissions.' } as const;
-	}
-
-	if (!profile || profile.role !== 'admin') {
-		return { authorized: false, reason: 'Only admins can manage courses.' } as const;
-	}
-
-	return { authorized: true, userId: profile.id } as const;
-}
+import { requirePlatformAdmin } from '$lib/server/auth';
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
-		const auth = await requireAdmin(locals);
-		if (!auth.authorized) {
+	create: async (event) => {
+		try {
+			await requirePlatformAdmin(event);
+		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: auth.reason
+				message: 'Only platform admins can manage courses.'
 			});
 		}
 
+		const { request } = event;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString().trim() ?? '';
 		const shortName = formData.get('short_name')?.toString().trim() ?? '';
@@ -282,14 +269,17 @@ export const actions: Actions = {
 			context: { action: 'create' }
 		};
 	},
-	update: async ({ request, locals }) => {
-		const auth = await requireAdmin(locals);
-		if (!auth.authorized) {
+	update: async (event) => {
+		try {
+			await requirePlatformAdmin(event);
+		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: auth.reason
+				message: 'Only platform admins can manage courses.'
 			});
 		}
+
+		const { request } = event;
 
 		const formData = await request.formData();
 		const courseId = formData.get('course_id')?.toString();
@@ -401,14 +391,17 @@ export const actions: Actions = {
 			context: { action: 'update', courseId }
 		};
 	},
-	delete: async ({ request, locals }) => {
-		const auth = await requireAdmin(locals);
-		if (!auth.authorized) {
+	delete: async (event) => {
+		try {
+			await requirePlatformAdmin(event);
+		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: auth.reason
+				message: 'Only platform admins can manage courses.'
 			});
 		}
+
+		const { request } = event;
 
 		const formData = await request.formData();
 		const courseId = formData.get('course_id')?.toString();

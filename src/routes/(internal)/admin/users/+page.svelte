@@ -1,15 +1,19 @@
 <script lang="ts">
-	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send } from 'lucide-svelte';
+	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send, GraduationCap, BookOpen } from 'lucide-svelte';
 	import { apiPost, apiDelete, apiPut, supabaseRequest } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 
 	export let data;
-	let { supabase, users, currentUser, currentUserProfile } = data;
+	let { supabase, users, currentUser, currentUserProfile, courses, cohorts } = data;
 
 	let editingUserId = null;
 	let editingModules = [];
 	let loading = false;
+
+	// Filter state
+	let roleFilter = 'all'; // 'all', 'admin', 'student', 'hub_coordinator'
+	let searchQuery = '';
 
 	// Available modules for selection
 	const availableModules = [
@@ -19,11 +23,19 @@
 		{ id: 'courses', name: 'Courses', description: 'Manage course content and cohorts' }
 	];
 
+	// Available course roles
+	const courseRoles = [
+		{ id: 'student', name: 'Student', description: 'Can access course materials and submit reflections' },
+		{ id: 'coordinator', name: 'Coordinator', description: 'Can coordinate hubs and view student progress' },
+		{ id: 'admin', name: 'Course Admin', description: 'Can manage course content and settings' }
+	];
+
 	// New user form
 	let showNewUserForm = false;
 	let newUser = {
 		email: '',
 		full_name: '',
+		role: 'student',
 		modules: []
 	};
 	let createUserLoading = false;
@@ -39,6 +51,37 @@
 	let deleteUserId = null;
 	let deleteUserEmail = '';
 	let deleteLoading = false;
+
+	// Course enrollment management
+	let showEnrollmentModal = false;
+	let enrollmentUserId = null;
+	let enrollmentUserName = '';
+	let newEnrollment = {
+		cohortId: '',
+		role: 'student'
+	};
+	let enrollmentLoading = false;
+
+	// Edit enrollment
+	let editingEnrollmentId = null;
+	let editingEnrollmentRole = '';
+
+	// Filtered users
+	$: filteredUsers = users.filter(user => {
+		// Role filter
+		if (roleFilter !== 'all' && user.role !== roleFilter) {
+			return false;
+		}
+		// Search filter
+		if (searchQuery) {
+			const query = searchQuery.toLowerCase();
+			const matchesName = user.full_name?.toLowerCase().includes(query);
+			const matchesEmail = user.email?.toLowerCase().includes(query);
+			const matchesOrg = user.organization?.toLowerCase().includes(query);
+			return matchesName || matchesEmail || matchesOrg;
+		}
+		return true;
+	});
 
 	function startEdit(userId: string, currentModules: string[]) {
 		editingUserId = userId;
@@ -62,11 +105,13 @@
 		loading = true;
 
 		try {
-			await supabaseRequest(
-				() => supabase
-					.from('user_profiles')
-					.update({ modules: editingModules })
-					.eq('id', userId),
+			await apiPut(
+				'/api/admin/users',
+				{
+					userId,
+					action: 'update_modules',
+					modules: editingModules
+				},
 				{
 					loadingMessage: 'Saving user permissions',
 					loadingTitle: 'Updating permissions...',
@@ -76,8 +121,6 @@
 			);
 
 			cancelEdit();
-
-			// Refresh data from server
 			await invalidateAll();
 		} catch (error) {
 			console.error('Error updating permissions:', error);
@@ -96,8 +139,27 @@
 		return colors[moduleId] || 'bg-gray-100 text-gray-800';
 	}
 
-async function createNewUser(event) {
- event?.preventDefault();
+	function getRoleBadgeColor(role: string) {
+		const colors = {
+			'admin': 'bg-red-100 text-red-800',
+			'student': 'bg-blue-100 text-blue-800',
+			'hub_coordinator': 'bg-purple-100 text-purple-800',
+			'coordinator': 'bg-purple-100 text-purple-800'
+		};
+		return colors[role] || 'bg-gray-100 text-gray-800';
+	}
+
+	function getCourseRoleBadgeColor(role: string) {
+		const colors = {
+			'admin': 'bg-orange-100 text-orange-800',
+			'student': 'bg-green-100 text-green-800',
+			'coordinator': 'bg-indigo-100 text-indigo-800'
+		};
+		return colors[role] || 'bg-gray-100 text-gray-800';
+	}
+
+	async function createNewUser(event) {
+		event?.preventDefault();
 		createUserLoading = true;
 
 		const toastId = toastMultiStep([
@@ -119,26 +181,22 @@ async function createNewUser(event) {
 		], false);
 
 		try {
-			// Create user via API endpoint (sends invitation)
 			await apiPost('/api/admin/users', newUser, {
-				showToast: false // We're handling the multi-step toast manually
+				showToast: false
 			});
 
 			toastNextStep(toastId);
 			toastNextStep(toastId);
 
-			// Reset form
 			newUser = {
 				email: '',
 				full_name: '',
+				role: 'student',
 				modules: []
 			};
 			showNewUserForm = false;
-
-			// Refresh data from server
 			await invalidateAll();
 
-			// Auto-dismiss success toast after 5 seconds
 			setTimeout(() => dismissToast(toastId), 5000);
 		} catch (error) {
 			console.error('Error creating user:', error);
@@ -160,8 +218,8 @@ async function createNewUser(event) {
 		newPassword = '';
 	}
 
-async function resetUserPassword(event) {
- event?.preventDefault();
+	async function resetUserPassword(event) {
+		event?.preventDefault();
 		if (!newPassword || newPassword.length < 6) {
 			toastValidationError('Password', 'must be at least 6 characters');
 			return;
@@ -185,8 +243,6 @@ async function resetUserPassword(event) {
 			);
 
 			showPasswordResetModal = false;
-
-			// Refresh data from server
 			await invalidateAll();
 		} catch (error) {
 			console.error('Error resetting password:', error);
@@ -217,8 +273,6 @@ async function resetUserPassword(event) {
 			);
 
 			showDeleteModal = false;
-
-			// Refresh data from server
 			await invalidateAll();
 		} catch (error) {
 			console.error('Error deleting user:', error);
@@ -240,11 +294,118 @@ async function resetUserPassword(event) {
 				}
 			);
 
-			// Refresh data from server
 			await invalidateAll();
 		} catch (error) {
 			console.error('Error resending invitation:', error);
 		}
+	}
+
+	// Course enrollment functions
+	function showAddEnrollment(userId: string, userName: string) {
+		enrollmentUserId = userId;
+		enrollmentUserName = userName;
+		newEnrollment = {
+			cohortId: '',
+			role: 'student'
+		};
+		showEnrollmentModal = true;
+	}
+
+	async function addEnrollment(event) {
+		event?.preventDefault();
+		if (!newEnrollment.cohortId) {
+			toastValidationError('Cohort', 'must be selected');
+			return;
+		}
+
+		enrollmentLoading = true;
+
+		try {
+			await apiPost(
+				'/api/admin/enrollments',
+				{
+					userId: enrollmentUserId,
+					cohortId: newEnrollment.cohortId,
+					role: newEnrollment.role
+				},
+				{
+					loadingMessage: 'Enrolling user in course',
+					loadingTitle: 'Adding enrollment...',
+					successMessage: 'User enrolled successfully',
+					successTitle: 'Success!'
+				}
+			);
+
+			showEnrollmentModal = false;
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error adding enrollment:', error);
+		} finally {
+			enrollmentLoading = false;
+		}
+	}
+
+	async function removeEnrollment(enrollmentId: string, courseName: string) {
+		if (!confirm(`Remove this enrollment from ${courseName}?`)) {
+			return;
+		}
+
+		try {
+			await apiDelete(
+				'/api/admin/enrollments',
+				{ enrollmentId },
+				{
+					loadingMessage: 'Removing enrollment',
+					loadingTitle: 'Removing...',
+					successMessage: 'Enrollment removed successfully',
+					successTitle: 'Success!'
+				}
+			);
+
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error removing enrollment:', error);
+		}
+	}
+
+	function startEditEnrollment(enrollmentId: string, currentRole: string) {
+		editingEnrollmentId = enrollmentId;
+		editingEnrollmentRole = currentRole;
+	}
+
+	function cancelEditEnrollment() {
+		editingEnrollmentId = null;
+		editingEnrollmentRole = '';
+	}
+
+	async function saveEnrollmentRole(enrollmentId: string) {
+		try {
+			await apiPut(
+				'/api/admin/enrollments',
+				{
+					enrollmentId,
+					role: editingEnrollmentRole
+				},
+				{
+					loadingMessage: 'Updating enrollment role',
+					loadingTitle: 'Updating...',
+					successMessage: 'Role updated successfully',
+					successTitle: 'Success!'
+				}
+			);
+
+			cancelEditEnrollment();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Error updating enrollment:', error);
+		}
+	}
+
+	function getCohortLabel(cohort: any) {
+		if (!cohort) return 'Unknown';
+		const courseName = cohort.module?.course?.name || 'Unknown Course';
+		const moduleName = cohort.module?.name || '';
+		return `${courseName} - ${cohort.name}`;
 	}
 </script>
 
@@ -252,7 +413,7 @@ async function resetUserPassword(event) {
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="bg-white shadow rounded-lg">
 			<div class="px-6 py-4 border-b border-gray-200">
-				<div class="flex items-center justify-between">
+				<div class="flex items-center justify-between mb-4">
 					<h1 class="text-2xl font-semibold text-gray-900 flex items-center">
 						<Shield class="h-6 w-6 mr-2" />
 						User Management
@@ -267,6 +428,29 @@ async function resetUserPassword(event) {
 						</button>
 					</div>
 				</div>
+
+				<!-- Filters -->
+				<div class="flex items-center space-x-4">
+					<div class="flex-1">
+						<input
+							type="text"
+							bind:value={searchQuery}
+							placeholder="Search by name, email, or organization..."
+							class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						/>
+					</div>
+					<div>
+						<select
+							bind:value={roleFilter}
+							class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						>
+							<option value="all">All Roles</option>
+							<option value="admin">Platform Admin</option>
+							<option value="student">Student</option>
+							<option value="hub_coordinator">Hub Coordinator</option>
+						</select>
+					</div>
+				</div>
 			</div>
 
 			<div class="overflow-x-auto">
@@ -277,13 +461,10 @@ async function resetUserPassword(event) {
 								User
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Module Access
+								Platform Access
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Organization
-							</th>
-							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Joined
+								Course Enrollments
 							</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Actions
@@ -291,26 +472,34 @@ async function resetUserPassword(event) {
 						</tr>
 					</thead>
 					<tbody class="bg-white divide-y divide-gray-200">
-						{#each users as user}
+						{#each filteredUsers as user}
 							<tr class:bg-yellow-50={user.id === currentUser.id}>
-								<td class="px-6 py-4 whitespace-nowrap">
-									<div class="flex items-center">
-										<div>
-											<div class="text-sm font-medium text-gray-900 flex items-center gap-2">
-												{user.full_name || user.display_name || 'No name'}
-												{#if user.id === currentUser.id}
-													<span class="text-xs text-gray-500">(You)</span>
-												{/if}
-												{#if user.isPending}
-													<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-														Pending
-													</span>
-												{/if}
+								<td class="px-6 py-4">
+									<div class="flex items-start flex-col">
+										<div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+											{user.full_name || user.display_name || 'No name'}
+											{#if user.id === currentUser.id}
+												<span class="text-xs text-gray-500">(You)</span>
+											{/if}
+											{#if user.isPending}
+												<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+													Pending
+												</span>
+											{/if}
+										</div>
+										<div class="text-sm text-gray-500 flex items-center">
+											<Mail class="h-3 w-3 mr-1" />
+											{user.email}
+										</div>
+										{#if user.organization}
+											<div class="text-xs text-gray-400 mt-1">
+												{user.organization}
 											</div>
-											<div class="text-sm text-gray-500 flex items-center">
-												<Mail class="h-3 w-3 mr-1" />
-												{user.email}
-											</div>
+										{/if}
+										<div class="mt-1">
+											<span class="px-2 py-0.5 text-xs font-semibold rounded-full {getRoleBadgeColor(user.role)}">
+												{user.role === 'hub_coordinator' ? 'Hub Coordinator' : user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+											</span>
 										</div>
 									</div>
 								</td>
@@ -332,7 +521,11 @@ async function resetUserPassword(event) {
 										</div>
 									{:else}
 										<div class="flex flex-wrap gap-1">
-											{#if user.modules && user.modules.length > 0}
+											{#if user.role === 'admin'}
+												<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+													All Modules (Platform Admin)
+												</span>
+											{:else if user.modules && user.modules.length > 0}
 												{#each user.modules as moduleId}
 													{@const module = availableModules.find(m => m.id === moduleId)}
 													<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getModuleBadgeColor(moduleId)}">
@@ -345,11 +538,81 @@ async function resetUserPassword(event) {
 										</div>
 									{/if}
 								</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-									{user.organization || '-'}
-								</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-									{new Date(user.created_at).toLocaleDateString()}
+								<td class="px-6 py-4">
+									<div class="space-y-2">
+										{#if user.enrollments && user.enrollments.length > 0}
+											{#each user.enrollments as enrollment}
+												{@const cohort = enrollment.cohort}
+												{@const courseName = cohort?.module?.course?.name || 'Unknown'}
+												{@const cohortName = cohort?.name || 'Unknown Cohort'}
+												<div class="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
+													<div class="flex-1 min-w-0">
+														<div class="text-xs font-medium text-gray-900 truncate">
+															{courseName}
+														</div>
+														<div class="text-xs text-gray-500 truncate">
+															{cohortName}
+														</div>
+													</div>
+													{#if editingEnrollmentId === enrollment.id}
+														<div class="flex items-center gap-1">
+															<select
+																bind:value={editingEnrollmentRole}
+																class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+															>
+																<option value="student">Student</option>
+																<option value="coordinator">Coordinator</option>
+																<option value="admin">Admin</option>
+															</select>
+															<button
+																onclick={() => saveEnrollmentRole(enrollment.id)}
+																class="text-green-600 hover:text-green-900"
+																title="Save"
+															>
+																<Save class="h-3 w-3" />
+															</button>
+															<button
+																onclick={cancelEditEnrollment}
+																class="text-gray-600 hover:text-gray-900"
+																title="Cancel"
+															>
+																<X class="h-3 w-3" />
+															</button>
+														</div>
+													{:else}
+														<div class="flex items-center gap-1">
+															<span class="px-2 py-0.5 text-xs font-semibold rounded-full {getCourseRoleBadgeColor(enrollment.role)}">
+																{enrollment.role}
+															</span>
+															<button
+																onclick={() => startEditEnrollment(enrollment.id, enrollment.role)}
+																class="text-blue-600 hover:text-blue-900"
+																title="Edit role"
+															>
+																<Edit2 class="h-3 w-3" />
+															</button>
+															<button
+																onclick={() => removeEnrollment(enrollment.id, courseName)}
+																class="text-red-600 hover:text-red-900"
+																title="Remove enrollment"
+															>
+																<X class="h-3 w-3" />
+															</button>
+														</div>
+													{/if}
+												</div>
+											{/each}
+										{:else}
+											<span class="text-sm text-gray-400 italic">No enrollments</span>
+										{/if}
+										<button
+											onclick={() => showAddEnrollment(user.id, user.full_name || user.email)}
+											class="text-xs text-blue-600 hover:text-blue-900 flex items-center gap-1"
+										>
+											<Plus class="h-3 w-3" />
+											Add Enrollment
+										</button>
+									</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
 									{#if editingUserId === user.id}
@@ -373,13 +636,15 @@ async function resetUserPassword(event) {
 										</div>
 									{:else}
 										<div class="flex items-center space-x-2">
-											<button
-												onclick={() => startEdit(user.id, user.modules || [])}
-												class="text-blue-600 hover:text-blue-900"
-												title="Edit permissions"
-											>
-												<Edit2 class="h-4 w-4" />
-											</button>
+											{#if user.role !== 'student'}
+												<button
+													onclick={() => startEdit(user.id, user.modules || [])}
+													class="text-blue-600 hover:text-blue-900"
+													title="Edit platform permissions"
+												>
+													<Edit2 class="h-4 w-4" />
+												</button>
+											{/if}
 											{#if user.isPending}
 												<button
 													onclick={() => resendInvitation(user.id, user.email)}
@@ -415,21 +680,63 @@ async function resetUserPassword(event) {
 			</div>
 		</div>
 
-		<div class="mt-8 bg-white shadow rounded-lg p-6">
-			<h2 class="text-lg font-semibold text-gray-900 mb-4">Available Modules</h2>
-			<div class="space-y-3">
-				{#each availableModules as module}
-					<div>
-						<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getModuleBadgeColor(module.id)}">
-							{module.name}
-						</span>
-						<span class="ml-2 text-sm text-gray-600">{module.description}</span>
+		<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+			<!-- Platform Roles & Modules -->
+			<div class="bg-white shadow rounded-lg p-6">
+				<h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+					<Shield class="h-5 w-5 mr-2" />
+					Platform Roles & Modules
+				</h2>
+
+				<h3 class="text-sm font-semibold text-gray-700 mb-2">Platform Roles</h3>
+				<div class="space-y-2 mb-4">
+					<div class="flex items-start">
+						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 mr-2">Admin</span>
+						<span class="text-sm text-gray-600">Full platform access, automatic access to all modules and courses</span>
 					</div>
-				{/each}
+					<div class="flex items-start">
+						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 mr-2">Student</span>
+						<span class="text-sm text-gray-600">Regular user, enrolls in courses</span>
+					</div>
+					<div class="flex items-start">
+						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-2">Hub Coordinator</span>
+						<span class="text-sm text-gray-600">Manages hubs within courses</span>
+					</div>
+				</div>
+
+				<h3 class="text-sm font-semibold text-gray-700 mb-2 mt-4">Available Modules</h3>
+				<div class="space-y-3">
+					{#each availableModules as module}
+						<div>
+							<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getModuleBadgeColor(module.id)}">
+								{module.name}
+							</span>
+							<span class="ml-2 text-sm text-gray-600">{module.description}</span>
+						</div>
+					{/each}
+				</div>
 			</div>
-			<p class="mt-4 text-sm text-gray-500">
-				Users can be granted access to one or more modules. Each module grants full admin access to that feature area.
-			</p>
+
+			<!-- Course Roles -->
+			<div class="bg-white shadow rounded-lg p-6">
+				<h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+					<GraduationCap class="h-5 w-5 mr-2" />
+					Course Roles
+				</h2>
+				<div class="space-y-3">
+					{#each courseRoles as role}
+						<div class="flex items-start">
+							<span class="px-2 py-1 text-xs font-semibold rounded-full {getCourseRoleBadgeColor(role.id)} mr-2">
+								{role.name}
+							</span>
+							<span class="text-sm text-gray-600">{role.description}</span>
+						</div>
+					{/each}
+				</div>
+				<p class="mt-4 text-sm text-gray-500">
+					Course roles are assigned per enrollment. Users can have different roles in different courses.
+				</p>
+			</div>
 		</div>
 	</div>
 </div>
@@ -437,9 +744,9 @@ async function resetUserPassword(event) {
 <!-- New User Modal -->
 {#if showNewUserForm}
 	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+		<div class="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto">
 			<div class="mt-3">
-				<h3 class="text-lg font-medium text-gray-900 mb-2">Invite New Admin User</h3>
+				<h3 class="text-lg font-medium text-gray-900 mb-2">Invite New User</h3>
 				<p class="text-sm text-gray-600 mb-4">
 					An invitation email with a magic link will be sent to set up their account.
 				</p>
@@ -469,31 +776,50 @@ async function resetUserPassword(event) {
 						/>
 					</div>
 
-				<div>
-					<h3 class="block text-sm font-medium text-gray-700 mb-2">Module Access</h3>
-					<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
-							{#each availableModules as module}
-					<label class="flex items-start space-x-2 cursor-pointer">
-						<input
-							type="checkbox"
-							checked={newUser.modules.includes(module.id)}
-							onchange={() => {
-											if (newUser.modules.includes(module.id)) {
-												newUser.modules = newUser.modules.filter(m => m !== module.id);
-											} else {
-												newUser.modules = [...newUser.modules, module.id];
-											}
-										}}
-										class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-									/>
-									<div>
-										<div class="text-sm font-medium text-gray-700">{module.name}</div>
-										<div class="text-xs text-gray-500">{module.description}</div>
-									</div>
-								</label>
-							{/each}
-						</div>
+					<div>
+						<label for="role" class="block text-sm font-medium text-gray-700">Platform Role</label>
+						<select
+							id="role"
+							bind:value={newUser.role}
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						>
+							<option value="student">Student</option>
+							<option value="hub_coordinator">Hub Coordinator</option>
+							<option value="admin">Platform Admin</option>
+						</select>
 					</div>
+
+					{#if newUser.role !== 'student'}
+						<div>
+							<h3 class="block text-sm font-medium text-gray-700 mb-2">Module Access</h3>
+							<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
+								{#if newUser.role === 'admin'}
+									<p class="text-sm text-gray-600 italic">Platform admins have automatic access to all modules</p>
+								{:else}
+									{#each availableModules as module}
+										<label class="flex items-start space-x-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={newUser.modules.includes(module.id)}
+												onchange={() => {
+													if (newUser.modules.includes(module.id)) {
+														newUser.modules = newUser.modules.filter(m => m !== module.id);
+													} else {
+														newUser.modules = [...newUser.modules, module.id];
+													}
+												}}
+												class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+											/>
+											<div>
+												<div class="text-sm font-medium text-gray-700">{module.name}</div>
+												<div class="text-xs text-gray-500">{module.description}</div>
+											</div>
+										</label>
+									{/each}
+								{/if}
+							</div>
+						</div>
+					{/if}
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
@@ -510,6 +836,73 @@ async function resetUserPassword(event) {
 							class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
 						>
 							{createUserLoading ? 'Sending Invitation...' : 'Send Invitation'}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Add Enrollment Modal -->
+{#if showEnrollmentModal}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<h3 class="text-lg font-medium text-gray-900 mb-2 flex items-center">
+					<GraduationCap class="h-5 w-5 mr-2" />
+					Add Course Enrollment
+				</h3>
+				<p class="text-sm text-gray-600 mb-4">
+					Enroll {enrollmentUserName} in a course
+				</p>
+
+				<form onsubmit={addEnrollment} class="space-y-4">
+					<div>
+						<label for="cohortId" class="block text-sm font-medium text-gray-700">Select Cohort</label>
+						<select
+							id="cohortId"
+							bind:value={newEnrollment.cohortId}
+							required
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						>
+							<option value="">Choose a cohort...</option>
+							{#each cohorts as cohort}
+								<option value={cohort.id}>
+									{getCohortLabel(cohort)}
+								</option>
+							{/each}
+						</select>
+					</div>
+
+					<div>
+						<label for="enrollmentRole" class="block text-sm font-medium text-gray-700">Course Role</label>
+						<select
+							id="enrollmentRole"
+							bind:value={newEnrollment.role}
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+						>
+							<option value="student">Student</option>
+							<option value="coordinator">Coordinator</option>
+							<option value="admin">Course Admin</option>
+						</select>
+					</div>
+
+					<div class="flex justify-end space-x-3 pt-4">
+						<button
+							type="button"
+							onclick={() => showEnrollmentModal = false}
+							disabled={enrollmentLoading}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={enrollmentLoading}
+							class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+						>
+							{enrollmentLoading ? 'Enrolling...' : 'Enroll User'}
 						</button>
 					</div>
 				</form>
@@ -546,7 +939,6 @@ async function resetUserPassword(event) {
 							The user will be able to sign in with this new password immediately.
 						</p>
 					</div>
-
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
