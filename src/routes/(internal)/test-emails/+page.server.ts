@@ -1,19 +1,15 @@
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { requireAdmin } from '$lib/utils/auth-helpers';
+import { requirePlatformAdmin } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-	const { session, user } = await safeGetSession();
-
-	if (!session || !user) {
-		throw redirect(303, '/auth');
-	}
-
-	// Require admin role for email testing
-	const userProfile = await requireAdmin(supabase, user.id);
+export const load: PageServerLoad = async (event) => {
+	// Require platform admin role for email testing
+	const { user, profile } = await requirePlatformAdmin(event, {
+		mode: 'redirect',
+		redirectTo: '/profile'
+	});
 
 	return {
-		session,
-		userProfile
+		session: (await event.locals.safeGetSession()).session,
+		userProfile: profile
 	};
 };

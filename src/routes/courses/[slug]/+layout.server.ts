@@ -19,8 +19,8 @@ export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 	}
 
 	if (!userProfile) {
-		// No user found, redirect to login for this course
-		throw redirect(303, `/courses/${slug}/login`);
+		// No user found, redirect to platform login
+		throw redirect(303, `/auth?next=${url.pathname}`);
 	}
 
 	// Role-based routing logic
@@ -48,7 +48,9 @@ export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 	}
 
 	// Check if admin is accessing student pages - redirect to admin default
+	// But don't redirect if they're already in the admin section
 	if (userRole === 'admin' &&
+		!currentPath.includes('/admin') &&
 		(currentPath.includes('/dashboard') || currentPath.includes('/materials') || currentPath.includes('/reflections')) &&
 		!url.searchParams.has('view')) {
 		// Allow admins to view student pages with ?view=student parameter

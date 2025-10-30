@@ -1,11 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { requireAdmin } from '$lib/server/auth';
+import { requireCourseAdmin } from '$lib/server/auth';
 
 export const GET: RequestHandler = async (event) => {
 	// Require admin authentication
-	await requireAdmin(event);
+	const courseSlug = event.params.slug;
+	await requireCourseAdmin(event, courseSlug);
 
 	const cohortId = event.url.searchParams.get('cohortId');
 
@@ -98,7 +99,8 @@ export const GET: RequestHandler = async (event) => {
 
 export const POST: RequestHandler = async (event) => {
 	// Require admin authentication
-	const { user } = await requireAdmin(event);
+	const courseSlug = event.params.slug;
+	const { user } = await requireCourseAdmin(event, courseSlug);
 
 	const { userId, cohortId, sessionNumber, present } = await event.request.json();
 

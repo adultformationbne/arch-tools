@@ -1,30 +1,17 @@
 import { json, error } from '@sveltejs/kit';
-import { requireRole } from '$lib/utils/auth.js';
+import { requireModule } from '$lib/server/auth.js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST({ request, locals: { supabase, safeGetSession } }) {
+export async function POST(event) {
 	try {
-		const { session, user } = await safeGetSession();
+		// Check if user has user_management module access (admins automatically have access)
+		const { user } = await requireModule(event, 'user_management');
 
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		const { request } = event;
 
-		// Check if user has user_management module access
-		const { data: adminProfile } = await supabase
-			.from('user_profiles')
-			.select('modules')
-			.eq('id', user.id)
-			.single();
-
-		const hasUserManagement = adminProfile?.modules?.includes('user_management');
-		if (!hasUserManagement) {
-			throw error(403, 'Insufficient permissions. User management access required.');
-		}
-
-		const { email, full_name, modules } = await request.json();
+		const { email, full_name, modules, role } = await request.json();
 
 		// Validate required fields
 		if (!email) {
@@ -37,8 +24,15 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 			throw error(400, 'Invalid email format');
 		}
 
+		// Validate role
+		const validRoles = ['admin', 'student', 'hub_coordinator'];
+		const userRole = role || 'student'; // Default to student
+		if (!validRoles.includes(userRole)) {
+			throw error(400, 'Invalid role specified');
+		}
+
 		// Validate modules
-		const validModules = ['user_management', 'dgr', 'editor', 'courses', 'admin'];
+		const validModules = ['user_management', 'dgr', 'editor', 'courses'];
 		if (modules && !Array.isArray(modules)) {
 			throw error(400, 'Modules must be an array');
 		}
@@ -105,7 +99,7 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 				.from('user_profiles')
 				.update({
 					full_name: full_name || null,
-					role: 'admin', // All admin users have role='admin'
+					role: userRole,
 					modules: modules || []
 				})
 				.eq('id', authData.user.id)
@@ -126,7 +120,7 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 					id: authData.user.id,
 					email: email,
 					full_name: full_name || null,
-					role: 'admin', // All admin users have role='admin'
+					role: userRole,
 					modules: modules || []
 				})
 				.select()
@@ -156,25 +150,12 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 	}
 }
 
-export async function DELETE({ request, locals: { supabase, safeGetSession } }) {
+export async function DELETE(event) {
 	try {
-		const { session, user } = await safeGetSession();
+		// Check if user has user_management module access (admins automatically have access)
+		const { user } = await requireModule(event, 'user_management');
 
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
-
-		// Check if user has user_management module access
-		const { data: adminProfile } = await supabase
-			.from('user_profiles')
-			.select('modules')
-			.eq('id', user.id)
-			.single();
-
-		const hasUserManagement = adminProfile?.modules?.includes('user_management');
-		if (!hasUserManagement) {
-			throw error(403, 'Insufficient permissions. User management access required.');
-		}
+		const { request } = event;
 
 		const { userId } = await request.json();
 
@@ -240,27 +221,16 @@ export async function DELETE({ request, locals: { supabase, safeGetSession } }) 
 	}
 }
 
-export async function PUT({ request, locals: { supabase, safeGetSession } }) {
+export async function PUT(event) {
 	try {
-		const { session, user } = await safeGetSession();
+		// Check if user has user_management module access (admins automatically have access)
+		const { user } = await requireModule(event, 'user_management');
 
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		const { request } = event;
 
-		// Check if user has user_management module access
-		const { data: adminProfile } = await supabase
-			.from('user_profiles')
-			.select('modules')
-			.eq('id', user.id)
-			.single();
-
-		const hasUserManagement = adminProfile?.modules?.includes('user_management');
-		if (!hasUserManagement) {
-			throw error(403, 'Insufficient permissions. User management access required.');
-		}
-
-		const { userId, action } = await request.json();
+		// Parse body once and store it
+		const body = await request.json();
+		const { userId, action, modules } = body;
 
 		if (!userId) {
 			throw error(400, 'User ID is required');
@@ -306,6 +276,36 @@ export async function PUT({ request, locals: { supabase, safeGetSession } }) {
 			return json({
 				success: true,
 				message: 'Invitation resent successfully'
+			});
+		}
+
+		// Handle update modules
+		if (action === 'update_modules') {
+			// Validate modules (removed accf_admin as it's deprecated)
+			const validModules = ['user_management', 'dgr', 'editor', 'courses'];
+			if (!Array.isArray(modules)) {
+				throw error(400, 'Modules must be an array');
+			}
+
+			// Filter out any invalid/deprecated modules
+			const cleanModules = modules.filter(m => validModules.includes(m));
+
+			console.log('Updating modules:', { original: modules, cleaned: cleanModules });
+
+			// Update user modules (use cleaned modules)
+			const { error: updateError } = await adminSupabase
+				.from('user_profiles')
+				.update({ modules: cleanModules })
+				.eq('id', userId);
+
+			if (updateError) {
+				console.error('Error updating modules:', updateError);
+				throw error(500, 'Failed to update user modules');
+			}
+
+			return json({
+				success: true,
+				message: 'User modules updated successfully'
 			});
 		}
 

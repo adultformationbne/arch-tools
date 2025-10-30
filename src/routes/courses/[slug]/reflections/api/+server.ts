@@ -1,11 +1,13 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCoursesUser } from '$lib/server/auth.js';
+import { requireCourseAccess } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+
 	// Require authenticated user
-	const { user } = await requireCoursesUser(event);
+	const { user } = await requireCourseAccess(event, courseSlug);
 	const userId = user.id;
 
 	try {

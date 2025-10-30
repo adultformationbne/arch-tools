@@ -1,14 +1,25 @@
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
+import { requireCourseAdmin } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	const session = await locals.safeGetSession();
+export const load: PageServerLoad = async (event) => {
+	const courseSlug = event.params.slug;
 
-	if (!session) {
+	// Require course admin authentication
+	await requireCourseAdmin(event, courseSlug);
+
+	// Get the course ID from slug
+	const { data: course } = await supabaseAdmin
+		.from('courses')
+		.select('id')
+		.eq('slug', courseSlug)
+		.single();
+
+	if (!course) {
 		return { cohorts: [], hubs: [] };
 	}
 
-	// Get all cohorts with module info
+	// Get cohorts for this course's modules
 	const { data: cohorts, error: cohortsError } = await supabaseAdmin
 		.from('courses_cohorts')
 		.select(`
@@ -17,11 +28,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			start_date,
 			end_date,
 			status,
-			modules (
+			module:courses_modules (
 				id,
-				name
+				name,
+				course_id
 			)
 		`)
+		.eq('courses_modules.course_id', course.id)
 		.order('start_date', { ascending: false });
 
 	if (cohortsError) {

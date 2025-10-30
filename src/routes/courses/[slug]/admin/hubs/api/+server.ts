@@ -1,11 +1,13 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+
 	// Require admin authentication
-	await requireAdmin(event);
+	await requireCourseAdmin(event, courseSlug);
 
 	try {
 		const { data: hubs, error: fetchError } = await supabaseAdmin

@@ -1,16 +1,35 @@
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// Require admin authentication
-	const { user } = await requireAdmin(event);
+	const courseSlug = event.params.slug;
+
+	// Require course admin role (or platform admin)
+	const { user } = await requireCourseAdmin(event, courseSlug);
 
 	try {
-		// Fetch all modules
+		// Get the course ID from slug
+		const { data: course } = await supabaseAdmin
+			.from('courses')
+			.select('id')
+			.eq('slug', courseSlug)
+			.single();
+
+		if (!course) {
+			return {
+				modules: [],
+				cohorts: [],
+				currentUserId: user.id,
+				courseSlug
+			};
+		}
+
+		// Fetch modules for this course only
 		const { data: modules, error: modulesError } = await supabaseAdmin
 			.from('courses_modules')
 			.select('*')
+			.eq('course_id', course.id)
 			.order('order_number', { ascending: true });
 
 		if (modulesError) {
@@ -18,7 +37,9 @@ export const load: PageServerLoad = async (event) => {
 			throw modulesError;
 		}
 
-		// Fetch all cohorts with related data
+		const moduleIds = modules?.map(m => m.id) || [];
+
+		// Fetch cohorts for this course's modules only
 		const { data: cohorts, error: cohortsError } = await supabaseAdmin
 			.from('courses_cohorts')
 			.select(`
@@ -29,7 +50,8 @@ export const load: PageServerLoad = async (event) => {
 					description
 				)
 			`)
-			.order('created_at', { ascending: false });
+			.in('module_id', moduleIds)
+			.order('created_at', { ascending: false});
 
 		if (cohortsError) {
 			console.error('Error fetching cohorts:', cohortsError);
@@ -88,7 +110,8 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			modules: modules || [],
 			cohorts: processedCohorts,
-			currentUserId: user.id
+			currentUserId: user.id,
+			courseSlug
 		};
 
 	} catch (error) {
@@ -97,6 +120,7 @@ export const load: PageServerLoad = async (event) => {
 			modules: [],
 			cohorts: [],
 			currentUserId: user.id,
+			courseSlug,
 			error: 'Failed to load cohorts data'
 		};
 	}
