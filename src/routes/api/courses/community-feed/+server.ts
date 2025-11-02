@@ -1,50 +1,86 @@
 import { error, json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
+import { supabaseAdmin } from '$lib/server/supabase.js';
+import { hasModule, hasModuleLevel } from '$lib/server/auth';
 
-/**
- * GET - Fetch community feed for a cohort
- * Query params:
- *   - cohort_id: Required
- *   - limit: Optional (default 50)
- *   - offset: Optional (default 0)
- */
+const ACTIVE_ENROLLMENT_STATUSES = ['active', 'invited', 'accepted'];
+
+async function getUserModules(userId: string): Promise<string[]> {
+	const { data, error: profileError } = await supabaseAdmin
+		.from('user_profiles')
+		.select('modules')
+		.eq('id', userId)
+		.single();
+
+	if (profileError) {
+		console.error('Error fetching user modules:', profileError);
+		return [];
+	}
+
+	return Array.isArray(data?.modules) ? data.modules : [];
+}
+
+async function getCohortEnrollment(userId: string, cohortId: string) {
+	const { data, error } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select('role, status')
+		.eq('user_profile_id', userId)
+		.eq('cohort_id', cohortId)
+		.in('status', ACTIVE_ENROLLMENT_STATUSES)
+		.maybeSingle();
+
+	if (error) {
+		console.error('Error checking cohort enrollment:', error);
+	}
+
+	return data ?? null;
+}
+
+function isGlobalCourseAdmin(modules: string[]): boolean {
+	return hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+}
+
+async function canManageCohort(userId: string, cohortId: string, modules: string[]): Promise<boolean> {
+	if (isGlobalCourseAdmin(modules)) {
+		return true;
+	}
+
+	if (!hasModuleLevel(modules, 'courses.manager')) {
+		return false;
+	}
+
+	const enrollment = await getCohortEnrollment(userId, cohortId);
+	return enrollment?.role === 'admin';
+}
+
+async function ensureSession(event) {
+	const { session, user } = await event.locals.safeGetSession();
+	if (!session || !user) {
+		throw error(401, 'Unauthorized');
+	}
+	return { session, user };
+}
+
 export const GET: RequestHandler = async (event) => {
-	// Require ACCF user authentication
-	const { user } = await requireCoursesUser(event);
+	const { user } = await ensureSession(event);
 
 	try {
 		const cohortId = event.url.searchParams.get('cohort_id');
-		const limit = parseInt(event.url.searchParams.get('limit') || '50');
-		const offset = parseInt(event.url.searchParams.get('offset') || '0');
+		const limit = parseInt(event.url.searchParams.get('limit') || '50', 10);
+		const offset = parseInt(event.url.searchParams.get('offset') || '0', 10);
 
 		if (!cohortId) {
 			throw error(400, 'cohort_id is required');
 		}
 
-		// Verify user has access to this cohort
-		const { data: accessCheck } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select('cohort_id')
-			.eq('user_profile_id', user.id)
-			.eq('cohort_id', cohortId)
-			.single();
+		const modules = await getUserModules(user.id);
+		const enrollment = await getCohortEnrollment(user.id, cohortId);
+		const isAdmin = isGlobalCourseAdmin(modules);
 
-		// Also check if user is admin
-		const { data: profileData } = await supabaseAdmin
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
-
-		if (!accessCheck && !isAdmin) {
+		if (!enrollment && !isAdmin) {
 			throw error(403, 'Access denied to this cohort feed');
 		}
 
-		// Fetch feed items - pinned first, then by created_at DESC
 		const { data: feedItems, error: feedError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.select('*')
@@ -60,14 +96,13 @@ export const GET: RequestHandler = async (event) => {
 
 		return json({
 			success: true,
-			data: feedItems,
+			data: feedItems ?? [],
 			pagination: {
 				limit,
 				offset,
-				count: feedItems.length
+				count: feedItems?.length ?? 0
 			}
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 
@@ -79,43 +114,32 @@ export const GET: RequestHandler = async (event) => {
 	}
 };
 
-/**
- * POST - Create admin update in community feed
- * Body:
- *   - cohort_id: Required
- *   - title: Optional
- *   - content: Required
- *   - image_url: Optional
- *   - pinned: Optional (default false)
- *   - send_email_notification: Optional (default false) - NOT IMPLEMENTED YET
- */
 export const POST: RequestHandler = async (event) => {
-	// Require ACCF user authentication
-	const { user } = await requireCoursesUser(event);
+	const { user } = await ensureSession(event);
 
 	try {
-		// Verify user is admin
-		const { data: profileData } = await supabaseAdmin
-			.from('user_profiles')
-			.select('role, full_name')
-			.eq('id', user.id)
-			.single();
-
-		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
-
-		if (!isAdmin) {
-			throw error(403, 'Only admins can create feed updates');
-		}
-
 		const body = await event.request.json();
 		const { cohort_id, title, content, image_url, pinned, send_email_notification } = body;
 
-		// Validate required fields
 		if (!cohort_id || !content?.trim()) {
 			throw error(400, 'cohort_id and content are required');
 		}
 
-		// Create feed item
+		const modules = await getUserModules(user.id);
+		const canManage = await canManageCohort(user.id, cohort_id, modules);
+
+		if (!canManage) {
+			throw error(403, 'Only course admins can create feed updates');
+		}
+
+		const authorProfile = await supabaseAdmin
+			.from('user_profiles')
+			.select('full_name')
+			.eq('id', user.id)
+			.single();
+
+		const authorName = authorProfile.data?.full_name || 'Course Admin';
+
 		const { data: feedItem, error: insertError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.insert({
@@ -124,10 +148,10 @@ export const POST: RequestHandler = async (event) => {
 				title: title?.trim() || null,
 				content: content.trim(),
 				author_id: user.id,
-				author_name: profileData.full_name || 'Admin',
+				author_name: authorName,
 				image_url: image_url?.trim() || null,
 				pinned: pinned || false,
-				email_notification_sent: false // Will be set to true when email is sent (future feature)
+				email_notification_sent: false
 			})
 			.select()
 			.single();
@@ -137,15 +161,13 @@ export const POST: RequestHandler = async (event) => {
 			throw error(500, 'Failed to create feed update');
 		}
 
-		// TODO: If send_email_notification is true, queue email to cohort members
-		// This will be implemented when email system is ready
+		// TODO: implement send_email_notification handling
 
 		return json({
 			success: true,
 			data: feedItem,
 			message: 'Feed update created successfully'
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 
@@ -157,33 +179,10 @@ export const POST: RequestHandler = async (event) => {
 	}
 };
 
-/**
- * PATCH - Update admin's own feed item
- * Body:
- *   - id: Required
- *   - title: Optional
- *   - content: Optional
- *   - image_url: Optional
- *   - pinned: Optional
- */
 export const PATCH: RequestHandler = async (event) => {
-	// Require ACCF user authentication
-	const { user } = await requireCoursesUser(event);
+	const { user } = await ensureSession(event);
 
 	try {
-		// Verify user is admin
-		const { data: profileData } = await supabaseAdmin
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
-
-		if (!isAdmin) {
-			throw error(403, 'Only admins can update feed items');
-		}
-
 		const body = await event.request.json();
 		const { id, title, content, image_url, pinned } = body;
 
@@ -191,10 +190,9 @@ export const PATCH: RequestHandler = async (event) => {
 			throw error(400, 'id is required');
 		}
 
-		// Verify this is the author's post and it's an admin_update
 		const { data: existingItem } = await supabaseAdmin
 			.from('courses_community_feed')
-			.select('author_id, feed_type')
+			.select('author_id, feed_type, cohort_id')
 			.eq('id', id)
 			.single();
 
@@ -202,25 +200,22 @@ export const PATCH: RequestHandler = async (event) => {
 			throw error(404, 'Feed item not found');
 		}
 
-		if (existingItem.feed_type !== 'admin_update') {
-			throw error(400, 'Cannot edit reflection posts');
+		const modules = await getUserModules(user.id);
+		const canManage = await canManageCohort(user.id, existingItem.cohort_id, modules);
+
+		if (!canManage || existingItem.feed_type !== 'admin_update' || existingItem.author_id !== user.id) {
+			throw error(403, 'Only the original course admin can update this feed item');
 		}
 
-		if (existingItem.author_id !== user.id) {
-			throw error(403, 'You can only edit your own posts');
-		}
-
-		// Build update object
-		const updates: any = {
+		const updates: Record<string, unknown> = {
 			updated_at: new Date().toISOString()
 		};
 
 		if (title !== undefined) updates.title = title?.trim() || null;
-		if (content !== undefined) updates.content = content.trim();
+		if (content !== undefined) updates.content = content?.trim() || null;
 		if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
-		if (pinned !== undefined) updates.pinned = pinned;
+		if (pinned !== undefined) updates.pinned = Boolean(pinned);
 
-		// Update feed item
 		const { data: updatedItem, error: updateError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.update(updates)
@@ -238,7 +233,6 @@ export const PATCH: RequestHandler = async (event) => {
 			data: updatedItem,
 			message: 'Feed item updated successfully'
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 
@@ -250,39 +244,20 @@ export const PATCH: RequestHandler = async (event) => {
 	}
 };
 
-/**
- * DELETE - Delete admin's own feed item
- * Query params:
- *   - id: Required
- */
 export const DELETE: RequestHandler = async (event) => {
-	// Require ACCF user authentication
-	const { user } = await requireCoursesUser(event);
+	const { user } = await ensureSession(event);
 
 	try {
-		// Verify user is admin
-		const { data: profileData } = await supabaseAdmin
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
-
-		if (!isAdmin) {
-			throw error(403, 'Only admins can delete feed items');
-		}
-
-		const id = event.url.searchParams.get('id');
+		const body = await event.request.json();
+		const { id } = body;
 
 		if (!id) {
 			throw error(400, 'id is required');
 		}
 
-		// Verify this is the author's post and it's an admin_update
 		const { data: existingItem } = await supabaseAdmin
 			.from('courses_community_feed')
-			.select('author_id, feed_type')
+			.select('author_id, feed_type, cohort_id')
 			.eq('id', id)
 			.single();
 
@@ -290,15 +265,13 @@ export const DELETE: RequestHandler = async (event) => {
 			throw error(404, 'Feed item not found');
 		}
 
-		if (existingItem.feed_type !== 'admin_update') {
-			throw error(400, 'Cannot delete reflection posts');
+		const modules = await getUserModules(user.id);
+		const canManage = await canManageCohort(user.id, existingItem.cohort_id, modules);
+
+		if (!canManage || existingItem.feed_type !== 'admin_update' || existingItem.author_id !== user.id) {
+			throw error(403, 'Only the original course admin can delete this feed item');
 		}
 
-		if (existingItem.author_id !== user.id) {
-			throw error(403, 'You can only delete your own posts');
-		}
-
-		// Delete feed item
 		const { error: deleteError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.delete()
@@ -313,7 +286,6 @@ export const DELETE: RequestHandler = async (event) => {
 			success: true,
 			message: 'Feed item deleted successfully'
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 

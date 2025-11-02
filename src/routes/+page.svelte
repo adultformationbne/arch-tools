@@ -1,10 +1,17 @@
 <script>
-	import { goto } from '$app/navigation';
-	import { Edit, Wrench, GraduationCap, Users, LayoutDashboard, Settings, BookOpen } from 'lucide-svelte';
-	import AppNavigation from '$lib/components/AppNavigation.svelte';
+import { goto } from '$app/navigation';
+import { onMount } from 'svelte';
+import { Edit, Wrench, GraduationCap, Users, LayoutDashboard, Settings, BookOpen } from 'lucide-svelte';
 
-	export let data;
-	$: ({ session, userRole } = data);
+export let data;
+$: ({ session, userModules = [] } = data);
+
+// Redirect participants to /my-courses as their default landing
+onMount(() => {
+	if (userModules?.includes?.('courses.participant')) {
+		goto('/my-courses');
+	}
+});
 
 	const routes = [
 		{
@@ -62,10 +69,6 @@
 <svelte:head>
 	<title>Archdiocesan Ministry Tools</title>
 </svelte:head>
-
-{#if session}
-	<AppNavigation {session} {userRole} />
-{/if}
 
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 	<div class="mb-8">

@@ -96,7 +96,7 @@
 				<div class="mt-3">
 					<div class="mb-1 flex items-center justify-between text-xs">
 						<span>Step {toast.currentStep + 1} of {toast.totalSteps}</span>
-						{#if toast.currentStep < toast.totalSteps - 1}
+						{#if toast.currentStep < toast.totalSteps - 1 && toast.type !== 'error'}
 							<button onclick={handleNextStep} class="text-xs font-medium hover:underline">
 								Next →
 							</button>

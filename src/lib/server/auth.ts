@@ -3,14 +3,14 @@ import type { RequestEvent } from '@sveltejs/kit';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * UNIFIED AUTH SYSTEM
+ * UNIFIED MODULE-BASED AUTH SYSTEM
  *
  * This is the single source of truth for authentication and authorization.
  *
  * Key concepts:
- * - Platform-level roles: admin, student, hub_coordinator (in user_profiles.role)
+ * - Module permissions: Namespaced array in user_profiles.modules
+ *   Format: ["users", "editor", "dgr", "courses.participant", "courses.manager", "courses.admin"]
  * - Course-level roles: admin, student, coordinator (in courses_enrollments.role per course)
- * - Module permissions: Array of module access (in user_profiles.modules)
  *
  * Response modes:
  * - throw_error: Returns HTTP 401/403 (for API routes)
@@ -49,12 +49,12 @@ export async function requireAuth(
 }
 
 /**
- * Get user profile with role/module info (no auth check)
+ * Get user profile with modules (no auth check)
  */
 export async function getUserProfile(supabase: SupabaseClient, userId: string) {
 	const { data: userProfile, error: profileError } = await supabase
 		.from('user_profiles')
-		.select('id, email, full_name, display_name, role, modules')
+		.select('id, email, full_name, display_name, modules')
 		.eq('id', userId)
 		.single();
 
@@ -67,56 +67,55 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string) {
 }
 
 // ============================================================================
+// MODULE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get the level for a specific module (e.g., 'participant' from 'courses.participant')
+ */
+export function getModuleLevel(modules: string[] | null, moduleName: string): string | null {
+	if (!modules) return null;
+	const match = modules.find(m => m.startsWith(`${moduleName}.`));
+	return match ? match.split('.')[1] : null;
+}
+
+/**
+ * Check if user has ANY level of a module (supports namespaced modules)
+ * Examples:
+ *   hasModule(['courses.participant'], 'courses') → true
+ *   hasModule(['users'], 'users') → true
+ */
+export function hasModule(modules: string[] | null, moduleName: string): boolean {
+	if (!modules) return false;
+	// Check for exact match or namespaced match
+	return modules.some(m => m === moduleName || m.startsWith(`${moduleName}.`));
+}
+
+/**
+ * Check for exact module.level match
+ */
+export function hasModuleLevel(modules: string[] | null, moduleLevel: string): boolean {
+	return modules?.includes(moduleLevel) || false;
+}
+
+/**
+ * Check if user has minimum level for hierarchical module (future use)
+ * For now, just checks exact match
+ */
+export function hasMinimumLevel(
+	modules: string[] | null,
+	moduleName: string,
+	minLevel: string
+): boolean {
+	return hasModuleLevel(modules, `${moduleName}.${minLevel}`);
+}
+
+// ============================================================================
 // PLATFORM-LEVEL AUTHORIZATION
 // ============================================================================
 
 /**
- * Requires platform admin role
- * @throws 403 or redirects if not admin
- */
-export async function requirePlatformAdmin(
-	event: RequestEvent,
-	options: AuthOptions = { mode: 'throw_error' }
-) {
-	const { user } = await requireAuth(event, options);
-
-	const profile = await getUserProfile(event.locals.supabase, user.id);
-
-	if (!profile || profile.role !== 'admin') {
-		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || '/profile');
-		}
-		throw error(403, 'Forbidden - Admin access required');
-	}
-
-	return { user, profile };
-}
-
-/**
- * Requires specific platform role(s)
- * @throws 403 or redirects if user doesn't have required role
- */
-export async function requirePlatformRole(
-	event: RequestEvent,
-	allowedRoles: string[],
-	options: AuthOptions = { mode: 'throw_error' }
-) {
-	const { user } = await requireAuth(event, options);
-
-	const profile = await getUserProfile(event.locals.supabase, user.id);
-
-	if (!profile || !allowedRoles.includes(profile.role)) {
-		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || '/profile');
-		}
-		throw error(403, `Forbidden - Requires one of: ${allowedRoles.join(', ')}`);
-	}
-
-	return { user, profile };
-}
-
-/**
- * Requires specific module access
+ * Requires specific module access (any level for namespaced modules)
  * @throws 403 or redirects if user doesn't have module access
  */
 export async function requireModule(
@@ -125,21 +124,57 @@ export async function requireModule(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-
 	const profile = await getUserProfile(event.locals.supabase, user.id);
 
-	// Admins have access to all modules
-	if (profile?.role === 'admin') {
-		return { user, profile };
+	if (!hasModule(profile?.modules, moduleName)) {
+		if (options.mode === 'redirect') {
+			throw redirect(303, options.redirectTo || '/my-courses');
+		}
+		throw error(403, `Requires ${moduleName} module access`);
 	}
 
-	const hasModule = profile?.modules?.includes(moduleName);
+	return { user, profile };
+}
 
-	if (!hasModule) {
+/**
+ * Requires the user to have at least one of the provided modules
+ * @throws 403 or redirects if user doesn't have any of the modules
+ */
+export async function requireAnyModule(
+	event: RequestEvent,
+	moduleNames: string[],
+	options: AuthOptions = { mode: 'throw_error' }
+) {
+	const { user } = await requireAuth(event, options);
+	const profile = await getUserProfile(event.locals.supabase, user.id);
+
+	if (!hasAnyModule(profile?.modules ?? null, moduleNames)) {
 		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || '/profile');
+			throw redirect(303, options.redirectTo || '/my-courses');
 		}
-		throw error(403, `Forbidden - Requires ${moduleName} module access`);
+		throw error(403, `Requires one of: ${moduleNames.join(', ')}`);
+	}
+
+	return { user, profile };
+}
+
+/**
+ * Requires specific module.level
+ * @throws 403 or redirects if user doesn't have exact module.level
+ */
+export async function requireModuleLevel(
+	event: RequestEvent,
+	moduleLevel: string,
+	options: AuthOptions = { mode: 'throw_error' }
+) {
+	const { user } = await requireAuth(event, options);
+	const profile = await getUserProfile(event.locals.supabase, user.id);
+
+	if (!hasModuleLevel(profile?.modules, moduleLevel)) {
+		if (options.mode === 'redirect') {
+			throw redirect(303, options.redirectTo || '/my-courses');
+		}
+		throw error(403, `Requires ${moduleLevel} access`);
 	}
 
 	return { user, profile };
@@ -203,13 +238,9 @@ export async function requireCourseRole(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-
-	// Platform admins have access to all courses
 	const profile = await getUserProfile(event.locals.supabase, user.id);
-	if (profile?.role === 'admin') {
-		return { user, profile, enrollment: null, isPlatformAdmin: true };
-	}
 
+	// Check enrollment
 	const enrollment = await getUserCourseEnrollment(
 		event.locals.supabase,
 		user.id,
@@ -222,33 +253,77 @@ export async function requireCourseRole(
 		}
 		throw error(
 			403,
-			`Forbidden - Requires one of: ${allowedRoles.join(', ')} role in this course`
+			`Requires one of: ${allowedRoles.join(', ')} role in this course`
 		);
 	}
 
-	return { user, profile, enrollment, isPlatformAdmin: false };
+	return { user, profile, enrollment };
 }
 
 /**
- * Requires course admin role (or platform admin)
+ * Requires course admin role
+ * Can access via:
+ * - courses.admin module (platform-wide access), OR
+ * - courses.manager module + enrolled with role='admin'
  */
 export async function requireCourseAdmin(
 	event: RequestEvent,
 	courseSlug: string,
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
-	return requireCourseRole(event, courseSlug, ['admin'], options);
+	const { user } = await requireAuth(event, options);
+	const profile = await getUserProfile(event.locals.supabase, user.id);
+
+	// Check for courses.admin module (platform-wide access)
+	if (hasModuleLevel(profile?.modules, 'courses.admin')) {
+		return { user, profile, enrollment: null, viaModule: true };
+	}
+
+	// Check for courses.manager module + enrollment as admin
+	if (hasModuleLevel(profile?.modules, 'courses.manager')) {
+		const enrollment = await getUserCourseEnrollment(
+			event.locals.supabase,
+			user.id,
+			courseSlug
+		);
+
+		if (enrollment?.role === 'admin') {
+			return { user, profile, enrollment, viaModule: false };
+		}
+	}
+
+	// Not authorized
+	if (options.mode === 'redirect') {
+		throw redirect(303, options.redirectTo || '/my-courses');
+	}
+	throw error(403, 'Requires course admin access');
 }
 
 /**
  * Requires user to be enrolled in course (any role)
+ * Everyone must be enrolled - including users with courses.admin module
  */
 export async function requireCourseAccess(
 	event: RequestEvent,
 	courseSlug: string,
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
-	return requireCourseRole(event, courseSlug, ['admin', 'student', 'coordinator'], options);
+	const { user } = await requireAuth(event, options);
+
+	const enrollment = await getUserCourseEnrollment(
+		event.locals.supabase,
+		user.id,
+		courseSlug
+	);
+
+	if (!enrollment) {
+		if (options.mode === 'redirect') {
+			throw redirect(303, options.redirectTo || '/my-courses');
+		}
+		throw error(403, 'Must be enrolled in this course');
+	}
+
+	return { user, enrollment };
 }
 
 // ============================================================================
@@ -260,7 +335,7 @@ export async function requireCourseAccess(
  */
 export function hasAnyModule(modules: string[] | null, requiredModules: string[]): boolean {
 	if (!modules) return false;
-	return requiredModules.some((mod) => modules.includes(mod));
+	return requiredModules.some((mod) => hasModule(modules, mod));
 }
 
 /**
@@ -268,26 +343,5 @@ export function hasAnyModule(modules: string[] | null, requiredModules: string[]
  */
 export function hasAllModules(modules: string[] | null, requiredModules: string[]): boolean {
 	if (!modules) return false;
-	return requiredModules.every((mod) => modules.includes(mod));
+	return requiredModules.every((mod) => hasModule(modules, mod));
 }
-
-/**
- * Check if user is platform admin
- */
-export function isPlatformAdmin(role: string | null): boolean {
-	return role === 'admin';
-}
-
-// ============================================================================
-// BACKWARD COMPATIBILITY ALIASES
-// ============================================================================
-
-/**
- * @deprecated Use requirePlatformAdmin instead
- */
-export const requireAdmin = requirePlatformAdmin;
-
-/**
- * @deprecated Use requirePlatformRole instead
- */
-export const requireRole = requirePlatformRole;

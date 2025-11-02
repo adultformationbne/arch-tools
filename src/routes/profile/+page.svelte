@@ -219,7 +219,7 @@ async function handlePasswordChange(event?: Event) {
 					</p>
 				</div>
 
-		{#if profile?.role === 'admin' && profile?.modules?.length > 0}
+		{#if profile?.modules && profile.modules.length > 0}
 			<div>
 				<h3 class="block text-sm font-medium text-gray-700 mb-2">
 					Module Access
@@ -349,14 +349,14 @@ async function handlePasswordChange(event?: Event) {
 			{/if}
 		</div>
 
-		{#if profile?.role === 'admin'}
+		{#if profile?.modules && profile.modules.includes('users')}
 			<div class="bg-white shadow rounded-lg">
 				<div class="px-6 py-4 border-b border-gray-200">
 					<h2 class="text-xl font-semibold text-gray-900">Admin Panel</h2>
 				</div>
 				<div class="p-6">
 					<a
-						href="/admin/users"
+						href="/users"
 						class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
 					>
 						Manage Users

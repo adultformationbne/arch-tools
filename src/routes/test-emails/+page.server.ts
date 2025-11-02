@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { requirePlatformAdmin } from '$lib/server/auth';
+import { requireModule } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
 	// Require platform admin role for email testing
-	const { user, profile } = await requirePlatformAdmin(event, {
+	const { profile } = await requireModule(event, 'users', {
 		mode: 'redirect',
 		redirectTo: '/profile'
 	});

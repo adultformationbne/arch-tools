@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { hasModule, hasModuleLevel } from '$lib/server/auth';
 
 export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 	const { slug } = params;
@@ -23,50 +24,72 @@ export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 		throw redirect(303, `/auth?next=${url.pathname}`);
 	}
 
-	// Role-based routing logic
-	const userRole = userProfile.role;
+	const userModules: string[] = userProfile.modules ?? [];
+	const hasGlobalCourseAdmin = hasModuleLevel(userModules, 'courses.admin') || hasModule(userModules, 'users');
+	const hasCourseManager = hasModuleLevel(userModules, 'courses.manager');
+	const hasParticipantModule = hasModuleLevel(userModules, 'courses.participant');
+
+	const { data: enrollment } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select(`
+			role,
+			status,
+			courses_cohorts!inner (
+				id,
+				courses_modules!inner (
+					courses!inner (
+						slug
+					)
+				)
+			)
+		`)
+		.eq('user_profile_id', userProfile.id)
+		.eq('courses_cohorts.courses_modules.courses.slug', slug)
+		.in('status', ['active', 'invited', 'accepted'])
+		.maybeSingle();
+
+	const enrollmentRole = enrollment?.role ?? null;
+	const isCourseAdmin = hasGlobalCourseAdmin || (hasCourseManager && enrollmentRole === 'admin');
+	const hasCourseAccess = isCourseAdmin || !!enrollmentRole || hasParticipantModule;
+
+	if (!hasCourseAccess) {
+		throw redirect(303, '/my-courses');
+	}
+
 	const currentPath = url.pathname;
+	const adminPath = `/courses/${slug}/admin`;
+	const participantPath = `/courses/${slug}/dashboard`;
 
-	// Define default landing pages for each role (within this course)
-	const defaultPages = {
-		'admin': `/courses/${slug}/admin`,
-		'student': `/courses/${slug}/dashboard`,
-		'hub_coordinator': `/courses/${slug}/dashboard`
-	};
-
-	// Check if user is trying to access root course path
 	if (currentPath === `/courses/${slug}` || currentPath === `/courses/${slug}/`) {
-		const defaultPage = defaultPages[userRole];
-		if (defaultPage) {
-			throw redirect(303, defaultPage);
-		}
+		throw redirect(303, isCourseAdmin ? adminPath : participantPath);
 	}
 
-	// Check if user is accessing an admin path but isn't an admin
-	if (currentPath.includes('/admin') && userRole !== 'admin') {
-		throw redirect(303, `/courses/${slug}/dashboard`);
+	if (currentPath.includes('/admin') && !isCourseAdmin) {
+		throw redirect(303, participantPath);
 	}
 
-	// Check if admin is accessing student pages - redirect to admin default
-	// But don't redirect if they're already in the admin section
-	if (userRole === 'admin' &&
+	if (
+		isCourseAdmin &&
 		!currentPath.includes('/admin') &&
 		(currentPath.includes('/dashboard') || currentPath.includes('/materials') || currentPath.includes('/reflections')) &&
-		!url.searchParams.has('view')) {
-		// Allow admins to view student pages with ?view=student parameter
-		throw redirect(303, `/courses/${slug}/admin`);
+		!url.searchParams.has('view')
+	) {
+		throw redirect(303, adminPath);
 	}
 
 	// Extract theme and branding from course settings
 	const settings = course.settings || {};
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
+	const userRole = isCourseAdmin ? 'admin' : 'student';
 
 	return {
 		userRole,
 		userName: userProfile.full_name || userProfile.display_name || 'User',
 		userProfile,
 		courseSlug: slug,
+		enrollmentRole,
+		isCourseAdmin,
 		courseInfo: {
 			id: course.id,
 			slug: course.slug,

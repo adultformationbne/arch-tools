@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { requirePlatformAdmin } from '$lib/server/auth.js';
+import { requireModule } from '$lib/server/auth.js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createClient } from '@supabase/supabase-js';
@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(event) {
 	try {
 		// Check if user is platform admin
-		await requirePlatformAdmin(event);
+		await requireModule(event, 'users');
 
 		const { request } = event;
 

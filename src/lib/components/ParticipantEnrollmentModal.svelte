@@ -12,8 +12,8 @@
 	let error = $state('');
 	let uploadResult = $state(null);
 
-	// Single student form
-	let studentData = $state({
+	// Single participant form
+	let participantData = $state({
 		full_name: '',
 		email: '',
 		role: 'student',
@@ -33,8 +33,8 @@
 		}
 	}
 
-	async function handleSingleStudent() {
-		if (!studentData.full_name || !studentData.email) {
+	async function handleSingleParticipant() {
+		if (!participantData.full_name || !participantData.email) {
 			error = 'Name and email are required';
 			return;
 		}
@@ -48,10 +48,10 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					action: 'upload_csv',
-					filename: 'single-student.csv',
+					filename: 'single-participant.csv',
 					cohortId: cohort.id,
 					data: [{
-						...studentData
+						...participantData
 					}]
 				})
 			});
@@ -62,11 +62,11 @@
 				dispatch('complete', { cohortId: cohort.id });
 				handleClose();
 			} else {
-				error = result.message || 'Failed to add student';
+				error = result.message || 'Failed to add participant';
 			}
 		} catch (err) {
-			console.error('Error adding student:', err);
-			error = 'Failed to add student. Please try again.';
+			console.error('Error adding participant:', err);
+			error = 'Failed to add participant. Please try again.';
 		} finally {
 			isLoading = false;
 		}
@@ -110,7 +110,7 @@
 
 	function handleClose() {
 		mode = 'choice';
-		studentData = { full_name: '', email: '', role: 'student', hub: '' };
+		participantData = { full_name: '', email: '', role: 'student', hub: '' };
 		error = '';
 		uploadResult = null;
 		isLoading = false;
@@ -136,7 +136,7 @@
 			<!-- Header -->
 			<div class="modal-header">
 				<div>
-					<h2>Add Students</h2>
+					<h2>Add Participants</h2>
 					{#if cohort}
 						<p class="cohort-name">{cohort.name}</p>
 					{/if}
@@ -149,37 +149,37 @@
 			<!-- Choice Mode -->
 			{#if mode === 'choice'}
 				<div class="modal-body">
-					<p class="intro-text">Choose how you'd like to add students to this cohort:</p>
+					<p class="intro-text">Choose how you'd like to add participants to this cohort:</p>
 
 					<div class="choice-grid">
 						<button type="button" onclick={() => selectMode('single')} class="choice-card">
-							<UserPlus size={48} />
-							<h3>Add Single Student</h3>
-							<p>Manually enter student information</p>
+							<UserPlus size={48} color="var(--course-accent-darkest)" />
+							<h3>Add Single Participant</h3>
+							<p>Manually enter participant information</p>
 						</button>
 
 						<button type="button" onclick={() => selectMode('bulk')} class="choice-card">
-							<Users size={48} />
+							<Users size={48} color="var(--course-accent-darkest)" />
 							<h3>Bulk Upload</h3>
-							<p>Import multiple students via CSV</p>
+							<p>Import multiple participants via CSV</p>
 						</button>
 					</div>
 				</div>
 			{/if}
 
-			<!-- Single Student Mode -->
+			<!-- Single Participant Mode -->
 			{#if mode === 'single'}
 				<div class="modal-body">
 					<button type="button" onclick={goBack} class="back-link">
 						← Back to options
 					</button>
 
-					<form onsubmit={(e) => { e.preventDefault(); handleSingleStudent(); }}>
+					<form onsubmit={(e) => { e.preventDefault(); handleSingleParticipant(); }}>
 						<div class="form-group">
 							<label>Full Name*</label>
 							<input
 								type="text"
-								bind:value={studentData.full_name}
+								bind:value={participantData.full_name}
 								placeholder="John Smith"
 								required
 							/>
@@ -189,7 +189,7 @@
 							<label>Email*</label>
 							<input
 								type="email"
-								bind:value={studentData.email}
+								bind:value={participantData.email}
 								placeholder="john.smith@example.com"
 								required
 							/>
@@ -197,7 +197,7 @@
 
 						<div class="form-group">
 							<label>Role</label>
-							<select bind:value={studentData.role}>
+							<select bind:value={participantData.role}>
 								<option value="student">Participant</option>
 								<option value="hub_coordinator">Hub Coordinator</option>
 								<option value="admin">Admin</option>
@@ -208,7 +208,7 @@
 							<label>Hub (Optional)</label>
 							<input
 								type="text"
-								bind:value={studentData.hub}
+								bind:value={participantData.hub}
 								placeholder="St. Mary's Parish"
 							/>
 						</div>
@@ -222,7 +222,7 @@
 								Cancel
 							</button>
 							<button type="submit" class="btn-primary" disabled={isLoading}>
-								{isLoading ? 'Adding...' : 'Add Student'}
+								{isLoading ? 'Adding...' : 'Add Participant'}
 							</button>
 						</div>
 					</form>
@@ -241,7 +241,7 @@
 					{#if uploadResult}
 						<div class="upload-result">
 							<p class="success-text">
-								<strong>{uploadResult.successful}</strong> students added successfully
+								<strong>{uploadResult.successful}</strong> participants added successfully
 							</p>
 
 							{#if uploadResult.errors > 0}
@@ -356,16 +356,26 @@
 		gap: 16px;
 		padding: 32px 24px;
 		border: 2px solid var(--course-surface);
-		background: white;
+		background: var(--course-surface-elevated, var(--course-surface));
+		color: var(--course-accent-darkest);
 		border-radius: 12px;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		text-align: center;
 	}
 
+	.choice-card:focus {
+		outline: 2px solid var(--course-accent-light);
+		outline-offset: 2px;
+	}
+
+	.choice-card :global(svg) {
+		color: var(--course-accent-dark);
+	}
+
 	.choice-card:hover {
 		border-color: var(--course-accent-light);
-		background: var(--course-surface);
+		background: var(--course-surface-strong, var(--course-surface));
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}

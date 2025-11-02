@@ -7,7 +7,7 @@ import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // POST - Create new enrollment
 export const POST: RequestHandler = async (event) => {
-	const { user } = await requireModule(event, 'user_management');
+	await requireModule(event, 'users');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -61,7 +61,7 @@ export const POST: RequestHandler = async (event) => {
 
 // PUT - Update enrollment role
 export const PUT: RequestHandler = async (event) => {
-	const { user } = await requireModule(event, 'user_management');
+	await requireModule(event, 'users');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -100,7 +100,7 @@ export const PUT: RequestHandler = async (event) => {
 
 // DELETE - Remove enrollment
 export const DELETE: RequestHandler = async (event) => {
-	const { user } = await requireModule(event, 'user_management');
+	await requireModule(event, 'users');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

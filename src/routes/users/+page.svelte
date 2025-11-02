@@ -12,30 +12,35 @@
 	let loading = false;
 
 	// Filter state
-	let roleFilter = 'all'; // 'all', 'admin', 'student', 'hub_coordinator'
+	let moduleFilter = 'all';
 	let searchQuery = '';
 
 	// Available modules for selection
 	const availableModules = [
-		{ id: 'user_management', name: 'User Management', description: 'Create and manage admin users' },
+		{ id: 'users', name: 'User Management', description: 'Manage users, invitations, permissions' },
 		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
 		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
-		{ id: 'courses', name: 'Courses', description: 'Manage course content and cohorts' }
+		{ id: 'courses.participant', name: 'Course Participant', description: 'Access My Courses and participant dashboards' },
+		{ id: 'courses.manager', name: 'Course Manager', description: 'Manage assigned courses and cohorts' },
+		{ id: 'courses.admin', name: 'Course Admin', description: 'Manage all courses platform-wide' }
+	];
+	const moduleFilterOptions = [
+		{ value: 'all', label: 'All Modules' },
+		...availableModules.map((module) => ({ value: module.id, label: module.name }))
 	];
 
 	// Available course roles
-	const courseRoles = [
-		{ id: 'student', name: 'Student', description: 'Can access course materials and submit reflections' },
-		{ id: 'coordinator', name: 'Coordinator', description: 'Can coordinate hubs and view student progress' },
-		{ id: 'admin', name: 'Course Admin', description: 'Can manage course content and settings' }
-	];
+const courseRoles = [
+	{ id: 'student', name: 'Student', description: 'Can access course materials and submit reflections' },
+	{ id: 'coordinator', name: 'Coordinator', description: 'Can coordinate hubs and view student progress' },
+	{ id: 'admin', name: 'Course Admin', description: 'Can manage course content and settings' }
+];
 
 	// New user form
 	let showNewUserForm = false;
 	let newUser = {
 		email: '',
 		full_name: '',
-		role: 'student',
 		modules: []
 	};
 	let createUserLoading = false;
@@ -67,9 +72,12 @@
 	let editingEnrollmentRole = '';
 
 	// Filtered users
+	function userHasModule(user, moduleId) {
+		return user.modules?.includes?.(moduleId);
+	}
+
 	$: filteredUsers = users.filter(user => {
-		// Role filter
-		if (roleFilter !== 'all' && user.role !== roleFilter) {
+		if (moduleFilter !== 'all' && !userHasModule(user, moduleFilter)) {
 			return false;
 		}
 		// Search filter
@@ -120,6 +128,16 @@
 				}
 			);
 
+			users = users.map((existing) =>
+				existing.id === userId ? { ...existing, modules: [...editingModules] } : existing
+			);
+			if (currentUserProfile?.id === userId) {
+				currentUserProfile = {
+					...currentUserProfile,
+					modules: [...editingModules]
+				};
+			}
+
 			cancelEdit();
 			await invalidateAll();
 		} catch (error) {
@@ -131,22 +149,14 @@
 
 	function getModuleBadgeColor(moduleId: string) {
 		const colors = {
-			'user_management': 'bg-purple-100 text-purple-800',
+			'users': 'bg-purple-100 text-purple-800',
 			'dgr': 'bg-blue-100 text-blue-800',
 			'editor': 'bg-green-100 text-green-800',
-			'courses': 'bg-yellow-100 text-yellow-800'
+			'courses.participant': 'bg-emerald-100 text-emerald-800',
+			'courses.manager': 'bg-amber-100 text-amber-800',
+			'courses.admin': 'bg-red-100 text-red-800'
 		};
 		return colors[moduleId] || 'bg-gray-100 text-gray-800';
-	}
-
-	function getRoleBadgeColor(role: string) {
-		const colors = {
-			'admin': 'bg-red-100 text-red-800',
-			'student': 'bg-blue-100 text-blue-800',
-			'hub_coordinator': 'bg-purple-100 text-purple-800',
-			'coordinator': 'bg-purple-100 text-purple-800'
-		};
-		return colors[role] || 'bg-gray-100 text-gray-800';
 	}
 
 	function getCourseRoleBadgeColor(role: string) {
@@ -441,13 +451,12 @@
 					</div>
 					<div>
 						<select
-							bind:value={roleFilter}
+							bind:value={moduleFilter}
 							class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
 						>
-							<option value="all">All Roles</option>
-							<option value="admin">Platform Admin</option>
-							<option value="student">Student</option>
-							<option value="hub_coordinator">Hub Coordinator</option>
+							{#each moduleFilterOptions as option}
+								<option value={option.value}>{option.label}</option>
+							{/each}
 						</select>
 					</div>
 				</div>
@@ -496,36 +505,35 @@
 												{user.organization}
 											</div>
 										{/if}
-										<div class="mt-1">
-											<span class="px-2 py-0.5 text-xs font-semibold rounded-full {getRoleBadgeColor(user.role)}">
-												{user.role === 'hub_coordinator' ? 'Hub Coordinator' : user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-											</span>
-										</div>
 									</div>
 								</td>
 								<td class="px-6 py-4">
 									{#if editingUserId === user.id}
-										<div class="space-y-2">
+										<div class="flex flex-wrap gap-2">
 											{#each availableModules as module}
-												<label class="flex items-center space-x-2 cursor-pointer">
-													<input
-														type="checkbox"
-														checked={editingModules.includes(module.id)}
-														onchange={() => toggleModule(module.id)}
-														disabled={user.id === currentUser.id && module.id === 'user_management'}
-														class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-													/>
-													<span class="text-sm text-gray-700">{module.name}</span>
-												</label>
+												{@const isActive = editingModules.includes(module.id)}
+												<button
+													type="button"
+													aria-pressed={isActive}
+													class="px-3 py-1 rounded-full border text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500"
+													class:bg-gray-900={isActive}
+													class:text-white={isActive}
+													class:border-gray-900={isActive}
+													class:bg-gray-100={!isActive}
+													class:text-gray-600={!isActive}
+													class:border-gray-300={!isActive}
+													onclick={() => toggleModule(module.id)}
+													disabled={user.id === currentUser.id && module.id === 'users'}
+													class:opacity-50={user.id === currentUser.id && module.id === 'users'}
+													title={module.description}
+												>
+													{module.name}
+												</button>
 											{/each}
 										</div>
 									{:else}
 										<div class="flex flex-wrap gap-1">
-											{#if user.role === 'admin'}
-												<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-													All Modules (Platform Admin)
-												</span>
-											{:else if user.modules && user.modules.length > 0}
+											{#if user.modules && user.modules.length > 0}
 												{#each user.modules as moduleId}
 													{@const module = availableModules.find(m => m.id === moduleId)}
 													<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getModuleBadgeColor(moduleId)}">
@@ -636,15 +644,13 @@
 										</div>
 									{:else}
 										<div class="flex items-center space-x-2">
-											{#if user.role !== 'student'}
-												<button
-													onclick={() => startEdit(user.id, user.modules || [])}
-													class="text-blue-600 hover:text-blue-900"
-													title="Edit platform permissions"
-												>
-													<Edit2 class="h-4 w-4" />
-												</button>
-											{/if}
+											<button
+												onclick={() => startEdit(user.id, user.modules || [])}
+												class="text-blue-600 hover:text-blue-900"
+												title="Edit platform permissions"
+											>
+												<Edit2 class="h-4 w-4" />
+											</button>
 											{#if user.isPending}
 												<button
 													onclick={() => resendInvitation(user.id, user.email)}
@@ -681,28 +687,16 @@
 		</div>
 
 		<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-			<!-- Platform Roles & Modules -->
+			<!-- Platform Modules -->
 			<div class="bg-white shadow rounded-lg p-6">
 				<h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
 					<Shield class="h-5 w-5 mr-2" />
-					Platform Roles & Modules
+					Platform Modules
 				</h2>
 
-				<h3 class="text-sm font-semibold text-gray-700 mb-2">Platform Roles</h3>
-				<div class="space-y-2 mb-4">
-					<div class="flex items-start">
-						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 mr-2">Admin</span>
-						<span class="text-sm text-gray-600">Full platform access, automatic access to all modules and courses</span>
-					</div>
-					<div class="flex items-start">
-						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 mr-2">Student</span>
-						<span class="text-sm text-gray-600">Regular user, enrolls in courses</span>
-					</div>
-					<div class="flex items-start">
-						<span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-2">Hub Coordinator</span>
-						<span class="text-sm text-gray-600">Manages hubs within courses</span>
-					</div>
-				</div>
+				<p class="text-sm text-gray-600 mb-4">
+					Platform access is completely module-driven. Assign the combinations that match a user&rsquo;s responsibilities—no separate platform roles or hard-coded “admins” remain.
+				</p>
 
 				<h3 class="text-sm font-semibold text-gray-700 mb-2 mt-4">Available Modules</h3>
 				<div class="space-y-3">
@@ -714,6 +708,14 @@
 							<span class="ml-2 text-sm text-gray-600">{module.description}</span>
 						</div>
 					{/each}
+				</div>
+				<div class="mt-4 text-sm text-gray-600">
+					<p class="font-semibold text-gray-700 mb-1">Common combinations:</p>
+					<ul class="list-disc pl-5 space-y-1">
+						<li><span class="font-medium">Platform manager:</span> users, courses.admin, editor, dgr</li>
+						<li><span class="font-medium">Course staff:</span> courses.manager (+ courses.participant if they also take courses)</li>
+						<li><span class="font-medium">Participant only:</span> courses.participant</li>
+					</ul>
 				</div>
 			</div>
 
@@ -777,49 +779,30 @@
 					</div>
 
 					<div>
-						<label for="role" class="block text-sm font-medium text-gray-700">Platform Role</label>
-						<select
-							id="role"
-							bind:value={newUser.role}
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-						>
-							<option value="student">Student</option>
-							<option value="hub_coordinator">Hub Coordinator</option>
-							<option value="admin">Platform Admin</option>
-						</select>
-					</div>
-
-					{#if newUser.role !== 'student'}
-						<div>
-							<h3 class="block text-sm font-medium text-gray-700 mb-2">Module Access</h3>
-							<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
-								{#if newUser.role === 'admin'}
-									<p class="text-sm text-gray-600 italic">Platform admins have automatic access to all modules</p>
-								{:else}
-									{#each availableModules as module}
-										<label class="flex items-start space-x-2 cursor-pointer">
-											<input
-												type="checkbox"
-												checked={newUser.modules.includes(module.id)}
-												onchange={() => {
-													if (newUser.modules.includes(module.id)) {
-														newUser.modules = newUser.modules.filter(m => m !== module.id);
-													} else {
-														newUser.modules = [...newUser.modules, module.id];
-													}
-												}}
-												class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-											/>
-											<div>
-												<div class="text-sm font-medium text-gray-700">{module.name}</div>
-												<div class="text-xs text-gray-500">{module.description}</div>
-											</div>
-										</label>
-									{/each}
-								{/if}
-							</div>
+						<h3 class="block text-sm font-medium text-gray-700 mb-2">Module Access</h3>
+						<div class="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-300">
+							{#each availableModules as module}
+								<label class="flex items-start space-x-2 cursor-pointer">
+									<input
+										type="checkbox"
+										checked={newUser.modules.includes(module.id)}
+										onchange={() => {
+											if (newUser.modules.includes(module.id)) {
+												newUser.modules = newUser.modules.filter(m => m !== module.id);
+											} else {
+												newUser.modules = [...newUser.modules, module.id];
+											}
+										}}
+										class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+									/>
+									<div>
+										<div class="text-sm font-medium text-gray-700">{module.name}</div>
+										<div class="text-xs text-gray-500">{module.description}</div>
+									</div>
+								</label>
+							{/each}
 						</div>
-					{/if}
+					</div>
 
 					<div class="flex justify-end space-x-3 pt-4">
 						<button

@@ -275,6 +275,30 @@ export const load: PageServerLoad = async (event) => {
 		const currentSessionMaterials = materialsBySession[currentSession] || [];
 		const currentSessionInfo = sessionsByNumber[currentSession];
 
+		// Handle session 0 (cohort not started yet)
+		let currentSessionData;
+		if (currentSession === 0) {
+			currentSessionData = {
+				sessionNumber: 0,
+				sessionTitle: "Course Starting Soon",
+				sessionOverview: `This course begins on ${new Date(cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Materials will be available when your cohort starts Session 1.`,
+				materials: [],
+				reflectionQuestion: { id: null, text: "" },
+				reflectionStatus: "not_started",
+				isUpcoming: true // Flag to indicate cohort hasn't started
+			};
+		} else {
+			currentSessionData = {
+				sessionNumber: currentSession,
+				sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
+				sessionOverview: currentSessionInfo?.description || `Session ${currentSession} content and materials`,
+				materials: currentSessionMaterials,
+				reflectionQuestion: questionsBySession[currentSession] || { id: null, text: "Reflect on this session's materials and their impact on your faith journey." },
+				reflectionStatus: "not_started", // TODO: Get from user's reflection responses
+				isUpcoming: false
+			};
+		}
+
 		const courseData = {
 			title: cohort.courses_modules?.name || "Foundations of Faith",
 			description: cohort.courses_modules?.description || "",
@@ -282,14 +306,7 @@ export const load: PageServerLoad = async (event) => {
 			startDate: cohort.start_date,
 			endDate: cohort.end_date,
 			status: cohort.status,
-			currentSessionData: {
-				sessionNumber: currentSession,
-				sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
-				sessionOverview: currentSessionInfo?.description || `Session ${currentSession} content and materials`,
-				materials: currentSessionMaterials,
-				reflectionQuestion: questionsBySession[currentSession] || { id: null, text: "Reflect on this session's materials and their impact on your faith journey." },
-				reflectionStatus: "not_started" // TODO: Get from user's reflection responses
-			}
+			currentSessionData
 		};
 
 		return {

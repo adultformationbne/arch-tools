@@ -31,7 +31,11 @@ export const load: PageServerLoad = async (event) => {
 
 		if (moduleIds.length === 0) {
 			return {
-				course,
+				course: {
+					id: course.id,
+					name: course.name,
+					slug: courseSlug
+				},
 				users: [],
 				hubs: []
 			};
@@ -47,7 +51,11 @@ export const load: PageServerLoad = async (event) => {
 
 		if (cohortIds.length === 0) {
 			return {
-				course,
+				course: {
+					id: course.id,
+					name: course.name,
+					slug: courseSlug
+				},
 				users: [],
 				hubs: []
 			};
@@ -62,7 +70,7 @@ export const load: PageServerLoad = async (event) => {
 					id,
 					email,
 					full_name,
-					role
+					modules
 				),
 				cohort:cohort_id (
 					id,
@@ -84,10 +92,11 @@ export const load: PageServerLoad = async (event) => {
 			throw error(500, 'Failed to load users');
 		}
 
-		// Get all hubs for this course
+		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
 			.from('courses_hubs')
 			.select('*')
+			.eq('course_id', course.id)
 			.order('name');
 
 		if (hubsError) {
@@ -95,7 +104,11 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		return {
-			course,
+			course: {
+				id: course.id,
+				name: course.name,
+				slug: courseSlug
+			},
 			users: enrollments || [],
 			hubs: hubs || []
 		};

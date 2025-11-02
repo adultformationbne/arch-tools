@@ -1,27 +1,14 @@
 import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
+import { requireAnyModule } from '$lib/server/auth';
 
 /**
  * GET - List all courses with module counts
  */
-export const GET: RequestHandler = async ({ locals: { safeGetSession, supabase } }) => {
+export const GET: RequestHandler = async (event) => {
 	try {
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
-
-		// Check if user is admin
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
 		// Fetch all courses with module count and cohort count
 		const { data: courses, error: coursesError } = await supabaseAdmin
@@ -67,25 +54,11 @@ export const GET: RequestHandler = async ({ locals: { safeGetSession, supabase }
 /**
  * POST - Create a new course
  */
-export const POST: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user is admin
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const body = await request.json();
+		const body = await event.request.json();
 		const { name, short_name, description, duration_weeks, is_active, status, settings } = body;
 
 		if (!name || !short_name) {
@@ -125,25 +98,11 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 /**
  * PUT - Update a course
  */
-export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user is admin
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const body = await request.json();
+		const body = await event.request.json();
 		const { id, name, short_name, description, duration_weeks, is_active, status, settings } = body;
 
 		if (!id) {
@@ -185,25 +144,11 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 /**
  * DELETE - Archive a course (soft delete)
  */
-export const DELETE: RequestHandler = async ({ url, locals: { safeGetSession, supabase } }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user is admin
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const id = url.searchParams.get('id');
+		const id = event.url.searchParams.get('id');
 		if (!id) {
 			throw error(400, 'Course id is required');
 		}
