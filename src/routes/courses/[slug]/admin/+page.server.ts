@@ -75,21 +75,20 @@ export const load: PageServerLoad = async (event) => {
 		const processedCohorts = cohorts?.map(cohort => {
 			const studentCount = userCounts?.filter(u => u.cohort_id === cohort.id).length || 0;
 
-			// Determine status with automatic transitions
-			const startDate = new Date(cohort.start_date);
-			const endDate = new Date(cohort.end_date);
-			const now = new Date();
+			// Determine status based on session progression
 			let status = cohort.status;
 
-			// Auto-transition: scheduled → active when start date passes
-			if (status === 'scheduled' && now >= startDate) {
+			// Session-based status:
+			// - current_session = 0 → 'upcoming' (not started)
+			// - current_session >= 1 → 'active' (unless manually marked completed)
+			const currentSession = cohort.current_session || 0;
+
+			if (currentSession === 0 && status !== 'completed') {
+				status = 'upcoming';
+			} else if (currentSession >= 1 && status !== 'completed') {
 				status = 'active';
 			}
-
-			// Auto-transition: active → completed when end date passes
-			if (status === 'active' && now > endDate) {
-				status = 'completed';
-			}
+			// If status is 'completed', keep it (manually set by admin)
 
 			return {
 				id: cohort.id,
@@ -99,7 +98,7 @@ export const load: PageServerLoad = async (event) => {
 				startDate: cohort.start_date,
 				endDate: cohort.end_date,
 				status: status,
-				currentSession: cohort.current_session || 1, // Use manually set value
+				currentSession: currentSession,
 				totalSessions: 8, // All ACCF modules are 8 sessions
 				students: studentCount,
 				description: cohort.description || '',

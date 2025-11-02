@@ -259,21 +259,19 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 		'/privacy-policy',
 		'/accf-profile'
 	];
-	const coursesProtectedPrefixes = ['/dashboard', '/materials', '/reflections', '/accf-profile'];
-
 	const isCoursesRoute =
 		coursesRoutePrefixes.some(route => pathname.startsWith(route)) || pathname === '/';
-	const isCoursesProtectedRoute = coursesProtectedPrefixes.some(route => pathname.startsWith(route));
-	const isAdminRoute = pathname.startsWith('/admin');
-
-	const publicRoutes = ['/', '/auth', '/dgr/submit', '/login', '/readings', '/api/v1/readings', '/privacy-policy'];
-	const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route));
+	const publicRoutes = ['/', '/auth', '/login', '/readings', '/privacy-policy'];
+	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/'];
+	const isExplicitPublic = publicRoutes.some(route => pathname === route);
+	const isPrefixPublic = publicPrefixes.some(prefix => pathname.startsWith(prefix));
+	const isPublicRoute = isExplicitPublic || isPrefixPublic;
 
 	let userProfile = null;
 	if (session && user) {
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('*')
+	const { data: profile } = await supabase
+		.from('user_profiles')
+		.select('id, email, full_name, display_name, modules')
 			.eq('id', user.id)
 			.single();
 		userProfile = profile;
@@ -284,16 +282,6 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 			throw redirect(303, '/login?next=' + pathname);
 		}
 		throw redirect(303, '/auth?next=' + pathname);
-	}
-
-	if (session && userProfile) {
-		if (isCoursesProtectedRoute && !['student', 'admin', 'hub_coordinator'].includes(userProfile.role)) {
-			throw redirect(303, '/login?error=insufficient_permissions');
-		}
-
-		if (isAdminRoute && userProfile.role !== 'admin') {
-			throw redirect(303, '/auth?error=insufficient_permissions');
-		}
 	}
 
 	let courseRecord = await resolveCourseForUser(user?.id);
@@ -309,6 +297,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 		session,
 		user,
 		userProfile,
+		userModules: userProfile?.modules ?? [],
 		isCoursesRoute,
 		courseTheme,
 		courseBranding,

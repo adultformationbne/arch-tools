@@ -207,8 +207,7 @@
 						<select
 							id="cohort-filter"
 							bind:value={selectedCohort}
-							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-							style="focus:ring-color: var(--course-accent-light);"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
 						>
 							<option value="all">All Cohorts</option>
 							{#each cohorts as cohort}
@@ -227,8 +226,7 @@
 								bind:value={searchQuery}
 								type="text"
 								placeholder="Search by student name or content..."
-								class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-								style="focus:ring-color: var(--course-accent-light);"
+								class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
 							/>
 						</div>
 					</div>
@@ -423,8 +421,7 @@
 						bind:value={markingForm.feedback}
 						placeholder="Provide constructive feedback to help the student grow in their faith journey..."
 						rows="6"
-						class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent resize-none"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent resize-none text-gray-900 bg-white"
 					></textarea>
 					<p class="text-xs text-gray-500 mt-1">This feedback will be visible to the student</p>
 				</div>

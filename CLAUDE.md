@@ -232,26 +232,30 @@ The auth system supports two response modes:
 
 #### Platform-Level Auth
 ```typescript
-import { requirePlatformAdmin, requireModule } from '$lib/server/auth';
+import { requireModule, requireModuleLevel, requireAnyModule } from '$lib/server/auth';
 
-// Require platform admin role
+// Require specific module access (matches any level)
 export const load: PageServerLoad = async (event) => {
-  const { user, profile } = await requirePlatformAdmin(event);
+  const { user, profile } = await requireModule(event, 'users');
   // For page routes with redirect:
-  const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect', redirectTo: '/profile' });
+  const { user, profile } = await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses' });
 };
 
-// Require specific module access
-const { user, profile } = await requireModule(event, 'user_management');
-const { user, profile } = await requireModule(event, 'dgr', { mode: 'redirect' });
+// Require exact module.level
+const { user, profile } = await requireModuleLevel(event, 'courses.admin');
+const { user, profile } = await requireModuleLevel(event, 'courses.participant', { mode: 'redirect' });
+
+// Require any of multiple modules
+const { user, profile } = await requireAnyModule(event, ['courses.manager', 'courses.admin']);
 ```
 
 #### Course-Level Auth
 ```typescript
 import { requireCourseAdmin, requireCourseAccess, requireCourseRole } from '$lib/server/auth';
 
-// Require course admin (or platform admin)
-const { user, enrollment } = await requireCourseAdmin(event, courseSlug);
+// Require course admin access
+// Allows: courses.admin module OR (courses.manager module + enrolled as admin)
+const { user, profile, enrollment, viaModule } = await requireCourseAdmin(event, courseSlug);
 
 // Require any enrollment in course
 const { user, enrollment } = await requireCourseAccess(event, courseSlug);
@@ -260,21 +264,18 @@ const { user, enrollment } = await requireCourseAccess(event, courseSlug);
 const { user, enrollment } = await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
 ```
 
-**Platform Roles** (in `user_profiles.role`):
-- `admin` - Full platform access
-- `student` - Regular user
-- `hub_coordinator` - Hub management
-
-**Course Roles** (in `courses_enrollments.role` per course):
-- `admin` - Can manage this specific course
-- `student` - Enrolled in this course
-- `coordinator` - Coordinates hubs for this course
-
-**Module Permissions** (in `user_profiles.modules`):
-- `user_management` - User administration
-- `dgr` - Daily Gospel Reflections management
+**Platform Modules** (in `user_profiles.modules`):
+- `users` - User management, invitations, permissions
 - `editor` - Content editor access
-- Admins automatically have access to all modules
+- `dgr` - Daily Gospel Reflections management
+- `courses.participant` - Access enrolled courses via `/my-courses`
+- `courses.manager` - Manage courses where enrolled as admin
+- `courses.admin` - Manage all courses platform-wide
+
+**Course Roles** (in `courses_enrollments.role` per enrollment):
+- `admin` - Can manage this specific course
+- `student` - Enrolled student in this course
+- `coordinator` - Hub coordinator for this course
 
 ### 2. API Requests & Toast Integration
 

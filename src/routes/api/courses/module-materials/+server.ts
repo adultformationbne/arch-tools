@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
+import { requireAnyModule } from '$lib/server/auth';
 
 export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) => {
 	try {
@@ -65,26 +66,11 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 	}
 };
 
-export const POST: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
-		// Authentication check - only admins can create materials
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user has admin role
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const body = await request.json();
+		const body = await event.request.json();
 		const { session_id, type, title, content, display_order } = body;
 
 		// Validate required fields (now using session_id instead of module_id + session_number)
@@ -127,26 +113,11 @@ export const POST: RequestHandler = async ({ request, locals: { safeGetSession, 
 	}
 };
 
-export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
+export const PUT: RequestHandler = async (event) => {
 	try {
-		// Authentication check - only admins can update materials
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user has admin role
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const body = await request.json();
+		const body = await event.request.json();
 		const { id, type, title, content, display_order } = body;
 
 		if (!id) {
@@ -189,26 +160,11 @@ export const PUT: RequestHandler = async ({ request, locals: { safeGetSession, s
 	}
 };
 
-export const DELETE: RequestHandler = async ({ request, locals: { safeGetSession, supabase } }) => {
+export const DELETE: RequestHandler = async (event) => {
 	try {
-		// Authentication check - only admins can delete materials
-		const { session, user } = await safeGetSession();
-		if (!session) {
-			throw error(401, 'Unauthorized');
-		}
+		await requireAnyModule(event, ['courses.admin', 'users']);
 
-		// Check if user has admin role
-		const { data: profile } = await supabase
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		if (!profile || !['admin', 'admin'].includes(profile.role)) {
-			throw error(403, 'Forbidden - Admin access required');
-		}
-
-		const body = await request.json();
+		const body = await event.request.json();
 		const { id } = body;
 
 		if (!id) {

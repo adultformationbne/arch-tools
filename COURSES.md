@@ -106,10 +106,10 @@ CREATE TABLE courses_cohorts (
   -- Schedule
   start_date DATE,
   end_date DATE,
-  current_session INTEGER DEFAULT 1,     -- Current session (1-8, etc.)
+  current_session INTEGER DEFAULT 0,     -- Current session (0 = not started, 1-8 = in progress)
 
   -- Status
-  status TEXT DEFAULT 'scheduled',       -- 'scheduled', 'active', 'completed'
+  status TEXT DEFAULT 'upcoming',        -- 'upcoming', 'active', 'completed'
 
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -365,26 +365,48 @@ Courses can be created/edited at `/courses` (internal admin route) with:
 
 ## 🔐 Authentication & Authorization
 
-### Platform-Level Roles (`user_profiles.role`)
-- `admin` - Platform administrator (full access)
-- `student` - Regular user
-- `hub_coordinator` - Hub management access
+### Platform-Level Modules (`user_profiles.modules`)
+
+Module-based permissions control platform access:
+
+| Module | Access Granted |
+|--------|----------------|
+| `users` | User management, invitations, permissions |
+| `editor` | Content editor access |
+| `dgr` | Daily Gospel Reflections management |
+| `courses.participant` | Access to enrolled courses via `/my-courses` |
+| `courses.manager` | Manage courses where enrolled as admin |
+| `courses.admin` | Manage all courses platform-wide |
+
+**Key Concepts:**
+- Platform modules are stored in `user_profiles.modules` as an array
+- `courses.participant` and `courses.manager` are independent (not hierarchical)
+- `courses.admin` provides platform-wide course management regardless of enrollment
+- Hub coordination is per-course via enrollment role, NOT a platform module
 
 ### Course-Level Roles (`courses_enrollments.role`)
-- `admin` - Course administrator (can manage cohorts, enrollments, mark reflections)
-- `student` - Enrolled student
-- `coordinator` - Hub coordinator for course
+
+Per-course, per-enrollment roles:
+
+| Role | Description |
+|------|-------------|
+| `student` | Enrolled student in this course |
+| `coordinator` | Hub coordinator for this course |
+| `admin` | Course administrator (can manage this specific course) |
+
+**Important:** These are enrollment-specific roles, not platform-level permissions.
 
 ### Auth Helpers (`$lib/server/auth.ts`)
 
 ```typescript
-// Platform-level auth
-await requirePlatformAdmin(event);                    // Requires platform admin
-await requireModule(event, 'user_management');        // Requires specific module access
+// Platform-level module checks
+await requireModule(event, 'users');                  // Requires 'users' module
+await requireModuleLevel(event, 'courses.admin');     // Requires exact 'courses.admin' module
+await requireAnyModule(event, ['courses.manager', 'courses.admin']);
 
-// Course-level auth
-await requireCourseAdmin(event, courseSlug);          // Requires course admin role
-await requireCourseAccess(event, courseSlug);         // Requires any enrollment
+// Course-level enrollment checks
+await requireCourseAdmin(event, courseSlug);          // courses.admin OR (courses.manager + enrolled as admin)
+await requireCourseAccess(event, courseSlug);         // Must be enrolled (any role)
 await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
 ```
 
@@ -394,10 +416,10 @@ await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
 
 ```typescript
 // For page routes
-await requirePlatformAdmin(event, { mode: 'redirect', redirectTo: '/profile' });
+await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses' });
 
 // For API routes (default)
-await requirePlatformAdmin(event);  // Throws error with 401/403
+await requireModule(event, 'users');  // Throws error(403)
 ```
 
 ---
@@ -463,24 +485,37 @@ From cohort dashboard:
 ### Course Access
 1. Student logs in
 2. If enrolled in one course → Auto-redirected to `/courses/[slug]/dashboard`
-3. If enrolled in multiple courses → Shown course selector at `/courses`
+3. If enrolled in multiple courses → Shown course selector at `/my-courses`
 
 ### Dashboard
-Shows current cohort information:
-- Module name
-- Current session
+
+**When `current_session = 0` (Cohort Not Started):**
+- Shows "Course Starting Soon" message
+- Displays start date: "This course begins on [date]"
+- Message: "Materials will be available when your cohort starts Session 1"
+- No materials or reflection prompts visible
+- Empty state UI
+
+**When `current_session >= 1` (Cohort Active):**
+- Module name and current session number
+- Session materials for current session
+- Reflection prompt for current session
 - Progress indicator
 - Quick links to materials, reflections
+- Past reflections from current user
+- Public reflections from cohort members
 
 ### Materials
 - View session materials for current session
 - Materials organized by type (videos, documents, links)
 - Native HTML content rendered directly
+- Empty state shown when `current_session = 0`
 
 ### Reflections
 - Submit written reflections for each session
 - View feedback from admins
 - See passing/not passing status
+- Empty state shown when `current_session = 0`
 
 ---
 
@@ -509,6 +544,42 @@ Shows current cohort information:
 
 ---
 
+## 📊 Cohort Status Model
+
+### Session-Based Status
+
+Cohort status is determined by **session progression**, not dates:
+
+| `current_session` | `status` | Meaning | Student Access |
+|-------------------|----------|---------|----------------|
+| `0` | `'upcoming'` | Cohort created but not started | Can see start date, no materials |
+| `1-8` | `'active'` | Cohort in progress | Can access current session materials |
+| Any | `'completed'` | Admin manually marked complete | Full archive access |
+
+### Status Transition Rules
+
+```typescript
+// Automatic (runtime calculation):
+if (current_session === 0 && status !== 'completed') {
+  status = 'upcoming';
+} else if (current_session >= 1 && status !== 'completed') {
+  status = 'active';
+}
+// Manual: Admin marks as 'completed'
+```
+
+### Key Points
+
+- ✅ **Status changes when admin advances sessions** (not automatically by date)
+- ✅ **Dates are for display/planning only** (start_date, end_date)
+- ✅ **current_session drives everything**:
+  - `0` = Not started (upcoming)
+  - `1+` = Active (materials visible)
+- ✅ **Only 'completed' is set manually** by admin action
+- ✅ **No automatic date-based transitions**
+
+---
+
 ## 🔄 Course Lifecycle
 
 ```
@@ -518,15 +589,15 @@ Shows current cohort information:
    ↓
 3. Materials & Reflections Added to Sessions
    ↓
-4. Cohort Created (scheduled)
+4. Cohort Created (status: upcoming, current_session: 0)
    ↓
 5. Students Enrolled (pending → invited → active)
    ↓
-6. Cohort Started (status: active)
+6. Admin Starts Cohort (status: active, current_session: 1)
    ↓
-7. Sessions Progress (current_session: 1 → 2 → 3...)
+7. Sessions Progress (current_session: 2 → 3 → 4...)
    ↓
-8. Cohort Completed (status: completed)
+8. Admin Marks Complete (status: completed)
 ```
 
 ---
@@ -623,14 +694,38 @@ Components automatically use course theme:
 2. Create new module with name, description, session count
 3. Add materials via `/courses/[slug]/admin/modules`
 
+### How to start a cohort?
+1. Go to `/courses/[slug]/admin`
+2. Select cohort (should be at `current_session = 0` with status `'upcoming'`)
+3. Click "Advance to Session 1" button
+4. Cohort status automatically becomes `'active'`
+5. Students can now access Session 1 materials
+
 ### How to advance students to the next session?
 1. Go to `/courses/[slug]/admin`
-2. Click "Set Current Session to [X]" button
+2. Click "Advance to Session [X]" button
 3. All students in cohort advance together
+4. Cohort remains `'active'` until manually marked complete
 
 ### How to give someone admin access to a course?
-1. Enroll them in a cohort for that course
-2. Set their role to `admin` in the enrollment
+
+**For specific course management (courses.manager):**
+1. Go to `/users` as a platform admin
+2. Grant the user `courses.manager` module
+3. Enroll them in a cohort for that course with role `admin`
+4. They can now manage that specific course
+
+**For platform-wide course management (courses.admin):**
+1. Go to `/users` as a platform admin
+2. Grant the user `courses.admin` module
+3. They can now manage ALL courses (enrollment optional for management)
+
+### How to mark a cohort as complete?
+1. Go to `/courses/[slug]/admin`
+2. Select the cohort
+3. Click "Mark Complete" button
+4. Status changes to `'completed'`
+5. Students still have access but cohort is archived
 
 ---
 

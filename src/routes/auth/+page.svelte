@@ -30,18 +30,40 @@
 				});
 				if (error) throw error;
 
-				// Check user role after login for proper routing
+				// Check user modules after login for proper routing
 				const { data: profile, error: profileError } = await supabase
 					.from('user_profiles')
-					.select('role')
+					.select('modules')
 					.eq('id', authData.user.id)
 					.single();
 
+				// Determine redirect based on modules
+				const modules = profile?.modules || [];
 				let defaultRedirect = '/';
-				if (profile && ['admin', 'admin'].includes(profile.role)) {
-					defaultRedirect = '/admin';
-				} else if (profile && profile.role === 'courses_student') {
-					defaultRedirect = '/dashboard';
+
+				// User management → /users
+				if (modules.includes('users')) {
+					defaultRedirect = '/users';
+				}
+				// Course management → /courses
+				else if (modules.includes('courses.admin') || modules.includes('courses.manager')) {
+					defaultRedirect = '/courses';
+				}
+				// DGR → /dgr
+				else if (modules.includes('dgr')) {
+					defaultRedirect = '/dgr';
+				}
+				// Editor → /editor
+				else if (modules.includes('editor')) {
+					defaultRedirect = '/editor';
+				}
+				// Course participant → /my-courses
+				else if (modules.includes('courses.participant')) {
+					defaultRedirect = '/my-courses';
+				}
+				// Fallback → /profile
+				else {
+					defaultRedirect = '/profile';
 				}
 
 				const next = $page.url.searchParams.get('next') ?? defaultRedirect;

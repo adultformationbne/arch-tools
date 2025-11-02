@@ -1,6 +1,7 @@
 <script>
 	import { Plus, Download } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import CohortCard from '$lib/components/CohortCard.svelte';
 	import CohortManager from '$lib/components/CohortManager.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
@@ -14,17 +15,6 @@
 	const courseSlug = data.courseSlug;
 	let modules = $state(data.modules || []);
 	let cohorts = $state(data.cohorts || []);
-let selectedCohortId = $state(null);
-
-$effect(() => {
- const currentId = selectedCohortId;
- if (cohorts.length > 0) {
-  const exists = cohorts.some(cohort => cohort.id === currentId);
-  if (!exists) {
-   selectedCohortId = cohorts[0].id;
-  }
- }
-});
 	let showCohortWizard = $state(false);
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
@@ -34,9 +24,26 @@ $effect(() => {
 	let students = $state([]);
 	let loadingStudents = $state(false);
 
-	// Auto-select the latest cohort
+	// Get selected cohort from URL or default to first
+	let selectedCohortId = $state(null);
+
 	$effect(() => {
-		if (cohorts.length > 0 && !selectedCohortId) {
+		const cohortParam = $page.url.searchParams.get('cohort');
+		const actionParam = $page.url.searchParams.get('action');
+
+		// Handle new cohort action from sidebar
+		if (actionParam === 'new-cohort') {
+			showCohortWizard = true;
+			// Clear the action param
+			const newUrl = new URL($page.url);
+			newUrl.searchParams.delete('action');
+			goto(newUrl.pathname + newUrl.search, { replaceState: true });
+		}
+
+		// Select cohort from URL or default to first
+		if (cohortParam) {
+			selectedCohortId = cohortParam;
+		} else if (cohorts.length > 0 && !selectedCohortId) {
 			selectedCohortId = cohorts[0].id;
 		}
 	});
@@ -64,14 +71,6 @@ $effect(() => {
 		} finally {
 			loadingStudents = false;
 		}
-	}
-
-	function selectCohort(cohortId) {
-		selectedCohortId = cohortId;
-	}
-
-	function openCohortWizard() {
-		showCohortWizard = true;
 	}
 
 	function closeCohortWizard() {
@@ -203,30 +202,18 @@ Bob Johnson,bob.j@example.com,student,`;
 	}
 </script>
 
-<div class="px-24 pb-16">
-	<!-- Compact Header Row: Cohort Pills + New Cohort Button -->
-	<div class="cohort-header-row">
-		<div class="cohort-pills-container">
-			{#if cohorts.length === 0}
-				<div class="empty-state-inline">
-					<p>No cohorts yet</p>
-				</div>
-			{:else}
-				{#each cohorts.slice(0, 4) as cohort}
-					<CohortCard
-						{cohort}
-						isActive={selectedCohortId === cohort.id}
-						onClick={() => selectCohort(cohort.id)}
-					/>
-				{/each}
-			{/if}
+<div class="px-24 pb-16 pt-8">
+	{#if !selectedCohort && cohorts.length === 0}
+		<div class="empty-state">
+			<h2>No Active Cohorts</h2>
+			<p>Get started by creating your first cohort using the sidebar.</p>
 		</div>
-
-		<button onclick={openCohortWizard} class="btn-new-cohort">
-			<Plus size={20} />
-			New Cohort
-		</button>
-	</div>
+	{:else if !selectedCohort}
+		<div class="empty-state">
+			<h2>Select a Cohort</h2>
+			<p>Choose a cohort from the sidebar to view details and manage participants.</p>
+		</div>
+	{/if}
 
 	<!-- Two-Column Section: Cohort Details + Recent Activity -->
 	{#if selectedCohort}
@@ -282,61 +269,27 @@ Bob Johnson,bob.j@example.com,student,`;
 />
 
 <style>
-	/* Compact Header Row */
-	.cohort-header-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: stretch;
-		gap: 12px;
-		padding-top: 32px;
-		padding-bottom: 24px;
-	}
-
-	.cohort-pills-container {
-		display: flex;
-		gap: 12px;
-		overflow-x: auto;
-		flex: 1;
-	}
-
-	.empty-state-inline {
-		display: flex;
-		align-items: center;
-		padding: 16px 24px;
-		background: rgba(255, 255, 255, 0.08);
+	/* Empty State */
+	.empty-state {
+		text-align: center;
+		padding: 80px 24px;
+		background: rgba(255, 255, 255, 0.05);
 		border: 2px dashed rgba(255, 255, 255, 0.2);
-		border-radius: 12px;
-		color: rgba(255, 255, 255, 0.6);
-		font-size: 0.9375rem;
+		border-radius: 16px;
+		margin-top: 40px;
 	}
 
-	.empty-state-inline p {
-		margin: 0;
-	}
-
-	.btn-new-cohort {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		padding: 16px 24px;
-		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
-		border: 2px solid var(--course-accent-light);
-		border-radius: 12px;
+	.empty-state h2 {
+		margin: 0 0 12px 0;
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 1.75rem;
 		font-weight: 600;
-		font-size: 1rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		white-space: nowrap;
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
 	}
 
-	.btn-new-cohort:hover {
-		background: var(--course-accent-dark);
-		border-color: var(--course-accent-dark);
-		color: white;
-		transform: translateY(-2px);
+	.empty-state p {
+		margin: 0;
+		color: rgba(255, 255, 255, 0.6);
+		font-size: 1rem;
 	}
 
 	/* Two-Column Details + Activity */

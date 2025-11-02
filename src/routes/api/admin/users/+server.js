@@ -6,12 +6,12 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(event) {
 	try {
-		// Check if user has user_management module access (admins automatically have access)
-		const { user } = await requireModule(event, 'user_management');
+		// Check if user has users module access (admins automatically have access)
+		const { user } = await requireModule(event, 'users');
 
 		const { request } = event;
 
-		const { email, full_name, modules, role } = await request.json();
+		const { email, full_name, modules } = await request.json();
 
 		// Validate required fields
 		if (!email) {
@@ -24,21 +24,32 @@ export async function POST(event) {
 			throw error(400, 'Invalid email format');
 		}
 
-		// Validate role
-		const validRoles = ['admin', 'student', 'hub_coordinator'];
-		const userRole = role || 'student'; // Default to student
-		if (!validRoles.includes(userRole)) {
-			throw error(400, 'Invalid role specified');
-		}
-
 		// Validate modules
-		const validModules = ['user_management', 'dgr', 'editor', 'courses'];
+		const allowedModules = [
+			'users',
+			'editor',
+			'dgr',
+			'courses.participant',
+			'courses.manager',
+			'courses.admin'
+		];
+
 		if (modules && !Array.isArray(modules)) {
 			throw error(400, 'Modules must be an array');
 		}
-		if (modules && modules.some(m => !validModules.includes(m))) {
+
+		const requestedModules = Array.isArray(modules) ? modules : [];
+		const cleanModules = requestedModules
+			.filter((value) => typeof value === 'string')
+			.map((value) => value.trim())
+			.filter((value) => value.length > 0);
+
+		if (cleanModules.some((m) => !allowedModules.includes(m))) {
 			throw error(400, 'Invalid module specified');
 		}
+
+		// Ensure unique modules
+		const uniqueModules = Array.from(new Set(cleanModules));
 
 		// Create admin client with service role key
 		const adminSupabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -99,8 +110,7 @@ export async function POST(event) {
 				.from('user_profiles')
 				.update({
 					full_name: full_name || null,
-					role: userRole,
-					modules: modules || []
+					modules: uniqueModules
 				})
 				.eq('id', authData.user.id)
 				.select()
@@ -120,8 +130,7 @@ export async function POST(event) {
 					id: authData.user.id,
 					email: email,
 					full_name: full_name || null,
-					role: userRole,
-					modules: modules || []
+					modules: uniqueModules
 				})
 				.select()
 				.single();
@@ -136,7 +145,10 @@ export async function POST(event) {
 
 		return json({
 			success: true,
-			user: profileData
+			user: {
+				...profileData,
+				modules: uniqueModules
+			}
 		});
 
 	} catch (err) {
@@ -152,8 +164,8 @@ export async function POST(event) {
 
 export async function DELETE(event) {
 	try {
-		// Check if user has user_management module access (admins automatically have access)
-		const { user } = await requireModule(event, 'user_management');
+		// Check if user has users module access (admins automatically have access)
+		const { user } = await requireModule(event, 'users');
 
 		const { request } = event;
 
@@ -223,8 +235,8 @@ export async function DELETE(event) {
 
 export async function PUT(event) {
 	try {
-		// Check if user has user_management module access (admins automatically have access)
-		const { user } = await requireModule(event, 'user_management');
+		// Check if user has users module access (admins automatically have access)
+		const { user } = await requireModule(event, 'users');
 
 		const { request } = event;
 
@@ -282,20 +294,36 @@ export async function PUT(event) {
 		// Handle update modules
 		if (action === 'update_modules') {
 			// Validate modules (removed accf_admin as it's deprecated)
-			const validModules = ['user_management', 'dgr', 'editor', 'courses'];
+			const allowedModules = [
+				'users',
+				'editor',
+				'dgr',
+				'courses.participant',
+				'courses.manager',
+				'courses.admin'
+			];
+
 			if (!Array.isArray(modules)) {
 				throw error(400, 'Modules must be an array');
 			}
 
-			// Filter out any invalid/deprecated modules
-			const cleanModules = modules.filter(m => validModules.includes(m));
+			const cleanModules = modules
+				.filter((value) => typeof value === 'string')
+				.map((value) => value.trim())
+				.filter((value) => value.length > 0);
 
-			console.log('Updating modules:', { original: modules, cleaned: cleanModules });
+			if (cleanModules.some((m) => !allowedModules.includes(m))) {
+				throw error(400, 'Invalid module specified');
+			}
+
+			const uniqueModules = Array.from(new Set(cleanModules));
+
+			console.log('Updating modules:', { original: modules, cleaned: uniqueModules });
 
 			// Update user modules (use cleaned modules)
 			const { error: updateError } = await adminSupabase
 				.from('user_profiles')
-				.update({ modules: cleanModules })
+				.update({ modules: uniqueModules })
 				.eq('id', userId);
 
 			if (updateError) {

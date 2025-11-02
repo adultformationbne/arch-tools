@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { hasModule, hasModuleLevel } from '$lib/server/auth.js';
 
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
@@ -13,14 +14,17 @@ export async function POST({ request, locals }) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Check if user is admin
+		// Check if user has access to send invites
 		const { data: profile } = await locals.supabase
 			.from('user_profiles')
-			.select('role, modules')
+			.select('modules')
 			.eq('id', user.id)
 			.single();
 
-		if (profile?.role !== 'admin') {
+		const modules = Array.isArray(profile?.modules) ? profile.modules : [];
+		const isPlatformAdmin = hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+
+		if (!isPlatformAdmin) {
 			return json({ error: 'Forbidden - Admin access required' }, { status: 403 });
 		}
 

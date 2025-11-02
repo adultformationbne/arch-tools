@@ -2,28 +2,20 @@
 	import { User, Settings } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
-	let { session, userRole = null } = $props<{
+	let { session, modules = [] } = $props<{
 		session: any;
-		userRole?: string | null;
+		modules?: string[];
 	}>();
 
-	// Define all possible routes with role requirements
-	const allRoutes = [
-		{ name: 'Home', path: '/', description: 'Dashboard home', roles: ['admin', 'editor', 'contributor', 'viewer', 'admin', 'courses_student', 'hub_coordinator'] },
-		{ name: 'Courses', path: '/courses', description: 'Course management', roles: ['admin', 'student', 'hub_coordinator'] },
-		{ name: 'Editor', path: '/editor', description: 'Main content editor', roles: ['admin', 'editor'] },
-		{ name: 'DGR', path: '/dgr', description: 'DGR management', roles: ['admin'] },
-	];
+	const moduleSet = $derived(new Set(modules ?? []));
 
-	// Filter routes based on user role
-	let visibleRoutes = $derived(
-		userRole
-			? allRoutes.filter(route => route.roles.includes(userRole))
-			: allRoutes // Show all if no role specified (for backward compatibility)
-	);
+	function hasModule(module: string) {
+		return moduleSet.has(module);
+	}
 
-	// Check if user is admin
-	let isAdmin = $derived(userRole === 'admin');
+	function hasAnyModule(required: string[]) {
+		return required.some((mod) => hasModule(mod));
+	}
 </script>
 
 <nav class="bg-white">
@@ -34,24 +26,49 @@
 			</a>
 
 			<div class="absolute left-1/2 -translate-x-1/2 hidden items-center space-x-1 md:flex">
-				{#each visibleRoutes as route}
+				<a
+					href="/"
+					class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname === '/' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+					title="Dashboard home"
+				>
+					Home
+				</a>
+				{#if hasAnyModule(['courses.participant', 'courses.manager', 'courses.admin'])}
 					<a
-						href={route.path}
-						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname === route.path ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
-						title={route.description}
+						href={hasAnyModule(['courses.manager', 'courses.admin']) ? '/courses' : '/my-courses'}
+						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {($page.url.pathname.startsWith('/courses') || $page.url.pathname.startsWith('/my-courses')) ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title={hasAnyModule(['courses.manager', 'courses.admin']) ? 'Course management' : 'My courses'}
 					>
-						{route.name}
+						Courses
 					</a>
-				{/each}
+				{/if}
+				{#if hasModule('editor')}
+					<a
+						href="/editor"
+						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname.startsWith('/editor') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title="Content editor"
+					>
+						Editor
+					</a>
+				{/if}
+				{#if hasModule('dgr')}
+					<a
+						href="/dgr"
+						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname.startsWith('/dgr') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title="Daily Gospel management"
+					>
+						DGR
+					</a>
+				{/if}
 			</div>
 
 			{#if session}
 				<div class="flex items-center space-x-3">
-					{#if isAdmin}
+					{#if hasModule('users')}
 						<a
-							href="/admin/users"
-							class="rounded-full p-2 transition-colors {$page.url.pathname.startsWith('/admin') ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}"
-							title="Admin Settings"
+							href="/users"
+							class="rounded-full p-2 transition-colors {$page.url.pathname.startsWith('/users') ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}"
+							title="User Management"
 						>
 							<Settings class="h-5 w-5" />
 						</a>

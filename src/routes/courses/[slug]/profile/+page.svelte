@@ -118,8 +118,7 @@
 						id="profile-name"
 						type="text"
 						bind:value={profileForm.name}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 				</div>
 				<div>
@@ -128,8 +127,7 @@
 						id="profile-email"
 						type="email"
 						bind:value={profileForm.email}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 					</div>
 					<div class="flex gap-4 pt-4">
@@ -222,8 +220,7 @@
 						id="current-password"
 						type="password"
 						bind:value={passwordForm.currentPassword}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 				</div>
 				<div>
@@ -232,8 +229,7 @@
 						id="new-password"
 						type="password"
 						bind:value={passwordForm.newPassword}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 				</div>
 				<div>
@@ -242,8 +238,7 @@
 						id="confirm-password"
 						type="password"
 						bind:value={passwordForm.confirmPassword}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20"
-						style="focus:ring-color: var(--course-accent-light);"
+						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 					</div>
 					<div class="flex gap-4 pt-4">

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The arch-tools platform uses a **unified authentication system** (`$lib/server/auth.ts`) that handles all authentication and authorization with flexible response modes for different route types.
+The arch-tools platform uses a **unified module-based authentication system** (`$lib/server/auth.ts`) that handles all authentication and authorization using namespaced module permissions.
 
 ## System Architecture
 
@@ -11,10 +11,9 @@ The arch-tools platform uses a **unified authentication system** (`$lib/server/a
 **Location:** `$lib/server/auth.ts`
 
 **Features:**
-- Platform-level authorization (admin, modules)
-- Course-level authorization (per-course roles)
+- Module-based authorization (namespaced permissions)
+- Course-level authorization (per-course roles via enrollments)
 - Flexible response modes (errors vs redirects)
-- Automatic admin access to all modules
 - Clean, consistent API
 
 ---
@@ -27,15 +26,58 @@ The auth system supports two response modes via the `options` parameter:
 Returns HTTP 401/403 errors - perfect for API routes:
 ```typescript
 // Will throw error(401) or error(403)
-await requirePlatformAdmin(event);
+await requireModule(event, 'users');
 ```
 
 ### 2. `redirect`
 Returns 303 redirects - perfect for page routes:
 ```typescript
-// Will throw redirect(303, '/profile')
-await requirePlatformAdmin(event, { mode: 'redirect', redirectTo: '/profile' });
+// Will throw redirect(303, '/my-courses')
+await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses' });
 ```
+
+---
+
+## Module-Based Permissions
+
+### Module Format: `module.level`
+
+**Top-level module** determines **navigation visibility** (what sections you see).
+**Second-level** determines **capabilities** (what you can do in that section).
+
+### Platform Modules
+
+| Module | Description | Navigation | Notes |
+|--------|-------------|------------|-------|
+| `users` | Manage users, invitations, permissions | `/users` | Highest platform privilege |
+| `editor` | Content editor access | `/editor` | Single level for now |
+| `dgr` | Daily Gospel Reflections management | `/dgr` | Single level for now |
+
+### Course Modules
+
+| Module | Description | Navigation | Capabilities |
+|--------|-------------|------------|--------------|
+| `courses.participant` | Access enrolled courses | `/my-courses` | View enrolled courses, submit reflections |
+| `courses.manager` | Manage assigned courses | `/admin/courses` | Manage courses where enrolled as admin |
+| `courses.admin` | Manage all courses | `/admin/courses` | Platform-wide course access regardless of enrollment |
+
+**Key Principles:**
+- **courses.participant** and **courses.manager** are independent (not hierarchical)
+- Staff can have `courses.manager` WITHOUT `courses.participant`
+- Some staff may have BOTH to participate AND manage
+- `courses.admin` bypasses enrollment checks for management (but not for course content access)
+
+### Course Roles (per enrollment)
+
+Stored in `courses_enrollments.role` (per user per course):
+
+| Role | Description |
+|------|-------------|
+| `student` | Regular enrolled student |
+| `coordinator` | Hub coordinator for this course |
+| `admin` | Course administrator (can manage this specific course) |
+
+**Important:** Hub coordination is per-course via `enrollment.role`, NOT a platform module.
 
 ---
 
@@ -51,33 +93,26 @@ const { session, user } = await requireAuth(event);
 const { session, user } = await requireAuth(event, { mode: 'redirect', redirectTo: '/auth' });
 ```
 
-#### `requirePlatformAdmin(event, options?)`
-Requires user to have `admin` role in `user_profiles`.
-```typescript
-const { user, profile } = await requirePlatformAdmin(event);
-// For page routes:
-const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' });
-```
-
-#### `requirePlatformRole(event, allowedRoles, options?)`
-Requires user to have one of the specified platform roles.
-```typescript
-const { user, profile } = await requirePlatformRole(event, ['admin', 'hub_coordinator']);
-```
-
 #### `requireModule(event, moduleName, options?)`
-Requires user to have specific module access. **Admins automatically pass**.
+Requires user to have specific module (any level for namespaced modules).
 ```typescript
-const { user, profile } = await requireModule(event, 'user_management');
+const { user, profile } = await requireModule(event, 'users');
+const { user, profile } = await requireModule(event, 'courses'); // matches courses.*
 const { user, profile } = await requireModule(event, 'dgr', { mode: 'redirect' });
-const { user, profile } = await requireModule(event, 'editor');
+```
+
+#### `requireModuleLevel(event, moduleLevel, options?)`
+Requires user to have specific module.level.
+```typescript
+const { user, profile } = await requireModuleLevel(event, 'courses.participant');
+const { user, profile } = await requireModuleLevel(event, 'courses.admin');
 ```
 
 ---
 
 ## Course-Level Authorization
 
-Course-level permissions are based on enrollments in `courses_enrollments`. Platform admins automatically have access to all courses.
+Course-level permissions are based on enrollments in `courses_enrollments`. Module access determines which management UIs are visible, but course content access requires enrollment.
 
 ### Functions
 
@@ -85,13 +120,18 @@ Course-level permissions are based on enrollments in `courses_enrollments`. Plat
 Requires user to be enrolled in the course (any role: admin, student, or coordinator).
 ```typescript
 const courseSlug = event.params.slug;
-const { user, profile, enrollment } = await requireCourseAccess(event, courseSlug);
+const { user, enrollment } = await requireCourseAccess(event, courseSlug);
+// Everyone must be enrolled - including courses.admin users
 ```
 
 #### `requireCourseAdmin(event, courseSlug, options?)`
-Requires user to have admin role in the course (or be a platform admin).
+Requires user to have course admin access via:
+- `courses.admin` module (platform-wide access), OR
+- `courses.manager` module + enrolled with `role='admin'` in this course
+
 ```typescript
-const { user, enrollment, isPlatformAdmin } = await requireCourseAdmin(event, courseSlug);
+const { user, profile, enrollment, viaModule } = await requireCourseAdmin(event, courseSlug);
+// viaModule: true if accessed via courses.admin, false if via enrollment
 ```
 
 #### `requireCourseRole(event, courseSlug, allowedRoles, options?)`
@@ -103,50 +143,42 @@ const { user, enrollment } = await requireCourseRole(event, courseSlug, ['admin'
 
 ---
 
-## Role System
+## Module Lifecycle
 
-### Platform Roles
-Stored in `user_profiles.role`:
+### Default User
+- New users have NO modules (must be invited)
+- No access to any section until modules granted
 
-| Role | Description |
-|------|-------------|
-| `admin` | Full platform access, automatic access to all modules and courses |
-| `student` | Regular user, enrolls in courses |
-| `hub_coordinator` | Manages hubs |
+### Staff Invitation (via `/users`)
+- Admin selects which modules to grant
+- Example: `['users', 'courses.manager', 'dgr']`
 
-### Course Roles
-Stored in `courses_enrollments.role` (per user per course):
+### Participant Invitation (via course cohort)
+- Auto-grants `['courses.participant']`
+- Creates enrollment with role (student/coordinator/admin)
 
-| Role | Description |
-|------|-------------|
-| `admin` | Can manage this specific course |
-| `student` | Enrolled student in this course |
-| `coordinator` | Hub coordinator for this course |
-
-### Module Permissions
-Stored in `user_profiles.modules` (array):
-
-- `user_management` - User administration
-- `dgr` - Daily Gospel Reflections management
-- `editor` - Content editor access
-
-**Note:** Platform admins automatically have access to all modules without needing them listed.
+### Module Independence
+- Modules can be combined freely
+- Common combos:
+  - `['courses.participant']` - Participant only
+  - `['users', 'courses.manager']` - Staff (no participation)
+  - `['users', 'courses.participant', 'courses.manager']` - Staff who also participates
 
 ---
 
 ## Usage Examples
 
-### Example 1: (internal) Page Route - Redirect on Failure
+### Example 1: User Management Page (Staff Only)
 ```typescript
 // src/routes/(internal)/admin/users/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { requireModule } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
-  // Redirects to /profile if user doesn't have access
-  const { user, profile } = await requireModule(event, 'user_management', {
+  // Redirects to /my-courses if user doesn't have access
+  const { user, profile } = await requireModule(event, 'users', {
     mode: 'redirect',
-    redirectTo: '/profile'
+    redirectTo: '/my-courses'
   });
 
   // ... fetch users
@@ -162,14 +194,37 @@ import { requireModule } from '$lib/server/auth';
 
 export async function POST(event) {
   // Throws error(403) if user doesn't have access
-  const { user } = await requireModule(event, 'user_management');
+  const { user } = await requireModule(event, 'users');
 
   // ... create user
   return json({ success: true });
 }
 ```
 
-### Example 3: Course Admin Page
+### Example 3: My Courses (Participant View)
+```typescript
+// src/routes/my-courses/+page.server.ts
+import type { PageServerLoad } from './$types';
+import { requireModuleLevel } from '$lib/server/auth';
+
+export const load: PageServerLoad = async (event) => {
+  // Requires specific courses.participant module
+  const { user, profile } = await requireModuleLevel(event, 'courses.participant', {
+    mode: 'redirect',
+    redirectTo: '/profile'
+  });
+
+  // Fetch enrolled courses
+  const { data: enrollments } = await event.locals.supabase
+    .from('courses_enrollments')
+    .select('*, courses(*)')
+    .eq('user_profile_id', user.id);
+
+  return { enrollments };
+};
+```
+
+### Example 4: Course Admin Page
 ```typescript
 // src/routes/courses/[slug]/admin/+page.server.ts
 import type { PageServerLoad } from './$types';
@@ -178,28 +233,45 @@ import { requireCourseAdmin } from '$lib/server/auth';
 export const load: PageServerLoad = async (event) => {
   const courseSlug = event.params.slug;
 
-  // Platform admins OR course admins can access
-  const { user, enrollment, isPlatformAdmin } = await requireCourseAdmin(event, courseSlug);
+  // courses.admin OR (courses.manager + enrolled as admin)
+  const { user, profile, viaModule } = await requireCourseAdmin(event, courseSlug, {
+    mode: 'redirect'
+  });
 
   // ... fetch course data
-  return { courseData };
+  return { courseData, canManageAll: viaModule };
 };
 ```
 
-### Example 4: Course Student Page
+### Example 5: Course List (For Managers)
 ```typescript
-// src/routes/courses/[slug]/dashboard/+page.server.ts
+// src/routes/admin/courses/+page.server.ts
 import type { PageServerLoad } from './$types';
-import { requireCourseAccess } from '$lib/server/auth';
+import { requireModule, hasModuleLevel } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
-  const courseSlug = event.params.slug;
+  // Must have any courses management module
+  const { user, profile } = await requireModule(event, 'courses', {
+    mode: 'redirect'
+  });
 
-  // Any enrolled user (admin, student, coordinator) can access
-  const { user, enrollment } = await requireCourseAccess(event, courseSlug);
+  const isAdmin = hasModuleLevel(profile.modules, 'courses.admin');
+  const isManager = hasModuleLevel(profile.modules, 'courses.manager');
 
-  // ... fetch dashboard data
-  return { dashboardData };
+  let query = event.locals.supabase.from('courses').select('*');
+
+  if (isAdmin) {
+    // Show all courses
+  } else if (isManager) {
+    // Filter to only courses where enrolled as admin
+    query = query
+      .select('*, courses_modules!inner(courses_cohorts!inner(courses_enrollments!inner(*)))')
+      .eq('courses_modules.courses_cohorts.courses_enrollments.user_profile_id', user.id)
+      .eq('courses_modules.courses_cohorts.courses_enrollments.role', 'admin');
+  }
+
+  const { data: courses } = await query;
+  return { courses, isAdmin, isManager };
 };
 ```
 
@@ -209,50 +281,47 @@ export const load: PageServerLoad = async (event) => {
 
 For use in Svelte components to conditionally render UI:
 
-### `hasAnyModule(modules, requiredModules)`
+### `hasModule(modules, moduleName)`
+Check if user has ANY level of a module (for namespaced modules).
 ```svelte
 <script>
-  import { hasAnyModule } from '$lib/server/auth';
+  import { hasModule } from '$lib/server/auth';
 
   let { data } = $props();
-  let canEdit = $derived(hasAnyModule(data.userProfile?.modules, ['editor', 'admin']));
 </script>
 
-{#if canEdit}
-  <button>Edit Content</button>
+{#if hasModule(data.profile.modules, 'users')}
+  <button>Manage Users</button>
+{/if}
+
+{#if hasModule(data.profile.modules, 'courses')}
+  <NavItem href="/admin/courses">Course Admin</NavItem>
 {/if}
 ```
 
+### `hasModuleLevel(modules, moduleLevel)`
+Check for exact module.level match.
+```typescript
+const canParticipate = hasModuleLevel(profile.modules, 'courses.participant');
+const canManageAll = hasModuleLevel(profile.modules, 'courses.admin');
+```
+
+### `hasAnyModule(modules, requiredModules)`
+Check if user has ANY of the specified modules.
+```typescript
+const hasAnyManagement = hasAnyModule(profile.modules, [
+  'users',
+  'courses.manager',
+  'courses.admin',
+  'editor',
+  'dgr'
+]);
+```
+
 ### `hasAllModules(modules, requiredModules)`
+Check if user has ALL of the specified modules.
 ```typescript
-const hasFullAccess = hasAllModules(profile.modules, ['user_management', 'editor']);
-```
-
-### `isPlatformAdmin(role)`
-```typescript
-const isAdmin = isPlatformAdmin(profile.role);
-```
-
----
-
-## Migration from Old System
-
-### Old Pattern (REMOVED)
-```typescript
-// ❌ OLD - Don't use
-import { requireAdmin } from '$lib/utils/auth-helpers';
-
-const { session, user } = await safeGetSession();
-if (!session) throw redirect(303, '/auth');
-const profile = await requireAdmin(supabase, user.id);
-```
-
-### New Pattern
-```typescript
-// ✅ NEW - Use this
-import { requirePlatformAdmin } from '$lib/server/auth';
-
-const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' });
+const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
 ```
 
 ---
@@ -264,24 +333,25 @@ const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' }
 - Use the unified auth system from `$lib/server/auth.ts`
 - Use `mode: 'redirect'` for page routes
 - Use default mode (throw_error) for API routes
-- Let platform admins access everything automatically
 - Check auth in `+page.server.ts` or `+server.ts` (server-side)
 - Use client-side helpers for conditional UI rendering
+- Combine modules freely for flexible permissions
 
 ### ❌ DON'T
 
 - Don't check auth only client-side (security risk)
 - Don't duplicate auth logic
-- Don't forget platform admins have automatic access
 - Don't hardcode redirect paths (use the redirectTo option)
+- Don't assume hierarchical module relationships
+- Don't use `profile.role` (column removed - use modules instead)
 
 ---
 
 ## Security Notes
 
 1. **Server-side validation is mandatory** - All auth checks happen server-side
-2. **Platform admins bypass module checks** - They have access to everything
-3. **Course admins are course-specific** - Not the same as platform admins
+2. **Modules control UI visibility** - RLS policies provide database-level security
+3. **Course access requires enrollment** - Modules don't grant course content access
 4. **RLS policies** in Supabase provide additional database-level security
 5. **Session management** is handled by SvelteKit hooks
 
@@ -289,18 +359,14 @@ const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' }
 
 ## Troubleshooting
 
-### "Forbidden - Admin access required"
-- User needs `role: 'admin'` in `user_profiles` table
-- Check with: `SELECT role FROM user_profiles WHERE id = 'user-id';`
-
 ### "Forbidden - Requires [module] module access"
 - User needs module in `user_profiles.modules` array
-- Or user needs `role: 'admin'` (admins bypass module checks)
 - Check with: `SELECT modules FROM user_profiles WHERE id = 'user-id';`
+- Grant via user management UI or invitation flow
 
 ### "Forbidden - Requires [role] role in this course"
 - User needs enrollment in `courses_enrollments` with correct role
-- Or user needs platform admin (`user_profiles.role = 'admin'`)
+- Or user needs `courses.admin` module for platform-wide access
 - Check with:
   ```sql
   SELECT ce.role
@@ -312,18 +378,26 @@ const { user, profile } = await requirePlatformAdmin(event, { mode: 'redirect' }
     AND c.slug = 'course-slug';
   ```
 
+### "Can't see My Courses nav item"
+- User needs `courses.participant` module
+- Grant via course invitation flow (auto-adds module)
+
+### "Can't see Course Admin nav item"
+- User needs `courses.manager` or `courses.admin` module
+- Grant via staff invitation at `/users`
+
 ---
 
 ## Summary
 
-- **One auth system** to rule them all (`$lib/server/auth.ts`)
+- **One auth system** using modules only (`$lib/server/auth.ts`)
 - **Two response modes** - errors for APIs, redirects for pages
-- **Three permission levels** - platform, module, course
-- **Admins are powerful** - automatic access to everything
-- **Course-scoped roles** - different permissions per course
+- **Two permission types** - platform modules + course enrollments
+- **Namespaced modules** - `module.level` format for hierarchy
+- **Flexible combinations** - mix any modules for custom permissions
 
 For implementation examples, see:
 - `src/routes/(internal)/admin/users/+page.server.ts` - Module-based auth with redirect
 - `src/routes/courses/[slug]/admin/+page.server.ts` - Course admin auth
-- `src/routes/courses/[slug]/dashboard/+page.server.ts` - Course access auth
+- `src/routes/my-courses/+page.server.ts` - Participant access
 - `src/routes/api/admin/users/+server.ts` - API auth with errors

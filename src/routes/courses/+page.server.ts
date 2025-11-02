@@ -1,20 +1,33 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { hasModule, hasModuleLevel, requireAnyModule } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ parent }) => {
-	const { userProfile } = await parent();
+const STATUS_OPTIONS = ['draft', 'active', 'archived'] as const;
+
+export const load: PageServerLoad = async (event) => {
+	const {
+		profile: userProfile
+	} = await requireAnyModule(event, ['courses.admin', 'courses.manager', 'users'], {
+		mode: 'redirect',
+		redirectTo: '/auth'
+	});
 
 	if (!userProfile) {
-		// Not logged in - redirect to login (we'll need a generic login or course selection)
-		throw redirect(303, '/login');
+		throw redirect(303, '/auth');
 	}
 
+	const userModules: string[] = userProfile.modules ?? [];
 	const userId = userProfile.id;
-	const userRole = userProfile.role;
 
-	// If admin, show all active courses with module count
-	if (userRole === 'admin') {
+	const canManageAll = hasModuleLevel(userModules, 'courses.admin') || hasModule(userModules, 'users');
+	const canManageAssigned = hasModuleLevel(userModules, 'courses.manager');
+
+	if (!canManageAll && !canManageAssigned) {
+		throw redirect(303, '/my-courses');
+	}
+
+	if (canManageAll) {
 		const { data: courses, error: coursesError } = await supabaseAdmin
 			.from('courses')
 			.select(
@@ -40,19 +53,21 @@ export const load: PageServerLoad = async ({ parent }) => {
 			console.error('Error loading courses for admin view:', coursesError);
 		}
 
-		// Transform the data to include module count
-		const coursesWithCount = courses?.map(course => ({
-			...course,
-			moduleCount: course.courses_modules?.[0]?.count || 0
-		})) ?? [];
+		const coursesWithCount =
+			courses?.map((course) => ({
+				...course,
+				moduleCount: course.courses_modules?.[0]?.count || 0
+			})) ?? [];
 
 		return {
 			courses: coursesWithCount,
-			userRole: 'admin'
+			userRole: 'admin',
+			canManageAll: true,
+			noEnrollments: false
 		};
 	}
 
-	// For students and hub coordinators, show courses they're enrolled in
+	// Manager-level access: list courses where user is enrolled as admin
 	const { data: enrollments, error: enrollmentError } = await supabaseAdmin
 		.from('courses_enrollments')
 		.select(`
@@ -77,51 +92,44 @@ export const load: PageServerLoad = async ({ parent }) => {
 			)
 		`)
 		.eq('user_profile_id', userId)
+		.eq('role', 'admin')
 		.in('status', ['active', 'invited', 'accepted']);
 
-	// Extract unique courses from enrollments
-	const coursesMap = new Map();
+	if (enrollmentError) {
+		console.error('Error fetching enrollments for course manager view:', enrollmentError);
+	}
 
-	if (enrollments) {
-		for (const enrollment of enrollments) {
-			const course = enrollment.courses_cohorts?.courses_modules?.courses;
-			if (course && !coursesMap.has(course.id)) {
-				coursesMap.set(course.id, {
-					id: course.id,
-					name: course.name,
-					short_name: course.short_name,
-					slug: course.slug,
-					description: course.description
-				});
-			}
+	const coursesMap = new Map<string, { id: string; name: string | null; short_name: string | null; slug: string | null; description: string | null }>();
+
+	(enrollments || []).forEach((enrollment) => {
+		const course = enrollment.courses_cohorts?.courses_modules?.courses;
+		if (course && !coursesMap.has(course.id)) {
+			coursesMap.set(course.id, {
+				id: course.id,
+				name: course.name,
+				short_name: course.short_name,
+				slug: course.slug,
+				description: course.description
+			});
+		}
+	});
+
+	const managedCourses = Array.from(coursesMap.values());
+
+	if (managedCourses.length === 1) {
+		const course = managedCourses[0];
+		if (course?.slug) {
+			throw redirect(303, `/courses/${course.slug}/admin`);
 		}
 	}
 
-	const userCourses = Array.from(coursesMap.values());
-
-	// If user is enrolled in exactly one course, redirect directly to it
-	if (userCourses.length === 1) {
-		const course = userCourses[0];
-		throw redirect(303, `/courses/${course.slug}/dashboard`);
-	}
-
-	// If no enrollments, show empty state
-	if (userCourses.length === 0) {
-		return {
-			courses: [],
-			userRole,
-			noEnrollments: true
-		};
-	}
-
-	// Multiple courses - let user choose
 	return {
-		courses: userCourses,
-		userRole
+		courses: managedCourses,
+		userRole: 'manager',
+		canManageAll: false,
+		noEnrollments: managedCourses.length === 0
 	};
 };
-
-const STATUS_OPTIONS = ['draft', 'active', 'archived'] as const;
 
 function sanitizeSlug(rawSlug: unknown) {
 	if (typeof rawSlug !== 'string') return '';
@@ -155,12 +163,10 @@ function parseJsonField(value: FormDataEntryValue | null) {
 	}
 }
 
-import { requirePlatformAdmin } from '$lib/server/auth';
-
 export const actions: Actions = {
 	create: async (event) => {
 		try {
-			await requirePlatformAdmin(event);
+			await requireAnyModule(event, ['courses.admin', 'users']);
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
@@ -271,7 +277,7 @@ export const actions: Actions = {
 	},
 	update: async (event) => {
 		try {
-			await requirePlatformAdmin(event);
+			await requireAnyModule(event, ['courses.admin', 'users']);
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
@@ -393,7 +399,7 @@ export const actions: Actions = {
 	},
 	delete: async (event) => {
 		try {
-			await requirePlatformAdmin(event);
+			await requireAnyModule(event, ['courses.admin', 'users']);
 		} catch (err) {
 			return fail(403, {
 				type: 'error',

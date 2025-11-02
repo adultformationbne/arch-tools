@@ -1,33 +1,70 @@
 import { error, json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCoursesUser } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
+import { supabaseAdmin } from '$lib/server/supabase.js';
+import { hasModule, hasModuleLevel } from '$lib/server/auth';
 
-/**
- * PATCH - Toggle pin status for a feed item
- * Params:
- *   - id: Feed item ID (from URL)
- * Body:
- *   - pinned: boolean
- */
+const ACTIVE_ENROLLMENT_STATUSES = ['active', 'invited', 'accepted'];
+
+async function ensureSession(event) {
+	const { session, user } = await event.locals.safeGetSession();
+	if (!session || !user) {
+		throw error(401, 'Unauthorized');
+	}
+	return { session, user };
+}
+
+async function getUserModules(userId: string): Promise<string[]> {
+	const { data, error: profileError } = await supabaseAdmin
+		.from('user_profiles')
+		.select('modules')
+		.eq('id', userId)
+		.single();
+
+	if (profileError) {
+		console.error('Error fetching user modules:', profileError);
+		return [];
+	}
+
+	return Array.isArray(data?.modules) ? data.modules : [];
+}
+
+function isGlobalCourseAdmin(modules: string[]): boolean {
+	return hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+}
+
+async function getEnrollmentRole(userId: string, cohortId: string): Promise<string | null> {
+	const { data, error } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select('role')
+		.eq('user_profile_id', userId)
+		.eq('cohort_id', cohortId)
+		.in('status', ACTIVE_ENROLLMENT_STATUSES)
+		.maybeSingle();
+
+	if (error) {
+		console.error('Error fetching enrollment role:', error);
+	}
+
+	return data?.role ?? null;
+}
+
+async function canManageCohort(userId: string, cohortId: string, modules: string[]): Promise<boolean> {
+	if (isGlobalCourseAdmin(modules)) {
+		return true;
+	}
+
+	if (!hasModuleLevel(modules, 'courses.manager')) {
+		return false;
+	}
+
+	const enrollmentRole = await getEnrollmentRole(userId, cohortId);
+	return enrollmentRole === 'admin';
+}
+
 export const PATCH: RequestHandler = async (event) => {
-	// Require ACCF user authentication
-	const { user } = await requireCoursesUser(event);
+	const { user } = await ensureSession(event);
 
 	try {
-		// Verify user is admin
-		const { data: profileData } = await supabaseAdmin
-			.from('user_profiles')
-			.select('role')
-			.eq('id', user.id)
-			.single();
-
-		const isAdmin = profileData?.role === 'admin' || profileData?.role === 'admin';
-
-		if (!isAdmin) {
-			throw error(403, 'Only admins can pin/unpin feed items');
-		}
-
 		const { id } = event.params;
 		const body = await event.request.json();
 		const { pinned } = body;
@@ -36,18 +73,28 @@ export const PATCH: RequestHandler = async (event) => {
 			throw error(400, 'pinned must be a boolean value');
 		}
 
-		// Verify feed item exists
-		const { data: existingItem } = await supabaseAdmin
+		const { data: existingItem, error: fetchError } = await supabaseAdmin
 			.from('courses_community_feed')
-			.select('id, feed_type')
+			.select('id, feed_type, cohort_id')
 			.eq('id', id)
 			.single();
+
+		if (fetchError) {
+			console.error('Feed fetch error:', fetchError);
+			throw error(500, 'Failed to fetch feed item');
+		}
 
 		if (!existingItem) {
 			throw error(404, 'Feed item not found');
 		}
 
-		// Update pin status
+		const modules = await getUserModules(user.id);
+		const canManage = await canManageCohort(user.id, existingItem.cohort_id, modules);
+
+		if (!canManage) {
+			throw error(403, 'Only course admins can pin or unpin feed items');
+		}
+
 		const { data: updatedItem, error: updateError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.update({
@@ -68,7 +115,6 @@ export const PATCH: RequestHandler = async (event) => {
 			data: updatedItem,
 			message: pinned ? 'Post pinned successfully' : 'Post unpinned successfully'
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 

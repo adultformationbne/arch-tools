@@ -92,11 +92,31 @@ export function updateToastStatus(toastId, status, message, title = null, durati
 		updates.title = title;
 	}
 
+	// If updating to error or success, remove multi-step functionality
+	if (status === 'error' || status === 'success') {
+		updates.steps = null;
+		updates.totalSteps = 0;
+		updates.currentStep = 0;
+		updates.closeable = true; // Make error/success toasts closeable
+
+		// Auto-dismiss errors and successes if no duration specified
+		if (duration === null) {
+			updates.duration = status === 'error' ? DURATIONS.medium : DURATIONS.short;
+		}
+	}
+
 	if (duration !== null) {
 		updates.duration = duration;
 	}
 
 	toast.updateToast(toastId, updates);
+
+	// If we set a new duration, schedule auto-dismiss
+	if (updates.duration > 0) {
+		setTimeout(() => {
+			dismissToast(toastId);
+		}, updates.duration);
+	}
 }
 
 /**

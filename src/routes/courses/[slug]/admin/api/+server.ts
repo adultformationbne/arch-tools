@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth';
 import { sendBulkInvitations } from '$lib/server/resend.js';
 import type { RequestHandler } from './$types';
 
@@ -33,6 +33,18 @@ export const POST: RequestHandler = async (event) => {
 		const { action, ...data } = await event.request.json();
 
 		switch (action) {
+			case 'create_module':
+				return await createModule(data);
+			case 'update_module':
+				return await updateModule(data);
+			case 'delete_module':
+				return await deleteModule(data.moduleId);
+			case 'create_hub':
+				return await createHub(data);
+			case 'update_hub':
+				return await updateHub(data);
+			case 'delete_hub':
+				return await deleteHub(data.hubId);
 			case 'create_cohort':
 				return await createCohort(data);
 			case 'update_cohort':
@@ -68,6 +80,234 @@ export const POST: RequestHandler = async (event) => {
 	}
 };
 
+// Module Management Functions
+
+async function createModule(data: any) {
+	const { courseId, name, description, orderNumber, sessionCount } = data;
+
+	if (!courseId || !name) {
+		throw error(400, 'Missing required fields: courseId, name');
+	}
+
+	const numSessions = sessionCount || 8;
+
+	// Create the module
+	const { data: newModule, error: moduleError } = await supabaseAdmin
+		.from('courses_modules')
+		.insert({
+			course_id: courseId,
+			name: name,
+			description: description || '',
+			order_number: orderNumber || 1
+		})
+		.select()
+		.single();
+
+	if (moduleError) {
+		console.error('Error creating module:', moduleError);
+		throw error(500, 'Failed to create module');
+	}
+
+	// Auto-create session placeholders
+	const sessionsToCreate = [];
+	for (let i = 1; i <= numSessions; i++) {
+		sessionsToCreate.push({
+			module_id: newModule.id,
+			session_number: i,
+			title: `Session ${i}`,
+			description: '',
+			learning_objectives: []
+		});
+	}
+
+	const { data: createdSessions, error: sessionsError } = await supabaseAdmin
+		.from('courses_sessions')
+		.insert(sessionsToCreate)
+		.select('id, session_number');
+
+	if (sessionsError) {
+		console.error('Error creating sessions:', sessionsError);
+		// Don't fail the whole operation, sessions can be created manually
+	} else if (createdSessions) {
+		// Auto-create reflection questions for each session
+		await ensureModuleReflectionQuestions(newModule.id);
+	}
+
+	return json({
+		success: true,
+		data: newModule,
+		message: `Module created successfully with ${numSessions} sessions`
+	});
+}
+
+async function updateModule(data: any) {
+	const { moduleId, name, description, orderNumber } = data;
+
+	if (!moduleId) {
+		throw error(400, 'Missing moduleId');
+	}
+
+	const updateData: any = {
+		updated_at: new Date().toISOString()
+	};
+
+	if (name) updateData.name = name;
+	if (description !== undefined) updateData.description = description;
+	if (orderNumber !== undefined) updateData.order_number = orderNumber;
+
+	const { data: updatedModule, error: updateError } = await supabaseAdmin
+		.from('courses_modules')
+		.update(updateData)
+		.eq('id', moduleId)
+		.select()
+		.single();
+
+	if (updateError) {
+		console.error('Error updating module:', updateError);
+		throw error(500, 'Failed to update module');
+	}
+
+	return json({
+		success: true,
+		data: updatedModule,
+		message: 'Module updated successfully'
+	});
+}
+
+async function deleteModule(moduleId: string) {
+	if (!moduleId) {
+		throw error(400, 'Missing moduleId');
+	}
+
+	// Check if module has any cohorts
+	const { data: cohorts, error: cohortCheckError } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select('id')
+		.eq('module_id', moduleId)
+		.limit(1);
+
+	if (cohortCheckError) {
+		console.error('Error checking cohorts:', cohortCheckError);
+		throw error(500, 'Failed to check module cohorts');
+	}
+
+	if (cohorts && cohorts.length > 0) {
+		throw error(400, 'Cannot delete module with existing cohorts');
+	}
+
+	// Delete the module (sessions will cascade delete)
+	const { error: deleteError } = await supabaseAdmin
+		.from('courses_modules')
+		.delete()
+		.eq('id', moduleId);
+
+	if (deleteError) {
+		console.error('Error deleting module:', deleteError);
+		throw error(500, 'Failed to delete module');
+	}
+
+	return json({
+		success: true,
+		message: 'Module deleted successfully'
+	});
+}
+
+// Hub Management Functions
+
+async function createHub(data: any) {
+	const { courseId, name, location, coordinatorId } = data;
+
+	if (!courseId || !name) {
+		throw error(400, 'Missing required fields: courseId, name');
+	}
+
+	const { data: newHub, error: hubError } = await supabaseAdmin
+		.from('courses_hubs')
+		.insert({
+			course_id: courseId,
+			name: name,
+			location: location || null,
+			coordinator_id: coordinatorId || null
+		})
+		.select()
+		.single();
+
+	if (hubError) {
+		console.error('Error creating hub:', hubError);
+		throw error(500, 'Failed to create hub');
+	}
+
+	return json({
+		success: true,
+		data: newHub,
+		message: 'Hub created successfully'
+	});
+}
+
+async function updateHub(data: any) {
+	const { hubId, name, location, coordinatorId } = data;
+
+	if (!hubId) {
+		throw error(400, 'Missing hubId');
+	}
+
+	const updateData: any = {
+		updated_at: new Date().toISOString()
+	};
+
+	if (name) updateData.name = name;
+	if (location !== undefined) updateData.location = location || null;
+	if (coordinatorId !== undefined) updateData.coordinator_id = coordinatorId || null;
+
+	const { data: updatedHub, error: updateError } = await supabaseAdmin
+		.from('courses_hubs')
+		.update(updateData)
+		.eq('id', hubId)
+		.select()
+		.single();
+
+	if (updateError) {
+		console.error('Error updating hub:', updateError);
+		throw error(500, 'Failed to update hub');
+	}
+
+	return json({
+		success: true,
+		data: updatedHub,
+		message: 'Hub updated successfully'
+	});
+}
+
+async function deleteHub(hubId: string) {
+	if (!hubId) {
+		throw error(400, 'Missing hubId');
+	}
+
+	// Set hub_id to NULL for any enrollments using this hub
+	await supabaseAdmin
+		.from('courses_enrollments')
+		.update({ hub_id: null })
+		.eq('hub_id', hubId);
+
+	// Delete the hub
+	const { error: deleteError } = await supabaseAdmin
+		.from('courses_hubs')
+		.delete()
+		.eq('id', hubId);
+
+	if (deleteError) {
+		console.error('Error deleting hub:', deleteError);
+		throw error(500, 'Failed to delete hub');
+	}
+
+	return json({
+		success: true,
+		message: 'Hub deleted successfully'
+	});
+}
+
+// Cohort Management Functions
+
 async function createCohort(data: any) {
 	const { name, moduleId, startDate, endDate } = data;
 
@@ -87,8 +327,8 @@ async function createCohort(data: any) {
 			module_id: moduleId,
 			start_date: startDate,
 			end_date: calculatedEndDate,
-			current_session: 1,
-			status: 'draft',
+			current_session: 0, // Start at session 0 (not started yet)
+			status: 'upcoming', // Default status for new cohorts
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		})
@@ -172,7 +412,8 @@ async function duplicateCohort(cohortId: string) {
 			module_id: originalCohort.module_id,
 			start_date: '', // Will be set by admin later
 			end_date: '', // Will be calculated when start date is set
-			status: 'draft',
+			current_session: 0, // Start at session 0 (not started yet)
+			status: 'upcoming', // Default status for new cohorts
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		})
@@ -357,6 +598,18 @@ async function uploadCSV(data: any, importedBy: string) {
 		throw error(400, 'Cohort ID required');
 	}
 
+	// Get course_id from cohort for hub creation
+	const { data: cohort } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select('module_id, courses_modules!inner(course_id)')
+		.eq('id', cohortId)
+		.single();
+
+	const courseId = cohort?.courses_modules?.course_id;
+	if (!courseId) {
+		throw error(500, 'Could not determine course for this cohort');
+	}
+
 	// Create import tracking record
 	const { data: importRecord, error: importError } = await supabaseAdmin
 		.from('accf_user_imports')
@@ -407,20 +660,24 @@ async function uploadCSV(data: any, importedBy: string) {
 			if (row.hub && row.hub.trim()) {
 				const hubName = row.hub.trim();
 
-				// Check if hub exists (case-insensitive)
+				// Check if hub exists for THIS COURSE (case-insensitive)
 				const { data: existingHub } = await supabaseAdmin
 					.from('courses_hubs')
 					.select('id')
+					.eq('course_id', courseId)
 					.ilike('name', hubName)
 					.single();
 
 				if (existingHub) {
 					hubId = existingHub.id;
 				} else {
-					// Create new hub
+					// Create new hub for THIS COURSE
 					const { data: newHub, error: hubError } = await supabaseAdmin
 						.from('courses_hubs')
-						.insert({ name: hubName })
+						.insert({
+							name: hubName,
+							course_id: courseId
+						})
 						.select('id')
 						.single();
 
@@ -431,13 +688,13 @@ async function uploadCSV(data: any, importedBy: string) {
 			}
 
 			// Insert into courses_enrollments (invitation_token is auto-generated as UUID by database)
-			const { error: insertError } = await supabaseAdmin.from('courses_enrollments').insert({
-				email: row.email,
-				full_name: row.full_name,
-				role: row.role || 'courses_student',
-				hub_id: hubId,
-				cohort_id: cohortId,
-				imported_by: importedBy,
+		const { error: insertError } = await supabaseAdmin.from('courses_enrollments').insert({
+			email: row.email,
+			full_name: row.full_name,
+			role: row.role || 'student',
+			hub_id: hubId,
+			cohort_id: cohortId,
+			imported_by: importedBy,
 				status: 'pending'
 			});
 

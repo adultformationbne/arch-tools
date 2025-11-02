@@ -7,30 +7,44 @@
  * Available modules in the system
  */
 export const MODULES = {
-	USER_MANAGEMENT: 'user_management',
+	USERS: 'users',
 	DGR: 'dgr',
 	EDITOR: 'editor',
-	COURSES: 'courses'
+	COURSES_PARTICIPANT: 'courses.participant',
+	COURSES_MANAGER: 'courses.manager',
+	COURSES_ADMIN: 'courses.admin'
 };
 
 /**
- * User roles
+ * Course enrollment roles (per-course, not platform roles)
  */
-export const ROLES = {
-	ADMIN: 'admin',
-	STUDENT: 'student',
-	HUB_COORDINATOR: 'hub_coordinator'
+export const ENROLLMENT_ROLES = {
+	COURSE_ADMIN: 'admin',
+	COURSE_STUDENT: 'student',
+	COURSE_COORDINATOR: 'coordinator'
 };
 
 /**
- * Check if user has access to a specific module
+ * Check if user has access to a specific module (supports namespaced modules)
  * @param {Object} userProfile - User profile object with modules array
  * @param {string} moduleId - Module ID to check (use MODULES constants)
  * @returns {boolean} True if user has access to the module
  */
 export function hasModuleAccess(userProfile, moduleId) {
 	if (!userProfile || !userProfile.modules) return false;
-	return userProfile.modules.includes(moduleId);
+	// Support both exact match and namespaced match (e.g., 'courses' matches 'courses.participant')
+	return userProfile.modules.some(m => m === moduleId || m.startsWith(`${moduleId}.`));
+}
+
+/**
+ * Check if user has exact module.level match
+ * @param {Object} userProfile - User profile object with modules array
+ * @param {string} moduleLevel - Module.level to check (e.g., 'courses.admin')
+ * @returns {boolean} True if user has the exact module level
+ */
+export function hasModuleLevel(userProfile, moduleLevel) {
+	if (!userProfile || !userProfile.modules) return false;
+	return userProfile.modules.includes(moduleLevel);
 }
 
 /**
@@ -41,7 +55,7 @@ export function hasModuleAccess(userProfile, moduleId) {
  */
 export function hasAnyModuleAccess(userProfile, moduleIds) {
 	if (!userProfile || !userProfile.modules) return false;
-	return moduleIds.some(moduleId => userProfile.modules.includes(moduleId));
+	return moduleIds.some(moduleId => hasModuleAccess(userProfile, moduleId));
 }
 
 /**
@@ -52,52 +66,68 @@ export function hasAnyModuleAccess(userProfile, moduleIds) {
  */
 export function hasAllModuleAccess(userProfile, moduleIds) {
 	if (!userProfile || !userProfile.modules) return false;
-	return moduleIds.every(moduleId => userProfile.modules.includes(moduleId));
+	return moduleIds.every(moduleId => hasModuleAccess(userProfile, moduleId));
 }
 
 /**
- * Check if user is an admin (has role='admin')
+ * Check if user has user management access
  * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user is an admin
+ * @returns {boolean} True if user can manage users
  */
-export function isAdmin(userProfile) {
-	return userProfile?.role === ROLES.ADMIN;
+export function canManageUsers(userProfile) {
+	return hasModuleAccess(userProfile, MODULES.USERS);
 }
 
 /**
- * Check if user is a student (has role='student')
+ * Check if user has any course management access
  * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user is a student
+ * @returns {boolean} True if user can manage courses
  */
-export function isStudent(userProfile) {
-	return userProfile?.role === ROLES.STUDENT;
+export function canManageCourses(userProfile) {
+	return hasModuleLevel(userProfile, MODULES.COURSES_ADMIN) ||
+	       hasModuleLevel(userProfile, MODULES.COURSES_MANAGER);
 }
 
 /**
- * Check if user is a hub coordinator (has role='hub_coordinator')
+ * Check if user is a course participant
  * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user is a hub coordinator
+ * @returns {boolean} True if user has course participant access
  */
-export function isHubCoordinator(userProfile) {
-	return userProfile?.role === ROLES.HUB_COORDINATOR;
+export function isCourseParticipant(userProfile) {
+	return hasModuleLevel(userProfile, MODULES.COURSES_PARTICIPANT);
 }
 
 /**
- * Get the default redirect path based on user role and modules
+ * Get the default redirect path based on user modules
  * @param {Object} userProfile - User profile object
  * @returns {string} Default path to redirect user to
  */
 export function getDefaultRedirectPath(userProfile) {
-	if (!userProfile) return '/login';
+	if (!userProfile) return '/auth';
 
-	// Students and hub coordinators go to ACCF dashboard
-	if (isStudent(userProfile) || isHubCoordinator(userProfile)) {
-		return '/dashboard';
+	// User management → /users
+	if (hasModuleAccess(userProfile, MODULES.USERS)) {
+		return '/users';
 	}
 
-	// Admins go to /admin (will show modules they have access to)
-	if (isAdmin(userProfile)) {
-		return '/admin';
+	// Course management → /courses
+	if (canManageCourses(userProfile)) {
+		return '/courses';
+	}
+
+	// DGR access → /dgr
+	if (hasModuleAccess(userProfile, MODULES.DGR)) {
+		return '/dgr';
+	}
+
+	// Editor access → /editor
+	if (hasModuleAccess(userProfile, MODULES.EDITOR)) {
+		return '/editor';
+	}
+
+	// Course participant → /my-courses
+	if (isCourseParticipant(userProfile)) {
+		return '/my-courses';
 	}
 
 	// Fallback
@@ -114,25 +144,18 @@ export function getUserModules(userProfile) {
 }
 
 /**
- * Check if user can manage other users
- * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user has user management access
- */
-export function canManageUsers(userProfile) {
-	return hasModuleAccess(userProfile, MODULES.USER_MANAGEMENT);
-}
-
-/**
  * Format module name for display
  * @param {string} moduleId - Module ID
  * @returns {string} Formatted module name
  */
 export function getModuleName(moduleId) {
 	const names = {
-		[MODULES.USER_MANAGEMENT]: 'User Management',
+		[MODULES.USERS]: 'User Management',
 		[MODULES.DGR]: 'Daily Gospel Reflections',
 		[MODULES.EDITOR]: 'Content Editor',
-		[MODULES.COURSES]: 'Courses'
+		[MODULES.COURSES_PARTICIPANT]: 'Course Participant',
+		[MODULES.COURSES_MANAGER]: 'Course Manager',
+		[MODULES.COURSES_ADMIN]: 'Course Admin'
 	};
 	return names[moduleId] || moduleId;
 }

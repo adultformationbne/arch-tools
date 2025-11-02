@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth.js';
+import { requireCourseAdmin } from '$lib/server/auth';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
 			throw error(404, 'Course not found');
 		}
 
-		// Get all hubs
+		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
 			.from('courses_hubs')
 			.select(`
@@ -32,6 +32,7 @@ export const load: PageServerLoad = async (event) => {
 					email
 				)
 			`)
+			.eq('course_id', course.id)
 			.order('name');
 
 		if (hubsError) {
@@ -85,21 +86,32 @@ export const load: PageServerLoad = async (event) => {
 			enrollmentCount: enrollmentCounts[hub.id] || 0
 		}));
 
-		// Get all potential coordinators (users with hub_coordinator role or admin role)
+		// Get all potential coordinators (users with relevant course modules)
 		const { data: potentialCoordinators, error: coordinatorsError } = await supabaseAdmin
 			.from('user_profiles')
-			.select('id, full_name, email')
-			.in('role', ['hub_coordinator', 'admin'])
+			.select('id, full_name, email, modules')
 			.order('full_name');
 
 		if (coordinatorsError) {
 			console.error('Error fetching potential coordinators:', coordinatorsError);
 		}
 
+		const filteredCoordinators =
+			potentialCoordinators?.filter((user) => {
+				const modules: string[] = Array.isArray(user.modules) ? user.modules : [];
+				return (
+					modules.includes('courses.participant') ||
+					modules.includes('courses.manager') ||
+					modules.includes('courses.admin') ||
+					modules.includes('users')
+				);
+			}) ?? [];
+
 		return {
 			course,
+			courseId: course.id,
 			hubs: hubsWithCounts || [],
-			potentialCoordinators: potentialCoordinators || []
+			potentialCoordinators: filteredCoordinators
 		};
 
 	} catch (err) {

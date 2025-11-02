@@ -3,11 +3,19 @@
 	import '$lib/styles/tooltip.css';
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import AppNavigation from '$lib/components/AppNavigation.svelte';
 
 	export let data;
 
-	$: ({ supabase, session } = data);
+	$: ({ supabase, session, userModules = [] } = data);
+
+	// Routes where we don't show the navigation
+	$: hideNav = $page.url.pathname === '/auth' ||
+	             $page.url.pathname === '/login' ||
+	             $page.url.pathname.startsWith('/courses/') ||
+	             $page.url.pathname.startsWith('/dgr/');
 
 	onMount(() => {
 		const {
@@ -23,6 +31,9 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
+	{#if session && !hideNav}
+		<AppNavigation {session} modules={userModules} />
+	{/if}
 	<slot />
 </div>
 

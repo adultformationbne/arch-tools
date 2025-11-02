@@ -26,6 +26,7 @@ export const load: LayoutLoad = async ({ fetch, data, depends, url }) => {
 		supabase,
 		session: data?.session || null,
 		user: data?.user || null,
-		url: url.origin
+	url: url.origin,
+	userModules: data?.userModules || []
 	};
 };
