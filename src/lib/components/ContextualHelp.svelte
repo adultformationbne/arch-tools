@@ -246,27 +246,27 @@
 
 <style>
 	@reference "../../app.css";
-	.prose :global(ul) {
+	:global(.prose ul) {
 		@apply list-disc pl-5 space-y-1;
 	}
 
-	.prose :global(ol) {
+	:global(.prose ol) {
 		@apply list-decimal pl-5 space-y-1;
 	}
 
-	.prose :global(li) {
+	:global(.prose li) {
 		@apply text-sm;
 	}
 
-	.prose :global(strong) {
+	:global(.prose strong) {
 		@apply font-semibold;
 	}
 
-	.prose :global(code) {
+	:global(.prose code) {
 		@apply bg-gray-100 px-1 py-0.5 rounded text-xs font-mono;
 	}
 
-	.prose :global(a) {
+	:global(.prose a) {
 		@apply text-blue-600 hover:text-blue-800 underline;
 	}
 </style>
