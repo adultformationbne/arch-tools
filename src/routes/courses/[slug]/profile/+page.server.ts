@@ -1,15 +1,13 @@
-import { redirect } from '@sveltejs/kit';
+import { requireCourseAccess } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
-	const { session, user } = await safeGetSession();
+export const load: PageServerLoad = async (event) => {
+	const courseSlug = event.params.slug;
 
-	if (!session) {
-		throw redirect(303, '/login');
-	}
+	// Require user to be enrolled in this course (any role)
+	const { user } = await requireCourseAccess(event, courseSlug);
 
 	return {
-		session,
 		user
 	};
 };

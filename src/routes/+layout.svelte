@@ -14,8 +14,7 @@
 	// Routes where we don't show the navigation
 	$: hideNav = $page.url.pathname === '/auth' ||
 	             $page.url.pathname === '/login' ||
-	             $page.url.pathname.startsWith('/courses/') ||
-	             $page.url.pathname.startsWith('/dgr/');
+	             $page.url.pathname.startsWith('/courses/');
 
 	onMount(() => {
 		const {

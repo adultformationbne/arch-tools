@@ -368,7 +368,7 @@ async function handlePasswordChange(event?: Event) {
 </div>
 
 <style>
-	@reference "../../../app.css";
+	@reference "../../app.css";
 	input {
 		@apply border px-3 py-2;
 	}
