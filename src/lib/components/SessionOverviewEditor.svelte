@@ -2,7 +2,7 @@
 	let {
 		sessionOverview = '',
 		onOverviewChange = () => {},
-		placeholder = 'Write a brief overview of what students will learn this week...',
+		placeholder = '',
 		sessionNumber = 1
 	} = $props();
 
@@ -10,15 +10,15 @@
 		onOverviewChange(sessionOverview);
 	};
 
-	// Custom placeholder for Pre-Start
+	// Custom placeholder based on session type
 	const displayPlaceholder = sessionNumber === 0
-		? 'Welcome message for Pre-Start. This appears before Session 1 starts. Include course start date and what students should expect...'
-		: placeholder;
+		? 'Welcome message for Pre-Start (e.g., "This course begins on [date]. Review the materials below to prepare for Session 1.")'
+		: 'Brief overview of what students will learn in this session...';
 </script>
 
 <div class="bg-white rounded-2xl p-6 shadow-sm">
 	<h2 class="text-xl font-bold text-gray-800 mb-4">
-		{sessionNumber === 0 ? 'Pre-Start Welcome Message' : 'Session Overview'}
+		{sessionNumber === 0 ? 'Welcome Message' : 'Session Overview'}
 	</h2>
 	<textarea
 		bind:value={sessionOverview}

@@ -5,7 +5,7 @@
 	import CohortCard from '$lib/components/CohortCard.svelte';
 	import CohortManager from '$lib/components/CohortManager.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
-	import StudentEnrollmentModal from '$lib/components/StudentEnrollmentModal.svelte';
+	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import CohortDetails from '$lib/components/CohortDetails.svelte';
 	import RecentActivity from '$lib/components/RecentActivity.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
@@ -264,7 +264,7 @@ Bob Johnson,bob.j@example.com,student,`;
 	on:complete={handleWizardComplete}
 />
 
-<StudentEnrollmentModal {courseSlug}
+<ParticipantEnrollmentModal {courseSlug}
 	cohort={selectedCohort}
 	show={showStudentEnrollment}
 	onClose={closeStudentEnrollment}
