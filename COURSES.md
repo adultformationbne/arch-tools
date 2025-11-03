@@ -117,7 +117,9 @@ CREATE TABLE courses_cohorts (
 ```
 
 #### `courses_enrollments`
-User enrollments in specific cohorts with role-based access.
+**Participant enrollments in specific cohorts.**
+
+**IMPORTANT:** Cohort enrollments are for participants only—course managers and admins are NOT enrolled in cohorts. They manage courses via platform modules.
 
 ```sql
 CREATE TABLE courses_enrollments (
@@ -125,13 +127,15 @@ CREATE TABLE courses_enrollments (
   user_profile_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
   cohort_id UUID NOT NULL REFERENCES courses_cohorts(id) ON DELETE CASCADE,
 
-  -- Role in THIS cohort
-  role TEXT NOT NULL CHECK (role IN ('student', 'admin', 'coordinator')),
+  -- Enrollment role (participants only - course management is via platform modules)
+  role TEXT NOT NULL CHECK (role IN ('student', 'coordinator')),
+  -- 'student' = regular participant
+  -- 'coordinator' = hub coordinator
 
   -- Student progression
   current_session INTEGER DEFAULT 1,
 
-  -- Hub assignment (optional)
+  -- Hub assignment (optional, for hub coordinators)
   hub_id UUID REFERENCES courses_hubs(id) ON DELETE SET NULL,
 
   -- Invitation workflow
@@ -144,6 +148,8 @@ CREATE TABLE courses_enrollments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+**Note:** Course management access is controlled via platform modules (`courses.admin`, `courses.manager`), NOT via enrollment roles.
 
 #### `courses_materials`
 Course materials for each session within a module.
@@ -375,26 +381,39 @@ Module-based permissions control platform access:
 | `editor` | Content editor access |
 | `dgr` | Daily Gospel Reflections management |
 | `courses.participant` | Access to enrolled courses via `/my-courses` |
-| `courses.manager` | Manage courses where enrolled as admin |
-| `courses.admin` | Manage all courses platform-wide |
+| `courses.manager` | Manage assigned courses (via `user_profiles.assigned_course_ids`) |
+| `courses.admin` | Manage ALL courses platform-wide |
 
 **Key Concepts:**
 - Platform modules are stored in `user_profiles.modules` as an array
 - `courses.participant` and `courses.manager` are independent (not hierarchical)
-- `courses.admin` provides platform-wide course management regardless of enrollment
-- Hub coordination is per-course via enrollment role, NOT a platform module
+- `courses.admin` can manage ALL courses (no assignment needed)
+- `courses.manager` can only manage courses in their `assigned_course_ids` array
+- **Course managers and admins are NOT enrolled in cohorts**—enrollments are for participants only
 
-### Course-Level Roles (`courses_enrollments.role`)
+### Course Assignment for Managers (`user_profiles.assigned_course_ids`)
 
-Per-course, per-enrollment roles:
+Users with the `courses.manager` module must be assigned to specific courses:
+
+```json
+// Example: user_profiles.assigned_course_ids
+["uuid-of-course-1", "uuid-of-course-2"]
+```
+
+- **courses.admin** users don't need assignments (can manage all courses)
+- **courses.manager** users only see courses in their `assigned_course_ids`
+- Assignment is managed at `/users` by platform admins
+
+### Course Enrollment Roles (`courses_enrollments.role`)
+
+**Cohort enrollments are for participants only.** Only two roles exist:
 
 | Role | Description |
 |------|-------------|
-| `student` | Enrolled student in this course |
+| `student` | Regular course participant |
 | `coordinator` | Hub coordinator for this course |
-| `admin` | Course administrator (can manage this specific course) |
 
-**Important:** These are enrollment-specific roles, not platform-level permissions.
+**Critical:** Course managers and admins are NOT enrolled in cohorts. They manage courses via platform modules, not enrollments.
 
 ### Auth Helpers (`$lib/server/auth.ts`)
 
@@ -404,10 +423,18 @@ await requireModule(event, 'users');                  // Requires 'users' module
 await requireModuleLevel(event, 'courses.admin');     // Requires exact 'courses.admin' module
 await requireAnyModule(event, ['courses.manager', 'courses.admin']);
 
-// Course-level enrollment checks
-await requireCourseAdmin(event, courseSlug);          // courses.admin OR (courses.manager + enrolled as admin)
-await requireCourseAccess(event, courseSlug);         // Must be enrolled (any role)
-await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
+// Course management access (for admin UIs)
+await requireCourseAdmin(event, courseSlug);
+// Returns true if:
+//   - User has 'courses.admin' module (can manage ALL courses), OR
+//   - User has 'courses.manager' module AND courseId is in their assigned_course_ids
+
+// Course participant access (for student-facing content)
+await requireCourseAccess(event, courseSlug);
+// Must be enrolled in a cohort (student or coordinator role)
+
+await requireCourseRole(event, courseSlug, ['coordinator']);
+// Must be enrolled with specific role (e.g., only hub coordinators)
 ```
 
 **Response Modes:**
@@ -707,18 +734,21 @@ Components automatically use course theme:
 3. All students in cohort advance together
 4. Cohort remains `'active'` until manually marked complete
 
-### How to give someone admin access to a course?
+### How to give someone course management access?
 
 **For specific course management (courses.manager):**
 1. Go to `/users` as a platform admin
 2. Grant the user `courses.manager` module
-3. Enroll them in a cohort for that course with role `admin`
-4. They can now manage that specific course
+3. Add the course ID to their `assigned_course_ids` array
+4. They can now manage only those assigned courses
+5. **Note:** They are NOT enrolled in cohorts—management is via module assignment
 
 **For platform-wide course management (courses.admin):**
 1. Go to `/users` as a platform admin
 2. Grant the user `courses.admin` module
-3. They can now manage ALL courses (enrollment optional for management)
+3. They can now manage ALL courses (no assignment or enrollment needed)
+
+**Important:** Course managers and admins should NOT be enrolled in cohorts. Cohort enrollments are for participants only (students and hub coordinators).
 
 ### How to mark a cohort as complete?
 1. Go to `/courses/[slug]/admin`

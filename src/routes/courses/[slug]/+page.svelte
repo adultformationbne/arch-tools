@@ -1,11 +1,11 @@
 <script>
-	import HubCoordinatorBar from '../HubCoordinatorBar.svelte';
-	import SessionContent from '../SessionContent.svelte';
-	import ReflectionWriter from '../ReflectionWriter.svelte';
-	import MaterialViewer from '../MaterialViewer.svelte';
-	import PastReflectionsSection from '../PastReflectionsSection.svelte';
-	import PublicReflectionsFeed from '../PublicReflectionsFeed.svelte';
-	import ReflectionModal from '../ReflectionModal.svelte';
+	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
+	import SessionContent from './SessionContent.svelte';
+	import ReflectionWriter from './ReflectionWriter.svelte';
+	import MaterialViewer from './MaterialViewer.svelte';
+	import PastReflectionsSection from './PastReflectionsSection.svelte';
+	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
+	import ReflectionModal from './ReflectionModal.svelte';
 
 	let { data } = $props();
 

@@ -36,7 +36,7 @@
 		isProcessing = true;
 		try {
 			await apiPost(
-				'/courses/${courseSlug}/admin/api',
+				'/admin/courses/${courseSlug}/api',
 				{
 					action: 'advance_students',
 					cohortId: cohort.id,

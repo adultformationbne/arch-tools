@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send, GraduationCap, BookOpen } from 'lucide-svelte';
+	import { Shield, Mail, Edit2, Save, X, Plus, UserPlus, KeyRound, Trash2, Send, GraduationCap, BookOpen, Users, Edit3, Briefcase, Settings as SettingsIcon, ChevronDown, ChevronUp } from 'lucide-svelte';
 	import { apiPost, apiDelete, apiPut, supabaseRequest } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 
 	export let data;
-	let { supabase, users, currentUser, currentUserProfile, courses, cohorts } = data;
+	$: ({ users, currentUser, currentUserProfile, courses, cohorts } = data);
 
 	let editingUserId = null;
 	let editingModules = [];
@@ -15,25 +15,29 @@
 	let moduleFilter = 'all';
 	let searchQuery = '';
 
-	// Available modules for selection
+	// Accordion state
+	let showModulesInfo = false;
+	let showRolesInfo = false;
+
+	// Available modules for selection with icons (must match AUTH_SYSTEM.md and profile page)
 	const availableModules = [
-		{ id: 'users', name: 'User Management', description: 'Manage users, invitations, permissions' },
-		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
-		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
-		{ id: 'courses.participant', name: 'Course Participant', description: 'Access My Courses and participant dashboards' },
-		{ id: 'courses.manager', name: 'Course Manager', description: 'Manage assigned courses and cohorts' },
-		{ id: 'courses.admin', name: 'Course Admin', description: 'Manage all courses platform-wide' }
+		{ id: 'users', name: 'User Management', description: 'Manage users, invitations, permissions', icon: Users, color: 'purple' },
+		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule', icon: BookOpen, color: 'blue' },
+		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters', icon: Edit3, color: 'green' },
+		{ id: 'courses.participant', name: 'Course Participant', description: 'Access My Courses and participant dashboards', icon: GraduationCap, color: 'emerald' },
+		{ id: 'courses.manager', name: 'Course Manager', description: 'Manage assigned courses and cohorts', icon: Briefcase, color: 'amber' },
+		{ id: 'courses.admin', name: 'Course Admin', description: 'Manage all courses platform-wide', icon: SettingsIcon, color: 'red' }
 	];
 	const moduleFilterOptions = [
 		{ value: 'all', label: 'All Modules' },
 		...availableModules.map((module) => ({ value: module.id, label: module.name }))
 	];
 
-	// Available course roles
+	// Available course enrollment roles (cohort participants only)
+	// NOTE: Course management is via platform modules (courses.admin/courses.manager), NOT enrollment roles
 const courseRoles = [
-	{ id: 'student', name: 'Student', description: 'Can access course materials and submit reflections' },
-	{ id: 'coordinator', name: 'Coordinator', description: 'Can coordinate hubs and view student progress' },
-	{ id: 'admin', name: 'Course Admin', description: 'Can manage course content and settings' }
+	{ id: 'student', name: 'Participant', description: 'Regular course participant - can access materials and submit reflections' },
+	{ id: 'coordinator', name: 'Hub Coordinator', description: 'Hub coordinator - can coordinate hubs and view student progress' }
 ];
 
 	// New user form
@@ -568,9 +572,8 @@ const courseRoles = [
 																bind:value={editingEnrollmentRole}
 																class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
 															>
-																<option value="student">Student</option>
-																<option value="coordinator">Coordinator</option>
-																<option value="admin">Admin</option>
+																<option value="student">Participant</option>
+																<option value="coordinator">Hub Coordinator</option>
 															</select>
 															<button
 																onclick={() => saveEnrollmentRole(enrollment.id)}
@@ -688,56 +691,93 @@ const courseRoles = [
 
 		<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
 			<!-- Platform Modules -->
-			<div class="bg-white shadow rounded-lg p-6">
-				<h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-					<Shield class="h-5 w-5 mr-2" />
-					Platform Modules
-				</h2>
+			<div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+				<button
+					onclick={() => showModulesInfo = !showModulesInfo}
+					class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+				>
+					<h2 class="text-lg font-semibold text-gray-900 flex items-center">
+						<Shield class="h-5 w-5 mr-2 text-blue-600" />
+						Platform Modules Reference
+					</h2>
+					{#if showModulesInfo}
+						<ChevronUp class="h-5 w-5 text-gray-500" />
+					{:else}
+						<ChevronDown class="h-5 w-5 text-gray-500" />
+					{/if}
+				</button>
 
-				<p class="text-sm text-gray-600 mb-4">
-					Platform access is completely module-driven. Assign the combinations that match a user&rsquo;s responsibilities—no separate platform roles or hard-coded “admins” remain.
-				</p>
+				{#if showModulesInfo}
+					<div class="px-6 pb-6 border-t border-gray-200">
+						<p class="text-sm text-gray-600 mb-4 mt-4">
+							Platform access is completely module-driven. Assign the combinations that match a user&rsquo;s responsibilities—no separate platform roles or hard-coded "admins" remain.
+						</p>
 
-				<h3 class="text-sm font-semibold text-gray-700 mb-2 mt-4">Available Modules</h3>
-				<div class="space-y-3">
-					{#each availableModules as module}
-						<div>
-							<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getModuleBadgeColor(module.id)}">
-								{module.name}
-							</span>
-							<span class="ml-2 text-sm text-gray-600">{module.description}</span>
+						<h3 class="text-sm font-semibold text-gray-700 mb-2 mt-4">Available Modules</h3>
+						<div class="space-y-3">
+							{#each availableModules as module}
+								<div>
+									<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getModuleBadgeColor(module.id)}">
+										{module.name}
+									</span>
+									<span class="ml-2 text-sm text-gray-600">{module.description}</span>
+								</div>
+							{/each}
 						</div>
-					{/each}
-				</div>
-				<div class="mt-4 text-sm text-gray-600">
-					<p class="font-semibold text-gray-700 mb-1">Common combinations:</p>
-					<ul class="list-disc pl-5 space-y-1">
-						<li><span class="font-medium">Platform manager:</span> users, courses.admin, editor, dgr</li>
-						<li><span class="font-medium">Course staff:</span> courses.manager (+ courses.participant if they also take courses)</li>
-						<li><span class="font-medium">Participant only:</span> courses.participant</li>
-					</ul>
-				</div>
+						<div class="mt-4 text-sm text-gray-600">
+							<p class="font-semibold text-gray-700 mb-1">Common combinations:</p>
+							<ul class="list-disc pl-5 space-y-1">
+								<li><span class="font-medium">Platform manager:</span> users, courses.admin, editor, dgr</li>
+								<li><span class="font-medium">Course staff:</span> courses.manager (+ courses.participant if they also take courses)</li>
+								<li><span class="font-medium">Participant only:</span> courses.participant</li>
+							</ul>
+						</div>
+					</div>
+				{/if}
 			</div>
 
-			<!-- Course Roles -->
-			<div class="bg-white shadow rounded-lg p-6">
-				<h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-					<GraduationCap class="h-5 w-5 mr-2" />
-					Course Roles
-				</h2>
-				<div class="space-y-3">
-					{#each courseRoles as role}
-						<div class="flex items-start">
-							<span class="px-2 py-1 text-xs font-semibold rounded-full {getCourseRoleBadgeColor(role.id)} mr-2">
-								{role.name}
-							</span>
-							<span class="text-sm text-gray-600">{role.description}</span>
+			<!-- Course Enrollment Roles -->
+			<div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+				<button
+					onclick={() => showRolesInfo = !showRolesInfo}
+					class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+				>
+					<h2 class="text-lg font-semibold text-gray-900 flex items-center">
+						<GraduationCap class="h-5 w-5 mr-2 text-green-600" />
+						Course Roles Reference
+					</h2>
+					{#if showRolesInfo}
+						<ChevronUp class="h-5 w-5 text-gray-500" />
+					{:else}
+						<ChevronDown class="h-5 w-5 text-gray-500" />
+					{/if}
+				</button>
+
+				{#if showRolesInfo}
+					<div class="px-6 pb-6 border-t border-gray-200">
+						<p class="text-sm text-gray-600 mb-4 mt-4">
+							<strong>Cohort enrollments are for participants only.</strong> Course managers and admins are NOT enrolled in cohorts—they manage courses via platform modules.
+						</p>
+						<div class="space-y-3">
+							{#each courseRoles as role}
+								<div class="flex items-start">
+									<span class="px-2 py-1 text-xs font-semibold rounded-full {getCourseRoleBadgeColor(role.id)} mr-2">
+										{role.name}
+									</span>
+									<span class="text-sm text-gray-600">{role.description}</span>
+								</div>
+							{/each}
 						</div>
-					{/each}
-				</div>
-				<p class="mt-4 text-sm text-gray-500">
-					Course roles are assigned per enrollment. Users can have different roles in different courses.
-				</p>
+						<div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+							<p class="text-xs text-amber-900 font-semibold mb-2">How Course Access Works:</p>
+							<ul class="text-xs text-amber-800 space-y-1 ml-4 list-disc">
+								<li><strong>Participants:</strong> Need <code class="bg-amber-100 px-1 rounded">courses.participant</code> module + cohort enrollment (student or coordinator role)</li>
+								<li><strong>Course Managers:</strong> Need <code class="bg-amber-100 px-1 rounded">courses.manager</code> module + assignment to specific courses (no enrollment)</li>
+								<li><strong>Course Admins:</strong> Need <code class="bg-amber-100 px-1 rounded">courses.admin</code> module (can manage ALL courses, no assignment or enrollment needed)</li>
+							</ul>
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -859,16 +899,18 @@ const courseRoles = [
 					</div>
 
 					<div>
-						<label for="enrollmentRole" class="block text-sm font-medium text-gray-700">Course Role</label>
+						<label for="enrollmentRole" class="block text-sm font-medium text-gray-700">Enrollment Role</label>
 						<select
 							id="enrollmentRole"
 							bind:value={newEnrollment.role}
 							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
 						>
-							<option value="student">Student</option>
-							<option value="coordinator">Coordinator</option>
-							<option value="admin">Course Admin</option>
+							<option value="student">Participant</option>
+							<option value="coordinator">Hub Coordinator</option>
 						</select>
+						<p class="mt-1 text-xs text-gray-500">
+							Note: Course management is via platform modules, not enrollment roles.
+						</p>
 					</div>
 
 					<div class="flex justify-end space-x-3 pt-4">

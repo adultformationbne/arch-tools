@@ -62,7 +62,7 @@
 
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
+			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
 			const result = await response.json();
 			students = result.success ? result.data : [];
 		} catch (err) {
@@ -102,7 +102,7 @@
 	async function handleCohortUpdate() {
 		// Fetch updated cohort data directly
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`);
+			const response = await fetch(`/admin/courses/${courseSlug}/api`);
 			const result = await response.json();
 			if (result.success) {
 				cohorts = result.data;
@@ -139,7 +139,7 @@
 	async function refreshData() {
 		try {
 			// Fetch fresh data from server
-			const response = await fetch(`/courses/${courseSlug}/admin`, {
+			const response = await fetch(`/admin/courses/${courseSlug}`, {
 				headers: {
 					'Accept': 'application/json'
 				}
@@ -160,7 +160,7 @@
 		if (!confirm('Delete this cohort? This cannot be undone.')) return;
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

@@ -41,7 +41,7 @@
 							style="background: linear-gradient(90deg, {accentDark} 0%, {accentLight} 100%);"
 						></div>
 
-						<a href="/courses/{course.slug}/dashboard" class="block">
+						<a href="/courses/{course.slug}" class="block">
 							<div class="p-6">
 								<!-- Course Header -->
 								<div class="mb-4 flex items-start justify-between">

@@ -10,7 +10,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * Key concepts:
  * - Module permissions: Namespaced array in user_profiles.modules
  *   Format: ["users", "editor", "dgr", "courses.participant", "courses.manager", "courses.admin"]
- * - Course-level roles: admin, student, coordinator (in courses_enrollments.role per course)
+ * - Course enrollment roles: student, coordinator (in courses_enrollments.role - PARTICIPANTS ONLY)
+ * - Course management: via platform modules (courses.admin, courses.manager) + assigned_course_ids
  *
  * Response modes:
  * - throw_error: Returns HTTP 401/403 (for API routes)
@@ -49,12 +50,12 @@ export async function requireAuth(
 }
 
 /**
- * Get user profile with modules (no auth check)
+ * Get user profile with modules and assigned courses (no auth check)
  */
 export async function getUserProfile(supabase: SupabaseClient, userId: string) {
 	const { data: userProfile, error: profileError } = await supabase
 		.from('user_profiles')
-		.select('id, email, full_name, display_name, modules')
+		.select('id, email, full_name, display_name, modules, assigned_course_ids')
 		.eq('id', userId)
 		.single();
 
@@ -249,7 +250,7 @@ export async function requireCourseRole(
 
 	if (!enrollment || !allowedRoles.includes(enrollment.role)) {
 		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || `/courses/${courseSlug}/dashboard`);
+			throw redirect(303, options.redirectTo || `/courses/${courseSlug}`);
 		}
 		throw error(
 			403,
@@ -261,10 +262,12 @@ export async function requireCourseRole(
 }
 
 /**
- * Requires course admin role
+ * Requires course management access
  * Can access via:
- * - courses.admin module (platform-wide access), OR
- * - courses.manager module + enrolled with role='admin'
+ * - courses.admin module (platform-wide access to ALL courses), OR
+ * - courses.manager module + course ID in user's assigned_course_ids
+ *
+ * NOTE: Managers are NOT enrolled in cohorts—they manage via platform modules
  */
 export async function requireCourseAdmin(
 	event: RequestEvent,
@@ -276,19 +279,31 @@ export async function requireCourseAdmin(
 
 	// Check for courses.admin module (platform-wide access)
 	if (hasModuleLevel(profile?.modules, 'courses.admin')) {
-		return { user, profile, enrollment: null, viaModule: true };
+		return { user, profile, viaModule: 'courses.admin' };
 	}
 
-	// Check for courses.manager module + enrollment as admin
+	// Check for courses.manager module + assignment to this specific course
 	if (hasModuleLevel(profile?.modules, 'courses.manager')) {
-		const enrollment = await getUserCourseEnrollment(
-			event.locals.supabase,
-			user.id,
-			courseSlug
-		);
+		// Get the course ID from slug
+		const { data: course } = await event.locals.supabase
+			.from('courses')
+			.select('id')
+			.eq('slug', courseSlug)
+			.single();
 
-		if (enrollment?.role === 'admin') {
-			return { user, profile, enrollment, viaModule: false };
+		if (course) {
+			// Get user's full profile with assigned_course_ids
+			const { data: fullProfile } = await event.locals.supabase
+				.from('user_profiles')
+				.select('id, email, full_name, display_name, modules, assigned_course_ids')
+				.eq('id', user.id)
+				.single();
+
+			// Check if this course is in their assigned courses
+			const assignedCourseIds = fullProfile?.assigned_course_ids || [];
+			if (Array.isArray(assignedCourseIds) && assignedCourseIds.includes(course.id)) {
+				return { user, profile: fullProfile, viaModule: 'courses.manager' };
+			}
 		}
 	}
 

@@ -33,13 +33,22 @@
 				>
 					Home
 				</a>
-				{#if hasAnyModule(['courses.participant', 'courses.manager', 'courses.admin'])}
+				{#if hasAnyModule(['courses.manager', 'courses.admin'])}
 					<a
-						href={hasAnyModule(['courses.manager', 'courses.admin']) ? '/courses' : '/my-courses'}
-						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {($page.url.pathname.startsWith('/courses') || $page.url.pathname.startsWith('/my-courses')) ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
-						title={hasAnyModule(['courses.manager', 'courses.admin']) ? 'Course management' : 'My courses'}
+						href="/admin/courses"
+						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname.startsWith('/admin/courses') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title="Course management"
 					>
 						Courses
+					</a>
+				{/if}
+				{#if hasModule('courses.participant')}
+					<a
+						href="/courses"
+						class="rounded-full px-4 py-2 text-sm font-medium transition-colors {$page.url.pathname.startsWith('/courses') && !$page.url.pathname.startsWith('/admin/courses') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title="My enrolled courses"
+					>
+						My Courses
 					</a>
 				{/if}
 				{#if hasModule('editor')}

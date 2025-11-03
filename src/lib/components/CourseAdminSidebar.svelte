@@ -56,49 +56,49 @@ function toggleShowAllCohorts() {
 const navItems = $derived([
     {
         label: 'Dashboard',
-        href: `/courses/${courseSlug}/admin`,
+        href: `/admin/courses/${courseSlug}`,
         icon: LayoutDashboard,
         description: 'Cohort overview',
         visible: true
     },
     {
         label: 'Modules',
-        href: `/courses/${courseSlug}/admin/modules`,
+        href: `/admin/courses/${courseSlug}/modules`,
         icon: BookOpen,
         description: 'Manage modules',
         visible: isCourseAdmin
     },
     {
         label: 'Sessions',
-        href: `/courses/${courseSlug}/admin/sessions`,
+        href: `/admin/courses/${courseSlug}/sessions`,
         icon: FileText,
         description: 'Edit session content',
         visible: isCourseAdmin
     },
     {
         label: 'Reflections',
-        href: `/courses/${courseSlug}/admin/reflections`,
+        href: `/admin/courses/${courseSlug}/reflections`,
         icon: PenSquare,
         description: 'Review submissions',
         visible: canManageParticipants || isCourseAdmin
     },
     {
         label: 'Participants',
-        href: `/courses/${courseSlug}/admin/participants`,
+        href: `/admin/courses/${courseSlug}/participants`,
         icon: Users,
         description: 'All course participants',
         visible: canManageParticipants
     },
     {
         label: 'Hubs',
-        href: `/courses/${courseSlug}/admin/hubs`,
+        href: `/admin/courses/${courseSlug}/hubs`,
         icon: MapPin,
         description: 'Hub management',
         visible: canViewHubs
     },
     {
         label: 'Attendance',
-        href: `/courses/${courseSlug}/admin/attendance`,
+        href: `/admin/courses/${courseSlug}/attendance`,
         icon: Calendar,
         description: 'Track attendance',
         visible: canManageAttendance

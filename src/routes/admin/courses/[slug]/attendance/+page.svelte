@@ -83,7 +83,7 @@
 		// Debounce the API call (300ms)
 		const timeoutId = setTimeout(async () => {
 			try {
-				const response = await fetch(`/courses/${courseSlug}/admin/attendance/api`, {
+				const response = await fetch(`/admin/courses/${courseSlug}/attendance/api`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({

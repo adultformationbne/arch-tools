@@ -13,7 +13,7 @@
 
 	// Extract cohort selection from URL if on dashboard
 	const selectedCohortId = $derived(() => {
-		if ($page.url.pathname === `/courses/${courseSlug}/admin`) {
+		if ($page.url.pathname === `/admin/courses/${courseSlug}`) {
 			return $page.url.searchParams.get('cohort');
 		}
 		return null;
@@ -21,12 +21,12 @@
 
 	function handleNewCohort() {
 		// Navigate to dashboard and trigger new cohort wizard
-		goto(`/courses/${courseSlug}/admin?action=new-cohort`);
+		goto(`/admin/courses/${courseSlug}?action=new-cohort`);
 	}
 
 	function handleSelectCohort(cohortId) {
 		// Navigate to dashboard with selected cohort
-		goto(`/courses/${courseSlug}/admin?cohort=${cohortId}`);
+		goto(`/admin/courses/${courseSlug}?cohort=${cohortId}`);
 	}
 </script>
 

@@ -6,15 +6,16 @@
 	import { page } from '$app/stores';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
+	import AppFooter from '$lib/components/AppFooter.svelte';
 
 	export let data;
 
 	$: ({ supabase, session, userModules = [] } = data);
 
-	// Routes where we don't show the navigation
+	// Routes where we don't show the navigation and footer
 	$: hideNav = $page.url.pathname === '/auth' ||
 	             $page.url.pathname === '/login' ||
-	             $page.url.pathname.startsWith('/courses/');
+	             $page.url.pathname === '/auth/setup-password';
 
 	onMount(() => {
 		const {
@@ -29,11 +30,16 @@
 	});
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50 flex flex-col">
 	{#if session && !hideNav}
 		<AppNavigation {session} modules={userModules} />
 	{/if}
-	<slot />
+	<main class="flex-1">
+		<slot />
+	</main>
+	{#if !hideNav}
+		<AppFooter />
+	{/if}
 </div>
 
 <ToastContainer />

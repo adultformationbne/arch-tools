@@ -24,7 +24,7 @@
 
 		loading = true;
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=recent_activity&cohort_id=${cohort.id}`);
+			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=recent_activity&cohort_id=${cohort.id}`);
 			if (response.ok) {
 				const data = await response.json();
 				recentActivity = data.data || [];
