@@ -199,8 +199,7 @@
 							<label>Role</label>
 							<select bind:value={participantData.role}>
 								<option value="student">Participant</option>
-								<option value="hub_coordinator">Hub Coordinator</option>
-								<option value="admin">Admin</option>
+								<option value="coordinator">Hub Coordinator</option>
 							</select>
 						</div>
 
@@ -321,14 +320,22 @@
 		padding: 8px;
 		border: none;
 		background: transparent;
-		color: var(--course-accent-dark);
+		color: var(--course-accent-darkest);
 		cursor: pointer;
-		border-radius: 4px;
+		border-radius: 8px;
 		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.close-button:hover {
 		background: var(--course-surface);
+		color: var(--course-accent-dark);
+	}
+
+	.close-button:active {
+		transform: scale(0.95);
 	}
 
 	.modal-body {
@@ -355,8 +362,8 @@
 		align-items: center;
 		gap: 16px;
 		padding: 32px 24px;
-		border: 2px solid var(--course-surface);
-		background: var(--course-surface-elevated, var(--course-surface));
+		border: 2px solid #E5E7EB;
+		background: #F9FAFB;
 		color: var(--course-accent-darkest);
 		border-radius: 12px;
 		cursor: pointer;
@@ -375,7 +382,7 @@
 
 	.choice-card:hover {
 		border-color: var(--course-accent-light);
-		background: var(--course-surface-strong, var(--course-surface));
+		background: white;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
@@ -401,7 +408,7 @@
 		padding: 8px 12px;
 		border: none;
 		background: transparent;
-		color: var(--course-accent-light);
+		color: var(--course-accent-dark);
 		font-weight: 600;
 		cursor: pointer;
 		border-radius: 6px;
@@ -409,7 +416,8 @@
 	}
 
 	.back-link:hover {
-		background: var(--course-surface);
+		background: #F3F4F6;
+		color: var(--course-accent-darkest);
 	}
 
 	.form-group {
@@ -428,16 +436,24 @@
 	.form-group select {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--course-surface);
+		border: 2px solid #E5E7EB;
 		border-radius: 8px;
 		font-size: 1rem;
-		transition: border-color 0.2s ease;
+		background: #F9FAFB;
+		color: var(--course-accent-darkest);
+		transition: all 0.2s ease;
 	}
 
 	.form-group input:focus,
 	.form-group select:focus {
 		outline: none;
 		border-color: var(--course-accent-light);
+		background: white;
+		box-shadow: 0 0 0 3px rgba(197, 154, 107, 0.1);
+	}
+
+	.form-group input::placeholder {
+		color: #9CA3AF;
 	}
 
 	.upload-result {

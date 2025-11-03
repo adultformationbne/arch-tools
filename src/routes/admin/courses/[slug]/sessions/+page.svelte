@@ -355,15 +355,17 @@
 		<!-- Session Navigation (Full Width) - Sticky -->
 		<div class="sticky top-12 z-10 bg-gray-900/95 backdrop-blur-md rounded-2xl border border-gray-700 mb-8 p-6 shadow-lg">
 			<div class="flex items-center justify-between mb-4">
-				<h4 class="text-xl font-semibold text-white">{selectedModule.name}</h4>
-				<span class="text-white/60 text-sm">Editing: {selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession} of ${totalSessions}`}</span>
+				<h2 class="text-2xl font-bold text-white">
+					{selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession}`}
+				</h2>
+				<span class="text-white/70 text-sm">{selectedModule.name}</span>
 			</div>
 
 			<div class="flex gap-2 items-center flex-wrap">
 				<!-- Pre-Start Button -->
 				<button
 					onclick={() => handleSessionChange(0)}
-					class="px-4 h-12 rounded-lg font-bold text-sm transition-all {selectedSession === 0 ? 'bg-white text-gray-800' : 'bg-white/20 text-white hover:bg-white/30'}"
+					class="px-4 h-12 rounded-lg font-bold text-sm transition-all {selectedSession === 0 ? 'bg-white text-gray-800 shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}"
 					title="Pre-Start"
 				>
 					Pre-Start
@@ -373,7 +375,7 @@
 				{#each Array(totalSessions).fill(0) as _, i}
 					<button
 						onclick={() => handleSessionChange(i + 1)}
-						class="w-12 h-12 rounded-lg font-bold text-xl transition-all {selectedSession === i + 1 ? 'bg-white text-gray-800' : 'bg-white/20 text-white hover:bg-white/30'}"
+						class="w-12 h-12 rounded-lg font-bold text-xl transition-all {selectedSession === i + 1 ? 'bg-white text-gray-800 shadow-lg scale-110' : 'bg-white/20 text-white hover:bg-white/30'}"
 						title="Session {i + 1}"
 					>
 						{i + 1}
