@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 
 	export let data;
 	const { supabase } = data;
@@ -10,6 +11,35 @@
 	let isSignUp = false;
 	let loading = false;
 	let errorMessage = '';
+
+	// Handle invite link hash fragments (e.g., #access_token=...&type=invite)
+	onMount(async () => {
+		const hash = window.location.hash;
+
+		// Check if this is an invite link with tokens in the hash
+		if (hash && hash.includes('access_token') && hash.includes('type=invite')) {
+			loading = true;
+
+			try {
+				// Get the current session (Supabase should auto-handle hash tokens)
+				const { data: { session }, error } = await supabase.auth.getSession();
+
+				if (error) throw error;
+
+				if (session?.user) {
+					// User is authenticated via invite - redirect to password setup
+					const next = $page.url.searchParams.get('next') ?? '/profile';
+					goto(`/auth/setup-password?next=${encodeURIComponent(next)}`);
+					return;
+				}
+			} catch (error) {
+				console.error('Error handling invite:', error);
+				errorMessage = error.message || 'Failed to process invitation';
+			} finally {
+				loading = false;
+			}
+		}
+	});
 
 	async function handleAuth() {
 		loading = true;
