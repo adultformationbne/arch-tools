@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { requireModule } from '$lib/server/auth.js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SITE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createClient } from '@supabase/supabase-js';
 
@@ -80,7 +80,7 @@ export async function POST(event) {
 						full_name: full_name || null,
 						invited_by: user.email
 					},
-					redirectTo: `${PUBLIC_SUPABASE_URL}/auth/callback`
+					redirectTo: `${PUBLIC_SITE_URL}/auth/callback?setup=true`
 				}
 			);
 
@@ -217,6 +217,19 @@ export async function DELETE(event) {
 			throw error(400, deleteError.message || 'Failed to delete user');
 		}
 
+		// Auth user deleted successfully - now also delete from user_profiles
+		const { error: profileDeleteError } = await adminSupabase
+			.from('user_profiles')
+			.delete()
+			.eq('id', userId);
+
+		if (profileDeleteError) {
+			console.error('Error deleting user profile after auth deletion:', profileDeleteError);
+			// Don't throw error here - auth user is already deleted
+			// Just log the warning
+			console.warn('Auth user was deleted but profile cleanup failed');
+		}
+
 		return json({
 			success: true,
 			message: 'User deleted successfully'
@@ -277,7 +290,7 @@ export async function PUT(event) {
 						full_name: authUser.user.user_metadata?.full_name || null,
 						invited_by: user.email
 					},
-					redirectTo: `${PUBLIC_SUPABASE_URL}/auth/callback`
+					redirectTo: `${PUBLIC_SITE_URL}/auth/callback?setup=true`
 				}
 			);
 

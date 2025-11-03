@@ -56,11 +56,11 @@
 	async function loadStudents() {
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`);
+			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`);
 			const result = await response.json();
 
 			// Fetch attendance data for all students
-			const attendanceResponse = await fetch(`/courses/${courseSlug}/admin/api?endpoint=attendance&cohort_id=${cohort.id}`);
+			const attendanceResponse = await fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${cohort.id}`);
 			const attendanceResult = await attendanceResponse.json();
 
 			// Fetch reflection data for all students
@@ -105,7 +105,7 @@
 
 	async function loadHubs() {
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/hubs/api`);
+			const response = await fetch(`/admin/courses/${courseSlug}/hubs/api`);
 			const result = await response.json();
 			if (result.success) {
 				hubs = result.data;
@@ -142,7 +142,7 @@
 
 		sendingInvitations = true;
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -173,7 +173,7 @@
 
 	async function saveEditStudent() {
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -202,7 +202,7 @@
 		if (!confirm('Remove this student?')) return;
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -229,7 +229,7 @@
 		}
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -265,7 +265,7 @@
 		if (!editingSession) return;
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

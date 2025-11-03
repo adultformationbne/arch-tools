@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { hasModule, hasModuleLevel } from '$lib/server/auth';
+import { hasModuleLevel } from '$lib/server/auth';
 
 export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 	const { slug } = params;
@@ -20,15 +20,13 @@ export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 	}
 
 	if (!userProfile) {
-		// No user found, redirect to platform login
 		throw redirect(303, `/auth?next=${url.pathname}`);
 	}
 
 	const userModules: string[] = userProfile.modules ?? [];
-	const hasGlobalCourseAdmin = hasModuleLevel(userModules, 'courses.admin') || hasModule(userModules, 'users');
-	const hasCourseManager = hasModuleLevel(userModules, 'courses.manager');
 	const hasParticipantModule = hasModuleLevel(userModules, 'courses.participant');
 
+	// Check for enrollment (participants only)
 	const { data: enrollment } = await supabaseAdmin
 		.from('courses_enrollments')
 		.select(`
@@ -49,47 +47,23 @@ export const load: LayoutServerLoad = async ({ params, url, parent }) => {
 		.maybeSingle();
 
 	const enrollmentRole = enrollment?.role ?? null;
-	const isCourseAdmin = hasGlobalCourseAdmin || (hasCourseManager && enrollmentRole === 'admin');
-	const hasCourseAccess = isCourseAdmin || !!enrollmentRole || hasParticipantModule;
+	const hasAccess = !!enrollmentRole || hasParticipantModule;
 
-	if (!hasCourseAccess) {
-		throw redirect(303, '/my-courses');
-	}
-
-	const currentPath = url.pathname;
-	const adminPath = `/courses/${slug}/admin`;
-	const participantPath = `/courses/${slug}/dashboard`;
-
-	if (currentPath === `/courses/${slug}` || currentPath === `/courses/${slug}/`) {
-		throw redirect(303, isCourseAdmin ? adminPath : participantPath);
-	}
-
-	if (currentPath.includes('/admin') && !isCourseAdmin) {
-		throw redirect(303, participantPath);
-	}
-
-	if (
-		isCourseAdmin &&
-		!currentPath.includes('/admin') &&
-		(currentPath.includes('/dashboard') || currentPath.includes('/materials') || currentPath.includes('/reflections')) &&
-		!url.searchParams.has('view')
-	) {
-		throw redirect(303, adminPath);
+	if (!hasAccess) {
+		throw redirect(303, '/courses');
 	}
 
 	// Extract theme and branding from course settings
 	const settings = course.settings || {};
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
-	const userRole = isCourseAdmin ? 'admin' : 'student';
 
 	return {
-		userRole,
+		userRole: enrollmentRole || 'student', // Use actual role: 'student' or 'coordinator'
 		userName: userProfile.full_name || userProfile.display_name || 'User',
 		userProfile,
 		courseSlug: slug,
 		enrollmentRole,
-		isCourseAdmin,
 		courseInfo: {
 			id: course.id,
 			slug: course.slug,

@@ -118,7 +118,7 @@
 		isSaving = true;
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/admin/reflections/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/reflections/api`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

@@ -58,8 +58,16 @@ export const load: PageServerLoad = async (event) => {
 		console.error('Error loading courses:', coursesError);
 	}
 
-	// Fetch all available cohorts
-	const { data: cohorts, error: cohortsError } = await event.locals.supabase
+	// Create admin client to check auth status and fetch cohorts
+	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false
+		}
+	});
+
+	// Fetch all available cohorts using admin client
+	const { data: cohorts, error: cohortsError } = await supabaseAdmin
 		.from('courses_cohorts')
 		.select(`
 			id,
@@ -79,14 +87,6 @@ export const load: PageServerLoad = async (event) => {
 	if (cohortsError) {
 		console.error('Error loading cohorts:', cohortsError);
 	}
-
-	// Create admin client to check auth status
-	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false
-		}
-	});
 
 	// Enrich users with auth status (pending vs active)
 	const enrichedUsers = await Promise.all(

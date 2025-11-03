@@ -23,9 +23,9 @@ export const POST: RequestHandler = async (event) => {
 		throw error(400, 'Missing required fields: userId, cohortId, role');
 	}
 
-	// Validate role
-	if (!['student', 'admin', 'coordinator'].includes(role)) {
-		throw error(400, 'Invalid role. Must be: student, admin, or coordinator');
+	// Validate role (only participants - managers/admins are NOT enrolled)
+	if (!['student', 'coordinator'].includes(role)) {
+		throw error(400, 'Invalid role. Must be: student or coordinator');
 	}
 
 	// Check if enrollment already exists
@@ -40,13 +40,28 @@ export const POST: RequestHandler = async (event) => {
 		throw error(409, 'User is already enrolled in this cohort');
 	}
 
+	// Fetch user profile to get email and full_name (required fields)
+	const { data: userProfile, error: profileError } = await supabaseAdmin
+		.from('user_profiles')
+		.select('email, full_name')
+		.eq('id', userId)
+		.single();
+
+	if (profileError || !userProfile) {
+		console.error('Error fetching user profile:', profileError);
+		throw error(404, 'User profile not found');
+	}
+
 	// Create enrollment
 	const { data, error: insertError } = await supabaseAdmin
 		.from('courses_enrollments')
 		.insert({
 			user_profile_id: userId,
 			cohort_id: cohortId,
-			role: role
+			role: role,
+			email: userProfile.email,
+			full_name: userProfile.full_name,
+			status: 'active' // User already exists, so status is active
 		})
 		.select()
 		.single();
@@ -77,9 +92,9 @@ export const PUT: RequestHandler = async (event) => {
 		throw error(400, 'Missing required fields: enrollmentId, role');
 	}
 
-	// Validate role
-	if (!['student', 'admin', 'coordinator'].includes(role)) {
-		throw error(400, 'Invalid role. Must be: student, admin, or coordinator');
+	// Validate role (only participants - managers/admins are NOT enrolled)
+	if (!['student', 'coordinator'].includes(role)) {
+		throw error(400, 'Invalid role. Must be: student or coordinator');
 	}
 
 	// Update enrollment

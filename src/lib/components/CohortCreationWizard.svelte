@@ -35,7 +35,7 @@
 		try {
 			const endDate = calculateEndDate(cohortData.startDate);
 
-			const response = await fetch('/courses/${courseSlug}/admin/api', {
+			const response = await fetch('/admin/courses/${courseSlug}/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -68,7 +68,7 @@
 	async function handleCsvUpload(csvData) {
 		isLoading = true;
 		try {
-			const response = await fetch('/courses/${courseSlug}/admin/api', {
+			const response = await fetch('/admin/courses/${courseSlug}/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -100,7 +100,7 @@
 		isLoading = true;
 		try {
 			// Update cohort status to scheduled (will auto-transition to active on start date)
-			const response = await fetch('/courses/${courseSlug}/admin/api', {
+			const response = await fetch('/admin/courses/${courseSlug}/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

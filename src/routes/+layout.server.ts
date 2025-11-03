@@ -251,7 +251,6 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	const pathname = url.pathname;
 
 	const coursesRoutePrefixes = [
-		'/dashboard',
 		'/materials',
 		'/reflections',
 		'/login',

@@ -70,7 +70,7 @@
 				payload.sessionCount = sessionCount;
 			}
 
-			const response = await fetch(`/courses/${courseSlug}/admin/api`, {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)

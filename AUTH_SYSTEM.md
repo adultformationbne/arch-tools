@@ -58,26 +58,30 @@ await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses
 | Module | Description | Navigation | Capabilities |
 |--------|-------------|------------|--------------|
 | `courses.participant` | Access enrolled courses | `/my-courses` | View enrolled courses, submit reflections |
-| `courses.manager` | Manage assigned courses | `/admin/courses` | Manage courses where enrolled as admin |
-| `courses.admin` | Manage all courses | `/admin/courses` | Platform-wide course access regardless of enrollment |
+| `courses.manager` | Manage assigned courses | `/courses/[slug]/admin` | Manage specific courses (via `assigned_course_ids`) |
+| `courses.admin` | Manage all courses | `/courses/[slug]/admin` | Platform-wide course management (no assignment needed) |
 
 **Key Principles:**
 - **courses.participant** and **courses.manager** are independent (not hierarchical)
 - Staff can have `courses.manager` WITHOUT `courses.participant`
 - Some staff may have BOTH to participate AND manage
-- `courses.admin` bypasses enrollment checks for management (but not for course content access)
+- **Course managers are assigned to specific courses via `user_profiles.assigned_course_ids`**
+- **Course admins and managers are NOT enrolled in cohorts**—they manage via platform modules
+- `courses.admin` can manage ALL courses without any assignment
 
-### Course Roles (per enrollment)
+### Course Enrollment Roles (participants only)
 
-Stored in `courses_enrollments.role` (per user per course):
+**CRITICAL:** Cohort enrollments are for participants only. Stored in `courses_enrollments.role`:
 
 | Role | Description |
 |------|-------------|
-| `student` | Regular enrolled student |
+| `student` | Regular course participant |
 | `coordinator` | Hub coordinator for this course |
-| `admin` | Course administrator (can manage this specific course) |
 
-**Important:** Hub coordination is per-course via `enrollment.role`, NOT a platform module.
+**Important Notes:**
+- Hub coordination is per-course via `enrollment.role`, NOT a platform module
+- Course managers and admins are NOT enrolled—management is via platform modules
+- Only participants (students and coordinators) appear in cohort enrollments
 
 ---
 
@@ -125,20 +129,23 @@ const { user, enrollment } = await requireCourseAccess(event, courseSlug);
 ```
 
 #### `requireCourseAdmin(event, courseSlug, options?)`
-Requires user to have course admin access via:
-- `courses.admin` module (platform-wide access), OR
-- `courses.manager` module + enrolled with `role='admin'` in this course
+Requires user to have course management access via:
+- `courses.admin` module (can manage ALL courses platform-wide), OR
+- `courses.manager` module + course ID in their `assigned_course_ids` array
 
 ```typescript
-const { user, profile, enrollment, viaModule } = await requireCourseAdmin(event, courseSlug);
-// viaModule: true if accessed via courses.admin, false if via enrollment
+const { user, profile, viaModule } = await requireCourseAdmin(event, courseSlug);
+// viaModule: 'courses.admin' if platform admin, 'courses.manager' if assigned manager
+// Note: No enrollment object - managers are NOT enrolled in cohorts
 ```
 
 #### `requireCourseRole(event, courseSlug, allowedRoles, options?)`
-Requires user to have one of the specified roles in the course.
+Requires user to have one of the specified enrollment roles (participants only).
 ```typescript
-// Allow both admin and coordinator
-const { user, enrollment } = await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
+// Allow only hub coordinators
+const { user, enrollment } = await requireCourseRole(event, courseSlug, ['coordinator']);
+
+// Valid roles: 'student', 'coordinator' (admin role no longer exists)
 ```
 
 ---

@@ -41,16 +41,46 @@ function isGlobalCourseAdmin(modules: string[]): boolean {
 }
 
 async function canManageCohort(userId: string, cohortId: string, modules: string[]): Promise<boolean> {
+	// Global course admins can manage all cohorts
 	if (isGlobalCourseAdmin(modules)) {
 		return true;
 	}
 
+	// Course managers must be assigned to this course (NOT enrolled)
 	if (!hasModuleLevel(modules, 'courses.manager')) {
 		return false;
 	}
 
-	const enrollment = await getCohortEnrollment(userId, cohortId);
-	return enrollment?.role === 'admin';
+	// Get the course ID for this cohort
+	const { data: cohort } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select('module_id')
+		.eq('id', cohortId)
+		.single();
+
+	if (!cohort?.module_id) {
+		return false;
+	}
+
+	const { data: module } = await supabaseAdmin
+		.from('courses_modules')
+		.select('course_id')
+		.eq('id', cohort.module_id)
+		.single();
+
+	if (!module?.course_id) {
+		return false;
+	}
+
+	// Check if this course is in user's assigned_course_ids
+	const { data: userProfile } = await supabaseAdmin
+		.from('user_profiles')
+		.select('assigned_course_ids')
+		.eq('id', userId)
+		.single();
+
+	const assignedCourseIds = userProfile?.assigned_course_ids || [];
+	return Array.isArray(assignedCourseIds) && assignedCourseIds.includes(module.course_id);
 }
 
 async function ensureSession(event) {

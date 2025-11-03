@@ -16,12 +16,12 @@ export const MODULES = {
 };
 
 /**
- * Course enrollment roles (per-course, not platform roles)
+ * Course enrollment roles (PARTICIPANTS ONLY - managers/admins are NOT enrolled)
+ * Managers/admins manage courses via platform modules + assigned_course_ids
  */
 export const ENROLLMENT_ROLES = {
-	COURSE_ADMIN: 'admin',
-	COURSE_STUDENT: 'student',
-	COURSE_COORDINATOR: 'coordinator'
+	STUDENT: 'student',
+	COORDINATOR: 'coordinator'
 };
 
 /**
