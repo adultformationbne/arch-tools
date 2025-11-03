@@ -8,7 +8,7 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { myReflections, cohortReflections, currentReflectionQuestion } = data;
+	const { myReflections, cohortReflections, currentReflectionQuestion, courseSlug } = data;
 
 	// Page state
 	let activeTab = $state('my-reflections'); // 'my-reflections' | 'my-cohort'
@@ -47,7 +47,7 @@
 		closeReflectionWriter();
 
 		// Invalidate and reload the page data
-		await goto('/reflections', { invalidateAll: true });
+		await goto(`/courses/${courseSlug}/reflections`, { invalidateAll: true });
 		console.log('Page data refreshed');
 	};
 
@@ -73,6 +73,7 @@
 		<div class="pt-8 pb-4">
 			<div class="max-w-4xl mx-auto">
 				<ReflectionWriter
+					courseSlug={courseSlug}
 					bind:isVisible={showReflectionWriter}
 					question={selectedReflection?.question || currentReflectionQuestion?.question || ''}
 					questionId={selectedReflection?.questionId || currentReflectionQuestion?.questionId}

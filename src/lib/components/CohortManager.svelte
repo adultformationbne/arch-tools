@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Edit2, X, Mail, Trash2, Check, Home, AlertTriangle, MoreVertical, ArrowRight } from 'lucide-svelte';
+	import { Plus, Edit2, X, Mail, Trash2, Check, Home, AlertTriangle, MoreVertical, ArrowRight, Loader2 } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import {
 		getUserReflectionStatus,
@@ -15,7 +15,8 @@
 		onUpdate = () => {},
 		onDelete = () => {},
 		onAddStudents = () => {},
-		refreshTrigger = 0
+		refreshTrigger = 0,
+		totalSessions = 8  // Default to 8, can be passed from parent
 	} = $props();
 
 	let students = $state([]);
@@ -26,16 +27,20 @@
 	let selectedStudents = $state(new Set());
 	let sendingInvitations = $state(false);
 	let openDropdown = $state(null); // Track which student's dropdown is open
+	let dropdownPosition = $state({ top: 0, right: 0 }); // Track dropdown position
 	let editingSession = $state(null); // Track which student's session is being edited
 
 	// Derived state: students who are behind the cohort's current session
+	// Only show advance option if cohort has started (session > 0)
 	const studentsBehind = $derived(
-		Array.from(selectedStudents)
-			.map(id => students.find(s => s.id === id))
-			.filter(s => s && s.current_session < cohort.current_session)
+		cohort.current_session > 0
+			? Array.from(selectedStudents)
+					.map(id => students.find(s => s.id === id))
+					.filter(s => s && s.current_session < cohort.current_session)
+			: []
 	);
 
-	const canAdvance = $derived(studentsBehind.length > 0);
+	const canAdvance = $derived(studentsBehind.length > 0 && cohort.current_session > 0);
 
 	// Reload when cohort changes
 	$effect(() => {
@@ -56,22 +61,25 @@
 	async function loadStudents() {
 		loadingStudents = true;
 		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`);
-			const result = await response.json();
+			// Fetch all data in parallel instead of sequentially
+			const [enrollmentResponse, attendanceResponse, reflectionsData] = await Promise.all([
+				fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`).then(r => r.json()),
+				fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${cohort.id}`).then(r => r.json()),
+				fetchReflectionsByCohort(cohort.id, courseSlug)
+			]);
 
-			// Fetch attendance data for all students
-			const attendanceResponse = await fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${cohort.id}`);
-			const attendanceResult = await attendanceResponse.json();
+			const result = enrollmentResponse;
+			const attendanceResult = attendanceResponse;
+			reflectionsByUser = reflectionsData;
 
-			// Fetch reflection data for all students
-			reflectionsByUser = await fetchReflectionsByCohort(cohort.id, courseSlug);
-
-			// Create attendance map: user_id -> attendance_count
+			// Create attendance map: enrollment_id -> attendance_count
 			const attendanceMap = new Map();
-			if (attendanceResult.success) {
+			if (attendanceResult.success && attendanceResult.data) {
 				attendanceResult.data.forEach(record => {
-					const count = attendanceMap.get(record.user_id) || 0;
-					attendanceMap.set(record.user_id, count + (record.present ? 1 : 0));
+					if (record.present) {
+						const count = attendanceMap.get(record.enrollment_id) || 0;
+						attendanceMap.set(record.enrollment_id, count + 1);
+					}
 				});
 			}
 
@@ -86,10 +94,11 @@
 					canInvite: user.status === 'pending',
 					// Mark if they can be edited/deleted (not yet active)
 					canEdit: !user.auth_user_id,
-					// Add attendance data
-					attendanceCount: attendanceMap.get(user.auth_user_id) || 0,
-					// Calculate if student is behind (more than 1 session)
-					isBehind: user.current_session < (cohort.current_session - 1),
+					// Add attendance data (use enrollment ID, not auth_user_id)
+					attendanceCount: attendanceMap.get(user.id) || 0,
+					// Calculate if student is behind
+					// Don't mark as behind if cohort is at session 0 (not started) or if student is at session 0
+					isBehind: cohort.current_session > 0 && user.current_session > 0 && user.current_session < cohort.current_session,
 					// Add reflection status
 					reflectionStatus: reflectionStatus
 				};
@@ -258,11 +267,21 @@
 	}
 
 	function startEditSession(student) {
-		editingSession = { id: student.id, value: student.current_session };
+		editingSession = {
+			id: student.id,
+			value: student.current_session,
+			studentName: student.full_name
+		};
 	}
 
 	async function saveEditSession() {
 		if (!editingSession) return;
+
+		// Validate session number
+		if (editingSession.value < 0 || editingSession.value > totalSessions) {
+			alert(`Session must be between 0 (not started) and ${totalSessions}`);
+			return;
+		}
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
@@ -277,20 +296,61 @@
 				})
 			});
 
-			if (response.ok) {
+			const result = await response.json();
+
+			if (response.ok && result.success) {
 				editingSession = null;
 				await loadStudents();
 				await onUpdate();
+			} else {
+				const errorMsg = result.message || 'Failed to update session. Please try again.';
+				console.error('Session update failed:', result);
+				alert(errorMsg);
 			}
 		} catch (err) {
 			console.error('Failed to update session:', err);
-			alert('Failed to update session');
+			alert('Failed to update session: ' + (err.message || 'Unknown error'));
 		}
 	}
 
-	function toggleDropdown(studentId) {
-		openDropdown = openDropdown === studentId ? null : studentId;
+	function toggleDropdown(studentId, event) {
+		event?.stopPropagation(); // Prevent event bubbling
+
+		if (openDropdown === studentId) {
+			openDropdown = null;
+		} else {
+			// Calculate position for fixed positioning
+			const button = event.currentTarget;
+			const rect = button.getBoundingClientRect();
+
+			dropdownPosition = {
+				top: rect.bottom + 4, // 4px below the button
+				right: window.innerWidth - rect.right // Align to right edge of button
+			};
+
+			openDropdown = studentId;
+		}
 	}
+
+	// Close dropdown when clicking outside
+	$effect(() => {
+		function handleClickOutside(event) {
+			if (openDropdown !== null) {
+				const target = event.target;
+				const dropdown = target.closest('.actions-dropdown');
+				if (!dropdown) {
+					openDropdown = null;
+				}
+			}
+		}
+
+		if (typeof document !== 'undefined') {
+			document.addEventListener('click', handleClickOutside);
+			return () => {
+				document.removeEventListener('click', handleClickOutside);
+			};
+		}
+	});
 
 	// Helper function for reflection status display
 	function getReflectionStatusDisplay(student) {
@@ -300,8 +360,7 @@
 
 	const getRoleBadgeClass = (role) => {
 		switch (role) {
-			case 'admin': return 'bg-blue-100 text-blue-800';
-			case 'hub_coordinator': return 'bg-purple-100 text-purple-800';
+			case 'coordinator': return 'bg-purple-100 text-purple-800';
 			case 'student': return 'bg-green-100 text-green-800';
 			default: return 'bg-gray-100 text-gray-800';
 		}
@@ -323,8 +382,7 @@
 
 	const formatRole = (role) => {
 		const roles = {
-			admin: 'Admin',
-			hub_coordinator: 'Hub Coordinator',
+			coordinator: 'Hub Coordinator',
 			student: 'Participant'
 		};
 		return roles[role] || role;
@@ -370,7 +428,11 @@
 						{sendingInvitations ? 'Sending...' : `Send Invitations (${selectedStudents.size})`}
 					</button>
 				{/if}
-				<button onclick={onAddStudents} class="btn-primary-small">
+				<button type="button" onclick={() => {
+					console.log('Add Participants button clicked!');
+					console.log('onAddStudents function:', onAddStudents);
+					onAddStudents();
+				}} class="btn-primary-small">
 					<Plus size={16} />
 					Add Participants
 				</button>
@@ -378,12 +440,16 @@
 		</div>
 
 		{#if loadingStudents}
-			<div class="empty-state">Loading participants...</div>
+			<div class="loading-state">
+				<Loader2 size={32} class="spinner" />
+				<p>Loading participants...</p>
+			</div>
 		{:else if students.length === 0}
 			<div class="empty-state">No participants yet. Click "Add Participants" to get started.</div>
 		{:else}
-			<div class="table-wrapper">
-				<table>
+			<div class="table-container">
+				<div class="table-wrapper">
+					<table>
 					<thead>
 						<tr>
 							<th class="w-12">
@@ -418,7 +484,7 @@
 										{/if}
 										<div class="name-content">
 											<span class="student-name">{student.full_name}</span>
-											{#if student.role === 'hub_coordinator'}
+											{#if student.role === 'coordinator'}
 												<div class="hub-coordinator-badge">
 													<Home size={12} />
 													<span>Hub Coordinator</span>
@@ -434,62 +500,69 @@
 											<input
 												type="number"
 												bind:value={editingSession.value}
-												min="1"
-												max="8"
+												min="0"
+												max={totalSessions}
 												class="table-input-small"
+												placeholder="0-{totalSessions}"
 											/>
-											<button onclick={saveEditSession} class="btn-icon-tiny success">
+											<button
+												onclick={saveEditSession}
+												class="btn-icon-tiny success"
+												title="Save session change"
+											>
 												<Check size={14} />
 											</button>
-											<button onclick={() => editingSession = null} class="btn-icon-tiny">
+											<button
+												onclick={() => editingSession = null}
+												class="btn-icon-tiny"
+												title="Cancel"
+											>
 												<X size={14} />
 											</button>
 										</div>
 									{:else}
-										<div class="session-display" onclick={() => startEditSession(student)}>
-											Session {student.current_session}
+										<div
+											class="session-display"
+											onclick={() => startEditSession(student)}
+											title="Click to edit {student.full_name}'s current session"
+										>
+											{#if student.current_session === 0}
+												<span class="session-not-started">Not Started</span>
+											{:else}
+												Session {student.current_session}
+											{/if}
+											<span class="edit-hint">✏️</span>
 										</div>
 									{/if}
 								</td>
 								<td>
-									<span class="attendance-display">
-										{student.attendanceCount}/{cohort.current_session}
-									</span>
+									{#if cohort.current_session === 0}
+										<span class="text-gray-400">—</span>
+									{:else}
+										<span class="attendance-display">
+											{student.attendanceCount}/{cohort.current_session}
+										</span>
+									{/if}
 								</td>
 								<td>
-									{#if student.reflectionStatus}
+									{#if student.current_session === 0 || cohort.current_session === 0}
+										<span class="text-gray-400">—</span>
+									{:else if student.reflectionStatus}
 										<span class="badge {getStatusBadgeClass(student.reflectionStatus.status)}">
 											{getReflectionStatusDisplay(student)}
 										</span>
 									{:else}
-										<span class="text-gray-400">-</span>
+										<span class="text-gray-400">—</span>
 									{/if}
 								</td>
 								<td class="actions-dropdown">
-									<button onclick={() => toggleDropdown(student.id)} class="btn-icon">
+									<button
+										type="button"
+										class="btn-icon"
+										onclick={(e) => toggleDropdown(student.id, e)}
+									>
 										<MoreVertical size={16} />
 									</button>
-									{#if openDropdown === student.id}
-										<div class="dropdown-menu">
-											{#if student.canEdit}
-												<button onclick={() => { startEditStudent(student); openDropdown = null; }} class="dropdown-item">
-													<Edit2 size={14} />
-													Edit Details
-												</button>
-												<button onclick={() => { deleteStudent(student.id); openDropdown = null; }} class="dropdown-item danger">
-													<Trash2 size={14} />
-													Remove
-												</button>
-											{:else}
-												<button onclick={() => { /* TODO: View profile */ openDropdown = null; }} class="dropdown-item">
-													View Profile
-												</button>
-												<button onclick={() => { /* TODO: Send message */ openDropdown = null; }} class="dropdown-item">
-													Send Message
-												</button>
-											{/if}
-										</div>
-									{/if}
 								</td>
 							</tr>
 
@@ -507,7 +580,7 @@
 													Role:
 													<select bind:value={editingStudent.role} class="table-input">
 														<option value="student">Participant</option>
-														<option value="hub_coordinator">Hub Coordinator</option>
+														<option value="coordinator">Hub Coordinator</option>
 													</select>
 												</label>
 												<label>
@@ -537,9 +610,67 @@
 						{/each}
 					</tbody>
 				</table>
+				</div>
 			</div>
 		{/if}
 	</div>
+
+	<!-- Fixed position dropdown menu (rendered outside table to avoid clipping) -->
+	{#if openDropdown !== null}
+		{#each students.filter(s => s.id === openDropdown) as student}
+			<div
+				class="dropdown-menu-fixed"
+				style="top: {dropdownPosition.top}px; right: {dropdownPosition.right}px;"
+				onclick={(e) => e.stopPropagation()}
+			>
+				{#if student.canEdit}
+					<button
+						type="button"
+						onclick={() => {
+							startEditStudent(student);
+							openDropdown = null;
+						}}
+						class="dropdown-item"
+					>
+						<Edit2 size={14} />
+						Edit Details
+					</button>
+					<button
+						type="button"
+						onclick={() => {
+							deleteStudent(student.id);
+							openDropdown = null;
+						}}
+						class="dropdown-item danger"
+					>
+						<Trash2 size={14} />
+						Remove
+					</button>
+				{:else}
+					<button
+						type="button"
+						onclick={() => {
+							/* TODO: View profile */
+							openDropdown = null;
+						}}
+						class="dropdown-item"
+					>
+						View Profile
+					</button>
+					<button
+						type="button"
+						onclick={() => {
+							/* TODO: Send message */
+							openDropdown = null;
+						}}
+						class="dropdown-item"
+					>
+						Send Message
+					</button>
+				{/if}
+			</div>
+		{/each}
+	{/if}
 </div>
 
 <style>
@@ -554,6 +685,7 @@
 		border: 1px solid var(--course-surface);
 		border-radius: 12px;
 		padding: 24px;
+		overflow: visible; /* Allow dropdowns to overflow */
 	}
 
 	.section-header {
@@ -635,13 +767,20 @@
 		color: var(--course-accent-dark);
 	}
 
+	.table-container {
+		overflow-x: auto; /* Handle horizontal scroll on outer container */
+		overflow-y: visible; /* Allow dropdowns to overflow vertically */
+	}
+
 	.table-wrapper {
-		overflow-x: auto;
+		overflow: visible; /* Inner wrapper allows dropdown to escape */
+		min-width: 100%;
 	}
 
 	table {
 		width: 100%;
 		border-collapse: collapse;
+		position: relative;
 	}
 
 	thead {
@@ -672,11 +811,15 @@
 		font-size: 0.875rem;
 	}
 
-	tr:hover:not(.editing) {
+	tr {
+		position: relative;
+	}
+
+	tr:hover:not(.editing-row) {
 		background: var(--course-surface);
 	}
 
-	tr.editing {
+	tr.editing-row {
 		background: #fffbf0;
 	}
 
@@ -713,10 +856,18 @@
 		transition: all 0.2s ease;
 		display: flex;
 		align-items: center;
+		position: relative;
+		z-index: 1;
 	}
 
 	.btn-icon:hover {
 		background: var(--course-surface);
+		color: var(--course-accent-darkest);
+	}
+
+	.btn-icon:active {
+		transform: scale(0.95);
+		background: var(--course-accent-light);
 	}
 
 	.btn-icon.success {
@@ -766,6 +917,35 @@
 		color: var(--course-accent-dark);
 	}
 
+	.loading-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 64px 48px;
+		gap: 16px;
+	}
+
+	.loading-state p {
+		color: var(--course-accent-dark);
+		font-size: 1rem;
+		font-weight: 500;
+	}
+
+	.loading-state :global(.spinner) {
+		color: var(--course-accent-light);
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	/* New table styles */
 	.name-cell {
 		display: flex;
@@ -805,14 +985,39 @@
 
 	.session-display {
 		cursor: pointer;
-		padding: 4px 8px;
-		border-radius: 4px;
-		transition: background 0.2s ease;
-		display: inline-block;
+		padding: 6px 12px;
+		border-radius: 6px;
+		transition: all 0.2s ease;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		border: 1px solid transparent;
+		font-weight: 500;
 	}
 
 	.session-display:hover {
 		background: var(--course-surface);
+		border-color: var(--course-accent-light);
+	}
+
+	.session-display .edit-hint {
+		opacity: 0;
+		font-size: 0.75rem;
+		transition: opacity 0.2s ease;
+	}
+
+	.session-display:hover .edit-hint {
+		opacity: 0.5;
+	}
+
+	.session-not-started {
+		color: #6B7280;
+		font-style: italic;
+		font-weight: 400;
+	}
+
+	.text-gray-400 {
+		color: #9CA3AF;
 	}
 
 	.session-edit {
@@ -822,11 +1027,19 @@
 	}
 
 	.table-input-small {
-		width: 60px;
-		padding: 4px 8px;
-		border: 1px solid var(--course-accent-light);
-		border-radius: 4px;
+		width: 70px;
+		padding: 6px 10px;
+		border: 2px solid var(--course-accent-light);
+		border-radius: 6px;
 		font-size: 0.875rem;
+		font-weight: 500;
+		transition: border-color 0.2s ease;
+	}
+
+	.table-input-small:focus {
+		outline: none;
+		border-color: var(--course-accent-dark);
+		background: #FFFBF0;
 	}
 
 	.btn-icon-tiny {
@@ -866,20 +1079,29 @@
 	.actions-dropdown {
 		position: relative;
 		text-align: right;
+		overflow: visible !important;
 	}
 
-	.dropdown-menu {
-		position: absolute;
-		right: 0;
-		top: 100%;
-		margin-top: 4px;
+	.dropdown-menu-fixed {
+		position: fixed;
 		background: white;
-		border: 1px solid var(--course-surface);
+		border: 2px solid var(--course-accent-light);
 		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-		min-width: 160px;
-		z-index: 10;
-		overflow: hidden;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+		min-width: 180px;
+		z-index: 9999;
+		animation: dropdownFade 0.15s ease-out;
+	}
+
+	@keyframes dropdownFade {
+		from {
+			opacity: 0;
+			transform: translateY(-8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.dropdown-item {

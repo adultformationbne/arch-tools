@@ -106,11 +106,16 @@ export const load: PageServerLoad = async (event) => {
 			};
 		}) || [];
 
+		// Determine initial selected cohort from URL or default to first
+		const cohortParam = event.url.searchParams.get('cohort');
+		const initialSelectedCohort = cohortParam || (processedCohorts.length > 0 ? processedCohorts[0].id : null);
+
 		return {
 			modules: modules || [],
 			cohorts: processedCohorts,
 			currentUserId: user.id,
-			courseSlug
+			courseSlug,
+			initialSelectedCohort
 		};
 
 	} catch (error) {

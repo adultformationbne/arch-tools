@@ -1,5 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
@@ -7,16 +9,14 @@
 	import StudentPreview from '$lib/components/StudentPreview.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
-	// Available modules from database
-	let availableModules = $state([
-		{ id: 'f29f35b3-a651-4b86-b067-458a56db73c4', name: 'Module 1: Foundations of Faith', description: 'Introduction to Catholic doctrine, scripture, and the basics of Christian faith', order_number: 1 },
-		{ id: '0e8b0cd7-b019-4a81-95cc-548a1eed346d', name: 'Module 2: Scripture & Tradition', description: 'Deep dive into biblical studies and the role of tradition in Catholic teaching', order_number: 2 },
-		{ id: '926f8a52-f4b2-4ede-9a13-ffa0dc21fea7', name: 'Module 3: Sacraments & Liturgy', description: 'Understanding the seven sacraments and liturgical practices of the Church', order_number: 3 },
-		{ id: '4a14089f-50ff-491b-a4d6-61cc576b2165', name: 'Module 4: Moral Teaching', description: 'Catholic social teaching, ethics, and moral decision-making in modern life', order_number: 4 }
-	]);
+	let { data } = $props();
 
-	// Currently selected module
-	let selectedModule = $state(availableModules[0]); // Default to first module
+	// Available modules from server
+	let availableModules = $state(data.modules || []);
+
+	// Get module from URL or default to first
+	let selectedModuleId = $state($page.url.searchParams.get('module') || availableModules[0]?.id);
+	let selectedModule = $derived(availableModules.find(m => m.id === selectedModuleId) || availableModules[0]);
 	let totalSessions = $state(8); // Default sessions, can be adjusted per module
 	let showCreateModule = $state(false);
 	let editingModule = $state(null); // For inline editing
@@ -25,9 +25,11 @@
 	let editModuleName = $state('');
 	let editModuleDescription = $state('');
 
-	let selectedSession = $state(1);
+	let selectedSession = $state(0); // Start with Week 0
 	let sessionMaterials = $state({});
 	let sessionReflections = $state({});
+	let sessionReflectionsEnabled = $state({}); // Track reflections_enabled per session
+	let sessionIds = $state({}); // Track session IDs for updates
 	let loading = $state(false);
 	let saving = $state(false);
 	let saveMessage = $state('');
@@ -36,9 +38,14 @@
 	const initializeSessions = () => {
 		sessionMaterials = {};
 		sessionReflections = {};
-		for (let i = 1; i <= totalSessions; i++) {
+		sessionReflectionsEnabled = {};
+		sessionIds = {};
+		// Include Week 0 (session 0)
+		for (let i = 0; i <= totalSessions; i++) {
 			sessionMaterials[i] = [];
 			sessionReflections[i] = '';
+			sessionReflectionsEnabled[i] = true; // Default to enabled
+			sessionIds[i] = null;
 		}
 	};
 
@@ -49,6 +56,18 @@
 	const loadSessionData = async (session) => {
 		loading = true;
 		try {
+			// Load session metadata (including reflections_enabled)
+			const sessionResponse = await fetch(`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${session}`);
+			const sessionData = await sessionResponse.json();
+
+			if (sessionResponse.ok && sessionData.session) {
+				sessionReflectionsEnabled[session] = sessionData.session.reflections_enabled ?? true;
+				sessionIds[session] = sessionData.session.id;
+				console.log('Loaded session data:', { session, reflectionsEnabled: sessionReflectionsEnabled[session], sessionId: sessionIds[session] });
+			} else {
+				console.error('Failed to load session metadata:', sessionData);
+			}
+
 			// Load materials from MODULE
 			const materialsResponse = await fetch(`/api/courses/module-materials?module_id=${selectedModule.id}&session_number=${session}`);
 			const materialsData = await materialsResponse.json();
@@ -106,6 +125,49 @@
 		saveMessage = message;
 	};
 
+	const handleReflectionsEnabledChange = async (newEnabled) => {
+		sessionReflectionsEnabled[selectedSession] = newEnabled;
+
+		saving = true;
+		saveMessage = 'Updating reflection settings...';
+
+		try {
+			const response = await fetch('/api/courses/sessions', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionIds[selectedSession],
+					reflections_enabled: newEnabled
+				})
+			});
+
+			if (response.ok) {
+				saveMessage = 'Saved';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 1000);
+				toastSuccess(newEnabled ? 'Reflections enabled' : 'Reflections disabled');
+			} else {
+				const errorData = await response.json();
+				saveMessage = 'Save failed';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 2000);
+				toastError(`Failed to update reflection settings: ${errorData.error}`);
+			}
+		} catch (error) {
+			console.error('Error updating reflection settings:', error);
+			saveMessage = 'Save failed';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 2000);
+			toastError('Failed to update reflection settings');
+		}
+	};
+
 	const handleReflectionChange = async (newReflection) => {
 		sessionReflections[selectedSession] = newReflection;
 
@@ -136,8 +198,7 @@
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						module_id: selectedModule.id,
-						session_number: selectedSession,
+						session_id: sessionIds[selectedSession],
 						question_text: newReflection
 					})
 				});
@@ -183,11 +244,17 @@
 		}
 	};
 
-	const handleModuleChange = async (module) => {
-		selectedModule = module;
-		selectedSession = 1;
+	const handleModuleChange = async (moduleId) => {
+		selectedModuleId = moduleId;
+		selectedSession = 0; // Start with Pre-Start
+
+		// Update URL to reflect selected module
+		const url = new URL($page.url);
+		url.searchParams.set('module', moduleId);
+		goto(url.toString(), { replaceState: true, keepFocus: true });
+
 		initializeSessions();
-		await loadSessionData(1);
+		await loadSessionData(0);
 	};
 
 	const addSession = () => {
@@ -237,11 +304,12 @@
 		editModuleDescription = '';
 	};
 
-	const currentSessionData = $derived(() => ({
+	const currentSessionData = $derived({
 		materials: sessionMaterials[selectedSession] || [],
 		reflectionQuestion: sessionReflections[selectedSession] || '',
+		reflectionsEnabled: sessionReflectionsEnabled[selectedSession] ?? true,
 		sessionOverview: '' // TODO: Implement when session overview table exists
-	}));
+	});
 </script>
 
 <div class="px-16 py-12">
@@ -273,11 +341,8 @@
 				</div>
 
 				<select
-					value={selectedModule.id}
-					onchange={(e) => {
-						const module = availableModules.find(m => m.id === e.target.value);
-						if (module) handleModuleChange(module);
-					}}
+					value={selectedModuleId}
+					onchange={(e) => handleModuleChange(e.target.value)}
 					class="bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white font-semibold text-base"
 				>
 					{#each availableModules as module}
@@ -291,16 +356,27 @@
 		<div class="sticky top-12 z-10 bg-gray-900/95 backdrop-blur-md rounded-2xl border border-gray-700 mb-8 p-6 shadow-lg">
 			<div class="flex items-center justify-between mb-4">
 				<h4 class="text-xl font-semibold text-white">{selectedModule.name}</h4>
-				<span class="text-white/60 text-sm">Editing: Session {selectedSession} of {totalSessions}</span>
+				<span class="text-white/60 text-sm">Editing: {selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession} of ${totalSessions}`}</span>
 			</div>
 
-			<div class="flex gap-3 overflow-x-auto pb-2">
+			<div class="flex gap-2 items-center flex-wrap">
+				<!-- Pre-Start Button -->
+				<button
+					onclick={() => handleSessionChange(0)}
+					class="px-4 h-12 rounded-lg font-bold text-sm transition-all {selectedSession === 0 ? 'bg-white text-gray-800' : 'bg-white/20 text-white hover:bg-white/30'}"
+					title="Pre-Start"
+				>
+					Pre-Start
+				</button>
+
+				<!-- Regular Sessions (1-8) -->
 				{#each Array(totalSessions).fill(0) as _, i}
 					<button
 						onclick={() => handleSessionChange(i + 1)}
-						class="flex-shrink-0 px-6 py-3 rounded-xl font-semibold transition-all {selectedSession === i + 1 ? 'bg-white text-gray-800' : 'bg-white/20 text-white hover:bg-white/30'}"
+						class="w-12 h-12 rounded-lg font-bold text-xl transition-all {selectedSession === i + 1 ? 'bg-white text-gray-800' : 'bg-white/20 text-white hover:bg-white/30'}"
+						title="Session {i + 1}"
 					>
-						Session {i + 1}
+						{i + 1}
 					</button>
 				{/each}
 			</div>
@@ -313,13 +389,14 @@
 				<div class="lg:col-span-2 space-y-6">
 					<!-- Session Overview -->
 					<SessionOverviewEditor
-						sessionOverview={currentSessionData().sessionOverview}
+						sessionOverview={currentSessionData.sessionOverview}
 						onOverviewChange={handleOverviewChange}
+						sessionNumber={selectedSession}
 					/>
 
 					<!-- Materials Editor -->
 					<MaterialEditor
-						materials={currentSessionData().materials}
+						materials={currentSessionData.materials}
 						onMaterialsChange={handleMaterialsChange}
 						onSaveStatusChange={handleSaveStatusChange}
 						allowNativeContent={true}
@@ -332,16 +409,19 @@
 				<!-- Right: Reflection & Preview -->
 				<div>
 					<ReflectionEditor
-						reflectionQuestion={currentSessionData().reflectionQuestion}
+						reflectionQuestion={currentSessionData.reflectionQuestion}
+						reflectionsEnabled={currentSessionData.reflectionsEnabled}
 						onReflectionChange={handleReflectionChange}
+						onReflectionsEnabledChange={handleReflectionsEnabledChange}
+						sessionNumber={selectedSession}
 					/>
 
 					<!-- Student Preview -->
 					<div class="mt-6">
 						<StudentPreview
 							sessionNumber={selectedSession}
-							sessionOverview={currentSessionData().sessionOverview}
-							materials={currentSessionData().materials}
+							sessionOverview={currentSessionData.sessionOverview}
+							materials={currentSessionData.materials}
 						/>
 					</div>
 				</div>

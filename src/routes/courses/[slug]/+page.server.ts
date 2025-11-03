@@ -90,7 +90,8 @@ export const load: PageServerLoad = async (event) => {
 				*,
 				courses_sessions!inner (
 					session_number,
-					module_id
+					module_id,
+					reflections_enabled
 				)
 			`)
 			.eq('courses_sessions.module_id', moduleId);
@@ -191,13 +192,19 @@ export const load: PageServerLoad = async (event) => {
 		});
 
 		// Create reflection questions lookup with IDs
+		// Only include questions from sessions where reflections_enabled is true
 		const questionsBySession: Record<number, { id: string, text: string }> = {};
 		reflectionQuestions?.forEach(question => {
 			const sessionNum = question.courses_sessions.session_number;
-			questionsBySession[sessionNum] = {
-				id: question.id,
-				text: question.question_text
-			};
+			const reflectionsEnabled = question.courses_sessions.reflections_enabled ?? true;
+
+			// Only add question if reflections are enabled for this session
+			if (reflectionsEnabled) {
+				questionsBySession[sessionNum] = {
+					id: question.id,
+					text: question.question_text
+				};
+			}
 		});
 
 		// Process reflection responses for PastReflectionsSection
@@ -278,23 +285,30 @@ export const load: PageServerLoad = async (event) => {
 		// Handle session 0 (cohort not started yet)
 		let currentSessionData;
 		if (currentSession === 0) {
+			// For Week 0, load actual materials and session info from the database
+			const sessionInfo = sessionsByNumber[0];
+			const sessionMaterials = materialsBySession[0] || [];
+
 			currentSessionData = {
 				sessionNumber: 0,
-				sessionTitle: "Course Starting Soon",
-				sessionOverview: `This course begins on ${new Date(cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Materials will be available when your cohort starts Session 1.`,
-				materials: [],
-				reflectionQuestion: { id: null, text: "" },
-				reflectionStatus: "not_started",
+				sessionTitle: sessionInfo?.title || "Welcome",
+				sessionOverview: sessionInfo?.description || `This course begins on ${new Date(cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Review the materials below to prepare for Session 1.`,
+				materials: sessionMaterials,
+				reflectionQuestion: null, // No reflection for Week 0
+				reflectionStatus: null,
 				isUpcoming: true // Flag to indicate cohort hasn't started
 			};
 		} else {
+			// Check if reflections are enabled for this session (default to true if no question exists)
+			const reflectionQuestion = questionsBySession[currentSession] || null;
+
 			currentSessionData = {
 				sessionNumber: currentSession,
 				sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
 				sessionOverview: currentSessionInfo?.description || `Session ${currentSession} content and materials`,
 				materials: currentSessionMaterials,
-				reflectionQuestion: questionsBySession[currentSession] || { id: null, text: "Reflect on this session's materials and their impact on your faith journey." },
-				reflectionStatus: "not_started", // TODO: Get from user's reflection responses
+				reflectionQuestion: reflectionQuestion,
+				reflectionStatus: reflectionQuestion ? "not_started" : null, // Only show status if reflection is enabled
 				isUpcoming: false
 			};
 		}
@@ -318,7 +332,8 @@ export const load: PageServerLoad = async (event) => {
 			sessionsByNumber,
 			pastReflections,
 			publicReflections: processedPublicReflections,
-			currentUserId
+			currentUserId,
+			courseSlug
 		};
 
 	} catch (error) {
@@ -334,6 +349,7 @@ export const load: PageServerLoad = async (event) => {
 			pastReflections: [],
 			publicReflections: [],
 			currentUserId,
+			courseSlug,
 			error: 'Failed to load course data'
 		};
 	}

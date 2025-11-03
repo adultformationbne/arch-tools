@@ -10,13 +10,15 @@
 	const enrollmentRole = data.enrollmentRole;
 	const isCourseAdmin = data.isCourseAdmin;
 	const cohorts = data.cohorts || [];
+	const courseTheme = data.courseTheme || {};
 
-	// Extract cohort selection from URL if on dashboard
+	// Default theme colors
+	const accentDark = courseTheme.accentDark || '#334642';
+	const accentLight = courseTheme.accentLight || '#c59a6b';
+
+	// Extract cohort selection from URL - works on all admin pages
 	const selectedCohortId = $derived(() => {
-		if ($page.url.pathname === `/admin/courses/${courseSlug}`) {
-			return $page.url.searchParams.get('cohort');
-		}
-		return null;
+		return $page.url.searchParams.get('cohort');
 	});
 
 	function handleNewCohort() {
@@ -25,12 +27,17 @@
 	}
 
 	function handleSelectCohort(cohortId) {
-		// Navigate to dashboard with selected cohort
-		goto(`/admin/courses/${courseSlug}?cohort=${cohortId}`);
+		// Update cohort param while staying on current page
+		const newUrl = new URL($page.url);
+		newUrl.searchParams.set('cohort', cohortId);
+		goto(newUrl.toString());
 	}
 </script>
 
-<div class="admin-layout">
+<div
+	class="admin-layout"
+	style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};"
+>
 	<CourseAdminSidebar
 		{courseSlug}
 		{modules}

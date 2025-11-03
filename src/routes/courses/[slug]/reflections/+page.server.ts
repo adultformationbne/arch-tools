@@ -73,15 +73,16 @@ export const load: PageServerLoad = async (event) => {
 			.select(`
 				*,
 				courses_sessions!inner (
-					session_number
+					session_number,
+					reflections_enabled
 				)
 			`)
 			.eq('courses_sessions.module_id', moduleId);
 
-		// Sort by session number in code (can't order by joined columns in Supabase)
-		reflectionQuestions?.sort((a, b) =>
-			a.courses_sessions.session_number - b.courses_sessions.session_number
-		);
+		// Sort by session number and filter out sessions with reflections disabled
+		const enabledReflectionQuestions = reflectionQuestions
+			?.filter(q => q.courses_sessions.reflections_enabled !== false)
+			?.sort((a, b) => a.courses_sessions.session_number - b.courses_sessions.session_number);
 
 		if (questionsError) {
 			console.error('Error fetching reflection questions:', questionsError);
@@ -129,8 +130,9 @@ export const load: PageServerLoad = async (event) => {
 		});
 
 		// Create entries for all sessions (1 through currentSession)
+		// Only include sessions where reflections are enabled
 		for (let session = 1; session <= currentSession; session++) {
-			const question = reflectionQuestions?.find(q => q.courses_sessions?.session_number === session);
+			const question = enabledReflectionQuestions?.find(q => q.courses_sessions?.session_number === session);
 			const response = responsesBySession[session];
 
 			if (question) {
@@ -185,8 +187,8 @@ export const load: PageServerLoad = async (event) => {
 			};
 		}) || [];
 
-		// Get current reflection question (if there's one due)
-		const currentReflectionQuestion = reflectionQuestions?.find(q => q.courses_sessions?.session_number === currentSession);
+		// Get current reflection question (if there's one due and reflections are enabled)
+		const currentReflectionQuestion = enabledReflectionQuestions?.find(q => q.courses_sessions?.session_number === currentSession);
 		const hasCurrentSubmission = responsesBySession[currentSession];
 
 		const currentQuestion = currentReflectionQuestion ? {
@@ -204,7 +206,8 @@ export const load: PageServerLoad = async (event) => {
 			currentReflectionQuestion: currentQuestion,
 			userId: user.id,
 			cohortId,
-			currentSession
+			currentSession,
+			courseSlug
 		};
 
 	} catch (error) {
@@ -216,6 +219,7 @@ export const load: PageServerLoad = async (event) => {
 			userId: user.id,
 			cohortId,
 			currentSession,
+			courseSlug,
 			error: 'Failed to load reflections data'
 		};
 	}

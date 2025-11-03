@@ -108,8 +108,19 @@ async function createModule(data: any) {
 		throw error(500, 'Failed to create module');
 	}
 
-	// Auto-create session placeholders
+	// Auto-create session placeholders (including Pre-Start at session 0)
 	const sessionsToCreate = [];
+
+	// Create Pre-Start (session 0)
+	sessionsToCreate.push({
+		module_id: newModule.id,
+		session_number: 0,
+		title: `Welcome to ${name}`,
+		description: 'Review these materials to prepare for Session 1.',
+		learning_objectives: []
+	});
+
+	// Create regular sessions (1 through numSessions)
 	for (let i = 1; i <= numSessions; i++) {
 		sessionsToCreate.push({
 			module_id: newModule.id,
@@ -479,9 +490,10 @@ async function ensureModuleReflectionQuestions(moduleId: string) {
 	const now = new Date().toISOString();
 	const questionsToInsert = sessions
 		.filter(session => !existingSessionIds.has(session.id))
-		.map((session, index) => ({
+		.filter(session => session.session_number !== 0) // Skip Pre-Start (session 0)
+		.map((session) => ({
 			session_id: session.id,
-			question_text: defaultQuestions[index] || defaultQuestions[defaultQuestions.length - 1],
+			question_text: defaultQuestions[session.session_number - 1] || defaultQuestions[defaultQuestions.length - 1],
 			created_at: now,
 			updated_at: now
 		}));
@@ -543,7 +555,7 @@ async function updateCohort(data: any, actorName: string) {
 			'session_changed',
 			null,
 			actorName,
-			`Current session changed from ${currentCohort?.current_session || 1} to ${currentSession}`,
+			`Current session changed from ${currentCohort?.current_session ?? 0} to ${currentSession}`,
 			{ old_session: currentCohort?.current_session, new_session: currentSession }
 		);
 	}
@@ -841,7 +853,7 @@ async function advanceStudents(data: any, actorName: string) {
 		throw error(400, 'No students selected');
 	}
 
-	if (targetSession < 1 || targetSession > 8) {
+	if (targetSession < 0 || targetSession > 8) {
 		throw error(400, 'Invalid session number');
 	}
 

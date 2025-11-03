@@ -5,23 +5,21 @@
 </script>
 
 <footer class="bg-white border-t border-gray-200 mt-auto">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-		<div class="flex flex-col md:flex-row items-center justify-between gap-4">
+	<div class="max-w-7xl mx-auto px-4 py-2">
+		<div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
 			<!-- Copyright -->
-			<div class="text-sm text-gray-600">
-				&copy; {currentYear} Archdiocesan Ministries. All rights reserved.
+			<div>
+				&copy; {currentYear} Archdiocesan Ministries
 			</div>
 
 			<!-- Links -->
-			<div class="flex items-center gap-6">
-				<a
-					href="/data-policy"
-					class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
-				>
-					<Scale class="h-4 w-4 mr-1.5" />
-					Data Policy
-				</a>
-			</div>
+			<a
+				href="/data-policy"
+				class="inline-flex items-center hover:text-gray-700 transition-colors"
+			>
+				<Scale class="h-3 w-3 mr-1" />
+				Data Policy
+			</a>
 		</div>
 	</div>
 </footer>

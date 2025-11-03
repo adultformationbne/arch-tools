@@ -5,31 +5,26 @@ export const load: LayoutServerLoad = async ({ params, parent }) => {
 	const parentData = await parent();
 	const courseSlug = params.slug;
 
-	// Get course ID
+	// Get course with settings
 	const { data: course } = await supabaseAdmin
 		.from('courses')
-		.select('id')
+		.select('id, name, short_name, description, settings')
 		.eq('slug', courseSlug)
 		.single();
 
 	let cohorts = [];
 	if (course) {
 		// Get modules for this course
-		const { data: modules, error: modulesError } = await supabaseAdmin
+		const { data: modules } = await supabaseAdmin
 			.from('courses_modules')
 			.select('id')
 			.eq('course_id', course.id);
 
-		if (modulesError) {
-			console.error('Error fetching modules:', modulesError);
-		}
-
 		const moduleIds = modules?.map(m => m.id) || [];
-		console.log('Module IDs for course:', moduleIds);
 
 		if (moduleIds.length > 0) {
 			// Get active/upcoming cohorts (not completed/withdrawn)
-			const { data: cohortsData, error: cohortsError } = await supabaseAdmin
+			const { data: cohortsData } = await supabaseAdmin
 				.from('courses_cohorts')
 				.select('id, name, current_session, start_date, end_date')
 				.in('module_id', moduleIds)
@@ -37,20 +32,29 @@ export const load: LayoutServerLoad = async ({ params, parent }) => {
 				.neq('status', 'withdrawn')
 				.order('start_date', { ascending: false });
 
-			if (cohortsError) {
-				console.error('Error fetching cohorts:', cohortsError);
-			}
-
 			cohorts = cohortsData || [];
-			console.log('Cohorts loaded for sidebar:', cohorts);
 		}
 	}
+
+	// Extract theme and branding from course settings
+	const settings = course?.settings || {};
+	const courseTheme = settings.theme || {};
+	const courseBranding = settings.branding || {};
 
 	return {
 		courseSlug: params.slug,
 		userModules: parentData.userProfile?.modules || [],
 		enrollmentRole: parentData.enrollmentRole || null,
 		isCourseAdmin: parentData.isCourseAdmin || false,
-		cohorts
+		cohorts,
+		courseInfo: {
+			id: course?.id,
+			slug: params.slug,
+			name: course?.name,
+			shortName: course?.short_name,
+			description: course?.description
+		},
+		courseTheme,
+		courseBranding
 	};
 };

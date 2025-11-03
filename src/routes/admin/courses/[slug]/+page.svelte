@@ -1,6 +1,6 @@
 <script>
 	import { Plus, Download } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
 	import CohortCard from '$lib/components/CohortCard.svelte';
 	import CohortManager from '$lib/components/CohortManager.svelte';
@@ -24,9 +24,10 @@
 	let students = $state([]);
 	let loadingStudents = $state(false);
 
-	// Get selected cohort from URL or default to first
-	let selectedCohortId = $state(null);
+	// Get selected cohort - use server-provided initial value for instant load
+	let selectedCohortId = $state(data.initialSelectedCohort);
 
+	// On mount: if we have a selected cohort but no URL param, update URL instantly
 	$effect(() => {
 		const cohortParam = $page.url.searchParams.get('cohort');
 		const actionParam = $page.url.searchParams.get('action');
@@ -38,13 +39,19 @@
 			const newUrl = new URL($page.url);
 			newUrl.searchParams.delete('action');
 			goto(newUrl.pathname + newUrl.search, { replaceState: true });
+			return;
 		}
 
-		// Select cohort from URL or default to first
-		if (cohortParam) {
+		// If we have an initial selection but no URL param, update URL using SvelteKit's replaceState (instant + reactive!)
+		if (selectedCohortId && !cohortParam) {
+			const newUrl = new URL($page.url);
+			newUrl.searchParams.set('cohort', selectedCohortId);
+			replaceState(newUrl.toString(), {});
+		}
+
+		// Sync selectedCohortId with URL changes (when user clicks sidebar)
+		if (cohortParam && cohortParam !== selectedCohortId) {
 			selectedCohortId = cohortParam;
-		} else if (cohorts.length > 0 && !selectedCohortId) {
-			selectedCohortId = cohorts[0].id;
 		}
 	});
 
@@ -84,7 +91,10 @@
 	}
 
 	function openStudentEnrollment() {
+		console.log('openStudentEnrollment called!');
+		console.log('Current showStudentEnrollment state:', showStudentEnrollment);
 		showStudentEnrollment = true;
+		console.log('New showStudentEnrollment state:', showStudentEnrollment);
 	}
 
 	function closeStudentEnrollment() {
