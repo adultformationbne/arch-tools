@@ -152,7 +152,7 @@
 										Edit Module
 									</button>
 									<a
-										href="/courses/{course?.slug}/admin/sessions?module={module.id}"
+										href="/admin/courses/{course?.slug}/sessions?module={module.id}"
 										class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 block"
 										onclick={() => openDropdown = null}
 									>

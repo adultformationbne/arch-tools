@@ -16,13 +16,16 @@
 		<section class="mb-8">
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">What This Platform Does</h2>
 			<p class="text-gray-700 mb-4">
-				The Archdiocesan Ministry Tools platform is an internal content management system that helps staff organize and publish Catholic liturgical content, including:
+				The Archdiocesan Ministry Tools platform is an internal content management system that helps staff organize and publish Catholic liturgical content, and manage formation programs, including:
 			</p>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li>Daily Gospel Reflections (DGR) scheduling and publishing</li>
 				<li>Scripture reading organization from public liturgical calendars</li>
 				<li>Content editing and version management for publications</li>
 				<li>User account management for internal staff access</li>
+				<li>Catholic formation courses and programs (e.g., ACCF - Archdiocesan Center for Catholic Formation)</li>
+				<li>Student enrollment and cohort management</li>
+				<li>Course materials delivery and reflection tracking</li>
 			</ul>
 		</section>
 
@@ -32,10 +35,30 @@
 			<div class="space-y-6">
 				<div class="bg-blue-50 p-4 rounded-lg">
 					<h3 class="font-medium text-gray-800 mb-2">Data We Can Access (stored in our database)</h3>
+
+					<h4 class="font-medium text-gray-700 mt-4 mb-2">User & Access Data:</h4>
 					<ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-						<li>Work email addresses and staff names</li>
-						<li>User roles and permissions (admin, editor, contributor, viewer)</li>
-						<li>Content editing activity logs and version history</li>
+						<li>Email addresses and names (staff and course participants)</li>
+						<li>Platform access modules (users, editor, dgr, courses.participant, courses.manager, courses.admin)</li>
+						<li>Course assignments for managers</li>
+						<li>Activity logs and version history</li>
+					</ul>
+
+					<h4 class="font-medium text-gray-700 mt-4 mb-2">Course & Formation Data:</h4>
+					<ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+						<li>Course enrollments (participant names, emails, cohort assignments)</li>
+						<li>Course roles (student, coordinator)</li>
+						<li>Hub assignments and coordination</li>
+						<li>Student progress tracking (current session number)</li>
+						<li>Attendance records</li>
+						<li>Reflection submissions and written responses</li>
+						<li>Grading and feedback on reflections (passing/not passing, feedback text)</li>
+						<li>Course materials (videos, documents, links, HTML content)</li>
+						<li>Module and session structures</li>
+					</ul>
+
+					<h4 class="font-medium text-gray-700 mt-4 mb-2">Content & Publishing Data:</h4>
+					<ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
 						<li>Scripture readings and liturgical content</li>
 						<li>Gospel reflections and publication content</li>
 						<li>Contributor scheduling preferences and assignments</li>
@@ -72,10 +95,13 @@
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">How We Protect Data</h2>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li><strong>Authentication:</strong> All access requires secure login via Supabase Auth</li>
-				<li><strong>Role-based access:</strong> Staff can only access content appropriate to their role</li>
+				<li><strong>Module-based access:</strong> Platform access controlled by assigned modules (users, editor, dgr, courses.*)</li>
+				<li><strong>Course-level permissions:</strong> Course managers only access assigned courses; participants only access enrolled cohorts</li>
 				<li><strong>Secure hosting:</strong> Data stored on Supabase's secure PostgreSQL infrastructure</li>
+				<li><strong>Row-level security:</strong> Database policies ensure users only access data they're authorized to see</li>
 				<li><strong>Version control:</strong> All content changes are logged with timestamps and user attribution</li>
 				<li><strong>Token-based submissions:</strong> Public contributors access content via secure, time-limited tokens</li>
+				<li><strong>Enrollment privacy:</strong> Student reflection submissions are only visible to course administrators and the student who submitted them</li>
 			</ul>
 		</section>
 
@@ -83,6 +109,9 @@
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">Data Retention</h2>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li><strong>Content:</strong> All content versions are preserved for historical reference and audit purposes</li>
+				<li><strong>Course enrollments:</strong> Maintained indefinitely for transcript and completion record purposes</li>
+				<li><strong>Reflection submissions:</strong> Preserved as part of student records and grading history</li>
+				<li><strong>Attendance records:</strong> Retained for the duration of the course and archived upon completion</li>
 				<li><strong>User sessions:</strong> Automatically expire according to Supabase security policies</li>
 				<li><strong>Activity logs:</strong> Maintained indefinitely for content integrity and version control</li>
 				<li><strong>Email notifications:</strong> Processed and delivered, not permanently stored</li>
@@ -102,7 +131,10 @@
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">Staff Responsibilities</h2>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li>Keep login credentials secure and do not share accounts</li>
-				<li>Only access and modify content within your assigned role</li>
+				<li>Only access and modify content within your assigned modules and courses</li>
+				<li>Respect student privacy - do not share reflection submissions or grades outside the platform</li>
+				<li>Course managers should only access courses they are assigned to manage</li>
+				<li>Maintain confidentiality of participant information (names, emails, progress, reflections)</li>
 				<li>Report any suspected security issues to IT administration</li>
 				<li>Use the platform only for official archdiocesan ministry purposes</li>
 			</ul>
@@ -126,8 +158,8 @@
 		</section>
 
 		<footer class="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
-			<p>Last updated: September 2025</p>
-			<p>This policy applies to internal use of the Archdiocesan Ministry Tools platform.</p>
+			<p>Last updated: November 2025</p>
+			<p>This policy applies to internal use of the Archdiocesan Ministry Tools platform, including course management and formation programs.</p>
 		</footer>
 	</div>
 </div>

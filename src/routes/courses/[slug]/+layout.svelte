@@ -1,10 +1,15 @@
 <script>
+	import CourseNavigation from './CourseNavigation.svelte';
+
 	// This layout applies course-specific theming from the database settings
 	let { data, children } = $props();
 
 	// Extract theme settings from the parent layout
 	const theme = data.courseTheme || {};
 	const branding = data.courseBranding || {};
+	const courseSlug = data.courseSlug || '';
+	const userName = data.userName || 'User';
+	const userRole = data.userRole || 'student';
 
 	// Build CSS custom property string for inline styles
 	function buildThemeStyles(themeSettings) {
@@ -36,6 +41,14 @@
 
 <!-- Apply course theme as CSS custom properties to all child routes -->
 <div style={themeStyles} class="course-themed-container">
+	<!-- Course Navigation -->
+	<CourseNavigation
+		{courseSlug}
+		{userName}
+		{userRole}
+		courseBranding={branding}
+	/>
+
 	{@render children()}
 </div>
 

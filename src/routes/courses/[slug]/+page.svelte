@@ -10,11 +10,13 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber } = data;
+	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug } = data;
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
-	let availableSessions = $state(8); // Student can access sessions 1-8
+	// Students can only access sessions up to their current_session
+	// If current_session is 0 (not started), they can't access any sessions
+	let availableSessions = $state(initialSession);
 	let showReflectionWriter = $state(false);
 	let showMaterialViewer = $state(false);
 	let selectedMaterial = $state(null);
@@ -120,6 +122,7 @@
 	<div class="pb-8">
 		<div class="max-w-7xl mx-auto">
 			<ReflectionWriter
+				courseSlug={courseSlug}
 				bind:isVisible={showReflectionWriter}
 				questionId={currentSessionData.reflectionQuestion?.id}
 				question={currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}

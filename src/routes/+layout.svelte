@@ -5,6 +5,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import NavigationLoader from '$lib/components/NavigationLoader.svelte';
+	import PageTransition from '$lib/components/PageTransition.svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 
@@ -29,6 +31,12 @@
 		return () => subscription.unsubscribe();
 	});
 </script>
+
+<!-- Global navigation loading indicator -->
+<NavigationLoader />
+
+<!-- Optional: Uncomment to enable skeleton loading screen during page transitions -->
+<!-- <PageTransition /> -->
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
 	{#if session && !hideNav}

@@ -29,7 +29,7 @@
 		if (!confirmed) return;
 
 		try {
-			const response = await fetch('/admin/courses/' + course.slug/api', {
+			const response = await fetch('/admin/courses/' + course.slug + '/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

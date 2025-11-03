@@ -39,9 +39,10 @@ function hasModule(module) {
 }
 
 const canManageAllCourses = $derived(hasModule('users') || hasModule('courses.admin'));
-const canManageParticipants = $derived(isCourseAdmin || hasModule('courses.manager'));
-const canViewHubs = $derived(canManageParticipants);
-const canManageAttendance = $derived(canManageParticipants);
+// Course managers can fully manage courses they're enrolled in as admin
+const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
+const canViewHubs = $derived(canManageCourse);
+const canManageAttendance = $derived(canManageCourse);
 
 // Determine which cohorts to display
 const displayedCohorts = $derived(
@@ -53,52 +54,60 @@ function toggleShowAllCohorts() {
     showAllCohorts = !showAllCohorts;
 }
 
+// Helper to append cohort param to URLs
+function withCohort(basePath) {
+    if (selectedCohortId) {
+        return `${basePath}?cohort=${selectedCohortId}`;
+    }
+    return basePath;
+}
+
 const navItems = $derived([
     {
         label: 'Dashboard',
-        href: `/admin/courses/${courseSlug}`,
+        href: withCohort(`/admin/courses/${courseSlug}`),
         icon: LayoutDashboard,
         description: 'Cohort overview',
         visible: true
     },
     {
         label: 'Modules',
-        href: `/admin/courses/${courseSlug}/modules`,
+        href: withCohort(`/admin/courses/${courseSlug}/modules`),
         icon: BookOpen,
         description: 'Manage modules',
-        visible: isCourseAdmin
+        visible: canManageCourse
     },
     {
         label: 'Sessions',
-        href: `/admin/courses/${courseSlug}/sessions`,
+        href: withCohort(`/admin/courses/${courseSlug}/sessions`),
         icon: FileText,
         description: 'Edit session content',
-        visible: isCourseAdmin
+        visible: canManageCourse
     },
     {
         label: 'Reflections',
-        href: `/admin/courses/${courseSlug}/reflections`,
+        href: withCohort(`/admin/courses/${courseSlug}/reflections`),
         icon: PenSquare,
         description: 'Review submissions',
-        visible: canManageParticipants || isCourseAdmin
+        visible: canManageCourse
     },
     {
         label: 'Participants',
-        href: `/admin/courses/${courseSlug}/participants`,
+        href: withCohort(`/admin/courses/${courseSlug}/participants`),
         icon: Users,
         description: 'All course participants',
-        visible: canManageParticipants
+        visible: canManageCourse
     },
     {
         label: 'Hubs',
-        href: `/admin/courses/${courseSlug}/hubs`,
+        href: withCohort(`/admin/courses/${courseSlug}/hubs`),
         icon: MapPin,
         description: 'Hub management',
         visible: canViewHubs
     },
     {
         label: 'Attendance',
-        href: `/admin/courses/${courseSlug}/attendance`,
+        href: withCohort(`/admin/courses/${courseSlug}/attendance`),
         icon: Calendar,
         description: 'Track attendance',
         visible: canManageAttendance
@@ -106,7 +115,10 @@ const navItems = $derived([
 ].filter((item) => item.visible));
 
 function isActive(href) {
-    return $page.url.pathname === href || $page.url.pathname.startsWith(href + '/');
+    // Extract just the pathname from href (strip query params)
+    const hrefPath = href.split('?')[0];
+    // Only match exact pathname (not prefixes)
+    return $page.url.pathname === hrefPath;
 }
 </script>
 
@@ -176,7 +188,7 @@ function isActive(href) {
 
 	<!-- Footer Actions -->
 	<div class="sidebar-footer">
-		<a href="/courses" class="footer-link">
+		<a href="/admin/courses?from=course" class="footer-link">
 			<ArrowLeft size={18} />
 			<span>Back to Courses</span>
 		</a>
@@ -200,6 +212,7 @@ function isActive(href) {
 		top: 0;
 		left: 0;
 		overflow-y: auto;
+		overflow-x: hidden; /* Prevent horizontal scrolling */
 		display: flex;
 		flex-direction: column;
 	}
@@ -227,6 +240,7 @@ function isActive(href) {
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		overflow: hidden; /* Prevent horizontal overflow */
 	}
 
 	.nav-item {
@@ -376,6 +390,7 @@ function isActive(href) {
 		border: none;
 		background: transparent;
 		font-family: inherit;
+		min-width: 0; /* Prevent overflow */
 	}
 
 	.cohort-info {
@@ -383,17 +398,24 @@ function isActive(href) {
 		flex-direction: column;
 		gap: 2px;
 		width: 100%;
+		min-width: 0; /* Allow flex children to shrink below content size */
 	}
 
 	.cohort-name {
 		font-size: 0.9375rem;
 		font-weight: 500;
 		color: inherit;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.cohort-session {
 		font-size: 0.75rem;
 		color: rgba(255, 255, 255, 0.6);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.cohort-item.active .cohort-session {

@@ -15,8 +15,7 @@
 	let cohortData = $state({
 		name: '',
 		moduleId: '',
-		startDate: '',
-		frequency: 'weekly'
+		startDate: ''
 	});
 
 	// Step 2: Participants
@@ -35,7 +34,7 @@
 		try {
 			const endDate = calculateEndDate(cohortData.startDate);
 
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -43,8 +42,7 @@
 					name: cohortData.name,
 					moduleId: cohortData.moduleId,
 					startDate: cohortData.startDate,
-					endDate: endDate,
-					frequency: cohortData.frequency
+					endDate: endDate
 				})
 			});
 
@@ -68,7 +66,7 @@
 	async function handleCsvUpload(csvData) {
 		isLoading = true;
 		try {
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -100,7 +98,7 @@
 		isLoading = true;
 		try {
 			// Update cohort status to scheduled (will auto-transition to active on start date)
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -197,18 +195,7 @@
 						<div class="form-group">
 							<label>Start Date*</label>
 							<input type="date" bind:value={cohortData.startDate} required />
-							<p class="help-text">End date will be automatically calculated based on frequency</p>
-						</div>
-
-						<div class="form-group">
-							<label>Session Frequency*</label>
-							<select bind:value={cohortData.frequency} required>
-								<option value="daily">Daily (1 day per session)</option>
-								<option value="weekly">Weekly (7 days per session)</option>
-								<option value="fortnightly">Fortnightly (14 days per session)</option>
-								<option value="quarterly">Quarterly (90 days per session)</option>
-							</select>
-							<p class="help-text">Determines how often new sessions become available</p>
+							<p class="help-text">End date will be automatically calculated (8 weeks from start)</p>
 						</div>
 
 						<div class="modal-actions">

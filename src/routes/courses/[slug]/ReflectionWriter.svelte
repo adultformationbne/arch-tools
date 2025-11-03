@@ -2,6 +2,7 @@
 	import { Save, Eye, EyeOff, X, CheckCircle, Scan } from 'lucide-svelte';
 
 	let {
+		courseSlug = '',
 		question = '',
 		questionId = null,
 		existingContent = '',
@@ -36,7 +37,8 @@
 		autoSaveStatus = 'saving';
 
 		try {
-			const response = await fetch('/reflections/api', {
+			const apiPath = `/courses/${courseSlug}/reflections/api`;
+			const response = await fetch(apiPath, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -89,7 +91,8 @@
 		}
 
 		isSaving = true;
-		console.log('Sending POST to /reflections/api...');
+		const apiPath = `/courses/${courseSlug}/reflections/api`;
+		console.log('Sending POST to', apiPath);
 
 		try {
 			const payload = {
@@ -100,7 +103,7 @@
 			};
 			console.log('Payload:', payload);
 
-			const response = await fetch('/reflections/api', {
+			const response = await fetch(apiPath, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

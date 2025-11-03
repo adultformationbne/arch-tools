@@ -109,7 +109,10 @@ export const load: PageServerLoad = async (event) => {
 			moduleCount: course.courses_modules?.[0]?.count || 0
 		})) ?? [];
 
-	if (managedCoursesWithCount.length === 1) {
+	// Auto-redirect to single course UNLESS user explicitly came back here
+	const skipRedirect = event.url.searchParams.get('from') === 'course';
+
+	if (managedCoursesWithCount.length === 1 && !skipRedirect) {
 		const course = managedCoursesWithCount[0];
 		if (course?.slug) {
 			throw redirect(303, `/admin/courses/${course.slug}`);

@@ -229,7 +229,7 @@ export function getStatusBadgeClass(status) {
  */
 export async function fetchReflectionsByCohort(cohortId, courseSlug) {
 	try {
-		const response = await fetch(`/courses/${courseSlug}/admin/api?endpoint=reflection_responses&cohort_id=${cohortId}`);
+		const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=reflection_responses&cohort_id=${cohortId}`);
 		const result = await response.json();
 
 		if (!result.success) {
