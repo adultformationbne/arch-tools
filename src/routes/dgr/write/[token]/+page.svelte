@@ -554,7 +554,7 @@ let modalContent = $state(null);
 <ToastContainer />
 
 <style>
-	@reference "../../../../../app.css";
+	@reference "../../../../app.css";
 	/* Gospel text styling */
 	:global(.prose h2.passage-ref) {
 		@apply text-sm font-semibold text-indigo-800 mt-4 mb-2;
