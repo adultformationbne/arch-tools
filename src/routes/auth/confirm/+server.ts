@@ -6,6 +6,13 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	const type = url.searchParams.get('type');
 	const next = url.searchParams.get('next') ?? '/';
 
+	// Log all URL parameters for debugging
+	console.log('Auth confirm params:', {
+		token_hash: token_hash ? 'present' : 'missing',
+		type,
+		all_params: Object.fromEntries(url.searchParams.entries())
+	});
+
 	if (token_hash && type) {
 		// Verify the OTP and establish session
 		const { error } = await supabase.auth.verifyOtp({
@@ -15,6 +22,7 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 
 		if (error) {
 			console.error('Error verifying token:', error);
+			console.error('Token hash (first 10 chars):', token_hash.substring(0, 10));
 			throw redirect(303, '/auth/error');
 		}
 

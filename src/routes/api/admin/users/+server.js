@@ -70,27 +70,52 @@ export async function POST(event) {
 			// Re-use the existing auth user instead of creating new one
 			console.log('Re-using existing auth user:', existingAuthUser.id);
 			authData = { user: existingAuthUser };
-		} else {
-			// Send invitation email using Supabase's built-in system
-			// This sends a magic link that allows the user to set their password
-			const { data: newAuthData, error: authError } = await adminSupabase.auth.admin.inviteUserByEmail(
+
+			// Send OTP for existing user to set up their account
+			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
 				email,
-				{
-					data: {
-						full_name: full_name || null,
-						invited_by: user.email
-					},
-					// Supabase will append token_hash and type=invite to this URL
-					redirectTo: `${PUBLIC_SITE_URL}/auth/confirm`
+				options: {
+					shouldCreateUser: false
 				}
-			);
+			});
+
+			if (otpError) {
+				console.error('OTP send error:', otpError);
+				throw error(400, otpError.message || 'Failed to send OTP');
+			}
+		} else {
+			// Create new user and send OTP code (not magic link)
+			// This sends a 6-digit code via email that works in locked-down environments
+			const { data: newAuthData, error: authError } = await adminSupabase.auth.admin.createUser({
+				email,
+				email_confirm: false, // User will confirm via OTP
+				user_metadata: {
+					full_name: full_name || null,
+					invited_by: user.email
+				}
+			});
 
 			if (authError) {
-				console.error('Auth invitation error:', authError);
-				throw error(400, authError.message || 'Failed to send invitation');
+				console.error('Auth user creation error:', authError);
+				throw error(400, authError.message || 'Failed to create user');
 			}
 
 			authData = newAuthData;
+
+			// Now send OTP for the new user
+			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
+				email,
+				options: {
+					shouldCreateUser: false // User already created above
+				}
+			});
+
+			if (otpError) {
+				console.error('OTP send error:', otpError);
+				// Clean up the created user
+				await adminSupabase.auth.admin.deleteUser(authData.user.id);
+				throw error(400, otpError.message || 'Failed to send OTP');
+			}
 		}
 
 		// Wait a moment for the trigger to potentially create the profile
@@ -283,26 +308,21 @@ export async function PUT(event) {
 				throw error(400, 'User not found');
 			}
 
-			// Resend invitation using inviteUserByEmail
-			const { error: inviteError } = await adminSupabase.auth.admin.inviteUserByEmail(
-				authUser.user.email,
-				{
-					data: {
-						full_name: authUser.user.user_metadata?.full_name || null,
-						invited_by: user.email
-					},
-					// Supabase will append token_hash and type=invite to this URL
-					redirectTo: `${PUBLIC_SITE_URL}/auth/confirm`
+			// Resend OTP code instead of magic link
+			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
+				email: authUser.user.email,
+				options: {
+					shouldCreateUser: false
 				}
-			);
+			});
 
-			if (inviteError) {
-				throw error(400, inviteError.message || 'Failed to resend invitation');
+			if (otpError) {
+				throw error(400, otpError.message || 'Failed to resend OTP');
 			}
 
 			return json({
 				success: true,
-				message: 'Invitation resent successfully'
+				message: 'OTP code resent successfully'
 			});
 		}
 
