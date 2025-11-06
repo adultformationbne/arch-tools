@@ -26,7 +26,7 @@
 
 		isLoading = true;
 		try {
-			const response = await fetch(`/admin/attendance/api?cohortId=${cohortId}`);
+			const response = await fetch(`/admin/courses/${courseSlug}/attendance/api?cohortId=${cohortId}`);
 			const result = await response.json();
 			attendanceData = result;
 		} catch (error) {

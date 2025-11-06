@@ -12,6 +12,8 @@ export const PUT: RequestHandler = async (event) => {
 		const body = await event.request.json();
 		const { reflection_id, feedback, grade } = body;
 
+		console.log('Marking reflection:', { reflection_id, feedback, grade });
+
 		// Validate required fields
 		if (!reflection_id) {
 			throw error(400, 'Reflection ID is required');
@@ -23,17 +25,22 @@ export const PUT: RequestHandler = async (event) => {
 
 		// Map grade to new enum status
 		const newStatus = grade === 'pass' ? 'passed' : 'needs_revision';
+		console.log('Mapped status:', newStatus);
 
 		// Update reflection with marking details
+		const updateData = {
+			feedback: feedback?.trim() || null,
+			status: newStatus,
+			marked_at: new Date().toISOString(),
+			marked_by: user.id,
+			updated_at: new Date().toISOString()
+		};
+
+		console.log('Update data:', updateData);
+
 		const { data: updatedReflection, error: updateError } = await supabaseAdmin
 			.from('courses_reflection_responses')
-			.update({
-				feedback: feedback?.trim() || null,
-				status: newStatus,
-				marked_at: new Date().toISOString(),
-				marked_by: user.id,
-				updated_at: new Date().toISOString()
-			})
+			.update(updateData)
 			.eq('id', reflection_id)
 			.select()
 			.single();
