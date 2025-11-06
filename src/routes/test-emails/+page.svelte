@@ -83,7 +83,8 @@
 		loading.reset = true;
 		try {
 			const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-				redirectTo: window.location.origin + '/reset-password'
+				// Supabase will append token_hash and type=recovery to this URL
+				redirectTo: window.location.origin + '/auth/confirm'
 			});
 
 			if (error) throw error;
