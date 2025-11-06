@@ -2,7 +2,21 @@
 
 ## Overview
 
-The arch-tools platform uses a **unified module-based authentication system** (`$lib/server/auth.ts`) that handles all authentication and authorization using namespaced module permissions.
+The arch-tools platform uses a **unified module-based authentication system** (`$lib/server/auth.ts`) that handles all authentication and authorization using namespaced module permissions. All authentication flows use **modern PKCE flow with token_hash** for security and compliance with Supabase standards.
+
+---
+
+## Table of Contents
+
+1. [System Architecture](#system-architecture)
+2. [Authentication Flows](#authentication-flows)
+3. [Module-Based Permissions](#module-based-permissions)
+4. [Authorization Functions](#authorization-functions)
+5. [Usage Examples](#usage-examples)
+6. [Configuration](#configuration)
+7. [Troubleshooting](#troubleshooting)
+
+---
 
 ## System Architecture
 
@@ -15,25 +29,197 @@ The arch-tools platform uses a **unified module-based authentication system** (`
 - Course-level authorization (per-course roles via enrollments)
 - Flexible response modes (errors vs redirects)
 - Clean, consistent API
+- PKCE flow with token_hash for all email-based auth
 
----
-
-## Response Modes
+### Response Modes
 
 The auth system supports two response modes via the `options` parameter:
 
-### 1. `throw_error` (Default)
+#### 1. `throw_error` (Default)
 Returns HTTP 401/403 errors - perfect for API routes:
 ```typescript
 // Will throw error(401) or error(403)
 await requireModule(event, 'users');
 ```
 
-### 2. `redirect`
+#### 2. `redirect`
 Returns 303 redirects - perfect for page routes:
 ```typescript
 // Will throw redirect(303, '/my-courses')
 await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses' });
+```
+
+---
+
+## Authentication Flows
+
+All email-based auth flows use **PKCE with token_hash**. The standard pattern is:
+
+1. **Trigger** → Supabase sends email with link containing `token_hash`
+2. **Email Link** → User clicks link to `/auth/confirm?token_hash=xxx&type={type}`
+3. **Verification** → Server verifies token via `verifyOtp()` and establishes session
+4. **Redirect** → User sent to appropriate page based on auth type
+
+### 1. User Invitation Flow
+
+**Purpose:** Admin invites new user to platform
+
+**Trigger:** Admin uses `/users` page to invite user
+
+**Email Template:** "Invite User" in Supabase Dashboard
+
+**Link Format:**
+```
+https://app.archdiocesanministries.org.au/auth/confirm?token_hash={hash}&type=invite
+```
+
+**Flow:**
+```
+1. Admin invites user via /users page
+2. POST /api/admin/users { email, full_name, modules }
+3. Supabase sends invite email with token_hash link
+4. User clicks link → GET /auth/confirm?token_hash=xxx&type=invite
+5. Server calls supabase.auth.verifyOtp({ token_hash, type: 'invite' })
+6. Session established in HTTP-only cookies ✅
+7. Redirect to /auth/setup-password
+8. User sets password via supabase.auth.updateUser({ password })
+9. Redirect to dashboard based on assigned modules
+```
+
+**Code:**
+```javascript
+// src/routes/api/admin/users/+server.js
+await adminSupabase.auth.admin.inviteUserByEmail(email, {
+  data: { full_name, invited_by: user.email },
+  redirectTo: `${PUBLIC_SITE_URL}/auth/confirm`
+});
+```
+
+### 2. Password Reset Flow
+
+**Purpose:** User forgot password and needs to reset it
+
+**Trigger:** User requests password reset
+
+**Email Template:** "Reset Password" in Supabase Dashboard
+
+**Link Format:**
+```
+https://app.archdiocesanministries.org.au/auth/confirm?token_hash={hash}&type=recovery
+```
+
+**Flow:**
+```
+1. User requests password reset
+2. Call supabase.auth.resetPasswordForEmail(email, { redirectTo: '/auth/confirm' })
+3. Supabase sends recovery email with token_hash link
+4. User clicks link → GET /auth/confirm?token_hash=xxx&type=recovery
+5. Server verifies token and establishes session
+6. Redirect to /auth/setup-password
+7. User sets new password
+8. Redirect to dashboard
+```
+
+**Code:**
+```javascript
+await supabase.auth.resetPasswordForEmail(resetEmail, {
+  redirectTo: window.location.origin + '/auth/confirm'
+});
+```
+
+### 3. Signup Confirmation Flow
+
+**Purpose:** New user self-registration
+
+**Trigger:** User signs up via `/auth` page
+
+**Email Template:** "Confirm Signup" in Supabase Dashboard
+
+**Link Format:**
+```
+https://app.archdiocesanministries.org.au/auth/confirm?token_hash={hash}&type=signup
+```
+
+**Flow:**
+```
+1. User signs up with email + password
+2. Call supabase.auth.signUp({ email, password, options: { emailRedirectTo } })
+3. Supabase sends confirmation email
+4. User clicks link → GET /auth/confirm?token_hash=xxx&type=signup
+5. Server verifies token and establishes session
+6. Redirect to dashboard based on user modules
+```
+
+**Code:**
+```javascript
+await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: window.location.origin + '/auth/confirm'
+  }
+});
+```
+
+### 4. Magic Link Login Flow
+
+**Purpose:** Passwordless login
+
+**Trigger:** User requests magic link
+
+**Email Template:** "Magic Link" in Supabase Dashboard
+
+**Code:**
+```javascript
+await supabase.auth.signInWithOtp({
+  email,
+  options: { shouldCreateUser: false }
+});
+```
+
+### 5. Email Change Flow
+
+**Purpose:** User updates their email address
+
+**Trigger:** User changes email in profile
+
+**Email Template:** "Email Change" in Supabase Dashboard
+
+**Code:**
+```javascript
+await supabase.auth.updateUser({ email: newEmail });
+```
+
+### Central Auth Handler
+
+All flows route through **`/auth/confirm`** which verifies tokens and establishes sessions:
+
+```typescript
+// src/routes/auth/confirm/+server.ts
+export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
+  const token_hash = url.searchParams.get('token_hash');
+  const type = url.searchParams.get('type');
+
+  if (token_hash && type) {
+    // Verify and establish session
+    const { error } = await supabase.auth.verifyOtp({
+      type: type as any,
+      token_hash
+    });
+
+    if (!error) {
+      // Route based on type
+      if (type === 'invite' || type === 'recovery') {
+        redirect(303, '/auth/setup-password');
+      } else if (type === 'signup') {
+        redirect(303, '/dashboard'); // or based on modules
+      }
+      // ... etc
+    }
+  }
+
+  redirect(303, '/auth/error');
+};
 ```
 
 ---
@@ -83,11 +269,33 @@ await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/my-courses
 - Course managers and admins are NOT enrolled—management is via platform modules
 - Only participants (students and coordinators) appear in cohort enrollments
 
+### Module Lifecycle
+
+#### Default User
+- New users have NO modules (must be invited)
+- No access to any section until modules granted
+
+#### Staff Invitation (via `/users`)
+- Admin selects which modules to grant
+- Example: `['users', 'courses.manager', 'dgr']`
+- Invitation email sent with magic link to set password
+- User sets password and gains immediate access
+
+#### Participant Invitation (via course cohort)
+- Auto-grants `['courses.participant']`
+- Creates enrollment with role (student/coordinator)
+
+#### Module Independence
+Modules can be combined freely. Common combos:
+- `['courses.participant']` - Participant only
+- `['users', 'courses.manager']` - Staff (no participation)
+- `['users', 'courses.participant', 'courses.manager']` - Staff who also participates
+
 ---
 
-## Platform-Level Authorization
+## Authorization Functions
 
-### Functions
+### Platform-Level Authorization
 
 #### `requireAuth(event, options?)`
 Requires user to be authenticated.
@@ -112,16 +320,18 @@ const { user, profile } = await requireModuleLevel(event, 'courses.participant')
 const { user, profile } = await requireModuleLevel(event, 'courses.admin');
 ```
 
----
+#### `requireAnyModule(event, moduleNames, options?)`
+Requires user to have at least one of the provided modules.
+```typescript
+const { user, profile } = await requireAnyModule(event, ['courses.admin', 'courses.manager']);
+```
 
-## Course-Level Authorization
+### Course-Level Authorization
 
 Course-level permissions are based on enrollments in `courses_enrollments`. Module access determines which management UIs are visible, but course content access requires enrollment.
 
-### Functions
-
 #### `requireCourseAccess(event, courseSlug, options?)`
-Requires user to be enrolled in the course (any role: admin, student, or coordinator).
+Requires user to be enrolled in the course (any role).
 ```typescript
 const courseSlug = event.params.slug;
 const { user, enrollment } = await requireCourseAccess(event, courseSlug);
@@ -145,31 +355,50 @@ Requires user to have one of the specified enrollment roles (participants only).
 // Allow only hub coordinators
 const { user, enrollment } = await requireCourseRole(event, courseSlug, ['coordinator']);
 
-// Valid roles: 'student', 'coordinator' (admin role no longer exists)
+// Valid roles: 'student', 'coordinator'
 ```
 
----
+### Client-Side Helpers
 
-## Module Lifecycle
+For use in Svelte components to conditionally render UI:
 
-### Default User
-- New users have NO modules (must be invited)
-- No access to any section until modules granted
+#### `hasModule(modules, moduleName)`
+Check if user has ANY level of a module (for namespaced modules).
+```svelte
+<script>
+  import { hasModule } from '$lib/server/auth';
+  let { data } = $props();
+</script>
 
-### Staff Invitation (via `/users`)
-- Admin selects which modules to grant
-- Example: `['users', 'courses.manager', 'dgr']`
+{#if hasModule(data.profile.modules, 'users')}
+  <button>Manage Users</button>
+{/if}
+```
 
-### Participant Invitation (via course cohort)
-- Auto-grants `['courses.participant']`
-- Creates enrollment with role (student/coordinator/admin)
+#### `hasModuleLevel(modules, moduleLevel)`
+Check for exact module.level match.
+```typescript
+const canParticipate = hasModuleLevel(profile.modules, 'courses.participant');
+const canManageAll = hasModuleLevel(profile.modules, 'courses.admin');
+```
 
-### Module Independence
-- Modules can be combined freely
-- Common combos:
-  - `['courses.participant']` - Participant only
-  - `['users', 'courses.manager']` - Staff (no participation)
-  - `['users', 'courses.participant', 'courses.manager']` - Staff who also participates
+#### `hasAnyModule(modules, requiredModules)`
+Check if user has ANY of the specified modules.
+```typescript
+const hasAnyManagement = hasAnyModule(profile.modules, [
+  'users',
+  'courses.manager',
+  'courses.admin',
+  'editor',
+  'dgr'
+]);
+```
+
+#### `hasAllModules(modules, requiredModules)`
+Check if user has ALL of the specified modules.
+```typescript
+const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
+```
 
 ---
 
@@ -177,7 +406,7 @@ const { user, enrollment } = await requireCourseRole(event, courseSlug, ['coordi
 
 ### Example 1: User Management Page (Staff Only)
 ```typescript
-// src/routes/(internal)/admin/users/+page.server.ts
+// src/routes/users/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { requireModule } from '$lib/server/auth';
 
@@ -240,96 +469,104 @@ import { requireCourseAdmin } from '$lib/server/auth';
 export const load: PageServerLoad = async (event) => {
   const courseSlug = event.params.slug;
 
-  // courses.admin OR (courses.manager + enrolled as admin)
+  // courses.admin OR (courses.manager + assigned to this course)
   const { user, profile, viaModule } = await requireCourseAdmin(event, courseSlug, {
     mode: 'redirect'
   });
 
   // ... fetch course data
-  return { courseData, canManageAll: viaModule };
-};
-```
-
-### Example 5: Course List (For Managers)
-```typescript
-// src/routes/admin/courses/+page.server.ts
-import type { PageServerLoad } from './$types';
-import { requireModule, hasModuleLevel } from '$lib/server/auth';
-
-export const load: PageServerLoad = async (event) => {
-  // Must have any courses management module
-  const { user, profile } = await requireModule(event, 'courses', {
-    mode: 'redirect'
-  });
-
-  const isAdmin = hasModuleLevel(profile.modules, 'courses.admin');
-  const isManager = hasModuleLevel(profile.modules, 'courses.manager');
-
-  let query = event.locals.supabase.from('courses').select('*');
-
-  if (isAdmin) {
-    // Show all courses
-  } else if (isManager) {
-    // Filter to only courses where enrolled as admin
-    query = query
-      .select('*, courses_modules!inner(courses_cohorts!inner(courses_enrollments!inner(*)))')
-      .eq('courses_modules.courses_cohorts.courses_enrollments.user_profile_id', user.id)
-      .eq('courses_modules.courses_cohorts.courses_enrollments.role', 'admin');
-  }
-
-  const { data: courses } = await query;
-  return { courses, isAdmin, isManager };
+  return { courseData, canManageAll: viaModule === 'courses.admin' };
 };
 ```
 
 ---
 
-## Client-Side Helpers
+## Configuration
 
-For use in Svelte components to conditionally render UI:
+### Supabase Dashboard Setup
 
-### `hasModule(modules, moduleName)`
-Check if user has ANY level of a module (for namespaced modules).
-```svelte
-<script>
-  import { hasModule } from '$lib/server/auth';
+**Required for production:**
 
-  let { data } = $props();
-</script>
+#### 1. Authentication → URL Configuration
 
-{#if hasModule(data.profile.modules, 'users')}
-  <button>Manage Users</button>
-{/if}
+- **Site URL**: `https://app.archdiocesanministries.org.au`
+- **Redirect URLs**: Add `https://app.archdiocesanministries.org.au/auth/confirm`
 
-{#if hasModule(data.profile.modules, 'courses')}
-  <NavItem href="/admin/courses">Course Admin</NavItem>
-{/if}
+#### 2. Authentication → Email Templates
+
+Update each template to use `/auth/confirm` with `token_hash`:
+
+**Invite User Template:**
+```html
+<h2>You've been invited!</h2>
+<p>Click here to set up your account:</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite">Accept Invitation</a></p>
 ```
 
-### `hasModuleLevel(modules, moduleLevel)`
-Check for exact module.level match.
-```typescript
-const canParticipate = hasModuleLevel(profile.modules, 'courses.participant');
-const canManageAll = hasModuleLevel(profile.modules, 'courses.admin');
+**Reset Password Template:**
+```html
+<h2>Reset Your Password</h2>
+<p>Click here to reset your password:</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery">Reset Password</a></p>
 ```
 
-### `hasAnyModule(modules, requiredModules)`
-Check if user has ANY of the specified modules.
-```typescript
-const hasAnyManagement = hasAnyModule(profile.modules, [
-  'users',
-  'courses.manager',
-  'courses.admin',
-  'editor',
-  'dgr'
-]);
+**Confirm Signup Template:**
+```html
+<h2>Confirm Your Email</h2>
+<p>Click here to confirm your email:</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm Email</a></p>
 ```
 
-### `hasAllModules(modules, requiredModules)`
-Check if user has ALL of the specified modules.
-```typescript
-const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
+**Magic Link Template:**
+```html
+<h2>Your Magic Link</h2>
+<p>Click here to sign in:</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">Sign In</a></p>
 ```
+
+### Environment Variables
+
+```env
+PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+PUBLIC_SITE_URL=https://app.archdiocesanministries.org.au
+```
+
+### Local Development
+
+For local development, emails are caught by Inbucket at `http://localhost:54324`.
+
+---
+
+## Security Features
+
+### 1. PKCE Flow
+- Modern OAuth 2.0 standard
+- Uses `token_hash` instead of plaintext tokens in URLs
+- 5-minute token expiry
+- Single-use tokens (cannot be reused)
+
+### 2. Server-Side Verification
+- All tokens verified server-side via `verifyOtp()`
+- Session established in secure HTTP-only cookies
+- No client-side auth bypass possible
+- Server-side validation mandatory for all protected routes
+
+### 3. Token Security
+- Tokens are hashed before being sent in URLs
+- Prevents token interception and replay attacks
+- Compliant with OAuth 2.0 security best practices
+
+### 4. Session Management
+- Handled by SvelteKit hooks (`hooks.server.ts`)
+- Uses `@supabase/ssr` for secure cookie handling
+- Automatic session refresh
+
+### 5. Row-Level Security (RLS)
+- Database-level security via Supabase RLS policies
+- Enforced regardless of client-side code
+- Provides defense-in-depth
 
 ---
 
@@ -343,6 +580,8 @@ const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
 - Check auth in `+page.server.ts` or `+server.ts` (server-side)
 - Use client-side helpers for conditional UI rendering
 - Combine modules freely for flexible permissions
+- Always use `/auth/confirm` for email redirect URLs
+- Set `emailRedirectTo` in all auth methods that send emails
 
 ### ❌ DON'T
 
@@ -351,16 +590,8 @@ const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
 - Don't hardcode redirect paths (use the redirectTo option)
 - Don't assume hierarchical module relationships
 - Don't use `profile.role` (column removed - use modules instead)
-
----
-
-## Security Notes
-
-1. **Server-side validation is mandatory** - All auth checks happen server-side
-2. **Modules control UI visibility** - RLS policies provide database-level security
-3. **Course access requires enrollment** - Modules don't grant course content access
-4. **RLS policies** in Supabase provide additional database-level security
-5. **Session management** is handled by SvelteKit hooks
+- Don't use `/auth/callback` for new code (legacy route)
+- Don't include tokens in query parameters (use token_hash)
 
 ---
 
@@ -393,18 +624,92 @@ const hasFullAccess = hasAllModules(profile.modules, ['users', 'editor']);
 - User needs `courses.manager` or `courses.admin` module
 - Grant via staff invitation at `/users`
 
+### "Auth session missing!" at /auth/setup-password
+- **Cause**: Session not established before accessing protected page
+- **Solution**: Ensure user came through `/auth/confirm` route which establishes session
+- Check that email template uses correct link format with `token_hash`
+
+### "Invalid token_hash"
+- **Cause**: Token expired (>5 minutes) or already used
+- **Solution**: Request new invitation/reset email
+
+### Redirect Loop
+- **Cause**: Misconfigured redirect URLs in Supabase Dashboard
+- **Solution**: Verify Site URL and Redirect URLs match your domain exactly
+
+### Email Not Arriving
+- **Local Dev**: Check Inbucket at `http://localhost:54324`
+- **Production**: Check Supabase logs for email delivery errors
+- Verify email templates are configured correctly in Supabase Dashboard
+
+---
+
+## Testing
+
+### Test Page
+
+Use `/test-emails` page to test all auth flows:
+- User Invitation
+- Magic Link Login
+- Password Reset
+- Email Change
+
+### Manual Testing Checklist
+
+```bash
+# 1. Test User Invitation
+POST /api/admin/users
+{
+  "email": "test@example.com",
+  "full_name": "Test User",
+  "modules": ["courses.participant"]
+}
+
+# 2. Check email inbox (Inbucket for local dev)
+# 3. Click invitation link
+# 4. Verify redirect to /auth/setup-password
+# 5. Set password
+# 6. Verify redirect to appropriate dashboard
+# 7. Confirm user can access their modules
+```
+
 ---
 
 ## Summary
 
 - **One auth system** using modules only (`$lib/server/auth.ts`)
+- **PKCE flow** with `token_hash` for all email-based auth
+- **Central handler** at `/auth/confirm` for all verification
 - **Two response modes** - errors for APIs, redirects for pages
 - **Two permission types** - platform modules + course enrollments
 - **Namespaced modules** - `module.level` format for hierarchy
 - **Flexible combinations** - mix any modules for custom permissions
+- **Server-side security** - all auth checks happen server-side
 
-For implementation examples, see:
-- `src/routes/(internal)/admin/users/+page.server.ts` - Module-based auth with redirect
-- `src/routes/courses/[slug]/admin/+page.server.ts` - Course admin auth
-- `src/routes/my-courses/+page.server.ts` - Participant access
-- `src/routes/api/admin/users/+server.ts` - API auth with errors
+---
+
+## Related Documentation
+
+- **AUTH_FLOWS.md** - Detailed flow diagrams for each auth type (archived)
+- **EMAIL_SYSTEM.md** - Email templates and sending
+- **COURSES.md** - Course system architecture
+- **AGENTS.MD** - Database migrations via Supabase MCP
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/server/auth.ts` | Core auth functions |
+| `src/routes/auth/confirm/+server.ts` | Central auth verification handler |
+| `src/routes/auth/setup-password/+page.svelte` | Password setup UI |
+| `src/routes/auth/+page.svelte` | Login/signup page |
+| `src/routes/api/admin/users/+server.js` | User invitation API |
+| `src/hooks.server.ts` | SvelteKit auth hooks |
+
+---
+
+*Last Updated: November 2025*
+*Version: 2.0 - PKCE Flow*
+*Maintainer: Development Team*
