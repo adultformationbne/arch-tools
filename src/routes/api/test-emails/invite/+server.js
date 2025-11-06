@@ -49,7 +49,8 @@ export async function POST({ request, locals }) {
 				full_name: full_name || undefined,
 				invited_by: user.email || 'Administrator'
 			},
-			redirectTo: `${request.headers.get('origin')}/auth/callback`
+			// Supabase will append token_hash and type=invite to this URL
+			redirectTo: `${request.headers.get('origin')}/auth/confirm`
 		});
 
 		if (error) {

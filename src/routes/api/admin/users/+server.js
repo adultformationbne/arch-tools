@@ -80,7 +80,8 @@ export async function POST(event) {
 						full_name: full_name || null,
 						invited_by: user.email
 					},
-					redirectTo: `${PUBLIC_SITE_URL}/auth/callback?setup=true`
+					// Supabase will append token_hash and type=invite to this URL
+					redirectTo: `${PUBLIC_SITE_URL}/auth/confirm`
 				}
 			);
 
@@ -290,7 +291,8 @@ export async function PUT(event) {
 						full_name: authUser.user.user_metadata?.full_name || null,
 						invited_by: user.email
 					},
-					redirectTo: `${PUBLIC_SITE_URL}/auth/callback?setup=true`
+					// Supabase will append token_hash and type=invite to this URL
+					redirectTo: `${PUBLIC_SITE_URL}/auth/confirm`
 				}
 			);
 

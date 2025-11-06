@@ -12,11 +12,12 @@
 	let loading = false;
 	let errorMessage = '';
 
-	// Handle invite link hash fragments (e.g., #access_token=...&type=invite)
+	// Note: Invite links now use /auth/confirm route with token_hash
+	// This legacy hash fragment handler is kept for backwards compatibility only
 	onMount(async () => {
 		const hash = window.location.hash;
 
-		// Check if this is an invite link with tokens in the hash
+		// Check if this is a legacy invite link with tokens in the hash
 		if (hash && hash.includes('access_token') && hash.includes('type=invite')) {
 			loading = true;
 
@@ -49,7 +50,11 @@
 			if (isSignUp) {
 				const { error } = await supabase.auth.signUp({
 					email,
-					password
+					password,
+					options: {
+						// Supabase will append token_hash and type=signup to this URL
+						emailRedirectTo: window.location.origin + '/auth/confirm'
+					}
 				});
 				if (error) throw error;
 				errorMessage = 'Check your email for the confirmation link!';
