@@ -3,6 +3,8 @@ import { requireModule } from '$lib/server/auth.js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SITE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createClient } from '@supabase/supabase-js';
+import { createInvitation, resendInvitation } from '$lib/server/invite-codes.js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function POST(event) {
 	try {
@@ -169,11 +171,25 @@ export async function POST(event) {
 			profileData = newProfile;
 		}
 
+		// Create pending invitation with shareable code
+		// This provides a fallback if email OTP doesn't work
+		const invitation = await createInvitation({
+			email: email,
+			modules: uniqueModules,
+			createdBy: user.id,
+			userId: authData.user.id
+		});
+
 		return json({
 			success: true,
 			user: {
 				...profileData,
 				modules: uniqueModules
+			},
+			invitation: {
+				code: invitation.code,
+				url: `${PUBLIC_SITE_URL}/auth/invite?code=${invitation.code}`,
+				expires_at: invitation.expires_at
 			}
 		});
 
@@ -318,6 +334,18 @@ export async function PUT(event) {
 
 			if (otpError) {
 				throw error(400, otpError.message || 'Failed to resend OTP');
+			}
+
+			// Update invitation record if it exists
+			const { data: invitation } = await supabaseAdmin
+				.from('pending_invitations')
+				.select('id')
+				.eq('user_id', userId)
+				.eq('status', 'pending')
+				.single();
+
+			if (invitation) {
+				await resendInvitation(invitation.id);
 			}
 
 			return json({

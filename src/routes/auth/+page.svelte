@@ -9,14 +9,24 @@
 	let email = '';
 	let password = '';
 	let otp = '';
-	let isSignUp = false;
-	let showOtpInput = false;
+	let showOtpInput = false; // Show OTP input instead of password
+	let isSignUp = false; // Toggle between sign in and sign up
 	let loading = false;
 	let errorMessage = '';
 
 	// Note: Invite links now use /auth/confirm route with token_hash
 	// This legacy hash fragment handler is kept for backwards compatibility only
 	onMount(async () => {
+		// Check for invite flow parameters (email and mode from /auth/invite)
+		const urlEmail = $page.url.searchParams.get('email');
+		const urlMode = $page.url.searchParams.get('mode');
+
+		if (urlEmail && urlMode === 'otp') {
+			email = urlEmail;
+			showOtpInput = true;
+			errorMessage = 'Please enter the 6-digit code sent to your email';
+		}
+
 		const hash = window.location.hash;
 
 		// Check if this is a legacy invite link with tokens in the hash
@@ -69,8 +79,53 @@
 				});
 				if (error) throw error;
 
-				// Successfully verified OTP - now redirect to password setup
-				goto('/auth/setup-password');
+				// Mark invitation as accepted if this was from invite flow
+				try {
+					await fetch('/api/auth/complete-invitation', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ email })
+					});
+				} catch (err) {
+					// Don't fail login if invitation marking fails
+					console.error('Error marking invitation accepted:', err);
+				}
+
+				// Check if user already has a password set
+				// If they have app_metadata or confirmed_at, they're an existing user
+				const user = authData.user;
+				const hasPassword = user?.confirmed_at !== null;
+
+				if (hasPassword) {
+					// Existing user - redirect to dashboard based on modules
+					const { data: profile } = await supabase
+						.from('user_profiles')
+						.select('modules')
+						.eq('id', user.id)
+						.single();
+
+					const modules = profile?.modules || [];
+					let defaultRedirect = '/';
+
+					if (modules.includes('users')) {
+						defaultRedirect = '/users';
+					} else if (modules.includes('courses.admin') || modules.includes('courses.manager')) {
+						defaultRedirect = '/courses';
+					} else if (modules.includes('dgr')) {
+						defaultRedirect = '/dgr';
+					} else if (modules.includes('editor')) {
+						defaultRedirect = '/editor';
+					} else if (modules.includes('courses.participant')) {
+						defaultRedirect = '/my-courses';
+					} else {
+						defaultRedirect = '/profile';
+					}
+
+					goto(defaultRedirect);
+				} else {
+					// New user - needs to set up password
+					goto('/auth/setup-password');
+				}
 			} else {
 				// Try password login first
 				const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -81,9 +136,23 @@
 				if (error) {
 					// Check if this might be a pending user who needs OTP
 					if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
-						// Show OTP input instead
+						// Send OTP to user
+						const { error: otpError } = await supabase.auth.signInWithOtp({
+							email,
+							options: {
+								shouldCreateUser: false
+							}
+						});
+
+						if (otpError) {
+							errorMessage = 'Failed to send verification code. Please try again.';
+							loading = false;
+							return;
+						}
+
+						// Show OTP input
 						showOtpInput = true;
-						errorMessage = 'Please enter the 6-digit code sent to your email';
+						errorMessage = 'A 6-digit code has been sent to your email';
 						loading = false;
 						return;
 					}
@@ -141,6 +210,33 @@
 		errorMessage = '';
 		otp = '';
 	}
+
+	async function resendOtp() {
+		if (!email) {
+			errorMessage = 'Please enter your email address first';
+			return;
+		}
+
+		loading = true;
+		errorMessage = '';
+
+		try {
+			const { error } = await supabase.auth.signInWithOtp({
+				email,
+				options: {
+					shouldCreateUser: false
+				}
+			});
+
+			if (error) throw error;
+
+			errorMessage = 'A new code has been sent to your email';
+		} catch (error) {
+			errorMessage = error.message || 'Failed to resend code';
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
@@ -153,7 +249,7 @@
 				{isSignUp ? 'Create your account' : 'Sign in to your account'}
 			</h2>
 		</div>
-		<form class="mt-8 space-y-6" on:submit|preventDefault={handleAuth}>
+		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleAuth(); }}>
 			<div class="-space-y-px rounded-md shadow-sm">
 				<div>
 					<input
@@ -179,6 +275,14 @@
 							placeholder="000000"
 							autocomplete="one-time-code"
 						/>
+						<button
+							type="button"
+							onclick={resendOtp}
+							disabled={loading}
+							class="w-full text-center text-xs text-blue-600 hover:text-blue-500 mt-2 disabled:opacity-50"
+						>
+							Didn't receive a code? Resend
+						</button>
 					</div>
 				{:else}
 					<div>
@@ -211,13 +315,22 @@
 
 			{#if !isSignUp}
 				<div class="text-center">
-					<button
-						type="button"
-						onclick={toggleOtpInput}
-						class="text-sm text-blue-600 hover:text-blue-500"
-					>
-						{showOtpInput ? 'Back to password login' : 'Have an invitation code?'}
-					</button>
+					{#if showOtpInput}
+						<button
+							type="button"
+							onclick={toggleOtpInput}
+							class="text-sm text-blue-600 hover:text-blue-500"
+						>
+							Back to password login
+						</button>
+					{:else}
+						<a
+							href="/auth/invite"
+							class="text-sm text-blue-600 hover:text-blue-500"
+						>
+							Have an invitation code?
+						</a>
+					{/if}
 				</div>
 			{/if}
 
