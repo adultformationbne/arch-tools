@@ -38,7 +38,7 @@ export const GET: RequestHandler = async (event) => {
 			email,
 			full_name,
 			hub_id,
-			hubs!inner (
+			courses_hubs!inner (
 				id,
 				name
 			)
@@ -87,7 +87,7 @@ export const GET: RequestHandler = async (event) => {
 		email: student.email,
 		full_name: student.full_name,
 		hub_id: student.hub_id,
-		hub_name: student.hubs.name,
+		hub_name: student.courses_hubs.name,
 		attendance: attendanceMap[student.id] || []
 	}));
 

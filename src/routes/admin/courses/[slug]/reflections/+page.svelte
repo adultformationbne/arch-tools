@@ -31,16 +31,18 @@
 
 	const filterOptions = $derived.by(() => [
 		{ value: 'all', label: 'All Reflections', count: reflections.length },
-		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => r.status === 'pending').length },
+		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => r.status === 'submitted' || r.status === 'under_review').length },
 		{ value: 'overdue', label: 'Overdue', count: reflections.filter(r => r.status === 'overdue').length },
-		{ value: 'marked', label: 'Recently Marked', count: reflections.filter(r => r.status === 'marked').length }
+		{ value: 'passed', label: 'Passed', count: reflections.filter(r => r.status === 'passed').length }
 	]);
 
 	const getStatusColor = (status) => {
 		switch (status) {
-			case 'pending': return 'bg-orange-100 text-orange-800';
+			case 'submitted':
+			case 'under_review': return 'bg-orange-100 text-orange-800';
 			case 'overdue': return 'bg-red-100 text-red-800';
-			case 'marked': return 'bg-green-100 text-green-800';
+			case 'passed': return 'bg-green-100 text-green-800';
+			case 'needs_revision': return 'bg-yellow-100 text-yellow-800';
 			default: return 'bg-gray-100 text-gray-800';
 		}
 	};
@@ -260,19 +262,16 @@
 									<span class="px-3 py-1 rounded-full text-sm font-semibold {reflection.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
 										{reflection.status === 'overdue' ? 'Overdue Review' : 'Awaiting Feedback'}
 									</span>
-								{:else if reflection.status === 'marked'}
-									<!-- Marked as passed or needs revision -->
-									{#if reflection.grade === 'pass'}
-										<span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white flex items-center gap-1">
-											<CheckCircle size="14" />
-											Passed
-										</span>
-									{:else if reflection.grade === 'fail'}
-										<span class="px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800 flex items-center gap-1">
-											<XCircle size="14" />
-											Needs Revision
-										</span>
-									{/if}
+								{:else if reflection.status === 'passed'}
+									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white flex items-center gap-1">
+										<CheckCircle size="14" />
+										Passed
+									</span>
+								{:else if reflection.status === 'needs_revision'}
+									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800 flex items-center gap-1">
+										<XCircle size="14" />
+										Needs Revision
+									</span>
 								{/if}
 
 								<div class="text-right text-sm text-gray-500">
