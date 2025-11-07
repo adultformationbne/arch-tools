@@ -31,6 +31,26 @@ export async function generateInviteCode() {
  * @returns {Promise<Object>} Created invitation record
  */
 export async function createInvitation({ email, modules, createdBy, userId = null }) {
+	// Opportunistic cleanup: Delete old invitations while we're here
+	// This keeps the table clean without needing a cron job
+	try {
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+		const { error: cleanupError } = await supabaseAdmin
+			.from('pending_invitations')
+			.delete()
+			.or(`expires_at.lt.${new Date().toISOString()},and(status.eq.accepted,accepted_at.lt.${thirtyDaysAgo.toISOString()}),and(status.eq.cancelled,created_at.lt.${thirtyDaysAgo.toISOString()})`);
+
+		if (cleanupError) {
+			// Don't fail invitation creation if cleanup fails - just log it
+			console.warn('Invitation cleanup failed (non-critical):', cleanupError);
+		}
+	} catch (cleanupErr) {
+		// Cleanup is opportunistic - don't let it break invitation creation
+		console.warn('Invitation cleanup error (non-critical):', cleanupErr);
+	}
+
 	const code = await generateInviteCode();
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + 30); // 30 days

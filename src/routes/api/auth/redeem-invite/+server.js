@@ -1,9 +1,20 @@
 import { json, error } from '@sveltejs/kit';
 import { redeemInviteCode, markInvitationAccepted } from '$lib/server/invite-codes.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { checkRateLimit } from '$lib/server/rate-limit.js';
 
-export async function POST({ request, cookies, locals }) {
+export async function POST({ request, cookies, locals, getClientAddress }) {
 	try {
+		// SECURITY: Rate limiting to prevent brute force enumeration
+		// Limit: 5 attempts per minute per IP address
+		const clientIp = getClientAddress();
+
+		try {
+			checkRateLimit(clientIp, 5, 60000); // 5 requests per minute
+		} catch (rateLimitError) {
+			throw error(429, rateLimitError.message);
+		}
+
 		const { code } = await request.json();
 
 		if (!code) {
@@ -115,11 +126,12 @@ export async function POST({ request, cookies, locals }) {
 		// Don't create session yet - wait for OTP verification
 		// The user will verify OTP on /auth page, then we'll mark as accepted
 
+		// SECURITY: Don't return email - prevents email harvesting attack
+		// The OTP was already sent to invitation.email above
 		return json({
 			success: true,
-			message: 'Verification code sent to your email',
-			email: invitation.email,
-			isNewUser: !existingUser && !invitation.user_id
+			message: 'A 6-digit verification code has been sent to your email'
+			// Intentionally NOT returning email for security
 		});
 
 	} catch (err) {

@@ -56,9 +56,10 @@
 				throw new Error(result.message || 'Invalid invitation code');
 			}
 
-			// Code is valid - OTP has been sent
-			// Redirect to /auth with email pre-filled for OTP verification
-			goto(`/auth?email=${encodeURIComponent(result.email)}&mode=otp`);
+			// Code is valid - OTP has been sent to user's email
+			// Redirect to /auth for OTP verification
+			// SECURITY: We don't get the email back from API (prevents harvesting)
+			goto('/auth?mode=otp&from=invite');
 		} catch (error) {
 			errorMessage = error.message;
 		} finally {
