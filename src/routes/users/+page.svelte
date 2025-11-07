@@ -172,6 +172,11 @@ const courseRoles = [
 		return colors[role] || 'bg-gray-100 text-gray-800';
 	}
 
+	// State for showing invitation code after creation
+	let showInvitationCode = false;
+	let createdInvitationCode = '';
+	let createdInvitationUrl = '';
+
 	async function createNewUser(event) {
 		event?.preventDefault();
 		createUserLoading = true;
@@ -184,23 +189,30 @@ const courseRoles = [
 			},
 			{
 				title: 'Sending email...',
-				message: 'Sending magic link to user',
+				message: 'Sending 6-digit code to user',
 				type: 'loading'
 			},
 			{
-				title: 'Invitation sent!',
-				message: `Magic link sent to ${newUser.email}`,
+				title: 'Invitation created!',
+				message: `OTP code sent to ${newUser.email}`,
 				type: 'success'
 			}
 		], false);
 
 		try {
-			await apiPost('/api/admin/users', newUser, {
+			const result = await apiPost('/api/admin/users', newUser, {
 				showToast: false
 			});
 
 			toastNextStep(toastId);
 			toastNextStep(toastId);
+
+			// Show invitation code to admin
+			if (result.invitation) {
+				createdInvitationCode = result.invitation.code;
+				createdInvitationUrl = result.invitation.url;
+				showInvitationCode = true;
+			}
 
 			newUser = {
 				email: '',
@@ -790,7 +802,7 @@ const courseRoles = [
 			<div class="mt-3">
 				<h3 class="text-lg font-medium text-gray-900 mb-2">Invite New User</h3>
 				<p class="text-sm text-gray-600 mb-4">
-					An invitation email with a magic link will be sent to set up their account.
+					A 6-digit OTP code will be sent to their email. You'll also receive a shareable invitation code (ABC-123) as a backup.
 				</p>
 
 				<form onsubmit={createNewUser} class="space-y-4">
@@ -804,7 +816,7 @@ const courseRoles = [
 							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
 							placeholder="user@example.com"
 						/>
-						<p class="mt-1 text-xs text-gray-500">They'll receive a magic link to set their password</p>
+						<p class="mt-1 text-xs text-gray-500">They'll receive a 6-digit code to verify their email and set a password</p>
 					</div>
 
 					<div>
@@ -1020,6 +1032,82 @@ const courseRoles = [
 						class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
 					>
 						{deleteLoading ? 'Deleting...' : 'Delete User'}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Invitation Code Display Modal -->
+{#if showInvitationCode}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-6 border w-[500px] shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<div class="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+					<UserPlus class="h-6 w-6 text-green-600" />
+				</div>
+				<h3 class="text-lg font-medium text-gray-900 text-center mb-2">User Invited Successfully!</h3>
+				<p class="text-sm text-gray-600 text-center mb-4">
+					A 6-digit OTP code has been sent to their email. Share this invitation code with them as a backup:
+				</p>
+
+				<!-- Invitation Code Display -->
+				<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+					<label class="block text-xs font-medium text-blue-900 mb-1">Invitation Code</label>
+					<div class="flex items-center justify-between">
+						<code class="text-2xl font-mono font-bold text-blue-900 tracking-wider">{createdInvitationCode}</code>
+						<button
+							type="button"
+							onclick={() => {
+								navigator.clipboard.writeText(createdInvitationCode);
+								toastSuccess('Code copied!', 'Copied', 2000);
+							}}
+							class="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1 border border-blue-300 rounded hover:bg-blue-100"
+						>
+							Copy Code
+						</button>
+					</div>
+				</div>
+
+				<!-- Invitation URL Display -->
+				<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+					<label class="block text-xs font-medium text-gray-700 mb-1">Shareable Link</label>
+					<div class="flex items-center justify-between gap-2">
+						<input
+							type="text"
+							readonly
+							value={createdInvitationUrl}
+							class="flex-1 text-xs font-mono text-gray-600 bg-white border border-gray-300 rounded px-2 py-1"
+						/>
+						<button
+							type="button"
+							onclick={() => {
+								navigator.clipboard.writeText(createdInvitationUrl);
+								toastSuccess('Link copied!', 'Copied', 2000);
+							}}
+							class="text-xs text-gray-600 hover:text-gray-800 font-medium px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 whitespace-nowrap"
+						>
+							Copy Link
+						</button>
+					</div>
+				</div>
+
+				<p class="text-xs text-gray-500 mb-4 text-center">
+					<strong>Note:</strong> The code expires in 30 days. The user can also login with the OTP code sent to their email.
+				</p>
+
+				<div class="flex justify-center">
+					<button
+						type="button"
+						onclick={() => {
+							showInvitationCode = false;
+							createdInvitationCode = '';
+							createdInvitationUrl = '';
+						}}
+						class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					>
+						Done
 					</button>
 				</div>
 			</div>

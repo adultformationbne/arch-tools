@@ -17,14 +17,17 @@
 	// Note: Invite links now use /auth/confirm route with token_hash
 	// This legacy hash fragment handler is kept for backwards compatibility only
 	onMount(async () => {
-		// Check for invite flow parameters (email and mode from /auth/invite)
-		const urlEmail = $page.url.searchParams.get('email');
+		// Check for invite flow parameters
 		const urlMode = $page.url.searchParams.get('mode');
+		const fromInvite = $page.url.searchParams.get('from');
 
-		if (urlEmail && urlMode === 'otp') {
-			email = urlEmail;
+		if (urlMode === 'otp') {
 			showOtpInput = true;
-			errorMessage = 'Please enter the 6-digit code sent to your email';
+			if (fromInvite === 'invite') {
+				errorMessage = 'Please enter your email and the 6-digit code that was sent to you';
+			} else {
+				errorMessage = 'Please enter the 6-digit code sent to your email';
+			}
 		}
 
 		const hash = window.location.hash;
