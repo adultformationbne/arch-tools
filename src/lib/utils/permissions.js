@@ -103,7 +103,7 @@ export function isCourseParticipant(userProfile) {
  * @returns {string} Default path to redirect user to
  */
 export function getDefaultRedirectPath(userProfile) {
-	if (!userProfile) return '/auth';
+	if (!userProfile) return '/login';
 
 	// User management → /users
 	if (hasModuleAccess(userProfile, MODULES.USERS)) {

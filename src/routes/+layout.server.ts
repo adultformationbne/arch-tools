@@ -253,14 +253,13 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	const coursesRoutePrefixes = [
 		'/materials',
 		'/reflections',
-		'/login',
 		'/signup',
 		'/privacy-policy',
 		'/accf-profile'
 	];
 	const isCoursesRoute =
 		coursesRoutePrefixes.some(route => pathname.startsWith(route)) || pathname === '/';
-	const publicRoutes = ['/', '/auth', '/login', '/readings', '/privacy-policy'];
+	const publicRoutes = ['/', '/login', '/readings', '/privacy-policy'];
 	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/'];
 	const isExplicitPublic = publicRoutes.some(route => pathname === route);
 	const isPrefixPublic = publicPrefixes.some(prefix => pathname.startsWith(prefix));
@@ -277,10 +276,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	}
 
 	if (!session && !isPublicRoute) {
-		if (isCoursesRoute) {
-			throw redirect(303, '/login?next=' + pathname);
-		}
-		throw redirect(303, '/auth?next=' + pathname);
+		throw redirect(303, '/login?next=' + pathname);
 	}
 
 	let courseRecord = await resolveCourseForUser(user?.id);

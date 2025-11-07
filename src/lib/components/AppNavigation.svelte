@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { User, Settings } from 'lucide-svelte';
+	import { User, Settings, LogOut } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	let { session, modules = [] } = $props<{
 		session: any;
@@ -88,6 +89,13 @@
 						title="Profile Settings"
 					>
 						<User class="h-5 w-5" />
+					</a>
+					<a
+						href="/auth/logout"
+						class="flex h-9 w-9 items-center justify-center rounded-full transition-colors text-gray-600 hover:bg-red-50 hover:text-red-600"
+						title="Sign Out"
+					>
+						<LogOut class="h-5 w-5" />
 					</a>
 				</div>
 			{/if}

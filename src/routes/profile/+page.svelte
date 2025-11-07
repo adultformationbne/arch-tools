@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon } from 'lucide-svelte';
+	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon, LogOut } from 'lucide-svelte';
 	import { supabaseRequest, createFormSubmitHandler } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
 	import { toast } from '$lib/stores/toast.svelte.js';
@@ -432,6 +432,28 @@ async function handlePasswordChange(event?: Event) {
 					</p>
 				</div>
 			{/if}
+		</div>
+
+		<!-- Sign Out Section -->
+		<div class="bg-white shadow-sm rounded-lg border border-gray-200">
+			<div class="px-6 py-4 border-b border-gray-200">
+				<h2 class="text-lg font-semibold text-gray-900 flex items-center">
+					<LogOut class="h-5 w-5 mr-2 text-gray-600" />
+					Account Actions
+				</h2>
+			</div>
+			<div class="p-6">
+				<p class="text-sm text-gray-600 mb-4">
+					Sign out of your account. You'll need to sign in again to access the platform.
+				</p>
+				<a
+					href="/auth/logout"
+					class="inline-flex items-center px-5 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 shadow-sm transition-colors"
+				>
+					<LogOut class="h-4 w-4 mr-2" />
+					Sign Out
+				</a>
+			</div>
 		</div>
 
 		{#if profile?.modules && profile.modules.includes('users')}

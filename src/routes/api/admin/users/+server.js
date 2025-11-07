@@ -1,9 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { requireModule } from '$lib/server/auth.js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SITE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-import { createClient } from '@supabase/supabase-js';
-import { createInvitation, resendInvitation } from '$lib/server/invite-codes.js';
+import { PUBLIC_SITE_URL } from '$env/static/public';
+import { createInvitation, resendInvitation, getInvitationUrl } from '$lib/server/invite-codes.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function POST(event) {
@@ -53,16 +51,8 @@ export async function POST(event) {
 		// Ensure unique modules
 		const uniqueModules = Array.from(new Set(cleanModules));
 
-		// Create admin client with service role key
-		const adminSupabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false
-			}
-		});
-
 		// Check if user already exists in auth system
-		const { data: { users: existingAuthUsers } } = await adminSupabase.auth.admin.listUsers();
+		const { data: { users: existingAuthUsers } } = await supabaseAdmin.auth.admin.listUsers();
 		const existingAuthUser = existingAuthUsers?.find(u => u.email === email);
 
 		let authData;
@@ -74,7 +64,7 @@ export async function POST(event) {
 			authData = { user: existingAuthUser };
 
 			// Send OTP for existing user to set up their account
-			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
+			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
 				email,
 				options: {
 					shouldCreateUser: false
@@ -88,7 +78,7 @@ export async function POST(event) {
 		} else {
 			// Create new user and send OTP code (not magic link)
 			// This sends a 6-digit code via email that works in locked-down environments
-			const { data: newAuthData, error: authError } = await adminSupabase.auth.admin.createUser({
+			const { data: newAuthData, error: authError } = await supabaseAdmin.auth.admin.createUser({
 				email,
 				email_confirm: false, // User will confirm via OTP
 				user_metadata: {
@@ -105,7 +95,7 @@ export async function POST(event) {
 			authData = newAuthData;
 
 			// Now send OTP for the new user
-			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
+			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
 				email,
 				options: {
 					shouldCreateUser: false // User already created above
@@ -115,7 +105,7 @@ export async function POST(event) {
 			if (otpError) {
 				console.error('OTP send error:', otpError);
 				// Clean up the created user
-				await adminSupabase.auth.admin.deleteUser(authData.user.id);
+				await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
 				throw error(400, otpError.message || 'Failed to send OTP');
 			}
 		}
@@ -124,7 +114,7 @@ export async function POST(event) {
 		await new Promise(resolve => setTimeout(resolve, 500));
 
 		// Check if profile was created by trigger, if not create it manually
-		let { data: existingProfile } = await adminSupabase
+		let { data: existingProfile } = await supabaseAdmin
 			.from('user_profiles')
 			.select()
 			.eq('id', authData.user.id)
@@ -134,7 +124,7 @@ export async function POST(event) {
 
 		if (existingProfile) {
 			// Profile exists, update it with the provided information
-			const { data: updatedProfile, error: updateError } = await adminSupabase
+			const { data: updatedProfile, error: updateError } = await supabaseAdmin
 				.from('user_profiles')
 				.update({
 					full_name: full_name || null,
@@ -146,13 +136,13 @@ export async function POST(event) {
 
 			if (updateError) {
 				console.error('Profile update error:', updateError);
-				await adminSupabase.auth.admin.deleteUser(authData.user.id);
+				await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
 				throw error(500, 'Failed to update user profile: ' + updateError.message);
 			}
 			profileData = updatedProfile;
 		} else {
 			// Profile doesn't exist, create it manually
-			const { data: newProfile, error: insertError } = await adminSupabase
+			const { data: newProfile, error: insertError } = await supabaseAdmin
 				.from('user_profiles')
 				.insert({
 					id: authData.user.id,
@@ -165,7 +155,7 @@ export async function POST(event) {
 
 			if (insertError) {
 				console.error('Profile insert error:', insertError);
-				await adminSupabase.auth.admin.deleteUser(authData.user.id);
+				await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
 				throw error(500, 'Failed to create user profile: ' + insertError.message);
 			}
 			profileData = newProfile;
@@ -188,7 +178,7 @@ export async function POST(event) {
 			},
 			invitation: {
 				code: invitation.code,
-				url: `${PUBLIC_SITE_URL}/auth/invite?code=${invitation.code}`,
+				url: getInvitationUrl(invitation.code, PUBLIC_SITE_URL),
 				expires_at: invitation.expires_at
 			}
 		});
@@ -222,23 +212,15 @@ export async function DELETE(event) {
 			throw error(400, 'You cannot delete your own account');
 		}
 
-		// Create admin client with service role key
-		const adminSupabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false
-			}
-		});
-
 		// Try to delete from Supabase Auth first
-		const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+		const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
 		// If user not found in auth, they might be a pending invite - just delete from user_profiles
 		if (deleteError && deleteError.code === 'user_not_found') {
 			console.log('User not found in auth, deleting from user_profiles only');
 
 			// Delete directly from user_profiles (will cascade to related tables)
-			const { error: profileDeleteError } = await adminSupabase
+			const { error: profileDeleteError } = await supabaseAdmin
 				.from('user_profiles')
 				.delete()
 				.eq('id', userId);
@@ -260,7 +242,7 @@ export async function DELETE(event) {
 		}
 
 		// Auth user deleted successfully - now also delete from user_profiles
-		const { error: profileDeleteError } = await adminSupabase
+		const { error: profileDeleteError } = await supabaseAdmin
 			.from('user_profiles')
 			.delete()
 			.eq('id', userId);
@@ -307,25 +289,17 @@ export async function PUT(event) {
 			throw error(400, 'Action is required');
 		}
 
-		// Create admin client with service role key
-		const adminSupabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false
-			}
-		});
-
 		// Handle resend invitation
 		if (action === 'resend_invitation') {
 			// Get user email from auth
-			const { data: authUser, error: getUserError } = await adminSupabase.auth.admin.getUserById(userId);
+			const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
 			if (getUserError || !authUser) {
 				throw error(400, 'User not found');
 			}
 
 			// Resend OTP code instead of magic link
-			const { error: otpError } = await adminSupabase.auth.signInWithOtp({
+			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
 				email: authUser.user.email,
 				options: {
 					shouldCreateUser: false
@@ -384,7 +358,7 @@ export async function PUT(event) {
 			console.log('Updating modules:', { original: modules, cleaned: uniqueModules });
 
 			// Update user modules (use cleaned modules)
-			const { error: updateError } = await adminSupabase
+			const { error: updateError } = await supabaseAdmin
 				.from('user_profiles')
 				.update({ modules: uniqueModules })
 				.eq('id', userId);

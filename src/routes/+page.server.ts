@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
 
 	// Redirect to login if not authenticated
 	if (!session || !user) {
-		throw redirect(303, '/auth/login');
+		throw redirect(303, '/login');
 	}
 
 	// Allow authenticated users to proceed

@@ -15,9 +15,8 @@
 	$: ({ supabase, session, userModules = [] } = data);
 
 	// Routes where we don't show the navigation and footer
-	$: hideNav = $page.url.pathname === '/auth' ||
-	             $page.url.pathname === '/login' ||
-	             $page.url.pathname === '/auth/setup-password';
+	$: hideNav = $page.url.pathname === '/login' ||
+	             $page.url.pathname === '/login/setup-password';
 
 	onMount(() => {
 		const {

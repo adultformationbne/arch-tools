@@ -7,13 +7,13 @@ export const load: PageServerLoad = async (event) => {
 
 	const { user } = await requireModule(event, 'dgr', {
 		mode: 'redirect',
-		redirectTo: '/auth'
+		redirectTo: '/login'
 	});
 
 	const { session } = await locals.safeGetSession();
 
 	if (!session) {
-		throw redirect(303, '/auth');
+		throw redirect(303, '/login');
 	}
 
 	return { session, user };

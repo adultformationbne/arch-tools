@@ -7,11 +7,11 @@ export const load: PageServerLoad = async (event) => {
 	// Require participant module to access My Courses
 	const { profile: userProfile } = await requireModuleLevel(event, 'courses.participant', {
 		mode: 'redirect',
-		redirectTo: '/auth'
+		redirectTo: '/login'
 	});
 
 	if (!userProfile) {
-		throw redirect(303, '/auth');
+		throw redirect(303, '/login');
 	}
 
 	const userId = userProfile.id;

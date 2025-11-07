@@ -222,5 +222,5 @@ export async function cancelInvitation(invitationId) {
  * @returns {string} Full invitation URL
  */
 export function getInvitationUrl(code, siteUrl) {
-	return `${siteUrl}/auth/invite?code=${code}`;
+	return `${siteUrl}/login/invite?code=${code}`;
 }

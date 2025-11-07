@@ -8,7 +8,7 @@ export const load: PageServerLoad = async (event) => {
 	// Check if user has user management module access (admins automatically have access)
 	const { user, profile: currentUserProfile } = await requireModule(event, 'users', {
 		mode: 'redirect',
-		redirectTo: '/profile'
+		redirectTo: '/login'
 	});
 
 	// Fetch ALL users (not just admins)
