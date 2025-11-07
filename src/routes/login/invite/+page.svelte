@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
-	export let data;
+	let { data } = $props();
 	const { supabase } = data;
 
 	let code = $state('');
