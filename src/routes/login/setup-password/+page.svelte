@@ -55,28 +55,34 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
 	<div class="w-full max-w-md space-y-8">
 		<div class="text-center">
-			<div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-				<KeyRound class="h-8 w-8 text-blue-600" />
+			<!-- Archdiocesan Cross Mark Logo -->
+			<div class="flex justify-center mb-6">
+				<img
+					src="/archmin-mark.png"
+					alt="Archdiocesan Ministry Tools"
+					class="w-24 h-24 object-contain"
+				/>
 			</div>
-			<h1 class="mt-6 text-3xl font-bold text-gray-900">
+
+			<h1 class="text-2xl font-semibold text-black">
 				Welcome to Arch Tools
 			</h1>
-			<p class="mt-2 text-sm text-gray-600">
+			<p class="mt-2 text-sm text-neutral-600">
 				Please create a password to secure your account
 			</p>
 			{#if user?.email}
-				<p class="mt-1 text-sm text-gray-500">
+				<p class="mt-1 text-sm text-neutral-500">
 					{user.email}
 				</p>
 			{/if}
 		</div>
 
 		{#if success}
-			<div class="rounded-lg bg-green-50 p-4 text-center">
-				<CheckCircle class="mx-auto h-12 w-12 text-green-500" />
+			<div class="bg-green-50 p-4 text-center border-2 border-green-200">
+				<CheckCircle class="mx-auto h-12 w-12 text-green-600" />
 				<p class="mt-2 text-sm font-medium text-green-800">
 					Password set successfully!
 				</p>
@@ -86,9 +92,9 @@
 			</div>
 		{:else}
 			<form class="mt-8 space-y-6" onsubmit={handleSetPassword}>
-				<div class="space-y-4 rounded-md shadow-sm">
+				<div class="space-y-4">
 					<div>
-						<label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="password" class="block text-sm font-medium text-black mb-1">
 							New Password
 						</label>
 						<input
@@ -97,13 +103,13 @@
 							id="password"
 							required
 							minlength="6"
-							class="relative block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
+							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
 							placeholder="Enter your password (min 6 characters)"
 							disabled={loading}
 						/>
 					</div>
 					<div>
-						<label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="confirm-password" class="block text-sm font-medium text-black mb-1">
 							Confirm Password
 						</label>
 						<input
@@ -112,7 +118,7 @@
 							id="confirm-password"
 							required
 							minlength="6"
-							class="relative block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
+							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
 							placeholder="Confirm your password"
 							disabled={loading}
 						/>
@@ -120,7 +126,7 @@
 				</div>
 
 				{#if errorMessage}
-					<div class="rounded-md bg-red-50 p-3 text-center text-sm text-red-800 border border-red-200">
+					<div class="bg-red-50 p-3 text-center text-sm text-red-800 border-2 border-red-200">
 						{errorMessage}
 					</div>
 				{/if}
@@ -129,14 +135,14 @@
 					<button
 						type="submit"
 						disabled={loading}
-						class="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						{loading ? 'Setting password...' : 'Set Password'}
 					</button>
 
-					<div class="bg-blue-50 border border-blue-200 rounded-md p-3">
-						<p class="text-xs text-blue-800">
-							<strong>Important:</strong> After setting your password, you can sign in anytime using your email and this password.
+					<div class="bg-neutral-100 border-2 border-neutral-300 p-3">
+						<p class="text-xs text-neutral-700">
+							<strong class="text-black">Important:</strong> After setting your password, you can sign in anytime using your email and this password.
 						</p>
 					</div>
 				</div>

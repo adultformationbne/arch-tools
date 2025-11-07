@@ -10,11 +10,11 @@ export const load: PageServerLoad = async (event) => {
 		profile: userProfile
 	} = await requireAnyModule(event, ['courses.admin', 'courses.manager', 'users'], {
 		mode: 'redirect',
-		redirectTo: '/auth'
+		redirectTo: '/login'
 	});
 
 	if (!userProfile) {
-		throw redirect(303, '/auth');
+		throw redirect(303, '/login');
 	}
 
 	const userModules: string[] = userProfile.modules ?? [];

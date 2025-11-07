@@ -23,17 +23,17 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 		if (error) {
 			console.error('Error verifying token:', error);
 			console.error('Token hash (first 10 chars):', token_hash.substring(0, 10));
-			throw redirect(303, '/auth/error');
+			throw redirect(303, '/login/error');
 		}
 
 		// Successfully verified - session is now established in cookies
 		// Redirect based on type
 		if (type === 'invite') {
 			// For invitations, send to password setup
-			throw redirect(303, '/auth/setup-password?next=' + encodeURIComponent(next));
+			throw redirect(303, '/login/setup-password?next=' + encodeURIComponent(next));
 		} else if (type === 'recovery') {
 			// For password recovery, send to password setup (same page, different context)
-			throw redirect(303, '/auth/setup-password?next=' + encodeURIComponent(next));
+			throw redirect(303, '/login/setup-password?next=' + encodeURIComponent(next));
 		} else if (type === 'signup' || type === 'email') {
 			// For signup confirmation or email verification, redirect to app
 			// Check user profile to determine best redirect
@@ -72,5 +72,5 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	}
 
 	// No valid params
-	throw redirect(303, '/auth/error');
+	throw redirect(303, '/login/error');
 };

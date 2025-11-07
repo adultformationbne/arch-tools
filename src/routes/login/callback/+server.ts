@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 				nextUrl.searchParams.delete('setup');
 				const cleanNext = nextUrl.pathname + nextUrl.search || '/';
 
-				throw redirect(303, `/auth/setup-password?next=${encodeURIComponent(cleanNext)}`);
+				throw redirect(303, `/login/setup-password?next=${encodeURIComponent(cleanNext)}`);
 			}
 			throw redirect(303, next);
 		}
@@ -42,7 +42,7 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 				nextUrl.searchParams.delete('setup');
 				const cleanNext = nextUrl.pathname + nextUrl.search || '/';
 
-				throw redirect(303, `/auth/setup-password?next=${encodeURIComponent(cleanNext)}`);
+				throw redirect(303, `/login/setup-password?next=${encodeURIComponent(cleanNext)}`);
 			}
 			throw redirect(303, next);
 		}
@@ -57,10 +57,10 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 			const nextUrl = new URL(next, url.origin);
 			nextUrl.searchParams.delete('setup');
 			const cleanNext = nextUrl.pathname + nextUrl.search || '/';
-			throw redirect(303, `/auth/setup-password?next=${encodeURIComponent(cleanNext)}`);
+			throw redirect(303, `/login/setup-password?next=${encodeURIComponent(cleanNext)}`);
 		}
 		throw redirect(303, next);
 	}
 
-	throw redirect(303, '/auth/error');
+	throw redirect(303, '/login/error');
 };

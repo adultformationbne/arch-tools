@@ -1,9 +1,19 @@
 import type { LayoutServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { requireCourseAdmin } from '$lib/server/auth.js';
 
-export const load: LayoutServerLoad = async ({ params, parent }) => {
-	const parentData = await parent();
+export const load: LayoutServerLoad = async (event) => {
+	const { params } = event;
 	const courseSlug = params.slug;
+
+	// CRITICAL: Require course admin access BEFORE loading any data
+	// This protects ALL nested admin routes
+	await requireCourseAdmin(event, courseSlug, {
+		mode: 'redirect',
+		redirectTo: '/courses'
+	});
+
+	const parentData = await event.parent();
 
 	// Get course with settings
 	const { data: course } = await supabaseAdmin

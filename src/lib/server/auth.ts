@@ -41,7 +41,7 @@ export async function requireAuth(
 
 	if (!session) {
 		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || '/auth');
+			throw redirect(303, options.redirectTo || '/login');
 		}
 		throw error(401, 'Unauthorized - Please sign in');
 	}

@@ -1,21 +1,18 @@
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { requireAuth, getUserProfile } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-	const { session, user } = await safeGetSession();
+export const load: PageServerLoad = async (event) => {
+	// Use unified auth function
+	const { user } = await requireAuth(event, {
+		mode: 'redirect',
+		redirectTo: '/login'
+	});
 
-	if (!session) {
-		throw redirect(303, '/auth');
-	}
+	// Use centralized profile fetching
+	const profile = await getUserProfile(event.locals.supabase, user.id);
 
-	const { data: profile, error } = await supabase
-		.from('user_profiles')
-		.select('*')
-		.eq('id', user.id)
-		.single();
-
-	if (error) {
-		console.error('Error loading profile:', error);
+	if (!profile) {
+		console.error('Error loading profile: User profile not found for user', user.id);
 	}
 
 	return {

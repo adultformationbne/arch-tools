@@ -57,9 +57,9 @@
 			}
 
 			// Code is valid - OTP has been sent to user's email
-			// Redirect to /auth for OTP verification
+			// Redirect to /login for OTP verification
 			// SECURITY: We don't get the email back from API (prevents harvesting)
-			goto('/auth?mode=otp&from=invite');
+			goto('/login?mode=otp&from=invite');
 		} catch (error) {
 			errorMessage = error.message;
 		} finally {
@@ -68,20 +68,29 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
 	<div class="w-full max-w-md space-y-8">
 		<div>
-			<h1 class="mt-6 mb-2 text-center text-2xl font-bold text-gray-900">
+			<!-- Archdiocesan Cross Mark Logo -->
+			<div class="flex justify-center mb-6">
+				<img
+					src="/archmin-mark.png"
+					alt="Archdiocesan Ministry Tools"
+					class="w-24 h-24 object-contain"
+				/>
+			</div>
+
+			<h1 class="mb-2 text-center text-2xl font-semibold text-black">
 				Redeem Invitation Code
 			</h1>
-			<p class="text-center text-sm text-gray-600">
+			<p class="text-center text-sm text-neutral-600">
 				Enter the invitation code you received
 			</p>
 		</div>
 
 		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 			<div>
-				<label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+				<label for="code" class="block text-sm font-medium text-black mb-2">
 					Invitation Code
 				</label>
 				<input
@@ -92,16 +101,16 @@
 					maxlength="7"
 					placeholder="ABC-123"
 					required
-					class="block w-full rounded-md border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-widest text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 focus:outline-none uppercase"
+					class="block w-full border-2 border-black px-4 py-3 text-center text-2xl font-mono tracking-widest text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none uppercase"
 					disabled={loading}
 				/>
-				<p class="mt-2 text-xs text-gray-500 text-center">
+				<p class="mt-2 text-xs text-neutral-500 text-center">
 					Format: ABC-123 (6 characters)
 				</p>
 			</div>
 
 			{#if errorMessage}
-				<div class="rounded-md bg-red-50 p-3 text-center text-sm text-red-800 border border-red-200">
+				<div class="bg-red-50 p-3 text-center text-sm text-red-800 border-2 border-red-200">
 					{errorMessage}
 				</div>
 			{/if}
@@ -110,22 +119,22 @@
 				<button
 					type="submit"
 					disabled={loading || code.length < 7}
-					class="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					{loading ? 'Verifying...' : 'Continue'}
 				</button>
 			</div>
 
 			<div class="text-center">
-				<a href="/auth" class="text-sm text-blue-600 hover:text-blue-500">
+				<a href="/login" class="text-sm text-black hover:text-neutral-700 underline">
 					← Back to login
 				</a>
 			</div>
 		</form>
 
-		<div class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-200">
-			<p class="text-xs text-blue-800">
-				<strong>Don't have an invitation code?</strong> Contact your administrator to receive an invitation to the platform.
+		<div class="mt-6 bg-neutral-100 p-4 border-2 border-neutral-300">
+			<p class="text-xs text-neutral-700">
+				<strong class="text-black">Don't have an invitation code?</strong> Contact your administrator to receive an invitation to the platform.
 			</p>
 		</div>
 	</div>
