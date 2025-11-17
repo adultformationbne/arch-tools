@@ -1,0 +1,1789 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.4"
+  }
+  public: {
+    Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      courses: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_weeks: number | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          settings: Json | null
+          short_name: string | null
+          slug: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          settings?: Json | null
+          short_name?: string | null
+          slug: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          settings?: Json | null
+          short_name?: string | null
+          slug?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      courses_activity_log: {
+        Row: {
+          activity_type: string
+          actor_name: string
+          cohort_id: string
+          created_at: string | null
+          description: string
+          enrollment_id: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          activity_type: string
+          actor_name: string
+          cohort_id: string
+          created_at?: string | null
+          description: string
+          enrollment_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          activity_type?: string
+          actor_name?: string
+          cohort_id?: string
+          created_at?: string | null
+          description?: string
+          enrollment_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohort_activity_log_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_attendance: {
+        Row: {
+          attendance_type: string | null
+          cohort_id: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          marked_by: string
+          notes: string | null
+          present: boolean
+          session_number: number
+          updated_at: string
+        }
+        Insert: {
+          attendance_type?: string | null
+          cohort_id: string
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          marked_by: string
+          notes?: string | null
+          present: boolean
+          session_number: number
+          updated_at?: string
+        }
+        Update: {
+          attendance_type?: string | null
+          cohort_id?: string
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          marked_by?: string
+          notes?: string | null
+          present?: boolean
+          session_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_cohorts: {
+        Row: {
+          created_at: string
+          current_session: number
+          email_preferences: Json | null
+          end_date: string
+          id: string
+          module_id: string
+          name: string
+          start_date: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_session?: number
+          email_preferences?: Json | null
+          end_date: string
+          id?: string
+          module_id: string
+          name: string
+          start_date: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_session?: number
+          email_preferences?: Json | null
+          end_date?: string
+          id?: string
+          module_id?: string
+          name?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohorts_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "courses_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_community_feed: {
+        Row: {
+          author_id: string
+          author_name: string
+          cohort_id: string
+          content: string
+          created_at: string
+          email_notification_sent: boolean | null
+          feed_type: string
+          id: string
+          image_url: string | null
+          pinned: boolean | null
+          reflection_response_id: string | null
+          session_number: number | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          cohort_id: string
+          content: string
+          created_at?: string
+          email_notification_sent?: boolean | null
+          feed_type: string
+          id?: string
+          image_url?: string | null
+          pinned?: boolean | null
+          reflection_response_id?: string | null
+          session_number?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          cohort_id?: string
+          content?: string
+          created_at?: string
+          email_notification_sent?: boolean | null
+          feed_type?: string
+          id?: string
+          image_url?: string | null
+          pinned?: boolean | null
+          reflection_response_id?: string | null
+          session_number?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_feed_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_feed_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_feed_reflection_response_id_fkey"
+            columns: ["reflection_response_id"]
+            isOneToOne: false
+            referencedRelation: "courses_reflection_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_enrollment_imports: {
+        Row: {
+          created_at: string | null
+          error_rows: number | null
+          filename: string
+          id: string
+          imported_by: string | null
+          status: string | null
+          successful_rows: number | null
+          total_rows: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_rows?: number | null
+          filename: string
+          id?: string
+          imported_by?: string | null
+          status?: string | null
+          successful_rows?: number | null
+          total_rows?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_rows?: number | null
+          filename?: string
+          id?: string
+          imported_by?: string | null
+          status?: string | null
+          successful_rows?: number | null
+          total_rows?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accf_user_imports_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_enrollments: {
+        Row: {
+          assigned_admin_id: string | null
+          cohort_id: string
+          created_at: string | null
+          current_session: number | null
+          email: string
+          enrolled_at: string | null
+          error_message: string | null
+          full_name: string
+          hub_id: string | null
+          id: string
+          imported_by: string | null
+          invitation_accepted_at: string | null
+          role: string
+          status: string
+          updated_at: string | null
+          user_profile_id: string | null
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          cohort_id: string
+          created_at?: string | null
+          current_session?: number | null
+          email: string
+          enrolled_at?: string | null
+          error_message?: string | null
+          full_name: string
+          hub_id?: string | null
+          id?: string
+          imported_by?: string | null
+          invitation_accepted_at?: string | null
+          role: string
+          status?: string
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          cohort_id?: string
+          created_at?: string | null
+          current_session?: number | null
+          email?: string
+          enrolled_at?: string | null
+          error_message?: string | null
+          full_name?: string
+          hub_id?: string | null
+          id?: string
+          imported_by?: string | null
+          invitation_accepted_at?: string | null
+          role?: string
+          status?: string
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohort_enrollments_assigned_admin_id_fkey"
+            columns: ["assigned_admin_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_enrollments_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_enrollments_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "courses_hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_enrollments_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_enrollments_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_hubs: {
+        Row: {
+          coordinator_id: string | null
+          course_id: string
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          coordinator_id?: string | null
+          course_id: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          coordinator_id?: string | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_hubs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hubs_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_materials: {
+        Row: {
+          content: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          session_id: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          session_id: string
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          session_id?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_materials_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "courses_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_modules: {
+        Row: {
+          course_id: string | null
+          description: string | null
+          id: string
+          name: string
+          order_number: number
+        }
+        Insert: {
+          course_id?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          order_number: number
+        }
+        Update: {
+          course_id?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          order_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_reflection_questions: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_text: string
+          session_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_text: string
+          session_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_text?: string
+          session_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_reflection_questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "courses_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_reflection_responses: {
+        Row: {
+          cohort_id: string
+          created_at: string | null
+          enrollment_id: string
+          feedback: string | null
+          id: string
+          is_public: boolean | null
+          marked_at: string | null
+          marked_by: string | null
+          question_id: string
+          response_text: string
+          session_number: number
+          status: Database["public"]["Enums"]["reflection_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          cohort_id: string
+          created_at?: string | null
+          enrollment_id: string
+          feedback?: string | null
+          id?: string
+          is_public?: boolean | null
+          marked_at?: string | null
+          marked_by?: string | null
+          question_id: string
+          response_text: string
+          session_number: number
+          status?: Database["public"]["Enums"]["reflection_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          cohort_id?: string
+          created_at?: string | null
+          enrollment_id?: string
+          feedback?: string | null
+          id?: string
+          is_public?: boolean | null
+          marked_at?: string | null
+          marked_by?: string | null
+          question_id?: string
+          response_text?: string
+          session_number?: number
+          status?: Database["public"]["Enums"]["reflection_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reflection_responses_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reflection_responses_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reflection_responses_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reflection_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "courses_reflection_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_sessions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          learning_objectives: string[] | null
+          module_id: string
+          reflections_enabled: boolean
+          session_number: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          learning_objectives?: string[] | null
+          module_id: string
+          reflections_enabled?: boolean
+          session_number: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          learning_objectives?: string[] | null
+          module_id?: string
+          reflections_enabled?: boolean
+          session_number?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_sessions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "courses_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dgr_assignment_rules: {
+        Row: {
+          action_message: string | null
+          action_type: string
+          action_value: string | null
+          active: boolean | null
+          condition_day_type: string | null
+          condition_liturgical_day_contains: string | null
+          condition_season: string | null
+          condition_week_number: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          priority: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_message?: string | null
+          action_type: string
+          action_value?: string | null
+          active?: boolean | null
+          condition_day_type?: string | null
+          condition_liturgical_day_contains?: string | null
+          condition_season?: string | null
+          condition_week_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_message?: string | null
+          action_type?: string
+          action_value?: string | null
+          active?: boolean | null
+          condition_day_type?: string | null
+          condition_liturgical_day_contains?: string | null
+          condition_season?: string | null
+          condition_week_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      dgr_contributors: {
+        Row: {
+          access_token: string
+          active: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          preferred_days: number[] | null
+          schedule_pattern: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          active?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          preferred_days?: number[] | null
+          schedule_pattern?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          active?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          preferred_days?: number[] | null
+          schedule_pattern?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      dgr_promo_tiles: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: number
+          image_url: string | null
+          link_url: string | null
+          position: number
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: number
+          image_url?: string | null
+          link_url?: string | null
+          position: number
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: number
+          image_url?: string | null
+          link_url?: string | null
+          position?: number
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      dgr_schedule: {
+        Row: {
+          approved_at: string | null
+          contributor_email: string | null
+          contributor_id: string | null
+          created_at: string | null
+          date: string
+          gospel_quote: string | null
+          gospel_reference: string | null
+          gospel_text: string | null
+          id: string
+          liturgical_date: string | null
+          published_at: string | null
+          readings_data: Json | null
+          reflection_content: string | null
+          reflection_title: string | null
+          reminder_history: Json | null
+          status: Database["public"]["Enums"]["dgr_status"] | null
+          submission_token: string | null
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          contributor_email?: string | null
+          contributor_id?: string | null
+          created_at?: string | null
+          date: string
+          gospel_quote?: string | null
+          gospel_reference?: string | null
+          gospel_text?: string | null
+          id?: string
+          liturgical_date?: string | null
+          published_at?: string | null
+          readings_data?: Json | null
+          reflection_content?: string | null
+          reflection_title?: string | null
+          reminder_history?: Json | null
+          status?: Database["public"]["Enums"]["dgr_status"] | null
+          submission_token?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          contributor_email?: string | null
+          contributor_id?: string | null
+          created_at?: string | null
+          date?: string
+          gospel_quote?: string | null
+          gospel_reference?: string | null
+          gospel_text?: string | null
+          id?: string
+          liturgical_date?: string | null
+          published_at?: string | null
+          readings_data?: Json | null
+          reflection_content?: string | null
+          reflection_title?: string | null
+          reminder_history?: Json | null
+          status?: Database["public"]["Enums"]["dgr_status"] | null
+          submission_token?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dgr_schedule_contributor_id_fkey"
+            columns: ["contributor_id"]
+            isOneToOne: false
+            referencedRelation: "dgr_contributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dgr_templates: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          html: string
+          id: string
+          is_active: boolean | null
+          name: string
+          template_key: string
+          thumbnail_generated_at: string | null
+          thumbnail_url: string | null
+          variables: string[] | null
+          version: number
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          html: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          template_key: string
+          thumbnail_generated_at?: string | null
+          thumbnail_url?: string | null
+          variables?: string[] | null
+          version: number
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          html?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          template_key?: string
+          thumbnail_generated_at?: string | null
+          thumbnail_url?: string | null
+          variables?: string[] | null
+          version?: number
+        }
+        Relationships: []
+      }
+      editor_blocks: {
+        Row: {
+          block_id: string
+          chapter_id: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          metadata: Json | null
+          tag: string
+        }
+        Insert: {
+          block_id: string
+          chapter_id?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          tag: string
+        }
+        Update: {
+          block_id?: string
+          chapter_id?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "editor_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editor_books: {
+        Row: {
+          auto_add_on_paste: boolean | null
+          blocks: Json
+          created_at: string | null
+          created_by: string | null
+          custom_tags: Json | null
+          document_title: string
+          id: string
+          parent_version_id: string | null
+          reverse_order: boolean | null
+          version: string | null
+        }
+        Insert: {
+          auto_add_on_paste?: boolean | null
+          blocks: Json
+          created_at?: string | null
+          created_by?: string | null
+          custom_tags?: Json | null
+          document_title?: string
+          id?: string
+          parent_version_id?: string | null
+          reverse_order?: boolean | null
+          version?: string | null
+        }
+        Update: {
+          auto_add_on_paste?: boolean | null
+          blocks?: Json
+          created_at?: string | null
+          created_by?: string | null
+          custom_tags?: Json | null
+          document_title?: string
+          id?: string
+          parent_version_id?: string | null
+          reverse_order?: boolean | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "editor_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editor_chapters: {
+        Row: {
+          block_id: string
+          chapter_number: number
+          created_at: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          block_id: string
+          chapter_number: number
+          created_at?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          block_id?: string
+          chapter_number?: number
+          created_at?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      editor_logs: {
+        Row: {
+          action_type: string
+          block_id: string | null
+          changes: Json | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          block_id?: string | null
+          changes?: Json | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          block_id?: string | null
+          changes?: Json | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      lectionary: {
+        Row: {
+          admin_order: number | null
+          created_at: string | null
+          day: string | null
+          first_reading: string | null
+          gospel_reading: string | null
+          id: number
+          liturgical_day: string
+          psalm: string | null
+          second_reading: string | null
+          time: string | null
+          week: string | null
+          year: string | null
+        }
+        Insert: {
+          admin_order?: number | null
+          created_at?: string | null
+          day?: string | null
+          first_reading?: string | null
+          gospel_reading?: string | null
+          id?: number
+          liturgical_day: string
+          psalm?: string | null
+          second_reading?: string | null
+          time?: string | null
+          week?: string | null
+          year?: string | null
+        }
+        Update: {
+          admin_order?: number | null
+          created_at?: string | null
+          day?: string | null
+          first_reading?: string | null
+          gospel_reading?: string | null
+          id?: number
+          liturgical_day?: string
+          psalm?: string | null
+          second_reading?: string | null
+          time?: string | null
+          week?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
+      lectionary_readings: {
+        Row: {
+          admin_order: number
+          created_at: string | null
+          day_type: string
+          first_reading: string | null
+          gospel_reading: string
+          id: string
+          liturgical_day: string
+          psalm: string | null
+          second_reading: string | null
+          time_period: string
+          updated_at: string | null
+          week_number: string
+          year_cycle: string
+        }
+        Insert: {
+          admin_order: number
+          created_at?: string | null
+          day_type: string
+          first_reading?: string | null
+          gospel_reading: string
+          id?: string
+          liturgical_day: string
+          psalm?: string | null
+          second_reading?: string | null
+          time_period: string
+          updated_at?: string | null
+          week_number: string
+          year_cycle: string
+        }
+        Update: {
+          admin_order?: number
+          created_at?: string | null
+          day_type?: string
+          first_reading?: string | null
+          gospel_reading?: string
+          id?: string
+          liturgical_day?: string
+          psalm?: string | null
+          second_reading?: string | null
+          time_period?: string
+          updated_at?: string | null
+          week_number?: string
+          year_cycle?: string
+        }
+        Relationships: []
+      }
+      liturgical_calendar: {
+        Row: {
+          calendar_date: string
+          created_at: string | null
+          day_of_week: string
+          id: string
+          liturgical_name: string
+          liturgical_rank: string
+          liturgical_season: string
+          liturgical_week: number | null
+          year: number
+        }
+        Insert: {
+          calendar_date: string
+          created_at?: string | null
+          day_of_week: string
+          id?: string
+          liturgical_name: string
+          liturgical_rank: string
+          liturgical_season: string
+          liturgical_week?: number | null
+          year: number
+        }
+        Update: {
+          calendar_date?: string
+          created_at?: string | null
+          day_of_week?: string
+          id?: string
+          liturgical_name?: string
+          liturgical_rank?: string
+          liturgical_season?: string
+          liturgical_week?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
+      liturgical_years: {
+        Row: {
+          created_at: string | null
+          id: string
+          sunday_cycle: string
+          weekday_cycle: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sunday_cycle: string
+          weekday_cycle: string
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sunday_cycle?: string
+          weekday_cycle?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      ordo_calendar: {
+        Row: {
+          calendar_date: string
+          created_at: string | null
+          liturgical_name: string
+          liturgical_rank: string | null
+          liturgical_season: string | null
+          liturgical_week: number | null
+          liturgical_year: number
+          year_cycle: string | null
+        }
+        Insert: {
+          calendar_date: string
+          created_at?: string | null
+          liturgical_name: string
+          liturgical_rank?: string | null
+          liturgical_season?: string | null
+          liturgical_week?: number | null
+          liturgical_year: number
+          year_cycle?: string | null
+        }
+        Update: {
+          calendar_date?: string
+          created_at?: string | null
+          liturgical_name?: string
+          liturgical_rank?: string | null
+          liturgical_season?: string | null
+          liturgical_week?: number | null
+          liturgical_year?: number
+          year_cycle?: string | null
+        }
+        Relationships: []
+      }
+      ordo_lectionary_mapping: {
+        Row: {
+          calendar_date: string
+          created_at: string | null
+          id: number
+          lectionary_id: number | null
+          match_method: string | null
+          match_type: string
+        }
+        Insert: {
+          calendar_date: string
+          created_at?: string | null
+          id?: number
+          lectionary_id?: number | null
+          match_method?: string | null
+          match_type: string
+        }
+        Update: {
+          calendar_date?: string
+          created_at?: string | null
+          id?: number
+          lectionary_id?: number | null
+          match_method?: string | null
+          match_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordo_lectionary_mapping_calendar_date_fkey"
+            columns: ["calendar_date"]
+            isOneToOne: true
+            referencedRelation: "ordo_calendar"
+            referencedColumns: ["calendar_date"]
+          },
+          {
+            foreignKeyName: "ordo_lectionary_mapping_lectionary_id_fkey"
+            columns: ["lectionary_id"]
+            isOneToOne: false
+            referencedRelation: "lectionary"
+            referencedColumns: ["admin_order"]
+          },
+        ]
+      }
+      platform_email_log: {
+        Row: {
+          body: string
+          created_at: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          reference_id: string | null
+          resend_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["email_status"] | null
+          subject: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          reference_id?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_status"] | null
+          subject: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          email_type?: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          reference_id?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_status"] | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dgr_email_queue_schedule_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "dgr_schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_email_templates: {
+        Row: {
+          available_variables: string[]
+          body_template: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          available_variables?: string[]
+          body_template: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          available_variables?: string[]
+          body_template?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject_template?: string
+          template_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          assigned_course_ids: Json | null
+          avatar_url: string | null
+          bio: string | null
+          completed_cohorts: Json | null
+          created_at: string | null
+          display_name: string | null
+          email: string
+          full_name: string | null
+          id: string
+          modules: string[]
+          organization: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_course_ids?: Json | null
+          avatar_url?: string | null
+          bio?: string | null
+          completed_cohorts?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          modules?: string[]
+          organization?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_course_ids?: Json | null
+          avatar_url?: string | null
+          bio?: string | null
+          completed_cohorts?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          modules?: string[]
+          organization?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      chapter_section_hierarchy: {
+        Row: {
+          block_count: number | null
+          chapter_id: string | null
+          chapter_title: string | null
+          section_name: string | null
+          section_order: number | null
+          section_type: string | null
+          start_block_id: string | null
+        }
+        Relationships: []
+      }
+      complete_books: {
+        Row: {
+          block_count: number | null
+          blocks: Json | null
+          book_id: string | null
+          created_at: string | null
+          document_title: string | null
+          version: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      activate_template_version: { Args: { p_id: string }; Returns: Json }
+      assign_contributor_to_date: {
+        Args: { target_date: string }
+        Returns: string
+      }
+      calculate_current_session: {
+        Args: { p_frequency: string; p_start_date: string }
+        Returns: number
+      }
+      check_assignment_rules: {
+        Args: { target_date: string }
+        Returns: {
+          is_blocked: boolean
+          rule_message: string
+          rule_name: string
+          specific_contributor_id: string
+        }[]
+      }
+      detect_chapter_sections: {
+        Args: { p_book_id?: string }
+        Returns: {
+          block_count: number
+          chapter_id: string
+          chapter_title: string
+          section_name: string
+          section_order: number
+          section_type: string
+          start_block_id: string
+        }[]
+      }
+      generate_contributor_access_token: { Args: never; Returns: string }
+      generate_invite_code: { Args: never; Returns: string }
+      generate_submission_token: { Args: never; Returns: string }
+      get_book_by_chapters: {
+        Args: { book_id_param?: string }
+        Returns: {
+          blocks: Json
+          book_id: string
+          chapter_id: string
+          chapter_number: number
+          chapter_title: string
+          document_title: string
+        }[]
+      }
+      get_complete_book: {
+        Args: { book_id_param?: string }
+        Returns: {
+          blocks: Json
+          book_id: string
+          created_at: string
+          document_title: string
+          version: string
+        }[]
+      }
+      get_contributor_assigned_dates: {
+        Args: { contributor_uuid: string; months_ahead?: number }
+        Returns: {
+          date: string
+          gospel_quote: string
+          has_content: boolean
+          liturgical_date: string
+          readings_data: Json
+          reflection_content: string
+          reflection_title: string
+          schedule_id: string
+          status: Database["public"]["Enums"]["dgr_status"]
+        }[]
+      }
+      get_lectionary_readings_for_date: {
+        Args: { target_date: string }
+        Returns: {
+          day_type: string
+          first_reading: string
+          gospel_reading: string
+          liturgical_day: string
+          psalm: string
+          second_reading: string
+          time_period: string
+          year_cycle: string
+        }[]
+      }
+      get_next_template_version: {
+        Args: { p_template_key: string }
+        Returns: number
+      }
+      get_readings_for_date: {
+        Args: { target_date: string }
+        Returns: {
+          calendar_date: string
+          first_reading: string
+          gospel_reading: string
+          liturgical_day: string
+          liturgical_rank: string
+          liturgical_season: string
+          liturgical_week: number
+          psalm: string
+          second_reading: string
+          year_cycle: string
+        }[]
+      }
+      get_session_week: {
+        Args: { p_frequency: string; p_session: number; p_start_date: string }
+        Returns: string
+      }
+      get_user_cohorts: { Args: never; Returns: string[] }
+      get_user_modules: { Args: { user_id: string }; Returns: Json }
+      has_module:
+        | { Args: { module_name: string }; Returns: boolean }
+        | { Args: { module: string; user_id: string }; Returns: boolean }
+      has_module_access: {
+        Args: { module_name: string; user_id: string }
+        Returns: boolean
+      }
+      has_module_prefix: {
+        Args: { module_prefix: string; user_id: string }
+        Returns: boolean
+      }
+      is_admin_user: { Args: { user_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
+    }
+    Enums: {
+      dgr_status: "pending" | "submitted" | "approved" | "published"
+      email_status: "pending" | "sent" | "failed"
+      email_type: "assignment" | "reminder" | "approval" | "published"
+      reflection_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "passed"
+        | "needs_revision"
+        | "resubmitted"
+      user_role:
+        | "admin"
+        | "editor"
+        | "contributor"
+        | "viewer"
+        | "accf_admin"
+        | "accf_student"
+        | "hub_coordinator"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      dgr_status: ["pending", "submitted", "approved", "published"],
+      email_status: ["pending", "sent", "failed"],
+      email_type: ["assignment", "reminder", "approval", "published"],
+      reflection_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "passed",
+        "needs_revision",
+        "resubmitted",
+      ],
+      user_role: [
+        "admin",
+        "editor",
+        "contributor",
+        "viewer",
+        "accf_admin",
+        "accf_student",
+        "hub_coordinator",
+      ],
+    },
+  },
+} as const

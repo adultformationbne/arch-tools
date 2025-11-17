@@ -14,6 +14,19 @@
 		children
 	} = $props();
 
+	// Portal action to move element to body
+	function portal(node) {
+		document.body.appendChild(node);
+
+		return {
+			destroy() {
+				if (document.body.contains(node)) {
+					document.body.removeChild(node);
+				}
+			}
+		};
+	}
+
 	function handleOverlayClick() {
 		if (!loading) {
 			onCancel();
@@ -22,7 +35,7 @@
 </script>
 
 {#if show}
-	<div class="modal-overlay" onclick={handleOverlayClick}>
+	<div class="modal-overlay" use:portal onclick={handleOverlayClick}>
 		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
 			{#if loading}
 				<div class="modal-loading">

@@ -9,6 +9,8 @@
 	import CohortDetails from '$lib/components/CohortDetails.svelte';
 	import RecentActivity from '$lib/components/RecentActivity.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
+	import { toastError, toastWarning } from '$lib/utils/toast-helpers.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 
@@ -26,6 +28,9 @@
 
 	// Get selected cohort - use server-provided initial value for instant load
 	let selectedCohortId = $state(data.initialSelectedCohort);
+
+	// Delete confirmation state
+	let showDeleteConfirm = $state(false);
 
 	// On mount: if we have a selected cohort but no URL param, update URL instantly
 	$effect(() => {
@@ -142,7 +147,7 @@
 	function openAttendanceModal() {
 		showAttendanceModal = true;
 		// TODO: Implement attendance modal
-		alert('Attendance tracking coming soon!');
+		toastWarning('Attendance tracking coming soon!', 'Coming Soon');
 		showAttendanceModal = false;
 	}
 
@@ -164,10 +169,14 @@
 		}
 	}
 
-	async function handleCohortDelete() {
-		if (!selectedCohortId) return;
+	function confirmCohortDelete() {
+		showDeleteConfirm = true;
+	}
 
-		if (!confirm('Delete this cohort? This cannot be undone.')) return;
+	async function handleCohortDelete() {
+		showDeleteConfirm = false;
+
+		if (!selectedCohortId) return;
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
@@ -185,11 +194,11 @@
 				await refreshData();
 			} else {
 				const error = await response.text();
-				alert(error || 'Failed to delete cohort');
+				toastError(error || 'Failed to delete cohort', 'Delete Failed');
 			}
 		} catch (err) {
 			console.error('Error deleting cohort:', err);
-			alert('Failed to delete cohort');
+			toastError('Failed to delete cohort', 'Delete Failed');
 		}
 	}
 
@@ -233,7 +242,7 @@ Bob Johnson,bob.j@example.com,student,`;
 				cohort={selectedCohort}
 				{modules}
 				onUpdate={handleCohortUpdate}
-				onDelete={handleCohortDelete}
+				onDelete={confirmCohortDelete}
 			/>
 
 			<!-- Right: Recent Activity -->
@@ -277,6 +286,19 @@ Bob Johnson,bob.j@example.com,student,`;
 	bind:show={showAdvancementModal}
 	onComplete={handleAdvancementComplete}
 />
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Delete Cohort"
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={handleCohortDelete}
+	onCancel={() => showDeleteConfirm = false}
+>
+	<p>Are you sure you want to delete this cohort?</p>
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>
 
 <style>
 	/* Empty State */

@@ -1,6 +1,8 @@
 <script>
 	import { Plus, BookOpen, Calendar, Users, Edit, Trash2, MoreVertical } from 'lucide-svelte';
 	import ModuleModal from '$lib/components/ModuleModal.svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -10,6 +12,10 @@
 	let showModuleModal = $state(false);
 	let editingModule = $state(null);
 	let openDropdown = $state(null);
+
+	// Delete confirmation state
+	let showDeleteConfirm = $state(false);
+	let moduleToDelete = $state(null);
 
 	function handleCreateModule() {
 		editingModule = null;
@@ -22,9 +28,18 @@
 		openDropdown = null;
 	}
 
-	async function handleDeleteModule(module) {
-		const confirmed = confirm(`Are you sure you want to delete "${module.name}"? This cannot be undone.`);
-		if (!confirmed) return;
+	function confirmDeleteModule(module) {
+		moduleToDelete = module;
+		showDeleteConfirm = true;
+		openDropdown = null;
+	}
+
+	async function handleDeleteModule() {
+		const module = moduleToDelete;
+		showDeleteConfirm = false;
+		moduleToDelete = null;
+
+		if (!module) return;
 
 		try {
 			const response = await fetch(`/admin/courses/${course.slug}/api`, {
@@ -44,10 +59,9 @@
 
 			// Remove from list
 			modules = modules.filter(m => m.id !== module.id);
-			openDropdown = null;
 		} catch (err) {
 			console.error('Error deleting module:', err);
-			alert(err.message || 'Failed to delete module');
+			toastError(err.message || 'Failed to delete module', 'Delete Failed');
 		}
 	}
 
@@ -160,7 +174,7 @@
 										Edit Sessions
 									</a>
 									<button
-										onclick={() => handleDeleteModule(module)}
+										onclick={() => confirmDeleteModule(module)}
 										class="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-gray-100"
 									>
 										<Trash2 size={16} />
@@ -231,6 +245,22 @@
 	onClose={handleCloseModal}
 	onSave={handleModuleSaved}
 />
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Delete Module"
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={handleDeleteModule}
+	onCancel={() => {
+		showDeleteConfirm = false;
+		moduleToDelete = null;
+	}}
+>
+	<p>Are you sure you want to delete "<strong>{moduleToDelete?.name}</strong>"?</p>
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>
 
 <style>
 	.line-clamp-2 {

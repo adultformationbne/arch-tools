@@ -155,9 +155,7 @@ async function updateModule(data: any) {
 		throw error(400, 'Missing moduleId');
 	}
 
-	const updateData: any = {
-		updated_at: new Date().toISOString()
-	};
+	const updateData: any = {};
 
 	if (name) updateData.name = name;
 	if (description !== undefined) updateData.description = description;

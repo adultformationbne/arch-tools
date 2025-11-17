@@ -1,5 +1,6 @@
 <script>
 	import { Save, Eye, EyeOff, X, CheckCircle, Scan } from 'lucide-svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
 		courseSlug = '',
@@ -128,9 +129,8 @@
 			handleClose();
 		} catch (error) {
 			console.error('Submit error:', error);
-			console.error('Error stack:', error.stack);
-			// TODO: Show error message to user
-			alert('Failed to submit reflection. Please try again.');
+			console.error('Error stack:', error);
+			toastError('Failed to submit reflection. Please try again.', 'Submission Failed');
 		} finally {
 			isSaving = false;
 			console.log('=== SUBMIT ENDED ===');
@@ -147,7 +147,7 @@
 			handleClose();
 		} catch (error) {
 			console.error('Save draft error:', error);
-			alert('Failed to save draft. Please try again.');
+			toastError('Failed to save draft. Please try again.', 'Save Failed');
 		} finally {
 			isSaving = false;
 		}

@@ -1,6 +1,8 @@
 <script>
 	import { Plus, MapPin, Users, Edit, Trash2, UserCircle } from 'lucide-svelte';
 	import HubModal from '$lib/components/HubModal.svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -10,6 +12,10 @@
 	// Modal state
 	let showHubModal = $state(false);
 	let editingHub = $state(null);
+
+	// Delete confirmation state
+	let showDeleteConfirm = $state(false);
+	let hubToDelete = $state(null);
 
 	function handleCreateHub() {
 		editingHub = null;
@@ -21,12 +27,17 @@
 		showHubModal = true;
 	}
 
-	async function handleDeleteHub(hub) {
-		const confirmed = confirm(
-			`Are you sure you want to delete "${hub.name}"?\n\n` +
-			`This will remove ${hub.enrollmentCount} participant(s) from this hub.`
-		);
-		if (!confirmed) return;
+	function confirmDeleteHub(hub) {
+		hubToDelete = hub;
+		showDeleteConfirm = true;
+	}
+
+	async function handleDeleteHub() {
+		const hub = hubToDelete;
+		showDeleteConfirm = false;
+		hubToDelete = null;
+
+		if (!hub) return;
 
 		try {
 			const response = await fetch('/admin/courses/' + course.slug + '/api', {
@@ -48,7 +59,7 @@
 			hubs = hubs.filter(h => h.id !== hub.id);
 		} catch (err) {
 			console.error('Error deleting hub:', err);
-			alert(err.message || 'Failed to delete hub');
+			toastError(err.message || 'Failed to delete hub', 'Delete Failed');
 		}
 	}
 
@@ -167,7 +178,7 @@
 								<Edit size={18} style="color: var(--course-accent-dark);" />
 							</button>
 							<button
-								onclick={() => handleDeleteHub(hub)}
+								onclick={() => confirmDeleteHub(hub)}
 								class="p-2 hover:bg-red-50 rounded transition-colors"
 								title="Delete hub"
 							>
@@ -191,3 +202,24 @@
 	onClose={handleCloseModal}
 	onSave={handleHubSaved}
 />
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Delete Hub"
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={handleDeleteHub}
+	onCancel={() => {
+		showDeleteConfirm = false;
+		hubToDelete = null;
+	}}
+>
+	<p>Are you sure you want to delete "<strong>{hubToDelete?.name}</strong>"?</p>
+	{#if hubToDelete?.enrollmentCount > 0}
+		<p class="text-sm text-orange-600 mt-2">
+			This will remove {hubToDelete.enrollmentCount} participant(s) from this hub.
+		</p>
+	{/if}
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>

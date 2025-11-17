@@ -1,5 +1,6 @@
 <script>
 	import { User, Mail, Lock, Shield, Trash2, Save, Edit3 } from 'lucide-svelte';
+	import { toastWarning } from '$lib/utils/toast-helpers.js';
 
 	// Mock user data - would come from auth/database
 	let userProfile = $state({
@@ -66,7 +67,7 @@
 
 	const savePassword = () => {
 		if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-			alert('New passwords do not match');
+			toastWarning('New passwords do not match', 'Password Mismatch');
 			return;
 		}
 		// TODO: Submit to API

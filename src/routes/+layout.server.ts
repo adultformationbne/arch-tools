@@ -246,7 +246,7 @@ async function resolveFallbackCourse(): Promise<CourseRecord> {
 	return anyCourse ?? null;
 }
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, url }) => {
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }) => {
 	const { session, user } = await safeGetSession();
 	const pathname = url.pathname;
 
@@ -266,11 +266,16 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 
 	let userProfile = null;
 	if (session && user) {
-	const { data: profile } = await supabase
-		.from('user_profiles')
-		.select('id, email, full_name, display_name, modules')
+		const { data: profile, error } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, email, full_name, modules')
 			.eq('id', user.id)
 			.single();
+
+		if (error) {
+			console.error('Error loading user profile:', error);
+		}
+
 		userProfile = profile;
 	}
 

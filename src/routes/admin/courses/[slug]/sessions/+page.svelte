@@ -29,6 +29,7 @@
 	let sessionMaterials = $state({});
 	let sessionReflections = $state({});
 	let sessionReflectionsEnabled = $state({}); // Track reflections_enabled per session
+	let sessionDescriptions = $state({}); // Track session descriptions/overviews
 	let sessionIds = $state({}); // Track session IDs for updates
 	let loading = $state(false);
 	let saving = $state(false);
@@ -39,12 +40,14 @@
 		sessionMaterials = {};
 		sessionReflections = {};
 		sessionReflectionsEnabled = {};
+		sessionDescriptions = {};
 		sessionIds = {};
 		// Include Week 0 (session 0)
 		for (let i = 0; i <= totalSessions; i++) {
 			sessionMaterials[i] = [];
 			sessionReflections[i] = '';
 			sessionReflectionsEnabled[i] = true; // Default to enabled
+			sessionDescriptions[i] = '';
 			sessionIds[i] = null;
 		}
 	};
@@ -62,8 +65,9 @@
 
 			if (sessionResponse.ok && sessionData.session) {
 				sessionReflectionsEnabled[session] = sessionData.session.reflections_enabled ?? true;
+				sessionDescriptions[session] = sessionData.session.description || '';
 				sessionIds[session] = sessionData.session.id;
-				console.log('Loaded session data:', { session, reflectionsEnabled: sessionReflectionsEnabled[session], sessionId: sessionIds[session] });
+				console.log('Loaded session data:', { session, reflectionsEnabled: sessionReflectionsEnabled[session], description: sessionDescriptions[session], sessionId: sessionIds[session] });
 			} else {
 				console.error('Failed to load session metadata:', sessionData);
 			}
@@ -230,10 +234,46 @@
 		}
 	};
 
-	const handleOverviewChange = (newOverview) => {
-		// TODO: Implement session overview database integration when that table is created
-		console.log('Session overview updated for session', selectedSession, newOverview);
-		toastSuccess('Session overview updated (local only)');
+	const handleOverviewChange = async (newOverview) => {
+		// Update session description in database
+		saving = true;
+		saveMessage = 'Saving session overview...';
+
+		try {
+			const response = await fetch('/api/courses/sessions', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionIds[selectedSession],
+					description: newOverview
+				})
+			});
+
+			if (response.ok) {
+				saveMessage = 'Saved';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 1000);
+				toastSuccess('Session overview saved');
+			} else {
+				const errorData = await response.json();
+				saveMessage = 'Save failed';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 2000);
+				toastError(`Failed to save session overview: ${errorData.error}`);
+			}
+		} catch (error) {
+			console.error('Error saving session overview:', error);
+			saveMessage = 'Save failed';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 2000);
+			toastError('Failed to save session overview');
+		}
 	};
 
 	const handleSessionChange = async (session) => {
@@ -308,7 +348,7 @@
 		materials: sessionMaterials[selectedSession] || [],
 		reflectionQuestion: sessionReflections[selectedSession] || '',
 		reflectionsEnabled: sessionReflectionsEnabled[selectedSession] ?? true,
-		sessionOverview: '' // TODO: Implement when session overview table exists
+		sessionOverview: sessionDescriptions[selectedSession] || ''
 	});
 </script>
 
@@ -405,6 +445,7 @@
 						allowDocumentUpload={true}
 						moduleId={selectedModule.id}
 						sessionNumber={selectedSession}
+					sessionId={sessionIds[selectedSession]}
 					/>
 				</div>
 

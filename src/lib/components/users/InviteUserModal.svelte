@@ -17,7 +17,8 @@
 	let newUser = $state({
 		email: '',
 		full_name: '',
-		modules: []
+		modules: [],
+		sendWelcomeEmail: false
 	});
 
 	function getModuleBadgeColor(moduleId) {
@@ -55,7 +56,8 @@
 				email: '',
 				full_name: '',
 				role: 'student',
-				modules: []
+				modules: [],
+				sendWelcomeEmail: false
 			};
 			onClose?.();
 
@@ -139,6 +141,22 @@
 						</div>
 					</div>
 
+					<div class="border-t border-gray-200 pt-4">
+						<label class="flex items-start space-x-3 cursor-pointer">
+							<input
+								type="checkbox"
+								bind:checked={newUser.sendWelcomeEmail}
+								class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+							/>
+							<div>
+								<div class="text-sm font-medium text-gray-700">Send welcome email</div>
+								<div class="text-xs text-gray-500">
+									Send login instructions to the user's email address. The email will include manual login steps to avoid email scanning issues.
+								</div>
+							</div>
+						</label>
+					</div>
+
 					<div class="flex justify-end space-x-3 pt-4">
 						<button
 							type="button"
@@ -147,7 +165,8 @@
 								newUser = {
 									email: '',
 									full_name: '',
-									modules: []
+									modules: [],
+									sendWelcomeEmail: false
 								};
 							}}
 							disabled={createUserLoading}

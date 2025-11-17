@@ -33,23 +33,21 @@
 	};
 </script>
 
-<div class="bg-white rounded-2xl p-6 shadow-sm {sessionNumber !== 0 && !reflectionsEnabled ? 'opacity-50' : ''}">
+<div class="bg-white rounded-2xl p-6 shadow-sm {!reflectionsEnabled ? 'opacity-50' : ''}">
 	<div class="flex items-center justify-between mb-4">
 		<h2 class="text-xl font-bold text-gray-800">Reflection Question</h2>
 		<div class="flex items-center gap-3">
-			{#if sessionNumber !== 0}
-				<!-- iOS-style toggle -->
-				<label class="relative inline-block w-11 h-6 cursor-pointer">
-					<input
-						type="checkbox"
-						checked={reflectionsEnabled}
-						onchange={toggleReflectionsEnabled}
-						class="sr-only peer"
-					/>
-					<div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-				</label>
-			{/if}
-			{#if !editingReflection && sessionNumber !== 0 && reflectionsEnabled}
+			<!-- iOS-style toggle -->
+			<label class="relative inline-block w-11 h-6 cursor-pointer">
+				<input
+					type="checkbox"
+					checked={reflectionsEnabled}
+					onchange={toggleReflectionsEnabled}
+					class="sr-only peer"
+				/>
+				<div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+			</label>
+			{#if !editingReflection && reflectionsEnabled}
 				<button
 					onclick={startEditReflection}
 					class="p-2 text-blue-600 hover:text-blue-800"
@@ -61,16 +59,7 @@
 		</div>
 	</div>
 
-	{#if sessionNumber === 0}
-		<!-- Pre-Start Note -->
-		<div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-			<Info size="20" class="text-blue-600 flex-shrink-0 mt-0.5" />
-			<div class="text-sm">
-				<p class="font-semibold text-blue-900 mb-1">Pre-Start is for welcome materials only</p>
-				<p class="text-blue-700">Reflection questions are not needed for Pre-Start. Students will see the course start date and any welcome materials you add.</p>
-			</div>
-		</div>
-	{:else if !reflectionsEnabled}
+	{#if !reflectionsEnabled}
 		<div class="text-gray-500 leading-relaxed italic">
 			Reflections disabled for this session
 		</div>

@@ -11,6 +11,7 @@
 		MoreVertical
 	} from 'lucide-svelte';
 	import { createDropdown } from '$lib/utils/dropdown.js';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	let {
 		user,
@@ -69,27 +70,30 @@
 
 <tr>
 	<td class="px-6 py-4">
-		<div class="flex items-start flex-col">
-			<div class="text-sm font-medium text-gray-900 flex items-center gap-2">
-				{user.full_name || user.display_name || 'No name'}
-				{#if user.id === currentUserId}
-					<span class="text-xs text-gray-500">(You)</span>
-				{/if}
-				{#if user.isPending}
-					<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-						Pending
-					</span>
-				{/if}
-			</div>
-			<div class="text-sm text-gray-500 flex items-center">
-				<Mail class="h-3 w-3 mr-1" />
-				{user.email}
-			</div>
-			{#if user.organization}
-				<div class="text-xs text-gray-400 mt-1">
-					{user.organization}
+		<div class="flex items-start gap-3">
+			<UserAvatar user={user} size="md" />
+			<div class="flex items-start flex-col">
+				<div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+					{user.full_name || user.display_name || 'No name'}
+					{#if user.id === currentUserId}
+						<span class="text-xs text-gray-500">(You)</span>
+					{/if}
+					{#if user.isPending}
+						<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+							Pending
+						</span>
+					{/if}
 				</div>
-			{/if}
+				<div class="text-sm text-gray-500 flex items-center">
+					<Mail class="h-3 w-3 mr-1" />
+					{user.email}
+				</div>
+				{#if user.organization}
+					<div class="text-xs text-gray-400 mt-1">
+						{user.organization}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</td>
 	<td class="px-6 py-4">

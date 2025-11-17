@@ -2,10 +2,12 @@
 	import { User, Settings, LogOut, Menu, X } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
-	let { session, modules = [] } = $props<{
+	let { session, modules = [], userProfile = null } = $props<{
 		session: any;
 		modules?: string[];
+		userProfile?: any;
 	}>();
 
 	const moduleSet = $derived(new Set(modules ?? []));
@@ -111,13 +113,23 @@
 								<Settings class="h-5 w-5" />
 							</a>
 						{/if}
-						<a
-							href="/profile"
-							class="flex h-9 w-9 items-center justify-center rounded-full transition-colors {$page.url.pathname === '/profile' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-							title="Profile Settings"
-						>
-							<User class="h-5 w-5" />
-						</a>
+						{#if userProfile}
+							<a
+								href="/profile"
+								class="transition-opacity hover:opacity-80"
+								title="Profile Settings - {userProfile.full_name || userProfile.email}"
+							>
+								<UserAvatar user={userProfile} size="sm" />
+							</a>
+						{:else}
+							<a
+								href="/profile"
+								class="flex h-9 w-9 items-center justify-center rounded-full transition-colors {$page.url.pathname === '/profile' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
+								title="Profile Settings"
+							>
+								<User class="h-5 w-5" />
+							</a>
+						{/if}
 						<a
 							href="/auth/logout"
 							class="flex h-9 w-9 items-center justify-center rounded-full transition-colors text-gray-600 hover:bg-red-50 hover:text-red-600"
@@ -198,8 +210,13 @@
 					class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors {$page.url.pathname === '/profile' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
 					onclick={closeMobileMenu}
 				>
-					<User class="h-5 w-5" />
-					<span>Profile Settings</span>
+					{#if userProfile}
+						<UserAvatar user={userProfile} size="sm" />
+						<span>{userProfile.full_name || userProfile.email}</span>
+					{:else}
+						<User class="h-5 w-5" />
+						<span>Profile Settings</span>
+					{/if}
 				</a>
 				<a
 					href="/auth/logout"

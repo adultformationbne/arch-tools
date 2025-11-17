@@ -26,7 +26,12 @@ export const load: LayoutLoad = async ({ fetch, data, depends, url }) => {
 		supabase,
 		session: data?.session || null,
 		user: data?.user || null,
-	url: url.origin,
-	userModules: data?.userModules || []
+		userProfile: data?.userProfile || null,
+		url: url.origin,
+		userModules: data?.userModules || [],
+		courseTheme: data?.courseTheme,
+		courseBranding: data?.courseBranding,
+		courseInfo: data?.courseInfo,
+		isCoursesRoute: data?.isCoursesRoute
 	};
 };

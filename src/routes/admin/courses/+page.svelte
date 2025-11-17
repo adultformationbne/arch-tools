@@ -10,13 +10,16 @@
 	import { Button } from '$lib/design-system';
 	import Modal from '$lib/components/Modal.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data, form } = $props();
 	const courses = data.courses || [];
+	const managers = data.managers || [];
 	const userRole = data.userRole;
+	const userProfile = data.userProfile;
 
 	// Modal states
 	let showCreateModal = $state(false);
@@ -43,6 +46,9 @@
 	// Loading states
 	let isSubmitting = $state(false);
 
+	// Manager assignment
+	let selectedManagerIds = $state([]);
+
 	// Reset form data
 	function resetForm() {
 		formData = {
@@ -52,6 +58,7 @@
 			metadata: '{}',
 			settings: '{}'
 		};
+		selectedManagerIds = [];
 		themeData = {
 			accentDark: '#334642',
 			accentLight: '#c59a6b',
@@ -98,6 +105,10 @@
 				fontFamily: 'Inter'
 			};
 		}
+		// Find which managers are assigned to this course
+		selectedManagerIds = managers
+			.filter(m => m.assigned_course_ids?.includes(course.id))
+			.map(m => m.id);
 		showEditModal = true;
 	}
 
@@ -130,6 +141,45 @@
 			archived: 'bg-orange-100 text-orange-700'
 		};
 		return colors[status] || 'bg-gray-100 text-gray-700';
+	}
+
+	// Check if user can delete a course
+	function canDeleteCourse(course: any) {
+		// Admins can delete any course
+		if (userRole === 'admin') return true;
+
+		// Managers can only delete courses they created
+		if (userRole === 'manager') {
+			const createdByRole = course.metadata?.created_by_role;
+			const createdByUserId = course.metadata?.created_by_user_id;
+			return createdByRole === 'manager' && createdByUserId === userProfile?.id;
+		}
+
+		return false;
+	}
+
+	// Save manager assignments separately
+	async function handleSaveManagers() {
+		try {
+			const formData = new FormData();
+			formData.append('course_id', selectedCourse.id);
+			selectedManagerIds.forEach(id => {
+				formData.append('manager_ids', id);
+			});
+
+			const response = await fetch('?/updateManagers', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+				toastSuccess('Manager assignments updated', 'Success');
+			}
+		} catch (error) {
+			console.error('Error updating managers:', error);
+			toastError('Failed to update manager assignments', 'Error');
+		}
 	}
 </script>
 
@@ -184,9 +234,20 @@
 								<!-- Course Header -->
 								<div class="mb-4 flex items-start justify-between">
 									<div class="flex-1">
-										<h3 class="text-xl font-semibold" style="color: {accentDark};">
-											{course.name}
-										</h3>
+										<div class="flex items-center gap-2">
+											<h3 class="text-xl font-semibold" style="color: {accentDark};">
+												{course.name}
+											</h3>
+											{#if course.metadata?.created_by_role === 'manager'}
+												<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+													Manager
+												</span>
+											{:else if course.metadata?.created_by_role === 'admin'}
+												<span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+													Admin
+												</span>
+											{/if}
+										</div>
 										<p class="mt-1 text-sm font-mono text-gray-500">/{course.slug}</p>
 									</div>
 									<div
@@ -444,6 +505,40 @@
 				/>
 			</div>
 
+			<!-- Manager Assignment -->
+			{#if managers.length > 0}
+				<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+					<h3 class="mb-3 text-sm font-semibold text-gray-700">Assigned Managers</h3>
+					<p class="mb-3 text-xs text-gray-600">
+						Select which course managers can access and manage this course.
+					</p>
+					<div class="space-y-2 max-h-48 overflow-y-auto">
+						{#each managers as manager}
+							<label class="flex items-center gap-3 rounded p-2 hover:bg-gray-100 cursor-pointer">
+								<input
+									type="checkbox"
+									value={manager.id}
+									checked={selectedManagerIds.includes(manager.id)}
+									onchange={(e) => {
+										if (e.target.checked) {
+											selectedManagerIds = [...selectedManagerIds, manager.id];
+										} else {
+											selectedManagerIds = selectedManagerIds.filter(id => id !== manager.id);
+										}
+									}}
+									class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+								/>
+								<UserAvatar user={manager} size="sm" />
+								<div class="flex-1 text-sm">
+									<div class="font-medium text-gray-900">{manager.full_name}</div>
+									<div class="text-xs text-gray-500">{manager.email}</div>
+								</div>
+							</label>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
 			<details class="rounded-lg border border-gray-200 bg-gray-50 p-4">
 				<summary class="cursor-pointer text-sm font-medium text-gray-700">
 					Advanced Settings (JSON)
@@ -481,23 +576,28 @@
 
 	{#snippet footer()}
 		<div class="flex items-center justify-between">
-			<Button
-				variant="danger"
-				onclick={() => {
-					showEditModal = false;
-					openDeleteModal(selectedCourse);
-				}}
-			>
-				Delete Course
-			</Button>
+			{#if canDeleteCourse(selectedCourse)}
+				<Button
+					variant="danger"
+					onclick={() => {
+						showEditModal = false;
+						openDeleteModal(selectedCourse);
+					}}
+				>
+					Delete Course
+				</Button>
+			{:else}
+				<div></div>
+			{/if}
 			<div class="flex gap-3">
 				<Button variant="secondary" onclick={() => (showEditModal = false)}>Cancel</Button>
 				<Button
 					variant="primary"
 					loading={isSubmitting}
-					onclick={() => {
+					onclick={async () => {
 						isSubmitting = true;
 						document.querySelector('form[action="?/update"]').requestSubmit();
+						await handleSaveManagers();
 					}}
 				>
 					Save Changes

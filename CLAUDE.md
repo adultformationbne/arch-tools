@@ -222,6 +222,31 @@ src/
 
 ## Key Development Patterns
 
+### 0. User Notifications & Confirmations
+
+**NEVER use browser `alert()` or `confirm()`.** Use these instead:
+
+**For messages (errors, success, warnings):**
+```javascript
+import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
+toastError('Failed to save');
+toastSuccess('Saved!');
+toastWarning('Please fill required fields');
+```
+
+**For confirmations (deletions, irreversible actions):**
+```svelte
+<script>
+  import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+  let showConfirm = $state(false);
+  const confirmDelete = () => { showConfirm = true; };
+  const deleteItem = () => { showConfirm = false; /* do deletion */ };
+</script>
+<ConfirmationModal show={showConfirm} onConfirm={deleteItem} onCancel={() => showConfirm = false}>
+  <p>Delete this item?</p>
+</ConfirmationModal>
+```
+
 ### 1. Authentication & Authorization
 
 **Unified authentication system** in `$lib/server/auth.ts`:

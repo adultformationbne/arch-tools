@@ -12,6 +12,7 @@
 		X,
 		Plus
 	} from 'lucide-svelte';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	let {
 		user,
@@ -61,9 +62,11 @@
 		class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
 	>
 		<div class="flex items-start justify-between gap-3">
-			<div class="flex-1 min-w-0">
-				<div class="text-sm font-medium text-gray-900 flex items-center gap-2 flex-wrap">
-					{user.full_name || user.display_name || 'No name'}
+			<div class="flex items-start gap-3 flex-1 min-w-0">
+				<UserAvatar user={user} size="sm" />
+				<div class="flex-1 min-w-0">
+					<div class="text-sm font-medium text-gray-900 flex items-center gap-2 flex-wrap">
+						{user.full_name || user.display_name || 'No name'}
 					{#if user.id === currentUserId}
 						<span class="text-xs font-medium text-blue-600">(You)</span>
 					{/if}
@@ -101,6 +104,7 @@
 						{/if}
 					</div>
 				{/if}
+				</div>
 			</div>
 			<div class="flex-shrink-0 pt-1">
 				<ChevronDown
