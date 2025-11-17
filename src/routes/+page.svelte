@@ -41,7 +41,7 @@ const moduleRoutes = [
 	{
 		module: 'users',
 		name: 'User Management',
-		path: '/admin/users',
+		path: '/users',
 		description: 'Manage users, invitations, and platform permissions',
 		color: 'bg-gradient-to-br from-purple-500 to-purple-600',
 		icon: Users
