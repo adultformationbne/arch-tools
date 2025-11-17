@@ -24,40 +24,22 @@ export async function POST({ request }) {
 		const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
 		if (!existingUser) {
-			// User doesn't exist - check if they have a pending invitation
-			const { data: invitation } = await supabaseAdmin
-				.from('pending_invitations')
-				.select('id, status')
-				.eq('email', email.toLowerCase())
-				.eq('status', 'pending')
-				.gt('expires_at', new Date().toISOString())
-				.single();
-
-			if (invitation) {
-				// Has valid invitation - can receive OTP
-				return json({
-					exists: false,
-					nextStep: 'otp',
-					hasInvitation: true,
-					message: 'Invitation found - OTP code will be sent to your email'
-				});
-			} else {
-				// No invitation - invite-only system
-				return json({
-					exists: false,
-					nextStep: 'error',
-					hasInvitation: false,
-					message: 'No invitation found for this email'
-				});
-			}
+			// User doesn't exist in auth system
+			return json({
+				exists: false,
+				nextStep: 'error',
+				hasInvitation: false,
+				message: 'No account found. Please contact your administrator.'
+			});
 		}
 
 		// User exists - check if they have a password set
-		// Users with confirmed_at have completed setup (have password)
-		// Users without confirmed_at are pending (need OTP)
-		const hasPassword = existingUser.confirmed_at !== null;
+		// Check if user has encrypted_password field (indicates password was set)
+		// Users created via invitation will NOT have this until they set a password
+		const hasPassword = existingUser.encrypted_password !== null && existingUser.encrypted_password !== undefined && existingUser.encrypted_password !== '';
 
 		if (hasPassword) {
+			// User has password - allow password login
 			return json({
 				exists: true,
 				nextStep: 'password',
@@ -65,11 +47,13 @@ export async function POST({ request }) {
 				message: 'Enter your password to continue'
 			});
 		} else {
+			// User exists but has no password - this is a pending invitation
+			// Allow them to proceed with OTP
 			return json({
 				exists: true,
 				nextStep: 'otp',
 				hasPassword: false,
-				message: 'Account pending - OTP code will be sent to your email'
+				message: 'A verification code will be sent to your email'
 			});
 		}
 

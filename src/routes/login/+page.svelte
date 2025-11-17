@@ -18,18 +18,16 @@
 	let errorMessage = $state('');
 	let infoMessage = $state('');
 
-	// Check for URL parameters on mount (e.g., from invite flow)
+	// Track if user is a new/pending user (no password set yet)
+	let isPendingUser = $state(false);
+
+	// Check for URL parameters on mount
 	onMount(async () => {
 		const urlMode = $page.url.searchParams.get('mode');
-		const fromInvite = $page.url.searchParams.get('from');
 
 		if (urlMode === 'otp') {
 			currentStep = 'otp';
-			if (fromInvite === 'invite') {
-				infoMessage = 'Please enter your email and the 6-digit code that was sent to you';
-			} else {
-				infoMessage = 'Please enter the 6-digit code sent to your email';
-			}
+			infoMessage = 'Please enter the 6-digit code sent to your email';
 		}
 
 		// Handle legacy hash-based auth (backwards compatibility)
@@ -81,9 +79,11 @@
 			if (result.nextStep === 'password') {
 				// Existing user with password
 				currentStep = 'password';
+				isPendingUser = false;
 				infoMessage = result.message;
 			} else if (result.nextStep === 'otp') {
-				// Pending user or existing user without password - send OTP
+				// Pending user (no password set yet) - send OTP
+				isPendingUser = true;
 				const { error: otpError } = await supabase.auth.signInWithOtp({
 					email,
 					options: { shouldCreateUser: false }
@@ -98,8 +98,8 @@
 				currentStep = 'otp';
 				infoMessage = 'A 6-digit code has been sent to your email';
 			} else {
-				// User doesn't exist and no invitation found
-				errorMessage = 'No invitation found for this email. Please contact your administrator or use an invitation code.';
+				// User doesn't exist
+				errorMessage = result.message || 'No account found. Please contact your administrator.';
 			}
 		} catch (error) {
 			errorMessage = error.message || 'Failed to verify email';
@@ -120,23 +120,8 @@
 			});
 
 			if (error) {
-				// Password failed - offer OTP as fallback
-				errorMessage = 'Incorrect password. Sending verification code instead...';
-
-				const { error: otpError } = await supabase.auth.signInWithOtp({
-					email,
-					options: { shouldCreateUser: false }
-				});
-
-				if (otpError) {
-					errorMessage = 'Failed to send verification code. Please try again.';
-					loading = false;
-					return;
-				}
-
-				currentStep = 'otp';
-				infoMessage = 'A 6-digit code has been sent to your email';
-				password = ''; // Clear password field
+				// Password failed - show error
+				errorMessage = 'Incorrect password. Please try again or use a verification code instead.';
 				loading = false;
 				return;
 			}
@@ -159,6 +144,34 @@
 		}
 	}
 
+	// Send OTP code for password fallback
+	async function sendOtpFallback() {
+		loading = true;
+		errorMessage = '';
+
+		try {
+			const { error: otpError } = await supabase.auth.signInWithOtp({
+				email,
+				options: { shouldCreateUser: false }
+			});
+
+			if (otpError) {
+				errorMessage = 'Failed to send verification code. Please try again.';
+				loading = false;
+				return;
+			}
+
+			currentStep = 'otp';
+			isPendingUser = false; // Existing user using OTP fallback
+			infoMessage = 'A 6-digit code has been sent to your email';
+			password = ''; // Clear password field
+		} catch (error) {
+			errorMessage = error.message || 'Failed to send code';
+		} finally {
+			loading = false;
+		}
+	}
+
 	// Step 2b: OTP verification
 	async function handleOtpSubmit() {
 		loading = true;
@@ -173,23 +186,14 @@
 
 			if (error) throw error;
 
-			// Mark invitation as accepted if from invite flow
-			try {
-				await fetch('/api/auth/complete-invitation', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ email })
-				});
-			} catch (err) {
-				console.error('Error marking invitation accepted:', err);
-			}
-
-			// Check if user has password set
+			// Check if user needs to set up password
 			const user = authData.user;
-			const hasPassword = user?.confirmed_at !== null;
 
-			if (hasPassword) {
-				// Existing user - redirect to dashboard
+			if (isPendingUser) {
+				// New/pending user - needs to set up password
+				goto('/login/setup-password');
+			} else {
+				// Existing user logging in with OTP - redirect to dashboard
 				const { data: profile } = await supabase
 					.from('user_profiles')
 					.select('modules')
@@ -199,9 +203,6 @@
 				const modules = profile?.modules || [];
 				const defaultRedirect = determineRedirect(modules);
 				goto(defaultRedirect);
-			} else {
-				// New user - needs to set up password
-				goto('/login/setup-password');
 			}
 		} catch (error) {
 			errorMessage = error.message || 'Invalid or expired code';
@@ -253,7 +254,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-neutral-50">
+<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4 sm:px-6 lg:px-8">
 	<div class="w-full max-w-md space-y-8">
 		<div>
 			<!-- Archdiocesan Cross Mark Logo -->
@@ -309,15 +310,6 @@
 						{loading ? 'Checking...' : 'Continue'}
 					</button>
 				</div>
-
-				<div class="text-center">
-					<a
-						href="/login/invite"
-						class="text-sm text-black hover:text-neutral-700 underline"
-					>
-						Have an invitation code?
-					</a>
-				</div>
 			</form>
 		{/if}
 
@@ -346,13 +338,22 @@
 					<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
 				{/if}
 
-				<div>
+				<div class="space-y-3">
 					<button
 						type="submit"
 						disabled={loading}
 						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
 					>
 						{loading ? 'Signing in...' : 'Sign in'}
+					</button>
+
+					<button
+						type="button"
+						onclick={sendOtpFallback}
+						disabled={loading}
+						class="group relative flex w-full justify-center border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-neutral-50 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+					>
+						{loading ? 'Sending code...' : 'Send me a login code instead'}
 					</button>
 				</div>
 
@@ -371,9 +372,25 @@
 		<!-- Step 2b: OTP Input -->
 		{#if currentStep === 'otp'}
 			<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleOtpSubmit(); }}>
-				<div class="text-center text-sm text-neutral-600 mb-4">
-					Code sent to <strong class="text-black">{email}</strong>
-				</div>
+				{#if email}
+					<div class="text-center text-sm text-neutral-600 mb-4">
+						Code sent to <strong class="text-black">{email}</strong>
+					</div>
+				{:else}
+					<div class="text-center text-sm text-neutral-600 mb-4">
+						Enter your email and the verification code sent to you
+					</div>
+					<div>
+						<input
+							bind:value={email}
+							type="email"
+							required
+							autofocus
+							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+							placeholder="Email address"
+						/>
+					</div>
+				{/if}
 
 				<div>
 					<input

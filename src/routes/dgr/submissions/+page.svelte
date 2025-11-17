@@ -221,8 +221,8 @@
 	}
 </script>
 
-<div class="mx-auto max-w-7xl p-6">
-	<div class="mb-8 flex items-center justify-between">
+<div class="mx-auto max-w-7xl p-4 sm:p-6">
+	<div class="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 		<div>
 			<h1 class="text-3xl font-bold text-gray-900">Submissions</h1>
 			<p class="mt-1 text-sm text-gray-600">Review and manage submitted reflections</p>
@@ -236,15 +236,15 @@
 	{:else}
 		<div class="space-y-6">
 			<!-- Filters -->
-			<div class="rounded-lg bg-white p-4 shadow-sm">
-				<div class="flex items-center gap-6">
+			<div class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+				<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
 					<div class="flex items-center gap-2">
-						<label for="days-range" class="text-sm font-medium text-gray-700">Days Range:</label>
+						<label for="days-range" class="text-sm font-medium text-gray-700 whitespace-nowrap">Days Range:</label>
 						<select
 							id="days-range"
 							bind:value={scheduleDays}
 							onchange={loadSchedule}
-							class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							class="flex-1 sm:flex-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 						>
 							<option value={30}>30 days</option>
 							<option value={60}>60 days</option>

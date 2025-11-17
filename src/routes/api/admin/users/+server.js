@@ -1,7 +1,5 @@
 import { json, error } from '@sveltejs/kit';
 import { requireModule } from '$lib/server/auth.js';
-import { PUBLIC_SITE_URL } from '$env/static/public';
-import { createInvitation, resendInvitation, getInvitationUrl } from '$lib/server/invite-codes.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function POST(event) {
@@ -62,52 +60,27 @@ export async function POST(event) {
 			// Re-use the existing auth user instead of creating new one
 			console.log('Re-using existing auth user:', existingAuthUser.id);
 			authData = { user: existingAuthUser };
-
-			// Send OTP for existing user to set up their account
-			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
-				email,
-				options: {
-					shouldCreateUser: false
-				}
-			});
-
-			if (otpError) {
-				console.error('OTP send error:', otpError);
-				throw error(400, otpError.message || 'Failed to send OTP');
-			}
 		} else {
-			// Create new user and send OTP code (not magic link)
-			// This sends a 6-digit code via email that works in locked-down environments
-			const { data: newAuthData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-				email,
-				email_confirm: false, // User will confirm via OTP
-				user_metadata: {
-					full_name: full_name || null,
-					invited_by: user.email
-				}
-			});
-
-			if (authError) {
-				console.error('Auth user creation error:', authError);
-				throw error(400, authError.message || 'Failed to create user');
-			}
-
-			authData = newAuthData;
-
-			// Now send OTP for the new user
-			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
+			// Generate invite link without sending email
+			// This creates the user and gives us the auth token but doesn't send any email
+			const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+				type: 'invite',
 				email,
 				options: {
-					shouldCreateUser: false // User already created above
+					data: {
+						full_name: full_name || null,
+						invited_by: user.email
+					}
 				}
 			});
 
-			if (otpError) {
-				console.error('OTP send error:', otpError);
-				// Clean up the created user
-				await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-				throw error(400, otpError.message || 'Failed to send OTP');
+			if (linkError) {
+				console.error('Generate link error:', linkError);
+				throw error(400, linkError.message || 'Failed to generate invitation');
 			}
+
+			// The user is now created but no email was sent
+			authData = linkData;
 		}
 
 		// Wait a moment for the trigger to potentially create the profile
@@ -161,25 +134,11 @@ export async function POST(event) {
 			profileData = newProfile;
 		}
 
-		// Create pending invitation with shareable code
-		// This provides a fallback if email OTP doesn't work
-		const invitation = await createInvitation({
-			email: email,
-			modules: uniqueModules,
-			createdBy: user.id,
-			userId: authData.user.id
-		});
-
 		return json({
 			success: true,
 			user: {
 				...profileData,
 				modules: uniqueModules
-			},
-			invitation: {
-				code: invitation.code,
-				url: getInvitationUrl(invitation.code, PUBLIC_SITE_URL),
-				expires_at: invitation.expires_at
 			}
 		});
 
@@ -289,7 +248,7 @@ export async function PUT(event) {
 			throw error(400, 'Action is required');
 		}
 
-		// Handle resend invitation
+		// Handle resend invitation (sends OTP to user's email)
 		if (action === 'resend_invitation') {
 			// Get user email from auth
 			const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -298,7 +257,7 @@ export async function PUT(event) {
 				throw error(400, 'User not found');
 			}
 
-			// Resend OTP code instead of magic link
+			// Send OTP code to user's email
 			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
 				email: authUser.user.email,
 				options: {
@@ -307,24 +266,12 @@ export async function PUT(event) {
 			});
 
 			if (otpError) {
-				throw error(400, otpError.message || 'Failed to resend OTP');
-			}
-
-			// Update invitation record if it exists
-			const { data: invitation } = await supabaseAdmin
-				.from('pending_invitations')
-				.select('id')
-				.eq('user_id', userId)
-				.eq('status', 'pending')
-				.single();
-
-			if (invitation) {
-				await resendInvitation(invitation.id);
+				throw error(400, otpError.message || 'Failed to send OTP');
 			}
 
 			return json({
 				success: true,
-				message: 'OTP code resent successfully'
+				message: 'Login instructions sent to user\'s email'
 			});
 		}
 

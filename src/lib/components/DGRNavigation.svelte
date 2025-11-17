@@ -89,16 +89,17 @@
 							type="button"
 							onclick={() => handleSectionClick(section)}
 							onkeydown={(event) => handleSectionKeydown(event, section, menuId)}
-							class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+							class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
 							aria-haspopup="true"
 							aria-expanded={openDropdown === section.id}
 							aria-controls={section.subsections && section.subsections.length > 0 ? menuId : undefined}
 							id={`dgr-nav-${section.id}-button`}
+							title={section.name}
 						>
 							<Icon class="h-4 w-4" aria-hidden="true" />
-							{section.name}
+							<span class="hidden sm:inline">{section.name}</span>
 							{#if section.subsections && section.subsections.length > 0}
-								<ChevronDown class="h-3 w-3 transition-transform {openDropdown === section.id ? 'rotate-180' : ''}" aria-hidden="true" />
+								<ChevronDown class="h-3 w-3 transition-transform {openDropdown === section.id ? 'rotate-180' : ''} hidden sm:inline" aria-hidden="true" />
 							{/if}
 						</button>
 
@@ -108,7 +109,7 @@
 								id={menuId}
 								role="menu"
 								aria-labelledby={`dgr-nav-${section.id}-button`}
-								class="absolute left-0 top-full mt-1 w-48 rounded-lg bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 z-50 focus:outline-none"
+								class="absolute left-0 sm:left-0 top-full mt-1 w-full sm:w-48 rounded-lg bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 z-50 focus:outline-none"
 								tabindex="-1"
 							>
 								<div class="py-1">
@@ -131,10 +132,11 @@
 				<!-- Quick Publish Link (in the center with other nav items) -->
 				<a
 					href={quickPublishLink.path}
-					class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors {activeSection === 'publish' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+					class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === 'publish' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+					title={quickPublishLink.name}
 				>
 					<QuickIcon class="h-4 w-4" aria-hidden="true" />
-					{quickPublishLink.name}
+					<span class="hidden sm:inline">{quickPublishLink.name}</span>
 				</a>
 			</div>
 		</div>

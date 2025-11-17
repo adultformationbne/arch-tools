@@ -25,7 +25,6 @@
 	let loadingStudents = $state(false);
 	let editingStudent = $state(null);
 	let selectedStudents = $state(new Set());
-	let sendingInvitations = $state(false);
 	let openDropdown = $state(null); // Track which student's dropdown is open
 	let dropdownPosition = $state({ top: 0, right: 0 }); // Track dropdown position
 	let editingSession = $state(null); // Track which student's session is being edited
@@ -141,38 +140,6 @@
 			selectedStudents = new Set();
 		} else {
 			selectedStudents = new Set(students.map(s => s.id));
-		}
-	}
-
-	async function sendInvitations() {
-		if (selectedStudents.size === 0) return;
-
-		if (!confirm(`Send invitations to ${selectedStudents.size} student(s)?`)) return;
-
-		sendingInvitations = true;
-		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'send_invitations',
-					userIds: Array.from(selectedStudents)
-				})
-			});
-
-			const result = await response.json();
-			if (result.success) {
-				alert(`Successfully sent ${result.data.sent} invitations. ${result.data.failed} failed.`);
-				await loadStudents();
-				await onUpdate();
-			} else {
-				alert('Failed to send invitations: ' + result.message);
-			}
-		} catch (err) {
-			console.error('Failed to send invitations:', err);
-			alert('Failed to send invitations');
-		} finally {
-			sendingInvitations = false;
 		}
 	}
 
@@ -416,16 +383,6 @@
 					>
 						<ArrowRight size={16} />
 						Advance {studentsBehind.length} to Session {cohort.current_session}
-					</button>
-				{/if}
-				{#if selectedStudents.size > 0 && Array.from(selectedStudents).some(id => students.find(s => s.id === id)?.canInvite)}
-					<button
-						onclick={sendInvitations}
-						disabled={sendingInvitations}
-						class="btn-primary-small"
-					>
-						<Mail size={16} />
-						{sendingInvitations ? 'Sending...' : `Send Invitations (${selectedStudents.size})`}
 					</button>
 				{/if}
 				<button type="button" onclick={() => {
