@@ -41,9 +41,29 @@ export async function POST({ request }) {
 			throw error(500, 'Failed to verify user status');
 		}
 
-		// User has a password if they've successfully signed in before
-		// last_sign_in_at is only set after a successful password login or OTP verification + password setup
-		const hasPassword = fullUser.last_sign_in_at !== null;
+		/**
+		 * Determine if user has a password set
+		 *
+		 * Edge cases handled:
+		 * 1. New pending users - no flag, no sign-in → OTP flow
+		 * 2. Users who completed setup - has flag → Password flow
+		 * 3. Users who verified OTP but never set password - no flag, has sign-in → OTP flow (fixed!)
+		 * 4. Existing users (before flag was added) - no flag, has sign-in → Password flow (backward compat)
+		 * 5. Forgot password users - will get flag set when they reset password
+		 */
+
+		// Priority 1: Check metadata flag (most reliable - set when password is actually created)
+		const hasPasswordSetupFlag = fullUser.user_metadata?.password_setup_completed === true;
+
+		// Priority 2: For existing users (backward compatibility) - if they've signed in and don't have the flag,
+		// assume they have a password (they were created before we added the flag)
+		const isExistingUserWithSignIn = fullUser.last_sign_in_at !== null &&
+		                                  !fullUser.user_metadata?.hasOwnProperty('password_setup_completed');
+
+		// User has password if:
+		// 1. They have the password_setup_completed flag set to true (most reliable), OR
+		// 2. They're an existing user who has signed in before (created before we added the flag)
+		const hasPassword = hasPasswordSetupFlag || isExistingUserWithSignIn;
 
 		if (hasPassword) {
 			// User has password - allow password login
