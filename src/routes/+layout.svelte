@@ -12,7 +12,7 @@
 
 	export let data;
 
-	$: ({ supabase, session, userModules = [] } = data);
+	$: ({ supabase, session, userModules = [], userProfile } = data);
 
 	// Routes where we don't show the navigation and footer
 	$: hideNav = $page.url.pathname === '/login' ||
@@ -39,7 +39,7 @@
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
 	{#if session && !hideNav}
-		<AppNavigation {session} modules={userModules} />
+		<AppNavigation {session} modules={userModules} {userProfile} />
 	{/if}
 	<main class="flex-1">
 		<slot />

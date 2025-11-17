@@ -1,6 +1,7 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { Plus, Trash2, Save, AlertCircle } from 'lucide-svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { rules = $bindable([]) } = $props();
 
@@ -18,6 +19,8 @@
 
 	let showAddForm = $state(false);
 	let saving = $state(false);
+	let showDeleteConfirm = $state(false);
+	let ruleToDelete = $state(null);
 
 	// Options populated from database
 	const seasonOptions = ['Advent', 'Christmas', 'Lent', 'Easter', 'Easter Triduum', 'Holy Week', 'Ordinary'];
@@ -129,10 +132,17 @@
 		}
 	}
 
-	async function deleteRule(rule) {
-		if (!confirm(`Are you sure you want to delete the rule "${rule.name}"?`)) {
-			return;
-		}
+	function confirmDeleteRule(rule) {
+		ruleToDelete = rule;
+		showDeleteConfirm = true;
+	}
+
+	async function deleteRule() {
+		const rule = ruleToDelete;
+		showDeleteConfirm = false;
+		ruleToDelete = null;
+
+		if (!rule) return;
 
 		saving = true;
 		try {
@@ -384,7 +394,7 @@
 								{rule.active ? 'Disable' : 'Enable'}
 							</button>
 							<button
-								onclick={() => deleteRule(rule)}
+								onclick={() => confirmDeleteRule(rule)}
 								class="rounded-md p-2 text-red-600 hover:bg-red-50"
 								title="Delete rule"
 							>
@@ -397,3 +407,19 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Delete Assignment Rule"
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={deleteRule}
+	onCancel={() => {
+		showDeleteConfirm = false;
+		ruleToDelete = null;
+	}}
+>
+	<p>Are you sure you want to delete the rule "<strong>{ruleToDelete?.name}</strong>"?</p>
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>

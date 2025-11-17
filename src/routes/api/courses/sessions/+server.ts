@@ -6,6 +6,7 @@ import type { RequestHandler } from './$types';
 /**
  * GET /api/courses/sessions
  * Get session by module_id and session_number
+ * Creates session if it doesn't exist
  */
 export const GET: RequestHandler = async (event) => {
 	await requireAuth(event);
@@ -18,45 +19,77 @@ export const GET: RequestHandler = async (event) => {
 	}
 
 	try {
-		const { data: session, error: sessionError } = await supabaseAdmin
+		const sessionNum = parseInt(sessionNumber);
+
+		// Try to fetch existing session
+		const { data: existingSession, error: fetchError } = await supabaseAdmin
 			.from('courses_sessions')
 			.select('*')
 			.eq('module_id', moduleId)
-			.eq('session_number', parseInt(sessionNumber))
-			.single();
+			.eq('session_number', sessionNum)
+			.maybeSingle();
 
-		if (sessionError) {
-			console.error('Error fetching session:', sessionError);
-			throw error(500, 'Failed to fetch session');
+		// If session exists, return it
+		if (existingSession) {
+			return json({ session: existingSession });
 		}
 
-		return json({ session });
+		// Session doesn't exist - create it
+		const sessionTitle = sessionNum === 0 ? 'Pre-Start' : `Session ${sessionNum}`;
+		const { data: newSession, error: createError } = await supabaseAdmin
+			.from('courses_sessions')
+			.insert({
+				module_id: moduleId,
+				session_number: sessionNum,
+				title: sessionTitle,
+				description: '',
+				reflections_enabled: true
+			})
+			.select()
+			.single();
+
+		if (createError) {
+			console.error('Error creating session:', createError);
+			throw error(500, 'Failed to create session');
+		}
+
+		return json({ session: newSession });
 	} catch (err) {
 		console.error('Error in GET /api/courses/sessions:', err);
-		throw error(500, 'Failed to fetch session');
+		throw error(500, 'Failed to fetch or create session');
 	}
 };
 
 /**
  * PUT /api/courses/sessions
- * Update session (including reflections_enabled)
+ * Update session (including reflections_enabled and description)
  */
 export const PUT: RequestHandler = async (event) => {
 	await requireAuth(event);
 
-	const { session_id, reflections_enabled } = await event.request.json();
+	const { session_id, reflections_enabled, description } = await event.request.json();
 
 	if (!session_id) {
 		throw error(400, 'session_id is required');
 	}
 
 	try {
+		// Build update object with only provided fields
+		const updateData: any = {
+			updated_at: new Date().toISOString()
+		};
+
+		if (reflections_enabled !== undefined) {
+			updateData.reflections_enabled = reflections_enabled;
+		}
+
+		if (description !== undefined) {
+			updateData.description = description;
+		}
+
 		const { data: session, error: updateError } = await supabaseAdmin
 			.from('courses_sessions')
-			.update({
-				reflections_enabled,
-				updated_at: new Date().toISOString()
-			})
+			.update(updateData)
 			.eq('id', session_id)
 			.select()
 			.single();

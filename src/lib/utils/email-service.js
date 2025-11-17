@@ -15,7 +15,7 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
-const FROM_EMAIL = 'ACCF Platform <noreply@app.archdiocesanministries.org.au>';
+const FROM_EMAIL = 'Archdiocesan Ministries Platform <noreply@app.archdiocesanministries.org.au>';
 
 /**
  * Render email template by replacing {{variables}} with actual values

@@ -1,14 +1,14 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { hasModule, hasModuleLevel, requireAnyModule } from '$lib/server/auth';
+import { hasModule, hasModuleLevel, requireAnyModule, requireModuleLevel } from '$lib/server/auth';
 
 const STATUS_OPTIONS = ['draft', 'active', 'archived'] as const;
 
 export const load: PageServerLoad = async (event) => {
 	const {
 		profile: userProfile
-	} = await requireAnyModule(event, ['courses.admin', 'courses.manager', 'users'], {
+	} = await requireAnyModule(event, ['courses.admin', 'courses.manager'], {
 		mode: 'redirect',
 		redirectTo: '/login'
 	});
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async (event) => {
 	const userModules: string[] = userProfile.modules ?? [];
 	const userId = userProfile.id;
 
-	const canManageAll = hasModuleLevel(userModules, 'courses.admin') || hasModule(userModules, 'users');
+	const canManageAll = hasModuleLevel(userModules, 'courses.admin');
 	const canManageAssigned = hasModuleLevel(userModules, 'courses.manager');
 
 	if (!canManageAll && !canManageAssigned) {
@@ -59,9 +59,18 @@ export const load: PageServerLoad = async (event) => {
 				moduleCount: course.courses_modules?.[0]?.count || 0
 			})) ?? [];
 
+		// Fetch all users with courses.manager module for assignment UI
+		const { data: managers } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, full_name, email, assigned_course_ids')
+			.contains('modules', ['courses.manager'])
+			.order('full_name', { ascending: true });
+
 		return {
 			courses: coursesWithCount,
+			managers: managers || [],
 			userRole: 'admin',
+			userProfile,
 			canManageAll: true,
 			noEnrollments: false
 		};
@@ -121,7 +130,9 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		courses: managedCoursesWithCount,
+		managers: [],
 		userRole: 'manager',
+		userProfile,
 		canManageAll: false,
 		noEnrollments: managedCoursesWithCount.length === 0
 	};
@@ -161,12 +172,17 @@ function parseJsonField(value: FormDataEntryValue | null) {
 
 export const actions: Actions = {
 	create: async (event) => {
+		// Allow both admins and managers to create courses
+		let userProfile;
+		let creatorRole;
 		try {
-			await requireAnyModule(event, ['courses.admin', 'users']);
+			const result = await requireAnyModule(event, ['courses.admin', 'courses.manager']);
+			userProfile = result.profile;
+			creatorRole = hasModuleLevel(userProfile.modules, 'courses.admin') ? 'admin' : 'manager';
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: 'Only platform admins can manage courses.'
+				message: 'Requires courses.admin or courses.manager module to create courses.'
 			});
 		}
 
@@ -237,6 +253,14 @@ export const actions: Actions = {
 			});
 		}
 
+		// Add creator information to metadata
+		const enrichedMetadata = {
+			...metadata,
+			created_by_role: creatorRole,
+			created_by_user_id: userProfile.id,
+			created_at: new Date().toISOString()
+		};
+
 		const insertPayload = {
 			name,
 			short_name: shortName || null,
@@ -245,11 +269,15 @@ export const actions: Actions = {
 			duration_weeks: durationWeeks,
 			is_active: isActive,
 			status,
-			metadata,
+			metadata: enrichedMetadata,
 			settings
 		};
 
-		const { error } = await supabaseAdmin.from('courses').insert(insertPayload);
+		const { data: newCourse, error } = await supabaseAdmin
+			.from('courses')
+			.insert(insertPayload)
+			.select('id')
+			.single();
 
 		if (error) {
 			console.error('Error creating course:', error);
@@ -265,6 +293,17 @@ export const actions: Actions = {
 			});
 		}
 
+		// Auto-assign managers to courses they create
+		if (creatorRole === 'manager' && newCourse) {
+			const currentAssignments = userProfile.assigned_course_ids || [];
+			const updatedAssignments = [...currentAssignments, newCourse.id];
+
+			await supabaseAdmin
+				.from('user_profiles')
+				.update({ assigned_course_ids: updatedAssignments })
+				.eq('id', userProfile.id);
+		}
+
 		return {
 			type: 'success',
 			message: 'Course created successfully.',
@@ -273,11 +312,11 @@ export const actions: Actions = {
 	},
 	update: async (event) => {
 		try {
-			await requireAnyModule(event, ['courses.admin', 'users']);
+			await requireModuleLevel(event, 'courses.admin');
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: 'Only platform admins can manage courses.'
+				message: 'Only platform admins can update courses.'
 			});
 		}
 
@@ -394,19 +433,24 @@ export const actions: Actions = {
 		};
 	},
 	delete: async (event) => {
+		// Allow both admins and managers to delete (with restrictions)
+		let userProfile;
+		let userRole;
 		try {
-			await requireAnyModule(event, ['courses.admin', 'users']);
+			const result = await requireAnyModule(event, ['courses.admin', 'courses.manager']);
+			userProfile = result.profile;
+			userRole = hasModuleLevel(userProfile.modules, 'courses.admin') ? 'admin' : 'manager';
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: 'Only platform admins can manage courses.'
+				message: 'Requires courses.admin or courses.manager module to delete courses.'
 			});
 		}
 
 		const { request } = event;
-
 		const formData = await request.formData();
 		const courseId = formData.get('course_id')?.toString();
+
 		if (!courseId) {
 			return fail(400, {
 				type: 'error',
@@ -414,6 +458,46 @@ export const actions: Actions = {
 				context: { action: 'delete' }
 			});
 		}
+
+		// Fetch the course to check creator
+		const { data: course, error: fetchError } = await supabaseAdmin
+			.from('courses')
+			.select('id, metadata')
+			.eq('id', courseId)
+			.single();
+
+		if (fetchError || !course) {
+			return fail(404, {
+				type: 'error',
+				message: 'Course not found.',
+				context: { action: 'delete', courseId }
+			});
+		}
+
+		// Check permissions based on who created the course
+		const createdByRole = course.metadata?.created_by_role;
+
+		if (userRole === 'manager') {
+			// Managers can only delete courses they created (manager courses)
+			if (createdByRole !== 'manager') {
+				return fail(403, {
+					type: 'error',
+					message: 'Managers can only delete courses created by managers. This is an admin course.',
+					context: { action: 'delete', courseId }
+				});
+			}
+
+			// Verify the manager created this specific course
+			const createdByUserId = course.metadata?.created_by_user_id;
+			if (createdByUserId !== userProfile.id) {
+				return fail(403, {
+					type: 'error',
+					message: 'Managers can only delete courses they personally created.',
+					context: { action: 'delete', courseId }
+				});
+			}
+		}
+		// Admins can delete any course (no additional checks needed)
 
 		const { error } = await supabaseAdmin.from('courses').delete().eq('id', courseId);
 
@@ -434,6 +518,80 @@ export const actions: Actions = {
 			type: 'success',
 			message: 'Course deleted successfully.',
 			context: { action: 'delete', courseId }
+		};
+	},
+	updateManagers: async (event) => {
+		try {
+			await requireModuleLevel(event, 'courses.admin');
+		} catch (err) {
+			return fail(403, {
+				type: 'error',
+				message: 'Only platform admins can assign managers.'
+			});
+		}
+
+		const { request } = event;
+		const formData = await request.formData();
+		const courseId = formData.get('course_id')?.toString();
+		const managerIds = formData.getAll('manager_ids');
+
+		if (!courseId) {
+			return fail(400, {
+				type: 'error',
+				message: 'Missing course identifier.'
+			});
+		}
+
+		// Get all users with courses.manager module
+		const { data: allManagers } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, assigned_course_ids')
+			.contains('modules', ['courses.manager']);
+
+		if (!allManagers) {
+			return fail(500, {
+				type: 'error',
+				message: 'Failed to fetch managers.'
+			});
+		}
+
+		// Update each manager's assigned_course_ids
+		for (const manager of allManagers) {
+			const currentAssignments = manager.assigned_course_ids || [];
+			const shouldBeAssigned = managerIds.includes(manager.id);
+			const isCurrentlyAssigned = currentAssignments.includes(courseId);
+
+			let newAssignments = [...currentAssignments];
+
+			if (shouldBeAssigned && !isCurrentlyAssigned) {
+				// Add this course to manager's assignments
+				newAssignments.push(courseId);
+			} else if (!shouldBeAssigned && isCurrentlyAssigned) {
+				// Remove this course from manager's assignments
+				newAssignments = newAssignments.filter(id => id !== courseId);
+			} else {
+				// No change needed for this manager
+				continue;
+			}
+
+			// Update the manager's profile
+			const { error } = await supabaseAdmin
+				.from('user_profiles')
+				.update({ assigned_course_ids: newAssignments })
+				.eq('id', manager.id);
+
+			if (error) {
+				console.error('Error updating manager assignments:', error);
+				return fail(500, {
+					type: 'error',
+					message: `Failed to update assignments for ${manager.id}`
+				});
+			}
+		}
+
+		return {
+			type: 'success',
+			message: 'Manager assignments updated successfully.'
 		};
 	}
 };

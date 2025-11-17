@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate-schema": "node scripts/validate-schema.js",
+    "update-types": "node scripts/fetch-types.js"
   },
   "dependencies": {
     "@codemirror/basic-setup": "^0.20.0",

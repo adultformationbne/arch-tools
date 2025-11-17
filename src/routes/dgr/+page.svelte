@@ -10,6 +10,7 @@
 	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
 	import { getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
@@ -33,6 +34,7 @@
 		secondReading: '',
 		gospel: ''
 	});
+	let sendReminderConfirmModal = $state({ open: false, entry: null, message: '' });
 
 	// Quick Add modal state
 	let quickAddModalOpen = $state(false);
@@ -1014,8 +1016,8 @@
 		}
 	}
 
-	async function sendReminderEmail(entry) {
-		// Confirmation dialog
+	function confirmSendReminder(entry) {
+		// Build confirmation message
 		const contributor = entry.contributor || contributors.find(c => c.id === entry.contributor_id);
 		const daysUntil = Math.ceil((new Date(entry.date) - new Date()) / (1000 * 60 * 60 * 24));
 		const daysText = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
@@ -1027,9 +1029,16 @@
 			? `Send another reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.\n${reminderCount} reminder${reminderCount > 1 ? 's' : ''} already sent.`
 			: `Send reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.`;
 
-		const confirmed = confirm(confirmMessage);
+		sendReminderConfirmModal = { open: true, entry, message: confirmMessage };
+	}
 
-		if (!confirmed) return;
+	async function sendReminderEmail() {
+		const entry = sendReminderConfirmModal.entry;
+		sendReminderConfirmModal = { open: false, entry: null, message: '' };
+
+		if (!entry) return;
+
+		const contributor = entry.contributor || contributors.find(c => c.id === entry.contributor_id);
 
 		const loadingId = toast.loading({
 			title: 'Sending reminder...',
@@ -1157,7 +1166,7 @@
 					onEditReadings={openEditReadings}
 					onApproveReflection={approveReflection}
 					onQuickAddReflection={openQuickAddModal}
-					onSendReminder={sendReminderEmail}
+					onSendReminder={confirmSendReminder}
 				/>
 		</div>
 	{/if}
@@ -1381,5 +1390,17 @@
 	position="right"
 	autoShow={true}
 />
+
+<!-- Send Reminder Confirmation Modal -->
+<ConfirmationModal
+	show={sendReminderConfirmModal.open}
+	title="Send Reminder Email"
+	confirmText="Send"
+	cancelText="Cancel"
+	onConfirm={sendReminderEmail}
+	onCancel={() => sendReminderConfirmModal = { open: false, entry: null, message: '' }}
+>
+	<p class="whitespace-pre-line">{sendReminderConfirmModal.message}</p>
+</ConfirmationModal>
 
 <ToastContainer />

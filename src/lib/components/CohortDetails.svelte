@@ -52,11 +52,11 @@
 				editingCohort = false;
 				await onUpdate();
 			} else {
-				alert('Failed to update cohort');
+				toastError('Failed to update cohort', 'Update Failed');
 			}
 		} catch (err) {
 			console.error('Failed to update cohort:', err);
-			alert('Failed to update cohort');
+			toastError('Failed to update cohort', 'Update Failed');
 		}
 	}
 

@@ -7,6 +7,8 @@
 		getStatusBadgeClass,
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
+	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let {
 		cohort,
@@ -28,6 +30,12 @@
 	let openDropdown = $state(null); // Track which student's dropdown is open
 	let dropdownPosition = $state({ top: 0, right: 0 }); // Track dropdown position
 	let editingSession = $state(null); // Track which student's session is being edited
+
+	// Confirmation modal state
+	let showDeleteConfirm = $state(false);
+	let studentToDelete = $state(null);
+	let showAdvanceConfirm = $state(false);
+	let studentsToAdvance = $state([]);
 
 	// Derived state: students who are behind the cohort's current session
 	// Only show advance option if cohort has started (session > 0)
@@ -170,12 +178,21 @@
 			}
 		} catch (err) {
 			console.error('Failed to update student:', err);
-			alert('Failed to update student');
+			toastError('Failed to update student', 'Update Failed');
 		}
 	}
 
-	async function deleteStudent(studentId) {
-		if (!confirm('Remove this student?')) return;
+	function confirmDeleteStudent(studentId) {
+		studentToDelete = studentId;
+		showDeleteConfirm = true;
+	}
+
+	async function deleteStudent() {
+		const studentId = studentToDelete;
+		showDeleteConfirm = false;
+		studentToDelete = null;
+
+		if (!studentId) return;
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
@@ -193,16 +210,21 @@
 			}
 		} catch (err) {
 			console.error('Failed to delete student:', err);
-			alert('Failed to delete student');
+			toastError('Failed to delete student', 'Delete Failed');
 		}
 	}
 
-	async function advanceSelectedStudents() {
-		const studentIds = studentsBehind.map(s => s.id);
+	function confirmAdvanceStudents() {
+		studentsToAdvance = studentsBehind.map(s => s.id);
+		showAdvanceConfirm = true;
+	}
 
-		if (!confirm(`Advance ${studentIds.length} student(s) to Session ${cohort.current_session}?`)) {
-			return;
-		}
+	async function advanceSelectedStudents() {
+		const studentIds = studentsToAdvance;
+		showAdvanceConfirm = false;
+		studentsToAdvance = [];
+
+		if (!studentIds || studentIds.length === 0) return;
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
@@ -220,16 +242,16 @@
 			const result = await response.json();
 
 			if (result.success) {
-				alert(`Successfully advanced ${studentIds.length} student(s) to Session ${cohort.current_session}`);
+				toastSuccess(`Successfully advanced ${studentIds.length} student(s) to Session ${cohort.current_session}`, 'Students Advanced');
 				selectedStudents = new Set();
 				await loadStudents();
 				await onUpdate();
 			} else {
-				alert('Failed to advance students: ' + result.message);
+				toastError('Failed to advance students: ' + result.message, 'Advance Failed');
 			}
 		} catch (err) {
 			console.error('Error advancing students:', err);
-			alert('Failed to advance students');
+			toastError('Failed to advance students', 'Advance Failed');
 		}
 	}
 
@@ -246,7 +268,7 @@
 
 		// Validate session number
 		if (editingSession.value < 0 || editingSession.value > totalSessions) {
-			alert(`Session must be between 0 (not started) and ${totalSessions}`);
+			toastWarning(`Session must be between 0 (not started) and ${totalSessions}`, 'Invalid Session');
 			return;
 		}
 
@@ -272,11 +294,11 @@
 			} else {
 				const errorMsg = result.message || 'Failed to update session. Please try again.';
 				console.error('Session update failed:', result);
-				alert(errorMsg);
+				toastError(errorMsg, 'Update Failed');
 			}
 		} catch (err) {
 			console.error('Failed to update session:', err);
-			alert('Failed to update session: ' + (err.message || 'Unknown error'));
+			toastError('Failed to update session: ' + (err.message || 'Unknown error'), 'Update Failed');
 		}
 	}
 
@@ -378,7 +400,7 @@
 			<div class="header-actions">
 				{#if canAdvance}
 					<button
-						onclick={advanceSelectedStudents}
+						onclick={confirmAdvanceStudents}
 						class="btn-primary-small"
 					>
 						<ArrowRight size={16} />
@@ -595,7 +617,7 @@
 					<button
 						type="button"
 						onclick={() => {
-							deleteStudent(student.id);
+							confirmDeleteStudent(student.id);
 							openDropdown = null;
 						}}
 						class="dropdown-item danger"
@@ -629,6 +651,37 @@
 		{/each}
 	{/if}
 </div>
+
+<!-- Confirmation Modals -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Remove Student"
+	confirmText="Remove"
+	cancelText="Cancel"
+	onConfirm={deleteStudent}
+	onCancel={() => {
+		showDeleteConfirm = false;
+		studentToDelete = null;
+	}}
+>
+	<p>Are you sure you want to remove this student from the cohort?</p>
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>
+
+<ConfirmationModal
+	show={showAdvanceConfirm}
+	title="Advance Students"
+	confirmText="Advance"
+	cancelText="Cancel"
+	onConfirm={advanceSelectedStudents}
+	onCancel={() => {
+		showAdvanceConfirm = false;
+		studentsToAdvance = [];
+	}}
+>
+	<p>Advance {studentsToAdvance.length} student(s) to Session {cohort.current_session}?</p>
+	<p class="text-sm text-gray-600 mt-2">This will update their current session progress.</p>
+</ConfirmationModal>
 
 <style>
 	.cohort-manager {

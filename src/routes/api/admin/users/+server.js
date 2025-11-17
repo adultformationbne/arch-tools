@@ -1,6 +1,10 @@
 import { json, error } from '@sveltejs/kit';
 import { requireModule } from '$lib/server/auth.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { RESEND_API_KEY } from '$env/static/private';
+import { PUBLIC_SITE_URL } from '$env/static/public';
+import { sendEmail } from '$lib/utils/email-service.js';
+import { generateInvitationEmail } from '$lib/email-templates/user-invitation.js';
 
 export async function POST(event) {
 	try {
@@ -9,7 +13,7 @@ export async function POST(event) {
 
 		const { request } = event;
 
-		const { email, full_name, modules } = await request.json();
+		const { email, full_name, modules, sendWelcomeEmail } = await request.json();
 
 		// Validate required fields
 		if (!email) {
@@ -132,6 +136,35 @@ export async function POST(event) {
 				throw error(500, 'Failed to create user profile: ' + insertError.message);
 			}
 			profileData = newProfile;
+		}
+
+		// Send welcome email if requested
+		if (sendWelcomeEmail) {
+			try {
+				const siteUrl = PUBLIC_SITE_URL || 'https://app.archdiocesanministries.org.au';
+				const { subject, html } = generateInvitationEmail({
+					recipientName: full_name,
+					recipientEmail: email,
+					siteUrl: siteUrl,
+					modules: uniqueModules
+				});
+
+				await sendEmail({
+					to: email,
+					subject,
+					html,
+					emailType: 'user_invitation',
+					referenceId: authData.user.id,
+					metadata: { invited_by: user.email },
+					resendApiKey: RESEND_API_KEY,
+					supabase: supabaseAdmin
+				});
+
+				console.log('Welcome email sent to:', email);
+			} catch (emailError) {
+				console.error('Failed to send welcome email:', emailError);
+				// Don't fail the entire request if email fails - user is already created
+			}
 		}
 
 		return json({

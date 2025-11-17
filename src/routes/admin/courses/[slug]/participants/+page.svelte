@@ -1,5 +1,6 @@
 <script>
 	import { Search, Filter, Users, Edit2, Mail, MapPin } from 'lucide-svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -63,7 +64,7 @@
 			}
 		} catch (err) {
 			console.error('Error updating hub:', err);
-			alert(err.message || 'Failed to update hub');
+			toastError(err.message || 'Failed to update hub', 'Update Failed');
 		}
 	}
 

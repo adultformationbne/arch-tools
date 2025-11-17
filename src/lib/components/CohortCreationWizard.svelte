@@ -1,6 +1,7 @@
 <script>
 	import { X, ChevronRight, ChevronLeft, Check } from 'lucide-svelte';
 	import CsvUpload from './CsvUpload.svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
 		modules = [],
@@ -60,7 +61,7 @@
 			currentStep = 2;
 		} catch (error) {
 			console.error('Error creating cohort:', error);
-			alert('Failed to create cohort. Please try again.');
+			toastError('Failed to create cohort. Please try again.', 'Creation Failed');
 		} finally {
 			isLoading = false;
 		}
@@ -120,7 +121,7 @@
 			handleClose();
 		} catch (error) {
 			console.error('Error finishing setup:', error);
-			alert('Failed to finish setup. Please try again.');
+			toastError('Failed to finish setup. Please try again.', 'Setup Failed');
 		} finally {
 			isLoading = false;
 		}

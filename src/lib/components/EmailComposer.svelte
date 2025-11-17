@@ -21,6 +21,7 @@
 
 	import { apiPost } from '$lib/utils/api-handler.js';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	/** @type {Array<{email: string, name?: string}>} Array of recipient objects */
 	export let recipients = [];
@@ -41,13 +42,14 @@
 	let message = $state(prefilledMessage);
 	let isSending = $state(false);
 	let showPreview = $state(false);
+	let showSendConfirm = $state(false);
 
 	// Character counts for feedback
 	const subjectLength = $derived(subject.length);
 	const messageLength = $derived(message.length);
 	const recipientCount = $derived(recipients.length);
 
-	async function handleSend() {
+	function confirmSend() {
 		// Validation
 		if (!subject.trim()) {
 			toastError('Please enter a subject line');
@@ -64,13 +66,12 @@
 			return;
 		}
 
-		// Confirm before sending
-		const confirmed = confirm(
-			`Send email to ${recipientCount} recipient${recipientCount > 1 ? 's' : ''}?`
-		);
+		// Show confirmation modal
+		showSendConfirm = true;
+	}
 
-		if (!confirmed) return;
-
+	async function handleSend() {
+		showSendConfirm = false;
 		isSending = true;
 
 		try {
@@ -180,7 +181,7 @@
 
 		<button
 			type="button"
-			onclick={handleSend}
+			onclick={confirmSend}
 			disabled={isSending || !subject.trim() || !message.trim() || recipients.length === 0}
 			class="btn-primary"
 		>
@@ -203,6 +204,19 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showSendConfirm}
+	title="Send Email"
+	confirmText="Send"
+	cancelText="Cancel"
+	onConfirm={handleSend}
+	onCancel={() => showSendConfirm = false}
+>
+	<p>Send email to {recipientCount} recipient{recipientCount > 1 ? 's' : ''}?</p>
+	<p class="text-sm text-gray-600 mt-2"><strong>Subject:</strong> {subject}</p>
+</ConfirmationModal>
 
 <style>
 	.email-composer {

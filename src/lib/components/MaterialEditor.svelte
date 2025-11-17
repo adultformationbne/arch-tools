@@ -2,6 +2,8 @@
 	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import DocumentUpload from './DocumentUpload.svelte';
+	import ConfirmationModal from './ConfirmationModal.svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
 		materials = [],
@@ -10,6 +12,7 @@
 		allowDocumentUpload = true,
 		moduleId = '1',
 		weekNumber = 1,
+		sessionId = null,
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -24,6 +27,8 @@
 
 	let showNativeEditor = $state(false);
 	let showDocumentUpload = $state(false);
+	let showDeleteConfirm = $state(false);
+	let materialToDelete = $state(null);
 
 	const materialTypes = [
 		{ value: 'video', label: 'Video (YouTube)', icon: Video },
@@ -79,8 +84,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					module_id: moduleId,
-					week_number: weekNumber,
+					session_id: sessionId,
 					type: newMaterial.type,
 					title: newMaterial.title,
 					content: content,
@@ -115,13 +119,13 @@
 				console.error('Failed to add material:', errorData);
 				onSaveStatusChange(false, 'Save failed');
 				setTimeout(() => onSaveStatusChange(false, ''), 2000);
-				alert(`Failed to add material: ${errorData.error}`);
+				toastError(`Failed to add material: ${errorData.error}`);
 			}
 		} catch (error) {
 			console.error('Error adding material:', error);
 			onSaveStatusChange(false, 'Save failed');
 			setTimeout(() => onSaveStatusChange(false, ''), 2000);
-			alert('Failed to add material');
+			toastError('Failed to add material');
 		}
 	};
 
@@ -182,13 +186,13 @@
 				console.error('Failed to update material:', errorData);
 				onSaveStatusChange(false, 'Save failed');
 				setTimeout(() => onSaveStatusChange(false, ''), 2000);
-				alert(`Failed to update material: ${errorData.error}`);
+				toastError(`Failed to update material: ${errorData.error}`);
 			}
 		} catch (error) {
 			console.error('Error updating material:', error);
 			onSaveStatusChange(false, 'Save failed');
 			setTimeout(() => onSaveStatusChange(false, ''), 2000);
-			alert('Failed to update material');
+			toastError('Failed to update material');
 		}
 	};
 
@@ -197,10 +201,17 @@
 		showNativeEditor = false;
 	};
 
-	const deleteMaterial = async (materialId) => {
-		if (!confirm('Are you sure you want to delete this material?')) {
-			return;
-		}
+	const confirmDelete = (materialId) => {
+		materialToDelete = materialId;
+		showDeleteConfirm = true;
+	};
+
+	const deleteMaterial = async () => {
+		const materialId = materialToDelete;
+		showDeleteConfirm = false;
+		materialToDelete = null;
+
+		if (!materialId) return;
 
 		try {
 			onSaveStatusChange(true, 'Deleting material...');
@@ -223,13 +234,13 @@
 				console.error('Failed to delete material:', errorData);
 				onSaveStatusChange(false, 'Delete failed');
 				setTimeout(() => onSaveStatusChange(false, ''), 2000);
-				alert(`Failed to delete material: ${errorData.error}`);
+				toastError(`Failed to delete material: ${errorData.error}`);
 			}
 		} catch (error) {
 			console.error('Error deleting material:', error);
 			onSaveStatusChange(false, 'Delete failed');
 			setTimeout(() => onSaveStatusChange(false, ''), 2000);
-			alert('Failed to delete material');
+			toastError('Failed to delete material');
 		}
 	};
 
@@ -271,13 +282,13 @@
 
 			if (failedUpdates.length > 0) {
 				console.error('Some material order updates failed');
-				alert('Failed to update material order in database');
+				toastError('Failed to update material order in database');
 			} else {
 				console.log('Material order updated successfully');
 			}
 		} catch (error) {
 			console.error('Error updating material order:', error);
-			alert('Failed to update material order');
+			toastError('Failed to update material order');
 		}
 	};
 
@@ -485,7 +496,7 @@
 							<Edit3 size="16" />
 						</button>
 						<button
-							onclick={() => deleteMaterial(material.id)}
+							onclick={() => confirmDelete(material.id)}
 							class="p-2 text-red-600 hover:text-red-800"
 						>
 							<Trash2 size="16" />
@@ -621,3 +632,18 @@
 		</button>
 	</div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	title="Delete Material"
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={deleteMaterial}
+	onCancel={() => {
+		showDeleteConfirm = false;
+		materialToDelete = null;
+	}}
+>
+	<p>Are you sure you want to delete this material? This action cannot be undone.</p>
+</ConfirmationModal>

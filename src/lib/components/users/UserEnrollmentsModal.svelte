@@ -1,6 +1,7 @@
 <script>
 	import { X, Save, Edit2, Trash2, Plus } from 'lucide-svelte';
 	import { apiPut, apiDelete } from '$lib/utils/api-handler.js';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let {
 		isOpen = false,
@@ -13,6 +14,8 @@
 
 	let editingEnrollmentId = $state(null);
 	let editingEnrollmentRole = $state('');
+	let showRemoveConfirm = $state(false);
+	let enrollmentToRemove = $state(null);
 
 	function getCourseRoleBadgeColor(role) {
 		const colors = {
@@ -56,10 +59,17 @@
 		}
 	}
 
-	async function removeEnrollment(enrollmentId, courseName) {
-		if (!confirm(`Remove this enrollment from ${courseName}?`)) {
-			return;
-		}
+	function confirmRemoveEnrollment(enrollmentId, courseName) {
+		enrollmentToRemove = { enrollmentId, courseName };
+		showRemoveConfirm = true;
+	}
+
+	async function removeEnrollment() {
+		const { enrollmentId, courseName } = enrollmentToRemove;
+		showRemoveConfirm = false;
+		enrollmentToRemove = null;
+
+		if (!enrollmentId) return;
 
 		try {
 			await apiDelete(
@@ -148,7 +158,7 @@
 										<Edit2 class="h-4 w-4" />
 									</button>
 									<button
-										onclick={() => removeEnrollment(enrollment.id, courseName)}
+										onclick={() => confirmRemoveEnrollment(enrollment.id, courseName)}
 										class="p-1 text-red-600 hover:text-red-900"
 										title="Remove enrollment"
 									>
@@ -184,3 +194,19 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Confirmation Modal -->
+<ConfirmationModal
+	show={showRemoveConfirm}
+	title="Remove Enrollment"
+	confirmText="Remove"
+	cancelText="Cancel"
+	onConfirm={removeEnrollment}
+	onCancel={() => {
+		showRemoveConfirm = false;
+		enrollmentToRemove = null;
+	}}
+>
+	<p>Remove this enrollment from {enrollmentToRemove?.courseName}?</p>
+	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+</ConfirmationModal>

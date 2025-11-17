@@ -382,7 +382,8 @@
 																		{#if record}
 																			<button
 																				onclick={() => {
-																					if (confirm('Override coordinator marking?')) {
+																					// TODO: Use ConfirmationModal when implementing this feature
+															if (false) {
 																						// Show override buttons
 																					}
 																				}}
