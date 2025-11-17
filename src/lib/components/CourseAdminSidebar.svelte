@@ -1,5 +1,6 @@
 <script>
 import { page } from '$app/stores';
+import { preloadData } from '$app/navigation';
 import {
     LayoutDashboard,
     BookOpen,
@@ -120,6 +121,11 @@ function isActive(href) {
     // Only match exact pathname (not prefixes)
     return $page.url.pathname === hrefPath;
 }
+
+// Preload data on hover for instant navigation
+function handleMouseEnter(href) {
+    preloadData(href);
+}
 </script>
 
 <aside class="course-admin-sidebar">
@@ -134,6 +140,8 @@ function isActive(href) {
 							class="nav-item"
 							class:active={isActive(item.href)}
 							title={item.description}
+							onmouseenter={() => handleMouseEnter(item.href)}
+							data-sveltekit-preload-data="tap"
 						>
 							<item.icon size={20} class="nav-icon" />
 							<span class="nav-label">{item.label}</span>
@@ -188,7 +196,11 @@ function isActive(href) {
 
 	<!-- Footer Actions -->
 	<div class="sidebar-footer">
-		<a href="/admin/courses?from=course" class="footer-link">
+		<a
+			href="/admin/courses?from=course"
+			class="footer-link"
+			data-sveltekit-preload-data="tap"
+		>
 			<ArrowLeft size={18} />
 			<span>Back to Courses</span>
 		</a>

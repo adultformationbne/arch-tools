@@ -1,7 +1,7 @@
 <script>
 	import { Plus, Download } from 'lucide-svelte';
 	import { goto, replaceState } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page, navigating } from '$app/stores';
 	import CohortCard from '$lib/components/CohortCard.svelte';
 	import CohortManager from '$lib/components/CohortManager.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
@@ -14,6 +14,9 @@
 
 	let { data } = $props();
 
+	// Show loading state during navigation
+	let isLoading = $derived($navigating !== null);
+
 	const courseSlug = data.courseSlug;
 	let modules = $state(data.modules || []);
 	let cohorts = $state(data.cohorts || []);
@@ -23,7 +26,8 @@
 	let showAttendanceModal = $state(false);
 	let refreshTrigger = $state(0);
 
-	let students = $state([]);
+	// ✅ OPTIMIZATION: Use preloaded students from server
+	let students = $state(data.initialStudents || []);
 	let loadingStudents = $state(false);
 
 	// Get selected cohort - use server-provided initial value for instant load
@@ -60,9 +64,10 @@
 		}
 	});
 
-	// Load students when cohort changes
+	// Load students when cohort changes (but only if it's different from initial)
+	let lastLoadedCohortId = $state(data.initialSelectedCohort);
 	$effect(() => {
-		if (selectedCohortId) {
+		if (selectedCohortId && selectedCohortId !== lastLoadedCohortId) {
 			loadStudents();
 		}
 	});
@@ -77,6 +82,7 @@
 			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
 			const result = await response.json();
 			students = result.success ? result.data : [];
+			lastLoadedCohortId = selectedCohortId; // Track what we loaded
 		} catch (err) {
 			console.error('Failed to load students:', err);
 			students = [];
@@ -221,7 +227,7 @@ Bob Johnson,bob.j@example.com,student,`;
 	}
 </script>
 
-<div class="px-24 pb-16 pt-8">
+<div class="px-24 pb-16 pt-8 transition-opacity duration-200" class:opacity-60={isLoading && cohorts.length > 0} class:pointer-events-none={isLoading && cohorts.length > 0}>
 	{#if !selectedCohort && cohorts.length === 0}
 		<div class="empty-state">
 			<h2>No Active Cohorts</h2>

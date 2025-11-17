@@ -1,5 +1,5 @@
 <script>
-	import { Save, Eye, EyeOff, X, CheckCircle, Scan } from 'lucide-svelte';
+	import { Save, Eye, EyeOff, X, CheckCircle } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
@@ -20,11 +20,16 @@
 	let wordCount = $derived(content.trim().split(/\s+/).filter(word => word.length > 0).length);
 	let lastSaved = $state(new Date());
 	let isSaving = $state(false);
-	let isFullscreen = $state(false);
+	let textareaRef = $state(null);
 
-	const toggleFullscreen = () => {
-		isFullscreen = !isFullscreen;
-	};
+	// Auto-focus textarea when modal opens
+	$effect(() => {
+		if (isVisible && textareaRef) {
+			setTimeout(() => {
+				textareaRef?.focus();
+			}, 150);
+		}
+	});
 
 	// Auto-save functionality
 	let autoSaveTimer;
@@ -163,207 +168,110 @@
 </script>
 
 {#if isVisible}
-	<!-- Normal Writing View -->
-	{#if !isFullscreen}
-		<div class="relative z-10">
-			<div class="max-w-7xl mx-auto">
-				<div class="bg-white rounded-3xl shadow-2xl overflow-hidden" style="background-color: #f8f4f0;">
-					<!-- Header -->
-					<div class="p-8 border-b border-gray-200">
-						<div class="flex items-start justify-between mb-6">
-							<h3 class="text-2xl font-bold text-gray-800">Write Your Reflection</h3>
+	<!-- Modal Overlay -->
+	<div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 md:p-8">
+		<div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-full max-h-[95vh] flex flex-col" style="background-color: #f8f4f0;">
 
-							<!-- Close Button -->
-							<button
-								onclick={handleClose}
-								class="p-3 rounded-xl hover:bg-gray-100 transition-colors"
-							>
-								<X size="20" class="text-gray-600" />
-							</button>
-						</div>
-
-						<!-- Question Card -->
-						<div class="bg-white border-2 rounded-2xl p-6 mb-6" style="border-color: #c59a6b;">
-							<p class="text-gray-700 leading-relaxed font-medium">{question}</p>
-						</div>
-
-						<!-- Privacy Toggle Pill -->
-						<div class="flex items-center gap-3">
-							<button
-								class="flex items-center gap-2 px-5 py-2.5 rounded-full transition-all border-2"
-								class:bg-green-50={!isPrivate}
-								class:border-green-300={!isPrivate}
-								class:bg-red-50={isPrivate}
-								class:border-red-300={isPrivate}
-								onclick={() => isPrivate = !isPrivate}
-							>
-								{#if isPrivate}
-									<EyeOff size="16" class="text-red-600" />
-									<span class="text-red-700 font-semibold text-sm">Private</span>
-								{:else}
-									<Eye size="16" class="text-green-600" />
-									<span class="text-green-700 font-semibold text-sm">Public</span>
-								{/if}
-							</button>
-							<span class="text-sm text-gray-600">
-								{isPrivate ? 'Only you and your marker' : 'Visible to your cohort'}
-							</span>
-						</div>
-					</div>
-
-					<!-- Writing Area -->
-					<div class="p-8">
-						<div class="relative">
-							<textarea
-								bind:value={content}
-								placeholder="Begin writing your reflection here..."
-								class="w-full h-64 p-6 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-800 text-lg leading-relaxed"
-								style="focus:ring-color: #c59a6b; background-color: #ffffff;"
-							></textarea>
-
-							<!-- Expand to Fullscreen Button (Bottom Right Corner) -->
-							<button
-								onclick={toggleFullscreen}
-								class="absolute bottom-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-								title="Expand to fullscreen"
-							>
-								<Scan size="20" class="text-gray-600" />
-							</button>
-						</div>
-
-						<!-- Writing Stats and Auto-save Status -->
-						<div class="flex items-center justify-between mt-6">
-							<!-- Left: Stats -->
-							<div class="flex items-center gap-6 text-sm text-gray-600">
-								<div class="flex items-center gap-2">
-									<span>Words:</span>
-									<span class="font-semibold">{wordCount}</span>
-								</div>
-								<div class="flex items-center gap-2">
-									<span>Characters:</span>
-									<span class="font-semibold">{content.length}</span>
-								</div>
-							</div>
-
-							<!-- Right: Auto-save Status -->
-							<div class="flex items-center gap-4">
-								{#if autoSaveStatus === 'saving'}
-									<div class="flex items-center gap-2 text-blue-600">
-										<div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-										<span class="text-sm font-medium">Saving...</span>
-									</div>
-								{:else if autoSaveStatus === 'saved'}
-									<div class="flex items-center gap-2 text-green-600">
-										<CheckCircle size="16" />
-										<span class="text-sm font-medium">Saved at {formatTime(lastSaved)}</span>
-									</div>
-								{:else if autoSaveStatus === 'error'}
-									<div class="flex items-center gap-2 text-red-600">
-										<X size="16" />
-										<span class="text-sm font-medium">Save failed</span>
-									</div>
-								{/if}
-							</div>
-						</div>
-					</div>
-
-					<!-- Footer Actions -->
-					<div class="flex items-center justify-end gap-4 p-8 bg-gray-50 border-t border-gray-200">
-						<button
-							onclick={handleSaveDraft}
-							class="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors"
-							disabled={isSaving || content.trim().length === 0}
-						>
-							{isSaving ? 'Saving...' : 'Save as Draft'}
-						</button>
-						<button
-							onclick={handleSubmit}
-							class="flex items-center gap-2 px-8 py-3 text-white font-semibold rounded-2xl transition-colors hover:opacity-90"
-							style="background-color: #334642;"
-							disabled={content.trim().length === 0 || isSaving}
-						>
-							<Save size="16" />
-							{isSaving ? 'Submitting...' : 'Submit Reflection'}
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	<!-- Fullscreen Modal -->
-	{#if isFullscreen}
-		<div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-8">
-			<div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-full max-h-[90vh] flex flex-col" style="background-color: #f8f4f0;">
-				<!-- Modal Header -->
-				<div class="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-					<h3 class="text-xl font-bold text-gray-800">Write Your Reflection</h3>
+			<!-- Modal Header -->
+			<div class="flex flex-col gap-4 p-6 border-b border-gray-200 flex-shrink-0">
+				<div class="flex items-center justify-between">
+					<h3 class="text-2xl font-bold text-gray-800">Write Your Reflection</h3>
 					<button
-						onclick={toggleFullscreen}
+						onclick={handleClose}
 						class="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+						title="Close"
 					>
 						<X size="20" class="text-gray-600" />
 					</button>
 				</div>
 
-				<!-- Fullscreen Writing Area -->
-				<div class="flex-1 overflow-y-auto p-8">
-					<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-12">
-						<textarea
-							bind:value={content}
-							placeholder="Begin writing your reflection here..."
-							class="w-full border-0 resize-none focus:outline-none text-gray-800 text-lg leading-relaxed"
-							style="min-height: 500px; background-color: #ffffff;"
-						></textarea>
-					</div>
+				<!-- Question Card -->
+				<div class="bg-white border-2 rounded-2xl p-4" style="border-color: #c59a6b;">
+					<p class="text-gray-700 leading-relaxed font-medium">{question}</p>
 				</div>
 
-				<!-- Modal Footer -->
-				<div class="flex items-center justify-between p-6 bg-gray-50 border-t border-gray-200 flex-shrink-0">
-					<!-- Left: Stats -->
-					<div class="flex items-center gap-6 text-sm text-gray-600">
-						<div class="flex items-center gap-2">
-							<span>Words:</span>
-							<span class="font-semibold">{wordCount}</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<span>Characters:</span>
-							<span class="font-semibold">{content.length}</span>
-						</div>
-						{#if autoSaveStatus === 'saving'}
-							<div class="flex items-center gap-2 text-blue-600">
-								<div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-								<span class="text-sm font-medium">Saving...</span>
-							</div>
-						{:else if autoSaveStatus === 'saved'}
-							<div class="flex items-center gap-2 text-green-600">
-								<CheckCircle size="16" />
-								<span class="text-sm font-medium">Saved</span>
-							</div>
+				<!-- Privacy Toggle -->
+				<div class="flex items-center gap-3">
+					<button
+						class="flex items-center gap-2 px-5 py-2.5 rounded-full transition-all border-2"
+						class:bg-green-50={!isPrivate}
+						class:border-green-300={!isPrivate}
+						class:bg-red-50={isPrivate}
+						class:border-red-300={isPrivate}
+						onclick={() => isPrivate = !isPrivate}
+					>
+						{#if isPrivate}
+							<EyeOff size="16" class="text-red-600" />
+							<span class="text-red-700 font-semibold text-sm">Private</span>
+						{:else}
+							<Eye size="16" class="text-green-600" />
+							<span class="text-green-700 font-semibold text-sm">Public</span>
 						{/if}
-					</div>
+					</button>
+					<span class="text-sm text-gray-600">
+						{isPrivate ? 'Only you and your marker' : 'Visible to your cohort'}
+					</span>
+				</div>
+			</div>
 
-					<!-- Right: Actions -->
-					<div class="flex items-center gap-4">
-						<button
-							onclick={handleSaveDraft}
-							class="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors"
-							disabled={isSaving || content.trim().length === 0}
-						>
-							{isSaving ? 'Saving...' : 'Save as Draft'}
-						</button>
-						<button
-							onclick={handleSubmit}
-							class="flex items-center gap-2 px-8 py-3 text-white font-semibold rounded-2xl transition-colors hover:opacity-90"
-							style="background-color: #334642;"
-							disabled={content.trim().length === 0 || isSaving}
-						>
-							<Save size="16" />
-							{isSaving ? 'Submitting...' : 'Submit Reflection'}
-						</button>
+			<!-- Writing Area -->
+			<div class="flex-1 overflow-y-auto p-6">
+				<div class="max-w-4xl mx-auto">
+					<textarea
+						bind:this={textareaRef}
+						bind:value={content}
+						placeholder="Begin writing your reflection here..."
+						class="w-full border-0 resize-none focus:outline-none text-gray-800 text-lg leading-relaxed bg-white rounded-2xl p-6"
+						style="min-height: 400px;"
+					></textarea>
+				</div>
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+				<!-- Left: Stats & Auto-save -->
+				<div class="flex items-center gap-6 text-sm text-gray-600">
+					<div class="flex items-center gap-2">
+						<span>Words:</span>
+						<span class="font-semibold">{wordCount}</span>
 					</div>
+					<div class="flex items-center gap-2">
+						<span>Characters:</span>
+						<span class="font-semibold">{content.length}</span>
+					</div>
+					{#if autoSaveStatus === 'saving'}
+						<div class="flex items-center gap-2 text-blue-600">
+							<div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+							<span class="text-sm font-medium">Saving...</span>
+						</div>
+					{:else if autoSaveStatus === 'saved'}
+						<div class="flex items-center gap-2 text-green-600">
+							<CheckCircle size="16" />
+							<span class="text-sm font-medium">Saved</span>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Right: Actions -->
+				<div class="flex items-center gap-4">
+					<button
+						onclick={handleSaveDraft}
+						class="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors"
+						disabled={isSaving || content.trim().length === 0}
+					>
+						{isSaving ? 'Saving...' : 'Save as Draft'}
+					</button>
+					<button
+						onclick={handleSubmit}
+						class="flex items-center gap-2 px-8 py-3 text-white font-semibold rounded-2xl transition-colors hover:opacity-90"
+						style="background-color: #334642;"
+						disabled={content.trim().length === 0 || isSaving}
+					>
+						<Save size="16" />
+						{isSaving ? 'Submitting...' : 'Submit Reflection'}
+					</button>
 				</div>
 			</div>
 		</div>
-	{/if}
+	</div>
 {/if}

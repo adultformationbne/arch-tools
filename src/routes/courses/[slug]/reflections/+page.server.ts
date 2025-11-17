@@ -195,8 +195,8 @@ export const load: PageServerLoad = async (event) => {
 			sessionNumber: currentSession,
 			questionId: currentReflectionQuestion.id,
 			question: currentReflectionQuestion.question_text,
-			dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now (placeholder)
-			isOverdue: false, // TODO: Implement proper due date logic
+			dueDate: null, // Due dates not currently tracked in database
+			isOverdue: false,
 			hasSubmitted: !!hasCurrentSubmission
 		} : null;
 

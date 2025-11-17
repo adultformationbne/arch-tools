@@ -9,39 +9,68 @@ export const GET: RequestHandler = async (event) => {
 	await requireCourseAdmin(event, courseSlug);
 
 	const { url } = event;
-
-	const role = url.searchParams.get('role');
+	const enrollmentRole = url.searchParams.get('role'); // e.g., 'admin', 'student', 'coordinator'
+	const status = url.searchParams.get('status'); // e.g., 'active', 'pending', 'invited'
 
 	try {
-	const { data: users, error: fetchError } = await supabaseAdmin
-		.from('user_profiles')
-		.select('id, email, full_name, modules')
-		.order('full_name', { ascending: true });
+		// ✅ OPTIMIZATION: Use cached course data from layout
+		const cached = event.locals.courseCache?.get(courseSlug);
 
-		if (fetchError) {
-			console.error('Error fetching users:', fetchError);
-			throw error(500, 'Failed to fetch users');
+		if (!cached || !cached.cohortIds || cached.cohortIds.length === 0) {
+			return json({
+				success: true,
+				data: []
+			});
 		}
 
-	const filteredUsers = (users || []).filter((user) => {
-		const modules: string[] = Array.isArray(user.modules) ? user.modules : [];
-		if (!role) return true;
-		switch (role) {
-			case 'admin':
-				return modules.includes('users') || modules.includes('courses.admin');
-			case 'manager':
-				return modules.includes('courses.manager');
-			case 'participant':
-				return modules.includes('courses.participant');
-			default:
-				return true;
-		}
-	});
+		const cohortIds = cached.cohortIds;
 
-	return json({
-		success: true,
-		data: filteredUsers
-	});
+		// Build query for enrollments
+		let query = supabaseAdmin
+			.from('courses_enrollments')
+			.select(`
+				*,
+				user_profile:user_profile_id (
+					id,
+					email,
+					full_name,
+					modules
+				),
+				cohort:cohort_id (
+					id,
+					name,
+					module:module_id (
+						name
+					)
+				),
+				hub:hub_id (
+					id,
+					name
+				)
+			`)
+			.in('cohort_id', cohortIds);
+
+		// Apply filters if provided
+		if (enrollmentRole) {
+			query = query.eq('role', enrollmentRole);
+		}
+
+		if (status) {
+			query = query.eq('status', status);
+		}
+
+		const { data: enrollments, error: enrollmentsError } = await query
+			.order('created_at', { ascending: false });
+
+		if (enrollmentsError) {
+			console.error('Error fetching enrollments:', enrollmentsError);
+			throw error(500, 'Failed to fetch enrollments');
+		}
+
+		return json({
+			success: true,
+			data: enrollments || []
+		});
 	} catch (err) {
 		console.error('API error:', err);
 

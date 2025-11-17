@@ -14,22 +14,37 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	});
 
+	// ✅ OPTIMIZATION: Initialize request-scoped caches
+	event.locals.authCache = new Map();
+	event.locals.courseCache = new Map();
+
+	// Cache the session result per request to avoid multiple auth calls
+	let cachedSession: { session: any; user: any } | null = null;
+
 	event.locals.safeGetSession = async () => {
+		// Return cached result if already fetched during this request
+		if (cachedSession !== null) {
+			return cachedSession;
+		}
+
 		const {
 			data: { user },
 			error
 		} = await event.locals.supabase.auth.getUser();
 
 		if (error || !user) {
-			return { session: null, user: null };
+			cachedSession = { session: null, user: null };
+			return cachedSession;
 		}
 
 		// Create a minimal session object with authenticated user
 		// Instead of using the potentially insecure getSession()
-		return {
+		cachedSession = {
 			session: { user },
 			user
 		};
+
+		return cachedSession;
 	};
 
 	return resolve(event, {

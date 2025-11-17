@@ -1,9 +1,23 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page, navigating } from '$app/stores';
 	import CourseAdminSidebar from '$lib/components/CourseAdminSidebar.svelte';
 
 	let { data, children } = $props();
+
+	// Track navigation timing
+	let navStartTime = $state(null);
+
+	$effect(() => {
+		if ($navigating) {
+			navStartTime = Date.now();
+			console.log(`[CLIENT] 🚀 Navigation started: ${$navigating.from?.url.pathname} → ${$navigating.to?.url.pathname}`);
+		} else if (navStartTime) {
+			const duration = Date.now() - navStartTime;
+			console.log(`[CLIENT] ✅ Navigation complete in ${duration}ms\n`);
+			navStartTime = null;
+		}
+	});
 
 	const courseSlug = data.courseSlug;
 	const modules = data.userModules || [];

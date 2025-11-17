@@ -160,9 +160,23 @@ function buildCourseBranding(settings: CourseSettings) {
 async function resolveCourseForUser(userId?: string | null): Promise<CourseRecord> {
 	if (!userId) return null;
 
+	// ✅ OPTIMIZATION: Single query with joins instead of 4 waterfall queries
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
 		.from('courses_enrollments')
-		.select('cohort_id')
+		.select(`
+			cohort_id,
+			courses_cohorts!inner (
+				module_id,
+				courses_modules!inner (
+					course_id,
+					courses!inner (
+						id,
+						name,
+						settings
+					)
+				)
+			)
+		`)
 		.eq('user_profile_id', userId)
 		.order('enrolled_at', { ascending: false })
 		.limit(1)
@@ -173,45 +187,8 @@ async function resolveCourseForUser(userId?: string | null): Promise<CourseRecor
 		return null;
 	}
 
-	if (!enrollment?.cohort_id) return null;
-
-	const { data: cohort, error: cohortError } = await supabaseAdmin
-		.from('courses_cohorts')
-		.select('module_id')
-		.eq('id', enrollment.cohort_id)
-		.maybeSingle();
-
-	if (cohortError) {
-		console.error('Error fetching cohort for course theme resolution:', cohortError);
-		return null;
-	}
-
-	if (!cohort?.module_id) return null;
-
-	const { data: module, error: moduleError } = await supabaseAdmin
-		.from('courses_modules')
-		.select('course_id')
-		.eq('id', cohort.module_id)
-		.maybeSingle();
-
-	if (moduleError) {
-		console.error('Error fetching module for course theme resolution:', moduleError);
-		return null;
-	}
-
-	if (!module?.course_id) return null;
-
-	const { data: course, error: courseError } = await supabaseAdmin
-		.from('courses')
-		.select('id, name, settings')
-		.eq('id', module.course_id)
-		.maybeSingle();
-
-	if (courseError) {
-		console.error('Error fetching course for theme resolution:', courseError);
-		return null;
-	}
-
+	// Extract course from nested join
+	const course = enrollment?.courses_cohorts?.courses_modules?.courses;
 	return course ?? null;
 }
 
@@ -247,6 +224,9 @@ async function resolveFallbackCourse(): Promise<CourseRecord> {
 }
 
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }) => {
+	const startTime = Date.now();
+	console.log(`[ROOT LAYOUT] Loading: ${url.pathname}`);
+
 	const { session, user } = await safeGetSession();
 	const pathname = url.pathname;
 
@@ -266,11 +246,14 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 
 	let userProfile = null;
 	if (session && user) {
+		const profileStart = Date.now();
 		const { data: profile, error } = await supabaseAdmin
 			.from('user_profiles')
 			.select('id, email, full_name, modules')
 			.eq('id', user.id)
 			.single();
+
+		console.log(`[ROOT LAYOUT] User profile loaded in ${Date.now() - profileStart}ms`);
 
 		if (error) {
 			console.error('Error loading user profile:', error);
@@ -283,14 +266,29 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 		throw redirect(303, '/login?next=' + pathname);
 	}
 
-	let courseRecord = await resolveCourseForUser(user?.id);
-	if (!courseRecord) {
-		courseRecord = await resolveFallbackCourse();
+	// Skip expensive course resolution for admin routes
+	// Admin course routes have their own layout that loads course-specific data
+	const isAdminCourseRoute = pathname.startsWith('/admin/courses/');
+	const skipCourseResolution = isAdminCourseRoute;
+
+	let courseRecord = null;
+	if (!skipCourseResolution) {
+		console.log(`[ROOT LAYOUT] Resolving course (not an admin route)...`);
+		const courseStart = Date.now();
+		courseRecord = await resolveCourseForUser(user?.id);
+		if (!courseRecord) {
+			courseRecord = await resolveFallbackCourse();
+		}
+		console.log(`[ROOT LAYOUT] Course resolved in ${Date.now() - courseStart}ms`);
+	} else {
+		console.log(`[ROOT LAYOUT] ⚡ Skipping course resolution (admin route)`);
 	}
 
 	const courseTheme = buildCourseTheme(courseRecord?.settings ?? null);
 	const courseBranding = buildCourseBranding(courseRecord?.settings ?? null);
 	const courseInfo = courseRecord ? { id: courseRecord.id, name: courseRecord.name } : null;
+
+	console.log(`[ROOT LAYOUT] ✅ Complete in ${Date.now() - startTime}ms\n`);
 
 	return {
 		session,
@@ -300,6 +298,12 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 		isCoursesRoute,
 		courseTheme,
 		courseBranding,
-		courseInfo
+		courseInfo,
+		// Pass session info to child layouts to avoid re-authentication
+		_authCache: {
+			session,
+			user,
+			profile: userProfile
+		}
 	};
 };

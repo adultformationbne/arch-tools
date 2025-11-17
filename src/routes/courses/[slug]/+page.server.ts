@@ -13,7 +13,18 @@ export const load: PageServerLoad = async (event) => {
 	// Get user's enrollment to determine cohort and current session
 	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
 		.from('courses_enrollments')
-		.select('cohort_id, current_session')
+		.select(`
+			id,
+			cohort_id,
+			current_session,
+			role,
+			hub_id,
+			full_name,
+			user_profiles!user_profile_id (
+				full_name,
+				email
+			)
+		`)
 		.eq('user_profile_id', user.id)
 		.single();
 
@@ -23,6 +34,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const cohortId = enrollment.cohort_id;
 	const currentSession = enrollment.current_session;
+	const enrollmentId = enrollment.id;
 
 	try {
 		// First get the cohort to find its module_id
@@ -105,15 +117,6 @@ export const load: PageServerLoad = async (event) => {
 			console.error('Error fetching reflection questions:', questionsError);
 			throw questionsError;
 		}
-
-		// Get student's courses_enrollments record for reflection queries
-		const { data: studentRecord } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select('id')
-			.eq('user_profile_id', user.id)
-			.single();
-
-		const enrollmentId = studentRecord?.id;
 
 		// Fetch user's reflection responses
 		let reflectionResponses = [];
@@ -262,16 +265,19 @@ export const load: PageServerLoad = async (event) => {
 				return content.substring(0, maxLength) + '...';
 			};
 
+			// Get student name from the correct path
+			const studentName = response.courses_enrollments?.user_profiles?.full_name || 'Anonymous';
+
 			return {
 				id: response.id,
-				studentName: response.student?.full_name || 'Anonymous',
-				studentInitials: getInitials(response.student?.full_name),
+				studentName,
+				studentInitials: getInitials(studentName),
 				cohortName: cohort.courses_modules?.name || 'Unknown Module',
 				sessionNumber: response.courses_reflection_questions?.session_number || response.session_number || 0,
 				reflectionExcerpt: truncateContent(response.response_text),
 				submittedAt: response.created_at ? formatDate(response.created_at) : 'Unknown',
-				likes: 0, // TODO: Implement likes system
-				comments: 0, // TODO: Implement comments system
+				likes: 0,
+				comments: 0,
 				question: response.courses_reflection_questions?.question_text || '',
 				response: response.response_text || '',
 				status: response.status || 'submitted'
@@ -302,13 +308,22 @@ export const load: PageServerLoad = async (event) => {
 			// Check if reflections are enabled for this session (default to true if no question exists)
 			const reflectionQuestion = questionsBySession[currentSession] || null;
 
+			// Get actual reflection status for current session
+			let reflectionStatus = null;
+			if (reflectionQuestion && enrollmentId) {
+				const existingResponse = reflectionResponses?.find(
+					r => r.session_number === currentSession
+				);
+				reflectionStatus = existingResponse ? existingResponse.status : 'not_started';
+			}
+
 			currentSessionData = {
 				sessionNumber: currentSession,
 				sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
 				sessionOverview: currentSessionInfo?.description || `Session ${currentSession} content and materials`,
 				materials: currentSessionMaterials,
 				reflectionQuestion: reflectionQuestion,
-				reflectionStatus: reflectionQuestion ? "not_started" : null, // Only show status if reflection is enabled
+				reflectionStatus: reflectionStatus,
 				isUpcoming: false
 			};
 		}
@@ -323,6 +338,95 @@ export const load: PageServerLoad = async (event) => {
 			currentSessionData
 		};
 
+		// If user is a hub coordinator, load hub data
+		let hubData = null;
+		if (enrollment.role === 'coordinator' && enrollment.hub_id) {
+			// Get hub details
+			const { data: hub } = await supabaseAdmin
+				.from('courses_hubs')
+				.select('id, name, location')
+				.eq('id', enrollment.hub_id)
+				.single();
+
+			if (hub) {
+				// Get all students in this hub
+				const { data: hubStudents } = await supabaseAdmin
+					.from('courses_enrollments')
+					.select(
+						`
+						id,
+						full_name,
+						email,
+						current_session,
+						user_profile_id,
+						user_profiles!user_profile_id (
+							full_name,
+							email
+						)
+					`
+					)
+					.eq('hub_id', enrollment.hub_id)
+					.eq('cohort_id', enrollment.cohort_id)
+					.eq('role', 'student')
+					.order('full_name');
+
+				// For each student, get their reflection and attendance status for current session
+				const studentsWithStatus = await Promise.all(
+					(hubStudents || []).map(async (student) => {
+						const studentName =
+							student.user_profiles?.full_name || student.full_name || student.email;
+
+						// Get reflection status for current session
+						let reflectionStatus = 'not_started';
+						if (cohort.current_session > 0) {
+							const { data: reflection } = await supabaseAdmin
+								.from('courses_reflection_responses')
+								.select('status')
+								.eq('enrollment_id', student.id)
+								.eq('session_number', cohort.current_session)
+								.single();
+
+							if (reflection) {
+								reflectionStatus = reflection.status;
+							}
+						}
+
+						// Get attendance for current session
+						let attendanceStatus = null;
+						if (cohort.current_session > 0) {
+							const { data: attendance } = await supabaseAdmin
+								.from('courses_attendance')
+								.select('present')
+								.eq('enrollment_id', student.id)
+								.eq('session_number', cohort.current_session)
+								.single();
+
+							if (attendance) {
+								attendanceStatus = attendance.present ? 'present' : 'absent';
+							}
+						}
+
+						return {
+							id: student.id,
+							name: studentName,
+							email: student.email,
+							currentSession: student.current_session,
+							reflectionStatus,
+							attendanceStatus
+						};
+					})
+				);
+
+				hubData = {
+					hubName: hub.name,
+					hubLocation: hub.location,
+					coordinatorName: enrollment.user_profiles?.full_name || enrollment.full_name,
+					currentSession: cohort.current_session,
+					students: studentsWithStatus
+				};
+			}
+		}
+
 		return {
 			materials: materials || [],
 			materialsBySession,
@@ -333,39 +437,36 @@ export const load: PageServerLoad = async (event) => {
 			pastReflections,
 			publicReflections: processedPublicReflections,
 			currentUserId,
-			courseSlug
+			courseSlug,
+			hubData
 		};
 
-	} catch (error) {
-		console.error('Error in dashboard load function:', error);
-		console.error('Dashboard load error:', error);
+	} catch (err) {
+		console.error('Error in dashboard load function:', err);
 		return {
 			materials: [],
 			materialsBySession: {},
 			currentSession,
-			courseData: getDefaultCourseData(currentSession),
+			courseData: {
+				title: "Course Dashboard",
+				currentSessionData: {
+					sessionNumber: currentSession,
+					sessionTitle: `Session ${currentSession}`,
+					sessionOverview: "Failed to load course data. Please try refreshing the page.",
+					materials: [],
+					reflectionQuestion: null,
+					reflectionStatus: null,
+					isUpcoming: false
+				}
+			},
 			questionsBySession: {},
-			sessionOverviews: {},
+			sessionsByNumber: {},
 			pastReflections: [],
 			publicReflections: [],
 			currentUserId,
 			courseSlug,
+			hubData: null,
 			error: 'Failed to load course data'
 		};
 	}
-
-	console.log('Dashboard load successful');
 };
-
-function getDefaultCourseData(currentSession: number) {
-	return {
-		title: "Foundations of Faith",
-		currentSessionData: {
-			sessionNumber: currentSession,
-			sessionOverview: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim",
-			materials: [],
-			reflectionQuestion: { id: null, text: "What is the reason you look to God for answers over cultural sources and making prayer central to your life?" },
-			reflectionStatus: "not_started"
-		}
-	};
-}

@@ -51,8 +51,43 @@ export async function requireAuth(
 
 /**
  * Get user profile with modules and assigned courses (no auth check)
+ * ✅ OPTIMIZATION: Uses request-scoped cache to avoid redundant queries
  */
-export async function getUserProfile(supabase: SupabaseClient, userId: string) {
+export async function getUserProfile(event: RequestEvent, userId: string): Promise<any | null>;
+export async function getUserProfile(supabase: SupabaseClient, userId: string): Promise<any | null>;
+export async function getUserProfile(eventOrSupabase: RequestEvent | SupabaseClient, userId: string) {
+	// Determine if we have a RequestEvent (with caching) or just SupabaseClient
+	const isRequestEvent = 'locals' in eventOrSupabase && 'cookies' in eventOrSupabase;
+
+	// Check cache if we have RequestEvent
+	if (isRequestEvent) {
+		const event = eventOrSupabase as RequestEvent;
+		if (event.locals.authCache?.has(userId)) {
+			return event.locals.authCache.get(userId);
+		}
+
+		// Query database
+		const { data: userProfile, error: profileError } = await event.locals.supabase
+			.from('user_profiles')
+			.select('id, email, full_name, display_name, modules, assigned_course_ids')
+			.eq('id', userId)
+			.single();
+
+		if (profileError) {
+			console.error('Error fetching user profile:', profileError);
+			return null;
+		}
+
+		// Cache for this request
+		if (event.locals.authCache) {
+			event.locals.authCache.set(userId, userProfile);
+		}
+
+		return userProfile;
+	}
+
+	// Fallback for SupabaseClient (no caching)
+	const supabase = eventOrSupabase as SupabaseClient;
 	const { data: userProfile, error: profileError } = await supabase
 		.from('user_profiles')
 		.select('id, email, full_name, display_name, modules, assigned_course_ids')
@@ -125,7 +160,7 @@ export async function requireModule(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-	const profile = await getUserProfile(event.locals.supabase, user.id);
+	const profile = await getUserProfile(event, user.id);
 
 	if (!hasModule(profile?.modules, moduleName)) {
 		if (options.mode === 'redirect') {
@@ -147,7 +182,7 @@ export async function requireAnyModule(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-	const profile = await getUserProfile(event.locals.supabase, user.id);
+	const profile = await getUserProfile(event, user.id);
 
 	if (!hasAnyModule(profile?.modules ?? null, moduleNames)) {
 		if (options.mode === 'redirect') {
@@ -169,7 +204,7 @@ export async function requireModuleLevel(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-	const profile = await getUserProfile(event.locals.supabase, user.id);
+	const profile = await getUserProfile(event, user.id);
 
 	if (!hasModuleLevel(profile?.modules, moduleLevel)) {
 		if (options.mode === 'redirect') {
@@ -239,7 +274,7 @@ export async function requireCourseRole(
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
 	const { user } = await requireAuth(event, options);
-	const profile = await getUserProfile(event.locals.supabase, user.id);
+	const profile = await getUserProfile(event, user.id);
 
 	// Check enrollment
 	const enrollment = await getUserCourseEnrollment(
@@ -274,40 +309,45 @@ export async function requireCourseAdmin(
 	courseSlug: string,
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
+	const authStart = Date.now();
 	const { user } = await requireAuth(event, options);
-	const profile = await getUserProfile(event.locals.supabase, user.id);
+	console.log(`  [AUTH] requireAuth: ${Date.now() - authStart}ms`);
+
+	const profileStart = Date.now();
+	const wasCached = event.locals.authCache?.has(user.id);
+	const profile = await getUserProfile(event, user.id);
+	console.log(`  [AUTH] getUserProfile: ${Date.now() - profileStart}ms (cached: ${wasCached ? 'yes' : 'no'})`);
 
 	// Check for courses.admin module (platform-wide access)
 	if (hasModuleLevel(profile?.modules, 'courses.admin')) {
+		console.log(`  [AUTH] ✅ Authorized via courses.admin module`);
 		return { user, profile, viaModule: 'courses.admin' };
 	}
 
 	// Check for courses.manager module + assignment to this specific course
 	if (hasModuleLevel(profile?.modules, 'courses.manager')) {
 		// Get the course ID from slug
+		const courseStart = Date.now();
 		const { data: course } = await event.locals.supabase
 			.from('courses')
 			.select('id')
 			.eq('slug', courseSlug)
 			.single();
+		console.log(`  [AUTH] Course lookup: ${Date.now() - courseStart}ms`);
 
 		if (course) {
-			// Get user's full profile with assigned_course_ids
-			const { data: fullProfile } = await event.locals.supabase
-				.from('user_profiles')
-				.select('id, email, full_name, display_name, modules, assigned_course_ids')
-				.eq('id', user.id)
-				.single();
-
-			// Check if this course is in their assigned courses
-			const assignedCourseIds = fullProfile?.assigned_course_ids || [];
+			// FIXED: Use profile from line 278 instead of re-querying
+			// assigned_course_ids should already be in profile if needed
+			const assignedCourseIds = profile?.assigned_course_ids || [];
 			if (Array.isArray(assignedCourseIds) && assignedCourseIds.includes(course.id)) {
-				return { user, profile: fullProfile, viaModule: 'courses.manager' };
+				console.log(`  [AUTH] ✅ Authorized via courses.manager module`);
+				return { user, profile, viaModule: 'courses.manager' };
 			}
 		}
 	}
 
 	// Not authorized
+	console.log(`  [AUTH] ❌ Not authorized`);
 	if (options.mode === 'redirect') {
 		throw redirect(303, options.redirectTo || '/my-courses');
 	}

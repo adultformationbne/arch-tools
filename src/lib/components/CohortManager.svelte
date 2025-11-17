@@ -472,7 +472,7 @@
 										</div>
 									</div>
 								</td>
-								<td>{student.hubs?.name || '-'}</td>
+								<td>{student.courses_hubs?.name || '-'}</td>
 								<td>
 									{#if editingSession && editingSession.id === student.id}
 										<div class="session-edit">
@@ -503,6 +503,9 @@
 										<div
 											class="session-display"
 											onclick={() => startEditSession(student)}
+											onkeydown={(e) => e.key === 'Enter' && startEditSession(student)}
+											role="button"
+											tabindex="0"
 											title="Click to edit {student.full_name}'s current session"
 										>
 											{#if student.current_session === 0}
@@ -601,6 +604,9 @@
 				class="dropdown-menu-fixed"
 				style="top: {dropdownPosition.top}px; right: {dropdownPosition.right}px;"
 				onclick={(e) => e.stopPropagation()}
+				onkeydown={(e) => e.key === 'Escape' && (openDropdown = null)}
+				role="menu"
+				tabindex="-1"
 			>
 				{#if student.canEdit}
 					<button
@@ -722,51 +728,6 @@
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		gap: 20px;
-	}
-
-	.form-group {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-
-	.form-group label {
-		font-weight: 600;
-		font-size: 0.875rem;
-		color: var(--course-accent-darkest);
-	}
-
-	.section-edit .form-group label {
-		color: rgba(255, 255, 255, 0.8);
-	}
-
-	.form-group input,
-	.form-group select {
-		padding: 10px 12px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 8px;
-		font-size: 0.9375rem;
-		background: rgba(255, 255, 255, 0.1);
-		color: white;
-	}
-
-	.section .form-group input,
-	.section .form-group select {
-		border: 1px solid var(--course-surface);
-		background: white;
-		color: var(--course-accent-darkest);
-	}
-
-	.form-group input:focus,
-	.form-group select:focus {
-		outline: none;
-		border-color: var(--course-accent-light);
-		background: rgba(255, 255, 255, 0.15);
-	}
-
-	.section .form-group input:focus,
-	.section .form-group select:focus {
-		background: white;
 	}
 
 	.readonly-field {

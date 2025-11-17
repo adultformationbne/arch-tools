@@ -94,6 +94,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		materials: materials || [],
 		materialsBySession,
-		currentSession
+		currentSession,
+		courseName: cohort.courses_modules?.name || 'Course Materials'
 	};
 };

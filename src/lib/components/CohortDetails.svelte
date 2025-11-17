@@ -17,10 +17,10 @@
 	let showDropdown = $state(false);
 	let cohortForm = $state({
 		name: cohort.name,
-		moduleId: cohort.module_id || cohort.moduleId,
-		startDate: cohort.start_date || cohort.startDate,
-		endDate: cohort.end_date || cohort.endDate,
-		currentSession: cohort.current_session || cohort.currentSession || 1
+		moduleId: cohort.module_id,
+		startDate: cohort.start_date,
+		endDate: cohort.end_date,
+		currentSession: cohort.current_session || 1
 	});
 
 	// Reset form when cohort changes
@@ -28,10 +28,10 @@
 		if (cohort) {
 			cohortForm = {
 				name: cohort.name,
-				moduleId: cohort.module_id || cohort.moduleId,
-				startDate: cohort.start_date || cohort.startDate,
-				endDate: cohort.end_date || cohort.endDate,
-				currentSession: cohort.current_session || cohort.currentSession || 1
+				moduleId: cohort.module_id,
+				startDate: cohort.start_date,
+				endDate: cohort.end_date,
+				currentSession: cohort.current_session || 1
 			};
 		}
 	});
@@ -61,7 +61,7 @@
 	}
 
 	function openSessionModal() {
-		const currentSession = cohort.current_session || cohort.currentSession || 1;
+		const currentSession = cohort.current_session || 1;
 		if (currentSession >= 8) {
 			toastError('Already at final session');
 			return;
@@ -70,7 +70,7 @@
 	}
 
 	async function confirmAdvanceSession() {
-		const currentSession = cohort.current_session || cohort.currentSession || 1;
+		const currentSession = cohort.current_session || 1;
 		const nextSession = Math.min(currentSession + 1, 8);
 
 		updatingSession = true;
@@ -120,33 +120,33 @@
 				<div class="detail-item">
 					<BookOpen size={18} />
 					<span class="detail-label">Module</span>
-					<span class="detail-value">{cohort.module || `Module ${cohort.module_id || cohort.moduleId}`}</span>
+					<span class="detail-value">{cohort.courses_modules?.name || `Module ${cohort.module_id}`}</span>
 				</div>
 				<div class="detail-item">
 					<Calendar size={18} />
 					<span class="detail-label">Start Date</span>
-					<span class="detail-value">{formatDate(cohort.start_date || cohort.startDate)}</span>
+					<span class="detail-value">{formatDate(cohort.start_date)}</span>
 				</div>
 				<div class="detail-item">
 					<Calendar size={18} />
 					<span class="detail-label">End Date</span>
-					<span class="detail-value">{formatDate(cohort.end_date || cohort.endDate)}</span>
+					<span class="detail-value">{formatDate(cohort.end_date)}</span>
 				</div>
 				<div class="detail-item">
 					<BookOpen size={18} />
 					<span class="detail-label">Current Session</span>
-					<span class="detail-value">Session {cohort.current_session || cohort.currentSession || 1} of 8</span>
+					<span class="detail-value">Session {cohort.current_session || 1} of 8</span>
 				</div>
 			</div>
 		</div>
 		<div class="details-actions">
-			{#if (cohort.current_session || cohort.currentSession || 1) < 8}
+			{#if (cohort.current_session || 1) < 8}
 				<button
 					onclick={openSessionModal}
 					class="btn-icon-glassy primary"
 				>
 					<ChevronRight size={18} />
-					<span>Set Current Session to {(cohort.current_session || cohort.currentSession || 1) + 1}</span>
+					<span>Set Current Session to {(cohort.current_session || 1) + 1}</span>
 				</button>
 			{/if}
 
@@ -197,13 +197,13 @@
 
 		<div class="settings-grid">
 			<div class="form-group">
-				<label>Cohort Name</label>
-				<input type="text" bind:value={cohortForm.name} />
+				<label for="cohort-name">Cohort Name</label>
+				<input id="cohort-name" type="text" bind:value={cohortForm.name} />
 			</div>
 
 			<div class="form-group">
-				<label>Module</label>
-				<select bind:value={cohortForm.moduleId}>
+				<label for="cohort-module">Module</label>
+				<select id="cohort-module" bind:value={cohortForm.moduleId}>
 					{#each modules as module}
 						<option value={module.id}>{module.name}</option>
 					{/each}
@@ -211,18 +211,18 @@
 			</div>
 
 			<div class="form-group">
-				<label>Start Date</label>
-				<input type="date" bind:value={cohortForm.startDate} />
+				<label for="cohort-start-date">Start Date</label>
+				<input id="cohort-start-date" type="date" bind:value={cohortForm.startDate} />
 			</div>
 
 			<div class="form-group">
-				<label>End Date</label>
-				<input type="date" bind:value={cohortForm.endDate} />
+				<label for="cohort-end-date">End Date</label>
+				<input id="cohort-end-date" type="date" bind:value={cohortForm.endDate} />
 			</div>
 
 			<div class="form-group">
-				<label>Current Session</label>
-				<select bind:value={cohortForm.currentSession}>
+				<label for="cohort-current-session">Current Session</label>
+				<select id="cohort-current-session" bind:value={cohortForm.currentSession}>
 					<option value={1}>Session 1</option>
 					<option value={2}>Session 2</option>
 					<option value={3}>Session 3</option>
@@ -243,17 +243,17 @@
 	title="Advance Cohort Session"
 	loading={updatingSession}
 	loadingMessage="Advancing Session..."
-	confirmText="Advance to Session {(cohort.current_session || cohort.currentSession || 1) + 1}"
+	confirmText="Advance to Session {(cohort.current_session || 1) + 1}"
 	confirmIcon={ChevronRight}
 	onConfirm={confirmAdvanceSession}
 	onCancel={() => showSessionModal = false}
 >
 	{#snippet children()}
 		<p>
-			You are about to set the current session for <strong>{cohort.name}</strong> to Session {(cohort.current_session || cohort.currentSession || 1) + 1}.
+			You are about to set the current session for <strong>{cohort.name}</strong> to Session {(cohort.current_session || 1) + 1}.
 		</p>
 		<p class="modal-note">
-			<strong>Note:</strong> Participants will not be able to see Session {(cohort.current_session || cohort.currentSession || 1) + 1} materials until you manually advance them to this session. Setting the cohort session only controls what content is available—individual participant progression must be managed separately.
+			<strong>Note:</strong> Participants will not be able to see Session {(cohort.current_session || 1) + 1} materials until you manually advance them to this session. Setting the cohort session only controls what content is available—individual participant progression must be managed separately.
 		</p>
 	{/snippet}
 </ConfirmationModal>
@@ -417,17 +417,6 @@
 	.btn-icon-glassy.success:hover {
 		background: rgba(16, 185, 129, 0.25);
 		border-color: rgba(16, 185, 129, 0.5);
-	}
-
-	.btn-icon-glassy.danger {
-		background: rgba(239, 68, 68, 0.15);
-		border-color: rgba(239, 68, 68, 0.3);
-		color: #fca5a5;
-	}
-
-	.btn-icon-glassy.danger:hover {
-		background: rgba(239, 68, 68, 0.25);
-		border-color: rgba(239, 68, 68, 0.5);
 	}
 
 	/* Edit Form Styles */

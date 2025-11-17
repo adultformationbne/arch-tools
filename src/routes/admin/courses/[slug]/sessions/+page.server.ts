@@ -4,97 +4,79 @@ import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	const startTime = Date.now();
 	const courseSlug = event.params.slug;
+	console.log(`[SESSIONS PAGE] Loading...`);
 
-	// Require course admin authentication
-	await requireCourseAdmin(event, courseSlug);
+	// Auth is already done in layout - no need to check again!
+	// await requireCourseAdmin(event, courseSlug); // REMOVED - redundant
+
+	// Get layout data (modules already loaded, auth already checked)
+	const parentStart = Date.now();
+	const layoutData = await event.parent();
+	console.log(`[SESSIONS PAGE] ⚡ Parent data (cached): ${Date.now() - parentStart}ms`);
+
+	const modules = layoutData?.modules || [];
+	const courseInfo = layoutData?.courseInfo || {};
+	const moduleIds = modules?.map(m => m.id) || [];
 
 	try {
-		// Get the course ID from slug
-		const { data: course } = await supabaseAdmin
-			.from('courses')
-			.select('id, name')
-			.eq('slug', courseSlug)
-			.single();
-
-		if (!course) {
-			throw error(404, 'Course not found');
-		}
-
-		// Get modules for this course
-		const { data: modules, error: modulesError } = await supabaseAdmin
-			.from('courses_modules')
-			.select('*')
-			.eq('course_id', course.id)
-			.order('order_number', { ascending: true });
-
-		if (modulesError) {
-			console.error('Error fetching modules:', modulesError);
-			throw error(500, 'Failed to load modules');
-		}
-
-		// Get sessions for each module
-		const moduleIds = modules?.map(m => m.id) || [];
+		// Only fetch page-specific data (sessions, materials, reflection questions)
 		let sessions = [];
+		let materials = [];
+		let reflectionQuestions = [];
 
 		if (moduleIds.length > 0) {
+			// First, fetch sessions
+			const sessionsStart = Date.now();
 			const { data: sessionsData, error: sessionsError } = await supabaseAdmin
 				.from('courses_sessions')
 				.select('*')
 				.in('module_id', moduleIds)
-				.order('session_number', { ascending: true });
+				.order('session_number', { ascending: true});
+			console.log(`[SESSIONS PAGE] Sessions query: ${Date.now() - sessionsStart}ms`);
 
 			if (sessionsError) {
 				console.error('Error fetching sessions:', sessionsError);
 			} else {
 				sessions = sessionsData || [];
 			}
-		}
 
-		// Get materials for each session
-		const sessionIds = sessions.map(s => s.id);
-		let materials = [];
+			// Then fetch materials and questions in parallel using session IDs
+			const sessionIds = sessions.map(s => s.id);
 
-		if (sessionIds.length > 0) {
-			const { data: materialsData, error: materialsError } = await supabaseAdmin
-				.from('courses_materials')
-				.select('*')
-				.in('session_id', sessionIds)
-				.order('display_order', { ascending: true });
+			if (sessionIds.length > 0) {
+				const parallelStart = Date.now();
+				const [materialsResult, questionsResult] = await Promise.all([
+					supabaseAdmin
+						.from('courses_materials')
+						.select('*')
+						.in('session_id', sessionIds)
+						.order('display_order', { ascending: true }),
+					supabaseAdmin
+						.from('courses_reflection_questions')
+						.select('*')
+						.in('session_id', sessionIds)
+				]);
+				console.log(`[SESSIONS PAGE] Materials + Questions (parallel): ${Date.now() - parallelStart}ms`);
 
-			if (materialsError) {
-				console.error('Error fetching materials:', materialsError);
-			} else {
-				materials = materialsData || [];
+				materials = materialsResult.data || [];
+				reflectionQuestions = questionsResult.data || [];
 			}
 		}
 
-		// Get reflection questions for each session
-		let reflectionQuestions = [];
-
-		if (sessionIds.length > 0) {
-			const { data: questionsData, error: questionsError } = await supabaseAdmin
-				.from('courses_reflection_questions')
-				.select('*')
-				.in('session_id', sessionIds);
-
-			if (questionsError) {
-				console.error('Error fetching reflection questions:', questionsError);
-			} else {
-				reflectionQuestions = questionsData || [];
-			}
-		}
+		console.log(`[SESSIONS PAGE] ✅ Complete in ${Date.now() - startTime}ms (${sessions.length} sessions, ${materials.length} materials)\n`);
 
 		return {
-			course,
-			modules: modules || [],
-			sessions: sessions || [],
-			materials: materials || [],
-			reflectionQuestions: reflectionQuestions || []
+			course: courseInfo, // Pass course info from layout
+			modules,
+			sessions,
+			materials,
+			reflectionQuestions
 		};
 
 	} catch (err) {
-		console.error('Error in modules page load:', err);
-		throw error(500, 'Failed to load modules data');
+		console.error('Error in sessions page load:', err);
+		throw error(500, 'Failed to load sessions data');
 	}
 };

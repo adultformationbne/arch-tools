@@ -288,10 +288,10 @@
 						</div>
 
 						<!-- Content Preview -->
-						<div class="mb-4">
-							<p class="text-gray-800 leading-relaxed">
-								{reflection.content.length > 300 ? reflection.content.substring(0, 300) + '...' : reflection.content}
-							</p>
+						<div class="mb-4 prose prose-sm max-w-none">
+							<div class="text-gray-800 leading-relaxed">
+								{@html reflection.content.length > 300 ? reflection.content.substring(0, 300) + '...' : reflection.content}
+							</div>
 						</div>
 
 						<!-- Visibility & Actions -->
@@ -373,8 +373,10 @@
 				<!-- Student Reflection -->
 				<div class="mb-6">
 					<h3 class="font-semibold text-gray-800 mb-3">Student Reflection:</h3>
-					<div class="bg-gray-50 rounded-lg p-6">
-						<p class="text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedReflection.content}</p>
+					<div class="bg-gray-50 rounded-lg p-6 prose prose-sm max-w-none">
+						<div class="text-gray-800 leading-relaxed">
+							{@html selectedReflection.content}
+						</div>
 						<div class="mt-4 text-sm text-gray-500">
 							{getWordCount(selectedReflection.content)} words • Submitted {formatDate(selectedReflection.submittedAt)}
 						</div>

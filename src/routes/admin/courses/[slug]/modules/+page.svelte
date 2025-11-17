@@ -1,12 +1,17 @@
 <script>
 	import { Plus, BookOpen, Calendar, Users, Edit, Trash2, MoreVertical } from 'lucide-svelte';
+	import { navigating } from '$app/stores';
 	import ModuleModal from '$lib/components/ModuleModal.svelte';
+	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
 	let modules = $state(data.modules || []);
+
+	// Show loading state during navigation
+	let isLoading = $derived($navigating !== null);
 
 	// Modal state
 	let showModuleModal = $state(false);
@@ -129,8 +134,12 @@
 			</button>
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-			{#each modules as module}
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200" class:opacity-60={isLoading && modules.length > 0} class:pointer-events-none={isLoading && modules.length > 0}>
+			{#if isLoading && modules.length === 0}
+				<!-- Show skeleton loaders during initial load -->
+				<SkeletonLoader type="card" count={3} height="200px" />
+			{:else}
+				{#each modules as module}
 				<div
 					class="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow"
 					style="border-color: var(--course-surface);"
@@ -231,7 +240,8 @@
 						</div>
 					{/if}
 				</div>
-			{/each}
+				{/each}
+			{/if}
 		</div>
 	{/if}
 </div>

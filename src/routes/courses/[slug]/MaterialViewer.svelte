@@ -6,6 +6,7 @@
 		isVisible = $bindable(false),
 		currentSession = 8,
 		materialsBySession = {},
+		courseName = 'Course Materials',
 		onClose = () => {}
 	} = $props();
 
@@ -66,7 +67,7 @@
 					<!-- Sidebar Header -->
 					<div class="p-6 border-b border-gray-200">
 						<h3 class="text-lg font-bold text-gray-800">Course Materials</h3>
-						<p class="text-sm text-gray-600 mt-1">All sessions • Foundations of Faith</p>
+						<p class="text-sm text-gray-600 mt-1">All sessions • {courseName}</p>
 					</div>
 
 					<!-- Document Tree -->

@@ -35,8 +35,8 @@
 </script>
 
 {#if show}
-	<div class="modal-overlay" use:portal onclick={handleOverlayClick}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" use:portal onclick={handleOverlayClick} onkeydown={(e) => e.key === 'Enter' && !loading && onCancel()} role="presentation">
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && !loading && onCancel()} role="dialog" aria-modal="true" aria-labelledby="confirmation-title" tabindex="-1">
 			{#if loading}
 				<div class="modal-loading">
 					<Loader2 size={48} class="spinner" />
@@ -44,7 +44,7 @@
 				</div>
 			{:else}
 				<div class="modal-header">
-					<h3>{title}</h3>
+					<h3 id="confirmation-title">{title}</h3>
 					<button onclick={onCancel} class="modal-close">
 						<X size={20} />
 					</button>
@@ -58,7 +58,8 @@
 					</button>
 					<button onclick={onConfirm} class="btn-primary">
 						{#if confirmIcon}
-							<svelte:component this={confirmIcon} size={18} />
+							{@const Icon = confirmIcon}
+							<Icon size={18} />
 						{/if}
 						<span>{confirmText}</span>
 					</button>

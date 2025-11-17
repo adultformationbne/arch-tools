@@ -13,12 +13,12 @@
 	let selectedStatus = $state('all');
 
 	// Filtered students
-	let filteredStudents = $derived(() => {
-		return students.filter(student => {
+	let filteredStudents = $derived(
+		students.filter(student => {
 			// Search filter
 			const matchesSearch = !searchQuery ||
-				student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				student.email?.toLowerCase().includes(searchQuery.toLowerCase());
+				student.user_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				student.user_profile?.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
 			// Hub filter
 			const matchesHub = selectedHub === 'all' || student.hub_id === selectedHub;
@@ -27,15 +27,14 @@
 			const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
 
 			return matchesSearch && matchesHub && matchesStatus;
-		});
-	});
+		})
+	);
 
 	// Stats
-	let stats = $derived(() => {
-		const total = students.length;
-		const active = students.filter(s => s.status === 'active').length;
-		const pending = students.filter(s => s.status === 'pending' || s.status === 'invited').length;
-		return { total, active, pending };
+	let stats = $derived({
+		total: students.length,
+		active: students.filter(s => s.status === 'active').length,
+		pending: students.filter(s => s.status === 'pending' || s.status === 'invited').length
 	});
 
 	async function handleUpdateHub(studentId, newHubId) {
@@ -206,8 +205,8 @@
 							<!-- Student Info -->
 							<td class="px-6 py-4">
 								<div>
-									<div class="font-medium text-gray-900">{student.full_name}</div>
-									<div class="text-sm text-gray-500">{student.email}</div>
+									<div class="font-medium text-gray-900">{student.user_profile?.full_name || 'Unknown'}</div>
+									<div class="text-sm text-gray-500">{student.user_profile?.email || 'No email'}</div>
 								</div>
 							</td>
 

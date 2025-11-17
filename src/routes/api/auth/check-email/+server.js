@@ -53,6 +53,7 @@ export async function POST({ request }) {
 		 */
 
 		// Priority 1: Check metadata flag (most reliable - set when password is actually created)
+		// Note: Must explicitly be true, not just truthy (could be false for pending users)
 		const hasPasswordSetupFlag = fullUser.user_metadata?.password_setup_completed === true;
 
 		// Priority 2: For existing users (backward compatibility) - if they've signed in and don't have the flag,

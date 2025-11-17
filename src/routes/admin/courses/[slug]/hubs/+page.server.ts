@@ -1,25 +1,22 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const courseSlug = event.params.slug;
-
-	// Require course admin authentication
-	await requireCourseAdmin(event, courseSlug);
+	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
 
 	try {
-		// Get the course ID from slug
-		const { data: course } = await supabaseAdmin
-			.from('courses')
-			.select('id, name')
-			.eq('slug', courseSlug)
-			.single();
+		// Get layout data (course, modules, cohorts already loaded)
+		const layoutData = await event.parent();
+		const courseInfo = layoutData?.courseInfo;
+		const modules = layoutData?.modules || [];
+		const cohorts = layoutData?.cohorts || [];
 
-		if (!course) {
+		if (!courseInfo) {
 			throw error(404, 'Course not found');
 		}
+
+		const course = { id: courseInfo.id, name: courseInfo.name };
 
 		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
@@ -40,44 +37,25 @@ export const load: PageServerLoad = async (event) => {
 			throw error(500, 'Failed to load hubs');
 		}
 
-		// Get enrollment counts for each hub
+		// ✅ OPTIMIZATION: Use cached cohort IDs from layout
 		const hubIds = hubs?.map(h => h.id) || [];
+		const cohortIds = cohorts.map(c => c.id);
 		let enrollmentCounts = {};
 
-		if (hubIds.length > 0) {
-			// Get module IDs for this course
-			const { data: modules } = await supabaseAdmin
-				.from('courses_modules')
-				.select('id')
-				.eq('course_id', course.id);
+		if (hubIds.length > 0 && cohortIds.length > 0) {
+			// Count enrollments per hub for this course
+			const { data: enrollments } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('hub_id')
+				.in('cohort_id', cohortIds)
+				.in('hub_id', hubIds);
 
-			const moduleIds = modules?.map(m => m.id) || [];
-
-			if (moduleIds.length > 0) {
-				// Get cohort IDs for this course's modules
-				const { data: cohorts } = await supabaseAdmin
-					.from('courses_cohorts')
-					.select('id')
-					.in('module_id', moduleIds);
-
-				const cohortIds = cohorts?.map(c => c.id) || [];
-
-				if (cohortIds.length > 0) {
-					// Count enrollments per hub for this course
-					const { data: enrollments } = await supabaseAdmin
-						.from('courses_enrollments')
-						.select('hub_id')
-						.in('cohort_id', cohortIds)
-						.in('hub_id', hubIds);
-
-					// Build count map
-					enrollments?.forEach(e => {
-						if (e.hub_id) {
-							enrollmentCounts[e.hub_id] = (enrollmentCounts[e.hub_id] || 0) + 1;
-						}
-					});
+			// Build count map
+			enrollments?.forEach(e => {
+				if (e.hub_id) {
+					enrollmentCounts[e.hub_id] = (enrollmentCounts[e.hub_id] || 0) + 1;
 				}
-			}
+			});
 		}
 
 		// Add enrollment counts to hubs

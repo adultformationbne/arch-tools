@@ -1,6 +1,6 @@
 # Courses Platform Documentation
 
-**Last Updated:** October 30, 2025
+**Last Updated:** November 17, 2025
 **Status:** Production Implementation
 
 ---
@@ -157,18 +157,23 @@ Course materials for each session within a module.
 ```sql
 CREATE TABLE courses_materials (
   id UUID PRIMARY KEY,
-  module_id UUID NOT NULL REFERENCES courses_modules(id) ON DELETE CASCADE,
-  session_number INTEGER NOT NULL,       -- Which session (1-8, etc.)
+  session_id UUID NOT NULL REFERENCES courses_sessions(id) ON DELETE CASCADE,
 
   -- Material details
-  type TEXT NOT NULL,                    -- 'video', 'document', 'link', 'native'
+  type TEXT NOT NULL,                    -- 'video', 'link', 'native'
   title TEXT NOT NULL,
   content TEXT NOT NULL,                 -- URL or native HTML content
   display_order INTEGER DEFAULT 0,
 
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+**Material Types:**
+- `video` - YouTube videos (auto-fetches title, shows preview in edit mode)
+- `link` - External resources (auto-detects file type: PDF, Word, Excel, images, etc.)
+- `native` - Rich HTML content created in platform editor
 
 #### `courses_reflections`
 Reflection prompts for each session.
@@ -215,16 +220,41 @@ Each session within a module contains two main components:
 Stored in `courses_materials` table with reference to `session_id`:
 
 **Material Types:**
-- **Video** - YouTube/Vimeo embed URLs
-- **Document** - PDF links or downloadable files
-- **Link** - External resources (articles, websites)
-- **Native** - Rich HTML content edited directly in the platform
-- **Image** - Image resources
+- **Video** (`type: 'video'`)
+  - YouTube videos only
+  - Auto-fetches video title from YouTube oEmbed API
+  - Shows live preview in edit mode
+  - Embeds player for students
+
+- **Link** (`type: 'link'`)
+  - Any external URL (documents, websites, files, images)
+  - Auto-detects file type from URL extension
+  - Shows appropriate icon:
+    - 📄 PDF documents (.pdf)
+    - 📝 Word documents (.doc, .docx)
+    - 📊 Spreadsheets (.xls, .xlsx, .csv)
+    - 📽️ Presentations (.ppt, .pptx)
+    - 📦 Archives (.zip, .rar, .7z, .tar, .gz)
+    - 🖼️ Images (.jpg, .png, .gif, .svg, .webp, .bmp)
+    - 🔗 Generic link (all other URLs)
+  - Displays file type label (e.g., "PDF Document", "Spreadsheet")
+
+- **Native** (`type: 'native'`)
+  - Rich HTML content created using the platform's WYSIWYG editor
+  - Rendered directly on the page
+
+**Upload Documents:**
+- Use the "Upload Document" material type in the form
+- Uploads to Supabase Storage (`materials` bucket)
+- Automatically creates a `link` type material with the storage URL
+- File type is auto-detected from the uploaded file extension
 
 **Properties:**
 - Multiple materials per session (ordered by `display_order`)
 - Each material has a title and content (URL or HTML)
 - Materials are session-specific and reusable across cohorts
+- YouTube videos automatically populate title on URL paste
+- File type icons update dynamically based on URL
 
 ### Reflection Question (One per session)
 Stored in `courses_reflection_questions` table:
@@ -242,11 +272,12 @@ Stored in `courses_sessions` table:
 **Example Session Structure:**
 ```
 Session 1: Faith and Reason
+├─ Overview: "In this session, we explore the relationship between faith and reason..."
 ├─ Materials:
-│   ├─ Video: "Introduction to Faith" (YouTube)
-│   ├─ Document: "Reading Guide.pdf" (PDF link)
-│   ├─ Native: Welcome message (HTML)
-│   └─ Link: "Additional Resources" (external)
+│   ├─ Video: "Introduction to Faith" (YouTube) [auto-titled, with preview]
+│   ├─ Link: "Reading Guide.pdf" (PDF) [📄 PDF Document icon]
+│   ├─ Native: Welcome message (rich HTML)
+│   └─ Link: "Additional Resources" (external) [🔗 Link icon]
 └─ Reflection: "How do you define faith in your own words?"
 ```
 
@@ -476,15 +507,16 @@ Navigate to `/courses/[slug]/admin/courses`:
 
 ### 3. Add Materials & Reflections
 
-Navigate to `/courses/[slug]/admin/modules`:
-1. Select module
-2. Select session (1-8, etc.)
+Navigate to `/courses/[slug]/admin/sessions`:
+1. Select module from dropdown
+2. Select session (Pre-Start, 1-8, etc.)
 3. Add materials:
-   - Videos (YouTube/Vimeo URLs)
-   - Documents (PDF links)
-   - Links (external resources)
-   - Native content (HTML editor)
-4. Add reflection prompts
+   - **Videos** - Paste YouTube URL, title auto-fetches, preview shows inline
+   - **Links** - Any external URL, file type auto-detected (PDFs, docs, images, etc.)
+   - **Native Content** - Rich text editor for custom HTML content
+   - **Upload Document** - Upload files to storage, creates link material automatically
+4. Add reflection question (one per session)
+5. Add session overview/description
 
 ### 4. Create Cohorts
 
@@ -556,12 +588,20 @@ From cohort dashboard:
 - **Participants list** - Full enrollment roster with progression tracking
 - **Bulk operations** - Advance students, manage attendance
 
-### Module & Materials Editor (`/courses/[slug]/admin/modules`)
-- Select module
-- Navigate between sessions (1-8, etc.)
-- Add/edit/delete materials
-- Edit reflection prompts
-- Preview student view
+### Sessions Editor (`/courses/[slug]/admin/sessions`)
+- **Module selector dropdown** - Switch between modules
+- **Session navigation** - Pre-Start + Sessions 1-8 (or custom count)
+- **Materials editor**:
+  - Add/edit/delete materials
+  - YouTube videos: Auto-fetch title, live preview
+  - Links: Auto-detect file type, show appropriate icon
+  - Upload documents: Inline upload box when "Upload Document" selected
+  - Native content: Rich text editor
+  - Drag to reorder materials
+- **Reflection editor**: One question per session
+- **Session overview**: Description/introduction for each session
+- **Live save status** indicator
+- Changes save automatically to database
 
 ### Reflection Marking (`/courses/[slug]/admin/reflections`)
 - Queue of ungraded reflections
@@ -759,4 +799,50 @@ Components automatically use course theme:
 
 ---
 
-*Last updated: October 30, 2025*
+## 🎥 Material Editor Features
+
+### YouTube Video Integration
+When adding a YouTube video material:
+1. **Paste YouTube URL** - Supports all formats:
+   - `youtube.com/watch?v=...`
+   - `youtu.be/...`
+   - `youtube.com/embed/...`
+   - `youtube.com/shorts/...`
+2. **Auto-fetch title** - Automatically fetches video title from YouTube after 0.5s
+3. **Live preview** - Shows embedded video player while editing
+4. **Clean display** - Shows "YouTube Video" label instead of ugly URL in materials list
+
+### File Type Detection
+When adding a link material:
+- System automatically detects file type from URL extension
+- Shows appropriate icon and label:
+  - PDFs → 📄 "PDF Document"
+  - Word docs → 📝 "Word Document"
+  - Spreadsheets → 📊 "Spreadsheet"
+  - Presentations → 📽️ "Presentation"
+  - Archives → 📦 "Archive"
+  - Images → 🖼️ "Image"
+  - Other → 🔗 "Link"
+- No manual categorization needed
+
+### Document Upload
+Upload files directly to Supabase Storage:
+1. Select "Upload Document" as material type
+2. **Inline upload box** appears in the form (not a modal)
+3. Drag & drop or browse for files
+4. Accepts: `.pdf`, `.doc`, `.docx`, `.txt`, `.md`
+5. Automatically creates link material with:
+   - Storage URL
+   - File name as title (extension removed)
+   - File size in description
+   - Appropriate file type icon
+
+### Material Organization
+- **Drag to reorder** - Use ↑↓ buttons to change display order
+- **Instant preview** - YouTube videos show preview in edit mode only
+- **Edit in place** - Click edit button to modify any material
+- **Type indicators** - Color-coded icons for each material type
+
+---
+
+*Last updated: November 17, 2025*
