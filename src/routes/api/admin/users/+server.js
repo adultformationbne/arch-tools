@@ -281,31 +281,60 @@ export async function PUT(event) {
 			throw error(400, 'Action is required');
 		}
 
-		// Handle resend invitation (sends OTP to user's email)
+		// Handle resend invitation (sends custom welcome email)
 		if (action === 'resend_invitation') {
-			// Get user email from auth
+			// Get user profile and auth data
 			const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
 			if (getUserError || !authUser) {
 				throw error(400, 'User not found');
 			}
 
-			// Send OTP code to user's email
-			const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
-				email: authUser.user.email,
-				options: {
-					shouldCreateUser: false
-				}
-			});
+			// Get user profile for modules
+			const { data: userProfile, error: profileError } = await supabaseAdmin
+				.from('user_profiles')
+				.select('full_name, modules')
+				.eq('id', userId)
+				.single();
 
-			if (otpError) {
-				throw error(400, otpError.message || 'Failed to send OTP');
+			if (profileError) {
+				console.error('Error fetching user profile:', profileError);
+				throw error(400, 'User profile not found');
 			}
 
-			return json({
-				success: true,
-				message: 'Login instructions sent to user\'s email'
-			});
+			// Send custom welcome email
+			try {
+				const siteUrl = PUBLIC_SITE_URL || 'https://app.archdiocesanministries.org.au';
+				const { subject, html } = generateInvitationEmail({
+					recipientName: userProfile.full_name,
+					recipientEmail: authUser.user.email,
+					siteUrl: siteUrl,
+					modules: userProfile.modules || []
+				});
+
+				const result = await sendEmail({
+					to: authUser.user.email,
+					subject,
+					html,
+					emailType: 'user_invitation',
+					referenceId: userId,
+					metadata: { resent_by: user.email, action: 'resend_invitation' },
+					resendApiKey: RESEND_API_KEY,
+					supabase: supabaseAdmin
+				});
+
+				if (!result.success) {
+					throw error(500, result.error || 'Failed to send welcome email');
+				}
+
+				return json({
+					success: true,
+					message: 'Welcome email sent to user\'s email'
+				});
+			} catch (emailError) {
+				console.error('Error sending welcome email:', emailError);
+				throw error(500, emailError.message || 'Failed to send welcome email');
+			}
 		}
 
 		// Handle update modules
