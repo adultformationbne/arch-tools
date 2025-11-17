@@ -1,11 +1,14 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { X, ChevronRight, ChevronLeft, Check } from 'lucide-svelte';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { modules = [], show = false, courseSlug, onClose = () => {} } = $props();
-
-	const dispatch = createEventDispatcher();
+	let {
+		modules = [],
+		show = false,
+		courseSlug,
+		onClose = () => {},
+		onComplete = () => {}
+	} = $props();
 
 	let currentStep = $state(1);
 	let isLoading = $state(false);
@@ -113,7 +116,7 @@
 			}
 
 			// Close modal and refresh
-			dispatch('complete', { cohortId: createdCohortId });
+			onComplete({ cohortId: createdCohortId });
 			handleClose();
 		} catch (error) {
 			console.error('Error finishing setup:', error);

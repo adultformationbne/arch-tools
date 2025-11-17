@@ -277,7 +277,17 @@ const { user, enrollment } = await requireCourseRole(event, courseSlug, ['admin'
 - `student` - Enrolled student in this course
 - `coordinator` - Hub coordinator for this course
 
-### 2. API Requests & Toast Integration
+### 2. Dropdown Menus
+
+**IMPORTANT:** For ANY dropdown menu that might be clipped by `overflow: hidden` containers (tables, cards, modals), use the dropdown utility powered by Floating UI.
+
+```typescript
+import { createDropdown } from '$lib/utils/dropdown.js';
+```
+
+See `/src/lib/utils/dropdown-usage-examples.md` for complete usage guide with Svelte 5 examples.
+
+### 3. API Requests & Toast Integration
 
 All API requests use `apiRequest()` for automatic toast notifications:
 
@@ -317,7 +327,7 @@ await handler.executeStep(async () => { /* ... */ });
 handler.complete();
 ```
 
-### 3. Form Validation
+### 4. Form Validation
 
 Composable validator system:
 
@@ -344,7 +354,7 @@ if (!result.isValid) {
 - `matches(compareValue, fieldName)` - Value equality
 - Custom functions can be created
 
-### 4. Reactive State (Svelte 5 Runes)
+### 5. Reactive State (Svelte 5 Runes)
 
 Modern Svelte 5 uses runes for reactivity. **Key changes from Svelte 4:**
 
@@ -391,7 +401,7 @@ $effect.pre(() => {  // Run before DOM updates
 });
 ```
 
-### 5. Supabase Client Usage
+### 6. Supabase Client Usage
 
 **Server-side (always use admin client):**
 ```typescript
@@ -418,7 +428,7 @@ export async function load({ locals: { supabase, safeGetSession } }) {
 }
 ```
 
-### 6. Component Structure
+### 7. Component Structure
 
 Components follow Svelte 5 runes syntax:
 

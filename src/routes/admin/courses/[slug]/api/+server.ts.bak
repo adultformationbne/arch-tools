@@ -963,6 +963,9 @@ async function advanceStudents(data: any, actorName: string) {
 	});
 }
 
+async function sendInvitations(userIds: string[]) {
+	if (!userIds || userIds.length === 0) {
+
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 

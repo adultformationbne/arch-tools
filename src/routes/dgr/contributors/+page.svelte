@@ -88,7 +88,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-7xl p-6">
+<div class="mx-auto max-w-7xl p-4 sm:p-6">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold text-gray-900">Contributors</h1>
 		<p class="mt-1 text-sm text-gray-600">

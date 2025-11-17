@@ -1,11 +1,14 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import RichTextDisplay from './RichTextDisplay.svelte';
 	import { History, RotateCcw, User, Calendar, X } from 'lucide-svelte';
 
-	const dispatch = createEventDispatcher();
-
-	let { isOpen = false, blockId = null, currentContent = '' } = $props();
+	let {
+		isOpen = false,
+		blockId = null,
+		currentContent = '',
+		onClose = () => {},
+		onRestore = () => {}
+	} = $props();
 
 	let versions = $state([]);
 	let loading = $state(false);
@@ -43,11 +46,11 @@
 	function closeModal(e) {
 		console.log('Close modal clicked');
 		if (e) e.stopPropagation();
-		dispatch('close');
+		onClose();
 	}
 
 	function restoreVersion(version) {
-		dispatch('restore', {
+		onRestore({
 			blockId,
 			content: version.content,
 			tag: version.tag,

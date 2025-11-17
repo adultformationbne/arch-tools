@@ -1,530 +1,130 @@
 # Authentication & Authorization System
 
-**Last Updated:** 2025-11-07
+> **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, checklogs) have been removed.
+
+**Last Updated:** 2025-11-13
 **Status:** ✅ Production Ready
-**System Type:** Invite-Only with Multi-Factor Authentication
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [System Architecture](#system-architecture)
-3. [Authentication Flows](#authentication-flows)
-4. [Authorization System](#authorization-system)
-5. [User Experience](#user-experience)
-6. [Admin Experience](#admin-experience)
-7. [API Reference](#api-reference)
-8. [Security](#security)
-9. [Implementation Details](#implementation-details)
-10. [Testing](#testing)
+**System Type:** Invite-Only with Email + OTP
 
 ---
 
 ## Overview
 
-### What We Built
+This is an **invite-only authentication system** where:
+1. Admins pre-create user accounts
+2. Users login with their email
+3. System sends 6-digit OTP to verify email ownership
+4. New users set a password; existing users can use password or OTP
 
-An **invite-only authentication system** designed for organizations with locked-down corporate email environments (specifically Microsoft Outlook that blocks/pre-clicks magic links).
-
-### Key Features
-
-- ✅ **Email-first authentication** - Single email field, smart decision tree
-- ✅ **Multi-path verification** - OTP codes + shareable invitation codes
-- ✅ **Password fallback** - Existing users can use passwords with OTP fallback
-- ✅ **Rate limiting** - Prevents brute force attacks on invitation codes
-- ✅ **Security hardened** - No email harvesting, proper expiration, single-use tokens
-- ✅ **Module-based permissions** - Granular access control via user modules
-
-### Design Principles
-
-1. **Invite-Only** - No public signup, all users must be invited by administrators
-2. **Email as Identity** - Email is the primary identifier
-3. **Progressive Disclosure** - Show users only what they need, when they need it
-4. **Graceful Degradation** - Multiple paths to authentication if one fails
-5. **Security by Default** - Rate limiting, expiration, single-use tokens
+**No invitation codes required** - users just need their email address.
 
 ---
 
-## System Architecture
+## Core Flow
 
-### Technology Stack
-
-- **Supabase Auth** - PostgreSQL + Row Level Security + Built-in auth
-- **OTP Delivery** - 6-digit codes via email (60-minute expiry)
-- **Invitation Codes** - ABC-123 format (30-day expiry)
-- **Sessions** - HTTP-only cookies with SameSite=Lax
-- **Rate Limiting** - In-memory (5 requests/min per IP)
-
-### Database Schema
-
-#### `pending_invitations` Table
-
-```sql
-CREATE TABLE pending_invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code TEXT UNIQUE NOT NULL,              -- ABC-123 format
-  email TEXT NOT NULL,
-  modules TEXT[] NOT NULL DEFAULT '{}',
-  user_id UUID REFERENCES auth.users(id), -- Nullable until user created
-  status TEXT NOT NULL DEFAULT 'pending', -- pending, accepted, expired, cancelled
-
-  created_by UUID REFERENCES user_profiles(id) NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days'),
-  accepted_at TIMESTAMPTZ,
-
-  last_sent_at TIMESTAMPTZ DEFAULT NOW(),
-  send_count INT DEFAULT 1,
-
-  CONSTRAINT valid_code CHECK (code ~ '^[A-Z0-9]{3}-[A-Z0-9]{3}$'),
-  CONSTRAINT valid_status CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled'))
-);
-
-CREATE INDEX idx_pending_invitations_code ON pending_invitations(code);
-CREATE INDEX idx_pending_invitations_email ON pending_invitations(email);
-CREATE INDEX idx_pending_invitations_status ON pending_invitations(status);
-CREATE INDEX idx_pending_invitations_user_id ON pending_invitations(user_id);
-```
-
-#### RLS Policies
-
-```sql
--- Public can view by code (for redemption)
-CREATE POLICY "Anyone can view invitation by code"
-  ON pending_invitations FOR SELECT
-  USING (status = 'pending' AND expires_at > NOW());
-
--- Admins can manage all invitations
-CREATE POLICY "Users module can view all invitations"
-  ON pending_invitations FOR SELECT
-  USING (auth.uid() IN (
-    SELECT id FROM user_profiles WHERE 'users' = ANY(modules)
-  ));
-
-CREATE POLICY "Users module can insert invitations"
-  ON pending_invitations FOR INSERT
-  WITH CHECK (auth.uid() IN (
-    SELECT id FROM user_profiles WHERE 'users' = ANY(modules)
-  ));
-
-CREATE POLICY "Users module can update invitations"
-  ON pending_invitations FOR UPDATE
-  USING (auth.uid() IN (
-    SELECT id FROM user_profiles WHERE 'users' = ANY(modules)
-  ));
-```
-
-### Code Generation
-
-Uses PostgreSQL function for uniqueness:
-
-```sql
-CREATE OR REPLACE FUNCTION generate_invite_code()
-RETURNS TEXT AS $$
-DECLARE
-  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  code TEXT;
-BEGIN
-  LOOP
-    code := '';
-    -- Generate 3 characters
-    FOR i IN 1..3 LOOP
-      code := code || substr(chars, floor(random() * length(chars) + 1)::int, 1);
-    END LOOP;
-    code := code || '-';
-    -- Generate 3 more characters
-    FOR i IN 1..3 LOOP
-      code := code || substr(chars, floor(random() * length(chars) + 1)::int, 1);
-    END LOOP;
-
-    -- Check if code exists
-    EXIT WHEN NOT EXISTS (SELECT 1 FROM pending_invitations WHERE pending_invitations.code = code);
-  END LOOP;
-
-  RETURN code;
-END;
-$$ LANGUAGE plpgsql VOLATILE;
-```
-
-**Search Space:** 36^6 = ~2.1 billion combinations (~31 bits entropy)
-
----
-
-## Authentication Flows
-
-### Flow 1: New User Invitation (Primary)
+### For New Users (Pending)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Admin Invites User                                       │
-├─────────────────────────────────────────────────────────────┤
-│ Admin → /users → "Add User" → Enter email + modules         │
-│ ↓                                                            │
-│ POST /api/admin/users                                       │
-│   • Creates auth user (email_confirm: false)                │
-│   • Creates user_profile with modules                       │
-│   • Generates invitation code (ABC-123)                     │
-│   • Sends OTP to email                                      │
-│ ↓                                                            │
-│ Admin sees modal with:                                      │
-│   • Invitation code: ABC-123                                │
-│   • Shareable URL                                           │
-│   • Copy buttons                                            │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ 2. User Receives Email                                      │
-├─────────────────────────────────────────────────────────────┤
-│ Email contains:                                             │
-│   • 6-digit OTP code (e.g., 123456)                        │
-│   • Link to /login                                          │
-│   • 60-minute expiration notice                            │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ 3. User Authentication (Path A: Email OTP)                 │
-├─────────────────────────────────────────────────────────────┤
-│ User → /login                                               │
-│ ↓                                                            │
-│ Enter email → Click "Continue"                              │
-│ ↓                                                            │
-│ POST /api/auth/check-email                                  │
-│   • User not found → Check for invitation                   │
-│   • Invitation found → Send OTP                             │
-│ ↓                                                            │
-│ Show OTP input field                                        │
-│ User enters 6-digit code                                    │
-│ ↓                                                            │
-│ POST supabase.auth.verifyOtp()                             │
-│   • Verifies OTP                                            │
-│   • Creates session (HTTP-only cookie)                      │
-│   • Marks invitation as accepted                            │
-│ ↓                                                            │
-│ Redirect to /login/setup-password                          │
-│ User creates password                                       │
-│ ↓                                                            │
-│ Redirect to dashboard (based on modules)                    │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ 3. User Authentication (Path B: Invitation Code)           │
-├─────────────────────────────────────────────────────────────┤
-│ User receives ABC-123 code (via Teams, phone, etc.)        │
-│ ↓                                                            │
-│ User → /login/invite                                        │
-│ ↓                                                            │
-│ Enter code ABC-123 → Click "Continue"                       │
-│ ↓                                                            │
-│ POST /api/auth/redeem-invite (rate limited!)               │
-│   • Validates code exists & not expired                     │
-│   • Creates/finds auth user                                 │
-│   • Sends OTP to email                                      │
-│ ↓                                                            │
-│ Redirect to /login?mode=otp&from=invite                    │
-│ User enters email + OTP code                                │
-│ ↓                                                            │
-│ POST supabase.auth.verifyOtp()                             │
-│ Marks invitation as accepted                                │
-│ ↓                                                            │
-│ Redirect to /login/setup-password                          │
-│ User creates password                                       │
-│ ↓                                                            │
-│ Redirect to dashboard                                       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Flow 2: Existing User Login
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ User → /login                                               │
-├─────────────────────────────────────────────────────────────┤
-│ Enter email → Click "Continue"                              │
-│ ↓                                                            │
-│ POST /api/auth/check-email                                  │
-│   • User exists with password? → Show password field        │
-│   • User exists without password? → Send OTP, show OTP field│
-│ ↓                                                            │
-│ Case A: Has Password                                        │
-│   User enters password → Sign in                            │
-│   • Success → Dashboard                                     │
-│   • Failed → Auto-send OTP → Show OTP field                 │
-│ ↓                                                            │
-│ Case B: No Password (Pending User)                         │
-│   OTP sent automatically                                    │
-│   User enters OTP → Verify → Dashboard                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Flow 3: Password Reset (Admin)
-
-```
-Admin → /users → Select user → Reset password icon
+Admin creates user via /users
   ↓
-POST /api/admin/reset-password
-  • Updates user password via admin API
+User visits /login
   ↓
-User can now login with new password
+User enters email → clicks "Continue"
+  ↓
+System checks: User exists? Has password?
+  → User exists, no password → Send OTP
+  ↓
+User enters 6-digit OTP from email
+  ↓
+User redirected to /login/setup-password
+  ↓
+User creates password
+  ↓
+Redirect to dashboard based on modules
+```
+
+### For Existing Users
+
+```
+User visits /login
+  ↓
+User enters email → clicks "Continue"
+  ↓
+System checks: User has password?
+  → Yes → Show password field
+  ↓
+User enters password → clicks "Sign in"
+  ↓
+Success → Redirect to dashboard
+
+OR (if password forgotten/failed):
+  ↓
+User clicks "Send me a login code instead"
+  ↓
+OTP sent to email
+  ↓
+User enters OTP → Redirect to dashboard
 ```
 
 ---
 
-## Authorization System
+## Security Model
 
-### Module-Based Permissions
+### 1. Pre-Invited Accounts Only
+- Users **must** be pre-created by admins
+- No self-registration
+- Admin controls who has access
 
-Located in `$lib/server/auth.ts` - single unified auth library.
+### 2. Email Verification
+- OTP sent to email proves ownership
+- 6-digit code, 60-minute expiration (configurable to 10-30 min for higher security)
+- **OTP Send Rate Limiting:**
+  - Application-level: 5 requests/min per IP (in-memory)
+  - Supabase-level: Built-in verification rate limiting
+  - Current implementation accepts multiple OTP sends per legitimate email check
+  - **Future consideration:** Add per-email send limit (e.g., 3 sends per 15 min) to prevent mis-click spam
 
-#### Platform Modules
+### 3. Password Detection
+- Uses `encrypted_password` field to determine if password exists
+- Pending users (no password) → OTP flow
+- Active users (with password) → Password flow
 
-Stored in `user_profiles.modules` (TEXT[] array):
+### 4. Database Security
+- All user and authentication-related data is protected by Row Level Security (RLS)
+- No public SELECT policies on user tables
+- All authentication queries go through server endpoints
+- Email addresses are never exposed in client-side queries or API responses
 
-| Module | Description | Access |
-|--------|-------------|--------|
-| `users` | User management, invitations, permissions | `/users` |
-| `editor` | Content editor access | `/editor` |
-| `dgr` | Daily Gospel Reflections management | `/dgr` |
-| `courses.participant` | Access enrolled courses | `/my-courses` |
-| `courses.manager` | Manage assigned courses | `/courses` (as admin) |
-| `courses.admin` | Manage all courses platform-wide | All courses |
-
-#### Course-Level Roles
-
-Stored in `courses_enrollments.role` per enrollment:
-
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| `student` | Regular course participant | View materials, submit reflections |
-| `coordinator` | Hub coordinator | View student progress, coordinate hubs |
-
-**Note:** Course managers and admins are NOT enrolled - they access via platform modules.
-
-### Authorization Functions
-
-#### Response Modes
-
-```typescript
-type AuthOptions = {
-  mode?: 'throw_error' | 'redirect';  // Default: 'throw_error'
-  redirectTo?: string;                 // Default: '/my-courses'
-};
-```
-
-#### Platform-Level Functions
-
-```typescript
-// Require specific module (any level)
-await requireModule(event, 'users');
-await requireModule(event, 'users', { mode: 'redirect', redirectTo: '/profile' });
-
-// Require exact module.level
-await requireModuleLevel(event, 'courses.admin');
-
-// Require any of multiple modules
-await requireAnyModule(event, ['courses.manager', 'courses.admin']);
-```
-
-#### Course-Level Functions
-
-```typescript
-// Require course admin access
-// Allows: courses.admin OR (courses.manager + enrolled as admin)
-const { user, profile, enrollment, viaModule } =
-  await requireCourseAdmin(event, courseSlug);
-
-// Require any enrollment in course
-const { user, enrollment } =
-  await requireCourseAccess(event, courseSlug);
-
-// Require specific course role
-const { user, enrollment } =
-  await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
-```
+### 5. Rate Limiting
+- In-memory per-IP rate limiting: 5 req/min
+- **Note:** This is per-node and resets on restart
+- For production at scale, consider Redis/Postgres-based limiting
 
 ---
 
-## User Experience
+## Database Schema
 
-### `/login` Page - Email-First Interface
+### `user_profiles`
+- `id` (UUID) - Matches auth.users.id
+- `email` (TEXT) - User email
+- `modules` (TEXT[]) - Permission modules
+- `assigned_course_ids` (JSONB) - For courses.manager role
 
-#### Step 1: Email Entry
-```
-┌──────────────────────────────────────┐
-│  Archdiocesan Ministry Tools          │
-│  Sign in to your account              │
-│                                       │
-│  ┌─────────────────────────────────┐ │
-│  │ your@email.com                  │ │
-│  └─────────────────────────────────┘ │
-│                                       │
-│  [Continue]                          │
-│                                       │
-│  Have an invitation code?            │
-│  Enter code instead →                │
-└──────────────────────────────────────┘
-```
+### `auth.users` (Supabase Auth)
+- `email` - User email
+- `encrypted_password` - NULL if no password set yet (pending user)
+- Managed by Supabase Auth
 
-#### Step 2: Password (If User Has One)
-```
-┌──────────────────────────────────────┐
-│  Archdiocesan Ministry Tools          │
-│  Enter your password                  │
-│                                       │
-│  Signing in as user@email.com        │
-│                                       │
-│  ┌─────────────────────────────────┐ │
-│  │ ••••••••                        │ │
-│  └─────────────────────────────────┘ │
-│                                       │
-│  [Sign in]                           │
-│                                       │
-│  ← Use a different email             │
-└──────────────────────────────────────┘
-```
-
-#### Step 2: OTP (If User Doesn't Have Password)
-```
-┌──────────────────────────────────────┐
-│  Archdiocesan Ministry Tools          │
-│  Enter verification code              │
-│                                       │
-│  Code sent to user@email.com         │
-│                                       │
-│  ┌─────────────────────────────────┐ │
-│  │      1 2 3 4 5 6                │ │
-│  └─────────────────────────────────┘ │
-│                                       │
-│  [Verify Code]                       │
-│                                       │
-│  Resend code    ← Change email       │
-└──────────────────────────────────────┘
-```
-
-### `/login/invite` Page - Invitation Code Entry
-
-```
-┌──────────────────────────────────────┐
-│  Redeem Invitation Code              │
-│                                       │
-│  Enter the code you received:        │
-│  ┌─────────────────────────────────┐ │
-│  │      A B C - 1 2 3              │ │
-│  └─────────────────────────────────┘ │
-│  Format: ABC-123 (6 characters)      │
-│                                       │
-│  [Continue]                          │
-│                                       │
-│  ← Back to login                     │
-└──────────────────────────────────────┘
-```
-
-Auto-formatting as user types: `ABC123` → `ABC-123`
-
-### `/login/setup-password` Page
-
-```
-┌──────────────────────────────────────┐
-│  Welcome to Arch Tools                │
-│  Please create a password to secure  │
-│  your account                         │
-│                                       │
-│  user@email.com                      │
-│                                       │
-│  New Password                         │
-│  ┌─────────────────────────────────┐ │
-│  │ ••••••••                        │ │
-│  └─────────────────────────────────┘ │
-│                                       │
-│  Confirm Password                     │
-│  ┌─────────────────────────────────┐ │
-│  │ ••••••••                        │ │
-│  └─────────────────────────────────┘ │
-│                                       │
-│  [Set Password]                      │
-└──────────────────────────────────────┘
-```
+**Note:** All users (pending and active) are stored in the same tables. Status is implicit:
+- Pending user: `encrypted_password` is NULL
+- Active user: `encrypted_password` exists
 
 ---
 
-## Admin Experience
+## API Endpoints
 
-### `/users` Page - User Management
-
-#### Create User Modal
-
-After clicking "Add User":
-
-```
-┌──────────────────────────────────────────┐
-│ Invite New User                   [X]     │
-├──────────────────────────────────────────┤
-│ A 6-digit OTP code will be sent to       │
-│ their email. You'll also receive a       │
-│ shareable invitation code (ABC-123).     │
-│                                          │
-│ Email Address *                          │
-│ ┌──────────────────────────────────────┐ │
-│ │ user@example.com                     │ │
-│ └──────────────────────────────────────┘ │
-│ They'll receive a 6-digit code to       │
-│ verify their email and set a password   │
-│                                          │
-│ Full Name                                │
-│ ┌──────────────────────────────────────┐ │
-│ │ John Doe                             │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ Module Access                            │
-│ ┌──────────────────────────────────────┐ │
-│ │ ☐ User Management                    │ │
-│ │ ☐ Daily Gospel Reflections           │ │
-│ │ ☐ Content Editor                     │ │
-│ │ ☑ Course Participant                 │ │
-│ │ ☐ Course Manager                     │ │
-│ │ ☐ Course Admin                       │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│         [Cancel]  [Send Invitation]      │
-└──────────────────────────────────────────┘
-```
-
-#### Success Modal (After Creation)
-
-```
-┌──────────────────────────────────────────┐
-│ User Invited Successfully!        [X]     │
-├──────────────────────────────────────────┤
-│ A 6-digit OTP code has been sent to     │
-│ their email. Share this invitation code  │
-│ with them as a backup:                   │
-│                                          │
-│ Invitation Code                          │
-│ ┌──────────────────────────────────────┐ │
-│ │ ABC-123              [Copy Code]     │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ Shareable Link                           │
-│ ┌──────────────────────────────────────┐ │
-│ │ https://app.../login/invite?code=... │ │
-│ │                      [Copy Link]     │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ Note: The code expires in 30 days.      │
-│ The user can also login with the OTP    │
-│ code sent to their email.                │
-│                                          │
-│                    [Done]                │
-└──────────────────────────────────────────┘
-```
-
----
-
-## API Reference
-
-### POST `/api/auth/check-email`
-
-Check if user exists and determine next authentication step.
+### `POST /api/auth/check-email`
+**Purpose:** Determine authentication path for email
 
 **Request:**
 ```json
@@ -533,7 +133,7 @@ Check if user exists and determine next authentication step.
 }
 ```
 
-**Response:**
+**Response (existing user with password):**
 ```json
 {
   "exists": true,
@@ -543,493 +143,227 @@ Check if user exists and determine next authentication step.
 }
 ```
 
-**Possible `nextStep` values:**
-- `password` - User exists with password
-- `otp` - User exists without password OR has valid invitation
-- `error` - User doesn't exist and no invitation found
-
-### POST `/api/auth/redeem-invite`
-
-Redeem an invitation code and send OTP.
-
-**Rate Limited:** 5 requests per minute per IP
-
-**Request:**
+**Response (pending user, no password):**
 ```json
 {
-  "code": "ABC-123"
+  "exists": true,
+  "nextStep": "otp",
+  "hasPassword": false,
+  "message": "A verification code will be sent to your email"
 }
 ```
 
-**Response:**
+**Response (user doesn't exist):**
 ```json
 {
-  "success": true,
-  "message": "A 6-digit verification code has been sent to your email"
-}
-```
-
-**Errors:**
-- `400` - Invalid code format
-- `404` - Code not found or expired
-- `429` - Rate limit exceeded
-
-### POST `/api/auth/complete-invitation`
-
-Mark invitation as accepted after OTP verification.
-
-**Request:**
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "found": true
-}
-```
-
-### POST `/api/admin/users`
-
-Create new user invitation.
-
-**Requires:** `users` module
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "full_name": "John Doe",
-  "modules": ["courses.participant"]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "modules": ["courses.participant"]
-  },
-  "invitation": {
-    "code": "ABC-123",
-    "url": "https://app.../login/invite?code=ABC-123",
-    "expires_at": "2025-12-07T..."
-  }
+  "exists": false,
+  "nextStep": "error",
+  "message": "No account found. Please contact your administrator."
 }
 ```
 
 ---
 
-## Security
+## Module-Based Authorization
 
-### Rate Limiting
+### Platform Modules (in `user_profiles.modules`)
 
-**Implementation:** In-memory store (`src/lib/server/rate-limit.js`)
+| Module | Access |
+|--------|--------|
+| `users` | User management, invitations, permissions |
+| `editor` | Content editor access |
+| `dgr` | Daily Gospel Reflections management |
+| `courses.participant` | Access enrolled courses via /my-courses |
+| `courses.manager` | Manage assigned courses (via assigned_course_ids) |
+| `courses.admin` | Manage ALL courses platform-wide |
 
-**Limits:**
-- Invitation code validation: 5 requests/min per IP
-- OTP verification: Built into Supabase (automatic)
-
-**Attack Surface:**
-- Code enumeration: 36^6 combinations = ~825 years at 5/min
-- Without rate limiting: ~13 years at 5/sec (why we need it!)
-
-### Code Security
-
-**Format:** ABC-123 (6 alphanumeric characters)
-**Entropy:** ~31 bits (2.1 billion combinations)
-**Expiration:** 30 days
-**Usage:** Single-use (marked as accepted)
-**Storage:** Plaintext (acceptable for time-limited, non-auth tokens)
-
-**Security Measures:**
-- ✅ Rate limiting prevents brute force
-- ✅ Short expiration limits attack window
-- ✅ Single-use prevents replay
-- ✅ Admin can cancel anytime
-- ✅ Email never exposed in API responses
-
-### OTP Security
-
-**Format:** 6 digits (000000-999999)
-**Entropy:** ~20 bits
-**Expiration:** 60 minutes
-**Delivery:** Email only
-**Rate Limiting:** Built into Supabase
-
-### Session Security
-
-**Storage:** HTTP-only cookies
-**Flags:** Secure (prod), SameSite=Lax
-**Duration:** 7 days (Supabase default)
-**Refresh:** Automatic via Supabase SSR
-
-### Email Privacy
-
-**Critical:** Email addresses are NEVER exposed in API responses to prevent email harvesting attacks.
-
-```javascript
-// ❌ BAD
-return json({ email: invitation.email });
-
-// ✅ GOOD
-return json({ message: 'Code sent to your email' });
-```
-
-### Opportunistic Cleanup
-
-Old invitations are automatically deleted when creating new ones:
-- Expired invitations (past 30 days)
-- Accepted invitations (>30 days old)
-- Cancelled invitations (>30 days old)
-
-No cron job needed - piggybacks on normal operations.
-
----
-
-## Implementation Details
-
-### File Structure
-
-```
-src/
-├── routes/
-│   ├── login/
-│   │   ├── +page.svelte              # Main login (email-first)
-│   │   ├── invite/
-│   │   │   └── +page.svelte          # Invitation code entry
-│   │   ├── setup-password/
-│   │   │   ├── +page.svelte          # Password setup
-│   │   │   └── +page.server.ts       # Auth guard
-│   │   ├── confirm/
-│   │   │   └── +server.ts            # Email link handler
-│   │   ├── callback/
-│   │   │   └── +server.ts            # PKCE callback
-│   │   └── logout/
-│   │       └── +page.server.ts       # Logout handler
-│   │
-│   ├── api/
-│   │   ├── auth/
-│   │   │   ├── check-email/+server.js    # Email check endpoint
-│   │   │   ├── redeem-invite/+server.js  # Code redemption (rate limited)
-│   │   │   └── complete-invitation/+server.js
-│   │   └── admin/
-│   │       ├── users/+server.js           # User creation
-│   │       └── reset-password/+server.js  # Password reset
-│   │
-│   └── users/
-│       └── +page.svelte              # Admin user management
-│
-├── lib/
-│   ├── server/
-│   │   ├── auth.ts                   # ✨ Unified auth library
-│   │   ├── invite-codes.js           # Invitation utilities
-│   │   ├── rate-limit.js             # Rate limiting
-│   │   └── supabase.js               # Admin client
-│   │
-│   └── components/
-│       └── AppNavigation.svelte      # Nav with logout button
-```
-
-### Key Functions
-
-#### `$lib/server/auth.ts`
+### Auth Helper Functions (`$lib/server/auth.ts`)
 
 ```typescript
 // Platform-level
-export async function requireModule(
-  event: RequestEvent,
-  module: string,
-  options?: AuthOptions
-): Promise<{ user: User; profile: UserProfile }>;
-
-export async function requireModuleLevel(
-  event: RequestEvent,
-  moduleLevel: string,
-  options?: AuthOptions
-): Promise<{ user: User; profile: UserProfile }>;
-
-export async function requireAnyModule(
-  event: RequestEvent,
-  modules: string[],
-  options?: AuthOptions
-): Promise<{ user: User; profile: UserProfile }>;
+await requireModule(event, 'users');
+await requireModuleLevel(event, 'courses.admin');
+await requireAnyModule(event, ['courses.manager', 'courses.admin']);
 
 // Course-level
-export async function requireCourseAdmin(
-  event: RequestEvent,
-  courseSlug: string,
-  options?: AuthOptions
-): Promise<{
-  user: User;
-  profile: UserProfile;
-  enrollment: Enrollment | null;
-  viaModule: boolean;
-}>;
-
-export async function requireCourseAccess(
-  event: RequestEvent,
-  courseSlug: string,
-  options?: AuthOptions
-): Promise<{ user: User; enrollment: Enrollment }>;
-
-export async function requireCourseRole(
-  event: RequestEvent,
-  courseSlug: string,
-  roles: string[],
-  options?: AuthOptions
-): Promise<{ user: User; enrollment: Enrollment }>;
+await requireCourseAdmin(event, courseSlug);
+await requireCourseAccess(event, courseSlug);
+await requireCourseRole(event, courseSlug, ['admin', 'coordinator']);
 ```
 
-#### `$lib/server/invite-codes.js`
+**Response Modes:**
+- `mode: 'throw_error'` - Returns HTTP 401/403 (for API routes)
+- `mode: 'redirect'` - Returns 303 redirect (for page routes)
 
-```javascript
-export async function generateInviteCode(): Promise<string>;
+---
 
-export async function createInvitation({
-  email,
-  modules,
-  createdBy,
-  userId
-}): Promise<Invitation>;
+## User Experience
 
-export async function redeemInviteCode(code: string): Promise<Invitation>;
+### `/login` Page - Email-First Interface
 
-export async function markInvitationAccepted(invitationId: string): Promise<Invitation>;
-
-export async function resendInvitation(invitationId: string): Promise<Invitation>;
-
-export async function getPendingInvitations(filters?: object): Promise<Invitation[]>;
-
-export async function cancelInvitation(invitationId: string): Promise<Invitation>;
-
-export function getInvitationUrl(code: string, siteUrl: string): string;
+**Step 1: Email**
+```
+Enter email → Continue
 ```
 
-#### `$lib/server/rate-limit.js`
+**Step 2a: Password (if user has one)**
+```
+Enter password → Sign in
+OR
+Send me a login code instead (button)
+```
 
-```javascript
-export function checkRateLimit(
-  identifier: string,
-  maxAttempts: number = 5,
-  windowMs: number = 60000
-): void;
+**Step 2b: OTP (if pending or code requested)**
+```
+Enter 6-digit code → Verify
+```
 
-export function resetRateLimit(identifier: string): void;
-
-export function getAttemptCount(
-  identifier: string,
-  windowMs: number = 60000
-): number;
-
-export function getTrackedIdentifierCount(): number;
+**Step 3: Setup Password (new users only)**
+```
+Enter new password → Confirm → Set Password
 ```
 
 ---
 
-## Testing
+## Admin Experience
 
-### Manual Testing Checklist
+### Creating Users (`/users` page)
 
-#### New User Invitation (Email OTP)
-- [ ] Admin invites user via `/users`
-- [ ] Check email for 6-digit code
-- [ ] Go to `/login`, enter email
-- [ ] System detects invitation, sends OTP
-- [ ] Enter OTP code
-- [ ] Verify redirects to password setup
-- [ ] Set password
-- [ ] Verify redirects to correct dashboard based on modules
+1. Click "Add User"
+2. Enter email, name, modules
+3. Click "Send Invitation"
+4. User created in pending state (no password)
+5. **No automatic email sent** - Admins are responsible for informing users
+6. Admin tells user: "Visit [site]/login and sign in with your email address"
 
-#### New User Invitation (Invitation Code)
-- [ ] Admin invites user, gets code `ABC-123`
-- [ ] Go to `/login/invite`
-- [ ] Enter code (auto-formats: `ABC123` → `ABC-123`)
-- [ ] System sends OTP
-- [ ] Redirect to `/login?mode=otp&from=invite`
-- [ ] Enter email + OTP
-- [ ] Verify redirects to password setup
-- [ ] Set password
-- [ ] Verify redirects to dashboard
-
-#### Existing User Login (Password)
-- [ ] Go to `/login`, enter email
-- [ ] System detects user has password
-- [ ] Enter password
-- [ ] Verify redirects to dashboard
-
-#### Existing User Login (Password Fail → OTP)
-- [ ] Go to `/login`, enter email
-- [ ] Enter wrong password
-- [ ] System auto-sends OTP
-- [ ] Enter OTP code
-- [ ] Verify redirects to dashboard
-
-#### Existing User Login (No Password)
-- [ ] User invited but hasn't set password yet
-- [ ] Go to `/login`, enter email
-- [ ] System auto-sends OTP
-- [ ] Enter OTP
-- [ ] Verify redirects to password setup
-
-#### Rate Limiting
-- [ ] Try to validate invitation code 6 times in <1 minute
-- [ ] 6th request returns 429 error
-- [ ] Wait 1 minute
-- [ ] Can validate again
-
-#### Logout
-- [ ] Click logout in navigation
-- [ ] Verify redirects to `/login`
-- [ ] Verify cannot access protected pages
-
-#### Edge Cases
-- [ ] Expired invitation code (30+ days)
-- [ ] Invalid code format (`ABC123` vs `ABC-123`)
-- [ ] Already accepted invitation
-- [ ] Email doesn't exist in invitations
-- [ ] Multiple resends
-- [ ] Case-insensitive codes (`abc-123` works)
-
-### Security Testing
-
-#### Email Privacy
-- [ ] Invite user
-- [ ] Call `/api/auth/redeem-invite` with valid code
-- [ ] Verify response does NOT contain email address
-
-#### Rate Limiting
-- [ ] Script to attempt 100 code validations
-- [ ] Verify only first 5 succeed per minute
-- [ ] Verify proper error message with retry time
-
-#### Code Enumeration
-- [ ] Attempt to guess codes (`AAA-000`, `AAA-001`, etc.)
-- [ ] Verify rate limiting prevents brute force
-- [ ] With 5/min limit: ~825 years to enumerate all codes
-
-#### Session Security
-- [ ] Inspect cookies - verify HTTP-only flag
-- [ ] Inspect cookies - verify Secure flag (prod)
-- [ ] Inspect cookies - verify SameSite=Lax
-- [ ] Attempt to use session from different browser
+**Note:** Automatic "You've been invited" emails are a planned future enhancement. For now, admins communicate directly with new users via their preferred channel.
 
 ---
 
-## Troubleshooting
+## Known Limitations & Trade-offs
 
-### User Can't Login
+### 1. Email Enumeration
+**Reality:** The system reveals if an email exists or not.
 
-**Symptom:** "No invitation found for this email"
+**Why it's acceptable:** This is an invite-only B2B system where:
+- Only pre-invited emails exist
+- Target users are known staff/members
+- Enumeration doesn't grant access (still need OTP)
 
-**Causes:**
-1. No invitation created yet
-2. Invitation expired (>30 days)
-3. Invitation already accepted
-4. Wrong email address
+### 2. In-Memory Rate Limiting
+**Reality:** Rate limits are per-node and reset on restart.
 
-**Solution:**
-- Admin checks `/users` page
-- Resend invitation if needed
-- Check pending invitations status
+**Why it's acceptable for now:**
+- Small scale, single instance
+- Move to Redis/Postgres when scaling horizontally
 
-### OTP Not Received
+**Attack surface:** 5 req/min per IP makes brute force impractical for casual attackers, but distributed attacks could bypass this.
 
-**Symptom:** User doesn't receive 6-digit code
+### 3. OTP Security
+**Reality:** 6-digit codes = ~1M combinations, 60-minute window
 
-**Causes:**
-1. Email in spam folder
-2. Corporate email blocking
-3. Wrong email address
-4. Supabase email service issue
-
-**Solution:**
-- Check spam folder
-- Use invitation code as fallback (`/login/invite`)
-- Admin can resend OTP from `/users`
-- Check Supabase logs
-
-### Rate Limit Hit
-
-**Symptom:** "Too many attempts. Please try again in X seconds."
-
-**Causes:**
-1. Legitimate user trying wrong codes
-2. Brute force attempt
-
-**Solution:**
-- Wait 1 minute
-- Use correct invitation code
-- If admin: share code via Teams/phone instead
-
-### Invitation Code Not Working
-
-**Symptom:** "Invalid or expired invitation code"
-
-**Causes:**
-1. Code expired (>30 days)
-2. Code typo
-3. Code already used
-4. Code cancelled by admin
-
-**Solution:**
-- Check code format: ABC-123 (6 characters)
-- Case insensitive, auto-formats
-- Admin creates new invitation
+**Why it's acceptable:**
+- Supabase has built-in rate limiting on OTP verification
+- Requires email access (2FA: something you know + something you have)
+- Short expiration window (60 min)
 
 ---
 
-## Migration Notes
+## Password Reset Flow
 
-### From Magic Links to OTP
+**Current Implementation:**
+Users who forget their password use the OTP fallback:
+1. User goes to `/login` and enters email
+2. System shows password field
+3. User clicks "Send me a login code instead"
+4. OTP sent to email
+5. User enters OTP and logs in
+6. User can change password in `/profile` (if implemented)
 
-**Changes:**
-- ✅ No breaking changes for existing users
-- ✅ Existing password logins still work
-- ✅ New email template uses OTP codes
-- ✅ Backwards compatible with hash-based links
+**Admin Reset:**
+Admins with `users` module can reset passwords via `/users` page:
+- Select user → Click "Reset Password" → Admin sets temporary password
+- User logs in with temporary password and changes it
 
-**Email Template Update:**
-
-Update "Magic Link" template in Supabase Dashboard:
-
-```html
-<h1>Welcome to Archdiocesan Ministry Tools</h1>
-<p>Your verification code:</p>
-<div style="font-size: 48px; text-align: center; letter-spacing: 12px;
-            font-family: monospace; background: #f0f0f0; padding: 30px;
-            border-radius: 8px;">
-  {{ .Token }}
-</div>
-<p>This code expires in 60 minutes.</p>
-<p>Visit <a href="{{ .SiteURL }}/login">{{ .SiteURL }}/login</a> to enter your code.</p>
-```
+**Future Enhancement:**
+Dedicated "Forgot Password" flow with email-based reset link (similar to standard password reset UX).
 
 ---
 
-## Future Enhancements
+## Supabase Configuration
 
-### Planned
-- [ ] QR code generation for invitation codes
-- [ ] SMS backup channel (Twilio)
-- [ ] Email deliverability monitoring
-- [ ] Invitation analytics dashboard
+**CRITICAL:** Set these in Supabase Dashboard:
 
-### Considered
-- [ ] Auto-resend after 24 hours
-- [ ] CSV bulk upload
-- [ ] SSO integration
-- [ ] Custom email templates per course
+1. **Authentication → Providers → Email**
+   - ✅ Enable "Email OTP" (not Magic Link)
+   - ✅ Set OTP expiry to 3600 seconds (60 minutes)
+   - ✅ Disable "Confirm Email" (we handle via OTP)
+
+2. **Authentication → Email Templates**
+   - Update "Magic Link" template (used for OTP)
+   - Use `{{ .Token }}` variable for 6-digit code
+
+3. **Authentication → URL Configuration**
+   - Site URL: `https://yourdomain.com`
+   - Redirect URLs: Include /login, /login/callback
+
+---
+
+## Implementation Files
+
+### Frontend
+- `/src/routes/login/+page.svelte` - Main login UI
+- `/src/routes/login/setup-password/+page.svelte` - Password creation
+
+### Backend
+- `/src/lib/server/auth.ts` - Unified auth library (363 lines)
+- `/src/routes/api/auth/check-email/+server.js` - Email check endpoint
+- `/src/routes/api/admin/users/+server.js` - User creation
+
+---
+
+## Future Improvements
+
+### Security
+- [ ] Redis-based rate limiting for horizontal scaling
+- [ ] Per-email OTP send rate limit (3 sends per 15 min)
+- [ ] Add CAPTCHA on login after N failed attempts
+- [ ] IP blocklist for known bad actors
+- [ ] Reduce OTP expiry from 60 min to 10-30 min (stricter security)
+
+### UX
+- [ ] Automatic "You've been invited" email on user creation
+- [ ] Email templates with branded design
+- [ ] Dedicated "Forgot Password" flow with email reset link
+- [ ] Session activity log (login history per user)
+- [ ] Password change interface in `/profile`
+
+### Architecture
+- [ ] Add comprehensive test suite for authentication flows
+- [ ] Document admin password reset endpoint
+- [ ] Consider moving rate limiting to Postgres for persistence
+
+---
+
+## Migration from v1
+
+### What Changed
+1. **Removed:** Invitation code requirement
+2. **Simplified:** Email → OTP → Password (for new users)
+3. **Fixed:** RLS security bug (removed public SELECT on pending_invitations)
+4. **Fixed:** Auto-OTP on failed password (now explicit button)
+
+### Migration Steps (All Complete ✅)
+1. ✅ Updated `/api/auth/check-email` to allow pending users with OTP
+2. ✅ Removed "Have an invitation code?" link from login page
+3. ✅ Dropped public SELECT RLS policy on pending_invitations
+4. ✅ Added explicit "Send me a login code instead" button
+5. ✅ Updated AUTHENTICATION.md to reflect v2 flow
+6. ✅ Dropped `platform_invitation_code` table via migration
+7. ✅ Dropped `pending_invitations` table via migration
+8. ✅ Removed all invitation code UI and API endpoints
+9. ✅ Removed `/login/invite` route from public routes
 
 ---
 
 **End of Documentation**
-
-For questions or issues, contact the development team.

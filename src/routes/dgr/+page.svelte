@@ -1078,8 +1078,8 @@
 
 </script>
 
-<div class="mx-auto max-w-7xl p-6">
-	<div class="mb-8 flex items-center justify-between">
+<div class="mx-auto max-w-7xl p-4 sm:p-6">
+	<div class="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 		<div>
 			<h1 class="text-3xl font-bold text-gray-900">Schedule Management</h1>
 			<p class="mt-1 text-sm text-gray-600">Manage daily assignments, submissions, and reflections</p>
@@ -1094,14 +1094,14 @@
 		<!-- Schedule View -->
 		<div class="space-y-6">
 			<!-- Filters -->
-			<div class="rounded-lg bg-white p-4 shadow-sm">
-					<div class="flex items-center gap-6">
-						<div class="flex items-center gap-4">
+			<div class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+					<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
+						<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
 							<span class="text-sm font-medium text-gray-700">View:</span>
 							<div class="flex gap-2">
 								<button
 									onclick={() => (scheduleFilter = 'all')}
-									class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'all'
+									class="flex-1 sm:flex-none rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'all'
 										? 'bg-blue-600 text-white'
 										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
 								>
@@ -1109,7 +1109,7 @@
 								</button>
 								<button
 									onclick={() => (scheduleFilter = 'submissions')}
-									class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'submissions'
+									class="flex-1 sm:flex-none rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'submissions'
 										? 'bg-blue-600 text-white'
 										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
 								>
@@ -1125,12 +1125,12 @@
 						</div>
 
 						<div class="flex items-center gap-2">
-							<label for="days-range" class="text-sm font-medium text-gray-700">Days Ahead:</label>
+							<label for="days-range" class="text-sm font-medium text-gray-700 whitespace-nowrap">Days Ahead:</label>
 							<select
 								id="days-range"
 								bind:value={scheduleDays}
 								onchange={loadSchedule}
-								class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								class="flex-1 sm:flex-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
 							>
 								<option value={30}>30 days</option>
 								<option value={60}>60 days</option>

@@ -378,17 +378,17 @@
 <!-- Template Editor Layout -->
 <div class="bg-gray-50">
   <!-- Header -->
-  <div class="bg-white border-b border-gray-200 px-6 py-4">
-    <div class="flex items-center justify-between">
+  <div class="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <FileText class="w-6 h-6 text-blue-600" />
+        <FileText class="w-6 h-6 text-blue-600 flex-shrink-0" />
         <h1 class="text-xl font-semibold text-gray-900">DGR Template Editor</h1>
       </div>
 
       {#if editingMode}
         <button
           onclick={exitEditMode}
-          class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+          class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm"
         >
           ← Back to Templates
         </button>
@@ -405,9 +405,9 @@
     </div>
   {:else if !editingMode}
     <!-- Template Management View -->
-    <div class="p-6">
+    <div class="p-4 sm:p-6">
       <div class="max-w-6xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Your Templates</h2>
             <p class="text-sm text-gray-600 mt-1">Only one template can be active at a time - this is what the publish API uses</p>

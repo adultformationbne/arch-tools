@@ -1,11 +1,14 @@
 <script>
-	export let isOpen = false;
-	export let title = '';
-	export let message = '';
-	export let confirmText = 'Confirm';
-	export let cancelText = 'Cancel';
-	export let confirmAction = () => {};
-	export let cancelAction = () => {};
+	let {
+		isOpen = false,
+		title = '',
+		message = '',
+		confirmText = 'Confirm',
+		cancelText = 'Cancel',
+		confirmAction = () => {},
+		cancelAction = () => {},
+		onClose = () => {}
+	} = $props();
 </script>
 
 {#if isOpen}
@@ -27,18 +30,18 @@
 			<div class="flex space-x-3 justify-end mt-6">
 				<button
 					class="accf-button-secondary"
-					on:click={() => {
+					onclick={() => {
 						cancelAction();
-						isOpen = false;
+						onClose();
 					}}
 				>
 					{cancelText}
 				</button>
 				<button
 					class="accf-button-primary"
-					on:click={() => {
+					onclick={() => {
 						confirmAction();
-						isOpen = false;
+						onClose();
 					}}
 				>
 					{confirmText}
