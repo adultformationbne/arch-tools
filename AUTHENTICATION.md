@@ -1,8 +1,8 @@
 # Authentication & Authorization System
 
-> **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, checklogs) have been removed.
+> **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, changelogs) have been removed.
 
-**Last Updated:** 2025-11-13
+**Last Updated:** 2025-11-17
 **Status:** ✅ Production Ready
 **System Type:** Invite-Only with Email + OTP
 
@@ -11,12 +11,14 @@
 ## Overview
 
 This is an **invite-only authentication system** where:
-1. Admins pre-create user accounts
-2. Users login with their email
+1. Admins pre-create user accounts (platform users OR course enrollments)
+2. Users login with their email at `/login`
 3. System sends 6-digit OTP to verify email ownership
 4. New users set a password; existing users can use password or OTP
 
-**No invitation codes required** - users just need their email address.
+**No invitation codes or tokens** - users just need their email address.
+
+**No automatic emails** - admins inform users directly via their preferred channel.
 
 ---
 
@@ -25,11 +27,13 @@ This is an **invite-only authentication system** where:
 ### For New Users (Pending)
 
 ```
-Admin creates user via /users
+Admin creates user via /users OR bulk imports course enrollment
   ↓
-User visits /login
+Auth account created immediately (auth.users + user_profiles)
   ↓
-User enters email → clicks "Continue"
+Admin tells user: "Visit [site]/login with your email"
+  ↓
+User visits /login → Enters email → Clicks "Continue"
   ↓
 System checks: User exists? Has password?
   → User exists, no password → Send OTP
@@ -40,7 +44,7 @@ User redirected to /login/setup-password
   ↓
 User creates password
   ↓
-Redirect to dashboard based on modules
+Redirect to dashboard based on modules/enrollments
 ```
 
 ### For Existing Users
@@ -68,12 +72,43 @@ User enters OTP → Redirect to dashboard
 
 ---
 
+## User Creation Methods
+
+### Method 1: Platform Users (`/users` page)
+
+**Who:** Admins with `users` module
+**Creates:** Users with platform-level modules (users, editor, dgr, courses.admin, etc.)
+
+**Process:**
+1. Admin clicks "Add User"
+2. Enters email, name, modules
+3. Clicks "Send Invitation" (creates auth account, no email sent)
+4. User created with status: pending (no password)
+5. Admin informs user directly: "Login at [site]/login with: youremail@example.com"
+
+### Method 2: Course Enrollments (Bulk CSV Import)
+
+**Who:** Course admins
+**Creates:** Users enrolled in specific courses with `courses.participant` module
+
+**Process:**
+1. Admin uploads CSV with email, full_name, hub, cohort
+2. System creates auth accounts for all new emails
+3. System creates user_profiles with `courses.participant` module
+4. System creates course enrollments linked to user_profile_id
+5. Admin informs students: "Login at [site]/login with your email"
+
+**Both methods create users the same way** - auth.users account immediately, no emails, users login via `/login`.
+
+---
+
 ## Security Model
 
 ### 1. Pre-Invited Accounts Only
 - Users **must** be pre-created by admins
 - No self-registration
 - Admin controls who has access
+- Two creation methods: platform users or course enrollments
 
 ### 2. Email Verification
 - OTP sent to email proves ownership
@@ -107,13 +142,22 @@ User enters OTP → Redirect to dashboard
 ### `user_profiles`
 - `id` (UUID) - Matches auth.users.id
 - `email` (TEXT) - User email
+- `full_name` (TEXT) - User's full name
 - `modules` (TEXT[]) - Permission modules
-- `assigned_course_ids` (JSONB) - For courses.manager role
+- `assigned_course_ids` (JSONB) - For courses.manager module
 
 ### `auth.users` (Supabase Auth)
 - `email` - User email
 - `encrypted_password` - NULL if no password set yet (pending user)
 - Managed by Supabase Auth
+
+### `courses_enrollments`
+- `user_profile_id` (UUID) - Links to user_profiles
+- `email` (TEXT) - Denormalized for performance
+- `full_name` (TEXT) - User's name
+- `cohort_id` (UUID) - Which cohort they're in
+- `role` (TEXT) - 'student', 'admin', 'coordinator'
+- `status` (TEXT) - 'pending', 'active', 'completed', 'withdrawn'
 
 **Note:** All users (pending and active) are stored in the same tables. Status is implicit:
 - Pending user: `encrypted_password` is NULL
@@ -162,6 +206,16 @@ User enters OTP → Redirect to dashboard
 }
 ```
 
+### `POST /api/admin/users`
+**Purpose:** Create platform user
+**Auth:** Requires `users` module
+**Creates:** auth.users + user_profiles with specified modules
+
+### `POST /admin/courses/[slug]/api` (action: upload_csv)
+**Purpose:** Bulk import course enrollments
+**Auth:** Requires course admin access
+**Creates:** auth.users + user_profiles + courses_enrollments
+
 ---
 
 ## Module-Based Authorization
@@ -170,10 +224,10 @@ User enters OTP → Redirect to dashboard
 
 | Module | Access |
 |--------|--------|
-| `users` | User management, invitations, permissions |
+| `users` | User management, create users, manage permissions |
 | `editor` | Content editor access |
 | `dgr` | Daily Gospel Reflections management |
-| `courses.participant` | Access enrolled courses via /my-courses |
+| `courses.participant` | Access enrolled courses (auto-assigned on course import) |
 | `courses.manager` | Manage assigned courses (via assigned_course_ids) |
 | `courses.admin` | Manage ALL courses platform-wide |
 
@@ -227,16 +281,29 @@ Enter new password → Confirm → Set Password
 
 ## Admin Experience
 
-### Creating Users (`/users` page)
+### Creating Platform Users (`/users` page)
 
 1. Click "Add User"
 2. Enter email, name, modules
 3. Click "Send Invitation"
 4. User created in pending state (no password)
-5. **No automatic email sent** - Admins are responsible for informing users
+5. **No automatic email sent** - Admins communicate directly
 6. Admin tells user: "Visit [site]/login and sign in with your email address"
 
-**Note:** Automatic "You've been invited" emails are a planned future enhancement. For now, admins communicate directly with new users via their preferred channel.
+### Enrolling Course Students (Bulk CSV Import)
+
+1. Navigate to course cohort management
+2. Click "Add Participants"
+3. Upload CSV with: email, full_name, hub (optional)
+4. System processes each row:
+   - Creates auth account if user doesn't exist
+   - Creates user_profiles if doesn't exist
+   - Assigns `courses.participant` module
+   - Creates enrollment record
+5. **No automatic email sent** - Admins communicate directly
+6. Admin tells students: "Login at [site]/login with your email"
+
+**Key Point:** Both methods create real auth accounts immediately. Users can login right away at `/login`.
 
 ---
 
@@ -247,7 +314,7 @@ Enter new password → Confirm → Set Password
 
 **Why it's acceptable:** This is an invite-only B2B system where:
 - Only pre-invited emails exist
-- Target users are known staff/members
+- Target users are known staff/members/students
 - Enumeration doesn't grant access (still need OTP)
 
 ### 2. In-Memory Rate Limiting
@@ -266,6 +333,16 @@ Enter new password → Confirm → Set Password
 - Supabase has built-in rate limiting on OTP verification
 - Requires email access (2FA: something you know + something you have)
 - Short expiration window (60 min)
+
+### 4. No Automatic Emails
+**Reality:** System doesn't send invitation emails automatically.
+
+**Why it's acceptable:**
+- Admins control communication channels
+- Avoids email delivery issues
+- More flexible (SMS, in-person, phone, etc.)
+
+**Future:** Optional email notifications can be added later.
 
 ---
 
@@ -315,10 +392,14 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 - `/src/routes/login/+page.svelte` - Main login UI
 - `/src/routes/login/setup-password/+page.svelte` - Password creation
 
-### Backend
-- `/src/lib/server/auth.ts` - Unified auth library (363 lines)
+### Backend - Platform Users
+- `/src/lib/server/auth.ts` - Unified auth library
 - `/src/routes/api/auth/check-email/+server.js` - Email check endpoint
-- `/src/routes/api/admin/users/+server.js` - User creation
+- `/src/routes/api/admin/users/+server.js` - Platform user creation
+
+### Backend - Course Enrollments
+- `/src/routes/admin/courses/[slug]/api/+server.ts` - Bulk CSV import (upload_csv action)
+- Creates auth accounts exactly like platform user creation
 
 ---
 
@@ -332,7 +413,7 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 - [ ] Reduce OTP expiry from 60 min to 10-30 min (stricter security)
 
 ### UX
-- [ ] Automatic "You've been invited" email on user creation
+- [ ] Optional "You've been invited" email on user creation
 - [ ] Email templates with branded design
 - [ ] Dedicated "Forgot Password" flow with email reset link
 - [ ] Session activity log (login history per user)
@@ -345,24 +426,40 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 ---
 
-## Migration from v1
+## Migration History
 
-### What Changed
-1. **Removed:** Invitation code requirement
-2. **Simplified:** Email → OTP → Password (for new users)
-3. **Fixed:** RLS security bug (removed public SELECT on pending_invitations)
-4. **Fixed:** Auto-OTP on failed password (now explicit button)
+### v2 - Unified Authentication (2025-11-17)
+1. ✅ Unified course enrollments with platform user auth
+2. ✅ Course bulk imports now create auth accounts immediately
+3. ✅ Removed `invitation_token` from courses_enrollments
+4. ✅ Removed all email-sending on user creation
+5. ✅ Removed `/signup` route
+6. ✅ Deleted `sendBulkInvitations()` and invitation email functions
+7. ✅ Everything through `/login` - single unified flow
 
-### Migration Steps (All Complete ✅)
-1. ✅ Updated `/api/auth/check-email` to allow pending users with OTP
-2. ✅ Removed "Have an invitation code?" link from login page
-3. ✅ Dropped public SELECT RLS policy on pending_invitations
-4. ✅ Added explicit "Send me a login code instead" button
-5. ✅ Updated AUTHENTICATION.md to reflect v2 flow
-6. ✅ Dropped `platform_invitation_code` table via migration
-7. ✅ Dropped `pending_invitations` table via migration
-8. ✅ Removed all invitation code UI and API endpoints
-9. ✅ Removed `/login/invite` route from public routes
+### v1 Migration (2025-11-13)
+1. ✅ Removed invitation code requirement
+2. ✅ Simplified to: Email → OTP → Password (for new users)
+3. ✅ Fixed RLS security bug (removed public SELECT on pending_invitations)
+4. ✅ Fixed auto-OTP on failed password (now explicit button)
+5. ✅ Dropped `platform_invitation_code` table
+6. ✅ Dropped `pending_invitations` table
+7. ✅ Removed all invitation code UI and API endpoints
+8. ✅ Removed `/login/invite` route
+
+---
+
+## Summary
+
+**One System. One Flow. One Source of Truth.**
+
+- Platform users (via `/users`) → auth account created → admin tells user → `/login`
+- Course students (via CSV import) → auth account created → admin tells user → `/login`
+- No invitation tokens
+- No automatic emails
+- Everything goes through `/login`
+
+Simple. Consistent. Production-ready. 🎯
 
 ---
 
