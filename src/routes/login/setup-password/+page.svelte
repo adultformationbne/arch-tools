@@ -31,9 +31,12 @@
 		}
 
 		try {
-			// Update the user's password
+			// Update the user's password and set flag that password setup is complete
 			const { error } = await supabase.auth.updateUser({
-				password: password
+				password: password,
+				data: {
+					password_setup_completed: true
+				}
 			});
 
 			if (error) throw error;

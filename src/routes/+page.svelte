@@ -67,8 +67,8 @@ const moduleRoutes = [
 // Filter routes based on user's modules
 $: availableRoutes = moduleRoutes.filter((route) => userModules?.includes?.(route.module));
 
-// Always show public readings
-const publicRoute = {
+// Always show public readings (available to everyone)
+const publicReadingsRoute = {
 	name: 'Daily Readings',
 	path: '/readings',
 	description: 'View today\'s Mass readings and liturgical calendar',
@@ -76,7 +76,7 @@ const publicRoute = {
 	icon: BookOpen
 };
 
-$: allRoutes = [publicRoute, ...availableRoutes];
+$: allRoutes = [publicReadingsRoute, ...availableRoutes];
 </script>
 
 <svelte:head>
