@@ -21,6 +21,9 @@
 	// Track if user is a new/pending user (no password set yet)
 	let isPendingUser = $state(false);
 
+	// Track if user is in forgot password flow
+	let isForgotPasswordFlow = $state(false);
+
 	// Check for URL parameters on mount
 	onMount(async () => {
 		const urlMode = $page.url.searchParams.get('mode');
@@ -163,7 +166,36 @@
 
 			currentStep = 'otp';
 			isPendingUser = false; // Existing user using OTP fallback
+			isForgotPasswordFlow = false;
 			infoMessage = 'A 6-digit code has been sent to your email';
+			password = ''; // Clear password field
+		} catch (error) {
+			errorMessage = error.message || 'Failed to send code';
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Forgot password flow - send OTP to reset password
+	async function handleForgotPassword() {
+		loading = true;
+		errorMessage = '';
+
+		try {
+			const { error: otpError } = await supabase.auth.signInWithOtp({
+				email,
+				options: { shouldCreateUser: false }
+			});
+
+			if (otpError) {
+				errorMessage = 'Failed to send verification code. Please try again.';
+				loading = false;
+				return;
+			}
+
+			currentStep = 'otp';
+			isForgotPasswordFlow = true;
+			infoMessage = 'A 6-digit code has been sent to your email to reset your password';
 			password = ''; // Clear password field
 		} catch (error) {
 			errorMessage = error.message || 'Failed to send code';
@@ -189,8 +221,8 @@
 			// Check if user needs to set up password
 			const user = authData.user;
 
-			if (isPendingUser) {
-				// New/pending user - needs to set up password
+			if (isPendingUser || isForgotPasswordFlow) {
+				// New/pending user OR forgot password flow - needs to set/reset password
 				goto('/login/setup-password');
 			} else {
 				// Existing user logging in with OTP - redirect to dashboard
@@ -251,6 +283,8 @@
 		otp = '';
 		errorMessage = '';
 		infoMessage = '';
+		isPendingUser = false;
+		isForgotPasswordFlow = false;
 	}
 </script>
 
@@ -357,11 +391,19 @@
 					</button>
 				</div>
 
-				<div class="text-center">
+				<div class="flex justify-between text-sm">
+					<button
+						type="button"
+						onclick={handleForgotPassword}
+						disabled={loading}
+						class="text-black hover:text-neutral-700 underline disabled:opacity-50"
+					>
+						Forgot password?
+					</button>
 					<button
 						type="button"
 						onclick={goBackToEmail}
-						class="text-sm text-black hover:text-neutral-700 underline"
+						class="text-black hover:text-neutral-700 underline"
 					>
 						← Use a different email
 					</button>
