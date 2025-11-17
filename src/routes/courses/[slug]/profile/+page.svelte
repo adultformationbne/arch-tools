@@ -1,16 +1,22 @@
 <script>
 	import { User, Mail, Lock, Shield, Trash2, Save, Edit3 } from 'lucide-svelte';
-	import { toastWarning } from '$lib/utils/toast-helpers.js';
+	import { toastWarning, toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import { apiPost } from '$lib/utils/api-handler.js';
 
-	// Mock user data - would come from auth/database
+	// Get data from server
+	let { data } = $props();
+	const { profileData } = data;
+
+	// User profile state
 	let userProfile = $state({
-		name: 'Sarah Johnson',
-		email: 'sarah.johnson@email.com',
-		cohort: 'Foundations of Faith - February 2024',
-		hub: "St. Mary's Parish Hub",
-		joinDate: 'February 1, 2024',
-		completedModules: ['Foundations of Faith'],
-		currentSession: 8
+		name: profileData.name,
+		email: profileData.email,
+		cohort: `${profileData.moduleName} - ${profileData.cohortName}`,
+		hub: profileData.hubName,
+		hubLocation: profileData.hubLocation,
+		joinDate: profileData.joinDate,
+		currentSession: profileData.currentSession,
+		role: profileData.role
 	});
 
 	// Form states
@@ -43,12 +49,19 @@
 		profileForm.email = userProfile.email;
 	};
 
-	const saveProfile = () => {
-		// TODO: Submit to API
-		userProfile.name = profileForm.name;
-		userProfile.email = profileForm.email;
-		isEditingProfile = false;
-		console.log('Profile saved:', profileForm);
+	const saveProfile = async () => {
+		try {
+			const response = await apiPost(
+				'/api/profile/update',
+				{ name: profileForm.name, email: profileForm.email },
+				{ successMessage: 'Profile updated successfully' }
+			);
+			userProfile.name = profileForm.name;
+			userProfile.email = profileForm.email;
+			isEditingProfile = false;
+		} catch (error) {
+			toastError('Failed to update profile', 'Error');
+		}
 	};
 
 	const startChangingPassword = () => {
@@ -65,23 +78,47 @@
 		passwordForm.confirmPassword = '';
 	};
 
-	const savePassword = () => {
+	const savePassword = async () => {
 		if (passwordForm.newPassword !== passwordForm.confirmPassword) {
 			toastWarning('New passwords do not match', 'Password Mismatch');
 			return;
 		}
-		// TODO: Submit to API
-		isChangingPassword = false;
-		passwordForm.currentPassword = '';
-		passwordForm.newPassword = '';
-		passwordForm.confirmPassword = '';
-		console.log('Password changed');
+
+		if (passwordForm.newPassword.length < 6) {
+			toastWarning('Password must be at least 6 characters', 'Password Too Short');
+			return;
+		}
+
+		try {
+			await apiPost(
+				'/api/profile/change-password',
+				{
+					currentPassword: passwordForm.currentPassword,
+					newPassword: passwordForm.newPassword
+				},
+				{ successMessage: 'Password updated successfully' }
+			);
+			isChangingPassword = false;
+			passwordForm.currentPassword = '';
+			passwordForm.newPassword = '';
+			passwordForm.confirmPassword = '';
+		} catch (error) {
+			toastError('Failed to update password', 'Error');
+		}
 	};
 
-	const deleteAccount = () => {
-		// TODO: Submit to API
-		console.log('Account deletion requested');
-		// Redirect to goodbye page
+	const deleteAccount = async () => {
+		try {
+			await apiPost(
+				'/api/profile/delete-account',
+				{},
+				{ successMessage: 'Account deletion initiated' }
+			);
+			// Redirect to goodbye page after successful deletion
+			window.location.href = '/';
+		} catch (error) {
+			toastError('Failed to delete account', 'Error');
+		}
 	};
 </script>
 
@@ -183,11 +220,23 @@
 				</div>
 				<div>
 					<p class="text-sm text-gray-600 mb-2">Hub Location</p>
-					<p class="text-lg font-semibold text-gray-800">{userProfile.hub}</p>
+					<p class="text-lg font-semibold text-gray-800">
+						{#if userProfile.hubLocation}
+							{userProfile.hub} - {userProfile.hubLocation}
+						{:else}
+							{userProfile.hub}
+						{/if}
+					</p>
 				</div>
 				<div>
 					<p class="text-sm text-gray-600 mb-2">Current Session</p>
-					<p class="text-lg font-semibold text-gray-800">Session {userProfile.currentSession} of 8</p>
+					<p class="text-lg font-semibold text-gray-800">
+						{#if userProfile.currentSession === 0}
+							Not started
+						{:else}
+							Session {userProfile.currentSession}
+						{/if}
+					</p>
 				</div>
 				<div>
 					<p class="text-sm text-gray-600 mb-2">Joined</p>

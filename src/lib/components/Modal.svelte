@@ -57,9 +57,8 @@
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
 		onclick={handleBackdropClick}
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby={title ? "modal-title" : undefined}
+		onkeydown={(e) => e.key === 'Enter' && handleBackdropClick()}
+		role="presentation"
 	>
 		<!-- Modal Content -->
 		<div
@@ -67,7 +66,10 @@
 			class="max-h-[95vh] w-full overflow-auto rounded-xl bg-white shadow-xl {sizeClasses[size]}"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={handleKeydown}
-			tabindex="0"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={title ? "modal-title" : undefined}
+			tabindex="-1"
 		>
 			{#if title || showCloseButton}
 				<!-- Modal Header -->

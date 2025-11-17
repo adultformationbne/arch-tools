@@ -4,95 +4,78 @@ import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// Require admin authentication
+	const startTime = Date.now();
 	const courseSlug = event.params.slug;
-	await requireCourseAdmin(event, courseSlug);
+	console.log(`[MODULES PAGE] Loading...`);
+
+	// Auth is already done in layout - no need to check again!
+	// await requireCourseAdmin(event, courseSlug); // REMOVED - redundant
+
+	// Get layout data (modules and cohorts already loaded, auth already checked)
+	const parentStart = Date.now();
+	const layoutData = await event.parent();
+	console.log(`[MODULES PAGE] ⚡ Parent data (cached): ${Date.now() - parentStart}ms`);
+
+	const modules = layoutData?.modules || [];
+	const cohorts = layoutData?.cohorts || [];
+	const courseInfo = layoutData?.courseInfo || {};
+	const moduleIds = modules?.map(m => m.id) || [];
 
 	try {
-		// Fetch ONLY the current course
-		const { data: course, error: courseError } = await supabaseAdmin
-			.from('courses')
-			.select('*')
-			.eq('slug', courseSlug)
-			.single();
-
-		if (courseError || !course) {
-			console.error('Error fetching course:', courseError);
-			throw error(404, 'Course not found');
-		}
-
-		// Get modules for this course
-		const { data: modules, error: modulesError } = await supabaseAdmin
-			.from('courses_modules')
-			.select(`
-				*,
-				sessions:courses_sessions(count),
-				cohorts:courses_cohorts(
-					id,
-					name,
-					status,
-					start_date,
-					end_date
-				)
-			`)
-			.eq('course_id', course.id)
-			.order('order_number', { ascending: true });
-
-		if (modulesError) {
-			console.error('Error fetching modules:', modulesError);
-		}
-
-		// Get all cohorts for this course's modules
-		const moduleIds = modules?.map(m => m.id) || [];
-		let cohorts = [];
+		// Only fetch page-specific data (session counts and enrollment counts)
+		let modulesWithCounts = [];
 
 		if (moduleIds.length > 0) {
-			const { data: cohortsData, error: cohortsError } = await supabaseAdmin
-				.from('courses_cohorts')
-				.select(`
-					*,
-					module:module_id (
-						id,
-						name
-					),
-					enrollments:courses_enrollments(count)
-				`)
-				.in('module_id', moduleIds)
-				.order('start_date', { ascending: false });
+			// Get session counts for each module
+			const sessionsStart = Date.now();
+			const { data: sessionCounts } = await supabaseAdmin
+				.from('courses_sessions')
+				.select('module_id')
+				.in('module_id', moduleIds);
+			console.log(`[MODULES PAGE] Session counts query: ${Date.now() - sessionsStart}ms`);
 
-			if (cohortsError) {
-				console.error('Error fetching cohorts:', cohortsError);
-			} else {
-				cohorts = cohortsData || [];
-			}
+			// Get cohort counts and enrollments per module
+			const sessionCountMap = new Map();
+			sessionCounts?.forEach(s => {
+				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
+			});
+
+			// Enrich modules with counts
+			modulesWithCounts = modules.map(module => ({
+				...module,
+				sessionCount: sessionCountMap.get(module.id) || 0,
+				cohorts: cohorts.filter(c => c.module_id === module.id)
+			}));
 		}
 
-		// Get enrollment count across all cohorts
+		// Get total enrollment count
 		const cohortIds = cohorts.map(c => c.id);
 		let totalEnrollments = 0;
 
 		if (cohortIds.length > 0) {
-			const { count, error: countError } = await supabaseAdmin
+			const enrollStart = Date.now();
+			const { count } = await supabaseAdmin
 				.from('courses_enrollments')
 				.select('*', { count: 'exact', head: true })
 				.in('cohort_id', cohortIds);
+			console.log(`[MODULES PAGE] Enrollment count query: ${Date.now() - enrollStart}ms`);
 
-			if (!countError) {
-				totalEnrollments = count || 0;
-			}
+			totalEnrollments = count || 0;
 		}
 
+		console.log(`[MODULES PAGE] ✅ Complete in ${Date.now() - startTime}ms\n`);
+
 		return {
-			course,
-			modules: modules || [],
+			course: courseInfo, // Pass course info from layout
+			modules: modulesWithCounts,
 			cohorts,
 			totalEnrollments,
-			moduleCount: modules?.length || 0,
+			moduleCount: modules.length,
 			activeCohorts: cohorts.filter(c => c.status === 'active').length
 		};
 
 	} catch (err) {
-		console.error('Error in courses page load:', err);
-		throw error(500, 'Failed to load course data');
+		console.error('Error in modules page load:', err);
+		throw error(500, 'Failed to load modules data');
 	}
 };

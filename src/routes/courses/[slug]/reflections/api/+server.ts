@@ -62,83 +62,38 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Student enrollment not found');
 		}
 
-		// Check if reflection response already exists
-		console.log('Checking for existing response...');
-		const { data: existingResponse, error: checkError } = await supabaseAdmin
+		// Use upsert to avoid race conditions when multiple requests happen simultaneously
+		console.log('Upserting reflection response...');
+		const responseData = {
+			enrollment_id: studentData.id,
+			cohort_id: studentData.cohort_id,
+			question_id: reflection_question_id,
+			session_number: questionData.courses_sessions.session_number,
+			response_text: content.trim(),
+			is_public: is_public || false,
+			status: status === 'draft' ? 'draft' : 'submitted',
+			updated_at: new Date().toISOString()
+		};
+
+		console.log('Upsert payload:', responseData);
+
+		// Upsert will insert or update based on the unique constraint (enrollment_id, question_id)
+		// Note: marked_at is only set by admin when marking, not on submission
+		const { data: result, error: upsertError } = await supabaseAdmin
 			.from('courses_reflection_responses')
-			.select('*')
-			.eq('enrollment_id', studentData.id)
-			.eq('question_id', reflection_question_id)
-			.maybeSingle();
+			.upsert(responseData, {
+				onConflict: 'enrollment_id,question_id',
+				ignoreDuplicates: false
+			})
+			.select()
+			.single();
 
-		console.log('Existing response:', existingResponse);
-		console.log('Check error:', checkError);
+		console.log('Upsert result:', result);
+		console.log('Upsert error:', upsertError);
 
-		let result;
-
-		if (existingResponse) {
-			console.log('Updating existing response...');
-			// Update existing response
-			const updates = {
-				response_text: content.trim(),
-				is_public: is_public || false,
-				status: status === 'draft' ? 'draft' : 'submitted',
-				updated_at: new Date().toISOString()
-			};
-
-			console.log('Update payload:', updates);
-
-			// Note: marked_at is only set by admin when marking, not on submission
-			// Status stays 'submitted' until admin changes to 'passed' or 'needs_revision'
-
-			const { data: updatedResponse, error: updateError } = await supabaseAdmin
-				.from('courses_reflection_responses')
-				.update(updates)
-				.eq('id', existingResponse.id)
-				.select()
-				.single();
-
-			console.log('Updated response:', updatedResponse);
-			console.log('Update error:', updateError);
-
-			if (updateError) {
-				console.error('Update error:', updateError);
-				throw error(500, 'Failed to update reflection');
-			}
-
-			result = updatedResponse;
-		} else {
-			console.log('Creating new response...');
-			// Create new response with all required fields
-			const newResponse = {
-				enrollment_id: studentData.id,
-				cohort_id: studentData.cohort_id,
-				question_id: reflection_question_id,
-				session_number: questionData.courses_sessions.session_number,
-				response_text: content.trim(),
-				is_public: is_public || false,
-				status: status === 'draft' ? 'draft' : 'submitted',
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
-			};
-
-			console.log('Insert payload:', newResponse);
-
-			const { data: createdResponse, error: createError } = await supabaseAdmin
-				.from('courses_reflection_responses')
-				.insert(newResponse)
-				.select()
-				.single();
-
-			console.log('Created response:', createdResponse);
-			console.log('Create error:', createError);
-
-			if (createError) {
-				console.error('Create error:', createError);
-				throw error(500, 'Failed to save reflection');
-			}
-
-			result = createdResponse;
+		if (upsertError) {
+			console.error('Upsert error:', upsertError);
+			throw error(500, 'Failed to save reflection');
 		}
 
 		console.log('Returning success response');

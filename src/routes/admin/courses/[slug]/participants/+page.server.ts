@@ -1,61 +1,24 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const courseSlug = event.params.slug;
-
-	// Require course admin authentication
-	await requireCourseAdmin(event, courseSlug);
+	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
+	// Layout protects all nested admin routes
 
 	try {
-		// Get the course ID from slug
-		const { data: course } = await supabaseAdmin
-			.from('courses')
-			.select('id, name')
-			.eq('slug', courseSlug)
-			.single();
-
-		if (!course) {
-			throw error(404, 'Course not found');
-		}
-
-		// Get module IDs for this course
-		const { data: modules } = await supabaseAdmin
-			.from('courses_modules')
-			.select('id')
-			.eq('course_id', course.id);
+		// Get layout data (course, modules, cohorts already loaded)
+		const layoutData = await event.parent();
+		const courseInfo = layoutData?.courseInfo || {};
+		const modules = layoutData?.modules || [];
+		const cohorts = layoutData?.cohorts || [];
 
 		const moduleIds = modules?.map(m => m.id) || [];
-
-		if (moduleIds.length === 0) {
-			return {
-				course: {
-					id: course.id,
-					name: course.name,
-					slug: courseSlug
-				},
-				users: [],
-				hubs: []
-			};
-		}
-
-		// Get cohort IDs for this course's modules
-		const { data: cohorts } = await supabaseAdmin
-			.from('courses_cohorts')
-			.select('id')
-			.in('module_id', moduleIds);
-
 		const cohortIds = cohorts?.map(c => c.id) || [];
 
 		if (cohortIds.length === 0) {
 			return {
-				course: {
-					id: course.id,
-					name: course.name,
-					slug: courseSlug
-				},
+				course: courseInfo,
 				users: [],
 				hubs: []
 			};
@@ -96,7 +59,7 @@ export const load: PageServerLoad = async (event) => {
 		const { data: hubs, error: hubsError } = await supabaseAdmin
 			.from('courses_hubs')
 			.select('*')
-			.eq('course_id', course.id)
+			.eq('course_id', courseInfo.id)
 			.order('name');
 
 		if (hubsError) {
@@ -104,11 +67,7 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		return {
-			course: {
-				id: course.id,
-				name: course.name,
-				slug: courseSlug
-			},
+			course: courseInfo,
 			users: enrollments || [],
 			hubs: hubs || []
 		};

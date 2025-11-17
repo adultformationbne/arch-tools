@@ -6,10 +6,10 @@
 		currentSession = $bindable(),
 		availableSessions,
 		courseData,
+		courseSlug,
 		materials,
 		currentSessionData,
 		onSessionChange,
-		onOpenReflectionWriter,
 		onOpenMaterial
 	} = $props();
 
@@ -113,14 +113,14 @@
 											class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
 										></div>
 									</div>
-									<button
-										onclick={onOpenReflectionWriter}
-										class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90"
+									<a
+										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+										class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
 										style="background-color: #334642;"
 									>
 										<Edit3 size="20" />
 										Write Reflection
-									</button>
+									</a>
 								</div>
 							</div>
 						{/if}
@@ -216,14 +216,14 @@
 												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
 											></div>
 										</div>
-										<button
-											onclick={onOpenReflectionWriter}
-											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90"
+										<a
+											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
 											style="background-color: #334642;"
 										>
 											<Edit3 size="20" />
 											Write Reflection
-										</button>
+										</a>
 									</div>
 								</div>
 							{/if}

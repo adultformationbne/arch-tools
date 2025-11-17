@@ -132,11 +132,11 @@
 		tabindex="0"
 		aria-label="Close enrollment modal"
 	>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && handleClose()} role="dialog" aria-modal="true" aria-labelledby="enrollment-title" tabindex="-1">
 			<!-- Header -->
 			<div class="modal-header">
 				<div>
-					<h2>Add Participants</h2>
+					<h2 id="enrollment-title">Add Participants</h2>
 					{#if cohort}
 						<p class="cohort-name">{cohort.name}</p>
 					{/if}
@@ -176,8 +176,9 @@
 
 					<form onsubmit={(e) => { e.preventDefault(); handleSingleParticipant(); }}>
 						<div class="form-group">
-							<label>Full Name*</label>
+							<label for="participant-name">Full Name*</label>
 							<input
+								id="participant-name"
 								type="text"
 								bind:value={participantData.full_name}
 								placeholder="John Smith"
@@ -186,8 +187,9 @@
 						</div>
 
 						<div class="form-group">
-							<label>Email*</label>
+							<label for="participant-email">Email*</label>
 							<input
+								id="participant-email"
 								type="email"
 								bind:value={participantData.email}
 								placeholder="john.smith@example.com"
@@ -196,16 +198,17 @@
 						</div>
 
 						<div class="form-group">
-							<label>Role</label>
-							<select bind:value={participantData.role}>
+							<label for="participant-role">Role</label>
+							<select id="participant-role" bind:value={participantData.role}>
 								<option value="student">Participant</option>
 								<option value="coordinator">Hub Coordinator</option>
 							</select>
 						</div>
 
 						<div class="form-group">
-							<label>Hub (Optional)</label>
+							<label for="participant-hub">Hub (Optional)</label>
 							<input
+								id="participant-hub"
 								type="text"
 								bind:value={participantData.hub}
 								placeholder="St. Mary's Parish"

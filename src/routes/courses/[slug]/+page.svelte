@@ -1,7 +1,6 @@
 <script>
 	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
 	import SessionContent from './SessionContent.svelte';
-	import ReflectionWriter from './ReflectionWriter.svelte';
 	import MaterialViewer from './MaterialViewer.svelte';
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
@@ -10,14 +9,13 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug } = data;
+	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData } = data;
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
 	// Students can only access sessions up to their current_session
 	// If current_session is 0 (not started), they can't access any sessions
 	let availableSessions = $state(initialSession);
-	let showReflectionWriter = $state(false);
 	let showMaterialViewer = $state(false);
 	let selectedMaterial = $state(null);
 	let showReflectionModal = $state(false);
@@ -32,7 +30,7 @@
 
 		// Update course data for the selected session
 		const sessionMaterials = materialsBySession[sessionNum] || [];
-		const sessionQuestion = data.questionsBySession[sessionNum] || { id: null, text: 'Reflect on this session\'s materials and their impact on your faith journey.' };
+		const sessionQuestion = data.questionsBySession[sessionNum] || null;
 		const sessionInfo = sessionsByNumber[sessionNum];
 
 		courseData = {
@@ -46,14 +44,6 @@
 				reflectionStatus: 'not_started' // TODO: Get actual status
 			}
 		};
-	};
-
-	const openReflectionWriter = () => {
-		showReflectionWriter = true;
-	};
-
-	const closeReflectionWriter = () => {
-		showReflectionWriter = false;
 	};
 
 	const openMaterial = (material) => {
@@ -91,17 +81,17 @@
 <!-- Single content wrapper with consistent margins -->
 <div class="px-16">
 	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
-	<HubCoordinatorBar />
+	<HubCoordinatorBar {hubData} />
 
 	<!-- Main Content with Session Navigation -->
 	<SessionContent
 		bind:currentSession={currentSession}
 		availableSessions={availableSessions}
 		courseData={courseData}
+		courseSlug={courseSlug}
 		materials={materials}
 		currentSessionData={currentSessionData}
 		onSessionChange={handleSessionChange}
-		onOpenReflectionWriter={openReflectionWriter}
 		onOpenMaterial={openMaterial}
 	/>
 
@@ -113,20 +103,8 @@
 				material={selectedMaterial}
 				currentSession={currentSession}
 				materialsBySession={materialsBySession}
+				courseName={courseData.title || 'Course Materials'}
 				onClose={closeMaterialViewer}
-			/>
-		</div>
-	</div>
-
-	<!-- Reflection Writer Component -->
-	<div class="pb-8">
-		<div class="max-w-7xl mx-auto">
-			<ReflectionWriter
-				courseSlug={courseSlug}
-				bind:isVisible={showReflectionWriter}
-				questionId={currentSessionData.reflectionQuestion?.id}
-				question={currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
-				onClose={closeReflectionWriter}
 			/>
 		</div>
 	</div>

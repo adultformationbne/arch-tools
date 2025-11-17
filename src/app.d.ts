@@ -32,6 +32,14 @@ declare global {
 		interface Locals {
 			supabase: SupabaseClient;
 			safeGetSession: () => Promise<{ session: Session | null; user: User | null }>;
+			authCache?: Map<string, any>;
+			courseCache?: Map<string, {
+				course: any;
+				modules: any[];
+				cohorts: any[];
+				moduleIds: string[];
+				cohortIds: string[];
+			}>;
 		}
 		interface PageData {
 			session: Session | null;

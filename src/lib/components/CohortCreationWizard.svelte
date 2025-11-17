@@ -151,12 +151,12 @@
 </script>
 
 {#if show}
-	<div class="modal-overlay" onclick={handleClose}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" onclick={handleClose} onkeydown={(e) => e.key === 'Enter' && handleClose()} role="presentation">
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && handleClose()} role="dialog" aria-modal="true" aria-labelledby="wizard-title" tabindex="-1">
 			<!-- Header -->
 			<div class="modal-header">
 				<div>
-					<h2>Create New Cohort</h2>
+					<h2 id="wizard-title">Create New Cohort</h2>
 					<div class="step-indicator">
 						<span class:active={currentStep === 1} class:completed={currentStep > 1}>1. Details</span>
 						<ChevronRight size={16} />
@@ -177,8 +177,9 @@
 				<div class="modal-body">
 					<form onsubmit={(e) => { e.preventDefault(); createDraftCohort(); }}>
 						<div class="form-group">
-							<label>Cohort Name*</label>
+							<label for="cohort-name">Cohort Name*</label>
 							<input
+								id="cohort-name"
 								type="text"
 								bind:value={cohortData.name}
 								placeholder="e.g., February 2025 - Foundations of Faith"
@@ -187,8 +188,8 @@
 						</div>
 
 						<div class="form-group">
-							<label>Module*</label>
-							<select bind:value={cohortData.moduleId} required>
+							<label for="cohort-module">Module*</label>
+							<select id="cohort-module" bind:value={cohortData.moduleId} required>
 								<option value="">Select a module</option>
 								{#each modules as module}
 									<option value={module.id}>{module.name}</option>
@@ -197,8 +198,8 @@
 						</div>
 
 						<div class="form-group">
-							<label>Start Date*</label>
-							<input type="date" bind:value={cohortData.startDate} required />
+							<label for="cohort-start-date">Start Date*</label>
+							<input id="cohort-start-date" type="date" bind:value={cohortData.startDate} required />
 							<p class="help-text">End date will be automatically calculated (8 weeks from start)</p>
 						</div>
 
@@ -412,8 +413,7 @@
 	}
 
 	.form-group input,
-	.form-group select,
-	.form-group textarea {
+	.form-group select {
 		width: 100%;
 		padding: 12px;
 		border: 1px solid var(--course-surface);
@@ -423,14 +423,9 @@
 	}
 
 	.form-group input:focus,
-	.form-group select:focus,
-	.form-group textarea:focus {
+	.form-group select:focus {
 		outline: none;
 		border-color: var(--course-accent-light);
-	}
-
-	.form-group textarea {
-		resize: vertical;
 	}
 
 	.help-text {
@@ -510,32 +505,6 @@
 	.empty-state {
 		color: var(--course-accent-dark);
 		font-style: italic;
-	}
-
-	.checkbox-group {
-		margin-top: 16px;
-	}
-
-	.checkbox-group label {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		cursor: pointer;
-		padding: 12px;
-		border-radius: 8px;
-		background: white;
-		border: 1px solid var(--course-surface);
-		transition: all 0.2s ease;
-	}
-
-	.checkbox-group label:hover {
-		border-color: var(--course-accent-light);
-	}
-
-	.checkbox-group input[type='checkbox'] {
-		width: 18px;
-		height: 18px;
-		cursor: pointer;
 	}
 
 	.modal-actions {

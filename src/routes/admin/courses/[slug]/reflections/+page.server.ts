@@ -4,49 +4,28 @@ import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	const startTime = Date.now();
 	const courseSlug = event.params.slug;
+	console.log(`[REFLECTIONS PAGE] Loading...`);
 
-	// Restrict to admins only
-	const { user } = await requireCourseAdmin(event, courseSlug);
+	// Auth is already done in layout - no need to check again!
+	// Get user from locals instead of re-authenticating
+	const { user } = await event.locals.safeGetSession();
 
 	try {
-		// Get the course ID from slug
-		const { data: course } = await supabaseAdmin
-			.from('courses')
-			.select('id')
-			.eq('slug', courseSlug)
-			.single();
+		// Get layout data (modules and cohorts already loaded, auth already checked)
+		const parentStart = Date.now();
+		const layoutData = await event.parent();
+		console.log(`[REFLECTIONS PAGE] ⚡ Parent data (cached): ${Date.now() - parentStart}ms`);
 
-		if (!course) {
-			throw error(404, 'Course not found');
-		}
-
-		// Get module IDs for this course
-		const { data: modules } = await supabaseAdmin
-			.from('courses_modules')
-			.select('id')
-			.eq('course_id', course.id);
+		const modules = layoutData?.modules || [];
+		const cohorts = layoutData?.cohorts || [];
+		const courseInfo = layoutData?.courseInfo || {};
 
 		const moduleIds = modules?.map(m => m.id) || [];
+		const cohortIds = cohorts?.map(c => c.id) || [];
 
-		if (moduleIds.length === 0) {
-			return {
-				reflections: [],
-				cohorts: [],
-				currentUserId: user.id,
-				courseSlug
-			};
-		}
-
-		// Get cohort IDs for this course's modules
-		const { data: courseCohorts } = await supabaseAdmin
-			.from('courses_cohorts')
-			.select('id')
-			.in('module_id', moduleIds);
-
-		const cohortIds = courseCohorts?.map(c => c.id) || [];
-
-		if (cohortIds.length === 0) {
+		if (moduleIds.length === 0 || cohortIds.length === 0) {
 			return {
 				reflections: [],
 				cohorts: [],
@@ -56,6 +35,7 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		// Fetch reflection responses for this course's cohorts
+		const reflectionsStart = Date.now();
 		const { data: reflections, error: reflectionsError } = await supabaseAdmin
 			.from('courses_reflection_responses')
 			.select(`
@@ -89,27 +69,11 @@ export const load: PageServerLoad = async (event) => {
 			`)
 			.in('cohort_id', cohortIds)
 			.order('created_at', { ascending: false });
+		console.log(`[REFLECTIONS PAGE] Reflections query: ${Date.now() - reflectionsStart}ms`);
 
 		if (reflectionsError) {
 			console.error('Error fetching reflections:', reflectionsError);
 			throw error(500, 'Failed to load reflections');
-		}
-
-		// Get cohorts for this course for filter dropdown
-		const { data: cohorts, error: cohortsError } = await supabaseAdmin
-			.from('courses_cohorts')
-			.select(`
-				id,
-				name,
-				module:module_id (
-					name
-				)
-			`)
-			.in('module_id', moduleIds)
-			.order('start_date', { ascending: false });
-
-		if (cohortsError) {
-			console.error('Error fetching cohorts:', cohortsError);
 		}
 
 		// Process reflections for display
@@ -158,12 +122,14 @@ export const load: PageServerLoad = async (event) => {
 			};
 		}) || [];
 
-		// Get cohort options for filter
+		// Get cohort options for filter (from layout data)
 		const cohortOptions = cohorts?.map(c => ({
 			id: c.id,
 			name: c.name,
-			moduleName: c.module?.name || ''
+			moduleName: c.courses_modules?.name || ''
 		})) || [];
+
+		console.log(`[REFLECTIONS PAGE] ✅ Complete in ${Date.now() - startTime}ms (${processedReflections.length} reflections)\n`);
 
 		return {
 			reflections: processedReflections,

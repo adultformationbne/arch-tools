@@ -1,19 +1,14 @@
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { requireCourseAdmin } from '$lib/server/auth';
 
 export const load: PageServerLoad = async (event) => {
-	const courseSlug = event.params.slug;
+	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
 
-	// Require course admin authentication
-	await requireCourseAdmin(event, courseSlug);
+	// Get layout data (course already loaded)
+	const layoutData = await event.parent();
+	const courseInfo = layoutData?.courseInfo;
 
-	// Get the course ID from slug
-	const { data: course } = await supabaseAdmin
-		.from('courses')
-		.select('id')
-		.eq('slug', courseSlug)
-		.single();
+	const course = courseInfo ? { id: courseInfo.id } : null;
 
 	if (!course) {
 		return { cohorts: [], hubs: [] };

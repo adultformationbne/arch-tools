@@ -1,86 +1,48 @@
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
 	const courseSlug = event.params.slug;
+	const { user } = await event.locals.safeGetSession();
 
-	// Require course admin role (or platform admin)
-	const { user } = await requireCourseAdmin(event, courseSlug);
+	// Get layout data (modules and cohorts already loaded)
+	const layoutData = await event.parent();
+	const modules = layoutData?.modules || [];
+	const cohorts = layoutData?.cohorts || [];
 
 	try {
-		// Get the course ID from slug
-		const { data: course } = await supabaseAdmin
-			.from('courses')
-			.select('id')
-			.eq('slug', courseSlug)
-			.single();
-
-		if (!course) {
-			return {
-				modules: [],
-				cohorts: [],
-				currentUserId: user.id,
-				courseSlug
-			};
-		}
-
-		// Fetch modules for this course only
-		const { data: modules, error: modulesError } = await supabaseAdmin
-			.from('courses_modules')
-			.select('*')
-			.eq('course_id', course.id)
-			.order('order_number', { ascending: true });
-
-		if (modulesError) {
-			console.error('Error fetching modules:', modulesError);
-			throw modulesError;
-		}
-
-		const moduleIds = modules?.map(m => m.id) || [];
-
-		// Fetch cohorts for this course's modules only
-		const { data: cohorts, error: cohortsError } = await supabaseAdmin
-			.from('courses_cohorts')
-			.select(`
-				*,
-				courses_modules (
-					id,
-					name,
-					description
-				)
-			`)
-			.in('module_id', moduleIds)
-			.order('created_at', { ascending: false});
-
-		if (cohortsError) {
-			console.error('Error fetching cohorts:', cohortsError);
-			throw cohortsError;
-		}
-
 		// Get student counts for each cohort from courses_enrollments
-		const cohortIds = cohorts?.map(c => c.id) || [];
+		const cohortIds = cohorts.map(c => c.id);
 
-		// Count all users in each cohort
-		const { data: userCounts, error: userCountError } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select('cohort_id')
-			.in('cohort_id', cohortIds);
+		// ✅ OPTIMIZATION: Fetch both counts AND full enrollments for initial selected cohort
+		const cohortParam = event.url.searchParams.get('cohort');
+		const initialCohortId = cohortParam || cohorts[0]?.id;
 
-		if (userCountError) {
-			console.error('Error fetching user counts:', userCountError);
-		}
+		const [userCountsResult, enrollmentsResult] = await Promise.all([
+			supabaseAdmin
+				.from('courses_enrollments')
+				.select('cohort_id')
+				.in('cohort_id', cohortIds),
+			// Preload students for initial cohort to avoid client-side API call
+			initialCohortId
+				? supabaseAdmin
+						.from('courses_enrollments')
+						.select('*, courses_cohorts(name), courses_hubs(name)')
+						.eq('cohort_id', initialCohortId)
+						.order('created_at', { ascending: false })
+				: Promise.resolve({ data: null })
+		]);
 
-		// Process cohort data
-		const processedCohorts = cohorts?.map(cohort => {
+		const { data: userCounts } = userCountsResult;
+		const initialStudents = enrollmentsResult.data || [];
+
+		// Enrich cohort data with student counts
+		const enrichedCohorts = cohorts.map(cohort => {
 			const studentCount = userCounts?.filter(u => u.cohort_id === cohort.id).length || 0;
 
 			// Determine status based on session progression
 			let status = cohort.status;
-
-			// Session-based status:
-			// - current_session = 0 → 'upcoming' (not started)
-			// - current_session >= 1 → 'active' (unless manually marked completed)
 			const currentSession = cohort.current_session || 0;
 
 			if (currentSession === 0 && status !== 'completed') {
@@ -88,34 +50,24 @@ export const load: PageServerLoad = async (event) => {
 			} else if (currentSession >= 1 && status !== 'completed') {
 				status = 'active';
 			}
-			// If status is 'completed', keep it (manually set by admin)
 
 			return {
-				id: cohort.id,
-				name: cohort.name,
-				module: cohort.courses_modules?.name || 'Unknown Module',
-				moduleId: cohort.module_id,
-				startDate: cohort.start_date,
-				endDate: cohort.end_date,
+				...cohort,
 				status: status,
-				currentSession: currentSession,
-				totalSessions: 8, // All ACCF modules are 8 sessions
-				students: studentCount,
-				description: cohort.description || '',
-				createdAt: cohort.created_at
+				students: studentCount
 			};
-		}) || [];
+		});
 
 		// Determine initial selected cohort from URL or default to first
-		const cohortParam = event.url.searchParams.get('cohort');
-		const initialSelectedCohort = cohortParam || (processedCohorts.length > 0 ? processedCohorts[0].id : null);
+		const initialSelectedCohort = cohortParam || (enrichedCohorts.length > 0 ? enrichedCohorts[0].id : null);
 
 		return {
-			modules: modules || [],
-			cohorts: processedCohorts,
+			modules,
+			cohorts: enrichedCohorts,
 			currentUserId: user.id,
 			courseSlug,
-			initialSelectedCohort
+			initialSelectedCohort,
+			initialStudents // ✅ Preload students to avoid API call
 		};
 
 	} catch (error) {

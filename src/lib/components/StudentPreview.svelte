@@ -27,10 +27,14 @@
 		<p class="text-sm text-gray-600 mb-4">{sessionOverview || 'No overview set'}</p>
 		<div class="space-y-2">
 			{#each materials.slice(0, maxPreviewItems) as material}
-				<div class="flex items-center gap-2 text-sm">
-					<svelte:component this={getMaterialIcon(material.type)} size="16" class="text-gray-500" />
-					<span class="truncate">{material.title}</span>
-				</div>
+				{#snippet materialItem(mat)}
+					{@const Icon = getMaterialIcon(mat.type)}
+					<div class="flex items-center gap-2 text-sm">
+						<Icon size="16" class="text-gray-500" />
+						<span class="truncate">{mat.title}</span>
+					</div>
+				{/snippet}
+				{@render materialItem(material)}
 			{/each}
 			{#if materials.length > maxPreviewItems}
 				<p class="text-xs text-gray-500">+{materials.length - maxPreviewItems} more materials</p>

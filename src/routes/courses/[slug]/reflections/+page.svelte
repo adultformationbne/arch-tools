@@ -1,7 +1,5 @@
 <script>
 	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-svelte';
-	import ReflectionWriter from '../ReflectionWriter.svelte';
-	import { goto } from '$app/navigation';
 	import { ReflectionStatus } from '$lib/utils/reflection-status.js';
 
 	// Get data from server load
@@ -12,10 +10,7 @@
 
 	// Page state
 	let activeTab = $state('my-reflections'); // 'my-reflections' | 'my-cohort'
-	let showReflectionWriter = $state(false);
 	let expandedReflections = $state(new Set()); // Track which reflections are expanded
-	let selectedReflection = $state(null); // Track which reflection is being edited
-
 
 	// Toggle functions
 	const toggleReflectionExpansion = (reflectionId) => {
@@ -25,30 +20,6 @@
 			expandedReflections.add(reflectionId);
 		}
 		expandedReflections = new Set(expandedReflections);
-	};
-
-	const openReflectionWriter = (reflection = null) => {
-		selectedReflection = reflection;
-		showReflectionWriter = true;
-
-		// Scroll to top to show the reflection writer
-		setTimeout(() => {
-			window.scrollTo({ top: 0, behavior: 'smooth' });
-		}, 100);
-	};
-
-	const closeReflectionWriter = () => {
-		showReflectionWriter = false;
-		selectedReflection = null;
-	};
-
-	const handleReflectionSave = async () => {
-		console.log('Reflection saved, refreshing page data...');
-		closeReflectionWriter();
-
-		// Invalidate and reload the page data
-		await goto(`/courses/${courseSlug}/reflections`, { invalidateAll: true });
-		console.log('Page data refreshed');
 	};
 
 	const formatDate = (dateString) => {
@@ -67,25 +38,6 @@
 
 <!-- Single content wrapper with consistent margins -->
 <div class="px-16 space-y-8">
-
-	<!-- Reflection Writer Component (appears at top when active) -->
-	{#if showReflectionWriter}
-		<div class="pt-8 pb-4">
-			<div class="max-w-4xl mx-auto">
-				<ReflectionWriter
-					courseSlug={courseSlug}
-					bind:isVisible={showReflectionWriter}
-					question={selectedReflection?.question || currentReflectionQuestion?.question || ''}
-					questionId={selectedReflection?.questionId || currentReflectionQuestion?.questionId}
-					existingContent={selectedReflection?.myResponse || ''}
-					existingIsPublic={selectedReflection?.isPublic || false}
-					onClose={closeReflectionWriter}
-					onSave={handleReflectionSave}
-				/>
-			</div>
-		</div>
-	{/if}
-
 	<div class="py-8">
 		<div class="max-w-4xl mx-auto">
 
@@ -116,14 +68,14 @@
 								Due: {formatDate(currentReflectionQuestion.dueDate)}
 							</p>
 						</div>
-						<button
-							onclick={() => openReflectionWriter(currentReflectionQuestion)}
-							class="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90"
+						<a
+							href="/courses/{courseSlug}/write/{currentReflectionQuestion.questionId}"
+							class="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90 no-underline"
 							style="background-color: var(--course-accent-dark);"
 						>
 							<Edit3 size="18" />
 							Write Reflection
-						</button>
+						</a>
 					</div>
 				</div>
 			{/if}
@@ -219,14 +171,14 @@
 									<p class="text-gray-600 mb-4">
 										{reflection.status === ReflectionStatus.OVERDUE ? 'This reflection is overdue for marking.' : 'You haven\'t written this reflection yet.'}
 									</p>
-									<button
-										onclick={() => openReflectionWriter(reflection)}
-										class="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90 mx-auto"
+									<a
+										href="/courses/{courseSlug}/write/{reflection.questionId}"
+										class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90 no-underline"
 										style="background-color: var(--course-accent-dark);"
 									>
 										<Edit3 size="18" />
 										{reflection.status === ReflectionStatus.OVERDUE ? 'View Submitted Reflection' : 'Write Reflection'}
-									</button>
+									</a>
 								</div>
 							{:else if reflection.status === ReflectionStatus.NEEDS_REVISION}
 								<!-- Needs revision - show content but highlight revision needed -->
@@ -239,11 +191,15 @@
 									<!-- My Response -->
 									<div>
 										<h4 class="font-semibold text-gray-800 mb-2">Your Response</h4>
-										<div class="bg-gray-50 rounded-xl p-4">
+										<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
 											{#if expandedReflections.has(reflection.id)}
-												<p class="text-gray-700 leading-relaxed whitespace-pre-line">{reflection.myResponse}</p>
+												<div class="text-gray-700 leading-relaxed">
+													{@html reflection.myResponse}
+												</div>
 											{:else}
-												<p class="text-gray-700 leading-relaxed">{truncateText(reflection.myResponse)}</p>
+												<div class="text-gray-700 leading-relaxed">
+													{@html truncateText(reflection.myResponse)}
+												</div>
 											{/if}
 											{#if reflection.myResponse.length > 200}
 												<button
@@ -277,14 +233,14 @@
 										</div>
 									{/if}
 
-									<button
-										onclick={() => openReflectionWriter(reflection)}
-										class="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90"
+									<a
+										href="/courses/{courseSlug}/write/{reflection.questionId}"
+										class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white transition-colors hover:opacity-90 no-underline"
 										style="background-color: var(--course-accent-dark);"
 									>
 										<Edit3 size="18" />
 										Revise Reflection
-									</button>
+									</a>
 								</div>
 							{:else}
 								<!-- Has content -->
@@ -292,11 +248,15 @@
 									<!-- My Response -->
 									<div>
 										<h4 class="font-semibold text-gray-800 mb-2">Your Response</h4>
-										<div class="bg-gray-50 rounded-xl p-4">
+										<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
 											{#if expandedReflections.has(reflection.id)}
-												<p class="text-gray-700 leading-relaxed whitespace-pre-line">{reflection.myResponse}</p>
+												<div class="text-gray-700 leading-relaxed">
+													{@html reflection.myResponse}
+												</div>
 											{:else}
-												<p class="text-gray-700 leading-relaxed">{truncateText(reflection.myResponse)}</p>
+												<div class="text-gray-700 leading-relaxed">
+													{@html truncateText(reflection.myResponse)}
+												</div>
 											{/if}
 											{#if reflection.myResponse.length > 200}
 												<button
@@ -327,6 +287,23 @@
 											<div class="rounded-xl p-4" style="background-color: #f9f6f2;">
 												<p class="text-gray-700 leading-relaxed">{reflection.feedback}</p>
 											</div>
+										</div>
+									{/if}
+
+									<!-- Edit Button (if submitted but not reviewed yet) -->
+									{#if reflection.status === ReflectionStatus.SUBMITTED && !reflection.markedBy}
+										<div class="pt-2 border-t border-gray-200">
+											<p class="text-sm text-gray-600 mb-3">
+												You can still edit this reflection until it's reviewed.
+											</p>
+											<a
+												href="/courses/{courseSlug}/write/{reflection.questionId}"
+												class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors hover:opacity-90"
+												style="background-color: var(--course-accent-dark);"
+											>
+												<Edit3 size="16" />
+												Edit Reflection
+											</a>
 										</div>
 									{/if}
 
@@ -364,8 +341,10 @@
 							<p class="text-gray-700 font-medium mb-4">{reflection.question}</p>
 
 							<!-- Response (always full for cohort) -->
-							<div class="bg-gray-50 rounded-xl p-4">
-								<p class="text-gray-700 leading-relaxed whitespace-pre-line">{reflection.response}</p>
+							<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
+								<div class="text-gray-700 leading-relaxed">
+									{@html reflection.response}
+								</div>
 							</div>
 						</div>
 					{/each}

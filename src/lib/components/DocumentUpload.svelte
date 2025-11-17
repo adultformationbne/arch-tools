@@ -161,6 +161,10 @@
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
 		onclick={triggerFileSelect}
+		onkeydown={(e) => e.key === 'Enter' && triggerFileSelect()}
+		role="button"
+		tabindex="0"
+		aria-label="Upload documents"
 	>
 		{#if uploadStatus === 'uploading'}
 			<div class="space-y-4">

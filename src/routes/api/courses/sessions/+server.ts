@@ -21,39 +21,31 @@ export const GET: RequestHandler = async (event) => {
 	try {
 		const sessionNum = parseInt(sessionNumber);
 
-		// Try to fetch existing session
-		const { data: existingSession, error: fetchError } = await supabaseAdmin
-			.from('courses_sessions')
-			.select('*')
-			.eq('module_id', moduleId)
-			.eq('session_number', sessionNum)
-			.maybeSingle();
-
-		// If session exists, return it
-		if (existingSession) {
-			return json({ session: existingSession });
-		}
-
-		// Session doesn't exist - create it
+		// Use upsert to avoid race conditions when multiple requests happen simultaneously
 		const sessionTitle = sessionNum === 0 ? 'Pre-Start' : `Session ${sessionNum}`;
-		const { data: newSession, error: createError } = await supabaseAdmin
+		const sessionData = {
+			module_id: moduleId,
+			session_number: sessionNum,
+			title: sessionTitle,
+			description: '',
+			reflections_enabled: true
+		};
+
+		const { data: session, error: upsertError } = await supabaseAdmin
 			.from('courses_sessions')
-			.insert({
-				module_id: moduleId,
-				session_number: sessionNum,
-				title: sessionTitle,
-				description: '',
-				reflections_enabled: true
+			.upsert(sessionData, {
+				onConflict: 'module_id,session_number',
+				ignoreDuplicates: false
 			})
 			.select()
 			.single();
 
-		if (createError) {
-			console.error('Error creating session:', createError);
-			throw error(500, 'Failed to create session');
+		if (upsertError) {
+			console.error('Error creating/fetching session:', upsertError);
+			throw error(500, 'Failed to fetch or create session');
 		}
 
-		return json({ session: newSession });
+		return json({ session });
 	} catch (err) {
 		console.error('Error in GET /api/courses/sessions:', err);
 		throw error(500, 'Failed to fetch or create session');
@@ -67,7 +59,7 @@ export const GET: RequestHandler = async (event) => {
 export const PUT: RequestHandler = async (event) => {
 	await requireAuth(event);
 
-	const { session_id, reflections_enabled, description } = await event.request.json();
+	const { session_id, reflections_enabled, description, title } = await event.request.json();
 
 	if (!session_id) {
 		throw error(400, 'session_id is required');
@@ -85,6 +77,10 @@ export const PUT: RequestHandler = async (event) => {
 
 		if (description !== undefined) {
 			updateData.description = description;
+		}
+
+		if (title !== undefined) {
+			updateData.title = title;
 		}
 
 		const { data: session, error: updateError } = await supabaseAdmin

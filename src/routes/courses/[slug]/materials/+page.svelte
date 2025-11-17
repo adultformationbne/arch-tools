@@ -4,7 +4,7 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession, materials } = data;
+	const { materialsBySession, currentSession, materials, courseName } = data;
 
 	// Find a default material to show (first material from current session)
 	const defaultMaterial = materialsBySession[currentSession]?.[0] || null;
@@ -25,6 +25,7 @@
 			material={selectedMaterial}
 			currentSession={currentSession}
 			materialsBySession={materialsBySession}
+			courseName={courseName || 'Course Materials'}
 			onClose={() => {}}
 		/>
 	</div>

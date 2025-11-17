@@ -1,6 +1,9 @@
 <script>
 	import { Users, CheckSquare, BookOpen, ChevronDown, ChevronUp, Calendar, MessageSquare } from 'lucide-svelte';
 
+	// Props from parent
+	let { hubData = null } = $props();
+
 	let isExpanded = $state(false);
 	let activeTab = $state('attendance'); // 'attendance' | 'progress' | 'reflections'
 
@@ -8,33 +11,47 @@
 		isExpanded = !isExpanded;
 	};
 
-	// Mock hub data
-	const hubData = $state({
-		hubName: "St. Mary's Parish Hub",
-		coordinatorName: "Maria Rodriguez",
-		currentSession: 8,
-		students: [
-			{ id: 1, name: "Sarah Johnson", attendance: [true, true, false, true, true, true, false, true], reflectionStatus: 'submitted', email: 'sarah@email.com' },
-			{ id: 2, name: "Michael Chen", attendance: [true, true, true, true, false, true, true, false], reflectionStatus: 'not_started', email: 'michael@email.com' },
-			{ id: 3, name: "Jennifer Davis", attendance: [false, true, true, true, true, true, true, true], reflectionStatus: 'submitted', email: 'jennifer@email.com' },
-			{ id: 4, name: "Robert Wilson", attendance: [true, false, true, true, true, false, true, true], reflectionStatus: 'overdue', email: 'robert@email.com' },
-			{ id: 5, name: "Lisa Anderson", attendance: [true, true, true, false, true, true, true, true], reflectionStatus: 'submitted', email: 'lisa@email.com' }
-		]
-	});
-
-	const getAttendanceCount = (student) => {
-		return student.attendance.filter(Boolean).length;
+	const markAttendance = (studentId, present) => {
+		// TODO: Implement API call to mark attendance
+		const student = hubData?.students.find(s => s.id === studentId);
+		if (student) {
+			student.attendanceStatus = present ? 'present' : 'absent';
+		}
 	};
 
-	const markAttendance = (studentId, present) => {
-		const student = hubData.students.find(s => s.id === studentId);
-		if (student && student.attendance.length === hubData.currentSession) {
-			student.attendance[hubData.currentSession - 1] = present;
+	const getReflectionStatusLabel = (status) => {
+		switch (status) {
+			case 'submitted':
+			case 'under_review':
+			case 'passed':
+				return '✓ Submitted';
+			case 'not_started':
+				return '⏳ Not Started';
+			case 'needs_revision':
+			case 'resubmitted':
+				return '⚠️ Needs Work';
+			default:
+				return '⏳ Not Started';
+		}
+	};
+
+	const getReflectionStatusClass = (status) => {
+		switch (status) {
+			case 'submitted':
+			case 'under_review':
+			case 'passed':
+				return 'bg-green-100 text-green-700';
+			case 'needs_revision':
+			case 'resubmitted':
+				return 'bg-orange-100 text-orange-700';
+			default:
+				return 'bg-gray-100 text-gray-700';
 		}
 	};
 </script>
 
 <!-- Hub Coordinator Bar -->
+{#if hubData}
 <div class="py-4">
 	<div class="max-w-7xl mx-auto">
 		<div class="rounded-2xl border-2 transition-all duration-300 overflow-hidden" style="background-color: #eae2d9; border-color: #c59a6b;">
@@ -49,7 +66,7 @@
 				<div class="h-6 w-px" style="background-color: #c59a6b;"></div>
 				<div class="text-sm" style="color: #334642;">
 					<span class="font-medium">{hubData.hubName}</span> •
-					<span>{hubData.students.length} students</span>
+					<span>{hubData.students?.length || 0} students</span>
 				</div>
 			</div>
 
@@ -128,7 +145,7 @@
 							<h3 class="text-xl font-bold mb-4" style="color: #334642;">Session {hubData.currentSession} Attendance</h3>
 							<div class="bg-white rounded-2xl p-6 shadow-sm">
 								<div class="space-y-4">
-									{#each hubData.students as student}
+									{#each hubData.students || [] as student}
 										<div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
 											<div class="flex items-center gap-4">
 												<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style="background-color: #334642;">
@@ -136,27 +153,27 @@
 												</div>
 												<div>
 													<div class="font-semibold text-gray-800">{student.name}</div>
-													<div class="text-sm text-gray-600">{getAttendanceCount(student)}/8 sessions attended</div>
+													<div class="text-sm text-gray-600">{student.email}</div>
 												</div>
 											</div>
 											<div class="flex items-center gap-3">
 												<button
 													onclick={() => markAttendance(student.id, true)}
 													class="px-6 py-2 rounded-lg font-medium transition-colors"
-													class:bg-green-500={student.attendance[hubData.currentSession - 1] === true}
-													class:text-white={student.attendance[hubData.currentSession - 1] === true}
-													class:bg-gray-200={student.attendance[hubData.currentSession - 1] !== true}
-													class:text-gray-700={student.attendance[hubData.currentSession - 1] !== true}
+													class:bg-green-500={student.attendanceStatus === 'present'}
+													class:text-white={student.attendanceStatus === 'present'}
+													class:bg-gray-200={student.attendanceStatus !== 'present'}
+													class:text-gray-700={student.attendanceStatus !== 'present'}
 												>
 													Present
 												</button>
 												<button
 													onclick={() => markAttendance(student.id, false)}
 													class="px-6 py-2 rounded-lg font-medium transition-colors"
-													class:bg-red-500={student.attendance[hubData.currentSession - 1] === false}
-													class:text-white={student.attendance[hubData.currentSession - 1] === false}
-													class:bg-gray-200={student.attendance[hubData.currentSession - 1] !== false}
-													class:text-gray-700={student.attendance[hubData.currentSession - 1] !== false}
+													class:bg-red-500={student.attendanceStatus === 'absent'}
+													class:text-white={student.attendanceStatus === 'absent'}
+													class:bg-gray-200={student.attendanceStatus !== 'absent'}
+													class:text-gray-700={student.attendanceStatus !== 'absent'}
 												>
 													Absent
 												</button>
@@ -178,7 +195,7 @@
 							<h3 class="text-xl font-bold mb-4" style="color: #334642;">Hub Student Progress</h3>
 							<div class="bg-white rounded-2xl p-6 shadow-sm">
 								<div class="space-y-6">
-									{#each hubData.students as student}
+									{#each hubData.students || [] as student}
 										<div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
 											<div class="flex items-start justify-between mb-4">
 												<div class="flex items-center gap-4">
@@ -191,41 +208,26 @@
 													</div>
 												</div>
 												<div class="text-right">
-													<div class="text-sm text-gray-600 mb-1">Session 8 Reflection</div>
-													<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
-														class:bg-green-100={student.reflectionStatus === 'submitted'}
-														class:text-green-700={student.reflectionStatus === 'submitted'}
-														class:bg-orange-100={student.reflectionStatus === 'not_started'}
-														class:text-orange-700={student.reflectionStatus === 'not_started'}
-														class:bg-red-100={student.reflectionStatus === 'overdue'}
-														class:text-red-700={student.reflectionStatus === 'overdue'}
-													>
-														{#if student.reflectionStatus === 'submitted'}
-															✓ Submitted
-														{:else if student.reflectionStatus === 'not_started'}
-															⏳ Not Started
-														{:else if student.reflectionStatus === 'overdue'}
-															⚠️ Overdue
-														{/if}
+													<div class="text-sm text-gray-600 mb-1">Session {hubData.currentSession} Reflection</div>
+													<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {getReflectionStatusClass(student.reflectionStatus)}">
+														{getReflectionStatusLabel(student.reflectionStatus)}
 													</div>
 												</div>
 											</div>
-											<!-- Attendance Grid -->
+											<!-- Current Session Status -->
 											<div>
-												<div class="text-sm font-medium text-gray-700 mb-2">Attendance Record</div>
-												<div class="flex gap-1">
-													{#each student.attendance as attended, sessionIndex}
-														<div
-															class="w-8 h-8 rounded flex items-center justify-center text-xs font-medium"
-															class:bg-green-500={attended}
-															class:text-white={attended}
-															class:bg-red-200={!attended}
-															class:text-red-700={!attended}
-															title="Session {sessionIndex + 1}: {attended ? 'Present' : 'Absent'}"
-														>
-															{sessionIndex + 1}
-														</div>
-													{/each}
+												<div class="text-sm font-medium text-gray-700 mb-2">Session {hubData.currentSession} Status</div>
+												<div class="flex gap-4 text-sm">
+													<div>
+														<span class="text-gray-600">Attendance:</span>
+														<span class="font-medium" class:text-green-600={student.attendanceStatus === 'present'} class:text-red-600={student.attendanceStatus === 'absent'} class:text-gray-500={!student.attendanceStatus}>
+															{student.attendanceStatus === 'present' ? 'Present' : student.attendanceStatus === 'absent' ? 'Absent' : 'Not Marked'}
+														</span>
+													</div>
+													<div>
+														<span class="text-gray-600">Current Session:</span>
+														<span class="font-medium">{student.currentSession}</span>
+													</div>
 												</div>
 											</div>
 										</div>
@@ -254,6 +256,7 @@
 		</div>
 	</div>
 </div>
+{/if}
 
 <style>
 	.active-tab {

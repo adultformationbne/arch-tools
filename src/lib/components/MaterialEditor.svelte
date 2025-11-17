@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload } from 'lucide-svelte';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, File } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import DocumentUpload from './DocumentUpload.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
@@ -13,6 +13,7 @@
 		moduleId = '1',
 		weekNumber = 1,
 		sessionId = null,
+		courseId = null,
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -26,23 +27,137 @@
 	});
 
 	let showNativeEditor = $state(false);
-	let showDocumentUpload = $state(false);
 	let showDeleteConfirm = $state(false);
 	let materialToDelete = $state(null);
+	let fetchingVideoInfo = $state(false);
+	let videoPreviewId = $state(null);
 
 	const materialTypes = [
 		{ value: 'video', label: 'Video (YouTube)', icon: Video },
-		{ value: 'document', label: 'Document Link', icon: FileText },
-		{ value: 'link', label: 'External Link', icon: Link },
+		{ value: 'link', label: 'Link', icon: Link },
 		...(allowNativeContent ? [{ value: 'native', label: 'Native Content', icon: BookOpen }] : []),
 		...(allowDocumentUpload ? [{ value: 'upload', label: 'Upload Document', icon: Upload }] : [])
 	];
 
-	const getMaterialIcon = (type) => {
-		const typeObj = materialTypes.find(t => t.value === type);
-		return typeObj ? typeObj.icon : FileText;
+	// Detect file type from URL and return appropriate icon
+	const getFileTypeIcon = (url) => {
+		if (!url) return Link;
+
+		const urlLower = url.toLowerCase();
+
+		// PDF documents
+		if (urlLower.endsWith('.pdf')) return FileText;
+
+		// Word documents
+		if (urlLower.match(/\.(doc|docx)$/)) return FileText;
+
+		// Spreadsheets
+		if (urlLower.match(/\.(xls|xlsx|csv)$/)) return FileSpreadsheet;
+
+		// Presentations
+		if (urlLower.match(/\.(ppt|pptx)$/)) return Presentation;
+
+		// Archives
+		if (urlLower.match(/\.(zip|rar|7z|tar|gz)$/)) return Archive;
+
+		// Images
+		if (urlLower.match(/\.(jpg|jpeg|png|gif|svg|webp|bmp)$/)) return Image;
+
+		// Default link icon
+		return Link;
+	};
+
+	const getMaterialIcon = (type, url = '') => {
+		if (type === 'video') return Video;
+		if (type === 'native') return BookOpen;
+		if (type === 'upload') return Upload;
+		if (type === 'link') return getFileTypeIcon(url);
+
+		// Fallback for old 'document' type (for backwards compatibility)
+		if (type === 'document') return getFileTypeIcon(url);
+
+		return Link;
+	};
+
+	// Get human-readable file type label
+	const getFileTypeLabel = (url) => {
+		if (!url) return 'Link';
+
+		const urlLower = url.toLowerCase();
+
+		if (urlLower.endsWith('.pdf')) return 'PDF Document';
+		if (urlLower.match(/\.(doc|docx)$/)) return 'Word Document';
+		if (urlLower.match(/\.(xls|xlsx|csv)$/)) return 'Spreadsheet';
+		if (urlLower.match(/\.(ppt|pptx)$/)) return 'Presentation';
+		if (urlLower.match(/\.(zip|rar|7z|tar|gz)$/)) return 'Archive';
+		if (urlLower.match(/\.(jpg|jpeg|png|gif|svg|webp|bmp)$/)) return 'Image';
+
+		return 'Link';
 	};
 	const getFieldId = (prefix, unique) => `${prefix}-${unique ?? 'value'}`;
+
+	// Extract YouTube video ID from various URL formats
+	const getYouTubeVideoId = (url) => {
+		if (!url) return null;
+
+		const patterns = [
+			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+			/youtube\.com\/shorts\/([^&\n?#]+)/
+		];
+
+		for (const pattern of patterns) {
+			const match = url.match(pattern);
+			if (match) return match[1];
+		}
+
+		return null;
+	};
+
+	// Fetch YouTube video info using oEmbed API
+	const fetchYouTubeInfo = async (url) => {
+		try {
+			const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+			if (response.ok) {
+				const data = await response.json();
+				return {
+					title: data.title,
+					author: data.author_name
+				};
+			}
+		} catch (error) {
+			console.error('Error fetching YouTube info:', error);
+		}
+		return null;
+	};
+
+	// Handle URL change for new material
+	let urlDebounceTimer;
+	const handleNewMaterialUrlChange = async () => {
+		clearTimeout(urlDebounceTimer);
+
+		if (newMaterial.type === 'video' && newMaterial.url) {
+			const videoId = getYouTubeVideoId(newMaterial.url);
+			if (videoId) {
+				videoPreviewId = videoId;
+
+				// Auto-fetch title if title is empty
+				if (!newMaterial.title.trim()) {
+					urlDebounceTimer = setTimeout(async () => {
+						fetchingVideoInfo = true;
+						const info = await fetchYouTubeInfo(newMaterial.url);
+						if (info) {
+							newMaterial.title = info.title;
+						}
+						fetchingVideoInfo = false;
+					}, 500);
+				}
+			} else {
+				videoPreviewId = null;
+			}
+		} else {
+			videoPreviewId = null;
+		}
+	};
 
 	const addMaterial = async () => {
 		console.log('Add material clicked', newMaterial);
@@ -61,10 +176,10 @@
 			}
 		}
 
-		// For uploads, we handle differently
+		// For uploads, the user needs to upload files first
 		if (newMaterial.type === 'upload') {
-			console.log('Upload type - showing modal');
-			showDocumentUpload = true;
+			console.log('Upload type - files should be uploaded via DocumentUpload component');
+			toastError('Please upload files using the upload box below');
 			return;
 		}
 
@@ -297,7 +412,7 @@
 		for (const uploadResult of uploadResults) {
 			const material = {
 				id: Date.now() + Math.random(),
-				type: 'document',
+				type: 'link',
 				title: uploadResult.name.replace(/\.[^/.]+$/, ""), // Remove extension
 				url: uploadResult.url,
 				description: `Uploaded document (${(uploadResult.size / 1024 / 1024).toFixed(2)} MB)`,
@@ -308,7 +423,6 @@
 			onMaterialsChange(updatedMaterials);
 		}
 
-		showDocumentUpload = false;
 		return uploadResults;
 	};
 
@@ -320,10 +434,6 @@
 			showNativeEditor = true;
 		} else {
 			showNativeEditor = false;
-		}
-
-		if (material.type === 'upload' && isNew) {
-			showDocumentUpload = true;
 		}
 	};
 
@@ -354,7 +464,7 @@
 	<!-- Existing Materials -->
 	<div class="space-y-3 mb-6">
 		{#each materials as material, index}
-			{@const MaterialIcon = getMaterialIcon(material.type)}
+			{@const MaterialIcon = getMaterialIcon(material.type, material.url)}
 			{#if editingMaterial && editingMaterial.id === material.id}
 				<!-- Edit Mode -->
 				<div class="p-4">
@@ -418,6 +528,25 @@
 								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
 								style="focus:ring-color: #c59a6b;"
 							/>
+
+							<!-- YouTube Preview for editing video materials -->
+							{#if editingMaterial.type === 'video' && editingMaterial.url}
+								{@const videoId = getYouTubeVideoId(editingMaterial.url)}
+								{#if videoId}
+									<div class="mt-3 rounded-lg overflow-hidden bg-gray-100">
+										<div class="aspect-video">
+											<iframe
+												src="https://www.youtube.com/embed/{videoId}"
+												title={editingMaterial.title}
+												frameborder="0"
+												allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+												allowfullscreen
+												class="w-full h-full"
+											></iframe>
+										</div>
+									</div>
+								{/if}
+							{/if}
 						</div>
 					{/if}
 
@@ -454,27 +583,34 @@
 				</div>
 			{:else}
 				<!-- View Mode -->
-				<div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
-					<div class="flex items-center gap-3">
-						<div class="flex items-center gap-2">
-							<span class="text-sm font-semibold text-gray-500 w-6">{index + 1}</span>
-							<MaterialIcon size="20" style="color: #c59a6b;" />
-						</div>
-						<div>
-							<h3 class="font-semibold text-gray-800">{material.title}</h3>
-							<p class="text-sm text-gray-600">
-								{#if material.type === 'native'}
-									Native content
-								{:else}
-									{material.url}
+				<div class="p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+					<div class="flex items-center justify-between mb-3">
+						<div class="flex items-center gap-3 flex-1">
+							<div class="flex items-center gap-2">
+								<span class="text-sm font-semibold text-gray-500 w-6">{index + 1}</span>
+								<MaterialIcon size="20" style="color: #c59a6b;" />
+							</div>
+							<div class="flex-1">
+								<h3 class="font-semibold text-gray-800">{material.title}</h3>
+								<p class="text-sm text-gray-600">
+									{#if material.type === 'native'}
+										Native content
+									{:else if material.type === 'video'}
+										YouTube Video
+									{:else if material.type === 'link' || material.type === 'document'}
+										{getFileTypeLabel(material.url)}
+									{:else}
+										<a href={material.url} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+											{material.url}
+										</a>
+									{/if}
+								</p>
+								{#if material.description}
+									<p class="text-xs text-gray-500">{material.description}</p>
 								{/if}
-							</p>
-							{#if material.description}
-								<p class="text-xs text-gray-500">{material.description}</p>
-							{/if}
+							</div>
 						</div>
-					</div>
-					<div class="flex items-center gap-2">
+						<div class="flex items-center gap-2">
 						<button
 							onclick={() => moveMaterial(material.id, 'up')}
 							class="p-1 text-gray-500 hover:text-gray-700"
@@ -502,6 +638,7 @@
 							<Trash2 size="16" />
 						</button>
 					</div>
+					</div>
 				</div>
 			{/if}
 		{/each}
@@ -514,29 +651,6 @@
 		{/if}
 	</div>
 
-	<!-- Document Upload Modal -->
-	{#if showDocumentUpload}
-		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-			<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-				<div class="flex items-center justify-between mb-4">
-					<h3 class="text-lg font-semibold">Upload Documents</h3>
-					<button
-						onclick={() => showDocumentUpload = false}
-						class="p-1 text-gray-500 hover:text-gray-700"
-					>
-						<X size="20" />
-					</button>
-				</div>
-				<DocumentUpload
-					onUpload={handleDocumentUpload}
-					accept=".pdf,.doc,.docx,.txt,.md"
-					multiple={true}
-					{cohortId}
-					{weekNumber}
-				/>
-			</div>
-		</div>
-	{/if}
 
 	<!-- Add New Material -->
 	<div class="border-t pt-6">
@@ -589,7 +703,20 @@
 					placeholder="Enter your content..."
 				/>
 			</div>
-		{:else if newMaterial.type !== 'native' && newMaterial.type !== 'upload'}
+		{:else if newMaterial.type === 'upload'}
+			<div class="mb-4">
+				<div class="block text-sm font-semibold text-gray-700 mb-1">
+					Upload Documents
+				</div>
+				<DocumentUpload
+					onUpload={handleDocumentUpload}
+					accept=".pdf,.doc,.docx,.txt,.md"
+					multiple={true}
+					cohortId={courseId || moduleId}
+					weekNumber={weekNumber}
+				/>
+			</div>
+		{:else if newMaterial.type !== 'native'}
 			<div class="mb-4">
 				<label
 					for="new-material-url"
@@ -598,11 +725,31 @@
 				<input
 					id="new-material-url"
 					bind:value={newMaterial.url}
+					oninput={handleNewMaterialUrlChange}
 					type="url"
 					placeholder="https://..."
 					class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
 					style="focus:ring-color: #c59a6b;"
 				/>
+
+				{#if fetchingVideoInfo}
+					<p class="text-xs text-gray-500 mt-1">Fetching video info...</p>
+				{/if}
+
+				{#if videoPreviewId}
+					<div class="mt-3 rounded-lg overflow-hidden bg-gray-100">
+						<div class="aspect-video">
+							<iframe
+								src="https://www.youtube.com/embed/{videoPreviewId}"
+								title="YouTube video preview"
+								frameborder="0"
+								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+								allowfullscreen
+								class="w-full h-full"
+							></iframe>
+						</div>
+					</div>
+				{/if}
 			</div>
 		{/if}
 
