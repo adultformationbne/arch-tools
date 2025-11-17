@@ -223,7 +223,8 @@
 
 			if (isPendingUser || isForgotPasswordFlow) {
 				// New/pending user OR forgot password flow - needs to set/reset password
-				goto('/login/setup-password');
+				const next = $page.url.searchParams.get('next') ?? '/profile';
+				goto(`/login/setup-password?next=${encodeURIComponent(next)}`);
 			} else {
 				// Existing user logging in with OTP - redirect to dashboard
 				const { data: profile } = await supabase
@@ -234,7 +235,8 @@
 
 				const modules = profile?.modules || [];
 				const defaultRedirect = determineRedirect(modules);
-				goto(defaultRedirect);
+				const next = $page.url.searchParams.get('next') ?? defaultRedirect;
+				goto(next);
 			}
 		} catch (error) {
 			errorMessage = error.message || 'Invalid or expired code';

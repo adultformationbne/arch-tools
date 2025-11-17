@@ -31,7 +31,7 @@ interface AuthOptions {
 
 /**
  * Requires authentication for the request
- * @throws 401 or redirects to /auth if not authenticated
+ * @throws 401 or redirects to /login if not authenticated
  */
 export async function requireAuth(
 	event: RequestEvent,
@@ -41,7 +41,10 @@ export async function requireAuth(
 
 	if (!session) {
 		if (options.mode === 'redirect') {
-			throw redirect(303, options.redirectTo || '/login');
+			// Preserve the original URL for redirect after login
+			const originalUrl = event.url.pathname + event.url.search;
+			const redirectUrl = options.redirectTo || `/login?next=${encodeURIComponent(originalUrl)}`;
+			throw redirect(303, redirectUrl);
 		}
 		throw error(401, 'Unauthorized - Please sign in');
 	}

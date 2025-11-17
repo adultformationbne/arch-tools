@@ -4,7 +4,7 @@
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
-	import SessionNavigationTabs from '$lib/components/SessionNavigationTabs.svelte';
+	import SessionTreeSidebar from '$lib/components/SessionTreeSidebar.svelte';
 	import StudentPreview from '$lib/components/StudentPreview.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
@@ -16,6 +16,11 @@
 
 	// Available modules from server
 	let availableModules = $state(data.modules || []);
+
+	// Course theme colors
+	const courseTheme = data.courseTheme || {};
+	const accentDark = courseTheme.accentDark || '#334642';
+	const accentLight = courseTheme.accentLight || '#c59a6b';
 
 	// Get module from URL or default to first
 	let selectedModuleId = $state($page.url.searchParams.get('module') || availableModules[0]?.id);
@@ -429,6 +434,54 @@
 		processServerData(moduleId);
 	};
 
+	const handleSessionTitleChangeFromSidebar = async (sessionId, newTitle) => {
+		// Find the session to update
+		const session = data.sessions.find(s => s.id === sessionId);
+		if (!session) return;
+
+		// Update local state
+		sessionTitles[session.session_number] = newTitle;
+
+		// Save to database
+		saving = true;
+		saveMessage = 'Saving session title...';
+
+		try {
+			const response = await fetch('/api/courses/sessions', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionId,
+					title: newTitle
+				})
+			});
+
+			if (response.ok) {
+				saveMessage = 'Saved';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 1000);
+			} else {
+				const errorData = await response.json();
+				saveMessage = 'Save failed';
+				setTimeout(() => {
+					saving = false;
+					saveMessage = '';
+				}, 2000);
+				toastError(`Failed to save session title: ${errorData.error}`);
+			}
+		} catch (error) {
+			console.error('Error saving session title:', error);
+			saveMessage = 'Save failed';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 2000);
+			toastError('Failed to save session title');
+		}
+	};
+
 	const addSession = () => {
 		totalSessions += 1;
 		sessionMaterials[totalSessions] = [];
@@ -485,17 +538,32 @@
 	});
 </script>
 
-<div class="px-16 py-12 transition-opacity duration-200" class:opacity-60={isLoading && availableModules.length > 0} class:pointer-events-none={isLoading && availableModules.length > 0}>
-	<div class="max-w-7xl mx-auto">
-		<!-- Header with Module Dropdown -->
-		<div class="mb-8 flex items-center justify-between">
-			<div>
-				<h1 class="text-5xl font-bold text-white mb-2">Session Materials</h1>
-				<p class="text-lg text-white/80">Edit content for each session</p>
-			</div>
+<!-- Sessions Page with Tree Sidebar -->
+<div class="flex min-h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};">
+	<!-- Session Tree Sidebar -->
+	<div class="w-72 flex-shrink-0 border-r" style="border-color: rgba(255,255,255,0.1);">
+		<SessionTreeSidebar
+			modules={availableModules}
+			sessions={data.sessions}
+			selectedModuleId={selectedModuleId}
+			selectedSession={selectedSession}
+			onModuleChange={handleModuleChange}
+			onSessionChange={handleSessionChange}
+			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
+		/>
+	</div>
 
-			<!-- Module Selector Dropdown & Save Status -->
-			<div class="flex items-center gap-4">
+	<!-- Content Area -->
+	<div class="flex-1 overflow-y-auto">
+		<!-- Top Header with Save Status -->
+		<div class="sticky top-0 z-10 backdrop-blur-md border-b px-8 py-4" style="background-color: color-mix(in srgb, var(--course-accent-dark) 95%, transparent); border-color: rgba(255,255,255,0.1);">
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-bold text-white">{currentSessionData.sessionTitle}</h1>
+					<p class="text-sm text-white/60 mt-0.5">{selectedModule.name}</p>
+				</div>
+
+				<!-- Save Status -->
 				<div class="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 text-white text-sm border border-white/20">
 					{#if saving}
 						<div class="animate-spin w-3 h-3 border border-white/40 border-t-white rounded-full"></div>
@@ -512,53 +580,11 @@
 						<span class="text-green-300">Saved</span>
 					{/if}
 				</div>
-
-				<select
-					value={selectedModuleId}
-					onchange={(e) => handleModuleChange(e.target.value)}
-					class="bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white font-semibold text-base"
-				>
-					{#each availableModules as module}
-						<option value={module.id} class="bg-gray-800 text-white">{module.name}</option>
-					{/each}
-				</select>
 			</div>
 		</div>
 
-		<!-- Session Navigation (Full Width) - Sticky -->
-		<div class="sticky top-12 z-10 bg-gray-900/95 backdrop-blur-md rounded-2xl border border-gray-700 mb-8 p-6 shadow-lg">
-			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-2xl font-bold text-white">
-					{currentSessionData.sessionTitle}
-				</h2>
-				<span class="text-white/70 text-sm">{selectedModule.name}</span>
-			</div>
-
-			<div class="flex gap-2 items-center flex-wrap">
-				<!-- Pre-Start Button -->
-				<button
-					onclick={() => handleSessionChange(0)}
-					class="px-4 h-12 rounded-lg font-bold text-sm transition-all {selectedSession === 0 ? 'bg-white text-gray-800 shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}"
-					title="Pre-Start"
-				>
-					Pre-Start
-				</button>
-
-				<!-- Regular Sessions (1-8) -->
-				{#each Array(totalSessions).fill(0) as _, i}
-					<button
-						onclick={() => handleSessionChange(i + 1)}
-						class="w-12 h-12 rounded-lg font-bold text-xl transition-all {selectedSession === i + 1 ? 'bg-white text-gray-800 shadow-lg scale-110' : 'bg-white/20 text-white hover:bg-white/30'}"
-						title="Session {i + 1}"
-					>
-						{i + 1}
-					</button>
-				{/each}
-			</div>
-		</div>
-
-		<!-- Session Content (Full Width) -->
-		<div class="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
+		<!-- Session Content -->
+		<div class="p-8">
 			{#if !dataInitialized}
 				<!-- Skeleton Loading State -->
 				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-pulse">
@@ -594,19 +620,6 @@
 				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 transition-opacity duration-200" style="animation: fadeIn 0.2s ease-in;">
 					<!-- Left: Materials and Session Overview -->
 					<div class="lg:col-span-2 space-y-6">
-						<!-- Session Title Editor -->
-						<div class="bg-white rounded-2xl p-6 shadow-sm">
-							<h2 class="text-xl font-bold text-gray-800 mb-4">Session Title</h2>
-							<input
-								type="text"
-								value={currentSessionData.sessionTitle}
-								oninput={(e) => handleTitleInput(e.target.value)}
-								class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-								placeholder={selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession}`}
-								style="focus:ring-color: #c59a6b;"
-							/>
-						</div>
-
 						<!-- Session Overview -->
 						<SessionOverviewEditor
 							sessionOverview={currentSessionData.sessionOverview}
