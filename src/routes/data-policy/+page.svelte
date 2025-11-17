@@ -16,15 +16,15 @@
 		<section class="mb-8">
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">What This Platform Does</h2>
 			<p class="text-gray-700 mb-4">
-				The Archdiocesan Ministry Tools platform is an internal content management system that helps staff organize and publish Catholic liturgical content, and manage formation programs, including:
+				The Archdiocesan Ministry Tools platform is an internal content management system that helps staff organise and publish Catholic liturgical content, and manage formation programs, including:
 			</p>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li>Daily Gospel Reflections (DGR) scheduling and publishing</li>
-				<li>Scripture reading organization from public liturgical calendars</li>
+				<li>Scripture reading organisation from public liturgical calendars</li>
 				<li>Content editing and version management for publications</li>
 				<li>User account management for internal staff access</li>
-				<li>Catholic formation courses and programs (e.g., ACCF - Archdiocesan Center for Catholic Formation)</li>
-				<li>Student enrollment and cohort management</li>
+				<li>Catholic formation courses and programs (e.g., ACCF - Archdiocesan Centre for Catholic Formation)</li>
+				<li>Student enrolment and cohort management</li>
 				<li>Course materials delivery and reflection tracking</li>
 			</ul>
 		</section>
@@ -46,7 +46,7 @@
 
 					<h4 class="font-medium text-gray-700 mt-4 mb-2">Course & Formation Data:</h4>
 					<ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-						<li>Course enrollments (participant names, emails, cohort assignments)</li>
+						<li>Course enrolments (participant names, emails, cohort assignments)</li>
 						<li>Course roles (student, coordinator)</li>
 						<li>Hub assignments and coordination</li>
 						<li>Student progress tracking (current session number)</li>
@@ -81,7 +81,7 @@
 				</div>
 
 				<div>
-					<h3 class="font-medium text-gray-800">Public Content We Organize</h3>
+					<h3 class="font-medium text-gray-800">Public Content We Organise</h3>
 					<ul class="list-disc list-inside text-gray-700 ml-4">
 						<li>Scripture readings from publicly available liturgical calendars</li>
 						<li>Liturgical dates and seasonal information</li>
@@ -98,10 +98,10 @@
 				<li><strong>Module-based access:</strong> Platform access controlled by assigned modules (users, editor, dgr, courses.*)</li>
 				<li><strong>Course-level permissions:</strong> Course managers only access assigned courses; participants only access enrolled cohorts</li>
 				<li><strong>Secure hosting:</strong> Data stored on Supabase's secure PostgreSQL infrastructure</li>
-				<li><strong>Row-level security:</strong> Database policies ensure users only access data they're authorized to see</li>
+				<li><strong>Row-level security:</strong> Database policies ensure users only access data they're authorised to see</li>
 				<li><strong>Version control:</strong> All content changes are logged with timestamps and user attribution</li>
 				<li><strong>Token-based submissions:</strong> Public contributors access content via secure, time-limited tokens</li>
-				<li><strong>Enrollment privacy:</strong> Student reflection submissions are only visible to course administrators and the student who submitted them</li>
+				<li><strong>Enrolment privacy:</strong> Student reflection submissions are only visible to course administrators and the student who submitted them</li>
 			</ul>
 		</section>
 
@@ -109,7 +109,7 @@
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">Data Retention</h2>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li><strong>Content:</strong> All content versions are preserved for historical reference and audit purposes</li>
-				<li><strong>Course enrollments:</strong> Maintained indefinitely for transcript and completion record purposes</li>
+				<li><strong>Course enrolments:</strong> Maintained indefinitely for transcript and completion record purposes</li>
 				<li><strong>Reflection submissions:</strong> Preserved as part of student records and grading history</li>
 				<li><strong>Attendance records:</strong> Retained for the duration of the course and archived upon completion</li>
 				<li><strong>User sessions:</strong> Automatically expire according to Supabase security policies</li>

@@ -198,7 +198,7 @@
 				</h1>
 				<p class="mt-2 text-gray-600">
 					{#if userRole === 'admin'}
-						Create and manage courses for your organization
+						Create and manage courses for your organisation
 					{:else if courses.length === 0}
 						You are not currently enrolled in any courses
 					{:else}

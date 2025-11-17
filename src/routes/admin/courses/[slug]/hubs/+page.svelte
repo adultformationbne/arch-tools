@@ -112,7 +112,7 @@
 				No hubs yet
 			</h3>
 			<p class="text-white/80 mb-6">
-				Create your first hub to organize participants by location or group
+				Create your first hub to organise participants by location or group
 			</p>
 			<button
 				onclick={handleCreateHub}
