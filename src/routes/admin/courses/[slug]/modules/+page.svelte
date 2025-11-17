@@ -118,7 +118,7 @@
 			<h3 class="text-xl font-semibold mb-2 text-white">
 				No modules yet
 			</h3>
-			<p class="text-white/80 mb-6">Create your first module to organize course content</p>
+			<p class="text-white/80 mb-6">Create your first module to organise course content</p>
 			<button
 				onclick={handleCreateModule}
 				class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold"

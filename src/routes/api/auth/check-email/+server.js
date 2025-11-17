@@ -33,10 +33,17 @@ export async function POST({ request }) {
 			});
 		}
 
-		// User exists - check if they have a password set
-		// Check if user has encrypted_password field (indicates password was set)
-		// Users created via invitation will NOT have this until they set a password
-		const hasPassword = existingUser.encrypted_password !== null && existingUser.encrypted_password !== undefined && existingUser.encrypted_password !== '';
+		// Get full user details to check if they have signed in before
+		const { data: { user: fullUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(existingUser.id);
+
+		if (getUserError || !fullUser) {
+			console.error('Error fetching user details:', getUserError);
+			throw error(500, 'Failed to verify user status');
+		}
+
+		// User has a password if they've successfully signed in before
+		// last_sign_in_at is only set after a successful password login or OTP verification + password setup
+		const hasPassword = fullUser.last_sign_in_at !== null;
 
 		if (hasPassword) {
 			// User has password - allow password login
