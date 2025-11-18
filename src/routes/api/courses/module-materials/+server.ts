@@ -145,11 +145,15 @@ export const PUT: RequestHandler = async (event) => {
 			.update(updates)
 			.eq('id', id)
 			.select()
-			.single();
+			.maybeSingle();
 
 		if (error) {
 			console.error('Error updating module material:', error);
 			return json({ error: 'Failed to update module material' }, { status: 500 });
+		}
+
+		if (!material) {
+			return json({ error: 'Material not found' }, { status: 404 });
 		}
 
 		return json({ material });
