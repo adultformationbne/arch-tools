@@ -1,6 +1,23 @@
+/**
+ * Admin Reflections API - PUT Handler
+ *
+ * Marks student reflections as passed/needs_revision with optional feedback.
+ * Uses CourseMutations.markReflection() for database updates.
+ *
+ * Request body:
+ * - reflection_id: string (required)
+ * - grade: 'pass' | 'fail' (required)
+ * - feedback: string (optional)
+ *
+ * Response:
+ * - success: boolean
+ * - data: updated reflection object
+ * - message: status message
+ */
+
 import { error, json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAdmin } from '$lib/server/auth.js';
+import { CourseMutations } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 export const PUT: RequestHandler = async (event) => {
@@ -12,8 +29,6 @@ export const PUT: RequestHandler = async (event) => {
 		const body = await event.request.json();
 		const { reflection_id, feedback, grade } = body;
 
-		console.log('Marking reflection:', { reflection_id, feedback, grade });
-
 		// Validate required fields
 		if (!reflection_id) {
 			throw error(400, 'Reflection ID is required');
@@ -23,42 +38,28 @@ export const PUT: RequestHandler = async (event) => {
 			throw error(400, 'Valid grade (pass/fail) is required');
 		}
 
-		// Map grade to new enum status
-		const newStatus = grade === 'pass' ? 'passed' : 'needs_revision';
-		console.log('Mapped status:', newStatus);
+		// Mark reflection using repository mutation
+		const result = await CourseMutations.markReflection(
+			reflection_id,
+			grade,
+			feedback?.trim() || '',
+			user.id
+		);
 
-		// Update reflection with marking details
-		const updateData = {
-			feedback: feedback?.trim() || null,
-			status: newStatus,
-			marked_at: new Date().toISOString(),
-			marked_by: user.id,
-			updated_at: new Date().toISOString()
-		};
-
-		console.log('Update data:', updateData);
-
-		const { data: updatedReflection, error: updateError } = await supabaseAdmin
-			.from('courses_reflection_responses')
-			.update(updateData)
-			.eq('id', reflection_id)
-			.select()
-			.single();
-
-		if (updateError) {
-			console.error('Error updating reflection:', updateError);
+		if (result.error) {
+			console.error('Error marking reflection:', result.error);
 			throw error(500, 'Failed to mark reflection');
 		}
 
 		return json({
 			success: true,
-			data: updatedReflection,
+			data: result.data,
 			message: grade === 'pass' ? 'Reflection marked as passed' : 'Reflection marked as needs revision'
 		});
-
 	} catch (err) {
 		console.error('API error:', err);
 
+		// Re-throw SvelteKit errors (they have status codes)
 		if (err?.status) {
 			throw err;
 		}

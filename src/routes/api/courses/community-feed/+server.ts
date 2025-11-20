@@ -1,98 +1,48 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { hasModule, hasModuleLevel } from '$lib/server/auth';
+import { requireAuth, hasAnyModule } from '$lib/server/auth';
 
 const ACTIVE_ENROLLMENT_STATUSES = ['active', 'invited', 'accepted'];
 
-async function getUserModules(userId: string): Promise<string[]> {
-	const { data, error: profileError } = await supabaseAdmin
-		.from('user_profiles')
-		.select('modules')
-		.eq('id', userId)
-		.single();
-
-	if (profileError) {
-		console.error('Error fetching user modules:', profileError);
-		return [];
-	}
-
-	return Array.isArray(data?.modules) ? data.modules : [];
-}
-
-async function getCohortEnrollment(userId: string, cohortId: string) {
-	const { data, error } = await supabaseAdmin
-		.from('courses_enrollments')
-		.select('role, status')
-		.eq('user_profile_id', userId)
-		.eq('cohort_id', cohortId)
-		.in('status', ACTIVE_ENROLLMENT_STATUSES)
-		.maybeSingle();
-
-	if (error) {
-		console.error('Error checking cohort enrollment:', error);
-	}
-
-	return data ?? null;
-}
-
-function isGlobalCourseAdmin(modules: string[]): boolean {
-	return hasModule(modules, 'platform.admin') || hasModuleLevel(modules, 'courses.admin');
-}
-
-async function canManageCohort(userId: string, cohortId: string, modules: string[]): Promise<boolean> {
+/**
+ * Check if user can manage a specific cohort
+ * - Global admins (platform.admin, courses.admin) can manage all cohorts
+ * - Course managers (courses.manager) can manage cohorts for assigned courses
+ */
+async function canManageCohort(userId: string, cohortId: string, userProfile: any): Promise<boolean> {
 	// Global course admins can manage all cohorts
-	if (isGlobalCourseAdmin(modules)) {
+	if (hasAnyModule(userProfile.modules, ['platform.admin', 'courses.admin'])) {
 		return true;
 	}
 
-	// Course managers must be assigned to this course (NOT enrolled)
-	if (!hasModuleLevel(modules, 'courses.manager')) {
+	// Course managers must be assigned to this course
+	if (!hasAnyModule(userProfile.modules, ['courses.manager'])) {
 		return false;
 	}
 
 	// Get the course ID for this cohort
 	const { data: cohort } = await supabaseAdmin
 		.from('courses_cohorts')
-		.select('module_id')
+		.select('module:module_id(course_id)')
 		.eq('id', cohortId)
 		.single();
 
-	if (!cohort?.module_id) {
-		return false;
-	}
-
-	const { data: module } = await supabaseAdmin
-		.from('courses_modules')
-		.select('course_id')
-		.eq('id', cohort.module_id)
-		.single();
-
-	if (!module?.course_id) {
+	if (!cohort?.module?.course_id) {
 		return false;
 	}
 
 	// Check if this course is in user's assigned_course_ids
-	const { data: userProfile } = await supabaseAdmin
-		.from('user_profiles')
-		.select('assigned_course_ids')
-		.eq('id', userId)
-		.single();
-
-	const assignedCourseIds = userProfile?.assigned_course_ids || [];
-	return Array.isArray(assignedCourseIds) && assignedCourseIds.includes(module.course_id);
+	const assignedCourseIds = userProfile.assigned_course_ids || [];
+	return Array.isArray(assignedCourseIds) && assignedCourseIds.includes(cohort.module.course_id);
 }
 
-async function ensureSession(event) {
-	const { session, user } = await event.locals.safeGetSession();
-	if (!session || !user) {
-		throw error(401, 'Unauthorized');
-	}
-	return { session, user };
-}
-
+/**
+ * GET - Fetch community feed for a cohort
+ * Requires: User must be enrolled in cohort OR be a global course admin
+ */
 export const GET: RequestHandler = async (event) => {
-	const { user } = await ensureSession(event);
+	const { user, profile } = await requireAuth(event);
 
 	try {
 		const cohortId = event.url.searchParams.get('cohort_id');
@@ -103,14 +53,25 @@ export const GET: RequestHandler = async (event) => {
 			throw error(400, 'cohort_id is required');
 		}
 
-		const modules = await getUserModules(user.id);
-		const enrollment = await getCohortEnrollment(user.id, cohortId);
-		const isAdmin = isGlobalCourseAdmin(modules);
+		// Check authorization: enrollment OR global admin
+		const isGlobalAdmin = hasAnyModule(profile.modules, ['platform.admin', 'courses.admin']);
 
-		if (!enrollment && !isAdmin) {
-			throw error(403, 'Access denied to this cohort feed');
+		if (!isGlobalAdmin) {
+			// Check enrollment
+			const { data: enrollment } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('role, status')
+				.eq('user_profile_id', user.id)
+				.eq('cohort_id', cohortId)
+				.in('status', ACTIVE_ENROLLMENT_STATUSES)
+				.maybeSingle();
+
+			if (!enrollment) {
+				throw error(403, 'Access denied to this cohort feed');
+			}
 		}
 
+		// Fetch feed items
 		const { data: feedItems, error: feedError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.select('*')
@@ -144,8 +105,12 @@ export const GET: RequestHandler = async (event) => {
 	}
 };
 
+/**
+ * POST - Create new feed item
+ * Requires: User must be able to manage the cohort (admin/manager)
+ */
 export const POST: RequestHandler = async (event) => {
-	const { user } = await ensureSession(event);
+	const { user, profile } = await requireAuth(event);
 
 	try {
 		const body = await event.request.json();
@@ -155,21 +120,16 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'cohort_id and content are required');
 		}
 
-		const modules = await getUserModules(user.id);
-		const canManage = await canManageCohort(user.id, cohort_id, modules);
-
+		// Check authorization
+		const canManage = await canManageCohort(user.id, cohort_id, profile);
 		if (!canManage) {
 			throw error(403, 'Only course admins can create feed updates');
 		}
 
-		const authorProfile = await supabaseAdmin
-			.from('user_profiles')
-			.select('full_name')
-			.eq('id', user.id)
-			.single();
+		// Get author name
+		const authorName = profile.full_name || 'Course Admin';
 
-		const authorName = authorProfile.data?.full_name || 'Course Admin';
-
+		// Create feed item
 		const { data: feedItem, error: insertError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.insert({
@@ -209,8 +169,12 @@ export const POST: RequestHandler = async (event) => {
 	}
 };
 
+/**
+ * PATCH - Update existing feed item
+ * Requires: User must be the original author AND have cohort management permissions
+ */
 export const PATCH: RequestHandler = async (event) => {
-	const { user } = await ensureSession(event);
+	const { user, profile } = await requireAuth(event);
 
 	try {
 		const body = await event.request.json();
@@ -220,6 +184,7 @@ export const PATCH: RequestHandler = async (event) => {
 			throw error(400, 'id is required');
 		}
 
+		// Fetch existing item
 		const { data: existingItem } = await supabaseAdmin
 			.from('courses_community_feed')
 			.select('author_id, feed_type, cohort_id')
@@ -230,13 +195,14 @@ export const PATCH: RequestHandler = async (event) => {
 			throw error(404, 'Feed item not found');
 		}
 
-		const modules = await getUserModules(user.id);
-		const canManage = await canManageCohort(user.id, existingItem.cohort_id, modules);
+		// Check authorization
+		const canManage = await canManageCohort(user.id, existingItem.cohort_id, profile);
 
 		if (!canManage || existingItem.feed_type !== 'admin_update' || existingItem.author_id !== user.id) {
 			throw error(403, 'Only the original course admin can update this feed item');
 		}
 
+		// Build update object
 		const updates: Record<string, unknown> = {
 			updated_at: new Date().toISOString()
 		};
@@ -246,6 +212,7 @@ export const PATCH: RequestHandler = async (event) => {
 		if (image_url !== undefined) updates.image_url = image_url?.trim() || null;
 		if (pinned !== undefined) updates.pinned = Boolean(pinned);
 
+		// Update item
 		const { data: updatedItem, error: updateError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.update(updates)
@@ -274,8 +241,12 @@ export const PATCH: RequestHandler = async (event) => {
 	}
 };
 
+/**
+ * DELETE - Delete feed item
+ * Requires: User must be the original author AND have cohort management permissions
+ */
 export const DELETE: RequestHandler = async (event) => {
-	const { user } = await ensureSession(event);
+	const { user, profile } = await requireAuth(event);
 
 	try {
 		const body = await event.request.json();
@@ -285,6 +256,7 @@ export const DELETE: RequestHandler = async (event) => {
 			throw error(400, 'id is required');
 		}
 
+		// Fetch existing item
 		const { data: existingItem } = await supabaseAdmin
 			.from('courses_community_feed')
 			.select('author_id, feed_type, cohort_id')
@@ -295,13 +267,14 @@ export const DELETE: RequestHandler = async (event) => {
 			throw error(404, 'Feed item not found');
 		}
 
-		const modules = await getUserModules(user.id);
-		const canManage = await canManageCohort(user.id, existingItem.cohort_id, modules);
+		// Check authorization
+		const canManage = await canManageCohort(user.id, existingItem.cohort_id, profile);
 
 		if (!canManage || existingItem.feed_type !== 'admin_update' || existingItem.author_id !== user.id) {
 			throw error(403, 'Only the original course admin can delete this feed item');
 		}
 
+		// Delete item
 		const { error: deleteError } = await supabaseAdmin
 			.from('courses_community_feed')
 			.delete()

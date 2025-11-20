@@ -469,7 +469,7 @@ async function handlePasswordChange(event?: Event) {
 						You have access to user management tools
 					</p>
 					<a
-						href="/users"
+						href="/settings"
 						class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 shadow-sm transition-colors"
 					>
 						<Users class="h-4 w-4 mr-2" />

@@ -1,21 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireModule } from '$lib/server/auth';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { CourseMutations } from '$lib/server/course-data';
 
 // POST - Create new enrollment
 export const POST: RequestHandler = async (event) => {
 	await requireModule(event, 'platform.admin');
-
-	// Use admin client to bypass RLS
-	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false
-		}
-	});
 
 	const { userId, cohortId, role } = await event.request.json();
 
@@ -28,63 +18,30 @@ export const POST: RequestHandler = async (event) => {
 		throw error(400, 'Invalid role. Must be: student or coordinator');
 	}
 
-	// Check if enrollment already exists
-	const { data: existing } = await supabaseAdmin
-		.from('courses_enrollments')
-		.select('id')
-		.eq('user_profile_id', userId)
-		.eq('cohort_id', cohortId)
-		.single();
+	// Create enrollment using repository
+	const result = await CourseMutations.createEnrollment({
+		userId,
+		cohortId,
+		role
+	});
 
-	if (existing) {
-		throw error(409, 'User is already enrolled in this cohort');
-	}
-
-	// Fetch user profile to get email and full_name (required fields)
-	const { data: userProfile, error: profileError } = await supabaseAdmin
-		.from('user_profiles')
-		.select('email, full_name')
-		.eq('id', userId)
-		.single();
-
-	if (profileError || !userProfile) {
-		console.error('Error fetching user profile:', profileError);
-		throw error(404, 'User profile not found');
-	}
-
-	// Create enrollment
-	const { data, error: insertError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.insert({
-			user_profile_id: userId,
-			cohort_id: cohortId,
-			role: role,
-			email: userProfile.email,
-			full_name: userProfile.full_name,
-			status: 'active' // User already exists, so status is active
-		})
-		.select()
-		.single();
-
-	if (insertError) {
-		console.error('Error creating enrollment:', insertError);
+	if (result.error) {
+		if (result.error.message === 'User is already enrolled in this cohort') {
+			throw error(409, result.error.message);
+		}
+		if (result.error.message === 'User profile not found') {
+			throw error(404, result.error.message);
+		}
+		console.error('Error creating enrollment:', result.error);
 		throw error(500, 'Failed to create enrollment');
 	}
 
-	return json({ success: true, enrollment: data });
+	return json({ success: true, enrollment: result.data });
 };
 
 // PUT - Update enrollment role
 export const PUT: RequestHandler = async (event) => {
 	await requireModule(event, 'platform.admin');
-
-	// Use admin client to bypass RLS
-	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false
-		}
-	});
 
 	const { enrollmentId, role } = await event.request.json();
 
@@ -97,37 +54,30 @@ export const PUT: RequestHandler = async (event) => {
 		throw error(400, 'Invalid role. Must be: student or coordinator');
 	}
 
-	// Update enrollment
-	const { data, error: updateError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.update({ role })
-		.eq('id', enrollmentId)
-		.select()
-		.maybeSingle();
+	// Update enrollment using repository
+	const result = await CourseMutations.updateEnrollment({
+		userId: enrollmentId,
+		updates: { role }
+	});
 
-	if (updateError) {
-		console.error('Error updating enrollment:', updateError);
+	if (result.error) {
+		if (result.error.message === 'No valid updates provided') {
+			throw error(400, result.error.message);
+		}
+		console.error('Error updating enrollment:', result.error);
 		throw error(500, 'Failed to update enrollment');
 	}
 
-	if (!data) {
+	if (!result.data) {
 		throw error(404, 'Enrollment not found');
 	}
 
-	return json({ success: true, enrollment: data });
+	return json({ success: true, enrollment: result.data });
 };
 
 // DELETE - Remove enrollment
 export const DELETE: RequestHandler = async (event) => {
 	await requireModule(event, 'platform.admin');
-
-	// Use admin client to bypass RLS
-	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false
-		}
-	});
 
 	const { enrollmentId } = await event.request.json();
 
@@ -135,14 +85,14 @@ export const DELETE: RequestHandler = async (event) => {
 		throw error(400, 'Missing required field: enrollmentId');
 	}
 
-	// Delete enrollment
-	const { error: deleteError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.delete()
-		.eq('id', enrollmentId);
+	// Delete enrollment using repository
+	const result = await CourseMutations.deleteEnrollment(enrollmentId);
 
-	if (deleteError) {
-		console.error('Error deleting enrollment:', deleteError);
+	if (result.error) {
+		if (result.error.message === 'Cannot delete user who has completed signup') {
+			throw error(403, result.error.message);
+		}
+		console.error('Error deleting enrollment:', result.error);
 		throw error(500, 'Failed to delete enrollment');
 	}
 

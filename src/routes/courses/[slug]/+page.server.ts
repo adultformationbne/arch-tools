@@ -2,7 +2,6 @@ import { error } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import {
 	CourseAggregates,
-	addSessionNumbers,
 	groupMaterialsBySession,
 	groupQuestionsBySession
 } from '$lib/server/course-data.js';
@@ -24,9 +23,6 @@ export const load: PageServerLoad = async (event) => {
 	const { enrollment, sessions, materials, questions, responses, publicReflections, hubData } =
 		result.data;
 
-	// Add session_number to responses for backward compatibility
-	const responsesWithSessionNum = addSessionNumbers(responses);
-
 	// Group data by session
 	const materialsBySession = groupMaterialsBySession(materials);
 	const questionsBySession = groupQuestionsBySession(questions);
@@ -41,7 +37,7 @@ export const load: PageServerLoad = async (event) => {
 	);
 
 	// Process reflection responses for PastReflectionsSection
-	const pastReflections = responsesWithSessionNum.map((response) => {
+	const pastReflections = responses.map((response) => {
 		const formatDate = (dateString: string) => {
 			const date = new Date(dateString);
 			const now = new Date();
@@ -55,9 +51,11 @@ export const load: PageServerLoad = async (event) => {
 			return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
 		};
 
+		const sessionNumber = response.question?.session?.session_number || 0;
+
 		return {
-			session: response.session_number,
-			title: `Session ${response.session_number} Reflection`,
+			session: sessionNumber,
+			title: `Session ${sessionNumber} Reflection`,
 			question: response.question?.question_text || '',
 			status: response.status === 'passed' ? 'graded' : response.status,
 			submittedDate: response.created_at ? formatDate(response.created_at) : 'Not submitted',

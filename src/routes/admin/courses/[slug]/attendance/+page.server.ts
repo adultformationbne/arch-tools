@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { supabaseAdmin } from '$lib/server/supabase';
+import { CourseAggregates } from '$lib/server/course-data';
+import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async (event) => {
 	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
@@ -8,48 +9,29 @@ export const load: PageServerLoad = async (event) => {
 	const layoutData = await event.parent();
 	const courseInfo = layoutData?.courseInfo;
 
-	const course = courseInfo ? { id: courseInfo.id } : null;
-
-	if (!course) {
-		return { cohorts: [], hubs: [] };
+	if (!courseInfo) {
+		throw error(404, 'Course not found');
 	}
 
-	// Get cohorts for this course's modules
-	const { data: cohorts, error: cohortsError } = await supabaseAdmin
-		.from('courses_cohorts')
-		.select(`
-			id,
-			name,
-			start_date,
-			end_date,
-			status,
-			module:courses_modules (
-				id,
-				name,
-				course_id
-			)
-		`)
-		.eq('courses_modules.course_id', course.id)
-		.order('start_date', { ascending: false });
+	const cohortId = event.url.searchParams.get('cohort');
 
-	if (cohortsError) {
-		console.error('Error fetching cohorts:', cohortsError);
-		return { cohorts: [], hubs: [] };
+	if (!cohortId) {
+		// Return cohorts list for selection (already available from layout)
+		return {
+			cohorts: layoutData.cohorts || [],
+			attendanceData: null
+		};
 	}
 
-	// Get all hubs for filtering
-	const { data: hubs, error: hubsError } = await supabaseAdmin
-		.from('courses_hubs')
-		.select('id, name')
-		.order('name');
+	// Get full attendance grid using repository aggregate
+	const result = await CourseAggregates.getAttendanceGrid(cohortId);
 
-	if (hubsError) {
-		console.error('Error fetching hubs:', hubsError);
-		return { cohorts: cohorts || [], hubs: [] };
+	if (result.error) {
+		console.error('Error loading attendance grid:', result.error);
+		throw error(500, 'Failed to load attendance data');
 	}
 
 	return {
-		cohorts: cohorts || [],
-		hubs: hubs || []
+		attendanceData: result.data
 	};
 };

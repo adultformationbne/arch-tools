@@ -8,7 +8,8 @@
 		selectedSession = 0,
 		onModuleChange = () => {},
 		onSessionChange = () => {},
-		onSessionTitleChange = () => {}
+		onSessionTitleChange = () => {},
+		onAddSession = () => {}
 	} = $props();
 
 	let expandedModules = $state(new Set([selectedModuleId]));
@@ -204,7 +205,10 @@
 
 	<!-- Add Session Button (optional) -->
 	<div class="p-3 border-t" style="border-color: rgba(255,255,255,0.1);">
-		<button class="w-full px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-xs font-medium transition-colors">
+		<button
+			onclick={onAddSession}
+			class="w-full px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-xs font-medium transition-colors"
+		>
 			+ Add Session
 		</button>
 	</div>

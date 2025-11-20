@@ -1,4 +1,6 @@
 <script>
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+
 	// Svelte 5 syntax with runes
 	let {
 		currentSession = $bindable(),
@@ -19,30 +21,46 @@
 			onSessionChange(sessionNum);
 		}
 	};
+
+	// Navigation helpers
+	const canGoPrevious = $derived(currentSession > 1);
+	const canGoNext = $derived(currentSession < availableSessions);
+
+	const goToPrevious = () => {
+		if (canGoPrevious) {
+			handleSessionClick(currentSession - 1);
+		}
+	};
+
+	const goToNext = () => {
+		if (canGoNext) {
+			handleSessionClick(currentSession + 1);
+		}
+	};
 </script>
 
 <div class="flex min-h-[600px]">
-	<!-- Session Navigation Tabs -->
-	<div class="flex flex-col rounded-l-3xl overflow-hidden min-h-full">
-		{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as sessionNum}
-			<button
-				class="w-20 flex-1 flex items-center justify-center text-2xl font-bold cursor-pointer transition-colors duration-200"
-				class:current={isCurrentSession(sessionNum)}
-				class:completed={isCompletedSession(sessionNum)}
-				class:available={isSessionAvailable(sessionNum) && !isCurrentSession(sessionNum) && !isCompletedSession(sessionNum)}
-				class:locked={!isSessionAvailable(sessionNum)}
-				onclick={() => handleSessionClick(sessionNum)}
-				disabled={!isSessionAvailable(sessionNum)}
-			>
-				{sessionNum}
-			</button>
-		{/each}
-	</div>
+		<!-- Session Navigation Tabs -->
+		<div class="flex flex-col rounded-l-3xl overflow-hidden min-h-full">
+			{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as sessionNum}
+				<button
+					class="w-20 flex-1 flex items-center justify-center text-2xl font-bold cursor-pointer transition-colors duration-200"
+					class:current={isCurrentSession(sessionNum)}
+					class:completed={isCompletedSession(sessionNum)}
+					class:available={isSessionAvailable(sessionNum) && !isCurrentSession(sessionNum) && !isCompletedSession(sessionNum)}
+					class:locked={!isSessionAvailable(sessionNum)}
+					onclick={() => handleSessionClick(sessionNum)}
+					disabled={!isSessionAvailable(sessionNum)}
+				>
+					{sessionNum}
+				</button>
+			{/each}
+		</div>
 
-	<!-- Main Content Area -->
-	<div class="flex-1 rounded-r-3xl" style="background-color: #eae2d9;">
-		{@render children()}
-	</div>
+		<!-- Main Content Area -->
+		<div class="flex-1 rounded-r-3xl" style="background-color: #eae2d9;">
+			{@render children()}
+		</div>
 </div>
 
 <style>

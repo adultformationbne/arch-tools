@@ -1,4 +1,5 @@
 import { json, error } from '@sveltejs/kit';
+import { CourseMutations } from '$lib/server/course-data.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireAuth } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
@@ -66,36 +67,18 @@ export const PUT: RequestHandler = async (event) => {
 	}
 
 	try {
-		// Build update object with only provided fields
-		const updateData: any = {
-			updated_at: new Date().toISOString()
-		};
-
-		if (reflections_enabled !== undefined) {
-			updateData.reflections_enabled = reflections_enabled;
-		}
-
-		if (description !== undefined) {
-			updateData.description = description;
-		}
-
-		if (title !== undefined) {
-			updateData.title = title;
-		}
-
-		const { data: session, error: updateError } = await supabaseAdmin
-			.from('courses_sessions')
-			.update(updateData)
-			.eq('id', session_id)
-			.select()
-			.single();
+		const { data, error: updateError } = await CourseMutations.updateSession(session_id, {
+			title,
+			description,
+			reflectionsEnabled: reflections_enabled
+		});
 
 		if (updateError) {
 			console.error('Error updating session:', updateError);
 			throw error(500, 'Failed to update session');
 		}
 
-		return json({ success: true, session });
+		return json({ success: true, session: data });
 	} catch (err) {
 		console.error('Error in PUT /api/courses/sessions:', err);
 		throw error(500, 'Failed to update session');

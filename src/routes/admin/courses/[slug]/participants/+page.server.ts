@@ -10,10 +10,8 @@ export const load: PageServerLoad = async (event) => {
 		// Get layout data (course, modules, cohorts already loaded)
 		const layoutData = await event.parent();
 		const courseInfo = layoutData?.courseInfo || {};
-		const modules = layoutData?.modules || [];
 		const cohorts = layoutData?.cohorts || [];
 
-		const moduleIds = modules?.map(m => m.id) || [];
 		const cohortIds = cohorts?.map(c => c.id) || [];
 
 		if (cohortIds.length === 0) {
@@ -25,6 +23,7 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		// Get all enrollments for this course's cohorts
+		// Using direct query since we need very specific enrollment data
 		const { data: enrollments, error: enrollmentsError } = await supabaseAdmin
 			.from('courses_enrollments')
 			.select(`

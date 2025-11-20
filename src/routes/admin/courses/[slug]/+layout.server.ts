@@ -1,91 +1,61 @@
+/**
+ * Admin Course Layout - Server Load Function
+ *
+ * Loads base course and module/cohort data for all admin pages.
+ * Uses CourseAggregates.getAdminCourseData() for optimized parallel queries.
+ *
+ * Data structure is consumed by:
+ * - Admin dashboard (+page.svelte)
+ * - Sessions editor (sessions/+page.svelte)
+ * - Attendance (attendance/+page.svelte)
+ * - Reflections (reflections/+page.svelte)
+ */
+
 import type { LayoutServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
+import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
+import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
 
 export const load: LayoutServerLoad = async (event) => {
-	const { params } = event;
-	const courseSlug = params.slug;
+	const courseSlug = event.params.slug;
 
-	// Check auth
+	// Require admin access (via courses.admin module OR courses.manager + enrolled as admin)
 	const { user, enrollment } = await requireCourseAdmin(event, courseSlug, {
 		mode: 'redirect',
 		redirectTo: '/courses'
 	});
 
-	// Load course
-	const { data: course } = await supabaseAdmin
-		.from('courses')
-		.select('id, name, short_name, description, settings')
-		.eq('slug', courseSlug)
-		.single();
+	// Get course by slug
+	const { data: course, error: courseError } = await CourseQueries.getCourse(courseSlug);
 
-	if (!course) {
+	if (courseError || !course) {
 		throw redirect(303, '/courses');
 	}
 
-	// Load modules with cohorts
-	const { data: modulesData } = await supabaseAdmin
-		.from('courses_modules')
-		.select(`
-			id,
-			name,
-			description,
-			order_number,
-			courses_cohorts (
-				id,
-				name,
-				current_session,
-				start_date,
-				end_date,
-				status,
-				module_id
-			)
-		`)
-		.eq('course_id', course.id)
-		.order('order_number', { ascending: true });
+	// Load admin course data (modules + cohorts) in parallel
+	const result = await CourseAggregates.getAdminCourseData(course.id);
 
-	const modules = (modulesData || []).map(m => ({
-		id: m.id,
-		name: m.name,
-		description: m.description,
-		order_number: m.order_number
-	}));
+	if (result.error || !result.data) {
+		throw error(500, 'Failed to load admin course data');
+	}
 
-	// Flatten cohorts from all modules
-	const cohorts = (modulesData || [])
-		.flatMap(m =>
-			(m.courses_cohorts || []).map(c => ({
-				...c,
-				courses_modules: {
-					id: m.id,
-					name: m.name
-				}
-			}))
-		)
-		.sort((a, b) => {
-			const dateA = new Date(a.start_date || 0);
-			const dateB = new Date(b.start_date || 0);
-			return dateB.getTime() - dateA.getTime();
-		});
-
-	// Extract theme and branding
-	const settings = course?.settings || {};
+	// Extract theme and branding settings
+	const settings = course.settings || {};
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
 
 	return {
-		courseSlug: params.slug,
+		courseSlug,
 		enrollmentRole: enrollment?.role,
 		isCourseAdmin: true,
-		cohorts,
-		modules,
+		modules: result.data.modules,
+		cohorts: result.data.cohorts,
 		courseInfo: {
-			id: course?.id,
-			slug: params.slug,
-			name: course?.name,
-			shortName: course?.short_name,
-			description: course?.description
+			id: course.id,
+			slug: courseSlug,
+			name: course.name,
+			shortName: course.short_name,
+			description: course.description
 		},
 		courseTheme,
 		courseBranding

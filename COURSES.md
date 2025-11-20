@@ -408,7 +408,7 @@ Module-based permissions control platform access:
 
 | Module | Access Granted |
 |--------|----------------|
-| `users` | User management, invitations, permissions |
+| `users` | **Platform admin** - Manage all users, invitations, and permissions (highest platform privilege) |
 | `editor` | Content editor access |
 | `dgr` | Daily Gospel Reflections management |
 | `courses.participant` | Access to enrolled courses via `/my-courses` |

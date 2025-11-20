@@ -1,18 +1,14 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { supabaseAdmin } from '$lib/server/supabase.js';
+import { CourseQueries } from '$lib/server/course-data.js';
 import { requireCourseAccess } from '$lib/server/auth';
 
 export const load: LayoutServerLoad = async (event) => {
 	const { params } = event;
 	const { slug } = params;
 
-	// Load course by slug
-	const { data: course, error: courseError } = await supabaseAdmin
-		.from('courses')
-		.select('*')
-		.eq('slug', slug)
-		.single();
+	// Load course by slug using repository
+	const { data: course, error: courseError } = await CourseQueries.getCourse(slug);
 
 	if (courseError || !course) {
 		throw error(404, `Course "${slug}" not found`);

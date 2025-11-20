@@ -13,7 +13,8 @@ import {
     PenSquare,
     Plus,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Mail
 } from 'lucide-svelte';
 
 let {
@@ -90,6 +91,13 @@ const navItems = $derived([
         href: withCohort(`/admin/courses/${courseSlug}/reflections`),
         icon: PenSquare,
         description: 'Review submissions',
+        visible: canManageCourse
+    },
+    {
+        label: 'Emails',
+        href: `/admin/courses/${courseSlug}/emails`,
+        icon: Mail,
+        description: 'Email templates',
         visible: canManageCourse
     },
     {

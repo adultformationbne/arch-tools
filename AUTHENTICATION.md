@@ -76,7 +76,7 @@ User enters OTP → Redirect to dashboard
 
 ### Method 1: Platform Users (`/users` page)
 
-**Who:** Admins with `users` module
+**Who:** Platform admins with `users` module
 **Creates:** Users with platform-level modules (users, editor, dgr, courses.admin, etc.)
 
 **Process:**
@@ -224,7 +224,7 @@ User enters OTP → Redirect to dashboard
 
 | Module | Access |
 |--------|--------|
-| `users` | User management, create users, manage permissions |
+| `users` | **Platform admin** - Manage all users, create users, manage all permissions (highest platform privilege) |
 | `editor` | Content editor access |
 | `dgr` | Daily Gospel Reflections management |
 | `courses.participant` | Access enrolled courses (auto-assigned on course import) |

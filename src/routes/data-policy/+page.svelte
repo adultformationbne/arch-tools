@@ -39,7 +39,7 @@
 					<h4 class="font-medium text-gray-700 mt-4 mb-2">User & Access Data:</h4>
 					<ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
 						<li>Email addresses and names (staff and course participants)</li>
-						<li>Platform access modules (users, editor, dgr, courses.participant, courses.manager, courses.admin)</li>
+						<li>Platform access modules (platform.admin, editor, dgr, courses.participant, courses.manager, courses.admin)</li>
 						<li>Course assignments for managers</li>
 						<li>Activity logs and version history</li>
 					</ul>
@@ -95,7 +95,7 @@
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">How We Protect Data</h2>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li><strong>Authentication:</strong> All access requires secure login via Supabase Auth</li>
-				<li><strong>Module-based access:</strong> Platform access controlled by assigned modules (users, editor, dgr, courses.*)</li>
+				<li><strong>Module-based access:</strong> Platform access controlled by assigned modules (platform.admin, editor, dgr, courses.*)</li>
 				<li><strong>Course-level permissions:</strong> Course managers only access assigned courses; participants only access enrolled cohorts</li>
 				<li><strong>Secure hosting:</strong> Data stored on Supabase's secure PostgreSQL infrastructure</li>
 				<li><strong>Row-level security:</strong> Database policies ensure users only access data they're authorised to see</li>

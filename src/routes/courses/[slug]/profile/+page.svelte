@@ -323,6 +323,19 @@
 			{/if}
 		</div>
 
+		<!-- Account Actions Card -->
+		<div class="bg-white rounded-2xl p-8 shadow-sm">
+			<h2 class="text-2xl font-bold text-gray-800 mb-4">Account Actions</h2>
+			<p class="text-gray-600 mb-6">Sign out of your account or manage your account settings.</p>
+			<a
+				href="/auth/logout"
+				class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+				Sign Out
+			</a>
+		</div>
+
 		<!-- Danger Zone Card -->
 		<div class="bg-white rounded-2xl p-8 shadow-sm border border-red-200">
 			<h2 class="text-2xl font-bold text-red-600 mb-4">Danger Zone</h2>

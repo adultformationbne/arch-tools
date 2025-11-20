@@ -66,6 +66,16 @@ export const load: PageServerLoad = async (event) => {
 			.contains('modules', ['courses.manager'])
 			.order('full_name', { ascending: true });
 
+		// Auto-redirect to single course UNLESS user explicitly came back here
+		const skipRedirect = event.url.searchParams.get('from') === 'course';
+
+		if (coursesWithCount.length === 1 && !skipRedirect) {
+			const course = coursesWithCount[0];
+			if (course?.slug) {
+				throw redirect(303, `/admin/courses/${course.slug}`);
+			}
+		}
+
 		return {
 			courses: coursesWithCount,
 			managers: managers || [],
