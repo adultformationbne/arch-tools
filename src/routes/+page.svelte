@@ -11,7 +11,7 @@ import {
 } from 'lucide-svelte';
 
 export let data;
-$: ({ session, userModules = [] } = data);
+$: ({ session, userModules = [], platform } = data);
 
 // Redirect participants to /my-courses ONLY if that's their only module
 onMount(() => {
@@ -39,10 +39,10 @@ const moduleRoutes = [
 		icon: Wrench
 	},
 	{
-		module: 'users',
-		name: 'User Management',
+		module: 'platform.admin',
+		name: 'Platform Admin',
 		path: '/users',
-		description: 'Manage users, invitations, and platform permissions',
+		description: 'Manage users, invitations, and platform settings',
 		color: 'bg-gradient-to-br from-purple-500 to-purple-600',
 		icon: Users
 	},
@@ -80,7 +80,7 @@ $: allRoutes = [publicReadingsRoute, ...availableRoutes];
 </script>
 
 <svelte:head>
-	<title>Archdiocesan Ministry Tools</title>
+	<title>{platform.name}</title>
 </svelte:head>
 
 <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">

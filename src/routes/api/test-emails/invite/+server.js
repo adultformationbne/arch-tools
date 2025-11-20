@@ -22,7 +22,7 @@ export async function POST({ request, locals }) {
 			.single();
 
 		const modules = Array.isArray(profile?.modules) ? profile.modules : [];
-		const isPlatformAdmin = hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+		const isPlatformAdmin = hasModule(modules, 'platform.admin') || hasModuleLevel(modules, 'courses.admin');
 
 		if (!isPlatformAdmin) {
 			return json({ error: 'Forbidden - Admin access required' }, { status: 403 });

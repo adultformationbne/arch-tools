@@ -13,6 +13,7 @@
 	import UserTableRow from '$lib/components/users/UserTableRow.svelte';
 	import ModulesInfoAccordion from '$lib/components/users/ModulesInfoAccordion.svelte';
 	import RolesInfoAccordion from '$lib/components/users/RolesInfoAccordion.svelte';
+	import PlatformSettingsSection from '$lib/components/users/PlatformSettingsSection.svelte';
 
 	let { data } = $props();
 	let users = $derived(data.users);
@@ -25,6 +26,7 @@
 	let loading = $state(false);
 
 	// Filter state
+	let mainTab = $state('users'); // 'users' or 'settings'
 	let activeTab = $state('active'); // 'active' or 'pending'
 	let moduleFilter = $state('all');
 	let searchQuery = $state('');
@@ -35,7 +37,7 @@
 
 	// Available modules for selection with icons (must match AUTH_SYSTEM.md and profile page)
 	const availableModules = [
-		{ id: 'users', name: 'User Management', description: 'Manage users, invitations, permissions' },
+		{ id: 'platform.admin', name: 'Platform Admin', description: 'Manage users, invitations, permissions, and platform settings' },
 		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
 		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
 		{ id: 'courses.participant', name: 'Course Participant', description: 'Access My Courses and participant dashboards' },
@@ -226,22 +228,43 @@
 				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
 					<h1 class="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center">
 						<Shield class="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
-						User Management
+						Platform Admin
 					</h1>
-					<div class="flex items-center space-x-4">
-						<button
-							onclick={() => showNewUserModal = true}
-							class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto"
-						>
-							<UserPlus class="h-4 w-4 mr-2" />
-							Add User
-						</button>
-					</div>
+					{#if mainTab === 'users'}
+						<div class="flex items-center space-x-4">
+							<button
+								onclick={() => showNewUserModal = true}
+								class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto"
+							>
+								<UserPlus class="h-4 w-4 mr-2" />
+								Add User
+							</button>
+						</div>
+					{/if}
 				</div>
 
-				<!-- Tab Navigation -->
-				<div class="border-b border-gray-200 overflow-x-auto -mx-4 sm:mx-0">
-					<nav class="-mb-px flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max sm:min-w-0" aria-label="Tabs">
+				<!-- Main Tab Navigation (Users / Settings) -->
+				<div class="border-b border-gray-200 mb-4 overflow-x-auto -mx-4 sm:mx-0">
+					<nav class="-mb-px flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max sm:min-w-0" aria-label="Main Tabs">
+						<button
+							onclick={() => mainTab = 'users'}
+							class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors {mainTab === 'users' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+						>
+							User Management
+						</button>
+						<button
+							onclick={() => mainTab = 'settings'}
+							class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors {mainTab === 'settings' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+						>
+							Platform Settings
+						</button>
+					</nav>
+				</div>
+
+				<!-- User Management Sub-Tab Navigation -->
+				{#if mainTab === 'users'}
+					<div class="border-b border-gray-200 overflow-x-auto -mx-4 sm:mx-0">
+						<nav class="-mb-px flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max sm:min-w-0" aria-label="Tabs">
 						<button
 							onclick={() => activeTab = 'active'}
 							class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors {activeTab === 'active' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
@@ -260,11 +283,11 @@
 								{pendingUsersCount}
 							</span>
 						</button>
-					</nav>
-				</div>
+						</nav>
+					</div>
 
-				<!-- Filters -->
-				<div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 px-4 sm:px-6 py-4">
+						<!-- Filters -->
+					<div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 px-4 sm:px-6 py-4">
 					<div class="flex-1">
 						<input
 							type="text"
@@ -283,10 +306,20 @@
 							{/each}
 						</select>
 					</div>
-				</div>
+					</div>
+				{/if}
 			</div>
 
-			<!-- Mobile Card View -->
+			<!-- Platform Settings Content -->
+			{#if mainTab === 'settings'}
+				<div class="px-4 sm:px-6 py-6">
+					<PlatformSettingsSection />
+				</div>
+			{/if}
+
+			<!-- User Management Content -->
+			{#if mainTab === 'users'}
+				<!-- Mobile Card View -->
 			<div class="lg:hidden px-4 sm:px-6 py-4 space-y-3">
 				{#each filteredUsers as user}
 					<UserCardMobile
@@ -387,9 +420,8 @@
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
 			<!-- Platform Modules -->
 			<ModulesInfoAccordion
 				{availableModules}
@@ -403,7 +435,8 @@
 				isOpen={showRolesInfo}
 				onToggle={() => showRolesInfo = !showRolesInfo}
 			/>
-		</div>
+			</div>
+		{/if}
 	</div>
 </div>
 

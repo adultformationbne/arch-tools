@@ -1,6 +1,6 @@
 # Email Templates for Supabase Auth - Outlook Compatible
 
-This document contains all the email templates for the Archdiocesan Ministry Tools platform with **full Outlook compatibility**. These templates should be configured in your Supabase Dashboard under **Authentication → Email Templates**.
+This document contains all the email templates for the Archdiocesan Ministries Platform with **full Outlook compatibility**. These templates should be configured in your Supabase Dashboard under **Authentication → Email Templates**.
 
 ## Outlook Compatibility Features
 
@@ -45,7 +45,7 @@ Supabase provides the following dynamic variables for use in email templates:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="x-apple-disable-message-reformatting">
-    <title>Welcome to Archdiocesan Ministry Tools</title>
+    <title>Welcome to Archdiocesan Ministries Platform</title>
     <!--[if mso]>
     <style type="text/css">
         table {border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
@@ -56,7 +56,7 @@ Supabase provides the following dynamic variables for use in email templates:
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; width: 100% !important; height: 100% !important;">
     <!-- Outlook Preheader -->
     <div style="display: none; font-size: 1px; color: #f5f5f5; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-        Your verification code to access Archdiocesan Ministry Tools
+        Your verification code to access Archdiocesan Ministries Platform
     </div>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f5f5f5;">
@@ -74,7 +74,7 @@ Supabase provides the following dynamic variables for use in email templates:
                     <tr>
                         <td align="center" style="padding: 50px 30px 30px; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
                             <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-mark.png" alt="Archdiocesan Ministry Tools" width="120" height="auto" border="0" style="display: block; margin: 0 auto 25px; width: 120px; max-width: 120px; height: auto; border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
-                            <h1 style="color: #000000; margin: 0; padding: 0; font-size: 22px; line-height: 28px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">Archdiocesan Ministry Tools</h1>
+                            <h1 style="color: #000000; margin: 0; padding: 0; font-size: 22px; line-height: 28px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">Archdiocesan Ministries Platform</h1>
                         </td>
                     </tr>
 
@@ -82,7 +82,7 @@ Supabase provides the following dynamic variables for use in email templates:
                     <tr>
                         <td style="padding: 0 40px 40px; mso-line-height-rule: exactly;">
                             <p style="font-size: 15px; line-height: 24px; color: #333333; margin: 0 0 25px; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">
-                                You've been invited to join the Archdiocesan Ministry Tools platform. Use this verification code to complete your sign in:
+                                You've been invited to join the Archdiocesan Ministries Platform. Use this verification code to complete your sign in:
                             </p>
 
                             <!-- Token Code Box -->
@@ -301,7 +301,7 @@ Supabase provides the following dynamic variables for use in email templates:
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; width: 100% !important; height: 100% !important;">
     <!-- Outlook Preheader -->
     <div style="display: none; font-size: 1px; color: #f3f4f6; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-        Reset your password for Archdiocesan Ministry Tools
+        Reset your password for Archdiocesan Ministries Platform
     </div>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f3f4f6;">

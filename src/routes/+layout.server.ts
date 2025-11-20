@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
+import { supabaseAdmin, getPlatformSettings } from '$lib/server/supabase.js';
 import type { LayoutServerLoad } from './$types';
 
 type CourseSettings = {
@@ -288,6 +288,9 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const courseBranding = buildCourseBranding(courseRecord?.settings ?? null);
 	const courseInfo = courseRecord ? { id: courseRecord.id, name: courseRecord.name } : null;
 
+	// Load platform settings from database
+	const platform = await getPlatformSettings();
+
 	console.log(`[ROOT LAYOUT] ✅ Complete in ${Date.now() - startTime}ms\n`);
 
 	return {
@@ -299,6 +302,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 		courseTheme,
 		courseBranding,
 		courseInfo,
+		platform,
 		// Pass session info to child layouts to avoid re-authentication
 		_authCache: {
 			session,

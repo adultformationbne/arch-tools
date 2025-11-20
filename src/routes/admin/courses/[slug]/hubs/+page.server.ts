@@ -81,7 +81,7 @@ export const load: PageServerLoad = async (event) => {
 					modules.includes('courses.participant') ||
 					modules.includes('courses.manager') ||
 					modules.includes('courses.admin') ||
-					modules.includes('users')
+					modules.includes('platform.admin')
 				);
 			}) ?? [];
 

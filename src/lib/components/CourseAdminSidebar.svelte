@@ -39,7 +39,7 @@ function hasModule(module) {
     return moduleSet.has(module);
 }
 
-const canManageAllCourses = $derived(hasModule('users') || hasModule('courses.admin'));
+const canManageAllCourses = $derived(hasModule('platform.admin') || hasModule('courses.admin'));
 // Course managers can fully manage courses they're enrolled in as admin
 const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
 const canViewHubs = $derived(canManageCourse);

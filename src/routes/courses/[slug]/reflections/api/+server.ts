@@ -68,7 +68,7 @@ export const POST: RequestHandler = async (event) => {
 			enrollment_id: studentData.id,
 			cohort_id: studentData.cohort_id,
 			question_id: reflection_question_id,
-			session_number: questionData.courses_sessions.session_number,
+			// session_number removed - obtained via question_id -> session_id -> session.session_number
 			response_text: content.trim(),
 			is_public: is_public || false,
 			status: status === 'draft' ? 'draft' : 'submitted',

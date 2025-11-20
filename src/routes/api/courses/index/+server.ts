@@ -8,7 +8,7 @@ import { requireAnyModule } from '$lib/server/auth';
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		// Fetch all courses with module count and cohort count
 		const { data: courses, error: coursesError } = await supabaseAdmin
@@ -56,7 +56,7 @@ export const GET: RequestHandler = async (event) => {
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { name, short_name, description, duration_weeks, is_active, status, settings } = body;
@@ -100,7 +100,7 @@ export const POST: RequestHandler = async (event) => {
  */
 export const PUT: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { id, name, short_name, description, duration_weeks, is_active, status, settings } = body;
@@ -146,7 +146,7 @@ export const PUT: RequestHandler = async (event) => {
  */
 export const DELETE: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const id = event.url.searchParams.get('id');
 		if (!id) {

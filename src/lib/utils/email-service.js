@@ -14,8 +14,7 @@
 
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
-
-const FROM_EMAIL = 'Archdiocesan Ministries Platform <noreply@app.archdiocesanministries.org.au>';
+import { getPlatformSettings } from '$lib/server/supabase.js';
 
 /**
  * Render email template by replacing {{variables}} with actual values
@@ -46,9 +45,10 @@ export function renderTemplate(template, variables = {}) {
  * Convert plain text to basic HTML email format
  * Preserves line breaks and adds basic styling
  * @param {string} text Plain text content
+ * @param {string} organization Organization name for footer
  * @returns {string} HTML formatted email
  */
-export function textToHtml(text) {
+export function textToHtml(text, organization = 'Archdiocesan Ministries') {
 	if (!text) return '';
 
 	// Escape HTML and convert line breaks
@@ -81,7 +81,7 @@ export function textToHtml(text) {
 					<tr>
 						<td style="background-color: #f9f9f9; padding: 20px 30px; text-align: center; border-radius: 0 0 8px 8px;">
 							<p style="margin: 0; font-size: 13px; color: #999999;">
-								Sent from ACCF Platform
+								Sent from ${organization}
 							</p>
 						</td>
 					</tr>
@@ -155,10 +155,13 @@ export async function sendEmail({
 
 	const resend = new Resend(resendApiKey);
 
+	// Load platform settings for from email
+	const platformSettings = await getPlatformSettings();
+
 	try {
 		// Send email via Resend
 		const { data, error } = await resend.emails.send({
-			from: FROM_EMAIL,
+			from: platformSettings.fromEmail,
 			to: [to],
 			subject,
 			html

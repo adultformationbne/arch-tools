@@ -68,7 +68,7 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 
 export const POST: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { session_id, type, title, content, display_order } = body;
@@ -115,7 +115,7 @@ export const POST: RequestHandler = async (event) => {
 
 export const PUT: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { id, type, title, content, display_order } = body;
@@ -166,7 +166,7 @@ export const PUT: RequestHandler = async (event) => {
 
 export const DELETE: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { id } = body;

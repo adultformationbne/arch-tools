@@ -1,7 +1,7 @@
 <script>
 	import { Plus, Download } from 'lucide-svelte';
-	import { goto, replaceState } from '$app/navigation';
-	import { page, navigating } from '$app/stores';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import CohortCard from '$lib/components/CohortCard.svelte';
 	import CohortManager from '$lib/components/CohortManager.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
@@ -14,65 +14,41 @@
 
 	let { data } = $props();
 
-	// Show loading state during navigation
-	let isLoading = $derived($navigating !== null);
-
 	const courseSlug = data.courseSlug;
 	let modules = $state(data.modules || []);
 	let cohorts = $state(data.cohorts || []);
 	let showCohortWizard = $state(false);
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
-	let showAttendanceModal = $state(false);
 	let refreshTrigger = $state(0);
 
-	// ✅ OPTIMIZATION: Use preloaded students from server
-	let students = $state(data.initialStudents || []);
+	// Students state
+	let students = $state([]);
 	let loadingStudents = $state(false);
-
-	// Get selected cohort - use server-provided initial value for instant load
-	let selectedCohortId = $state(data.initialSelectedCohort);
 
 	// Delete confirmation state
 	let showDeleteConfirm = $state(false);
 
-	// On mount: if we have a selected cohort but no URL param, update URL instantly
-	$effect(() => {
-		const cohortParam = $page.url.searchParams.get('cohort');
-		const actionParam = $page.url.searchParams.get('action');
+	// Get selected cohort from URL params (simple derived state)
+	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
+	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
 
-		// Handle new cohort action from sidebar
+	// Handle action param for new cohort wizard
+	$effect(() => {
+		const actionParam = $page.url.searchParams.get('action');
 		if (actionParam === 'new-cohort') {
 			showCohortWizard = true;
-			// Clear the action param
-			const newUrl = new URL($page.url);
-			newUrl.searchParams.delete('action');
-			goto(newUrl.pathname + newUrl.search, { replaceState: true });
-			return;
-		}
-
-		// If we have an initial selection but no URL param, update URL using SvelteKit's replaceState (instant + reactive!)
-		if (selectedCohortId && !cohortParam) {
-			const newUrl = new URL($page.url);
-			newUrl.searchParams.set('cohort', selectedCohortId);
-			replaceState(newUrl.toString(), {});
-		}
-
-		// Sync selectedCohortId with URL changes (when user clicks sidebar)
-		if (cohortParam && cohortParam !== selectedCohortId) {
-			selectedCohortId = cohortParam;
 		}
 	});
 
-	// Load students when cohort changes (but only if it's different from initial)
-	let lastLoadedCohortId = $state(data.initialSelectedCohort);
+	// Load students when cohort changes
 	$effect(() => {
-		if (selectedCohortId && selectedCohortId !== lastLoadedCohortId) {
+		if (selectedCohortId) {
 			loadStudents();
+		} else {
+			students = [];
 		}
 	});
-
-	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
 
 	async function loadStudents() {
 		if (!selectedCohortId) return;
@@ -82,7 +58,6 @@
 			const response = await fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`);
 			const result = await response.json();
 			students = result.success ? result.data : [];
-			lastLoadedCohortId = selectedCohortId; // Track what we loaded
 		} catch (err) {
 			console.error('Failed to load students:', err);
 			students = [];
@@ -93,19 +68,19 @@
 
 	function closeCohortWizard() {
 		showCohortWizard = false;
+		// Clear action param from URL
+		const newUrl = new URL($page.url);
+		newUrl.searchParams.delete('action');
+		goto(newUrl.toString(), { replaceState: true });
 	}
 
 	async function handleWizardComplete(event) {
 		showCohortWizard = false;
-		// Refresh data without navigation
-		await refreshData();
+		await invalidateAll();
 	}
 
 	function openStudentEnrollment() {
-		console.log('openStudentEnrollment called!');
-		console.log('Current showStudentEnrollment state:', showStudentEnrollment);
 		showStudentEnrollment = true;
-		console.log('New showStudentEnrollment state:', showStudentEnrollment);
 	}
 
 	function closeStudentEnrollment() {
@@ -114,24 +89,12 @@
 
 	async function handleEnrollmentComplete() {
 		showStudentEnrollment = false;
-		// Trigger component refresh immediately
-		refreshTrigger++;
-		// Then refresh full data
-		await refreshData();
+		await invalidateAll();
+		await loadStudents();
 	}
 
 	async function handleCohortUpdate() {
-		// Fetch updated cohort data directly
-		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/api`);
-			const result = await response.json();
-			if (result.success) {
-				cohorts = result.data;
-			}
-		} catch (err) {
-			console.error('Failed to refresh cohorts:', err);
-		}
-		// Trigger component refresh
+		await invalidateAll();
 		refreshTrigger++;
 	}
 
@@ -145,34 +108,8 @@
 
 	async function handleAdvancementComplete() {
 		showAdvancementModal = false;
-		// Reload students to see updated sessions
 		await loadStudents();
 		refreshTrigger++;
-	}
-
-	function openAttendanceModal() {
-		showAttendanceModal = true;
-		// TODO: Implement attendance modal
-		toastWarning('Attendance tracking coming soon!', 'Coming Soon');
-		showAttendanceModal = false;
-	}
-
-	async function refreshData() {
-		try {
-			// Fetch fresh data from server
-			const response = await fetch(`/admin/courses/${courseSlug}`, {
-				headers: {
-					'Accept': 'application/json'
-				}
-			});
-
-			if (response.ok) {
-				// Use invalidateAll to refresh the page data
-				await goto('/admin', { invalidateAll: true, replaceState: true });
-			}
-		} catch (err) {
-			console.error('Failed to refresh data:', err);
-		}
 	}
 
 	function confirmCohortDelete() {
@@ -195,9 +132,10 @@
 			});
 
 			if (response.ok) {
-				// Reset selection before refresh
-				selectedCohortId = null;
-				await refreshData();
+				// Clear cohort param from URL
+				const newUrl = new URL($page.url);
+				newUrl.searchParams.delete('cohort');
+				await goto(newUrl.toString(), { invalidateAll: true });
 			} else {
 				const error = await response.text();
 				toastError(error || 'Failed to delete cohort', 'Delete Failed');
@@ -227,7 +165,7 @@ Bob Johnson,bob.j@example.com,student,`;
 	}
 </script>
 
-<div class="px-24 pb-16 pt-8 transition-opacity duration-200" class:opacity-60={isLoading && cohorts.length > 0} class:pointer-events-none={isLoading && cohorts.length > 0}>
+<div class="px-24 pb-16 pt-8">
 	{#if !selectedCohort && cohorts.length === 0}
 		<div class="empty-state">
 			<h2>No Active Cohorts</h2>
