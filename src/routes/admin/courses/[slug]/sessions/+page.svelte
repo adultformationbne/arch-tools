@@ -596,6 +596,7 @@
 			onModuleChange={handleModuleChange}
 			onSessionChange={handleSessionChange}
 			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
+			onAddSession={addSession}
 		/>
 	</div>
 

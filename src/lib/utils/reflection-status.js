@@ -111,7 +111,10 @@ export function getUserReflectionStatus(reflections, currentSession) {
 	// Create a map of session_number -> reflection
 	const reflectionMap = new Map();
 	reflections.forEach(r => {
-		reflectionMap.set(r.session_number, r);
+		const sessionNumber = r.question?.session?.session_number;
+		if (sessionNumber) {
+			reflectionMap.set(sessionNumber, r);
+		}
 	});
 
 	// Check all sessions up to currentSession

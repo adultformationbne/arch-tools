@@ -107,7 +107,7 @@ export function getDefaultRedirectPath(userProfile) {
 
 	// Platform admin → /users
 	if (hasModuleAccess(userProfile, MODULES.PLATFORM_ADMIN)) {
-		return '/users';
+		return '/settings';
 	}
 
 	// Course management → /courses

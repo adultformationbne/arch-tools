@@ -294,3 +294,269 @@ export async function getEmailLogs(supabase, filters = {}) {
 
 	return data || [];
 }
+
+// =====================================================
+// COURSE EMAIL TEMPLATE SYSTEM
+// =====================================================
+
+/**
+ * Create course-branded email HTML with dynamic colors
+ * @param {Object} options Email branding options
+ * @param {string} options.content Rendered HTML content (from Tiptap or plain text)
+ * @param {string} options.courseName Course name for header
+ * @param {string} options.accentDark Course accent dark color (hex)
+ * @param {string} options.accentLight Course accent light color (hex)
+ * @param {string} options.accentDarkest Course accent darkest color (hex)
+ * @param {string} [options.logoUrl] Optional course logo URL
+ * @param {string} [options.siteUrl] Site URL for footer
+ * @returns {string} Complete HTML email with branding
+ */
+export function createBrandedEmailHtml({
+	content,
+	courseName,
+	accentDark = '#334642',
+	accentLight = '#eae2d9',
+	accentDarkest = '#1e2322',
+	logoUrl = null,
+	siteUrl = 'https://archdiocesanministries.org.au'
+}) {
+	if (!content) return '';
+
+	// REFACTORED: Use MJML compiler for automatic Outlook compatibility
+	// and responsive design
+	const { generateEmailFromMjml } = require('$lib/email/compiler.js');
+
+	return generateEmailFromMjml({
+		bodyContent: content,
+		courseName,
+		logoUrl,
+		colors: {
+			accentDark,
+			accentLight,
+			accentDarkest
+		},
+		previewText: `Email from ${courseName}`
+	});
+}
+
+/**
+ * Create styled button link for emails using course colors
+ * @param {string} text Button text
+ * @param {string} url Button link URL
+ * @param {string} accentDark Button background color (hex)
+ * @returns {string} HTML for email-safe button
+ */
+export function createEmailButton(text, url, accentDark = '#334642') {
+	return `
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+	<tr>
+		<td style="border-radius: 6px; background-color: ${accentDark};">
+			<a href="${url}"
+			   style="display: inline-block; padding: 14px 32px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 6px; text-align: center;">
+				${text}
+			</a>
+		</td>
+	</tr>
+</table>
+	`.trim();
+}
+
+/**
+ * Get course email template from database
+ * @param {Object} supabase Supabase client
+ * @param {string} courseId Course UUID
+ * @param {string} templateKey Template key (e.g., 'welcome_enrolled')
+ * @returns {Promise<Object|null>} Template data or null
+ */
+export async function getCourseEmailTemplate(supabase, courseId, templateKey) {
+	const { data, error } = await supabase
+		.from('courses_email_templates')
+		.select('*')
+		.eq('course_id', courseId)
+		.eq('template_key', templateKey)
+		.eq('is_active', true)
+		.single();
+
+	if (error) {
+		console.error('Error fetching course email template:', error);
+		return null;
+	}
+
+	return data;
+}
+
+/**
+ * Build variable context from course, cohort, and enrollment data
+ * @param {Object} options Context data
+ * @param {Object} options.enrollment Enrollment record with user data
+ * @param {Object} options.course Course record
+ * @param {Object} options.cohort Cohort record
+ * @param {Object} [options.session] Optional session data
+ * @param {string} options.siteUrl Site base URL
+ * @returns {Object} Variable context for template rendering
+ */
+export function buildVariableContext({
+	enrollment,
+	course,
+	cohort,
+	session = null,
+	siteUrl
+}) {
+	// Parse name into first/last
+	const fullName = enrollment.full_name || '';
+	const nameParts = fullName.split(' ');
+	const firstName = nameParts[0] || '';
+	const lastName = nameParts.slice(1).join(' ') || '';
+
+	// Build base variables
+	const variables = {
+		// Student variables
+		firstName,
+		lastName,
+		fullName,
+		email: enrollment.email || '',
+
+		// Course variables
+		courseName: course.name || '',
+		courseSlug: course.slug || '',
+		cohortName: cohort.name || '',
+		startDate: cohort.start_date
+			? new Date(cohort.start_date).toLocaleDateString('en-US', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				})
+			: '',
+		endDate: cohort.end_date
+			? new Date(cohort.end_date).toLocaleDateString('en-US', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				})
+			: '',
+
+		// Session variables
+		sessionNumber: session?.session_number || cohort.current_session || '',
+		sessionTitle: session?.title || '',
+		currentSession: cohort.current_session || '',
+
+		// Link variables
+		loginLink: `${siteUrl}/courses/${course.slug}`,
+		dashboardLink: `${siteUrl}/courses/${course.slug}/dashboard`,
+		materialsLink: `${siteUrl}/courses/${course.slug}/materials`,
+		reflectionLink: `${siteUrl}/courses/${course.slug}/reflections`,
+
+		// System variables
+		supportEmail: 'support@archdiocesanministries.org.au',
+		hubName: enrollment.hub_name || 'N/A'
+	};
+
+	return variables;
+}
+
+/**
+ * Render email template with recipient-specific variables
+ * @param {Object} options Rendering options
+ * @param {string} options.subjectTemplate Subject template with {{variables}}
+ * @param {string} options.bodyTemplate Body template with {{variables}}
+ * @param {Object} options.variables Variable context (from buildVariableContext)
+ * @returns {Object} {subject: string, body: string}
+ */
+export function renderTemplateForRecipient({ subjectTemplate, bodyTemplate, variables }) {
+	return {
+		subject: renderTemplate(subjectTemplate, variables),
+		body: renderTemplate(bodyTemplate, variables)
+	};
+}
+
+/**
+ * Send course email with template rendering and branding
+ * @param {Object} options Email options
+ * @param {string} options.to Recipient email
+ * @param {string} options.subject Rendered subject
+ * @param {string} options.bodyHtml Rendered body HTML (can include variables already rendered)
+ * @param {string} options.emailType Email type for logging
+ * @param {Object} options.course Course record
+ * @param {string} [options.cohortId] Cohort UUID
+ * @param {string} [options.enrollmentId] Enrollment UUID
+ * @param {string} [options.templateId] Template UUID
+ * @param {Object} [options.metadata] Additional metadata
+ * @param {string} options.resendApiKey Resend API key
+ * @param {Object} options.supabase Supabase client
+ * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
+ */
+export async function sendCourseEmail({
+	to,
+	subject,
+	bodyHtml,
+	emailType,
+	course,
+	cohortId = null,
+	enrollmentId = null,
+	templateId = null,
+	metadata = {},
+	resendApiKey,
+	supabase
+}) {
+	// Get course branding
+	const accentDark = course.settings?.theme?.accentDark || course.accent_dark || '#334642';
+	const accentLight = course.settings?.theme?.accentLight || course.accent_light || '#eae2d9';
+	const accentDarkest =
+		course.settings?.theme?.accentDarkest || course.accent_darkest || '#1e2322';
+	const logoUrl = course.settings?.branding?.logoUrl || null;
+
+	// Wrap body in branded HTML
+	const html = createBrandedEmailHtml({
+		content: bodyHtml,
+		courseName: course.name,
+		accentDark,
+		accentLight,
+		accentDarkest,
+		logoUrl,
+		siteUrl: metadata.siteUrl || 'https://archdiocesanministries.org.au'
+	});
+
+	// Send email with course context logging
+	const result = await sendEmail({
+		to,
+		subject,
+		html,
+		emailType,
+		referenceId: cohortId,
+		metadata: {
+			...metadata,
+			course_id: course.id,
+			cohort_id: cohortId,
+			enrollment_id: enrollmentId,
+			template_id: templateId
+		},
+		resendApiKey,
+		supabase
+	});
+
+	// If successful, also update the new course context columns
+	if (result.success) {
+		// Get the most recent email log entry for this send
+		const { data: logEntry } = await supabase
+			.from('platform_email_log')
+			.select('id')
+			.eq('recipient_email', to)
+			.eq('resend_id', result.emailId)
+			.single();
+
+		if (logEntry) {
+			// Update with course context
+			await supabase
+				.from('platform_email_log')
+				.update({
+					course_id: course.id,
+					cohort_id: cohortId,
+					enrollment_id: enrollmentId,
+					template_id: templateId
+				})
+				.eq('id', logEntry.id);
+		}
+	}
+
+	return result;
+}

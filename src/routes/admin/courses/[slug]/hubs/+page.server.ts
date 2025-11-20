@@ -9,7 +9,6 @@ export const load: PageServerLoad = async (event) => {
 		// Get layout data (course, modules, cohorts already loaded)
 		const layoutData = await event.parent();
 		const courseInfo = layoutData?.courseInfo;
-		const modules = layoutData?.modules || [];
 		const cohorts = layoutData?.cohorts || [];
 
 		if (!courseInfo) {
@@ -38,9 +37,9 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		// ✅ OPTIMIZATION: Use cached cohort IDs from layout
-		const hubIds = hubs?.map(h => h.id) || [];
-		const cohortIds = cohorts.map(c => c.id);
-		let enrollmentCounts = {};
+		const hubIds = hubs?.map((h) => h.id) || [];
+		const cohortIds = cohorts.map((c) => c.id);
+		let enrollmentCounts: Record<string, number> = {};
 
 		if (hubIds.length > 0 && cohortIds.length > 0) {
 			// Count enrollments per hub for this course
@@ -51,7 +50,7 @@ export const load: PageServerLoad = async (event) => {
 				.in('hub_id', hubIds);
 
 			// Build count map
-			enrollments?.forEach(e => {
+			enrollments?.forEach((e) => {
 				if (e.hub_id) {
 					enrollmentCounts[e.hub_id] = (enrollmentCounts[e.hub_id] || 0) + 1;
 				}
@@ -59,7 +58,7 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		// Add enrollment counts to hubs
-		const hubsWithCounts = hubs?.map(hub => ({
+		const hubsWithCounts = hubs?.map((hub) => ({
 			...hub,
 			enrollmentCount: enrollmentCounts[hub.id] || 0
 		}));
@@ -91,7 +90,6 @@ export const load: PageServerLoad = async (event) => {
 			hubs: hubsWithCounts || [],
 			potentialCoordinators: filteredCoordinators
 		};
-
 	} catch (err) {
 		console.error('Error in hubs page load:', err);
 		throw error(500, 'Failed to load hubs data');

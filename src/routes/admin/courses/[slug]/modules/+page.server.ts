@@ -1,15 +1,21 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireCourseAdmin } from '$lib/server/auth.js';
 import type { PageServerLoad } from './$types';
 
+/**
+ * Modules Management Page
+ *
+ * Loads module data for course admin panel.
+ * Auth is handled in parent layout (+layout.server.ts).
+ *
+ * Data sources:
+ * - Modules & cohorts: From parent layout (cached)
+ * - Session counts: Fetched here (page-specific)
+ * - Enrollment counts: Fetched here (page-specific)
+ */
 export const load: PageServerLoad = async (event) => {
 	const startTime = Date.now();
-	const courseSlug = event.params.slug;
 	console.log(`[MODULES PAGE] Loading...`);
-
-	// Auth is already done in layout - no need to check again!
-	// await requireCourseAdmin(event, courseSlug); // REMOVED - redundant
 
 	// Get layout data (modules and cohorts already loaded, auth already checked)
 	const parentStart = Date.now();
@@ -22,7 +28,7 @@ export const load: PageServerLoad = async (event) => {
 	const moduleIds = modules?.map(m => m.id) || [];
 
 	try {
-		// Only fetch page-specific data (session counts and enrollment counts)
+		// Fetch page-specific data: session counts and enrollment counts
 		let modulesWithCounts = [];
 
 		if (moduleIds.length > 0) {
@@ -34,13 +40,13 @@ export const load: PageServerLoad = async (event) => {
 				.in('module_id', moduleIds);
 			console.log(`[MODULES PAGE] Session counts query: ${Date.now() - sessionsStart}ms`);
 
-			// Get cohort counts and enrollments per module
+			// Build session count map
 			const sessionCountMap = new Map();
 			sessionCounts?.forEach(s => {
 				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
 			});
 
-			// Enrich modules with counts
+			// Enrich modules with counts and associated cohorts
 			modulesWithCounts = modules.map(module => ({
 				...module,
 				sessionCount: sessionCountMap.get(module.id) || 0,
@@ -48,7 +54,7 @@ export const load: PageServerLoad = async (event) => {
 			}));
 		}
 
-		// Get total enrollment count
+		// Get total enrollment count across all cohorts
 		const cohortIds = cohorts.map(c => c.id);
 		let totalEnrollments = 0;
 
@@ -66,7 +72,7 @@ export const load: PageServerLoad = async (event) => {
 		console.log(`[MODULES PAGE] ✅ Complete in ${Date.now() - startTime}ms\n`);
 
 		return {
-			course: courseInfo, // Pass course info from layout
+			course: courseInfo,
 			modules: modulesWithCounts,
 			cohorts,
 			totalEnrollments,

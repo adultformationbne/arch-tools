@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  *
  * Key concepts:
  * - Module permissions: Namespaced array in user_profiles.modules
- *   Format: ["users", "editor", "dgr", "courses.participant", "courses.manager", "courses.admin"]
+ *   Format: ["platform.admin", "editor", "dgr", "courses.participant", "courses.manager", "courses.admin"]
  * - Course enrollment roles: student, coordinator (in courses_enrollments.role - PARTICIPANTS ONLY)
  * - Course management: via platform modules (courses.admin, courses.manager) + assigned_course_ids
  *
@@ -122,7 +122,7 @@ export function getModuleLevel(modules: string[] | null, moduleName: string): st
  * Check if user has ANY level of a module (supports namespaced modules)
  * Examples:
  *   hasModule(['courses.participant'], 'courses') → true
- *   hasModule(['users'], 'users') → true
+ *   hasModule(['platform.admin'], 'platform.admin') → true
  */
 export function hasModule(modules: string[] | null, moduleName: string): boolean {
 	if (!modules) return false;

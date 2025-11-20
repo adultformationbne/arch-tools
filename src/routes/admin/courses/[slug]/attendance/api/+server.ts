@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { supabaseAdmin } from '$lib/server/supabase';
+import { CourseAggregates, CourseMutations } from '$lib/server/course-data.js';
 import { requireCourseAdmin } from '$lib/server/auth';
 
 export const GET: RequestHandler = async (event) => {
@@ -14,86 +14,55 @@ export const GET: RequestHandler = async (event) => {
 		return json({ error: 'Cohort ID required' }, { status: 400 });
 	}
 
-	// Get non-hub students with their attendance
-	const { data: nonHubStudents, error: nonHubError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.select(`
-			id,
-			email,
-			full_name
-		`)
-		.eq('cohort_id', cohortId)
-		.is('hub_id', null);
+	// Get attendance grid data using repository aggregate
+	const result = await CourseAggregates.getAttendanceGrid(cohortId);
 
-	if (nonHubError) {
-		console.error('Error fetching non-hub students:', nonHubError);
+	if (result.error || !result.data) {
+		console.error('Error fetching attendance:', result.error);
 		return json({ error: 'Database error' }, { status: 500 });
 	}
 
-	// Get hub students with their hub info
-	const { data: hubStudents, error: hubError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.select(`
-			id,
-			email,
-			full_name,
-			hub_id,
-			courses_hubs!inner (
-				id,
-				name
-			)
-		`)
-		.eq('cohort_id', cohortId)
-		.not('hub_id', 'is', null);
+	const { enrollments, attendanceMap, hubs } = result.data;
 
-	if (hubError) {
-		console.error('Error fetching hub students:', hubError);
-		return json({ error: 'Database error' }, { status: 500 });
-	}
+	// Create hub lookup for hub names
+	const hubLookup = new Map(hubs.map(h => [h.id, h.name]));
 
-	// Get all attendance records for this cohort using courses_enrollments.id
-	const allUserIds = [
-		...(nonHubStudents || []).map(s => s.id),
-		...(hubStudents || []).map(s => s.id)
-	];
+	// Transform enrollments to match expected format (split by hub/non-hub)
+	const nonHubStudents = enrollments
+		.filter(e => !e.hub_id)
+		.map(student => ({
+			id: student.id,
+			email: student.email,
+			full_name: student.full_name,
+			attendance: Object.entries(attendanceMap[student.id] || {}).map(([sessionNum, present]) => ({
+				enrollment_id: student.id,
+				session_number: parseInt(sessionNum),
+				present,
+				marked_by: null, // Not included in attendanceMap
+				attendance_type: 'flagship'
+			}))
+		}));
 
-	const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
-		.from('courses_attendance')
-		.select('enrollment_id, session_number, present, marked_by, attendance_type')
-		.eq('cohort_id', cohortId)
-		.in('enrollment_id', allUserIds);
-
-	if (attendanceError) {
-		console.error('Error fetching attendance:', attendanceError);
-	}
-
-	// Map attendance to students using enrollment_id
-	const attendanceMap = (attendanceRecords || []).reduce((acc, record) => {
-		if (!acc[record.enrollment_id]) acc[record.enrollment_id] = [];
-		acc[record.enrollment_id].push(record);
-		return acc;
-	}, {});
-
-	// Transform the data to include attendance
-	const transformedNonHub = (nonHubStudents || []).map(student => ({
-		id: student.id,
-		email: student.email,
-		full_name: student.full_name,
-		attendance: attendanceMap[student.id] || []
-	}));
-
-	const transformedHub = (hubStudents || []).map(student => ({
-		id: student.id,
-		email: student.email,
-		full_name: student.full_name,
-		hub_id: student.hub_id,
-		hub_name: student.courses_hubs.name,
-		attendance: attendanceMap[student.id] || []
-	}));
+	const hubStudents = enrollments
+		.filter(e => e.hub_id)
+		.map(student => ({
+			id: student.id,
+			email: student.email,
+			full_name: student.full_name,
+			hub_id: student.hub_id,
+			hub_name: hubLookup.get(student.hub_id) || 'Unknown Hub',
+			attendance: Object.entries(attendanceMap[student.id] || {}).map(([sessionNum, present]) => ({
+				enrollment_id: student.id,
+				session_number: parseInt(sessionNum),
+				present,
+				marked_by: null,
+				attendance_type: 'flagship'
+			}))
+		}));
 
 	return json({
-		nonHubStudents: transformedNonHub,
-		hubStudents: transformedHub
+		nonHubStudents,
+		hubStudents
 	});
 };
 
@@ -108,48 +77,18 @@ export const POST: RequestHandler = async (event) => {
 		return json({ error: 'Missing required fields' }, { status: 400 });
 	}
 
-	// Check if attendance record exists
-	const { data: existing } = await supabaseAdmin
-		.from('courses_attendance')
-		.select('id')
-		.eq('enrollment_id', userId)
-		.eq('cohort_id', cohortId)
-		.eq('session_number', sessionNumber)
-		.single();
+	// Use repository mutation for attendance marking
+	const result = await CourseMutations.markAttendance({
+		enrollmentId: userId,
+		cohortId: cohortId,
+		sessionNumber: sessionNumber,
+		present,
+		markedBy: user.id
+	});
 
-	if (existing) {
-		// Update existing record
-		const { error: updateError } = await supabaseAdmin
-			.from('courses_attendance')
-			.update({
-				present,
-				marked_by: user.id,
-				attendance_type: 'flagship',
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', existing.id);
-
-		if (updateError) {
-			console.error('Error updating attendance:', updateError);
-			return json({ error: 'Failed to update attendance' }, { status: 500 });
-		}
-	} else {
-		// Create new record
-		const { error: insertError } = await supabaseAdmin
-			.from('courses_attendance')
-			.insert({
-				enrollment_id: userId,
-				cohort_id: cohortId,
-				session_number: sessionNumber,
-				present,
-				marked_by: user.id,
-				attendance_type: 'flagship'
-			});
-
-		if (insertError) {
-			console.error('Error creating attendance:', insertError);
-			return json({ error: 'Failed to create attendance' }, { status: 500 });
-		}
+	if (result.error) {
+		console.error('Error marking attendance:', result.error);
+		return json({ error: 'Failed to mark attendance' }, { status: 500 });
 	}
 
 	return json({ success: true });

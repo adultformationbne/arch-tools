@@ -1,5 +1,5 @@
-import { json, error } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
+import { json } from '@sveltejs/kit';
+import { CourseQueries, CourseMutations } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
 
@@ -8,54 +8,59 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 		// Authentication check - students can read questions
 		const { session } = await safeGetSession();
 		if (!session) {
-			throw error(401, 'Unauthorized');
+			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		const sessionId = url.searchParams.get('session_id');
 		const moduleId = url.searchParams.get('module_id');
 		const sessionNumber = url.searchParams.get('session_number');
-		const sessionId = url.searchParams.get('session_id');
 
-		// Need either session_id OR module_id
-		if (!sessionId && !moduleId) {
-			return json({ error: 'session_id or module_id is required' }, { status: 400 });
-		}
-
-		let query = supabaseAdmin
-			.from('courses_reflection_questions')
-			.select(`
-				*,
-				courses_sessions!inner (
-					id,
-					session_number,
-					module_id,
-					title,
-					description
-				)
-			`);
-
+		// Handle session_id case
 		if (sessionId) {
-			query = query.eq('session_id', sessionId);
-		} else if (moduleId) {
-			query = query.eq('courses_sessions.module_id', moduleId);
+			const { data, error } = await CourseQueries.getReflectionQuestions([sessionId]);
 
-			if (sessionNumber) {
-				query = query.eq('courses_sessions.session_number', parseInt(sessionNumber));
+			if (error) {
+				console.error('Error fetching questions:', error);
+				return json({ error: 'Failed to fetch module reflection questions' }, { status: 500 });
 			}
+
+			return json({ questions: data || [] });
 		}
 
-		const { data: questions, error } = await query;
+		// Handle module_id case
+		if (moduleId) {
+			// Get all sessions for module first
+			const { data: sessions, error: sessionsError } = await CourseQueries.getSessions(moduleId);
 
-		// Sort by session number in code (can't order by joined columns in Supabase)
-		questions?.sort((a, b) =>
-			a.courses_sessions.session_number - b.courses_sessions.session_number
-		);
+			if (sessionsError) {
+				console.error('Error fetching sessions:', sessionsError);
+				return json({ error: 'Failed to fetch sessions' }, { status: 500 });
+			}
 
-		if (error) {
-			console.error('Error fetching module reflection questions:', error);
-			return json({ error: 'Failed to fetch module reflection questions' }, { status: 500 });
+			let sessionIds = sessions?.map(s => s.id) || [];
+
+			// Filter by session_number if provided
+			if (sessionNumber && sessions) {
+				const targetSession = sessions.find(s => s.session_number === parseInt(sessionNumber));
+				sessionIds = targetSession ? [targetSession.id] : [];
+			}
+
+			const { data, error } = await CourseQueries.getReflectionQuestions(sessionIds);
+
+			if (error) {
+				console.error('Error fetching questions:', error);
+				return json({ error: 'Failed to fetch module reflection questions' }, { status: 500 });
+			}
+
+			// Sort by session number
+			const questions = (data || []).sort((a, b) =>
+				(a.session?.session_number || 0) - (b.session?.session_number || 0)
+			);
+
+			return json({ questions });
 		}
 
-		return json({ questions: questions || [] });
+		return json({ error: 'session_id or module_id required' }, { status: 400 });
 
 	} catch (error) {
 		console.error('Error in module reflection questions GET endpoint:', error);
@@ -68,30 +73,27 @@ export const POST: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { session_id, question_text } = body;
+		const { session_id, question_text, word_count_min } = body;
 
-		// Validate required fields (now using session_id instead of module_id + session_number)
+		// Validate required fields
 		if (!session_id || !question_text) {
 			return json({
 				error: 'Missing required fields: session_id, question_text'
 			}, { status: 400 });
 		}
 
-		const { data: question, error } = await supabaseAdmin
-			.from('courses_reflection_questions')
-			.insert({
-				session_id,
-				question_text
-			})
-			.select()
-			.single();
+		const { data, error } = await CourseMutations.createReflectionQuestion({
+			sessionId: session_id,
+			questionText: question_text,
+			wordCountMin: word_count_min
+		});
 
 		if (error) {
 			console.error('Error creating module reflection question:', error);
 			return json({ error: 'Failed to create module reflection question' }, { status: 500 });
 		}
 
-		return json({ question }, { status: 201 });
+		return json({ question: data }, { status: 201 });
 
 	} catch (error) {
 		console.error('Error in module reflection questions POST endpoint:', error);
@@ -104,43 +106,27 @@ export const PUT: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { id, question_text } = body;
-
-		console.log('[API PUT] Received request to update reflection question');
-		console.log('[API PUT] ID:', id);
-		console.log('[API PUT] New question_text:', question_text);
+		const { id, question_text, word_count_min } = body;
 
 		if (!id || !question_text) {
-			console.log('[API PUT] Validation failed - missing id or question_text');
 			return json({ error: 'Both id and question_text are required' }, { status: 400 });
 		}
 
-		console.log('[API PUT] Executing update query...');
-		const { data: question, error } = await supabaseAdmin
-			.from('courses_reflection_questions')
-			.update({
-				question_text,
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', id)
-			.select()
-			.maybeSingle();
-
-		console.log('[API PUT] Query result - error:', error);
-		console.log('[API PUT] Query result - data:', question);
+		const { data, error } = await CourseMutations.updateReflectionQuestion(id, {
+			questionText: question_text,
+			wordCountMin: word_count_min
+		});
 
 		if (error) {
-			console.error('[API PUT] Database error updating module reflection question:', error);
+			console.error('Error updating module reflection question:', error);
 			return json({ error: 'Failed to update module reflection question' }, { status: 500 });
 		}
 
-		if (!question) {
-			console.log('[API PUT] No question found with id:', id);
+		if (!data) {
 			return json({ error: 'Reflection question not found' }, { status: 404 });
 		}
 
-		console.log('[API PUT] Successfully updated question:', question);
-		return json({ question });
+		return json({ question: data });
 
 	} catch (error) {
 		console.error('Error in module reflection questions PUT endpoint:', error);
@@ -159,10 +145,7 @@ export const DELETE: RequestHandler = async (event) => {
 			return json({ error: 'Question id is required' }, { status: 400 });
 		}
 
-		const { error } = await supabaseAdmin
-			.from('courses_reflection_questions')
-			.delete()
-			.eq('id', id);
+		const { error } = await CourseMutations.deleteReflectionQuestion(id);
 
 		if (error) {
 			console.error('Error deleting module reflection question:', error);

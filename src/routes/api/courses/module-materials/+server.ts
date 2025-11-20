@@ -1,5 +1,5 @@
-import { json, error } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase.js';
+import { json } from '@sveltejs/kit';
+import { CourseQueries, CourseMutations } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
 
@@ -8,57 +8,61 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 		// Authentication check - students can read materials
 		const { session } = await safeGetSession();
 		if (!session) {
-			throw error(401, 'Unauthorized');
+			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		const sessionId = url.searchParams.get('session_id');
 		const moduleId = url.searchParams.get('module_id');
 		const sessionNumber = url.searchParams.get('session_number');
-		const sessionId = url.searchParams.get('session_id');
 
-		// Need either session_id OR module_id
-		if (!sessionId && !moduleId) {
-			return json({ error: 'session_id or module_id is required' }, { status: 400 });
-		}
-
-		let query = supabaseAdmin
-			.from('courses_materials')
-			.select(`
-				*,
-				courses_sessions!inner (
-					id,
-					session_number,
-					module_id,
-					title,
-					description
-				)
-			`)
-			.order('display_order', { ascending: true });
-
+		// Handle session_id case
 		if (sessionId) {
-			query = query.eq('session_id', sessionId);
-		} else if (moduleId) {
-			query = query.eq('courses_sessions.module_id', moduleId);
+			const { data, error } = await CourseQueries.getMaterials([sessionId]);
 
-			if (sessionNumber) {
-				query = query.eq('courses_sessions.session_number', parseInt(sessionNumber));
+			if (error) {
+				console.error('Error fetching materials:', error);
+				return json({ error: 'Failed to fetch module materials' }, { status: 500 });
 			}
+
+			return json({ materials: data || [] });
 		}
 
-		const { data: materials, error } = await query;
+		// Handle module_id case
+		if (moduleId) {
+			// Get all sessions for module first
+			const { data: sessions, error: sessionsError } = await CourseQueries.getSessions(moduleId);
 
-		// Sort by session number in code (can't order by joined columns in Supabase)
-		materials?.sort((a, b) => {
-			const sessionDiff = a.courses_sessions.session_number - b.courses_sessions.session_number;
-			if (sessionDiff !== 0) return sessionDiff;
-			return a.display_order - b.display_order;
-		});
+			if (sessionsError) {
+				console.error('Error fetching sessions:', sessionsError);
+				return json({ error: 'Failed to fetch sessions' }, { status: 500 });
+			}
 
-		if (error) {
-			console.error('Error fetching module materials:', error);
-			return json({ error: 'Failed to fetch module materials' }, { status: 500 });
+			let sessionIds = sessions?.map(s => s.id) || [];
+
+			// Filter by session_number if provided
+			if (sessionNumber && sessions) {
+				const targetSession = sessions.find(s => s.session_number === parseInt(sessionNumber));
+				sessionIds = targetSession ? [targetSession.id] : [];
+			}
+
+			const { data, error } = await CourseQueries.getMaterials(sessionIds);
+
+			if (error) {
+				console.error('Error fetching materials:', error);
+				return json({ error: 'Failed to fetch module materials' }, { status: 500 });
+			}
+
+			// Sort by session number then display order
+			const materials = (data || []).sort((a, b) => {
+				const sessionDiff = (a.session?.session_number || 0) - (b.session?.session_number || 0);
+				if (sessionDiff !== 0) return sessionDiff;
+				return a.display_order - b.display_order;
+			});
+
+			return json({ materials });
 		}
 
-		return json({ materials: materials || [] });
+		return json({ error: 'session_id or module_id required' }, { status: 400 });
 
 	} catch (error) {
 		console.error('Error in module materials GET endpoint:', error);
@@ -73,7 +77,7 @@ export const POST: RequestHandler = async (event) => {
 		const body = await event.request.json();
 		const { session_id, type, title, content, display_order } = body;
 
-		// Validate required fields (now using session_id instead of module_id + session_number)
+		// Validate required fields
 		if (!session_id || !type || !title || !content) {
 			return json({
 				error: 'Missing required fields: session_id, type, title, content'
@@ -88,24 +92,20 @@ export const POST: RequestHandler = async (event) => {
 			}, { status: 400 });
 		}
 
-		const { data: material, error } = await supabaseAdmin
-			.from('courses_materials')
-			.insert({
-				session_id,
-				type,
-				title,
-				content,
-				display_order: display_order || 0
-			})
-			.select()
-			.single();
+		const { data, error } = await CourseMutations.createMaterial({
+			sessionId: session_id,
+			type,
+			title,
+			content,
+			displayOrder: display_order
+		});
 
 		if (error) {
 			console.error('Error creating module material:', error);
 			return json({ error: 'Failed to create module material' }, { status: 500 });
 		}
 
-		return json({ material }, { status: 201 });
+		return json({ material: data }, { status: 201 });
 
 	} catch (error) {
 		console.error('Error in module materials POST endpoint:', error);
@@ -124,9 +124,7 @@ export const PUT: RequestHandler = async (event) => {
 			return json({ error: 'Material id is required' }, { status: 400 });
 		}
 
-		const updates: any = { updated_at: new Date().toISOString() };
-
-		// Only update provided fields
+		// Validate type if provided
 		if (type !== undefined) {
 			const validTypes = ['video', 'document', 'link', 'native', 'image'];
 			if (!validTypes.includes(type)) {
@@ -134,29 +132,25 @@ export const PUT: RequestHandler = async (event) => {
 					error: `Invalid type. Must be one of: ${validTypes.join(', ')}`
 				}, { status: 400 });
 			}
-			updates.type = type;
 		}
-		if (title !== undefined) updates.title = title;
-		if (content !== undefined) updates.content = content;
-		if (display_order !== undefined) updates.display_order = display_order;
 
-		const { data: material, error } = await supabaseAdmin
-			.from('courses_materials')
-			.update(updates)
-			.eq('id', id)
-			.select()
-			.maybeSingle();
+		const { data, error } = await CourseMutations.updateMaterial(id, {
+			type,
+			title,
+			content,
+			displayOrder: display_order
+		});
 
 		if (error) {
 			console.error('Error updating module material:', error);
 			return json({ error: 'Failed to update module material' }, { status: 500 });
 		}
 
-		if (!material) {
+		if (!data) {
 			return json({ error: 'Material not found' }, { status: 404 });
 		}
 
-		return json({ material });
+		return json({ material: data });
 
 	} catch (error) {
 		console.error('Error in module materials PUT endpoint:', error);
@@ -175,10 +169,7 @@ export const DELETE: RequestHandler = async (event) => {
 			return json({ error: 'Material id is required' }, { status: 400 });
 		}
 
-		const { error } = await supabaseAdmin
-			.from('courses_materials')
-			.delete()
-			.eq('id', id);
+		const { error } = await CourseMutations.deleteMaterial(id);
 
 		if (error) {
 			console.error('Error deleting module material:', error);

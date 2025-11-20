@@ -6,9 +6,31 @@
 		sessionNumber = 1
 	} = $props();
 
-	const handleBlur = () => {
-		onOverviewChange(sessionOverview);
+	// Local state to avoid two-way binding issues with props
+	let textareaValue = $state(sessionOverview);
+	let previousSessionNumber = $state(sessionNumber);
+
+	const handleInput = (e) => {
+		textareaValue = e.target.value;
 	};
+
+	const handleBlur = () => {
+		onOverviewChange(textareaValue);
+	};
+
+	// Sync with prop changes
+	$effect(() => {
+		// Session changed - reset value
+		if (sessionNumber !== previousSessionNumber) {
+			textareaValue = sessionOverview;
+			previousSessionNumber = sessionNumber;
+		} else {
+			// Same session - sync the value only if different
+			if (textareaValue !== sessionOverview) {
+				textareaValue = sessionOverview;
+			}
+		}
+	});
 
 	// Custom placeholder based on session type
 	const displayPlaceholder = sessionNumber === 0
@@ -21,7 +43,8 @@
 		{sessionNumber === 0 ? 'Welcome Message' : 'Session Overview'}
 	</h2>
 	<textarea
-		bind:value={sessionOverview}
+		value={textareaValue}
+		oninput={handleInput}
 		onblur={handleBlur}
 		placeholder={displayPlaceholder}
 		rows="3"

@@ -5,9 +5,11 @@ import { requireAnyModule } from '$lib/server/auth';
 
 /**
  * GET - List all courses with module counts
+ * Requires: courses.admin OR platform.admin module
  */
 export const GET: RequestHandler = async (event) => {
 	try {
+		// Verify user has admin access
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		// Fetch all courses with module count and cohort count
@@ -22,7 +24,7 @@ export const GET: RequestHandler = async (event) => {
 					status,
 					start_date,
 					end_date,
-					module:courses_modules(name)
+					module:module_id(name)
 				)
 			`)
 			.order('created_at', { ascending: false });
@@ -53,6 +55,7 @@ export const GET: RequestHandler = async (event) => {
 
 /**
  * POST - Create a new course
+ * Requires: courses.admin OR platform.admin module
  */
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -97,6 +100,7 @@ export const POST: RequestHandler = async (event) => {
 
 /**
  * PUT - Update a course
+ * Requires: courses.admin OR platform.admin module
  */
 export const PUT: RequestHandler = async (event) => {
 	try {
@@ -143,6 +147,7 @@ export const PUT: RequestHandler = async (event) => {
 
 /**
  * DELETE - Archive a course (soft delete)
+ * Requires: courses.admin OR platform.admin module
  */
 export const DELETE: RequestHandler = async (event) => {
 	try {

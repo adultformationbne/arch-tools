@@ -18,6 +18,11 @@
 	$: hideNav = $page.url.pathname === '/login' ||
 	             $page.url.pathname === '/login/setup-password';
 
+	// Only show main nav if user has modules beyond just courses.participant
+	// (since courses.participant users can access everything they need via the course sub-nav)
+	$: hasOtherModules = userModules.length > 0 &&
+	                     !(userModules.length === 1 && userModules[0] === 'courses.participant');
+
 	onMount(() => {
 		const {
 			data: { subscription }
@@ -38,7 +43,7 @@
 <!-- <PageTransition /> -->
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
-	{#if session && !hideNav}
+	{#if session && !hideNav && hasOtherModules}
 		<AppNavigation {session} modules={userModules} {userProfile} />
 	{/if}
 	<main class="flex-1">

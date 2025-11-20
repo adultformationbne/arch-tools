@@ -106,9 +106,9 @@
 					<div class="hidden md:flex items-center space-x-3">
 						{#if hasModule('platform.admin')}
 							<a
-								href="/users"
-								class="rounded-full p-2 transition-colors {$page.url.pathname.startsWith('/users') ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}"
-								title="User Management"
+								href="/settings"
+								class="rounded-full p-2 transition-colors {$page.url.pathname.startsWith('/settings') ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}"
+								title="Platform Admin"
 							>
 								<Settings class="h-5 w-5" />
 							</a>
@@ -197,12 +197,12 @@
 			<div class="border-t border-gray-200 pt-3 mt-3 space-y-1">
 				{#if hasModule('platform.admin')}
 					<a
-						href="/users"
-						class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors {$page.url.pathname.startsWith('/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						href="/settings"
+						class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors {$page.url.pathname.startsWith('/settings') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
 						onclick={closeMobileMenu}
 					>
 						<Settings class="h-5 w-5" />
-						<span>User Management</span>
+						<span>Platform Admin</span>
 					</a>
 				{/if}
 				<a
