@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
-	const { supabase } = data;
+	const { supabase, platform } = data;
 
 	// Auth flow states
 	type AuthStep = 'email' | 'password' | 'otp';
@@ -271,7 +271,7 @@
 	}
 
 	function determineRedirect(modules: string[]) {
-		if (modules.includes('users')) return '/users';
+		if (modules.includes('platform.admin')) return '/users';
 		if (modules.includes('courses.admin') || modules.includes('courses.manager')) return '/courses';
 		if (modules.includes('dgr')) return '/dgr';
 		if (modules.includes('editor')) return '/editor';
@@ -296,14 +296,14 @@
 			<!-- Archdiocesan Cross Mark Logo -->
 			<div class="flex justify-center mb-6">
 				<img
-					src="/archmin-mark.png"
-					alt="Archdiocesan Ministry Tools"
+					src={platform.logoPath}
+					alt={platform.name}
 					class="w-24 h-24 object-contain"
 				/>
 			</div>
 
 			<h1 class="mb-2 text-center text-2xl font-semibold text-black">
-				Archdiocesan Ministry Tools
+				{platform.name}
 			</h1>
 			<h2 class="text-center text-base text-neutral-600">
 				{#if currentStep === 'email'}

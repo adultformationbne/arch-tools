@@ -1,11 +1,11 @@
 <script>
 	import { page } from '$app/stores';
 	export let data;
-	$: ({ session } = data);
+	$: ({ session, platform } = data);
 </script>
 
 <svelte:head>
-	<title>Data Handling Policy - Archdiocesan Ministry Tools</title>
+	<title>Data Handling Policy - {platform.name}</title>
 </svelte:head>
 
 <div class="container mx-auto px-4 py-8 max-w-4xl">
@@ -16,7 +16,7 @@
 		<section class="mb-8">
 			<h2 class="text-xl font-semibold text-gray-800 mb-4">What This Platform Does</h2>
 			<p class="text-gray-700 mb-4">
-				The Archdiocesan Ministry Tools platform is an internal content management system that helps staff organise and publish Catholic liturgical content, and manage formation programs, including:
+				The {platform.name} is an internal content management system that helps staff organise and publish Catholic liturgical content, and manage formation programs, including:
 			</p>
 			<ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
 				<li>Daily Gospel Reflections (DGR) scheduling and publishing</li>
@@ -159,7 +159,7 @@
 
 		<footer class="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
 			<p>Last updated: November 2025</p>
-			<p>This policy applies to internal use of the Archdiocesan Ministry Tools platform, including course management and formation programs.</p>
+			<p>This policy applies to internal use of the {platform.name}, including course management and formation programs.</p>
 		</footer>
 	</div>
 </div>

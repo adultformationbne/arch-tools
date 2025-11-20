@@ -37,7 +37,7 @@ async function getCohortEnrollment(userId: string, cohortId: string) {
 }
 
 function isGlobalCourseAdmin(modules: string[]): boolean {
-	return hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+	return hasModule(modules, 'platform.admin') || hasModuleLevel(modules, 'courses.admin');
 }
 
 async function canManageCohort(userId: string, cohortId: string, modules: string[]): Promise<boolean> {

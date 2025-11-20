@@ -9,6 +9,7 @@
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
 	let attendanceData = $state({});
 	let isLoading = $state(false);
+	let overrideState = $state({ show: false, studentId: null, sessionNumber: null, studentName: null });
 
 	const toggleHub = (hubName) => {
 		const newExpanded = new Set(expandedHubs);
@@ -135,6 +136,20 @@
 	const selectedCohort = $derived(() => {
 		return data.cohorts.find(c => c.id === selectedCohortId);
 	});
+
+	const handleOverrideConfirm = async (present) => {
+		if (!overrideState.studentId || overrideState.sessionNumber === null) return;
+
+		// Mark the attendance with the override
+		await markAttendance(overrideState.studentId, overrideState.sessionNumber, present);
+
+		// Close the modal
+		overrideState = { show: false, studentId: null, sessionNumber: null, studentName: null };
+	};
+
+	const cancelOverride = () => {
+		overrideState = { show: false, studentId: null, sessionNumber: null, studentName: null };
+	};
 </script>
 
 <div class="px-16">
@@ -382,10 +397,12 @@
 																		{#if record}
 																			<button
 																				onclick={() => {
-																					// TODO: Use ConfirmationModal when implementing this feature
-															if (false) {
-																						// Show override buttons
-																					}
+																					overrideState = {
+																						show: true,
+																						studentId: student.id,
+																						sessionNumber: sessionNum,
+																						studentName: student.full_name
+																					};
 																				}}
 																				class="px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
 																			>
@@ -438,3 +455,57 @@
 		</div>
 	</div>
 </div>
+
+<!-- Override Confirmation Modal -->
+{#if overrideState.show}
+	<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onclick={cancelOverride}>
+		<div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4" onclick={(e) => e.stopPropagation()}>
+			<div class="p-6 border-b border-gray-200">
+				<h3 class="text-xl font-bold text-gray-800">Override Coordinator Marking</h3>
+				<p class="text-sm text-gray-600 mt-1">
+					You are about to override the attendance marking for <strong>{overrideState.studentName}</strong> in Session {overrideState.sessionNumber}.
+				</p>
+			</div>
+
+			<div class="p-6">
+				<div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+					<div class="flex items-start gap-3">
+						<AlertCircle size="20" class="text-amber-600 mt-0.5" />
+						<div class="text-sm text-amber-800">
+							<p class="font-semibold mb-1">This will override the coordinator's marking</p>
+							<p>This action should only be used to correct errors or handle special circumstances.</p>
+						</div>
+					</div>
+				</div>
+
+				<p class="text-gray-700 font-medium mb-4">Mark this student as:</p>
+
+				<div class="flex gap-3">
+					<button
+						onclick={() => handleOverrideConfirm(true)}
+						class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+					>
+						<CheckCircle size="20" />
+						Present
+					</button>
+					<button
+						onclick={() => handleOverrideConfirm(false)}
+						class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+					>
+						<XCircle size="20" />
+						Absent
+					</button>
+				</div>
+			</div>
+
+			<div class="p-6 pt-0">
+				<button
+					onclick={cancelOverride}
+					class="w-full px-6 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors"
+				>
+					Cancel
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

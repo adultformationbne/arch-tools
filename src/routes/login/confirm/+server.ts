@@ -49,7 +49,7 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 				const modules = profile?.modules || [];
 
 				// Determine redirect based on modules
-				if (modules.includes('users')) {
+				if (modules.includes('platform.admin')) {
 					throw redirect(303, '/users');
 				} else if (modules.includes('courses.admin') || modules.includes('courses.manager')) {
 					throw redirect(303, '/courses');

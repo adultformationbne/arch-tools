@@ -7,7 +7,7 @@ import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // POST - Create new enrollment
 export const POST: RequestHandler = async (event) => {
-	await requireModule(event, 'users');
+	await requireModule(event, 'platform.admin');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -76,7 +76,7 @@ export const POST: RequestHandler = async (event) => {
 
 // PUT - Update enrollment role
 export const PUT: RequestHandler = async (event) => {
-	await requireModule(event, 'users');
+	await requireModule(event, 'platform.admin');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -103,11 +103,15 @@ export const PUT: RequestHandler = async (event) => {
 		.update({ role })
 		.eq('id', enrollmentId)
 		.select()
-		.single();
+		.maybeSingle();
 
 	if (updateError) {
 		console.error('Error updating enrollment:', updateError);
 		throw error(500, 'Failed to update enrollment');
+	}
+
+	if (!data) {
+		throw error(404, 'Enrollment not found');
 	}
 
 	return json({ success: true, enrollment: data });
@@ -115,7 +119,7 @@ export const PUT: RequestHandler = async (event) => {
 
 // DELETE - Remove enrollment
 export const DELETE: RequestHandler = async (event) => {
-	await requireModule(event, 'users');
+	await requireModule(event, 'platform.admin');
 
 	// Use admin client to bypass RLS
 	const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

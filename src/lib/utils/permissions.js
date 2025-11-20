@@ -7,7 +7,7 @@
  * Available modules in the system
  */
 export const MODULES = {
-	USERS: 'users',
+	PLATFORM_ADMIN: 'platform.admin',
 	DGR: 'dgr',
 	EDITOR: 'editor',
 	COURSES_PARTICIPANT: 'courses.participant',
@@ -70,12 +70,12 @@ export function hasAllModuleAccess(userProfile, moduleIds) {
 }
 
 /**
- * Check if user has user management access
+ * Check if user has platform admin access
  * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user can manage users
+ * @returns {boolean} True if user can manage users and platform settings
  */
 export function canManageUsers(userProfile) {
-	return hasModuleAccess(userProfile, MODULES.USERS);
+	return hasModuleAccess(userProfile, MODULES.PLATFORM_ADMIN);
 }
 
 /**
@@ -105,8 +105,8 @@ export function isCourseParticipant(userProfile) {
 export function getDefaultRedirectPath(userProfile) {
 	if (!userProfile) return '/login';
 
-	// User management → /users
-	if (hasModuleAccess(userProfile, MODULES.USERS)) {
+	// Platform admin → /users
+	if (hasModuleAccess(userProfile, MODULES.PLATFORM_ADMIN)) {
 		return '/users';
 	}
 
@@ -150,7 +150,7 @@ export function getUserModules(userProfile) {
  */
 export function getModuleName(moduleId) {
 	const names = {
-		[MODULES.USERS]: 'User Management',
+		[MODULES.PLATFORM_ADMIN]: 'Platform Admin',
 		[MODULES.DGR]: 'Daily Gospel Reflections',
 		[MODULES.EDITOR]: 'Content Editor',
 		[MODULES.COURSES_PARTICIPANT]: 'Course Participant',

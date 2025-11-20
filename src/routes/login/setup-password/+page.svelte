@@ -4,7 +4,7 @@
 	import { KeyRound, CheckCircle } from 'lucide-svelte';
 
 	let { data } = $props();
-	const { supabase, user } = data;
+	const { supabase, user, platform } = data;
 
 	let password = $state('');
 	let confirmPassword = $state('');
@@ -64,14 +64,14 @@
 			<!-- Archdiocesan Cross Mark Logo -->
 			<div class="flex justify-center mb-6">
 				<img
-					src="/archmin-mark.png"
-					alt="Archdiocesan Ministry Tools"
+					src={platform.logoPath}
+					alt={platform.name}
 					class="w-24 h-24 object-contain"
 				/>
 			</div>
 
 			<h1 class="text-2xl font-semibold text-black">
-				Welcome to Arch Tools
+				Welcome to {platform.shortName}
 			</h1>
 			<p class="mt-2 text-sm text-neutral-600">
 				Please create a password to secure your account

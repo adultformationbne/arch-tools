@@ -50,7 +50,7 @@ Welcome to Archdiocesan Tools - Set Up Your Account
 </p>
 
 <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
-  <strong>Archdiocesan Ministry Tools</strong><br>
+  <strong>Archdiocesan Ministries Platform</strong><br>
   Catholic Archdiocese of Brisbane
 </p>
 ```

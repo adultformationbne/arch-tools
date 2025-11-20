@@ -29,7 +29,7 @@ async function getUserModules(userId: string): Promise<string[]> {
 }
 
 function isGlobalCourseAdmin(modules: string[]): boolean {
-	return hasModule(modules, 'users') || hasModuleLevel(modules, 'courses.admin');
+	return hasModule(modules, 'platform.admin') || hasModuleLevel(modules, 'courses.admin');
 }
 
 

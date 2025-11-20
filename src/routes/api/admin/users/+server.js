@@ -8,8 +8,8 @@ import { generateInvitationEmail } from '$lib/email-templates/user-invitation.js
 
 export async function POST(event) {
 	try {
-		// Check if user has users module access (admins automatically have access)
-		const { user } = await requireModule(event, 'users');
+		// Check if user has platform admin access
+		const { user } = await requireModule(event, 'platform.admin');
 
 		const { request } = event;
 
@@ -28,7 +28,7 @@ export async function POST(event) {
 
 		// Validate modules
 		const allowedModules = [
-			'users',
+			'platform.admin',
 			'editor',
 			'dgr',
 			'courses.participant',
@@ -188,8 +188,8 @@ export async function POST(event) {
 
 export async function DELETE(event) {
 	try {
-		// Check if user has users module access (admins automatically have access)
-		const { user } = await requireModule(event, 'users');
+		// Check if user has platform admin access
+		const { user } = await requireModule(event, 'platform.admin');
 
 		const { request } = event;
 
@@ -264,8 +264,8 @@ export async function DELETE(event) {
 
 export async function PUT(event) {
 	try {
-		// Check if user has users module access (admins automatically have access)
-		const { user } = await requireModule(event, 'users');
+		// Check if user has platform admin access
+		const { user } = await requireModule(event, 'platform.admin');
 
 		const { request } = event;
 
@@ -339,9 +339,9 @@ export async function PUT(event) {
 
 		// Handle update modules
 		if (action === 'update_modules') {
-			// Validate modules (removed accf_admin as it's deprecated)
+			// Validate modules
 			const allowedModules = [
-				'users',
+				'platform.admin',
 				'editor',
 				'dgr',
 				'courses.participant',

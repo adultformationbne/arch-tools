@@ -2,7 +2,7 @@
 
 ## Overview
 
-A consistent design system built for the Archdiocesan Ministry Tools editor application using Svelte 5 and Tailwind CSS.
+A consistent design system built for the Archdiocesan Ministries Platform editor application using Svelte 5 and Tailwind CSS.
 
 ## Components
 

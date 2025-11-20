@@ -112,8 +112,8 @@
 						class:text-gray-600={!isActive}
 						class:border-gray-300={!isActive}
 						onclick={() => onToggleModule(module.id)}
-						disabled={user.id === currentUserId && module.id === 'users'}
-						class:opacity-50={user.id === currentUserId && module.id === 'users'}
+						disabled={user.id === currentUserId && module.id === 'platform.admin'}
+						class:opacity-50={user.id === currentUserId && module.id === 'platform.admin'}
 						title={module.description}
 					>
 						{module.name}

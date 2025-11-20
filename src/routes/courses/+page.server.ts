@@ -17,7 +17,7 @@ export const load: PageServerLoad = async (event) => {
 	const userId = userProfile.id;
 	const userModules: string[] = userProfile.modules ?? [];
 
-	const derivedRole = userModules.some((mod) => mod === 'courses.manager' || mod === 'courses.admin' || mod === 'users')
+	const derivedRole = userModules.some((mod) => mod === 'courses.manager' || mod === 'courses.admin' || mod === 'platform.admin')
 		? 'admin'
 		: 'student';
 

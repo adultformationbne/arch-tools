@@ -32,6 +32,7 @@ export const load: LayoutLoad = async ({ fetch, data, depends, url }) => {
 		courseTheme: data?.courseTheme,
 		courseBranding: data?.courseBranding,
 		courseInfo: data?.courseInfo,
-		isCoursesRoute: data?.isCoursesRoute
+		isCoursesRoute: data?.isCoursesRoute,
+		platform: data?.platform
 	};
 };

@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(event) {
 	try {
 		// Check if user is platform admin
-		await requireModule(event, 'users');
+		await requireModule(event, 'platform.admin');
 
 		const { request } = event;
 

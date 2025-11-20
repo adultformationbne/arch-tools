@@ -104,7 +104,7 @@
 
 					<!-- Desktop Actions -->
 					<div class="hidden md:flex items-center space-x-3">
-						{#if hasModule('users')}
+						{#if hasModule('platform.admin')}
 							<a
 								href="/users"
 								class="rounded-full p-2 transition-colors {$page.url.pathname.startsWith('/users') ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}"
@@ -195,7 +195,7 @@
 
 			<!-- Mobile Actions -->
 			<div class="border-t border-gray-200 pt-3 mt-3 space-y-1">
-				{#if hasModule('users')}
+				{#if hasModule('platform.admin')}
 					<a
 						href="/users"
 						class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors {$page.url.pathname.startsWith('/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"

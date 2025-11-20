@@ -4,6 +4,8 @@
  * Uses manual instructions (no clickable links) to avoid Outlook link scanning issues
  */
 
+import { platform } from '$lib/config';
+
 /**
  * Generate welcome/invitation email for new users
  * @param {Object} data
@@ -24,7 +26,7 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
 		   </ul>`
 		: '';
 
-	const subject = 'Welcome to Archdiocesan Ministry Tools - Your Account is Ready';
+	const subject = `Welcome to ${platform.name} - Your Account is Ready`;
 
 	const html = `
 <!DOCTYPE html>
@@ -34,7 +36,7 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="x-apple-disable-message-reformatting">
-    <title>Welcome to Archdiocesan Ministry Tools</title>
+    <title>Welcome to ${platform.name}</title>
     <!--[if mso]>
     <style type="text/css">
         table {border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
@@ -62,8 +64,8 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
                     <!-- Header with Logo -->
                     <tr>
                         <td align="center" style="padding: 50px 30px 30px; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
-                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-mark-small.png" alt="Archdiocesan Ministry Tools" width="120" height="auto" border="0" style="display: block; margin: 0 auto 25px; width: 120px; max-width: 120px; height: auto; border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
-                            <h1 style="color: #000000; margin: 0; padding: 0; font-size: 22px; line-height: 28px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">Archdiocesan Ministry Tools</h1>
+                            <img src="https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin-mark-small.png" alt="${platform.name}" width="120" height="auto" border="0" style="display: block; margin: 0 auto 25px; width: 120px; max-width: 120px; height: auto; border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
+                            <h1 style="color: #000000; margin: 0; padding: 0; font-size: 22px; line-height: 28px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">${platform.name}</h1>
                         </td>
                     </tr>
 
@@ -75,7 +77,7 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
                             </p>
 
                             <p style="font-size: 15px; line-height: 24px; color: #333333; margin: 0 0 20px; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">
-                                Your account has been created on the Archdiocesan Ministry Tools platform. You can now login and start using the system.
+                                Your account has been created on the ${platform.name}. You can now login and start using the system.
                             </p>
 
                             ${modulesText}
@@ -180,7 +182,7 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
                     <!-- Footer -->
                     <tr>
                         <td align="center" style="background-color: #fafafa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; mso-line-height-rule: exactly;">
-                            <p style="font-size: 13px; line-height: 20px; color: #333333; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;"><strong style="font-weight: 600;">Archdiocesan Ministries Platform</strong></p>
+                            <p style="font-size: 13px; line-height: 20px; color: #333333; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;"><strong style="font-weight: 600;">${platform.name}</strong></p>
                             <p style="font-size: 11px; line-height: 18px; color: #999999; margin: 8px 0 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; mso-line-height-rule: exactly;">Catholic Archdiocese of Brisbane</p>
                         </td>
                     </tr>
@@ -209,7 +211,7 @@ export function generateInvitationEmail({ recipientName, recipientEmail, siteUrl
  */
 function formatModuleName(moduleId) {
 	const moduleNames = {
-		'users': 'User Management',
+		'platform.admin': 'Platform Admin',
 		'editor': 'Content Editor',
 		'dgr': 'Daily Gospel Reflections',
 		'courses.participant': 'Course Participation',

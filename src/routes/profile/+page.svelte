@@ -26,9 +26,9 @@ $effect(() => {
 
 	// Module configuration with labels, descriptions, icons, and colors
 	const moduleConfig = {
-		'users': {
-			label: 'User Management',
-			description: 'Manage users, invitations, and permissions',
+		'platform.admin': {
+			label: 'Platform Admin',
+			description: 'Manage users, invitations, permissions, and platform settings',
 			icon: Users,
 			color: 'purple'
 		},
@@ -456,12 +456,12 @@ async function handlePasswordChange(event?: Event) {
 			</div>
 		</div>
 
-		{#if profile?.modules && profile.modules.includes('users')}
+		{#if profile?.modules && profile.modules.includes('platform.admin')}
 			<div class="bg-gradient-to-br from-purple-50 to-purple-100 shadow-sm rounded-lg border border-purple-200">
 				<div class="px-6 py-4 border-b border-purple-200 bg-white/50">
 					<h2 class="text-lg font-semibold text-gray-900 flex items-center">
 						<Users class="h-5 w-5 mr-2 text-purple-600" />
-						Admin Panel
+						Platform Admin
 					</h2>
 				</div>
 				<div class="p-6">

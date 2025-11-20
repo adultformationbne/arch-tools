@@ -1,6 +1,7 @@
 <script>
 	import { page, navigating } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
+	import { Pencil } from 'lucide-svelte';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
@@ -22,9 +23,11 @@
 	const accentDark = courseTheme.accentDark || '#334642';
 	const accentLight = courseTheme.accentLight || '#c59a6b';
 
-	// Get module from URL or default to first
-	let selectedModuleId = $state($page.url.searchParams.get('module') || availableModules[0]?.id);
-	let selectedModule = $derived(availableModules.find(m => m.id === selectedModuleId) || availableModules[0]);
+	// Get module from URL (derived from URL params)
+	const selectedModuleId = $derived($page.url.searchParams.get('module'));
+	const selectedModule = $derived(
+		availableModules.find(m => m.id === selectedModuleId) || availableModules[0]
+	);
 	let totalSessions = $state(8); // Default sessions, can be adjusted per module
 	let showCreateModule = $state(false);
 	let editingModule = $state(null); // For inline editing
@@ -40,10 +43,13 @@
 	let sessionDescriptions = $state({}); // Track session descriptions/overviews
 	let sessionTitles = $state({}); // Track session titles
 	let sessionIds = $state({}); // Track session IDs for updates
+	let modifiedReflections = $state(new Set()); // Track which sessions have modified reflections (don't overwrite on reload)
 	let dataInitialized = $state(false);
 	let saving = $state(false);
 	let saveMessage = $state('');
 	let titleSaveTimeout = null;
+	let editingTitle = $state(false);
+	let titleHovered = $state(false);
 
 	// Process server-loaded data into component state
 	const processServerData = (moduleId) => {
@@ -72,8 +78,11 @@
 					}));
 
 				// Get reflection question for this session
-				const question = data.reflectionQuestions.find(q => q.session_id === session.id);
-				sessionReflections[i] = question ? question.question_text : '';
+				// Don't overwrite if this session's reflection was recently modified
+				if (!modifiedReflections.has(i)) {
+					const question = data.reflectionQuestions.find(q => q.session_id === session.id);
+					sessionReflections[i] = question ? question.question_text : '';
+				}
 
 				// Only enable reflections if there's actually a question
 				// This prevents inconsistent state where reflections are enabled but no question exists
@@ -93,35 +102,10 @@
 		dataInitialized = true;
 	};
 
-	// Initialize data from server on mount
+	// Initialize data from server when module changes
 	$effect(() => {
 		if (selectedModule?.id) {
 			processServerData(selectedModule.id);
-
-			// Fix any inconsistent states in the database (reflections enabled but no question)
-			// Run this asynchronously after data is loaded
-			setTimeout(async () => {
-				for (let i = 0; i <= totalSessions; i++) {
-					const hasQuestion = sessionReflections[i]?.trim().length > 0;
-					const sessionId = sessionIds[i];
-
-					// If reflections are enabled in DB but no question exists, disable them
-					if (sessionId) {
-						const dbSession = data.sessions.find(s => s.id === sessionId);
-						if (dbSession && dbSession.reflections_enabled && !hasQuestion) {
-							// Silently update the database to fix the inconsistency
-							await fetch('/api/courses/sessions', {
-								method: 'PUT',
-								headers: { 'Content-Type': 'application/json' },
-								body: JSON.stringify({
-									session_id: sessionId,
-									reflections_enabled: false
-								})
-							});
-						}
-					}
-				}
-			}, 500);
 		}
 	});
 
@@ -189,67 +173,121 @@
 	};
 
 	const handleReflectionChange = async (newReflection) => {
-		// Update local state immediately for reactive UI
-		sessionReflections[selectedSession] = newReflection;
+		// Update local state immediately for reactive UI (use spread to trigger Svelte 5 reactivity)
+		sessionReflections = {
+			...sessionReflections,
+			[selectedSession]: newReflection
+		};
 
-		// Auto-toggle reflections based on question content
+		// Reflections are always enabled when a question exists (default to ON)
 		const shouldEnableReflections = newReflection.trim().length > 0;
-		const reflectionsStateChanged = sessionReflectionsEnabled[selectedSession] !== shouldEnableReflections;
-
-		// Update reflections enabled state immediately (optimistic update)
 		sessionReflectionsEnabled[selectedSession] = shouldEnableReflections;
 
 		saving = true;
 		saveMessage = 'Saving reflection question...';
 
 		try {
-			// Ensure session exists before creating/updating reflection question
-			if (!sessionIds[selectedSession]) {
-				// Get/create the session (GET auto-creates if doesn't exist)
-				const getSessionResponse = await fetch(
-					`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
-				);
-
-				if (!getSessionResponse.ok) {
-					throw new Error('Failed to get or create session');
-				}
-
-				const sessionData = await getSessionResponse.json();
-				sessionIds[selectedSession] = sessionData.session.id;
-			}
-
-			// Check if reflection question already exists in MODULE
+			// Check if reflection question already exists
+			console.log('[Reflection] Fetching existing questions for module:', selectedModule.id, 'session:', selectedSession);
 			const existingQuestions = await fetch(`/api/courses/module-reflection-questions?module_id=${selectedModule.id}&session_number=${selectedSession}`);
 			const questionsData = await existingQuestions.json();
+			console.log('[Reflection] Questions response:', questionsData);
 
-			const existingQuestion = questionsData.questions?.find(q => q.session_number === selectedSession);
+			// Find question for this session and always use the most recently updated one
+			const matchingQuestions = questionsData.questions?.filter(q => q.courses_sessions?.session_number === selectedSession) || [];
+			const existingQuestion = matchingQuestions.sort((a, b) =>
+				new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+			)[0];
+			console.log('[Reflection] Found existing question:', existingQuestion);
 
 			let response;
-			if (existingQuestion) {
-				// Update existing question
+			let savedData;
+
+			// If question is empty, delete it
+			if (newReflection.trim().length === 0 && existingQuestion) {
+				console.log('[Reflection] DELETING empty question with ID:', existingQuestion.id);
 				response = await fetch('/api/courses/module-reflection-questions', {
-					method: 'PUT',
+					method: 'DELETE',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						id: existingQuestion.id,
-						question_text: newReflection
-					})
+					body: JSON.stringify({ id: existingQuestion.id })
 				});
+				console.log('[Reflection] DELETE response status:', response.status);
+				if (response.ok) {
+					savedData = { success: true };
+					toastSuccess('Reflection question removed');
+				}
+			} else if (newReflection.trim().length > 0) {
+				// Ensure session exists before creating/updating
+				if (!sessionIds[selectedSession]) {
+					const getSessionResponse = await fetch(
+						`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
+					);
+					if (!getSessionResponse.ok) {
+						throw new Error('Failed to get or create session');
+					}
+					const sessionData = await getSessionResponse.json();
+					sessionIds[selectedSession] = sessionData.session.id;
+				}
+
+				if (existingQuestion) {
+					// Update existing question
+					console.log('[Reflection] UPDATING existing question with ID:', existingQuestion.id);
+					console.log('[Reflection] New question text:', newReflection);
+					response = await fetch('/api/courses/module-reflection-questions', {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							id: existingQuestion.id,
+							question_text: newReflection
+						})
+					});
+					console.log('[Reflection] PUT response status:', response.status);
+					savedData = await response.json();
+					console.log('[Reflection] PUT response data:', savedData);
+				} else {
+					// Create new question
+					console.log('[Reflection] CREATING new question for session_id:', sessionIds[selectedSession]);
+					console.log('[Reflection] New question text:', newReflection);
+					response = await fetch('/api/courses/module-reflection-questions', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							session_id: sessionIds[selectedSession],
+							question_text: newReflection
+						})
+					});
+					console.log('[Reflection] POST response status:', response.status);
+					savedData = await response.json();
+					console.log('[Reflection] POST response data:', savedData);
+				}
 			} else {
-				// Create new question
-				response = await fetch('/api/courses/module-reflection-questions', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						session_id: sessionIds[selectedSession],
-						question_text: newReflection
-					})
-				});
+				// Empty question and no existing question - nothing to do
+				saving = false;
+				saveMessage = '';
+				return;
 			}
 
-			if (response.ok) {
-				// Auto-update reflections_enabled flag in database if changed
-				if (reflectionsStateChanged && sessionIds[selectedSession]) {
+			if (response && response.ok) {
+				// savedData is already populated from above
+				console.log('[Reflection] Saved question data:', savedData);
+
+				// Update local state with the server response to ensure reactivity
+				if (savedData && savedData.question) {
+					// Use object spread to trigger Svelte 5 reactivity
+					sessionReflections = {
+						...sessionReflections,
+						[selectedSession]: savedData.question.question_text
+					};
+					// Mark this session as modified so processServerData doesn't overwrite it
+					modifiedReflections = new Set([...modifiedReflections, selectedSession]);
+					console.log('[Reflection] Updated local state with saved question:', sessionReflections[selectedSession]);
+				}
+
+				// No need to invalidate - optimistic update is instant!
+				// The unique constraint ensures no duplicates, and we always pick the most recent
+
+				// Update reflections_enabled flag in database (always enabled when question exists)
+				if (sessionIds[selectedSession]) {
 					await fetch('/api/courses/sessions', {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
@@ -260,15 +298,22 @@
 					});
 				}
 
-				toastSuccess('Reflection question saved');
+				if (!savedData.success) {
+					toastSuccess('Reflection question saved');
+				}
 
 				saveMessage = 'Saved';
 				setTimeout(() => {
 					saving = false;
 					saveMessage = '';
 				}, 1000);
-			} else {
-				const errorData = await response.json();
+			} else if (response && !response.ok) {
+				let errorData;
+				try {
+					errorData = await response.json();
+				} catch (e) {
+					errorData = { error: 'Unknown error' };
+				}
 				saveMessage = 'Save failed';
 				setTimeout(() => {
 					saving = false;
@@ -422,16 +467,12 @@
 	};
 
 	const handleModuleChange = (moduleId) => {
-		selectedModuleId = moduleId;
-		selectedSession = 0; // Start with Pre-Start
+		selectedSession = 0; // Reset to Pre-Start
 
-		// Update URL to reflect selected module
+		// Update URL - the $effect will handle processing data
 		const url = new URL($page.url);
 		url.searchParams.set('module', moduleId);
 		goto(url.toString(), { replaceState: true, keepFocus: true });
-
-		// Process server data for the new module (instant, no API calls)
-		processServerData(moduleId);
 	};
 
 	const handleSessionTitleChangeFromSidebar = async (sessionId, newTitle) => {
@@ -514,10 +555,7 @@
 			availableModules[moduleIndex].name = editModuleName;
 			availableModules[moduleIndex].description = editModuleDescription;
 
-			// Update selected module if it's the one being edited
-			if (selectedModule.id === editingModule.id) {
-				selectedModule = { ...availableModules[moduleIndex] };
-			}
+			// selectedModule will auto-update via $derived reactivity
 		}
 		editingModule = null;
 		toastSuccess('Module updated');
@@ -536,6 +574,14 @@
 		sessionOverview: sessionDescriptions[selectedSession] || '',
 		sessionTitle: sessionTitles[selectedSession] || (selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession}`)
 	});
+
+	// Merge server sessions with updated titles for sidebar reactivity
+	const sessionsWithUpdatedTitles = $derived(
+		data.sessions.map(session => ({
+			...session,
+			title: sessionTitles[session.session_number] || session.title
+		}))
+	);
 </script>
 
 <!-- Sessions Page with Tree Sidebar -->
@@ -544,7 +590,7 @@
 	<div class="w-72 flex-shrink-0 border-r" style="border-color: rgba(255,255,255,0.1);">
 		<SessionTreeSidebar
 			modules={availableModules}
-			sessions={data.sessions}
+			sessions={sessionsWithUpdatedTitles}
 			selectedModuleId={selectedModuleId}
 			selectedSession={selectedSession}
 			onModuleChange={handleModuleChange}
@@ -558,8 +604,39 @@
 		<!-- Top Header with Save Status -->
 		<div class="sticky top-0 z-10 backdrop-blur-md border-b px-8 py-4" style="background-color: color-mix(in srgb, var(--course-accent-dark) 95%, transparent); border-color: rgba(255,255,255,0.1);">
 			<div class="flex items-center justify-between">
-				<div>
-					<h1 class="text-2xl font-bold text-white">{currentSessionData.sessionTitle}</h1>
+				<div class="flex-1">
+					<!-- Editable Session Title -->
+					<div class="flex items-center gap-2 group"
+						onmouseenter={() => titleHovered = true}
+						onmouseleave={() => titleHovered = false}>
+						{#if editingTitle}
+							<input
+								type="text"
+								value={currentSessionData.sessionTitle}
+								oninput={(e) => handleTitleInput(e.target.value)}
+								onblur={() => editingTitle = false}
+								onkeydown={(e) => {
+									if (e.key === 'Enter') {
+										e.target.blur();
+									} else if (e.key === 'Escape') {
+										editingTitle = false;
+									}
+								}}
+								class="text-2xl font-bold text-white bg-white/10 border border-white/20 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40"
+								style="background-color: rgba(255,255,255,0.1);"
+								autofocus
+							/>
+						{:else}
+							<h1 class="text-2xl font-bold text-white">{currentSessionData.sessionTitle}</h1>
+							<button
+								onclick={() => editingTitle = true}
+								class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded"
+								title="Edit session title"
+								style="opacity: {titleHovered ? '1' : '0'}">
+								<Pencil size={16} class="text-white/70" />
+							</button>
+						{/if}
+					</div>
 					<p class="text-sm text-white/60 mt-0.5">{selectedModule.name}</p>
 				</div>
 
@@ -645,9 +722,7 @@
 					<div>
 						<ReflectionEditor
 							reflectionQuestion={currentSessionData.reflectionQuestion}
-							reflectionsEnabled={currentSessionData.reflectionsEnabled}
 							onReflectionChange={handleReflectionChange}
-							onReflectionsEnabledChange={handleReflectionsEnabledChange}
 							weekNumber={selectedSession}
 						/>
 

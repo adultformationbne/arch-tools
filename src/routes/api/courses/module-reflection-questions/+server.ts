@@ -65,7 +65,7 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 
 export const POST: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { session_id, question_text } = body;
@@ -101,15 +101,21 @@ export const POST: RequestHandler = async (event) => {
 
 export const PUT: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { id, question_text } = body;
 
+		console.log('[API PUT] Received request to update reflection question');
+		console.log('[API PUT] ID:', id);
+		console.log('[API PUT] New question_text:', question_text);
+
 		if (!id || !question_text) {
+			console.log('[API PUT] Validation failed - missing id or question_text');
 			return json({ error: 'Both id and question_text are required' }, { status: 400 });
 		}
 
+		console.log('[API PUT] Executing update query...');
 		const { data: question, error } = await supabaseAdmin
 			.from('courses_reflection_questions')
 			.update({
@@ -118,13 +124,22 @@ export const PUT: RequestHandler = async (event) => {
 			})
 			.eq('id', id)
 			.select()
-			.single();
+			.maybeSingle();
+
+		console.log('[API PUT] Query result - error:', error);
+		console.log('[API PUT] Query result - data:', question);
 
 		if (error) {
-			console.error('Error updating module reflection question:', error);
+			console.error('[API PUT] Database error updating module reflection question:', error);
 			return json({ error: 'Failed to update module reflection question' }, { status: 500 });
 		}
 
+		if (!question) {
+			console.log('[API PUT] No question found with id:', id);
+			return json({ error: 'Reflection question not found' }, { status: 404 });
+		}
+
+		console.log('[API PUT] Successfully updated question:', question);
 		return json({ question });
 
 	} catch (error) {
@@ -135,7 +150,7 @@ export const PUT: RequestHandler = async (event) => {
 
 export const DELETE: RequestHandler = async (event) => {
 	try {
-		await requireAnyModule(event, ['courses.admin', 'users']);
+		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
 		const { id } = body;
