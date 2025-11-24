@@ -349,12 +349,12 @@
 							type="text"
 							bind:value={searchQuery}
 							placeholder="Search participants..."
-							class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 						/>
 					</div>
 					<select
 						bind:value={filterHub}
-						class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 					>
 						<option value="all">All Hubs</option>
 						{#each hubs as hub}
@@ -414,7 +414,7 @@
 												<div>
 													<div class="font-medium text-gray-900">{participant.full_name}</div>
 													{#if participant.role === 'coordinator'}
-														<div class="flex items-center gap-1 text-xs text-white">
+														<div class="flex items-center gap-1 text-xs text-purple-600">
 															<Home size={12} />
 															<span>Hub Coordinator</span>
 														</div>
