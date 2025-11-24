@@ -2,7 +2,7 @@
 	import { FileText, Video, Link, BookOpen, Upload } from 'lucide-svelte';
 
 	let {
-		weekNumber = 1,
+		sessionNumber = 1,
 		sessionOverview = '',
 		materials = [],
 		maxPreviewItems = 3
@@ -23,7 +23,7 @@
 <div class="bg-gray-50 rounded-2xl p-6">
 	<h3 class="font-bold text-gray-800 mb-4">Student Preview</h3>
 	<div class="bg-white rounded-lg p-4 border">
-		<h4 class="font-bold text-lg mb-2" style="color: #c59a6b;">Week {weekNumber}</h4>
+		<h4 class="font-bold text-lg mb-2" style="color: #c59a6b;">Session {sessionNumber}</h4>
 		<p class="text-sm text-gray-600 mb-4">{sessionOverview || 'No overview set'}</p>
 		<div class="space-y-2">
 			{#each materials.slice(0, maxPreviewItems) as material}

@@ -5,7 +5,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "validate-schema": "node scripts/validate-schema.js",
-    "update-types": "node scripts/fetch-types.js"
+    "update-types": "node scripts/fetch-types.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:cleanup": "node scripts/cleanup-test-data.js"
   },
   "dependencies": {
     "@codemirror/basic-setup": "^0.20.0",
@@ -45,10 +49,12 @@
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^24.3.0",
+    "@vitest/ui": "^4.0.13",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "svelte": "^5.38.7",
     "tailwindcss": "^4.1.12",
-    "vite": "^7.1.4"
+    "vite": "^7.1.4",
+    "vitest": "^4.0.13"
   }
 }

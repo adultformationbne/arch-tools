@@ -10,10 +10,10 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
  * Upload a file to the materials bucket
  * @param {File} file - The file to upload
  * @param {string} cohortId - The cohort ID for organization
- * @param {number} weekNumber - The week number
+ * @param {number} sessionNumber - The session number
  * @returns {Promise<{url: string, path: string, error?: string}>}
  */
-export async function uploadMaterial(file, cohortId, weekNumber) {
+export async function uploadMaterial(file, cohortId, sessionNumber) {
 	try {
 		// Validate file size
 		if (file.size > MAX_FILE_SIZE) {
@@ -23,7 +23,7 @@ export async function uploadMaterial(file, cohortId, weekNumber) {
 		// Generate unique file path
 		const fileExt = file.name.split('.').pop();
 		const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-		const filePath = `cohort-${cohortId}/week-${weekNumber}/${fileName}`;
+		const filePath = `cohort-${cohortId}/week-${sessionNumber}/${fileName}`;
 
 		// Upload file to storage
 		const { data, error } = await supabase.storage
@@ -135,14 +135,14 @@ export async function initializeMaterialsBucket() {
 }
 
 /**
- * List files in a specific cohort/week folder
+ * List files in a specific cohort/session folder
  * @param {string} cohortId - The cohort ID
- * @param {number} weekNumber - The week number
+ * @param {number} sessionNumber - The session number
  * @returns {Promise<{files: Array, error?: string}>}
  */
-export async function listMaterials(cohortId, weekNumber) {
+export async function listMaterials(cohortId, sessionNumber) {
 	try {
-		const folderPath = `cohort-${cohortId}/week-${weekNumber}`;
+		const folderPath = `cohort-${cohortId}/week-${sessionNumber}`;
 
 		const { data, error } = await supabase.storage
 			.from(MATERIALS_BUCKET)

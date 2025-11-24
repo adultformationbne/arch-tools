@@ -8,6 +8,7 @@
 	import SessionTreeSidebar from '$lib/components/SessionTreeSidebar.svelte';
 	import StudentPreview from '$lib/components/StudentPreview.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
@@ -50,6 +51,8 @@
 	let titleSaveTimeout = null;
 	let editingTitle = $state(false);
 	let titleHovered = $state(false);
+	let showDeleteConfirm = $state(false);
+	let sessionToDelete = $state(null);
 
 	// Process server-loaded data into component state
 	const processServerData = (moduleId) => {
@@ -392,7 +395,11 @@
 
 	const handleTitleInput = (newTitle) => {
 		// Update local state immediately for responsive UI
-		sessionTitles[selectedSession] = newTitle;
+		// Use spread operator to trigger Svelte 5 reactivity
+		sessionTitles = {
+			...sessionTitles,
+			[selectedSession]: newTitle
+		};
 
 		// Clear existing timeout
 		if (titleSaveTimeout) {
@@ -542,6 +549,62 @@
 		}
 	};
 
+	const handleSessionDelete = (sessionId, sessionNumber) => {
+		if (!sessionId) {
+			toastError('Cannot delete session - session not created yet');
+			return;
+		}
+		sessionToDelete = { id: sessionId, number: sessionNumber };
+		showDeleteConfirm = true;
+	};
+
+	const confirmDeleteSession = async () => {
+		if (!sessionToDelete) return;
+
+		saving = true;
+		saveMessage = 'Deleting session...';
+
+		try {
+			const response = await fetch('/api/courses/sessions', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionToDelete.id
+				})
+			});
+
+			if (response.ok) {
+				// Clear local state for this session
+				const sessionNum = sessionToDelete.number;
+				delete sessionIds[sessionNum];
+				delete sessionDescriptions[sessionNum];
+				delete sessionTitles[sessionNum];
+				delete sessionMaterials[sessionNum];
+				delete sessionReflections[sessionNum];
+				delete sessionReflectionsEnabled[sessionNum];
+
+				// If we deleted the currently selected session, switch to session 0
+				if (selectedSession === sessionNum) {
+					selectedSession = 0;
+				}
+
+				toastSuccess('Session deleted successfully');
+				await invalidate('session:data');
+			} else {
+				const errorData = await response.json();
+				toastError(`Failed to delete session: ${errorData.error}`);
+			}
+		} catch (error) {
+			console.error('Error deleting session:', error);
+			toastError('Failed to delete session');
+		} finally {
+			saving = false;
+			saveMessage = '';
+			showDeleteConfirm = false;
+			sessionToDelete = null;
+		}
+	};
+
 	const startEditingModule = (module) => {
 		editingModule = module;
 		editModuleName = module.name;
@@ -593,10 +656,12 @@
 			sessions={sessionsWithUpdatedTitles}
 			selectedModuleId={selectedModuleId}
 			selectedSession={selectedSession}
+			totalSessions={totalSessions}
 			onModuleChange={handleModuleChange}
 			onSessionChange={handleSessionChange}
 			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
 			onAddSession={addSession}
+			onSessionDelete={handleSessionDelete}
 		/>
 	</div>
 
@@ -702,7 +767,7 @@
 						<SessionOverviewEditor
 							sessionOverview={currentSessionData.sessionOverview}
 							onOverviewChange={handleOverviewChange}
-							weekNumber={selectedSession}
+							sessionNumber={selectedSession}
 						/>
 
 						<!-- Materials Editor -->
@@ -713,7 +778,7 @@
 							allowNativeContent={true}
 							allowDocumentUpload={true}
 							moduleId={selectedModule.id}
-							weekNumber={selectedSession}
+							sessionNumber={selectedSession}
 							sessionId={sessionIds[selectedSession]}
 							courseId={data.course.id}
 						/>
@@ -724,13 +789,13 @@
 						<ReflectionEditor
 							reflectionQuestion={currentSessionData.reflectionQuestion}
 							onReflectionChange={handleReflectionChange}
-							weekNumber={selectedSession}
+							sessionNumber={selectedSession}
 						/>
 
 						<!-- Student Preview -->
 						<div class="mt-6">
 							<StudentPreview
-								weekNumber={selectedSession}
+								sessionNumber={selectedSession}
 								sessionOverview={currentSessionData.sessionOverview}
 								materials={currentSessionData.materials}
 							/>
@@ -741,6 +806,22 @@
 		</div>
 	</div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	onConfirm={confirmDeleteSession}
+	onCancel={() => { showDeleteConfirm = false; sessionToDelete = null; }}
+>
+	<p>Are you sure you want to delete Session {sessionToDelete?.number}?</p>
+	<p class="text-sm text-gray-500 mt-2">This will permanently delete:</p>
+	<ul class="text-sm text-gray-500 list-disc list-inside mt-1">
+		<li>Session materials</li>
+		<li>Reflection questions</li>
+		<li>Session description</li>
+	</ul>
+	<p class="text-sm text-red-600 mt-2 font-medium">This action cannot be undone.</p>
+</ConfirmationModal>
 
 <style>
 	@keyframes fadeIn {

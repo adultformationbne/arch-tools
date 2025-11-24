@@ -1,44 +1,36 @@
 /**
- * Email Preview Generator
+ * Email Preview Generator (Client-Side)
  *
- * REFACTORED to use MJML templates - No more manual CSS syncing!
- * This is now a simple wrapper around the MJML compiler.
+ * ARCHITECTURE NOTE:
+ * - This is a SIMPLE client-side preview for the template editor only
+ * - Production emails use MJML compilation (src/lib/email/compiler.js) for:
+ *   - Full Outlook compatibility (VML buttons)
+ *   - Responsive design
+ *   - Email client compatibility
+ * - Use "Send Test Email" to see the exact MJML-compiled output
+ *
+ * This approach is used by most simple email tools - a basic editor preview
+ * with server-side compilation for production. Full block editors (like Mailchimp)
+ * are much more complex and take weeks to build.
  */
 
-import { generateEmailFromMjml } from '$lib/email/compiler.js';
-
 /**
- * Generate preview HTML for an email template
+ * Generate a simple preview HTML for the email template editor
  *
- * **SINGLE SOURCE OF TRUTH** - All emails (editor preview, test, production)
- * use this function to ensure consistent rendering.
- *
- * Now powered by MJML - automatically generates Outlook-compatible HTML
- * with responsive design and proper email client support.
+ * This preview is NOT pixel-perfect to the final email. It's a comfortable
+ * editing experience. The real email preview comes from sending a test email.
  *
  * @param {Object} options
  * @param {string} options.bodyContent - HTML content from the editor
  * @param {string} options.courseName - Course name for header
  * @param {string} [options.logoUrl] - Optional logo URL for header
  * @param {Object} options.colors - Course color palette
- * @param {string} options.colors.accentDark - Dark accent color
- * @param {string} options.colors.accentLight - Light accent color
- * @param {string} options.colors.accentDarkest - Darkest accent color
- * @param {string} [options.previewText] - Optional email preview text
- * @returns {string} Complete HTML email
+ * @param {string} [options.previewText] - Optional email preview text (unused in simple preview)
+ * @returns {string} Simple HTML preview for editor (NOT production-ready)
  */
-export function generateEmailPreview({ bodyContent, courseName, logoUrl, colors, previewText }) {
-	return generateEmailFromMjml({
-		bodyContent: bodyContent || '<p style="color: #999; font-style: italic;">Start typing to see preview...</p>',
-		courseName,
-		logoUrl,
-		colors: {
-			accentDark: colors.accentDark || '#334642',
-			accentLight: colors.accentLight || '#eae2d9',
-			accentDarkest: colors.accentDarkest || '#1e2322'
-		},
-		previewText: previewText || `Email from ${courseName}`
-	});
+export function generateEmailPreview({ bodyContent, courseName, logoUrl, colors }) {
+	// Not used in simple preview - just here for API compatibility
+	return bodyContent || '<p style="color: #999; font-style: italic;">Start typing...</p>';
 }
 
 /**

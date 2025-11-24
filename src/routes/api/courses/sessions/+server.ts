@@ -84,3 +84,35 @@ export const PUT: RequestHandler = async (event) => {
 		throw error(500, 'Failed to update session');
 	}
 };
+
+/**
+ * DELETE /api/courses/sessions
+ * Delete a session and all its related data (materials, reflection questions)
+ */
+export const DELETE: RequestHandler = async (event) => {
+	await requireAuth(event);
+
+	const { session_id } = await event.request.json();
+
+	if (!session_id) {
+		throw error(400, 'session_id is required');
+	}
+
+	try {
+		// Delete session (cascade will delete materials and reflection questions)
+		const { error: deleteError } = await supabaseAdmin
+			.from('courses_sessions')
+			.delete()
+			.eq('id', session_id);
+
+		if (deleteError) {
+			console.error('Error deleting session:', deleteError);
+			throw error(500, 'Failed to delete session');
+		}
+
+		return json({ success: true });
+	} catch (err) {
+		console.error('Error in DELETE /api/courses/sessions:', err);
+		throw error(500, 'Failed to delete session');
+	}
+};

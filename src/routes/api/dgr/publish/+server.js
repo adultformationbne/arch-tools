@@ -115,14 +115,28 @@ ${truncatedText}`;
 			console.warn('Could not fetch promo tiles:', err);
 		}
 
+		// Load header images from header-images.txt
+		let headerImages = [];
+		try {
+			const headerImagesPath = join(process.cwd(), 'header-images.txt');
+			const headerImagesContent = readFileSync(headerImagesPath, 'utf8');
+			headerImages = headerImagesContent
+				.split('\n')
+				.filter(line => line.trim())
+				.map(line => line.trim());
+			console.log(`📁 Loaded ${headerImages.length} header images from header-images.txt`);
+		} catch (error) {
+			console.warn('Could not load header images:', error);
+		}
+
 		console.log('=== Template Rendering ===');
 		console.log('Template key:', templateKey);
 		console.log('Template name:', template.name);
 		console.log('Data keys:', Object.keys(templateData));
 		console.log('=========================');
 
-		// Render template
-		let content = renderTemplate(template.html, templateData);
+		// Render template with header images
+		let content = renderTemplate(template.html, templateData, { headerImages });
 
 		// Add CSS to hide WordPress post title and fix potential styling issues
 		const wordpressCSS = `<style>h1.entry-title {display: none !important;}</style>`;
@@ -133,8 +147,9 @@ ${truncatedText}`;
 		content = minifyHTML(content);
 		console.log('HTML minified for WordPress - removed line breaks to prevent wpautop issues');
 
-		// Get random featured image from featured-images.txt
+		// Get random featured image from featured-images.txt (for WordPress metadata)
 		let featuredImageId;
+		let selectedImageUrl = null;
 		try {
 			// Read the featured images file
 			const featuredImagesPath = join(process.cwd(), 'featured-images.txt');
@@ -143,17 +158,16 @@ ${truncatedText}`;
 				.split('\n')
 				.filter(line => line.trim())
 				.map(line => line.trim());
-			
+
 			if (imageUrls.length > 0) {
 				// Select a random image URL
 				const randomUrl = imageUrls[Math.floor(Math.random() * imageUrls.length)];
-				console.log('Selected random featured image:', randomUrl);
-				
-				// Extract filename from URL for searching
-				const filename = randomUrl.split('/').pop();
-				
-				// Search for this image in WordPress media library
-				const mediaResponse = await fetch(`${WORDPRESS_URL}/wp-json/wp/v2/media?search=${encodeURIComponent(filename)}`, {
+				selectedImageUrl = randomUrl;
+				console.log('🎲 RANDOM IMAGE SELECTED:', randomUrl);
+
+				// Fetch media items and find exact URL match
+				// Using per_page=100 to get all images (adjust if you have more than 100)
+				const mediaResponse = await fetch(`${WORDPRESS_URL}/wp-json/wp/v2/media?per_page=100`, {
 					headers: {
 						Authorization:
 							'Basic ' +
@@ -163,11 +177,15 @@ ${truncatedText}`;
 
 				if (mediaResponse.ok) {
 					const mediaItems = await mediaResponse.json();
-					if (mediaItems.length > 0) {
-						featuredImageId = mediaItems[0].id;
-						console.log('Found featured image ID:', featuredImageId);
+					// Find exact URL match
+					const matchedImage = mediaItems.find(item => item.source_url === randomUrl);
+
+					if (matchedImage) {
+						featuredImageId = matchedImage.id;
+						console.log('✅ MATCHED WordPress Media ID:', featuredImageId, 'for URL:', randomUrl);
 					} else {
-						console.warn('Image not found in WordPress media library:', filename);
+						console.warn('❌ Image not found in WordPress media library:', randomUrl);
+						console.log('Available URLs (sample):', mediaItems.slice(0, 5).map(i => i.source_url));
 					}
 				}
 			}
@@ -289,6 +307,8 @@ ${truncatedText}`;
 				publishDate: post.date,
 				category: categoryId ? CATEGORY_NAME : 'None',
 				featuredImage: featuredImageId ? 'Set (random)' : 'Not found',
+				featuredImageUrl: selectedImageUrl || 'None',
+				featuredImageId: featuredImageId || null,
 				message: isScheduled ? `Scheduled for ${formattedDate}` : `Published for ${formattedDate}`
 			}),
 			{

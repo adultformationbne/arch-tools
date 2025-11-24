@@ -5,13 +5,13 @@ import { parseReadings } from './dgr-utils.js';
 import { formatReflectionText, escapeHtml } from './dgr-common.js';
 import { generateSubscribeSection } from './dgr-subscribe-section.js';
 
-export function renderTemplate(templateHtml, data) {
+export function renderTemplate(templateHtml, data, options = {}) {
   let processed = templateHtml;
 
   // escapeHtml is now imported from dgr-common.js
 
   // Process special template helpers first
-  processed = processSpecialHelpers(processed, data);
+  processed = processSpecialHelpers(processed, data, options);
 
   // Process variables
   Object.entries(data).forEach(([key, value]) => {
@@ -75,8 +75,9 @@ export function renderTemplate(templateHtml, data) {
 }
 
 // Process special template helpers
-function processSpecialHelpers(template, data) {
+function processSpecialHelpers(template, data, options = {}) {
   let processed = template;
+  const { headerImages = [] } = options;
 
   // Handle readings pills helper {{readingsPills readings}}
   processed = processed.replace(/{{readingsPills\s+(\w+)}}/g, (match, variable) => {
@@ -118,7 +119,14 @@ function processSpecialHelpers(template, data) {
 
   // Handle random header image helper {{randomHeaderImage}}
   processed = processed.replace(/{{randomHeaderImage}}/g, () => {
-    // Simple fallback for browser compatibility
+    if (headerImages.length > 0) {
+      // Pick a random image from the provided list
+      const randomIndex = Math.floor(Math.random() * headerImages.length);
+      const selectedImage = headerImages[randomIndex];
+      console.log('🎲 Random header image selected:', selectedImage);
+      return selectedImage;
+    }
+    // Fallback if no images provided
     return 'https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Asset-6-1.png';
   });
 

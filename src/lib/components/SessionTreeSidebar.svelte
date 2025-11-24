@@ -1,15 +1,17 @@
 <script>
-	import { ChevronDown, ChevronRight, Circle, Edit2, Check } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2 } from 'lucide-svelte';
 
 	let {
 		modules = [],
 		sessions = [],
 		selectedModuleId = '',
 		selectedSession = 0,
+		totalSessions = 8,
 		onModuleChange = () => {},
 		onSessionChange = () => {},
 		onSessionTitleChange = () => {},
-		onAddSession = () => {}
+		onAddSession = () => {},
+		onSessionDelete = () => {}
 	} = $props();
 
 	let expandedModules = $state(new Set([selectedModuleId]));
@@ -141,18 +143,28 @@
 									{preStartSession?.title || 'Pre-Start'}
 								</span>
 								{#if isPreStartSelected}
-									<button
-										onclick={(e) => startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e)}
-										class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
-									>
-										<Edit2 size={12} />
-									</button>
+									<div class="flex items-center gap-1">
+										<button
+											onclick={(e) => startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e)}
+											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
+											title="Edit session title"
+										>
+											<Edit2 size={12} />
+										</button>
+										<button
+											onclick={(e) => { e.stopPropagation(); onSessionDelete(preStartSession?.id, 0); }}
+											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200"
+											title="Delete session"
+										>
+											<Trash2 size={12} />
+										</button>
+									</div>
 								{/if}
 							{/if}
 						</button>
 
-						<!-- Regular Sessions (1-8+) -->
-						{#each Array(8).fill(0) as _, i}
+						<!-- Regular Sessions (1-totalSessions) -->
+						{#each Array(totalSessions).fill(0) as _, i}
 							{@const sessionNumber = i + 1}
 							{@const session = moduleSessions.find(s => s.session_number === sessionNumber)}
 							{@const isSessionSelected = isSelected && selectedSession === sessionNumber}
@@ -187,30 +199,41 @@
 										{session?.title || `Session ${sessionNumber}`}
 									</span>
 									{#if isSessionSelected}
-										<button
-											onclick={(e) => startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e)}
-											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
-										>
-											<Edit2 size={12} />
-										</button>
+										<div class="flex items-center gap-1">
+											<button
+												onclick={(e) => startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e)}
+												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
+												title="Edit session title"
+											>
+												<Edit2 size={12} />
+											</button>
+											<button
+												onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); }}
+												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200"
+												title="Delete session"
+											>
+												<Trash2 size={12} />
+											</button>
+										</div>
 									{/if}
 								{/if}
 							</button>
 						{/each}
+
+						<!-- Add Session Button (inline after last session) -->
+						<button
+							onclick={onAddSession}
+							class="w-full mt-1 px-3 py-1.5 rounded-lg text-left transition-colors text-white/50 hover:bg-white/5 hover:text-white/70 text-xs flex items-center gap-2"
+						>
+							<div class="w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-full bg-white/5 text-white/40">
+								+
+							</div>
+							<span>Add Session</span>
+						</button>
 					</div>
 				{/if}
 			</div>
 		{/each}
-	</div>
-
-	<!-- Add Session Button (optional) -->
-	<div class="p-3 border-t" style="border-color: rgba(255,255,255,0.1);">
-		<button
-			onclick={onAddSession}
-			class="w-full px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-xs font-medium transition-colors"
-		>
-			+ Add Session
-		</button>
 	</div>
 </div>
 

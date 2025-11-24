@@ -1112,6 +1112,8 @@ Upload files directly to Supabase Storage:
    - File size in description
    - Appropriate file type icon
 
+**⚠️ Technical Debt:** Storage file paths currently use `week-${sessionNumber}` format (e.g., `cohort-123/week-1/file.pdf`) for backwards compatibility with existing uploaded files. Function parameters were renamed to `sessionNumber`, but the actual storage path structure was preserved to avoid breaking existing file references. Future work: migrate storage paths to use `session-${sessionNumber}` format.
+
 ### Material Organization
 - **Drag to reorder** - Use ↑↓ buttons to change display order
 - **Instant preview** - YouTube videos show preview in edit mode only

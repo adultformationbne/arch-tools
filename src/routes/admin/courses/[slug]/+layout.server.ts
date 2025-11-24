@@ -55,7 +55,11 @@ export const load: LayoutServerLoad = async (event) => {
 			slug: courseSlug,
 			name: course.name,
 			shortName: course.short_name,
-			description: course.description
+			description: course.description,
+			logo_url: courseBranding?.logoUrl || null,
+			accent_dark: courseTheme?.accentDark || course.accent_dark || '#334642',
+			accent_light: courseTheme?.accentLight || course.accent_light || '#eae2d9',
+			accent_darkest: courseTheme?.accentDarkest || course.accent_darkest || '#1e2322'
 		},
 		courseTheme,
 		courseBranding
