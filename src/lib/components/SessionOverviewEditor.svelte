@@ -18,17 +18,12 @@
 		onOverviewChange(textareaValue);
 	};
 
-	// Sync with prop changes
+	// Sync with prop changes only when session changes
 	$effect(() => {
 		// Session changed - reset value
 		if (sessionNumber !== previousSessionNumber) {
 			textareaValue = sessionOverview;
 			previousSessionNumber = sessionNumber;
-		} else {
-			// Same session - sync the value only if different
-			if (textareaValue !== sessionOverview) {
-				textareaValue = sessionOverview;
-			}
 		}
 	});
 

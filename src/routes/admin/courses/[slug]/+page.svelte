@@ -414,7 +414,7 @@
 												<div>
 													<div class="font-medium text-gray-900">{participant.full_name}</div>
 													{#if participant.role === 'coordinator'}
-														<div class="flex items-center gap-1 text-xs text-purple-700">
+														<div class="flex items-center gap-1 text-xs text-white">
 															<Home size={12} />
 															<span>Hub Coordinator</span>
 														</div>

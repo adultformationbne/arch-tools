@@ -73,7 +73,7 @@ export const POST: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { session_id, question_text, word_count_min } = body;
+		const { session_id, question_text } = body;
 
 		// Validate required fields
 		if (!session_id || !question_text) {
@@ -84,8 +84,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const { data, error } = await CourseMutations.createReflectionQuestion({
 			sessionId: session_id,
-			questionText: question_text,
-			wordCountMin: word_count_min
+			questionText: question_text
 		});
 
 		if (error) {
@@ -106,15 +105,14 @@ export const PUT: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { id, question_text, word_count_min } = body;
+		const { id, question_text } = body;
 
 		if (!id || !question_text) {
 			return json({ error: 'Both id and question_text are required' }, { status: 400 });
 		}
 
 		const { data, error } = await CourseMutations.updateReflectionQuestion(id, {
-			questionText: question_text,
-			wordCountMin: word_count_min
+			questionText: question_text
 		});
 
 		if (error) {

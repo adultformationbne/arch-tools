@@ -47,6 +47,7 @@ export const load: PageServerLoad = async (event) => {
 					courses_modules(count)
 				`
 			)
+			.not('slug', 'like', 'test-%')
 			.order('created_at', { ascending: false });
 
 		if (coursesError) {
@@ -116,6 +117,7 @@ export const load: PageServerLoad = async (event) => {
 			courses_modules(count)
 		`)
 		.in('id', assignedCourseIds)
+		.not('slug', 'like', 'test-%')
 		.order('created_at', { ascending: false });
 
 	if (managedError) {

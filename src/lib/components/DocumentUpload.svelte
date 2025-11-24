@@ -9,7 +9,7 @@
 		multiple = false,
 		class: className = '',
 		cohortId = '1',
-		weekNumber = 1
+		sessionNumber = 1
 	} = $props();
 
 	let fileInput = $state(null);
@@ -55,7 +55,7 @@
 				const file = fileArray[i];
 				uploadProgress = (i / fileArray.length) * 80; // Reserve 20% for completion
 
-				const uploadResult = await uploadMaterial(file, cohortId, weekNumber);
+				const uploadResult = await uploadMaterial(file, cohortId, sessionNumber);
 
 				if (uploadResult.error) {
 					throw new Error(uploadResult.error);

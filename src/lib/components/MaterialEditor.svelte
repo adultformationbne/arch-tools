@@ -11,7 +11,7 @@
 		allowNativeContent = true,
 		allowDocumentUpload = true,
 		moduleId = '1',
-		weekNumber = 1,
+		sessionNumber = 1,
 		sessionId = null,
 		courseId = null,
 		onSaveStatusChange = () => {}
@@ -713,7 +713,7 @@
 					accept=".pdf,.doc,.docx,.txt,.md"
 					multiple={true}
 					cohortId={courseId || moduleId}
-					weekNumber={weekNumber}
+					sessionNumber={sessionNumber}
 				/>
 			</div>
 		{:else if newMaterial.type !== 'native'}

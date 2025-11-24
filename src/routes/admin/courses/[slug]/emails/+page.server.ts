@@ -72,6 +72,7 @@ export const load: PageServerLoad = async (event) => {
 			id: courseInfo.id,
 			name: courseInfo.name,
 			slug: courseInfo.slug,
+			logo_url: courseInfo.logo_url,
 			accent_dark: courseInfo.accent_dark,
 			accent_light: courseInfo.accent_light,
 			accent_darkest: courseInfo.accent_darkest

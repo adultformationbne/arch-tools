@@ -1,6 +1,7 @@
 <script>
 	import { Search, Filter, Users, Edit2, Mail, MapPin } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
+	import EmailComposerModal from '$lib/components/EmailComposerModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -11,6 +12,52 @@
 	let searchQuery = $state('');
 	let selectedHub = $state('all');
 	let selectedStatus = $state('all');
+
+	// Student selection state
+	let selectedStudents = $state(new Set());
+	let showEmailModal = $state(false);
+
+	// Selection helpers
+	let allFilteredSelected = $derived(
+		filteredStudents.length > 0 &&
+		filteredStudents.every(s => selectedStudents.has(s.id))
+	);
+
+	function toggleSelectAll() {
+		if (allFilteredSelected) {
+			// Deselect all filtered students
+			filteredStudents.forEach(s => selectedStudents.delete(s.id));
+		} else {
+			// Select all filtered students
+			filteredStudents.forEach(s => selectedStudents.add(s.id));
+		}
+		selectedStudents = new Set(selectedStudents);
+	}
+
+	function toggleStudent(studentId) {
+		if (selectedStudents.has(studentId)) {
+			selectedStudents.delete(studentId);
+		} else {
+			selectedStudents.add(studentId);
+		}
+		selectedStudents = new Set(selectedStudents);
+	}
+
+	function openEmailModal() {
+		showEmailModal = true;
+	}
+
+	function closeEmailModal() {
+		showEmailModal = false;
+		// Clear selection after sending
+		selectedStudents.clear();
+		selectedStudents = new Set(selectedStudents);
+	}
+
+	// Get selected enrollments for email modal
+	let selectedEnrollments = $derived(
+		students.filter(s => selectedStudents.has(s.id))
+	);
 
 	// Filtered students
 	let filteredStudents = $derived(
@@ -170,11 +217,43 @@
 		</div>
 	</div>
 
+	<!-- Action Toolbar (appears when students selected) -->
+	{#if selectedStudents.size > 0}
+		<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div class="text-sm font-medium text-blue-900">
+					{selectedStudents.size} {selectedStudents.size === 1 ? 'participant' : 'participants'} selected
+				</div>
+				<button
+					onclick={() => { selectedStudents.clear(); selectedStudents = new Set(selectedStudents); }}
+					class="text-sm text-blue-700 hover:text-blue-900 underline"
+				>
+					Clear selection
+				</button>
+			</div>
+			<button
+				onclick={openEmailModal}
+				class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+			>
+				<Mail size={18} />
+				Send Email
+			</button>
+		</div>
+	{/if}
+
 	<!-- Students Table -->
 	<div class="bg-white border rounded-lg overflow-hidden" style="border-color: var(--course-surface);">
 		<table class="w-full">
 			<thead class="bg-gray-50 border-b" style="border-color: var(--course-surface);">
 				<tr>
+					<th class="px-6 py-3 w-12">
+						<input
+							type="checkbox"
+							checked={allFilteredSelected}
+							onchange={toggleSelectAll}
+							class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+						/>
+					</th>
 					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
 						Participant
 					</th>
@@ -202,6 +281,16 @@
 				{:else}
 					{#each filteredStudents as student}
 						<tr class="hover:bg-gray-50 transition-colors">
+							<!-- Checkbox -->
+							<td class="px-6 py-4">
+								<input
+									type="checkbox"
+									checked={selectedStudents.has(student.id)}
+									onchange={() => toggleStudent(student.id)}
+									class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+								/>
+							</td>
+
 							<!-- Student Info -->
 							<td class="px-6 py-4">
 								<div>
@@ -263,3 +352,12 @@
 		Showing {filteredStudents.length} of {students.length} participants
 	</div>
 </div>
+
+<!-- Email Composer Modal -->
+<EmailComposerModal
+	show={showEmailModal}
+	onclose={closeEmailModal}
+	selectedEnrollments={selectedEnrollments}
+	courseSlug={course?.slug}
+	courseName={course?.name}
+/>

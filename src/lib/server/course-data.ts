@@ -1711,14 +1711,12 @@ export const CourseMutations = {
 	async createReflectionQuestion(params: {
 		sessionId: string;
 		questionText: string;
-		wordCountMin?: number;
 	}) {
 		return supabaseAdmin
 			.from('courses_reflection_questions')
 			.insert({
 				session_id: params.sessionId,
-				question_text: params.questionText,
-				word_count_min: params.wordCountMin || null
+				question_text: params.questionText
 			})
 			.select()
 			.single();
@@ -1731,13 +1729,11 @@ export const CourseMutations = {
 		id: string,
 		updates: {
 			questionText?: string;
-			wordCountMin?: number;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
 
 		if (updates.questionText) payload.question_text = updates.questionText;
-		if (updates.wordCountMin !== undefined) payload.word_count_min = updates.wordCountMin;
 
 		return supabaseAdmin
 			.from('courses_reflection_questions')

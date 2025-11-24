@@ -25,6 +25,7 @@
 	const isCourseAdmin = data.isCourseAdmin;
 	const cohorts = data.cohorts || [];
 	const courseTheme = data.courseTheme || {};
+	const courseBranding = data.courseBranding || {};
 
 	// Default theme colors
 	const accentDark = courseTheme.accentDark || '#334642';
@@ -46,6 +47,10 @@
 		newUrl.searchParams.set('cohort', cohortId);
 		goto(newUrl.toString());
 	}
+
+	function handleSettingsClick() {
+		goto(`/admin/courses/${courseSlug}/settings`);
+	}
 </script>
 
 <div
@@ -58,9 +63,11 @@
 		{enrollmentRole}
 		{isCourseAdmin}
 		{cohorts}
+		{courseBranding}
 		selectedCohortId={selectedCohortId()}
 		onNewCohort={handleNewCohort}
 		onSelectCohort={handleSelectCohort}
+		onSettingsClick={handleSettingsClick}
 	/>
 
 	<main class="admin-content">

@@ -116,9 +116,48 @@ $effect(() => { console.log(count); });
 
 ## Database
 
-Main tables: `user_profiles`, `courses`, `courses_modules`, `courses_enrollments`, `courses_materials`, `courses_reflections`
-
 **Schema changes:** Follow **AGENTS.MD** workflow
+
+### ⚠️ CRITICAL: Table Query Efficiency
+
+**NEVER USE `mcp__supabase__list_tables` WITHOUT FILTERING - IT USES 14,000+ TOKENS AND KILLS THE CONTEXT WINDOW!**
+
+**ALWAYS use targeted SQL queries filtered by table prefix:**
+
+```sql
+-- ✅ CORRECT: Query only relevant tables
+SELECT table_name, column_count
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name LIKE 'courses%'  -- Filter by prefix!
+ORDER BY table_name
+```
+
+### Table Groups (use these prefixes to filter queries)
+
+- **Courses**: `courses%` (14 tables) - courses, courses_modules, courses_sessions, courses_materials, courses_cohorts, courses_enrollments, courses_reflection_questions, courses_reflection_responses, courses_hubs, courses_attendance, courses_activity_log, courses_community_feed, courses_email_templates, courses_enrollment_imports
+
+- **DGR**: `dgr_%` (5 tables) - dgr_assignment_rules, dgr_contributors, dgr_promo_tiles, dgr_schedule, dgr_templates
+
+- **Editor**: `editor_%` (4 tables) - editor_blocks, editor_books, editor_chapters, editor_logs
+
+- **Liturgical**: `lectionary%` OR `liturgical_%` OR `ordo_%` (6 tables) - lectionary, lectionary_readings, liturgical_calendar, liturgical_years, ordo_calendar, ordo_lectionary_mapping
+
+- **Platform**: `platform_%` OR `admin_%` OR `user_%` (4 tables) - platform_email_log, platform_email_templates, platform_settings, admin_settings, user_profiles
+
+**REMEMBER: Filtered queries = ~500 tokens. Unfiltered queries = 14,000+ tokens. ALWAYS FILTER!**
+
+---
+
+## Testing
+
+**Before pushing changes, run tests to verify database operations and API contracts:**
+
+```bash
+npm test  # Run all tests (database + API tests, ~90s)
+```
+
+See `tests/README.md` for details. Tests auto-cleanup after running.
 
 ---
 

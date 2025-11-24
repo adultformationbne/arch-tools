@@ -26,7 +26,8 @@ let {
     onSelectCohort,
     modules = [],
     enrollmentRole = null,
-    isCourseAdmin = false
+    isCourseAdmin = false,
+    courseBranding = {}
 } = $props();
 
 // Cohort list expansion state
@@ -137,6 +138,13 @@ function handleMouseEnter(href) {
 </script>
 
 <aside class="course-admin-sidebar">
+	<!-- Logo Section -->
+	{#if courseBranding?.logoUrl && courseBranding?.showLogo}
+		<div class="logo-section">
+			<img src={courseBranding.logoUrl} alt="Course logo" class="course-logo" />
+		</div>
+	{/if}
+
 	<nav class="nav-container">
 		<div class="nav-section">
 			<h3 class="nav-section-title">Course Management</h3>
@@ -235,6 +243,22 @@ function handleMouseEnter(href) {
 		overflow-x: hidden; /* Prevent horizontal scrolling */
 		display: flex;
 		flex-direction: column;
+	}
+
+	.logo-section {
+		padding: 16px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.course-logo {
+		max-width: 120px;
+		max-height: 50px;
+		width: auto;
+		height: auto;
+		object-fit: contain;
 	}
 
 	.nav-container {
