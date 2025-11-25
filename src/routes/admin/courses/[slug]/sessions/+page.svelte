@@ -439,6 +439,52 @@
 		selectedSession = newSessionNum;
 	};
 
+	const handleSessionReorder = async (moduleId, sessionIds) => {
+		// Filter out any null IDs (unsaved sessions can't be reordered)
+		const validSessionIds = sessionIds.filter(id => id != null);
+		if (validSessionIds.length === 0) return;
+
+		saving = true;
+		saveMessage = 'Reordering...';
+
+		try {
+			const response = await fetch('/api/courses/sessions/reorder', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					module_id: moduleId,
+					session_order: validSessionIds
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Reorder failed');
+			}
+
+			// Refresh data from server to get updated session numbers
+			await invalidate('app:sessions-data');
+
+			saveMessage = 'Saved';
+			toastSuccess('Sessions reordered');
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 800);
+		} catch (error) {
+			console.error('Error reordering sessions:', error);
+			saveMessage = 'Reorder failed';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 2000);
+			toastError(`Failed to reorder: ${error.message}`);
+
+			// Refresh to restore original order
+			await invalidate('app:sessions-data');
+		}
+	};
+
 	const removeSession = () => {
 		// This is handled by handleSessionDelete with confirmation modal
 		// This function is kept for compatibility but not actively used
@@ -581,6 +627,7 @@
 			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
 			onAddSession={addSession}
 			onSessionDelete={handleSessionDelete}
+			onSessionReorder={handleSessionReorder}
 		/>
 	</div>
 
