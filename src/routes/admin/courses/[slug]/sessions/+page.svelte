@@ -1,6 +1,7 @@
 <script>
 	import { page, navigating } from '$app/stores';
 	import { goto, invalidate } from '$app/navigation';
+	import { untrack } from 'svelte';
 	import { Pencil } from 'lucide-svelte';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
@@ -16,8 +17,8 @@
 	// Show loading state during navigation
 	let isLoading = $derived($navigating !== null);
 
-	// Available modules from server
-	let availableModules = $state(data.modules || []);
+	// Available modules from server - props auto-update, use $derived
+	const availableModules = $derived(data.modules || []);
 
 	// Course theme colors
 	const courseTheme = data.courseTheme || {};
@@ -29,97 +30,107 @@
 	const selectedModule = $derived(
 		availableModules.find(m => m.id === selectedModuleId) || availableModules[0]
 	);
-	let totalSessions = $state(8); // Default sessions, can be adjusted per module
-	let showCreateModule = $state(false);
-	let editingModule = $state(null); // For inline editing
 
-	// Editable module fields
-	let editModuleName = $state('');
-	let editModuleDescription = $state('');
+	let selectedSession = $state(0); // Currently selected session number
 
-	let selectedSession = $state(0); // Start with Week 0
-	let sessionMaterials = $state({});
-	let sessionReflections = $state({});
-	let sessionReflectionsEnabled = $state({}); // Track reflections_enabled per session
-	let sessionDescriptions = $state({}); // Track session descriptions/overviews
-	let sessionTitles = $state({}); // Track session titles
-	let sessionIds = $state({}); // Track session IDs for updates
-	let modifiedReflections = $state(new Set()); // Track which sessions have modified reflections (don't overwrite on reload)
+	// Simplified state: Only store sessions that actually exist (no pre-filling)
+	let sessionData = $state({}); // { [sessionNumber]: { id, title, description, materials, reflection, reflectionEnabled } }
+
+	// Get list of actual session numbers that exist (for sidebar display)
+	const sessionNumbers = $derived(
+		Object.keys(sessionData)
+			.map(Number)
+			.sort((a, b) => a - b)
+	);
+
 	let dataInitialized = $state(false);
 	let saving = $state(false);
 	let saveMessage = $state('');
-	let titleSaveTimeout = null;
 	let editingTitle = $state(false);
 	let titleHovered = $state(false);
 	let showDeleteConfirm = $state(false);
 	let sessionToDelete = $state(null);
 
-	// Process server-loaded data into component state
+	// Track the current title for debouncing
+	let pendingTitle = $state('');
+
+	// Process server-loaded data into simplified component state
+	// ONLY initialize sessions that actually exist in the database (no pre-filling)
 	const processServerData = (moduleId) => {
 		const moduleSessions = data.sessions.filter(s => s.module_id === moduleId);
+		const newSessionData = {};
 
-		// Initialize all session slots (0-8)
-		for (let i = 0; i <= totalSessions; i++) {
-			const session = moduleSessions.find(s => s.session_number === i);
+		// Only add sessions that exist in the database
+		for (const session of moduleSessions) {
+			const sessionNum = session.session_number;
 
-			if (session) {
-				sessionIds[i] = session.id;
-				sessionDescriptions[i] = session.description || '';
-				sessionTitles[i] = session.title || (i === 0 ? 'Pre-Start' : `Session ${i}`);
+			// Get materials for this session
+			const materials = data.materials
+				.filter(m => m.session_id === session.id)
+				.map(m => ({
+					id: m.id,
+					type: m.type,
+					title: m.title,
+					url: m.type === 'native' ? '' : m.content,
+					content: m.type === 'native' ? m.content : '',
+					description: m.description || '',
+					order: m.display_order
+				}));
 
-				// Get materials for this session
-				sessionMaterials[i] = data.materials
-					.filter(m => m.session_id === session.id)
-					.map(m => ({
-						id: m.id,
-						type: m.type,
-						title: m.title,
-						url: m.type === 'native' ? '' : m.content,
-						content: m.type === 'native' ? m.content : '',
-						description: m.description || '',
-						order: m.display_order
-					}));
+			// Get reflection question for this session
+			const question = data.reflectionQuestions.find(q => q.session_id === session.id);
+			const reflection = question ? question.question_text : '';
+			const hasQuestion = reflection?.trim().length > 0;
 
-				// Get reflection question for this session
-				// Don't overwrite if this session's reflection was recently modified
-				if (!modifiedReflections.has(i)) {
-					const question = data.reflectionQuestions.find(q => q.session_id === session.id);
-					sessionReflections[i] = question ? question.question_text : '';
-				}
-
-				// Only enable reflections if there's actually a question
-				// This prevents inconsistent state where reflections are enabled but no question exists
-				const hasQuestion = sessionReflections[i]?.trim().length > 0;
-				sessionReflectionsEnabled[i] = hasQuestion ? (session.reflections_enabled ?? true) : false;
-			} else {
-				// Session doesn't exist yet - initialize empty
-				sessionIds[i] = null;
-				sessionDescriptions[i] = '';
-				sessionTitles[i] = i === 0 ? 'Pre-Start' : `Session ${i}`;
-				sessionReflectionsEnabled[i] = false; // Default to false for new sessions
-				sessionMaterials[i] = [];
-				sessionReflections[i] = '';
-			}
+			newSessionData[sessionNum] = {
+				id: session.id,
+				title: session.title || `Session ${sessionNum}`,
+				description: session.description || '',
+				materials,
+				reflection,
+				reflectionEnabled: hasQuestion ? (session.reflections_enabled ?? true) : false
+			};
 		}
 
+		sessionData = newSessionData;
 		dataInitialized = true;
+
+		// Auto-select first session if current selection doesn't exist
+		// Don't read sessionNumbers here (it's $derived from sessionData) to avoid infinite loop
+		if (!sessionData[selectedSession]) {
+			const numbers = Object.keys(sessionData).map(Number).sort((a, b) => a - b);
+			if (numbers.length > 0) {
+				selectedSession = numbers[0];
+			}
+		}
 	};
 
 	// Initialize data from server when module changes
 	$effect(() => {
-		if (selectedModule?.id) {
-			processServerData(selectedModule.id);
+		const moduleId = selectedModule?.id;
+		if (moduleId) {
+			// Use untrack to prevent processServerData from tracking data.sessions/materials as dependencies
+			untrack(() => processServerData(moduleId));
 		}
+	});
+
+	// Debounce title saves - proper cleanup pattern
+	$effect(() => {
+		if (!pendingTitle) return;
+
+		const timeout = setTimeout(() => {
+			saveTitleToDatabase(pendingTitle);
+			pendingTitle = ''; // Clear after saving
+		}, 1000);
+
+		// Cleanup runs before next effect or on unmount
+		return () => clearTimeout(timeout);
 	});
 
 	// Handler functions for component events
 	const handleMaterialsChange = async (newMaterials) => {
-		// Update local state immediately for responsive UI
-		sessionMaterials[selectedSession] = newMaterials;
-
-		// Note: Individual CRUD operations are handled in MaterialEditor component
-		// This handler is mainly for UI state management
-		console.log('Materials updated for session', selectedSession);
+		// Optimistic update - $state has deep reactivity, direct mutation works!
+		sessionData[selectedSession].materials = newMaterials;
 	};
 
 	const handleSaveStatusChange = (isSaving, message) => {
@@ -127,261 +138,121 @@
 		saveMessage = message;
 	};
 
-	const handleReflectionsEnabledChange = async (newEnabled) => {
-		// Prevent enabling reflections if there's no question
-		if (newEnabled && !sessionReflections[selectedSession]?.trim()) {
-			toastError('Cannot enable reflections without a reflection question', 'Missing Question');
-			return;
-		}
-
-		sessionReflectionsEnabled[selectedSession] = newEnabled;
-
-		saving = true;
-		saveMessage = 'Updating reflection settings...';
-
-		try {
-			const response = await fetch('/api/courses/sessions', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					session_id: sessionIds[selectedSession],
-					reflections_enabled: newEnabled
-				})
-			});
-
-			if (response.ok) {
-				saveMessage = 'Saved';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 1000);
-			} else {
-				const errorData = await response.json();
-				saveMessage = 'Save failed';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 2000);
-				toastError(`Failed to update reflection settings: ${errorData.error}`);
-			}
-		} catch (error) {
-			console.error('Error updating reflection settings:', error);
-			saveMessage = 'Save failed';
-			setTimeout(() => {
-				saving = false;
-				saveMessage = '';
-			}, 2000);
-			toastError('Failed to update reflection settings');
-		}
-	};
-
 	const handleReflectionChange = async (newReflection) => {
-		// Update local state immediately for reactive UI (use spread to trigger Svelte 5 reactivity)
-		sessionReflections = {
-			...sessionReflections,
-			[selectedSession]: newReflection
-		};
-
-		// Reflections are always enabled when a question exists (default to ON)
-		const shouldEnableReflections = newReflection.trim().length > 0;
-		sessionReflectionsEnabled[selectedSession] = shouldEnableReflections;
+		// Optimistic update - mutate directly on sessionData for immediate reactivity
+		sessionData[selectedSession].reflection = newReflection;
+		sessionData[selectedSession].reflectionEnabled = newReflection.trim().length > 0;
 
 		saving = true;
-		saveMessage = 'Saving reflection question...';
+		saveMessage = 'Saving...';
 
 		try {
-			// Check if reflection question already exists
-			console.log('[Reflection] Fetching existing questions for module:', selectedModule.id, 'session:', selectedSession);
-			const existingQuestions = await fetch(`/api/courses/module-reflection-questions?module_id=${selectedModule.id}&session_number=${selectedSession}`);
-			const questionsData = await existingQuestions.json();
-			console.log('[Reflection] Questions response:', questionsData);
+			// Ensure session exists
+			if (!sessionData[selectedSession].id) {
+				const getSessionResponse = await fetch(
+					`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
+				);
+				if (!getSessionResponse.ok) throw new Error('Failed to get or create session');
+				const { session } = await getSessionResponse.json();
+				sessionData[selectedSession].id = session.id;
+			}
 
-			// Find question for this session and always use the most recently updated one
-			const matchingQuestions = questionsData.questions?.filter(q => q.courses_sessions?.session_number === selectedSession) || [];
-			const existingQuestion = matchingQuestions.sort((a, b) =>
-				new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-			)[0];
-			console.log('[Reflection] Found existing question:', existingQuestion);
+			// Fetch existing question to determine if we need POST/PUT/DELETE
+			const existingQuestionsRes = await fetch(
+				`/api/courses/module-reflection-questions?module_id=${selectedModule.id}&session_number=${selectedSession}`
+			);
+			const { questions } = await existingQuestionsRes.json();
+			const existingQuestion = questions?.[0] || null;
 
-			let response;
-			let savedData;
-
-			// If question is empty, delete it
+			// Single API call to save/update/delete reflection
 			if (newReflection.trim().length === 0 && existingQuestion) {
-				console.log('[Reflection] DELETING empty question with ID:', existingQuestion.id);
-				response = await fetch('/api/courses/module-reflection-questions', {
+				// Delete empty reflection
+				await fetch('/api/courses/module-reflection-questions', {
 					method: 'DELETE',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ id: existingQuestion.id })
 				});
-				console.log('[Reflection] DELETE response status:', response.status);
-				if (response.ok) {
-					savedData = { success: true };
-					toastSuccess('Reflection question removed');
-				}
 			} else if (newReflection.trim().length > 0) {
-				// Ensure session exists before creating/updating
-				if (!sessionIds[selectedSession]) {
-					const getSessionResponse = await fetch(
-						`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
-					);
-					if (!getSessionResponse.ok) {
-						throw new Error('Failed to get or create session');
-					}
-					const sessionData = await getSessionResponse.json();
-					sessionIds[selectedSession] = sessionData.session.id;
-				}
+				const method = existingQuestion ? 'PUT' : 'POST';
+				const body = existingQuestion
+					? { id: existingQuestion.id, question_text: newReflection }
+					: { session_id: sessionData[selectedSession].id, question_text: newReflection };
 
-				if (existingQuestion) {
-					// Update existing question
-					console.log('[Reflection] UPDATING existing question with ID:', existingQuestion.id);
-					console.log('[Reflection] New question text:', newReflection);
-					response = await fetch('/api/courses/module-reflection-questions', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							id: existingQuestion.id,
-							question_text: newReflection
-						})
-					});
-					console.log('[Reflection] PUT response status:', response.status);
-					savedData = await response.json();
-					console.log('[Reflection] PUT response data:', savedData);
-				} else {
-					// Create new question
-					console.log('[Reflection] CREATING new question for session_id:', sessionIds[selectedSession]);
-					console.log('[Reflection] New question text:', newReflection);
-					response = await fetch('/api/courses/module-reflection-questions', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							session_id: sessionIds[selectedSession],
-							question_text: newReflection
-						})
-					});
-					console.log('[Reflection] POST response status:', response.status);
-					savedData = await response.json();
-					console.log('[Reflection] POST response data:', savedData);
+				const response = await fetch('/api/courses/module-reflection-questions', {
+					method,
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(body)
+				});
+
+				if (!response.ok) {
+					const errorData = await response.json();
+					throw new Error(errorData.error || 'Failed to save reflection');
 				}
-			} else {
-				// Empty question and no existing question - nothing to do
+			}
+
+			// Update reflections_enabled flag (no toast, just silent save)
+			await fetch('/api/courses/sessions', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionData[selectedSession].id,
+					reflections_enabled: sessionData[selectedSession].reflectionEnabled
+				})
+			});
+
+			saveMessage = 'Saved';
+			setTimeout(() => {
 				saving = false;
 				saveMessage = '';
-				return;
-			}
-
-			if (response && response.ok) {
-				// savedData is already populated from above
-				console.log('[Reflection] Saved question data:', savedData);
-
-				// Update local state with the server response to ensure reactivity
-				if (savedData && savedData.question) {
-					// Use object spread to trigger Svelte 5 reactivity
-					sessionReflections = {
-						...sessionReflections,
-						[selectedSession]: savedData.question.question_text
-					};
-					// Mark this session as modified so processServerData doesn't overwrite it
-					modifiedReflections = new Set([...modifiedReflections, selectedSession]);
-					console.log('[Reflection] Updated local state with saved question:', sessionReflections[selectedSession]);
-				}
-
-				// No need to invalidate - optimistic update is instant!
-				// The unique constraint ensures no duplicates, and we always pick the most recent
-
-				// Update reflections_enabled flag in database (always enabled when question exists)
-				if (sessionIds[selectedSession]) {
-					await fetch('/api/courses/sessions', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							session_id: sessionIds[selectedSession],
-							reflections_enabled: shouldEnableReflections
-						})
-					});
-				}
-
-				if (!savedData.success) {
-					toastSuccess('Reflection question saved');
-				}
-
-				saveMessage = 'Saved';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 1000);
-			} else if (response && !response.ok) {
-				let errorData;
-				try {
-					errorData = await response.json();
-				} catch (e) {
-					errorData = { error: 'Unknown error' };
-				}
-				saveMessage = 'Save failed';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 2000);
-				toastError(`Failed to save reflection question: ${errorData.error}`);
-			}
+			}, 800);
 		} catch (error) {
-			console.error('Error saving reflection question:', error);
+			console.error('Error saving reflection:', error);
 			saveMessage = 'Save failed';
 			setTimeout(() => {
 				saving = false;
 				saveMessage = '';
 			}, 2000);
-			toastError('Failed to save reflection question');
+			toastError(`Failed to save: ${error.message}`);
 		}
 	};
 
 	const handleOverviewChange = async (newOverview) => {
-		// Update session description in database
+		// Optimistic update - mutate directly for immediate reactivity
+		sessionData[selectedSession].description = newOverview;
+
 		saving = true;
-		saveMessage = 'Saving session overview...';
+		saveMessage = 'Saving...';
 
 		try {
-			// Ensure session exists before updating
-			if (!sessionIds[selectedSession]) {
-				// Get/create the session (GET auto-creates if doesn't exist)
+			// Ensure session exists
+			if (!sessionData[selectedSession].id) {
 				const getSessionResponse = await fetch(
 					`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
 				);
-
-				if (!getSessionResponse.ok) {
-					throw new Error('Failed to get or create session');
-				}
-
-				const sessionData = await getSessionResponse.json();
-				sessionIds[selectedSession] = sessionData.session.id;
+				if (!getSessionResponse.ok) throw new Error('Failed to get or create session');
+				const { session } = await getSessionResponse.json();
+				sessionData[selectedSession].id = session.id;
 			}
 
 			const response = await fetch('/api/courses/sessions', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					session_id: sessionIds[selectedSession],
+					session_id: sessionData[selectedSession].id,
 					description: newOverview
 				})
 			});
 
-			if (response.ok) {
-				sessionDescriptions[selectedSession] = newOverview;
-				saveMessage = 'Saved';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 1000);
-				toastSuccess('Session overview saved');
-			} else {
+			if (!response.ok) {
 				const errorData = await response.json();
-				saveMessage = 'Save failed';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 2000);
-				toastError(`Failed to save session overview: ${errorData.error}`);
+				throw new Error(errorData.error || 'Save failed');
 			}
+
+			saveMessage = 'Saved';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 800);
 		} catch (error) {
 			console.error('Error saving session overview:', error);
 			saveMessage = 'Save failed';
@@ -389,74 +260,52 @@
 				saving = false;
 				saveMessage = '';
 			}, 2000);
-			toastError('Failed to save session overview');
+			toastError(`Failed to save: ${error.message}`);
 		}
 	};
 
 	const handleTitleInput = (newTitle) => {
-		// Update local state immediately for responsive UI
-		// Use spread operator to trigger Svelte 5 reactivity
-		sessionTitles = {
-			...sessionTitles,
-			[selectedSession]: newTitle
-		};
+		// Optimistic update - direct mutation (deep reactivity in $state)
+		sessionData[selectedSession].title = newTitle;
 
-		// Clear existing timeout
-		if (titleSaveTimeout) {
-			clearTimeout(titleSaveTimeout);
-		}
-
-		// Debounce save - wait 1 second after user stops typing
-		titleSaveTimeout = setTimeout(() => {
-			saveTitleToDatabase(newTitle);
-		}, 1000);
+		// Set pending title - the $effect will handle debounced save
+		pendingTitle = newTitle;
 	};
 
 	const saveTitleToDatabase = async (newTitle) => {
-		// Update session title in database
 		saving = true;
-		saveMessage = 'Saving session title...';
+		saveMessage = 'Saving...';
 
 		try {
-			// Ensure session exists before updating
-			if (!sessionIds[selectedSession]) {
-				// Get/create the session (GET auto-creates if doesn't exist)
+			// Ensure session exists
+			if (!sessionData[selectedSession].id) {
 				const getSessionResponse = await fetch(
 					`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${selectedSession}`
 				);
-
-				if (!getSessionResponse.ok) {
-					throw new Error('Failed to get or create session');
-				}
-
-				const sessionData = await getSessionResponse.json();
-				sessionIds[selectedSession] = sessionData.session.id;
+				if (!getSessionResponse.ok) throw new Error('Failed to get or create session');
+				const { session } = await getSessionResponse.json();
+				sessionData[selectedSession].id = session.id;
 			}
 
 			const response = await fetch('/api/courses/sessions', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					session_id: sessionIds[selectedSession],
+					session_id: sessionData[selectedSession].id,
 					title: newTitle
 				})
 			});
 
-			if (response.ok) {
-				saveMessage = 'Saved';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 1000);
-			} else {
+			if (!response.ok) {
 				const errorData = await response.json();
-				saveMessage = 'Save failed';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 2000);
-				toastError(`Failed to save session title: ${errorData.error}`);
+				throw new Error(errorData.error || 'Save failed');
 			}
+
+			saveMessage = 'Saved';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 800);
 		} catch (error) {
 			console.error('Error saving session title:', error);
 			saveMessage = 'Save failed';
@@ -464,7 +313,7 @@
 				saving = false;
 				saveMessage = '';
 			}, 2000);
-			toastError('Failed to save session title');
+			toastError(`Failed to save: ${error.message}`);
 		}
 	};
 
@@ -483,42 +332,82 @@
 	};
 
 	const handleSessionTitleChangeFromSidebar = async (sessionId, newTitle) => {
-		// Find the session to update
-		const session = data.sessions.find(s => s.id === sessionId);
-		if (!session) return;
+		// Find the session by ID (for existing sessions) or by having id: null (for new sessions)
+		let sessionNum;
 
-		// Update local state
-		sessionTitles[session.session_number] = newTitle;
+		if (sessionId) {
+			// Existing session - find by ID
+			const session = data.sessions.find(s => s.id === sessionId);
+			if (!session) return;
+			sessionNum = session.session_number;
+		} else {
+			// New session (id: null) - find the session number from sessionData
+			// The sidebar is editing a session that exists in sessionData but not yet in database
+			const entry = Object.entries(sessionData).find(([num, data]) => data.id === null);
+			if (!entry) return;
+			sessionNum = Number(entry[0]);
+		}
 
-		// Save to database
+		// Optimistic update - direct mutation (deep reactivity in $state)
+		if (sessionData[sessionNum]) {
+			sessionData[sessionNum].title = newTitle;
+		}
+
 		saving = true;
-		saveMessage = 'Saving session title...';
+		saveMessage = 'Saving...';
 
 		try {
+			// For new sessions without ID, we need to create the session first
+			if (!sessionId) {
+				// Step 1: Create the session using GET (which uses upsert)
+				const createResponse = await fetch(`/api/courses/sessions?module_id=${selectedModule.id}&session_number=${sessionNum}`);
+
+				if (!createResponse.ok) {
+					throw new Error('Failed to create session');
+				}
+
+				const { session: createdSession } = await createResponse.json();
+
+				// Step 2: Update the title with PUT (since GET creates with default title)
+				const updateResponse = await fetch('/api/courses/sessions', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						session_id: createdSession.id,
+						title: newTitle
+					})
+				});
+
+				if (!updateResponse.ok) {
+					throw new Error('Failed to update session title');
+				}
+
+				// Update the local state with the new session ID
+				sessionData[sessionNum].id = createdSession.id;
+
+				saving = false;
+				saveMessage = 'Saved';
+				setTimeout(() => saveMessage = '', 2000);
+				return;
+			}
+
+			// For existing sessions, update the title
 			const response = await fetch('/api/courses/sessions', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					session_id: sessionId,
-					title: newTitle
-				})
+				body: JSON.stringify({ session_id: sessionId, title: newTitle })
 			});
 
-			if (response.ok) {
-				saveMessage = 'Saved';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 1000);
-			} else {
+			if (!response.ok) {
 				const errorData = await response.json();
-				saveMessage = 'Save failed';
-				setTimeout(() => {
-					saving = false;
-					saveMessage = '';
-				}, 2000);
-				toastError(`Failed to save session title: ${errorData.error}`);
+				throw new Error(errorData.error || 'Save failed');
 			}
+
+			saveMessage = 'Saved';
+			setTimeout(() => {
+				saving = false;
+				saveMessage = '';
+			}, 800);
 		} catch (error) {
 			console.error('Error saving session title:', error);
 			saveMessage = 'Save failed';
@@ -526,27 +415,33 @@
 				saving = false;
 				saveMessage = '';
 			}, 2000);
-			toastError('Failed to save session title');
+			toastError(`Failed to save: ${error.message}`);
 		}
 	};
 
 	const addSession = () => {
-		totalSessions += 1;
-		sessionMaterials[totalSessions] = [];
-		sessionReflections[totalSessions] = '';
-		toastSuccess(`Added Session ${totalSessions}`);
+		// Find the highest session number and add 1
+		const existingNumbers = Object.keys(sessionData).map(Number);
+		const maxSessionNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+		const newSessionNum = maxSessionNum + 1;
+
+		// Create new session in local state with EMPTY title (let admin name it)
+		sessionData[newSessionNum] = {
+			id: null,
+			title: '',  // Start empty - admin can name it however they want
+			description: '',
+			materials: [],
+			reflection: '',
+			reflectionEnabled: false
+		};
+
+		// Auto-select the new session
+		selectedSession = newSessionNum;
 	};
 
 	const removeSession = () => {
-		if (totalSessions > 1) {
-			delete sessionMaterials[totalSessions];
-			delete sessionReflections[totalSessions];
-			totalSessions -= 1;
-			if (selectedSession > totalSessions) {
-				selectedSession = totalSessions;
-			}
-			toastSuccess(`Removed session (now ${totalSessions} sessions)`);
-		}
+		// This is handled by handleSessionDelete with confirmation modal
+		// This function is kept for compatibility but not actively used
 	};
 
 	const handleSessionDelete = (sessionId, sessionNumber) => {
@@ -561,90 +456,115 @@
 	const confirmDeleteSession = async () => {
 		if (!sessionToDelete) return;
 
-		saving = true;
-		saveMessage = 'Deleting session...';
+		const sessionNum = sessionToDelete.number;
+		const sessionId = sessionToDelete.id;
 
+		// Store backup in case we need to restore
+		const backup = { ...sessionData[sessionNum] };
+
+		// OPTIMISTIC: Remove from UI immediately using object destructuring (triggers reactivity properly)
+		const { [sessionNum]: removed, ...rest } = sessionData;
+		sessionData = rest;
+		showDeleteConfirm = false;
+		sessionToDelete = null;
+
+		// If this was the selected session, switch to the nearest one
+		if (selectedSession === sessionNum) {
+			const numbers = Object.keys(sessionData).map(Number).sort((a, b) => a - b);
+			if (numbers.length === 0) {
+				// No sessions left, go to Pre-Start (0)
+				selectedSession = 0;
+			} else {
+				// Find the nearest session (prefer next, fallback to previous)
+				const nextSession = numbers.find(n => n > sessionNum);
+				const prevSession = numbers.reverse().find(n => n < sessionNum);
+				selectedSession = nextSession || prevSession || numbers[0];
+			}
+		}
+
+		// Now make the API call in background
 		try {
 			const response = await fetch('/api/courses/sessions', {
 				method: 'DELETE',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					session_id: sessionToDelete.id
-				})
+				body: JSON.stringify({ session_id: sessionId })
 			});
 
-			if (response.ok) {
-				// Clear local state for this session
-				const sessionNum = sessionToDelete.number;
-				delete sessionIds[sessionNum];
-				delete sessionDescriptions[sessionNum];
-				delete sessionTitles[sessionNum];
-				delete sessionMaterials[sessionNum];
-				delete sessionReflections[sessionNum];
-				delete sessionReflectionsEnabled[sessionNum];
-
-				// If we deleted the currently selected session, switch to session 0
-				if (selectedSession === sessionNum) {
-					selectedSession = 0;
-				}
-
-				toastSuccess('Session deleted successfully');
-				await invalidate('session:data');
-			} else {
+			if (!response.ok) {
 				const errorData = await response.json();
-				toastError(`Failed to delete session: ${errorData.error}`);
+				throw new Error(errorData.error || 'Delete failed');
 			}
+
+			// Success! Invalidate to refresh from server
+			await invalidate('app:sessions-data');
+			toastSuccess('Session deleted successfully');
 		} catch (error) {
 			console.error('Error deleting session:', error);
-			toastError('Failed to delete session');
-		} finally {
-			saving = false;
-			saveMessage = '';
-			showDeleteConfirm = false;
-			sessionToDelete = null;
+
+			// RESTORE: Put the session back in local state (reactivity works with direct assignment)
+			sessionData = { ...sessionData, [sessionNum]: backup };
+			selectedSession = sessionNum;
+
+			toastError(`Failed to delete: ${error.message}`);
 		}
 	};
 
-	const startEditingModule = (module) => {
-		editingModule = module;
-		editModuleName = module.name;
-		editModuleDescription = module.description;
-	};
 
-	const saveModuleChanges = async () => {
-		// TODO: API call to update module
-		const moduleIndex = availableModules.findIndex(m => m.id === editingModule.id);
-		if (moduleIndex >= 0) {
-			availableModules[moduleIndex].name = editModuleName;
-			availableModules[moduleIndex].description = editModuleDescription;
-
-			// selectedModule will auto-update via $derived reactivity
-		}
-		editingModule = null;
-		toastSuccess('Module updated');
-	};
-
-	const cancelEditingModule = () => {
-		editingModule = null;
-		editModuleName = '';
-		editModuleDescription = '';
-	};
-
-	const currentSessionData = $derived({
-		materials: sessionMaterials[selectedSession] || [],
-		reflectionQuestion: sessionReflections[selectedSession] || '',
-		reflectionsEnabled: sessionReflectionsEnabled[selectedSession] ?? true,
-		sessionOverview: sessionDescriptions[selectedSession] || '',
-		sessionTitle: sessionTitles[selectedSession] || (selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession}`)
+	// Derived state for current session (used by child components)
+	const currentSession = $derived(sessionData[selectedSession] || {
+		materials: [],
+		reflection: '',
+		reflectionEnabled: false,
+		description: '',
+		title: selectedSession === 0 ? 'Pre-Start' : ''  // Empty title for new sessions
 	});
 
-	// Merge server sessions with updated titles for sidebar reactivity
-	const sessionsWithUpdatedTitles = $derived(
-		data.sessions.map(session => ({
-			...session,
-			title: sessionTitles[session.session_number] || session.title
-		}))
-	);
+	// Merge server sessions with local sessionData for sidebar reactivity
+	// This includes both existing sessions AND newly added sessions
+	// Trust Svelte 5 reactivity - direct mutations work!
+	const sessionsWithUpdatedTitles = $derived((() => {
+		const sessionMap = new Map();
+
+		// Start with server sessions
+		data.sessions.forEach(session => {
+			sessionMap.set(session.session_number, session);
+		});
+
+		// Merge with local sessionData (includes new sessions, updated titles, and handles deletions)
+		Object.entries(sessionData).forEach(([sessionNum, localData]) => {
+			const numKey = Number(sessionNum);
+			if (sessionMap.has(numKey)) {
+				// Update existing session with local data (optimistic updates)
+				sessionMap.set(numKey, {
+					...sessionMap.get(numKey),
+					title: localData.title,
+					description: localData.description
+				});
+			} else {
+				// Add new session from local state (not yet saved to server)
+				sessionMap.set(numKey, {
+					id: localData.id,
+					module_id: selectedModule?.id,
+					session_number: numKey,
+					title: localData.title,
+					description: localData.description,
+					learning_objectives: [],
+					reflections_enabled: localData.reflectionEnabled
+				});
+			}
+		});
+
+		// Remove sessions that are in server data but not in local sessionData
+		// (this handles optimistic deletions before server refresh)
+		data.sessions.forEach(session => {
+			if (!sessionData.hasOwnProperty(session.session_number)) {
+				sessionMap.delete(session.session_number);
+			}
+		});
+
+		// Convert map back to array and sort by session number
+		return Array.from(sessionMap.values()).sort((a, b) => a.session_number - b.session_number);
+	})());
 </script>
 
 <!-- Sessions Page with Tree Sidebar -->
@@ -656,7 +576,6 @@
 			sessions={sessionsWithUpdatedTitles}
 			selectedModuleId={selectedModuleId}
 			selectedSession={selectedSession}
-			totalSessions={totalSessions}
 			onModuleChange={handleModuleChange}
 			onSessionChange={handleSessionChange}
 			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
@@ -678,7 +597,7 @@
 						{#if editingTitle}
 							<input
 								type="text"
-								value={currentSessionData.sessionTitle}
+								value={currentSession.title}
 								oninput={(e) => handleTitleInput(e.target.value)}
 								onblur={() => editingTitle = false}
 								onkeydown={(e) => {
@@ -693,7 +612,13 @@
 								autofocus
 							/>
 						{:else}
-							<h1 class="text-2xl font-bold text-white">{currentSessionData.sessionTitle}</h1>
+							<h1 class="text-2xl font-bold text-white">
+								{#if currentSession.title}
+									{currentSession.title}
+								{:else}
+									<span class="text-white/40 italic">Untitled Session</span>
+								{/if}
+							</h1>
 							<button
 								onclick={() => editingTitle = true}
 								class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded"
@@ -765,21 +690,21 @@
 					<div class="lg:col-span-2 space-y-6">
 						<!-- Session Overview -->
 						<SessionOverviewEditor
-							sessionOverview={currentSessionData.sessionOverview}
+							sessionOverview={currentSession.description}
 							onOverviewChange={handleOverviewChange}
 							sessionNumber={selectedSession}
 						/>
 
 						<!-- Materials Editor -->
 						<MaterialEditor
-							materials={currentSessionData.materials}
+							materials={currentSession.materials}
 							onMaterialsChange={handleMaterialsChange}
 							onSaveStatusChange={handleSaveStatusChange}
 							allowNativeContent={true}
 							allowDocumentUpload={true}
 							moduleId={selectedModule.id}
 							sessionNumber={selectedSession}
-							sessionId={sessionIds[selectedSession]}
+							sessionId={currentSession.id}
 							courseId={data.course.id}
 						/>
 					</div>
@@ -787,7 +712,7 @@
 					<!-- Right: Reflection & Preview -->
 					<div>
 						<ReflectionEditor
-							reflectionQuestion={currentSessionData.reflectionQuestion}
+							reflectionQuestion={currentSession.reflection}
 							onReflectionChange={handleReflectionChange}
 							sessionNumber={selectedSession}
 						/>
@@ -796,8 +721,8 @@
 						<div class="mt-6">
 							<StudentPreview
 								sessionNumber={selectedSession}
-								sessionOverview={currentSessionData.sessionOverview}
-								materials={currentSessionData.materials}
+								sessionOverview={currentSession.description}
+								materials={currentSession.materials}
 							/>
 						</div>
 					</div>
