@@ -4,6 +4,8 @@
 
 **Env:** Copy `.env.example` → `.env` (Supabase + Resend keys)
 
+**📚 Important:** See [SVELTE5_BEST_PRACTICES.md](./SVELTE5_BEST_PRACTICES.md) for Svelte 5 patterns (state management, reactivity, effects)
+
 ---
 
 ## Critical Patterns
@@ -149,15 +151,31 @@ ORDER BY table_name
 
 ---
 
-## Testing
+## Testing & Validation
 
-**Before pushing changes, run tests to verify database operations and API contracts:**
+**Before pushing changes, run tests and validators:**
 
 ```bash
-npm test  # Run all tests (database + API tests, ~90s)
+npm test              # Run all tests (database + API tests, ~90s)
+npm run validate-api  # Check API endpoint/frontend parameter mismatches
 ```
 
-See `tests/README.md` for details. Tests auto-cleanup after running.
+### API Contract Validation
+
+The `validate-api` script automatically detects mismatches between:
+- Frontend API calls (`apiGet`, `apiPost`, `apiPut`, `apiDelete`, `fetch`)
+- Backend endpoint definitions (+server.ts files)
+
+It checks:
+- Query parameter names (e.g., `?id=` vs `?template_id=`)
+- Body parameter names
+- HTTP methods
+
+**Example issues caught:**
+- DELETE endpoint expects `?template_id=` but frontend sends `?id=`
+- PUT endpoint expects `{ template_id: ... }` but frontend sends `{ id: ... }`
+
+See `tests/README.md` for test details. Tests auto-cleanup after running.
 
 ---
 

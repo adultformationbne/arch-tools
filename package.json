@@ -5,6 +5,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "validate-schema": "node scripts/validate-schema.js",
+    "validate-api": "node scripts/validate-api-contracts.js",
     "update-types": "node scripts/fetch-types.js",
     "test": "vitest run",
     "test:watch": "vitest",

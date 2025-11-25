@@ -16,7 +16,8 @@
 		} else {
 			expandedSections.add(sectionId);
 		}
-		expandedSections = new Set(expandedSections);
+		// Trigger reactivity without creating new Set
+		expandedSections = expandedSections;
 	};
 
 	const handleViewChange = (view) => {

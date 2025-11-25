@@ -9,17 +9,15 @@
 
 	let { data } = $props();
 
-	let systemTemplates = $derived(data.systemTemplates || []);
-	let customTemplates = $derived(data.customTemplates || []);
-	let emailLogs = $derived(data.emailLogs || []);
-
 	// Get selected view from URL params (default to 'logs')
 	const selectedView = $derived($page.url.searchParams.get('view') || 'logs');
 
 	// Find selected template if viewing one
-	const selectedTemplate = $derived(() => {
+	const selectedTemplate = $derived.by(() => {
 		if (selectedView === 'logs' || selectedView === 'new') return null;
-		return [...systemTemplates, ...customTemplates].find(t => t.id === selectedView);
+		return [...(data.systemTemplates || []), ...(data.customTemplates || [])].find(
+			(t) => t.id === selectedView
+		);
 	});
 
 	let showDeleteConfirm = $state(false);
@@ -45,7 +43,7 @@
 		if (!templateToDelete) return;
 
 		try {
-			await apiDelete(`/api/courses/${data.courseSlug}/emails?id=${templateToDelete.id}`, {
+			await apiDelete(`/api/courses/${data.courseSlug}/emails?template_id=${templateToDelete.id}`, {
 				successMessage: 'Template deleted successfully'
 			});
 
@@ -64,8 +62,8 @@
 	<!-- Left Sidebar -->
 	<div class="w-64 border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
 		<EmailTreeSidebar
-			{systemTemplates}
-			{customTemplates}
+			systemTemplates={data.systemTemplates || []}
+			customTemplates={data.customTemplates || []}
 			{selectedView}
 			onViewChange={handleViewChange}
 		/>
@@ -80,7 +78,7 @@
 				<p class="text-white/70 mb-8">View history of all sent emails for this course</p>
 
 				<div class="bg-white rounded-lg overflow-hidden">
-					{#if emailLogs.length === 0}
+					{#if (data.emailLogs || []).length === 0}
 						<div class="p-12 text-center">
 							<p class="text-gray-500">No emails sent yet</p>
 							<p class="text-sm text-gray-400 mt-2">Emails sent to students will appear here</p>
@@ -123,7 +121,7 @@
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-gray-200">
-									{#each emailLogs as log}
+									{#each data.emailLogs || [] as log}
 										<tr class="hover:bg-gray-50 transition-colors">
 											<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{new Date(log.sent_at).toLocaleString('en-US', {
@@ -186,7 +184,7 @@
 						<!-- Pagination info -->
 						<div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
 							<p class="text-sm text-gray-600">
-								Showing {emailLogs.length} most recent email{emailLogs.length === 1 ? '' : 's'}
+								Showing {(data.emailLogs || []).length} most recent email{(data.emailLogs || []).length === 1 ? '' : 's'}
 							</p>
 						</div>
 					{/if}
@@ -216,14 +214,14 @@
 				</div>
 			</div>
 
-		{:else if selectedTemplate()}
+		{:else if selectedTemplate}
 			<!-- Template Editor (Immediate Edit) -->
 			<div class="p-8">
 				<div class="flex items-center justify-between mb-6">
 					<div>
 						<div class="flex items-center gap-2 mb-2">
-							<h1 class="text-3xl font-bold text-white">{selectedTemplate().name}</h1>
-							{#if selectedTemplate().category === 'system'}
+							<h1 class="text-3xl font-bold text-white">{selectedTemplate.name}</h1>
+							{#if selectedTemplate.category === 'system'}
 								<span
 									class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
 									style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
@@ -232,14 +230,14 @@
 								</span>
 							{/if}
 						</div>
-						{#if selectedTemplate().description}
-							<p class="text-white/70">{selectedTemplate().description}</p>
+						{#if selectedTemplate.description}
+							<p class="text-white/70">{selectedTemplate.description}</p>
 						{/if}
 					</div>
 					<div class="flex gap-2">
-						{#if selectedTemplate().category === 'custom'}
+						{#if selectedTemplate.category === 'custom'}
 							<button
-								onclick={() => handleDeleteClick(selectedTemplate())}
+								onclick={() => handleDeleteClick(selectedTemplate)}
 								class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border border-red-300 text-red-600 bg-white hover:bg-red-50"
 							>
 								<Trash2 size={16} />
@@ -252,7 +250,7 @@
 				<!-- Simplified Editor (always in edit mode) -->
 				<div class="bg-white rounded-lg p-8">
 					<EmailTemplateEditor
-						template={selectedTemplate()}
+						template={selectedTemplate}
 						courseId={data.course.id}
 						courseSlug={data.courseSlug}
 						courseName={data.course.name}

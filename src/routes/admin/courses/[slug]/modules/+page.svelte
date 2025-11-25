@@ -10,6 +10,11 @@
 	let course = $derived(data.course);
 	let modules = $state(data.modules || []);
 
+	// Sync modules when data changes (e.g., after navigation or modal save)
+	$effect(() => {
+		modules = data.modules || [];
+	});
+
 	// Show loading state during navigation
 	let isLoading = $derived($navigating !== null);
 
@@ -76,8 +81,7 @@
 			// Update existing module
 			const index = modules.findIndex(m => m.id === savedModule.id);
 			if (index !== -1) {
-				modules[index] = savedModule;
-				modules = [...modules]; // Trigger reactivity
+				modules[index] = savedModule; // Direct mutation triggers reactivity
 			}
 		} else {
 			// Add new module
@@ -208,7 +212,7 @@
 								<BookOpen size={16} style="color: var(--course-accent-light);" />
 							</div>
 							<div class="text-2xl font-bold" style="color: var(--course-accent-dark);">
-								{module.sessions?.[0]?.count || 0}
+								{module.sessionCount || 0}
 							</div>
 							<div class="text-xs text-gray-500">Sessions</div>
 						</div>
