@@ -9,7 +9,7 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData } = data;
+	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber } = data;
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
@@ -93,6 +93,8 @@
 		currentSessionData={currentSessionData}
 		onSessionChange={handleSessionChange}
 		onOpenMaterial={openMaterial}
+		totalSessions={totalSessions}
+		maxSessionNumber={maxSessionNumber}
 	/>
 
 	<!-- Material Viewer Component -->

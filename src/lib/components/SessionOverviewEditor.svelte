@@ -29,8 +29,8 @@
 
 	// Custom placeholder based on session type
 	const displayPlaceholder = sessionNumber === 0
-		? 'Welcome message for Pre-Start (e.g., "This course begins on [date]. Review the materials below to prepare for Session 1.")'
-		: 'Brief overview of what students will learn in this session...';
+		? 'Welcome your students and set expectations. What should they do before the first session? Any pre-reading, introductions, or logistics to share?'
+		: 'What will students learn in this session? Key topics, goals, or themes to prepare them for the materials and discussion ahead...';
 </script>
 
 <div class="bg-white rounded-2xl p-6 shadow-sm">

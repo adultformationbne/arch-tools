@@ -10,11 +10,16 @@
 		materials,
 		currentSessionData,
 		onSessionChange,
-		onOpenMaterial
+		onOpenMaterial,
+		totalSessions,
+		maxSessionNumber
 	} = $props();
 
 	// Question truncation length
 	const QUESTION_TRUNCATE_LENGTH = 200;
+
+	// Determine if we should show tabbed sidebar (only for 6-12 sessions)
+	const showTabbedSidebar = $derived(totalSessions >= 6 && totalSessions <= 12);
 
 	// Navigation helpers
 	const canGoPrevious = $derived(currentSession > 1);
@@ -129,7 +134,7 @@
 									>
 										Pre-Start
 									</button>
-									{#each Array.from({ length: 8 }, (_, i) => i + 1) as sessionNum}
+									{#each Array.from({ length: maxSessionNumber }, (_, i) => i + 1) as sessionNum}
 										<button
 											onclick={() => selectSession(sessionNum)}
 											disabled={sessionNum > availableSessions}
@@ -281,11 +286,11 @@
 					</div>
 				</div>
 			</div>
-		{:else}
-			<!-- Sessions 1-8: Show tabs -->
+		{:else if showTabbedSidebar}
+			<!-- Sessions 1+: Show tabs (only for 6-12 sessions) -->
 			<SessionNavigationTabs
 				bind:currentSession={currentSession}
-				totalSessions={8}
+				totalSessions={maxSessionNumber}
 				{availableSessions}
 				{onSessionChange}
 			>
@@ -329,7 +334,7 @@
 									>
 										Pre-Start
 									</button>
-									{#each Array.from({ length: 8 }, (_, i) => i + 1) as sessionNum}
+									{#each Array.from({ length: maxSessionNumber }, (_, i) => i + 1) as sessionNum}
 										<button
 											onclick={() => selectSession(sessionNum)}
 											disabled={sessionNum > availableSessions}
@@ -478,6 +483,198 @@
 					</div>
 				</div>
 			</SessionNavigationTabs>
+		{:else}
+			<!-- Sessions 1+: Header navigation only (for <6 or >12 sessions) -->
+			<div class="rounded-3xl" style="background-color: #eae2d9;">
+				<!-- Thin Top Navigation Bar -->
+				<div class="px-12 pt-4 pb-3">
+					<div class="flex items-center justify-center gap-3 text-sm">
+						{#if canGoPrevious}
+							<button
+								onclick={goToPrevious}
+								class="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
+							>
+								<ChevronLeft size={16} />
+								<span>Previous</span>
+							</button>
+						{:else}
+							<span class="flex items-center gap-1 text-gray-400">
+								<ChevronLeft size={16} />
+								<span>Previous</span>
+							</span>
+						{/if}
+
+						<span class="text-gray-400">|</span>
+
+						<!-- Custom Dropdown -->
+						<div class="relative session-dropdown">
+							<button
+								onclick={() => dropdownOpen = !dropdownOpen}
+								class="px-3 py-1 rounded-lg font-medium text-gray-700 hover:bg-white/50 transition-colors flex items-center gap-1"
+							>
+								{getSessionLabel(currentSession)}
+								<ChevronDown size={14} />
+							</button>
+
+							{#if dropdownOpen}
+								<div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-50">
+									<button
+										onclick={() => selectSession(0)}
+										class="w-full px-4 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 transition-colors"
+										class:bg-gray-100={currentSession === 0}
+										class:font-semibold={currentSession === 0}
+									>
+										Pre-Start
+									</button>
+									{#each Array.from({ length: maxSessionNumber }, (_, i) => i + 1) as sessionNum}
+										<button
+											onclick={() => selectSession(sessionNum)}
+											disabled={sessionNum > availableSessions}
+											class="w-full px-4 py-2 text-left text-sm transition-colors"
+											class:text-gray-800={sessionNum <= availableSessions}
+											class:hover:bg-gray-100={sessionNum <= availableSessions}
+											class:bg-gray-100={currentSession === sessionNum}
+											class:font-semibold={currentSession === sessionNum}
+											class:text-gray-400={sessionNum > availableSessions}
+											class:cursor-not-allowed={sessionNum > availableSessions}
+										>
+											Session {sessionNum}
+											{#if sessionNum > availableSessions}
+												<span class="text-xs">(Locked)</span>
+											{/if}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+
+						<span class="text-gray-400">|</span>
+
+						{#if canGoNext}
+							<button
+								onclick={goToNext}
+								class="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
+							>
+								<span>Next</span>
+								<ChevronRight size={16} />
+							</button>
+						{:else}
+							<span class="flex items-center gap-1 text-gray-400">
+								<span>Next</span>
+								<ChevronRight size={16} />
+							</span>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Separator Line -->
+				<div class="border-t border-gray-300 mx-12"></div>
+
+				<!-- Main Content -->
+				<div class="p-12">
+					<!-- Course Header - Full Width -->
+					<div class="mb-10">
+						<p class="text-sm font-medium text-gray-600 mb-2">{courseData.title}</p>
+						<h1 class="text-5xl font-bold text-gray-800 mb-4">
+							{currentSessionData.sessionTitle}
+						</h1>
+						<div class="flex items-center gap-4">
+							<h2 class="text-3xl font-semibold" style="color: #c59a6b;">Session {currentSession}</h2>
+							<div class="h-1 w-20 rounded" style="background-color: #c59a6b;"></div>
+						</div>
+					</div>
+
+					<!-- Session Overview - Full Width -->
+					<div class="mb-10">
+						<p class="text-lg font-semibold text-gray-800 leading-relaxed">
+							<span class="font-bold">Session overview:</span> {currentSessionData.sessionOverview}
+						</p>
+					</div>
+
+					<!-- Two Column: Materials + Question -->
+					<div class="grid grid-cols-2 gap-12">
+						<!-- Left Column - Materials -->
+						<div>
+							<h3 class="text-2xl font-bold text-gray-800 mb-8">This session's materials</h3>
+							<div class="space-y-4">
+								{#each materials as material, index}
+									{@const IconComponent = getIcon(material.type)}
+									<div
+										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group"
+										class:primary={index === 0}
+										class:hover:opacity-90={material.viewable}
+										class:cursor-not-allowed={!material.viewable}
+										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
+										onclick={() => onOpenMaterial(material)}
+									>
+										<div class="flex items-center gap-4">
+											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
+											<span class="font-semibold text-lg" class:text-white={index === 0} class:text-gray-800={index !== 0}>
+												{material.title}
+											</span>
+										</div>
+
+										<!-- Hover Download Icon (for non-viewable materials) -->
+										{#if !material.viewable}
+											<div class="opacity-0 group-hover:opacity-100 transition-opacity">
+												<Download size="20" class="text-gray-600" />
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						</div>
+
+						<!-- Right Column - Reflection Question -->
+						<div>
+							{#if currentSessionData.reflectionQuestion}
+								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
+								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
+								<div class="bg-white rounded-3xl p-8 shadow-sm">
+									<div class="text-lg font-semibold mb-4" style="color: #c59a6b;">Question:</div>
+									<h4 class="text-2xl font-bold text-gray-800 mb-6 leading-tight">
+										{truncated}
+									</h4>
+
+									{#if needsTruncation}
+										<a
+											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+											class="text-sm font-medium mb-6 transition-colors block no-underline hover:underline"
+											style="color: #c59a6b;"
+										>
+											Read more
+										</a>
+									{/if}
+
+									<!-- Status and Button -->
+									<div class="flex items-center justify-between">
+										<div class="flex items-center gap-3">
+											<span class="text-gray-700 font-semibold text-lg">
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
+												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' : 'In progress'}
+											</span>
+											<div
+												class="w-3 h-3 rounded-full"
+												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
+											></div>
+										</div>
+										<a
+											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
+											style="background-color: #334642;"
+										>
+											<Edit3 size="20" />
+											Write Reflection
+										</a>
+									</div>
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
+			</div>
 		{/if}
 	</div>
 </div>

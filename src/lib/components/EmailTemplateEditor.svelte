@@ -32,6 +32,17 @@
 
 	let isSubmitting = $state(false);
 	let hasUnsavedChanges = $state(false);
+
+	// Sync form data when template prop changes
+	$effect(() => {
+		formData.template_key = template?.template_key || '';
+		formData.name = template?.name || '';
+		formData.description = template?.description || '';
+		formData.subject_template = template?.subject_template || '';
+		formData.body_template = template?.body_template || '';
+		formData.available_variables = template?.available_variables || [];
+		hasUnsavedChanges = false;
+	});
 	let editorComponent;
 	let tiptapEditor;
 	let showTestEmailModal = $state(false);
@@ -114,7 +125,7 @@
 			if (template) {
 				await apiPut(
 					`/api/courses/${courseSlug}/emails`,
-					{ id: template.id, ...payload },
+					{ template_id: template.id, ...payload },
 					{ successMessage: 'Template saved' }
 				);
 			} else {

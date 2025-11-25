@@ -4,8 +4,8 @@
 	// Svelte 5 syntax with runes
 	let {
 		currentSession = $bindable(),
-		totalSessions = 8,
-		availableSessions = 8,
+		totalSessions,
+		availableSessions,
 		onSessionChange = () => {},
 		children
 	} = $props();

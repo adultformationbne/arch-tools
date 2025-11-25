@@ -183,6 +183,11 @@ export const load: PageServerLoad = async (event) => {
 		};
 	}
 
+	// Calculate total sessions (excluding pre-start session 0)
+	const regularSessions = sessions.filter(s => s.session_number > 0);
+	const totalSessions = regularSessions.length;
+	const maxSessionNumber = Math.max(...regularSessions.map(s => s.session_number), 0);
+
 	const courseData = {
 		title: enrollment.cohort.module.name || 'Foundations of Faith',
 		description: enrollment.cohort.module.description || '',
@@ -190,7 +195,9 @@ export const load: PageServerLoad = async (event) => {
 		startDate: enrollment.cohort.start_date,
 		endDate: enrollment.cohort.end_date,
 		status: enrollment.cohort.status,
-		currentSessionData
+		currentSessionData,
+		totalSessions,
+		maxSessionNumber
 	};
 
 	// Format hub data if available
@@ -222,6 +229,8 @@ export const load: PageServerLoad = async (event) => {
 		publicReflections: processedPublicReflections,
 		currentUserId: user.id,
 		courseSlug,
-		hubData: formattedHubData
+		hubData: formattedHubData,
+		totalSessions,
+		maxSessionNumber
 	};
 };

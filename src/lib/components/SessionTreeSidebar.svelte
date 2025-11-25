@@ -6,7 +6,6 @@
 		sessions = [],
 		selectedModuleId = '',
 		selectedSession = 0,
-		totalSessions = 8,
 		onModuleChange = () => {},
 		onSessionChange = () => {},
 		onSessionTitleChange = () => {},
@@ -17,6 +16,7 @@
 	let expandedModules = $state(new Set([selectedModuleId]));
 	let editingSessionId = $state(null);
 	let editingTitle = $state('');
+	let savingTitle = $state(false);  // Track if we're saving
 
 	// Group sessions by module
 	const sessionsByModule = $derived(
@@ -54,11 +54,32 @@
 
 	const saveTitle = (sessionId) => {
 		if (editingTitle.trim()) {
+			savingTitle = true;
 			onSessionTitleChange(sessionId, editingTitle.trim());
+		} else {
+			editingSessionId = null;
+			editingTitle = '';
 		}
-		editingSessionId = null;
-		editingTitle = '';
 	};
+
+	// Watch for when the session title updates in props, then exit edit mode
+	$effect(() => {
+		if (savingTitle && editingSessionId) {
+			// Find the session being edited
+			const currentModule = modules.find(m => m.id === selectedModuleId);
+			if (currentModule) {
+				const moduleSessions = sessionsByModule[currentModule.id] || [];
+				const editedSession = moduleSessions.find(s => s.id === editingSessionId);
+
+				// If the session's title now matches what we typed, exit edit mode
+				if (editedSession && editedSession.title === editingTitle.trim()) {
+					savingTitle = false;
+					editingSessionId = null;
+					editingTitle = '';
+				}
+			}
+		}
+	});
 
 	const cancelEdit = () => {
 		editingSessionId = null;
@@ -134,7 +155,8 @@
 										if (e.key === 'Escape') cancelEdit();
 									}}
 									onclick={(e) => e.stopPropagation()}
-									class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1"
+									disabled={savingTitle}
+									class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 disabled:opacity-70 disabled:cursor-wait"
 									style="--tw-ring-color: var(--course-accent-light)"
 									autofocus
 								/>
@@ -144,29 +166,34 @@
 								</span>
 								{#if isPreStartSelected}
 									<div class="flex items-center gap-1">
-										<button
+										<div
+											role="button"
+											tabindex="0"
 											onclick={(e) => startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e)}
-											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
+											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e); }}
+											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
 											title="Edit session title"
 										>
 											<Edit2 size={12} />
-										</button>
-										<button
+										</div>
+										<div
+											role="button"
+											tabindex="0"
 											onclick={(e) => { e.stopPropagation(); onSessionDelete(preStartSession?.id, 0); }}
-											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200"
+											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(preStartSession?.id, 0); } }}
+											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
 											title="Delete session"
 										>
 											<Trash2 size={12} />
-										</button>
+										</div>
 									</div>
 								{/if}
 							{/if}
 						</button>
 
-						<!-- Regular Sessions (1-totalSessions) -->
-						{#each Array(totalSessions).fill(0) as _, i}
-							{@const sessionNumber = i + 1}
-							{@const session = moduleSessions.find(s => s.session_number === sessionNumber)}
+						<!-- Regular Sessions (only show sessions that exist) -->
+						{#each moduleSessions.filter(s => s.session_number > 0).sort((a, b) => a.session_number - b.session_number) as session}
+							{@const sessionNumber = session.session_number}
 							{@const isSessionSelected = isSelected && selectedSession === sessionNumber}
 
 							<button
@@ -190,7 +217,8 @@
 											if (e.key === 'Escape') cancelEdit();
 										}}
 										onclick={(e) => e.stopPropagation()}
-										class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1"
+										disabled={savingTitle}
+										class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 disabled:opacity-70 disabled:cursor-wait"
 										style="--tw-ring-color: var(--course-accent-light)"
 										autofocus
 									/>
@@ -200,20 +228,26 @@
 									</span>
 									{#if isSessionSelected}
 										<div class="flex items-center gap-1">
-											<button
+											<div
+												role="button"
+												tabindex="0"
 												onclick={(e) => startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e)}
-												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded"
+												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e); }}
+												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
 												title="Edit session title"
 											>
 												<Edit2 size={12} />
-											</button>
-											<button
+											</div>
+											<div
+												role="button"
+												tabindex="0"
 												onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); }}
-												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200"
+												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); } }}
+												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
 												title="Delete session"
 											>
 												<Trash2 size={12} />
-											</button>
+											</div>
 										</div>
 									{/if}
 								{/if}
