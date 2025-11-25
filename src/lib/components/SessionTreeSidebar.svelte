@@ -1,5 +1,7 @@
 <script>
-	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2 } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical } from 'lucide-svelte';
+	import { dndzone } from 'svelte-dnd-action';
+	import { flip } from 'svelte/animate';
 
 	let {
 		modules = [],
@@ -10,18 +12,40 @@
 		onSessionChange = () => {},
 		onSessionTitleChange = () => {},
 		onAddSession = () => {},
-		onSessionDelete = () => {}
+		onSessionDelete = () => {},
+		onSessionReorder = () => {}
 	} = $props();
 
 	let expandedModules = $state(new Set([selectedModuleId]));
 	let editingSessionId = $state(null);
 	let editingTitle = $state('');
 	let savingTitle = $state(false);  // Track if we're saving
+	let draggedItemId = $state(null);  // Track which item is being dragged
 
-	// Group sessions by module
+	// Drag-and-drop configuration
+	const DND_FLIP_DURATION = 200;
+
+	// Local state for draggable items per module - needed for svelte-dnd-action
+	let draggableItemsByModule = $state({});
+
+	// Sync draggable items when sessions prop changes
+	$effect(() => {
+		const newItems = {};
+		for (const module of modules) {
+			newItems[module.id] = sessions
+				.filter(s => s.module_id === module.id)
+				.sort((a, b) => a.session_number - b.session_number)
+				.map(s => ({ ...s })); // Create copies for local mutation
+		}
+		draggableItemsByModule = newItems;
+	});
+
+	// Group sessions by module (for non-drag purposes)
 	const sessionsByModule = $derived(
 		modules.reduce((acc, module) => {
-			acc[module.id] = sessions.filter(s => s.module_id === module.id);
+			acc[module.id] = sessions
+				.filter(s => s.module_id === module.id)
+				.map(s => ({ ...s, id: s.id }));
 			return acc;
 		}, {})
 	);
@@ -86,6 +110,35 @@
 		editingTitle = '';
 	};
 
+	// Drag-and-drop handlers
+	const handleDndConsider = (moduleId, e) => {
+		// Track which item is being dragged
+		const { trigger, id } = e.detail.info;
+		if (trigger === 'draggedEntered' || trigger === 'draggedOver') {
+			draggedItemId = id;
+		}
+		// Update local state during drag for visual feedback
+		draggableItemsByModule[moduleId] = e.detail.items;
+	};
+
+	const handleDndFinalize = (moduleId, e) => {
+		// Clear dragged item tracking
+		draggedItemId = null;
+		// Update local state with final order
+		draggableItemsByModule[moduleId] = e.detail.items;
+		// Call parent handler with new order (filter out any without valid IDs)
+		const sessionIds = e.detail.items.map(s => s.id).filter(id => id != null);
+		if (sessionIds.length > 0) {
+			onSessionReorder(moduleId, sessionIds);
+		}
+	};
+
+	// Get the new position of the dragged item
+	const getDraggedItemNewPosition = (moduleId) => {
+		const items = draggableItemsByModule[moduleId] || [];
+		return items.findIndex(item => item.id === draggedItemId);
+	};
+
 	const getSessionStatus = (session, sessionNumber) => {
 		// Check if session has content
 		const hasOverview = session?.description?.trim().length > 0;
@@ -133,126 +186,110 @@
 
 				<!-- Sessions (shown when module is expanded) -->
 				{#if isExpanded}
-					{@const preStartSession = moduleSessions.find(s => s.session_number === 0)}
-					{@const isPreStartSelected = isSelected && selectedSession === 0}
+					{@const draggableItems = draggableItemsByModule[module.id] || []}
 
 					<div class="ml-4 mt-1 space-y-0.5">
-						<!-- Pre-Start (Session 0) -->
-						<button
-							onclick={() => handleSessionClick(module.id, 0)}
-							class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors group {isPreStartSelected ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
-							style={isPreStartSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
+						<!-- Draggable Sessions List -->
+						<div
+							use:dndzone={{
+								items: draggableItems,
+								flipDurationMs: DND_FLIP_DURATION,
+								dropTargetStyle: { outline: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem' },
+								transformDraggedElement: (element, data, index) => {
+									// Update the number badge in the dragged element to show new position
+									const badge = element?.querySelector('.session-number-badge');
+									if (badge && index !== undefined) {
+										badge.textContent = String(index);
+									}
+								}
+							}}
+							onconsider={(e) => handleDndConsider(module.id, e)}
+							onfinalize={(e) => handleDndFinalize(module.id, e)}
+							class="space-y-0.5 min-h-[2rem]"
 						>
-							<Circle size={12} class="flex-shrink-0 {isPreStartSelected ? '' : 'text-white/30'}" style={isPreStartSelected ? 'fill: var(--course-accent-light); color: var(--course-accent-light)' : ''} />
+							{#each draggableItems as session, index (session.id)}
+								{@const displayNumber = index}
+								{@const isSessionSelected = isSelected && selectedSession === session.session_number}
+								{@const isPreStart = index === 0}
 
-							{#if editingSessionId === preStartSession?.id}
-								<input
-									type="text"
-									bind:value={editingTitle}
-									onblur={() => saveTitle(preStartSession.id)}
-									onkeydown={(e) => {
-										if (e.key === 'Enter') saveTitle(preStartSession.id);
-										if (e.key === 'Escape') cancelEdit();
-									}}
-									onclick={(e) => e.stopPropagation()}
-									disabled={savingTitle}
-									class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 disabled:opacity-70 disabled:cursor-wait"
-									style="--tw-ring-color: var(--course-accent-light)"
-									autofocus
-								/>
-							{:else}
-								<span class="flex-1 text-xs truncate">
-									{preStartSession?.title || 'Pre-Start'}
-								</span>
-								{#if isPreStartSelected}
-									<div class="flex items-center gap-1">
-										<div
-											role="button"
-											tabindex="0"
-											onclick={(e) => startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e)}
-											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(preStartSession?.id, preStartSession?.title || 'Pre-Start', e); }}
-											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
-											title="Edit session title"
-										>
-											<Edit2 size={12} />
-										</div>
-										<div
-											role="button"
-											tabindex="0"
-											onclick={(e) => { e.stopPropagation(); onSessionDelete(preStartSession?.id, 0); }}
-											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(preStartSession?.id, 0); } }}
-											class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
-											title="Delete session"
-										>
-											<Trash2 size={12} />
-										</div>
-									</div>
-								{/if}
-							{/if}
-						</button>
-
-						<!-- Regular Sessions (only show sessions that exist) -->
-						{#each moduleSessions.filter(s => s.session_number > 0).sort((a, b) => a.session_number - b.session_number) as session}
-							{@const sessionNumber = session.session_number}
-							{@const isSessionSelected = isSelected && selectedSession === sessionNumber}
-
-							<button
-								onclick={() => handleSessionClick(module.id, sessionNumber)}
-								class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors group {isSessionSelected ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
-								style={isSessionSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
-							>
-								<div class="w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-full {isSessionSelected ? 'font-bold' : 'bg-white/10 text-white/50'} text-xs"
-									style={isSessionSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 30%, transparent); color: var(--course-accent-light)' : ''}
+								<div
+									animate:flip={{ duration: DND_FLIP_DURATION }}
+									class="session-item"
 								>
-									{sessionNumber}
-								</div>
-
-								{#if editingSessionId === session?.id}
-									<input
-										type="text"
-										bind:value={editingTitle}
-										onblur={() => saveTitle(session.id)}
-										onkeydown={(e) => {
-											if (e.key === 'Enter') saveTitle(session.id);
-											if (e.key === 'Escape') cancelEdit();
-										}}
-										onclick={(e) => e.stopPropagation()}
-										disabled={savingTitle}
-										class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 disabled:opacity-70 disabled:cursor-wait"
-										style="--tw-ring-color: var(--course-accent-light)"
-										autofocus
-									/>
-								{:else}
-									<span class="flex-1 text-xs truncate">
-										{session?.title || `Session ${sessionNumber}`}
-									</span>
-									{#if isSessionSelected}
-										<div class="flex items-center gap-1">
-											<div
-												role="button"
-												tabindex="0"
-												onclick={(e) => startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e)}
-												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(session?.id, session?.title || `Session ${sessionNumber}`, e); }}
-												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
-												title="Edit session title"
-											>
-												<Edit2 size={12} />
-											</div>
-											<div
-												role="button"
-												tabindex="0"
-												onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); }}
-												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); } }}
-												class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
-												title="Delete session"
-											>
-												<Trash2 size={12} />
-											</div>
+									<button
+										onclick={() => handleSessionClick(module.id, session.session_number)}
+										class="w-full flex items-center gap-1 px-2 py-1.5 rounded-lg text-left transition-colors group {isSessionSelected ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
+										style={isSessionSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
+									>
+										<!-- Drag Handle -->
+										<div
+											class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+											title="Drag to reorder"
+										>
+											<GripVertical size={12} />
 										</div>
-									{/if}
-								{/if}
-							</button>
-						{/each}
+
+										<!-- Session Number - shows POSITION in list (reactive during drag) -->
+										{#if isPreStart}
+											<div class="session-number-badge w-5 h-5 flex items-center justify-center flex-shrink-0">
+												<Circle size={12} class="{isSessionSelected ? '' : 'text-white/30'}" style={isSessionSelected ? 'fill: var(--course-accent-light); color: var(--course-accent-light)' : ''} />
+											</div>
+										{:else}
+											<div class="session-number-badge w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-full text-xs transition-all duration-150 {isSessionSelected ? 'font-bold' : 'bg-white/10 text-white/50'}"
+												style={isSessionSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 30%, transparent); color: var(--course-accent-light)' : ''}
+											>
+												{displayNumber}
+											</div>
+										{/if}
+
+										{#if editingSessionId === session?.id}
+											<input
+												type="text"
+												bind:value={editingTitle}
+												onblur={() => saveTitle(session.id)}
+												onkeydown={(e) => {
+													if (e.key === 'Enter') saveTitle(session.id);
+													if (e.key === 'Escape') cancelEdit();
+												}}
+												onclick={(e) => e.stopPropagation()}
+												disabled={savingTitle}
+												class="flex-1 bg-white/10 border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 disabled:opacity-70 disabled:cursor-wait"
+												style="--tw-ring-color: var(--course-accent-light)"
+												autofocus
+											/>
+										{:else}
+											<span class="flex-1 text-xs truncate">
+												{session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`)}
+											</span>
+											{#if isSessionSelected}
+												<div class="flex items-center gap-1">
+													<div
+														role="button"
+														tabindex="0"
+														onclick={(e) => startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`), e)}
+														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`), e); }}
+														class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
+														title="Edit session title"
+													>
+														<Edit2 size={12} />
+													</div>
+													<div
+														role="button"
+														tabindex="0"
+														onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); }}
+														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); } }}
+														class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
+														title="Delete session"
+													>
+														<Trash2 size={12} />
+													</div>
+												</div>
+											{/if}
+										{/if}
+									</button>
+								</div>
+							{/each}
+						</div>
 
 						<!-- Add Session Button (inline after last session) -->
 						<button
@@ -288,5 +325,20 @@
 
 	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
 		background: rgba(255, 255, 255, 0.3);
+	}
+
+	/* Drag-and-drop styles */
+	.session-item {
+		touch-action: none;
+	}
+
+	:global(.session-item[aria-grabbed="true"]) {
+		opacity: 0.8;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 0.5rem;
+	}
+
+	:global(.session-item.svelte-dnd-zone-dragged) {
+		opacity: 0.5;
 	}
 </style>

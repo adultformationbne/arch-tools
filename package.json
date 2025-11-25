@@ -41,6 +41,7 @@
     "mjml": "^4.17.1",
     "prettier": "^3.6.2",
     "resend": "^6.1.1",
+    "svelte-dnd-action": "^0.9.67",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
