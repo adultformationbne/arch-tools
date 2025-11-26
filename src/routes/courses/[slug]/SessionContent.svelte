@@ -252,12 +252,14 @@
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
 												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' : 'In progress'}
+												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
+												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
 												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
 												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
 											></div>
 										</div>
@@ -440,12 +442,14 @@
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
 												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' : 'In progress'}
+												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
+												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
 												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
 												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
 											></div>
 										</div>
@@ -623,12 +627,14 @@
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
 												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' : 'In progress'}
+												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
+												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
 												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
 												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
 											></div>
 										</div>

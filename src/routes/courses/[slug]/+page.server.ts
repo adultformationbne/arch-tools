@@ -167,12 +167,27 @@ export const load: PageServerLoad = async (event) => {
 		const reflectionQuestion = questionsBySession[currentSession] || null;
 
 		// Get reflection status for current session
+		// Map database status to display status
 		let reflectionStatus = null;
 		if (reflectionQuestion) {
 			const existingResponse = responses.find(
 				(r) => r.question?.session?.session_number === currentSession
 			);
-			reflectionStatus = existingResponse ? existingResponse.status : 'not_started';
+
+			if (!existingResponse) {
+				reflectionStatus = 'not_started';
+			} else {
+				// Map database status to display status
+				const dbStatus = existingResponse.status;
+				if (dbStatus === 'passed') {
+					reflectionStatus = 'completed';
+				} else if (dbStatus === 'needs_revision') {
+					reflectionStatus = 'needs_revision';
+				} else {
+					// 'submitted', 'under_review' -> in_progress
+					reflectionStatus = 'in_progress';
+				}
+			}
 		}
 
 		currentSessionData = {

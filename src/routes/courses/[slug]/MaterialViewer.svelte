@@ -60,17 +60,19 @@
 		const showLogo = courseBranding.showLogo !== false && logoUrl;
 
 		// Build CSS with color values injected
+		// Use margin: 0 on first page for header, add top margin on subsequent pages
 		const printStyles = [
-			'@page { size: A4; margin: 15mm; }',
+			'@page { size: A4; margin: 15mm 0 15mm 0; }',
+			'@page :first { margin: 0 0 15mm 0; }',
 			'* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }',
-			'html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
-			'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; background: white; }',
-			'.print-header { background-color: ' + accentColor + ' !important; background: ' + accentColor + ' !important; color: white !important; padding: 20px 24px; margin: -15mm -15mm 24px -15mm; display: flex; align-items: center; gap: 20px; }',
+			'html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
+			'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #374151; background: white; }',
+			'.print-header { background-color: ' + accentColor + ' !important; background: ' + accentColor + ' !important; color: white !important; padding: 24px 20mm; display: flex; align-items: center; gap: 20px; }',
 			'.print-logo { height: 48px; width: auto; object-fit: contain; }',
 			'.print-header-text { flex: 1; }',
 			'.print-course-name { font-size: 12px; color: rgba(255,255,255,0.85) !important; font-weight: 500; margin: 0; text-transform: uppercase; letter-spacing: 1px; }',
 			'.print-document-title { font-size: 20px; font-weight: 700; color: white !important; margin: 4px 0 0 0; }',
-			'.print-content { padding: 0; }',
+			'.print-content { padding: 20mm; padding-top: 8mm; }',
 			'.print-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.75rem 0; color: #111827; line-height: 1.3; }',
 			'.print-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem 0; color: #374151; line-height: 1.3; }',
 			'.print-content h3 { font-size: 1.125rem; font-weight: 600; margin: 0.75rem 0 0.5rem 0; color: #374151; }',
@@ -79,8 +81,12 @@
 			'.print-content li { font-size: 0.95rem; line-height: 1.7; margin-bottom: 0.35rem; color: #374151; }',
 			'.print-content strong { font-weight: 600; color: ' + accentColor + '; }',
 			'.print-content em { font-style: italic; }',
-			'.print-content blockquote { border-left: 3px solid ' + accentColor + ' !important; padding-left: 0.75rem; margin: 0.75rem 0; color: #6b7280; font-style: italic; }'
+			'.print-content blockquote { border-left: 3px solid ' + accentColor + ' !important; padding-left: 0.75rem; margin: 0.75rem 0; color: #6b7280; font-style: italic; }',
+			'.print-footer { padding: 16px 20mm; margin-top: 24px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }'
 		].join('\n');
+
+		// Get current year for copyright
+		const currentYear = new Date().getFullYear();
 
 		// Build logo HTML
 		const logoHtml = showLogo
@@ -108,6 +114,9 @@
 			'<main class="print-content">',
 			selectedMaterial.content,
 			'</main>',
+			'<footer class="print-footer">',
+			'&copy; ' + currentYear + ' ' + (courseName || 'This organization') + '. All rights reserved. This material is for personal use only and may not be reproduced, distributed, or transmitted without prior written permission.',
+			'</footer>',
 			'</body>',
 			'</html>'
 		].join('\n');
