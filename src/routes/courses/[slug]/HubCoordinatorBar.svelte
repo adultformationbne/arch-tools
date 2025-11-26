@@ -22,14 +22,14 @@
 	const getReflectionStatusLabel = (status) => {
 		if (status === null) return 'N/A';
 		switch (status) {
-			case 'submitted':
-			case 'under_review':
-			case 'passed':
+			// Display values (mapped from database)
+			case 'completed':
+				return '✓ Completed';
+			case 'in_progress':
 				return '✓ Submitted';
 			case 'not_started':
 				return '⏳ Not Started';
 			case 'needs_revision':
-			case 'resubmitted':
 				return '⚠️ Needs Work';
 			default:
 				return '⏳ Not Started';
@@ -39,13 +39,14 @@
 	const getReflectionStatusClass = (status) => {
 		if (status === null) return 'bg-gray-50 text-gray-400';
 		switch (status) {
-			case 'submitted':
-			case 'under_review':
-			case 'passed':
+			// Display values (mapped from database)
+			case 'completed':
 				return 'bg-green-100 text-green-700';
+			case 'in_progress':
+				return 'bg-blue-100 text-blue-700';
 			case 'needs_revision':
-			case 'resubmitted':
 				return 'bg-orange-100 text-orange-700';
+			case 'not_started':
 			default:
 				return 'bg-gray-100 text-gray-700';
 		}
