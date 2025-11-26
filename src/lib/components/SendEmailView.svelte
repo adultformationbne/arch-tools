@@ -1,0 +1,775 @@
+<script>
+	import { Mail, FileText, Pencil, Send, Loader2, TestTube, X, Save, Eye, Users, ChevronDown, ChevronLeft, ChevronRight, Check, Square, CheckSquare } from 'lucide-svelte';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { apiPost, apiPut, apiGet } from '$lib/utils/api-handler.js';
+	import EmailBodyEditor from './EmailBodyEditor.svelte';
+	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
+
+	let {
+		course,
+		courseSlug,
+		templates = [],
+		cohorts = [],
+		hubs = [],
+		initialMode = 'choose'
+	} = $props();
+
+	// Main state
+	let mode = $state(initialMode); // 'choose' | 'quick' | 'template'
+
+	// Template mode state
+	let selectedTemplateId = $state('');
+	let isEditing = $state(false);
+	let editedSubject = $state('');
+	let editedBody = $state('');
+
+	// Quick email state
+	let quickSubject = $state('');
+	let quickBody = $state('');
+
+	// Recipient filter state
+	let selectedCohortId = $state('');
+	let additionalFilter = $state('none');
+	let selectedHubId = $state('');
+	let selectedSessionNumber = $state('');
+	let recipients = $state([]);
+	let loadingRecipients = $state(false);
+	let hasLoadedRecipients = $state(false);
+
+	// Recipients panel state
+	let showRecipientsPanel = $state(false);
+	let excludedRecipientIds = $state(new Set());
+
+	// Preview state - now stores the recipient ID
+	let previewRecipientId = $state(null);
+
+	// Sending state
+	let sending = $state(false);
+	let sendingTest = $state(false);
+	let showTestInput = $state(false);
+	let testEmail = $state('');
+
+	// Course colors
+	const courseColors = $derived({
+		accentDark: course?.accent_dark || '#334642',
+		accentLight: course?.accent_light || '#eae2d9',
+		accentDarkest: course?.accent_darkest || '#1e2322'
+	});
+
+	// Get selected template
+	const selectedTemplate = $derived(templates.find(t => t.id === selectedTemplateId));
+	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
+	const maxSession = $derived(selectedCohort?.current_session || 8);
+
+	// Enabled recipients (not excluded)
+	const enabledRecipients = $derived(recipients.filter(r => !excludedRecipientIds.has(r.id)));
+
+	// Get preview recipient - find by ID or default to first enabled
+	const previewRecipient = $derived(
+		previewRecipientId
+			? recipients.find(r => r.id === previewRecipientId)
+			: enabledRecipients[0] || recipients[0]
+	);
+
+	// Available variables
+	const availableVariables = [
+		{ name: 'firstName', description: 'Student first name' },
+		{ name: 'lastName', description: 'Student last name' },
+		{ name: 'fullName', description: 'Student full name' },
+		{ name: 'email', description: 'Student email address' },
+		{ name: 'hubName', description: 'Student hub assignment' },
+		{ name: 'courseName', description: 'Course name' },
+		{ name: 'courseSlug', description: 'Course URL identifier' },
+		{ name: 'cohortName', description: 'Cohort name' },
+		{ name: 'startDate', description: 'Cohort start date' },
+		{ name: 'endDate', description: 'Cohort end date' },
+		{ name: 'sessionNumber', description: 'Session number', dynamic: true },
+		{ name: 'sessionTitle', description: 'Session title', dynamic: true },
+		{ name: 'currentSession', description: 'Current cohort session', dynamic: true },
+		{ name: 'loginLink', description: 'Course login page' },
+		{ name: 'dashboardLink', description: 'Course dashboard' },
+		{ name: 'materialsLink', description: 'Course materials page' },
+		{ name: 'reflectionLink', description: 'Reflections page' },
+		{ name: 'supportEmail', description: 'Support contact email' }
+	];
+
+	function substituteVariables(template, recipient) {
+		if (!template) return template;
+		if (!recipient) return template;
+
+		const cohort = cohorts.find(c => c.id === recipient.cohort_id);
+
+		const variables = {
+			firstName: recipient.full_name?.split(' ')[0] || '',
+			lastName: recipient.full_name?.split(' ').slice(1).join(' ') || '',
+			fullName: recipient.full_name || '',
+			email: recipient.email || '',
+			courseName: course?.name || '',
+			courseSlug: courseSlug || '',
+			cohortName: cohort?.name || '',
+			sessionNumber: recipient.current_session || cohort?.current_session || 0,
+			currentSession: cohort?.current_session || 0,
+			startDate: cohort?.start_date ? new Date(cohort.start_date).toLocaleDateString() : '',
+			endDate: cohort?.end_date ? new Date(cohort.end_date).toLocaleDateString() : '',
+			loginLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}`,
+			dashboardLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/dashboard`,
+			materialsLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/materials`,
+			reflectionLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/reflections`,
+			supportEmail: 'support@archdiocesanministries.org.au',
+			hubName: recipient.courses_hubs?.name || ''
+		};
+
+		let result = template;
+		for (const [key, value] of Object.entries(variables)) {
+			result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+		}
+		return result;
+	}
+
+	// Get current subject/body (for display/send)
+	function getCurrentSubject() {
+		if (mode === 'quick') return quickSubject;
+		if (isEditing) return editedSubject;
+		return selectedTemplate?.subject_template || '';
+	}
+
+	function getCurrentBody() {
+		if (mode === 'quick') return quickBody;
+		if (isEditing) return editedBody;
+		return selectedTemplate?.body_template || '';
+	}
+
+	// Load recipients when filters change
+	$effect(() => {
+		if (selectedCohortId) {
+			loadRecipients();
+		} else {
+			recipients = [];
+			hasLoadedRecipients = false;
+			excludedRecipientIds = new Set();
+			previewRecipientId = null;
+		}
+	});
+
+	async function loadRecipients() {
+		if (!selectedCohortId) return;
+
+		loadingRecipients = true;
+		try {
+			const params = new URLSearchParams();
+			params.set('cohort_id', selectedCohortId);
+			params.set('status', 'active');
+
+			if (additionalFilter === 'hub' && selectedHubId) {
+				params.set('hub_id', selectedHubId);
+			} else if (additionalFilter === 'coordinators') {
+				params.set('role', 'coordinator');
+			} else if (additionalFilter === 'session' && selectedSessionNumber) {
+				params.set('current_session', selectedSessionNumber);
+			} else if (additionalFilter === 'pending_reflections') {
+				params.set('has_pending_reflections', 'true');
+			}
+
+			const result = await apiGet(`/api/courses/${courseSlug}/enrollments?${params.toString()}`, {
+				showToast: false
+			});
+
+			recipients = result?.enrollments || [];
+			hasLoadedRecipients = true;
+			// Reset exclusions and preview when recipients change
+			excludedRecipientIds = new Set();
+			previewRecipientId = recipients[0]?.id || null;
+		} catch (err) {
+			console.error('Failed to load recipients:', err);
+			recipients = [];
+		} finally {
+			loadingRecipients = false;
+		}
+	}
+
+	// Toggle recipient inclusion
+	function toggleRecipient(recipientId) {
+		const newExcluded = new Set(excludedRecipientIds);
+		if (newExcluded.has(recipientId)) {
+			newExcluded.delete(recipientId);
+		} else {
+			newExcluded.add(recipientId);
+			// If we excluded the preview person, reset preview
+			if (previewRecipientId === recipientId) {
+				const stillEnabled = recipients.find(r => !newExcluded.has(r.id));
+				previewRecipientId = stillEnabled?.id || null;
+			}
+		}
+		excludedRecipientIds = newExcluded;
+	}
+
+	// Select all / deselect all
+	function selectAllRecipients() {
+		excludedRecipientIds = new Set();
+	}
+
+	function deselectAllRecipients() {
+		excludedRecipientIds = new Set(recipients.map(r => r.id));
+		previewRecipientId = null;
+	}
+
+	// Set preview recipient
+	function setPreviewRecipient(recipientId) {
+		previewRecipientId = recipientId;
+	}
+
+	function handleCohortChange(e) {
+		selectedCohortId = e.target.value;
+		additionalFilter = 'none';
+		selectedHubId = '';
+		selectedSessionNumber = '';
+	}
+
+	function handleAdditionalFilterChange(e) {
+		additionalFilter = e.target.value;
+		selectedHubId = '';
+		selectedSessionNumber = '';
+		if (selectedCohortId) loadRecipients();
+	}
+
+	function handleSubFilterChange() {
+		if (selectedCohortId) loadRecipients();
+	}
+
+	function handleModeSelect(newMode) {
+		mode = newMode;
+		if (newMode === 'quick') {
+			selectedTemplateId = '';
+			isEditing = true; // Quick email is always in edit mode
+		} else if (newMode === 'template') {
+			quickSubject = '';
+			quickBody = '';
+			isEditing = false;
+			if (templates.length > 0 && !selectedTemplateId) {
+				selectedTemplateId = templates[0].id;
+			}
+		}
+	}
+
+	function handleBack() {
+		mode = 'choose';
+		isEditing = false;
+	}
+
+	function startEditing() {
+		editedSubject = selectedTemplate?.subject_template || '';
+		editedBody = selectedTemplate?.body_template || '';
+		isEditing = true;
+	}
+
+	function cancelEditing() {
+		isEditing = false;
+		editedSubject = '';
+		editedBody = '';
+	}
+
+	async function saveToTemplate() {
+		if (!selectedTemplate) return;
+
+		sending = true;
+		try {
+			await apiPut(`/api/courses/${courseSlug}/emails`, {
+				template_id: selectedTemplate.id,
+				subject_template: editedSubject,
+				body_template: editedBody
+			}, { successMessage: 'Template saved' });
+
+			selectedTemplate.subject_template = editedSubject;
+			selectedTemplate.body_template = editedBody;
+			isEditing = false;
+		} catch (err) {
+			// Error handled by apiPut
+		} finally {
+			sending = false;
+		}
+	}
+
+	async function handleSendTest() {
+		if (!testEmail) {
+			toastError('Please enter a test email address');
+			return;
+		}
+
+		const subject = getCurrentSubject();
+		const body = getCurrentBody();
+
+		if (!subject || !body) {
+			toastError('Please enter a subject and body');
+			return;
+		}
+
+		sendingTest = true;
+		try {
+			await apiPost(`/api/courses/${courseSlug}/emails/test`, {
+				to: testEmail,
+				subject,
+				body,
+				course_name: course?.name,
+				logo_url: course?.logo_url,
+				colors: courseColors
+			}, { successMessage: 'Test email sent!' });
+			showTestInput = false;
+			testEmail = '';
+		} catch (err) {
+			// Error handled by apiPost
+		} finally {
+			sendingTest = false;
+		}
+	}
+
+	async function handleSend() {
+		if (enabledRecipients.length === 0) {
+			toastError('Please select at least one recipient');
+			return;
+		}
+
+		const subject = getCurrentSubject();
+		const body = getCurrentBody();
+
+		if (!subject || !body) {
+			toastError('Please enter a subject and body');
+			return;
+		}
+
+		sending = true;
+		try {
+			const payload = {
+				recipients: enabledRecipients.map(r => r.id),
+				cohort_id: enabledRecipients[0]?.cohort_id
+			};
+
+			if (mode === 'quick' || isEditing) {
+				payload.subject = subject;
+				payload.body_html = body;
+				payload.email_type = 'quick';
+			} else {
+				payload.template_id = selectedTemplate.id;
+				payload.email_type = selectedTemplate.template_key || 'custom';
+			}
+
+			const result = await apiPost(`/api/courses/${courseSlug}/send-email`, payload);
+
+			if (result.success || result.sent > 0) {
+				toastSuccess(`Sent ${result.sent} email${result.sent !== 1 ? 's' : ''}${result.failed > 0 ? ` (${result.failed} failed)` : ''}`);
+				if (mode === 'quick') {
+					quickSubject = '';
+					quickBody = '';
+				}
+				recipients = [];
+				selectedCohortId = '';
+				excludedRecipientIds = new Set();
+			} else {
+				toastError(`Failed to send: ${result.errors?.[0]?.error || 'Unknown error'}`);
+			}
+		} catch (err) {
+			// Error handled by apiPost
+		} finally {
+			sending = false;
+		}
+	}
+
+	function handleBodyChange(html) {
+		if (mode === 'quick') {
+			quickBody = html;
+		} else {
+			editedBody = html;
+		}
+	}
+</script>
+
+<div class="p-6 max-w-4xl mx-auto">
+	{#if mode === 'choose'}
+		<!-- Mode Selection -->
+		<h1 class="text-2xl font-bold text-white mb-2">Send Email</h1>
+		<p class="text-white/70 mb-6">Choose how you'd like to compose your email</p>
+
+		<div class="grid grid-cols-2 gap-4 max-w-xl">
+			<button
+				onclick={() => handleModeSelect('quick')}
+				class="bg-white rounded-xl p-5 text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+			>
+				<div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);">
+					<Pencil size={20} style="color: var(--course-accent-dark);" />
+				</div>
+				<h3 class="text-base font-bold text-gray-900 mb-1">Quick Email</h3>
+				<p class="text-sm text-gray-600">Write a one-off message directly.</p>
+			</button>
+
+			<button
+				onclick={() => handleModeSelect('template')}
+				class="bg-white rounded-xl p-5 text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+			>
+				<div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);">
+					<FileText size={20} style="color: var(--course-accent-dark);" />
+				</div>
+				<h3 class="text-base font-bold text-gray-900 mb-1">Use a Template</h3>
+				<p class="text-sm text-gray-600">Select from your saved templates.</p>
+			</button>
+		</div>
+
+	{:else}
+		<!-- Header -->
+		<div class="flex items-center gap-3 mb-4">
+			<button
+				onclick={handleBack}
+				class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+			>
+				<ChevronLeft size={20} />
+			</button>
+			<h1 class="text-xl font-bold text-white">
+				{mode === 'quick' ? 'Quick Email' : 'Send with Template'}
+			</h1>
+		</div>
+
+		<!-- Recipients Filter Bar -->
+		<div class="bg-white rounded-xl mb-4 overflow-hidden">
+			<div class="p-4">
+				<div class="flex items-center gap-4 flex-wrap">
+					<div class="flex items-center gap-2">
+						<Users size={16} class="text-gray-500" />
+						<span class="text-sm font-semibold text-gray-700">To:</span>
+					</div>
+
+					<div class="relative">
+						<select
+							value={selectedCohortId}
+							onchange={handleCohortChange}
+							class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm min-w-[180px]"
+						>
+							<option value="">Select cohort...</option>
+							{#each cohorts as cohort}
+								<option value={cohort.id}>{cohort.name}</option>
+							{/each}
+						</select>
+						<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+					</div>
+
+					{#if selectedCohortId}
+						<div class="relative">
+							<select
+								value={additionalFilter}
+								onchange={handleAdditionalFilterChange}
+								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
+							>
+								<option value="none">All students</option>
+								<option value="hub">By Hub</option>
+								<option value="coordinators">Coordinators</option>
+								<option value="session">By Session</option>
+								<option value="pending_reflections">Pending Reflections</option>
+							</select>
+							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+						</div>
+
+						{#if additionalFilter === 'hub'}
+							<div class="relative">
+								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+									<option value="">Select hub...</option>
+									{#each hubs as hub}
+										<option value={hub.id}>{hub.name}</option>
+									{/each}
+								</select>
+								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+							</div>
+						{:else if additionalFilter === 'session'}
+							<div class="relative">
+								<select bind:value={selectedSessionNumber} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+									<option value="">Session...</option>
+									{#each Array(maxSession) as _, i}
+										<option value={i + 1}>Session {i + 1}</option>
+									{/each}
+								</select>
+								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+							</div>
+						{/if}
+					{/if}
+
+					<div class="ml-auto flex items-center gap-2">
+						{#if loadingRecipients}
+							<Loader2 size={14} class="animate-spin text-gray-400" />
+						{:else if hasLoadedRecipients && recipients.length > 0}
+							<button
+								onclick={() => showRecipientsPanel = !showRecipientsPanel}
+								class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100"
+								style="color: var(--course-accent-dark);"
+							>
+								<span class="tabular-nums">
+									{enabledRecipients.length}/{recipients.length}
+								</span>
+								<span>recipient{enabledRecipients.length !== 1 ? 's' : ''}</span>
+								<ChevronDown size={14} class="transition-transform {showRecipientsPanel ? 'rotate-180' : ''}" />
+							</button>
+						{:else if hasLoadedRecipients}
+							<span class="text-sm text-gray-500">No recipients match filters</span>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<!-- Expandable Recipients Panel -->
+			{#if showRecipientsPanel && recipients.length > 0}
+				<div class="border-t border-gray-200 bg-gray-50">
+					<!-- Panel Header -->
+					<div class="px-4 py-2 flex items-center justify-between border-b border-gray-200 bg-gray-100">
+						<div class="flex items-center gap-3">
+							<span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Recipients</span>
+							{#if excludedRecipientIds.size > 0}
+								<span class="text-xs text-orange-600 font-medium">
+									({excludedRecipientIds.size} excluded)
+								</span>
+							{/if}
+						</div>
+						<div class="flex items-center gap-2">
+							<button
+								onclick={selectAllRecipients}
+								disabled={excludedRecipientIds.size === 0}
+								class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
+							>
+								Select All
+							</button>
+							<button
+								onclick={deselectAllRecipients}
+								disabled={excludedRecipientIds.size === recipients.length}
+								class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
+							>
+								Deselect All
+							</button>
+						</div>
+					</div>
+
+					<!-- Recipients List -->
+					<div class="max-h-48 overflow-y-auto">
+						{#each recipients as recipient (recipient.id)}
+							{@const isExcluded = excludedRecipientIds.has(recipient.id)}
+							{@const isPreview = previewRecipientId === recipient.id}
+							<div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 {isExcluded ? 'opacity-50' : ''}">
+								<!-- Checkbox -->
+								<button
+									onclick={() => toggleRecipient(recipient.id)}
+									class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors {isExcluded ? 'border-gray-300 bg-white' : 'border-green-500 bg-green-500'}"
+								>
+									{#if !isExcluded}
+										<Check size={12} class="text-white" />
+									{/if}
+								</button>
+
+								<!-- Name & Email -->
+								<div class="flex-1 min-w-0">
+									<div class="text-sm font-medium text-gray-900 truncate {isExcluded ? 'line-through' : ''}">
+										{recipient.full_name}
+									</div>
+									<div class="text-xs text-gray-500 truncate">{recipient.email}</div>
+								</div>
+
+								<!-- Hub -->
+								{#if recipient.courses_hubs?.name}
+									<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">
+										{recipient.courses_hubs.name}
+									</span>
+								{/if}
+
+								<!-- Preview Eye Icon -->
+								<button
+									onclick={() => setPreviewRecipient(recipient.id)}
+									disabled={isExcluded}
+									class="flex-shrink-0 p-1.5 rounded-lg transition-colors {isPreview ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'} disabled:opacity-30 disabled:hover:bg-transparent"
+									title={isPreview ? 'Previewing as this recipient' : 'Preview as this recipient'}
+								>
+									<Eye size={14} />
+								</button>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Template Selector (only in template mode, not editing) -->
+		{#if mode === 'template' && !isEditing}
+			<div class="bg-white rounded-xl p-4 mb-4">
+				<div class="flex items-center gap-3">
+					<span class="text-sm font-semibold text-gray-700">Template:</span>
+					<div class="relative flex-1 max-w-xs">
+						<select
+							bind:value={selectedTemplateId}
+							class="email-select w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
+						>
+							<option value="">Select a template...</option>
+							{#each templates as template}
+								<option value={template.id}>{template.name}{template.category === 'system' ? ' (System)' : ''}</option>
+							{/each}
+						</select>
+						<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+					</div>
+					{#if selectedTemplate}
+						<button onclick={startEditing} class="edit-btn px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 border">
+							<Pencil size={14} />
+							Edit
+						</button>
+					{/if}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Subject Line -->
+		<div class="bg-white rounded-t-xl border-b border-gray-200 p-4">
+			<div class="flex items-center gap-3">
+				<span class="text-sm font-semibold text-gray-700 w-16">Subject:</span>
+				{#if isEditing}
+					{#if mode === 'quick'}
+						<input type="text" bind:value={quickSubject} placeholder="Enter subject..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+					{:else}
+						<input type="text" bind:value={editedSubject} placeholder="Enter subject..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+					{/if}
+				{:else}
+					<span class="flex-1 text-sm text-gray-900">
+						{previewRecipient ? substituteVariables(selectedTemplate?.subject_template || '', previewRecipient) : (selectedTemplate?.subject_template || 'Select a template...')}
+					</span>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Email Body Area -->
+		{#if isEditing}
+			<!-- Edit Mode: Full EmailBodyEditor with sidebar toolbar -->
+			<div class="bg-white rounded-b-xl">
+				<EmailBodyEditor
+					value={mode === 'quick' ? quickBody : editedBody}
+					onchange={handleBodyChange}
+					placeholder="Write your email message..."
+					courseName={course?.name}
+					logoUrl={course?.logo_url}
+					accentDark={courseColors.accentDark}
+					{availableVariables}
+				/>
+			</div>
+		{:else}
+			<!-- Preview Mode: Show substituted values -->
+			{#if previewRecipient}
+				<div class="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center gap-2">
+					<Eye size={14} class="text-blue-500" />
+					<span class="text-sm text-blue-700">
+						Previewing as <span class="font-semibold">{previewRecipient.full_name}</span>
+					</span>
+					<span class="text-xs text-blue-500">({previewRecipient.email})</span>
+				</div>
+			{/if}
+			<EmailPreviewFrame
+				courseName={course?.name}
+				logoUrl={course?.logo_url}
+				accentDark={courseColors.accentDark}
+			>
+				<div class="p-6 prose prose-sm max-w-none min-h-[200px]">
+					{#if selectedTemplate?.body_template && previewRecipient}
+						{@html substituteVariables(selectedTemplate.body_template, previewRecipient).replace(/\n/g, '<br>')}
+					{:else if selectedTemplate?.body_template}
+						{@html selectedTemplate.body_template.replace(/\n/g, '<br>')}
+					{:else}
+						<p class="text-gray-400 italic">Select a template to preview content...</p>
+					{/if}
+				</div>
+			</EmailPreviewFrame>
+		{/if}
+
+		<!-- Actions Bar -->
+		<div class="bg-white rounded-b-xl p-4 mt-0 border-t border-gray-200">
+			<div class="flex items-center justify-between">
+				<!-- Left: Edit actions or Test email -->
+				<div class="flex items-center gap-2">
+					{#if isEditing && mode === 'template'}
+						<button onclick={cancelEditing} class="px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+							Cancel
+						</button>
+						<button onclick={saveToTemplate} disabled={sending} class="save-btn px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-1.5 text-white disabled:opacity-50">
+							<Save size={14} />
+							Save Template
+						</button>
+					{:else}
+						<!-- Test Email -->
+						{#if showTestInput}
+							<input type="email" bind:value={testEmail} placeholder="test@example.com" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
+							<button onclick={handleSendTest} disabled={sendingTest || !testEmail} class="test-send-btn px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-1 disabled:opacity-50">
+								{#if sendingTest}<Loader2 size={14} class="animate-spin" />{:else}<TestTube size={14} />{/if}
+								Send
+							</button>
+							<button onclick={() => { showTestInput = false; testEmail = ''; }} class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+								<X size={14} />
+							</button>
+						{:else}
+							<button onclick={() => showTestInput = true} disabled={!getCurrentSubject() || !getCurrentBody()} class="test-btn px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-2 border disabled:opacity-50">
+								<TestTube size={14} />
+								Send Test
+							</button>
+						{/if}
+					{/if}
+				</div>
+
+				<!-- Right: Send Button -->
+				<button
+					onclick={handleSend}
+					disabled={sending || enabledRecipients.length === 0 || !getCurrentSubject() || !getCurrentBody()}
+					class="send-btn px-5 py-2.5 text-sm font-semibold rounded-lg flex items-center gap-2 disabled:opacity-50"
+				>
+					{#if sending}
+						<Loader2 size={16} class="animate-spin" />
+						Sending...
+					{:else}
+						<Send size={16} />
+						Send to {enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}
+					{/if}
+				</button>
+			</div>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.email-select:focus {
+		--tw-ring-color: var(--course-accent-light);
+		border-color: var(--course-accent-light);
+	}
+
+	.edit-btn {
+		color: var(--course-accent-dark);
+		border-color: var(--course-accent-light);
+	}
+	.edit-btn:hover {
+		background-color: color-mix(in srgb, var(--course-accent-light) 15%, white);
+	}
+
+	.save-btn {
+		background-color: var(--course-accent-dark);
+	}
+	.save-btn:hover:not(:disabled) {
+		background-color: var(--course-accent-darkest);
+	}
+
+	.test-btn {
+		color: var(--course-accent-dark);
+		border-color: var(--course-accent-light);
+	}
+	.test-btn:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--course-accent-light) 15%, white);
+	}
+
+	.test-send-btn {
+		background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);
+		color: var(--course-accent-darkest);
+	}
+	.test-send-btn:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--course-accent-light) 50%, white);
+	}
+
+	.send-btn {
+		background-color: var(--course-accent-light);
+		color: var(--course-accent-darkest);
+	}
+	.send-btn:hover:not(:disabled) {
+		background-color: var(--course-accent-dark);
+		color: white;
+	}
+</style>

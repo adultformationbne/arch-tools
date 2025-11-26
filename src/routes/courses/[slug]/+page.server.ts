@@ -127,6 +127,24 @@ export const load: PageServerLoad = async (event) => {
 	const currentSessionMaterials = materialsBySession[currentSession] || [];
 	const currentSessionInfo = sessionsByNumber[currentSession];
 
+	// Check if user can see coordinator-only materials
+	const userRole = enrollment.role || 'student';
+	const canSeeCoordinatorMaterials = userRole === 'coordinator' || userRole === 'admin';
+
+	// Filter materials based on coordinator_only flag and user role
+	const filterMaterials = (materialsList: any[]) => {
+		return materialsList
+			.filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials)
+			.map((m) => ({
+				id: m.id,
+				type: m.type,
+				title: m.title,
+				content: m.content,
+				url: m.content,
+				viewable: true
+			}));
+	};
+
 	let currentSessionData;
 	if (currentSession === 0) {
 		// Week 0 (Pre-start)
@@ -139,14 +157,7 @@ export const load: PageServerLoad = async (event) => {
 			sessionOverview:
 				sessionInfo?.description ||
 				`This course begins on ${new Date(enrollment.cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Review the materials below to prepare for Session 1.`,
-			materials: sessionMaterials.map((m) => ({
-				id: m.id,
-				type: m.type,
-				title: m.title,
-				content: m.content,
-				url: m.content,
-				viewable: true
-			})),
+			materials: filterMaterials(sessionMaterials),
 			reflectionQuestion: null,
 			reflectionStatus: null,
 			isUpcoming: true
@@ -158,8 +169,8 @@ export const load: PageServerLoad = async (event) => {
 		// Get reflection status for current session
 		let reflectionStatus = null;
 		if (reflectionQuestion) {
-			const existingResponse = responsesWithSessionNum.find(
-				(r) => r.session_number === currentSession
+			const existingResponse = responses.find(
+				(r) => r.question?.session?.session_number === currentSession
 			);
 			reflectionStatus = existingResponse ? existingResponse.status : 'not_started';
 		}
@@ -169,14 +180,7 @@ export const load: PageServerLoad = async (event) => {
 			sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
 			sessionOverview:
 				currentSessionInfo?.description || `Session ${currentSession} content and materials`,
-			materials: currentSessionMaterials.map((m) => ({
-				id: m.id,
-				type: m.type,
-				title: m.title,
-				content: m.content,
-				url: m.content,
-				viewable: true
-			})),
+			materials: filterMaterials(currentSessionMaterials),
 			reflectionQuestion,
 			reflectionStatus,
 			isUpcoming: false
@@ -201,26 +205,64 @@ export const load: PageServerLoad = async (event) => {
 	};
 
 	// Format hub data if available
+	const cohortCurrentSession = enrollment.cohort.current_session;
+	// Check if current session has a reflection question
+	const currentSessionHasQuestion = !!questionsBySession[cohortCurrentSession];
+
 	const formattedHubData = hubData
 		? {
 				hubName: hubData.hub.name,
 				hubLocation: hubData.hub.location,
 				coordinatorName: enrollment.user_profile?.full_name || enrollment.full_name,
-				currentSession: enrollment.cohort.current_session,
-				students: hubData.students.map((student) => ({
-					id: student.id,
-					name: student.user_profile?.full_name || student.full_name || student.email,
-					email: student.email,
-					currentSession: student.current_session,
-					reflectionStatus: 'not_started', // TODO: fetch from responses
-					attendanceStatus: null // TODO: fetch from attendance
-				}))
+				currentSession: cohortCurrentSession,
+				students: hubData.students.map((student) => {
+					// If no reflection question for this session, show null
+					if (!currentSessionHasQuestion) {
+						return {
+							id: student.id,
+							name: student.user_profile?.full_name || student.full_name || student.email,
+							email: student.email,
+							currentSession: student.current_session,
+							reflectionStatus: null, // No reflection required for this session
+							attendanceStatus: null
+						};
+					}
+
+					// Find reflection response for cohort's current session
+					const studentResponses = student.courses_reflection_responses || [];
+					const currentSessionResponse = studentResponses.find(
+						(r: any) => r.question?.session?.session_number === cohortCurrentSession
+					);
+
+					// Determine reflection status
+					let reflectionStatus = 'not_started';
+					if (currentSessionResponse) {
+						reflectionStatus = currentSessionResponse.status || 'submitted';
+					}
+
+					return {
+						id: student.id,
+						name: student.user_profile?.full_name || student.full_name || student.email,
+						email: student.email,
+						currentSession: student.current_session,
+						reflectionStatus,
+						attendanceStatus: null // TODO: fetch from attendance
+					};
+				})
 			}
 		: null;
 
+	// Filter materialsBySession for coordinator-only materials
+	const filteredMaterialsBySession = Object.fromEntries(
+		Object.entries(materialsBySession).map(([sessionNum, mats]) => [
+			sessionNum,
+			(mats as any[]).filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials)
+		])
+	);
+
 	return {
-		materials,
-		materialsBySession,
+		materials: materials.filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials),
+		materialsBySession: filteredMaterialsBySession,
 		currentSession,
 		courseData,
 		questionsBySession,

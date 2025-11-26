@@ -4,7 +4,6 @@
 	import StarterKit from '@tiptap/starter-kit';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Link from '@tiptap/extension-link';
-	import BubbleMenu from '@tiptap/extension-bubble-menu';
 	import { Node, mergeAttributes } from '@tiptap/core';
 	import {
 		Bold,
@@ -30,11 +29,11 @@
 		hideVariablePicker = false,
 		showFixedToolbar = false,
 		verticalToolbar = false,
-		editor = $bindable()
+		editor = $bindable(),
+		hasSelection = $bindable(false)
 	} = $props();
 
 	let editorElement;
-	let bubbleMenuElement;
 	let showVariableMenu = $state(false);
 	let variableMenuButton;
 
@@ -50,6 +49,41 @@
 	let currentButtonUrl = $state('');
 	let editingButtonPos = $state(null);
 	let buttonAnchorElement = $state(null);
+
+	// Track the last value we set to avoid unnecessary updates
+	let lastSetValue = '';
+
+	// Process value to convert {{variable}} syntax to Variable nodes
+	function processValueForEditor(rawValue) {
+		if (!rawValue) return '';
+
+		let content = rawValue;
+		const hasHtmlTags = /<[^>]+>/.test(content);
+
+		if (!hasHtmlTags) {
+			// Plain text - convert to HTML preserving line breaks
+			const blocks = content.split(/\n\n+/);
+			let htmlParts = [];
+
+			for (const block of blocks) {
+				if (block.trim()) {
+					const lineContent = block.replace(/\n/g, '<br>');
+					htmlParts.push(`<p>${lineContent}</p>`);
+				} else {
+					htmlParts.push('<p></p>');
+				}
+			}
+
+			content = htmlParts.join('');
+		}
+
+		// Replace {{variable}} syntax with proper variable span tags
+		content = content.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+			return `<span data-type="variable" data-id="${varName}" data-label="${varName}" class="variable-pill">${varName}</span>`;
+		});
+
+		return content;
+	}
 
 	// Custom Variable Node Extension - Renders as pills
 	const Variable = Node.create({
@@ -248,36 +282,8 @@
 
 	onMount(() => {
 		// Convert existing {{variable}} syntax to Variable nodes on load
-		let initialContent = value;
-		if (initialContent) {
-			// First, check if it's already HTML
-			const hasHtmlTags = /<[^>]+>/.test(initialContent);
-
-			if (!hasHtmlTags) {
-				// Plain text - convert to HTML preserving line breaks
-				// Split by double newlines for paragraphs, single newlines for <br>
-				const blocks = initialContent.split(/\n\n+/);
-				let htmlParts = [];
-
-				for (const block of blocks) {
-					if (block.trim()) {
-						// Replace single newlines with <br>
-						const lineContent = block.replace(/\n/g, '<br>');
-						htmlParts.push(`<p>${lineContent}</p>`);
-					} else {
-						htmlParts.push('<p></p>'); // Empty paragraph
-					}
-				}
-
-				initialContent = htmlParts.join('');
-			}
-
-			// Now replace {{variable}} syntax with proper variable span tags
-			// TipTap will parse these and convert to Variable nodes
-			initialContent = initialContent.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
-				return `<span data-type="variable" data-id="${varName}" data-label="${varName}" class="variable-pill">${varName}</span>`;
-			});
-		}
+		const initialContent = processValueForEditor(value);
+		lastSetValue = value;
 
 		editor = new Editor({
 			element: editorElement,
@@ -301,13 +307,6 @@
 				}).configure({
 					openOnClick: false
 				}),
-				BubbleMenu.configure({
-					element: bubbleMenuElement,
-					tippyOptions: {
-						duration: 100,
-						placement: 'top'
-					}
-				}),
 				Variable,
 				EmailButton,
 				EmailDivider
@@ -315,6 +314,11 @@
 			content: initialContent,
 			onTransaction: () => {
 				editor = editor;
+			},
+			onSelectionUpdate: ({ editor }) => {
+				// Track if there's a text selection for toolbar highlighting
+				const { from, to } = editor.state.selection;
+				hasSelection = from !== to;
 			},
 			onUpdate: ({ editor }) => {
 				// Convert variable nodes back to {{syntax}} for storage
@@ -515,8 +519,34 @@
 		}
 	});
 
+	// Sync editor content when value prop changes
+	$effect(() => {
+		if (!editor) return;
+
+		// Get the current output (with {{variable}} syntax)
+		const currentOutput = (() => {
+			let html = editor.getHTML();
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(html, 'text/html');
+			const variables = doc.querySelectorAll('[data-type="variable"]');
+			variables.forEach((varElement) => {
+				const id = varElement.getAttribute('data-id');
+				const textNode = document.createTextNode(`{{${id}}}`);
+				varElement.replaceWith(textNode);
+			});
+			return doc.body.innerHTML;
+		})();
+
+		// Only update if the value is actually different from what we have
+		if (value !== currentOutput && value !== lastSetValue) {
+			lastSetValue = value;
+			const processedContent = processValueForEditor(value);
+			editor.commands.setContent(processedContent, false);
+		}
+	});
+
 	// Group variables by category
-	const variablesByCategory = $derived(() => {
+	const variablesByCategory = $derived.by(() => {
 		return availableVariables.reduce((acc, v) => {
 			if (!acc[v.category]) acc[v.category] = [];
 			acc[v.category].push(v);
@@ -650,89 +680,6 @@
 			</button>
 		</div>
 	{/if}
-
-	<!-- Floating Bubble Menu (appears on text selection) -->
-	<div bind:this={bubbleMenuElement} class="bubble-menu">
-		<div class="flex items-center gap-0.5 bg-gray-900 rounded-lg shadow-2xl p-1">
-			<!-- Text formatting -->
-			<button
-				type="button"
-				onclick={toggleBold}
-				class="p-2 hover:bg-gray-700 rounded transition-colors text-white"
-				title="Bold"
-			>
-				<Bold size={16} />
-			</button>
-			<button
-				type="button"
-				onclick={toggleItalic}
-				class="p-2 hover:bg-gray-700 rounded transition-colors text-white"
-				title="Italic"
-			>
-				<Italic size={16} />
-			</button>
-
-			<div class="w-px h-6 bg-gray-600 mx-1"></div>
-
-			<!-- Headings -->
-			<button
-				type="button"
-				onclick={() => setHeading(1)}
-				class="px-2.5 py-2 hover:bg-gray-700 rounded transition-colors text-white text-xs font-semibold"
-				title="Heading 1"
-			>
-				H1
-			</button>
-			<button
-				type="button"
-				onclick={() => setHeading(2)}
-				class="px-2.5 py-2 hover:bg-gray-700 rounded transition-colors text-white text-xs font-semibold"
-				title="Heading 2"
-			>
-				H2
-			</button>
-			<button
-				type="button"
-				onclick={() => setHeading(3)}
-				class="px-2.5 py-2 hover:bg-gray-700 rounded transition-colors text-white text-xs font-semibold"
-				title="Heading 3"
-			>
-				H3
-			</button>
-
-			<div class="w-px h-6 bg-gray-600 mx-1"></div>
-
-			<!-- Lists -->
-			<button
-				type="button"
-				onclick={toggleBulletList}
-				class="p-2 hover:bg-gray-700 rounded transition-colors text-white"
-				title="Bullet List"
-			>
-				<List size={16} />
-			</button>
-			<button
-				type="button"
-				onclick={toggleOrderedList}
-				class="p-2 hover:bg-gray-700 rounded transition-colors text-white"
-				title="Numbered List"
-			>
-				<ListOrdered size={16} />
-			</button>
-
-			<div class="w-px h-6 bg-gray-600 mx-1"></div>
-
-			<!-- Link -->
-			<button
-				type="button"
-				onclick={(e) => toggleLink(e.currentTarget)}
-				class="p-2 hover:bg-gray-700 rounded transition-colors text-white"
-				title="Add Link"
-			>
-				<Link2 size={16} />
-			</button>
-		</div>
-	</div>
 
 	<!-- Editor -->
 	<div bind:this={editorElement} class="bg-white min-h-[300px] cursor-text px-8 py-6"></div>
@@ -910,18 +857,6 @@
 
 	:global(.ProseMirror:focus) {
 		outline: none;
-	}
-
-	/* Bubble Menu Styling */
-	.bubble-menu {
-		visibility: hidden;
-		opacity: 0;
-		transition: opacity 0.2s ease, visibility 0.2s ease;
-	}
-
-	:global(.bubble-menu.is-active) {
-		visibility: visible;
-		opacity: 1;
 	}
 
 	/* Variable dropdown positioning */

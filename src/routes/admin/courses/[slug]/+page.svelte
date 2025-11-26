@@ -7,6 +7,7 @@
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import EmailCohortModal from '$lib/components/EmailCohortModal.svelte';
 	import {
 		getUserReflectionStatus,
 		formatUserReflectionStatus,
@@ -26,6 +27,9 @@
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
 	let showDeleteConfirm = $state(false);
+	let showEmailModal = $state(false);
+	let emailRecipients = $state([]);
+	let emailModalRef = $state(null);
 
 	// Participants state
 	let participants = $state([]);
@@ -35,6 +39,7 @@
 	let searchQuery = $state('');
 	let filterHub = $state('all');
 	let reflectionsByUser = $state(new Map());
+	let sessionsWithQuestions = $state([]);
 	let editingSession = $state(null);
 
 	// Get selected cohort from URL params
@@ -97,15 +102,26 @@
 	async function loadParticipants() {
 		if (!selectedCohortId) return;
 
+		// Use local lookup to avoid $derived reactivity issues
+		const currentCohort = cohorts.find(c => c.id === selectedCohortId);
+		if (!currentCohort) return;
+
 		loadingParticipants = true;
 		try {
-			const [enrollmentResponse, attendanceResponse, reflectionsData] = await Promise.all([
+			// Get module ID for fetching sessions with questions
+			const moduleId = currentCohort.module?.id || currentCohort.module_id;
+
+			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse] = await Promise.all([
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`).then(r => r.json()),
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${selectedCohortId}`).then(r => r.json()),
-				fetchReflectionsByCohort(selectedCohortId, courseSlug)
+				fetchReflectionsByCohort(selectedCohortId, courseSlug),
+				moduleId
+					? fetch(`/admin/courses/${courseSlug}/api?endpoint=sessions_with_questions&module_id=${moduleId}`).then(r => r.json())
+					: Promise.resolve({ success: true, data: [] })
 			]);
 
 			reflectionsByUser = reflectionsData;
+			sessionsWithQuestions = sessionsResponse.success ? sessionsResponse.data : [];
 
 			// Create attendance map
 			const attendanceMap = new Map();
@@ -120,13 +136,13 @@
 
 			participants = (enrollmentResponse.success ? enrollmentResponse.data : []).map(user => {
 				const userReflections = reflectionsByUser.get(user.auth_user_id) || [];
-				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session);
+				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session, sessionsWithQuestions);
 
 				return {
 					...user,
 					attendanceCount: attendanceMap.get(user.id) || 0,
 					reflectionStatus,
-					isBehind: selectedCohort && user.current_session < selectedCohort.current_session
+					isBehind: currentCohort && user.current_session < currentCohort.current_session
 				};
 			});
 		} catch (err) {
@@ -207,7 +223,9 @@
 	}
 
 	function handleEmailAll() {
-		toastWarning('Email all feature coming soon');
+		emailRecipients = participants;
+		showEmailModal = true;
+		emailModalRef?.open();
 	}
 
 	function handleExport() {
@@ -220,7 +238,9 @@
 
 	// Bulk actions
 	function handleEmailSelected() {
-		toastWarning(`Email ${selectedParticipants.size} participants - coming soon`);
+		emailRecipients = participants.filter(p => selectedParticipants.has(p.id));
+		showEmailModal = true;
+		emailModalRef?.open();
 	}
 
 	function handleAdvanceSelected() {
@@ -536,3 +556,14 @@
 	<p>Are you sure you want to remove {selectedParticipants.size} participant(s)?</p>
 	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
 </ConfirmationModal>
+
+<EmailCohortModal
+	bind:this={emailModalRef}
+	show={showEmailModal}
+	{courseSlug}
+	courseName={data.course?.name || ''}
+	cohort={selectedCohort}
+	recipients={emailRecipients}
+	onClose={() => showEmailModal = false}
+	onSent={() => selectedParticipants = new Set()}
+/>

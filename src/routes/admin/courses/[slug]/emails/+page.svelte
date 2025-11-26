@@ -3,18 +3,22 @@
 	import { goto } from '$app/navigation';
 	import EmailTreeSidebar from '$lib/components/EmailTreeSidebar.svelte';
 	import EmailTemplateEditor from '$lib/components/EmailTemplateEditor.svelte';
+	import SendEmailView from '$lib/components/SendEmailView.svelte';
 	import { Edit, Trash2 } from 'lucide-svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { apiDelete } from '$lib/utils/api-handler.js';
 
 	let { data } = $props();
 
-	// Get selected view from URL params (default to 'logs')
-	const selectedView = $derived($page.url.searchParams.get('view') || 'logs');
+	// Get selected view from URL params (default to 'send')
+	const selectedView = $derived($page.url.searchParams.get('view') || 'send');
+
+	// Get initial mode for SendEmailView
+	const initialMode = $derived($page.url.searchParams.get('mode') || 'choose');
 
 	// Find selected template if viewing one
 	const selectedTemplate = $derived.by(() => {
-		if (selectedView === 'logs' || selectedView === 'new') return null;
+		if (selectedView === 'logs' || selectedView === 'new' || selectedView === 'send') return null;
 		return [...(data.systemTemplates || []), ...(data.customTemplates || [])].find(
 			(t) => t.id === selectedView
 		);
@@ -71,7 +75,18 @@
 
 	<!-- Main Content Area -->
 	<div class="flex-1 overflow-y-auto">
-		{#if selectedView === 'logs'}
+		{#if selectedView === 'send'}
+			<!-- Send Email View -->
+			<SendEmailView
+				course={data.course}
+				courseSlug={data.courseSlug}
+				templates={data.allTemplates || []}
+				cohorts={data.cohorts || []}
+				hubs={data.hubs || []}
+				{initialMode}
+			/>
+
+		{:else if selectedView === 'logs'}
 			<!-- Email Logs View -->
 			<div class="p-8">
 				<h1 class="text-3xl font-bold text-white mb-2">Email Logs</h1>

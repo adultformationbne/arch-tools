@@ -24,6 +24,7 @@
 	let students = $state([]);
 	let hubs = $state([]);
 	let reflectionsByUser = $state(new Map()); // Map of user_id -> reflections array
+	let sessionsWithQuestions = $state([]); // Session numbers that have reflection questions
 	let loadingStudents = $state(false);
 	let editingStudent = $state(null);
 	let selectedStudents = $state(new Set());
@@ -68,16 +69,23 @@
 	async function loadStudents() {
 		loadingStudents = true;
 		try {
+			// Get module ID for fetching sessions with questions
+			const moduleId = cohort.module?.id || cohort.module_id;
+
 			// Fetch all data in parallel instead of sequentially
-			const [enrollmentResponse, attendanceResponse, reflectionsData] = await Promise.all([
+			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse] = await Promise.all([
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${cohort.id}`).then(r => r.json()),
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${cohort.id}`).then(r => r.json()),
-				fetchReflectionsByCohort(cohort.id, courseSlug)
+				fetchReflectionsByCohort(cohort.id, courseSlug),
+				moduleId
+					? fetch(`/admin/courses/${courseSlug}/api?endpoint=sessions_with_questions&module_id=${moduleId}`).then(r => r.json())
+					: Promise.resolve({ success: true, data: [] })
 			]);
 
 			const result = enrollmentResponse;
 			const attendanceResult = attendanceResponse;
 			reflectionsByUser = reflectionsData;
+			sessionsWithQuestions = sessionsResponse.success ? sessionsResponse.data : [];
 
 			// Create attendance map: enrollment_id -> attendance_count
 			const attendanceMap = new Map();
@@ -93,7 +101,7 @@
 			students = (result.success ? result.data : []).map(user => {
 				// Get reflection status for this student
 				const userReflections = reflectionsByUser.get(user.auth_user_id) || [];
-				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session);
+				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session, sessionsWithQuestions);
 
 				return {
 					...user,

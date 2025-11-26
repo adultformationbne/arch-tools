@@ -153,6 +153,16 @@ export const POST: RequestHandler = async (event) => {
 
 					emailSubject = rendered.subject;
 					emailBody = rendered.body.replace(/\n/g, '<br>'); // Convert newlines to <br>
+				} else if (subject && body_html) {
+					// Quick email - also do variable substitution
+					const rendered = renderTemplateForRecipient({
+						subjectTemplate: subject,
+						bodyTemplate: body_html,
+						variables
+					});
+
+					emailSubject = rendered.subject;
+					emailBody = rendered.body;
 				}
 
 				// Send email
