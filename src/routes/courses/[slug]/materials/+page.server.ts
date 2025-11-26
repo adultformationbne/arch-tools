@@ -38,11 +38,20 @@ export const load: PageServerLoad = async (event) => {
 		throw error(500, 'Failed to load materials');
 	}
 
-	// Group materials by session
-	const materialsBySession = groupMaterialsBySession(materials || []);
+	// Check if user can see coordinator-only materials
+	const userRole = enrollment.role || 'student';
+	const canSeeCoordinatorMaterials = userRole === 'coordinator' || userRole === 'admin';
+
+	// Filter materials based on coordinator_only flag
+	const filteredMaterials = (materials || []).filter(
+		(m) => !m.coordinator_only || canSeeCoordinatorMaterials
+	);
+
+	// Group filtered materials by session
+	const materialsBySession = groupMaterialsBySession(filteredMaterials);
 
 	return {
-		materials: materials || [],
+		materials: filteredMaterials,
 		materialsBySession,
 		currentSession,
 		courseName: enrollment.cohort.module.name || 'Course Materials'

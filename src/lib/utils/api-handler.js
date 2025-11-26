@@ -85,7 +85,8 @@ export async function apiRequest(url, options = {}, config = {}) {
 		const fetchOptions = {
 			...options,
 			headers,
-			signal: controller.signal
+			signal: controller.signal,
+			credentials: 'include' // Send cookies for auth
 		};
 
 		// Make the request
@@ -197,6 +198,28 @@ export async function apiPut(url, data, config = {}) {
 		{
 			loadingMessage: 'Updating...',
 			successMessage: 'Updated successfully',
+			...config
+		}
+	);
+}
+
+/**
+ * Convenience method for PATCH requests
+ * @param {string} url - The URL to fetch
+ * @param {Object} data - The data to send
+ * @param {Object} config - Configuration options
+ * @returns {Promise<any>} The response data
+ */
+export async function apiPatch(url, data, config = {}) {
+	return apiRequest(
+		url,
+		{
+			method: 'PATCH',
+			body: JSON.stringify(data)
+		},
+		{
+			loadingMessage: 'Processing...',
+			successMessage: 'Operation completed',
 			...config
 		}
 	);

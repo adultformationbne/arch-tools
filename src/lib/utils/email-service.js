@@ -15,6 +15,7 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { getPlatformSettings } from '$lib/server/supabase.js';
+import { generateEmailFromMjml } from '$lib/email/compiler.js';
 
 /**
  * Render email template by replacing {{variables}} with actual values
@@ -324,8 +325,6 @@ export function createBrandedEmailHtml({
 
 	// REFACTORED: Use MJML compiler for automatic Outlook compatibility
 	// and responsive design
-	const { generateEmailFromMjml } = require('$lib/email/compiler.js');
-
 	return generateEmailFromMjml({
 		bodyContent: content,
 		courseName,
@@ -365,17 +364,28 @@ export function createEmailButton(text, url, accentDark = '#334642') {
  * Get course email template from database
  * @param {Object} supabase Supabase client
  * @param {string} courseId Course UUID
- * @param {string} templateKey Template key (e.g., 'welcome_enrolled')
+ * @param {string|null} templateKey Template key (e.g., 'welcome_enrolled')
+ * @param {string|null} templateId Template UUID (alternative to templateKey)
  * @returns {Promise<Object|null>} Template data or null
  */
-export async function getCourseEmailTemplate(supabase, courseId, templateKey) {
-	const { data, error } = await supabase
+export async function getCourseEmailTemplate(supabase, courseId, templateKey, templateId = null) {
+	let query = supabase
 		.from('courses_email_templates')
 		.select('*')
 		.eq('course_id', courseId)
-		.eq('template_key', templateKey)
-		.eq('is_active', true)
-		.single();
+		.eq('is_active', true);
+
+	// Fetch by ID or by key
+	if (templateId) {
+		query = query.eq('id', templateId);
+	} else if (templateKey) {
+		query = query.eq('template_key', templateKey);
+	} else {
+		console.error('Either templateKey or templateId must be provided');
+		return null;
+	}
+
+	const { data, error } = await query.single();
 
 	if (error) {
 		console.error('Error fetching course email template:', error);
@@ -417,17 +427,17 @@ export function buildVariableContext({
 		email: enrollment.email || '',
 
 		// Course variables
-		courseName: course.name || '',
-		courseSlug: course.slug || '',
-		cohortName: cohort.name || '',
-		startDate: cohort.start_date
+		courseName: course?.name || '',
+		courseSlug: course?.slug || '',
+		cohortName: cohort?.name || '',
+		startDate: cohort?.start_date
 			? new Date(cohort.start_date).toLocaleDateString('en-US', {
 					year: 'numeric',
 					month: 'long',
 					day: 'numeric'
 				})
 			: '',
-		endDate: cohort.end_date
+		endDate: cohort?.end_date
 			? new Date(cohort.end_date).toLocaleDateString('en-US', {
 					year: 'numeric',
 					month: 'long',
@@ -436,15 +446,15 @@ export function buildVariableContext({
 			: '',
 
 		// Session variables
-		sessionNumber: session?.session_number || cohort.current_session || '',
+		sessionNumber: session?.session_number || cohort?.current_session || '',
 		sessionTitle: session?.title || '',
-		currentSession: cohort.current_session || '',
+		currentSession: cohort?.current_session || '',
 
 		// Link variables
-		loginLink: `${siteUrl}/courses/${course.slug}`,
-		dashboardLink: `${siteUrl}/courses/${course.slug}/dashboard`,
-		materialsLink: `${siteUrl}/courses/${course.slug}/materials`,
-		reflectionLink: `${siteUrl}/courses/${course.slug}/reflections`,
+		loginLink: `${siteUrl}/courses/${course?.slug || ''}`,
+		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}/dashboard`,
+		materialsLink: `${siteUrl}/courses/${course?.slug || ''}/materials`,
+		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,
 
 		// System variables
 		supportEmail: 'support@archdiocesanministries.org.au',

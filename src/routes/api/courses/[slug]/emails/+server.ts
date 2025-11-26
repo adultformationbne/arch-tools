@@ -2,6 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
+import {
+	restoreTemplateToDefault,
+	generateSystemTemplatesForCourse
+} from '$lib/server/course-email-templates';
 
 // GET /api/courses/[slug]/emails - List all templates for a course
 export const GET: RequestHandler = async (event) => {
@@ -297,6 +301,102 @@ export const DELETE: RequestHandler = async (event) => {
 		});
 	} catch (error) {
 		console.error('DELETE /api/courses/[slug]/emails error:', error);
+		return json(
+			{
+				error: error instanceof Error ? error.message : 'Internal server error'
+			},
+			{ status: 500 }
+		);
+	}
+};
+
+// PATCH /api/courses/[slug]/emails - Restore a system template to default or generate missing templates
+export const PATCH: RequestHandler = async (event) => {
+	try {
+		const { slug } = event.params;
+
+		// Auth check - require course admin
+		await requireCourseAdmin(event, slug);
+
+		// Get course
+		const { data: course, error: courseError } = await supabaseAdmin
+			.from('courses')
+			.select('id')
+			.eq('slug', slug)
+			.single();
+
+		if (courseError || !course) {
+			return json({ error: 'Course not found' }, { status: 404 });
+		}
+
+		// Parse request body
+		const body = await event.request.json();
+		const { action, template_key } = body;
+
+		if (action === 'restore_default') {
+			// Restore a specific template to its default content
+			if (!template_key) {
+				return json({ error: 'Missing required field: template_key' }, { status: 400 });
+			}
+
+			// Verify template exists and is a system template
+			const { data: template, error: fetchError } = await supabaseAdmin
+				.from('courses_email_templates')
+				.select('id, course_id, category, template_key')
+				.eq('course_id', course.id)
+				.eq('template_key', template_key)
+				.single();
+
+			if (fetchError || !template) {
+				return json({ error: 'Template not found' }, { status: 404 });
+			}
+
+			if (template.category !== 'system') {
+				return json(
+					{ error: 'Only system templates can be restored to default' },
+					{ status: 400 }
+				);
+			}
+
+			const result = await restoreTemplateToDefault(supabaseAdmin, course.id, template_key);
+
+			if (!result.success) {
+				return json({ error: result.error || 'Failed to restore template' }, { status: 500 });
+			}
+
+			// Fetch updated template
+			const { data: updatedTemplate } = await supabaseAdmin
+				.from('courses_email_templates')
+				.select('*')
+				.eq('course_id', course.id)
+				.eq('template_key', template_key)
+				.single();
+
+			return json({
+				success: true,
+				message: 'Template restored to default',
+				template: updatedTemplate
+			});
+		} else if (action === 'generate_missing') {
+			// Generate any missing system templates for this course
+			const result = await generateSystemTemplatesForCourse(supabaseAdmin, course.id);
+
+			if (!result.success) {
+				return json({ error: result.error || 'Failed to generate templates' }, { status: 500 });
+			}
+
+			return json({
+				success: true,
+				message: `Generated ${result.count} missing system templates`
+			});
+		} else {
+			return json(
+				{ error: 'Invalid action. Use "restore_default" or "generate_missing"' },
+				{ status: 400 }
+			);
+		}
+	} catch (error) {
+		console.error('PATCH /api/courses/[slug]/emails error:', error);
 		return json(
 			{
 				error: error instanceof Error ? error.message : 'Internal server error'

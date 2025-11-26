@@ -1,5 +1,5 @@
 <script>
-	import { X, Download, ChevronDown, ChevronRight, FileText, Play, Mic, Book } from 'lucide-svelte';
+	import { X, Download, ChevronDown, ChevronRight, FileText, Play, Mic, Book, Printer } from 'lucide-svelte';
 
 	let {
 		material = null,
@@ -7,6 +7,8 @@
 		currentSession = 8,
 		materialsBySession = {},
 		courseName = 'Course Materials',
+		courseTheme = {},
+		courseBranding = {},
 		onClose = () => {}
 	} = $props();
 
@@ -48,6 +50,82 @@
 		return match ? match[1] : null;
 	};
 
+	// Print native document with course branding
+	const handlePrint = () => {
+		if (!selectedMaterial || selectedMaterial.type !== 'native') return;
+
+		// Get theme colors with fallbacks
+		const accentColor = courseTheme.accentDark || '#334642';
+		const logoUrl = courseBranding.logoUrl || '';
+		const showLogo = courseBranding.showLogo !== false && logoUrl;
+
+		// Build CSS with color values injected
+		const printStyles = [
+			'@page { size: A4; margin: 15mm; }',
+			'* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }',
+			'html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
+			'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; background: white; }',
+			'.print-header { background-color: ' + accentColor + ' !important; background: ' + accentColor + ' !important; color: white !important; padding: 20px 24px; margin: -15mm -15mm 24px -15mm; display: flex; align-items: center; gap: 20px; }',
+			'.print-logo { height: 48px; width: auto; object-fit: contain; }',
+			'.print-header-text { flex: 1; }',
+			'.print-course-name { font-size: 12px; color: rgba(255,255,255,0.85) !important; font-weight: 500; margin: 0; text-transform: uppercase; letter-spacing: 1px; }',
+			'.print-document-title { font-size: 20px; font-weight: 700; color: white !important; margin: 4px 0 0 0; }',
+			'.print-content { padding: 0; }',
+			'.print-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.75rem 0; color: #111827; line-height: 1.3; }',
+			'.print-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem 0; color: #374151; line-height: 1.3; }',
+			'.print-content h3 { font-size: 1.125rem; font-weight: 600; margin: 0.75rem 0 0.5rem 0; color: #374151; }',
+			'.print-content p { font-size: 0.95rem; line-height: 1.7; margin: 0 0 0.75rem 0; color: #374151; }',
+			'.print-content ul, .print-content ol { margin: 0 0 0.75rem 1.25rem; padding: 0; }',
+			'.print-content li { font-size: 0.95rem; line-height: 1.7; margin-bottom: 0.35rem; color: #374151; }',
+			'.print-content strong { font-weight: 600; color: ' + accentColor + '; }',
+			'.print-content em { font-style: italic; }',
+			'.print-content blockquote { border-left: 3px solid ' + accentColor + ' !important; padding-left: 0.75rem; margin: 0.75rem 0; color: #6b7280; font-style: italic; }'
+		].join('\n');
+
+		// Build logo HTML
+		const logoHtml = showLogo
+			? '<img src="' + logoUrl + '" alt="Course Logo" class="print-logo" />'
+			: '';
+
+		// Build print document HTML (use array join to avoid PostCSS parsing)
+		const styleTag = ['<', 'style>', printStyles, '</', 'style>'].join('');
+		const printContent = [
+			'<!DOCTYPE html>',
+			'<html>',
+			'<head>',
+			'<meta charset="UTF-8">',
+			'<title>' + selectedMaterial.title + ' - ' + courseName + '</title>',
+			styleTag,
+			'</head>',
+			'<body>',
+			'<header class="print-header">',
+			logoHtml,
+			'<div class="print-header-text">',
+			'<p class="print-course-name">' + courseName + '</p>',
+			'<h1 class="print-document-title">' + selectedMaterial.title + '</h1>',
+			'</div>',
+			'</header>',
+			'<main class="print-content">',
+			selectedMaterial.content,
+			'</main>',
+			'</body>',
+			'</html>'
+		].join('\n');
+
+		// Open print window
+		const printWindow = window.open('', '_blank', 'width=800,height=600');
+		if (printWindow) {
+			printWindow.document.write(printContent);
+			printWindow.document.close();
+
+			// Wait for images to load before printing
+			printWindow.onload = () => {
+				setTimeout(() => {
+					printWindow.print();
+				}, 250);
+			};
+		}
+	};
 
 	// Initialize with current material if provided
 	$effect(() => {
@@ -84,7 +162,9 @@
 									{:else}
 										<ChevronRight size="16" class="text-gray-500" />
 									{/if}
-									<span class="font-semibold text-gray-800">Session {sessionNum}</span>
+									<span class="font-semibold text-gray-800">
+									{parseInt(sessionNum) === 0 ? 'Pre-Start' : `Session ${sessionNum}`}
+								</span>
 								</button>
 
 								<!-- Material List -->
@@ -217,16 +297,27 @@
 									<span>External link</span>
 								{/if}
 							</div>
-							{#if selectedMaterial.type === 'document' || selectedMaterial.type === 'link'}
-								<a
-									href={selectedMaterial.content}
-									target="_blank"
-									class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100"
-								>
-									<Download size="16" />
-									<span class="text-sm font-medium">Open</span>
-								</a>
-							{/if}
+							<div class="flex items-center gap-2">
+								{#if selectedMaterial.type === 'native'}
+									<button
+										onclick={handlePrint}
+										class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100"
+									>
+										<Printer size="16" />
+										<span class="text-sm font-medium">Print / Save PDF</span>
+									</button>
+								{/if}
+								{#if selectedMaterial.type === 'document' || selectedMaterial.type === 'link'}
+									<a
+										href={selectedMaterial.content}
+										target="_blank"
+										class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100"
+									>
+										<Download size="16" />
+										<span class="text-sm font-medium">Open</span>
+									</a>
+								{/if}
+							</div>
 						</div>
 					{/if}
 				</div>

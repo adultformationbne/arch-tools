@@ -1,8 +1,8 @@
 <script>
-	import { Save, Send, Zap, SquareMousePointer } from 'lucide-svelte';
-	import { apiPost, apiPut } from '$lib/utils/api-handler.js';
+	import { Save, Send, RotateCcw } from 'lucide-svelte';
+	import { apiPost, apiPut, apiPatch } from '$lib/utils/api-handler.js';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
-	import TipTapEmailEditor from './TipTapEmailEditor.svelte';
+	import EmailBodyEditor from './EmailBodyEditor.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -20,76 +20,69 @@
 		onCancel = () => {}
 	} = $props();
 
+	// Generate template_key from name (lowercase, underscores, no special chars)
+	function generateTemplateKey(name) {
+		return name
+			.toLowerCase()
+			.trim()
+			.replace(/[^a-z0-9\s]/g, '')
+			.replace(/\s+/g, '_');
+	}
+
 	// Form state
 	let formData = $state({
-		template_key: template?.template_key || '',
 		name: template?.name || '',
-		description: template?.description || '',
 		subject_template: template?.subject_template || '',
 		body_template: template?.body_template || '',
 		available_variables: template?.available_variables || []
 	});
 
+	// Auto-generate template_key from name for new templates
+	const template_key = $derived(template?.template_key || generateTemplateKey(formData.name));
+
 	let isSubmitting = $state(false);
 	let hasUnsavedChanges = $state(false);
+	let showTestEmailModal = $state(false);
+	let testEmail = $state('');
+	let isSendingTest = $state(false);
+	let showRestoreConfirm = $state(false);
+	let isRestoring = $state(false);
+
+	// Check if this is a system template (can be restored to default)
+	const isSystemTemplate = $derived(template?.category === 'system');
 
 	// Sync form data when template prop changes
 	$effect(() => {
-		formData.template_key = template?.template_key || '';
 		formData.name = template?.name || '';
-		formData.description = template?.description || '';
 		formData.subject_template = template?.subject_template || '';
 		formData.body_template = template?.body_template || '';
 		formData.available_variables = template?.available_variables || [];
 		hasUnsavedChanges = false;
 	});
-	let editorComponent;
-	let tiptapEditor;
-	let showTestEmailModal = $state(false);
-	let testEmail = $state('');
-	let isSendingTest = $state(false);
 
 	// Available variables
-	// dynamic: true = Only populated when triggered by specific context (e.g., session emails)
 	const availableVariables = [
-		// Student info (always available)
 		{ name: 'firstName', description: 'Student first name' },
 		{ name: 'lastName', description: 'Student last name' },
 		{ name: 'fullName', description: 'Student full name' },
 		{ name: 'email', description: 'Student email address' },
 		{ name: 'hubName', description: 'Student hub assignment' },
-
-		// Course/cohort info (always available)
 		{ name: 'courseName', description: 'Course name' },
 		{ name: 'courseSlug', description: 'Course URL identifier' },
 		{ name: 'cohortName', description: 'Cohort name' },
 		{ name: 'startDate', description: 'Cohort start date' },
 		{ name: 'endDate', description: 'Cohort end date' },
-
-		// Session variables (context-dependent - only when email triggered by session)
 		{ name: 'sessionNumber', description: 'Session number', dynamic: true },
 		{ name: 'sessionTitle', description: 'Session title', dynamic: true },
 		{ name: 'currentSession', description: 'Current cohort session', dynamic: true },
-
-		// Links (always available)
 		{ name: 'loginLink', description: 'Course login page' },
 		{ name: 'dashboardLink', description: 'Course dashboard' },
 		{ name: 'materialsLink', description: 'Course materials page' },
 		{ name: 'reflectionLink', description: 'Reflections page' },
-
-		// System (always available)
 		{ name: 'supportEmail', description: 'Support contact email' }
 	];
 
-	// Note: The editor provides a WYSIWYG preview of the email body.
-	// For the exact production preview with MJML compilation, use "Send Test Email".
-
 	async function handleSubmit() {
-		// Validation
-		if (!template && !formData.template_key.trim()) {
-			toastError('Template key is required');
-			return;
-		}
 		if (!formData.name.trim()) {
 			toastError('Template name is required');
 			return;
@@ -117,6 +110,7 @@
 		try {
 			const payload = {
 				...formData,
+				template_key,
 				course_id: courseId,
 				category: template?.category || 'custom',
 				available_variables: usedVariables
@@ -148,36 +142,12 @@
 		hasUnsavedChanges = true;
 	}
 
-	function handleInsertVariable(variableName) {
-		if (!tiptapEditor) return;
-
-		// Insert variable node directly using the editor
-		tiptapEditor
-			.chain()
-			.focus()
-			.insertContent([
-				{
-					type: 'variable',
-					attrs: {
-						id: variableName,
-						label: variableName
-					}
-				},
-				{
-					type: 'text',
-					text: ' '
-				}
-			])
-			.run();
-	}
-
 	async function handleSendTestEmail() {
 		if (!testEmail.trim()) {
 			toastError('Please enter an email address');
 			return;
 		}
 
-		// Basic email validation
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(testEmail.trim())) {
 			toastError('Please enter a valid email address');
@@ -197,9 +167,7 @@
 					logo_url: courseLogoUrl,
 					colors: courseColors
 				},
-				{
-					successMessage: `Test email sent to ${testEmail}`
-				}
+				{ successMessage: `Test email sent to ${testEmail}` }
 			);
 
 			showTestEmailModal = false;
@@ -210,43 +178,53 @@
 			isSendingTest = false;
 		}
 	}
+
+	async function handleRestoreToDefault() {
+		if (!template?.template_key) return;
+
+		isRestoring = true;
+
+		try {
+			const result = await apiPatch(
+				`/api/courses/${courseSlug}/emails`,
+				{
+					action: 'restore_default',
+					template_key: template.template_key
+				},
+				{ successMessage: 'Template restored to default' }
+			);
+
+			if (result?.template) {
+				// Update form data with restored values
+				formData.name = result.template.name;
+				formData.subject_template = result.template.subject_template;
+				formData.body_template = result.template.body_template;
+				formData.available_variables = result.template.available_variables;
+				hasUnsavedChanges = false;
+			}
+
+			showRestoreConfirm = false;
+			onSave(); // Notify parent to refresh
+		} catch (error) {
+			console.error('Error restoring template:', error);
+		} finally {
+			isRestoring = false;
+		}
+	}
 </script>
 
-<!-- Single unified view - Editor IS the preview -->
 <div class="max-w-4xl mx-auto space-y-6">
-	<!-- Template metadata (only for new templates) -->
+	<!-- Template name (only for new templates) -->
 	{#if !template}
-		<div class="grid grid-cols-3 gap-4">
-			<div>
-				<label class="block text-sm font-semibold text-gray-700 mb-1.5">Template Key</label>
-				<input
-					type="text"
-					bind:value={formData.template_key}
-					placeholder="welcome_email"
-					class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-				/>
-				<p class="text-xs text-gray-500 mt-1">Lowercase, underscores only</p>
-			</div>
-
-			<div>
-				<label class="block text-sm font-semibold text-gray-700 mb-1.5">Template Name</label>
-				<input
-					type="text"
-					bind:value={formData.name}
-					placeholder="Welcome Email"
-					class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-				/>
-			</div>
-
-			<div>
-				<label class="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
-				<input
-					type="text"
-					bind:value={formData.description}
-					placeholder="Sent when students first enroll"
-					class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-				/>
-			</div>
+		<div>
+			<label class="block text-sm font-semibold text-gray-700 mb-1.5">Template Name</label>
+			<input
+				type="text"
+				bind:value={formData.name}
+				oninput={() => (hasUnsavedChanges = true)}
+				placeholder="Welcome Email"
+				class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+			/>
 		</div>
 	{/if}
 
@@ -262,174 +240,18 @@
 		/>
 	</div>
 
-	<!-- Unified Email Preview/Editor -->
+	<!-- Email Body Editor (shared component) -->
 	<div>
-		<label class="block text-sm font-semibold text-gray-700 mb-3">
-			Email Body
-		</label>
-
-		<!-- Email client simulation background with toolbar on the side -->
-		<div class="bg-gray-100 rounded-xl p-8 flex justify-center gap-4">
-			<!-- Toolbar Outside -->
-			<div class="flex flex-col items-center gap-1 p-2 bg-gray-50 border border-gray-200 rounded-lg w-14 h-fit sticky top-8">
-				<!-- Toolbar buttons will be added here via a slot or directly -->
-				<button
-					type="button"
-					onclick={() => tiptapEditor?.chain().focus().toggleBold().run()}
-					class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-					title="Bold"
-				>
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
-					</button>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleItalic().run()}
-						class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-						title="Italic"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4h-9M14 20H5M15 4L9 20"/></svg>
-					</button>
-					<div class="w-full h-px bg-gray-300 my-1"></div>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().setParagraph().run()}
-						class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
-						title="Paragraph"
-					>
-						P
-					</button>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 1 }).run()}
-						class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
-						title="Heading 1"
-					>
-						H1
-					</button>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 2 }).run()}
-						class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
-						title="Heading 2"
-					>
-						H2
-					</button>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 3 }).run()}
-						class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
-						title="Heading 3"
-					>
-						H3
-					</button>
-					<div class="w-full h-px bg-gray-300 my-1"></div>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleBulletList().run()}
-						class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-						title="Bullet List"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-					</button>
-					<button
-						type="button"
-						onclick={() => tiptapEditor?.chain().focus().toggleOrderedList().run()}
-						class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-						title="Numbered List"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
-					</button>
-					<div class="w-full h-px bg-gray-300 my-1"></div>
-					<button
-						type="button"
-						onclick={(e) => editorComponent?.openLinkModal(e.currentTarget)}
-						class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-						title="Add Link"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-					</button>
-					<button
-						type="button"
-						onclick={(e) => editorComponent?.openButtonModal(e.currentTarget)}
-						class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-						title="Insert Button"
-					>
-						<SquareMousePointer size={18} />
-					</button>
-				</div>
-
-			<!-- Email preview wrapper with branded header/footer (600px max like real emails) -->
-			<div
-				class="w-full max-w-[600px] border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xl"
-			>
-				<!-- Email header with logo -->
-				<div
-					class="text-center py-12 px-8 flex items-center justify-center"
-					style="background-color: {courseColors.accentDark};"
-				>
-					{#if courseLogoUrl}
-						<img
-							src={courseLogoUrl}
-							alt="{courseName} logo"
-							class="h-24 w-auto object-contain max-w-[280px]"
-						/>
-					{:else}
-						<h1 class="text-3xl font-bold text-white tracking-tight">{courseName}</h1>
-					{/if}
-				</div>
-
-				<!-- Editable email body WITHOUT toolbar -->
-				<div class="bg-white">
-					<TipTapEmailEditor
-						bind:this={editorComponent}
-						bind:editor={tiptapEditor}
-						value={formData.body_template}
-						onchange={handleBodyChange}
-						placeholder="Click here to start writing..."
-						{availableVariables}
-						hideVariablePicker={true}
-						showFixedToolbar={false}
-						verticalToolbar={false}
-					/>
-				</div>
-
-				<!-- Email footer -->
-				<div class="text-center py-6 px-6" style="background-color: {courseColors.accentDark};">
-					<p class="text-white text-sm font-medium">{courseName}</p>
-					<p class="text-white/70 text-xs mt-1">
-						You're receiving this email because you're enrolled in this course.
-					</p>
-				</div>
-			</div>
-		</div>
-
-		<!-- Variable Pills OUTSIDE the email preview -->
-		<div class="mt-4 p-4 bg-white border border-gray-300 rounded-lg">
-			<p class="text-xs font-semibold text-gray-700 mb-3">
-				Click to insert variable
-				<span class="ml-2 text-gray-500 font-normal inline-flex items-center gap-1">
-					<Zap size={12} class="text-amber-500" /> = Context-dependent (only populated in specific emails)
-				</span>
-			</p>
-
-			<div class="flex flex-wrap gap-2">
-				{#each availableVariables as variable}
-					<button
-						type="button"
-						onclick={() => handleInsertVariable(variable.name)}
-						class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all hover:scale-105"
-						class:variable-picker-pill={!variable.dynamic}
-						class:variable-picker-pill-dynamic={variable.dynamic}
-						title={variable.description}
-					>
-						{#if variable.dynamic}
-							<Zap size={12} class="text-amber-500" />
-						{/if}
-						{variable.name}
-					</button>
-				{/each}
-			</div>
-		</div>
+		<label class="block text-sm font-semibold text-gray-700 mb-3">Email Body</label>
+		<EmailBodyEditor
+			value={formData.body_template}
+			onchange={handleBodyChange}
+			placeholder="Click here to start writing..."
+			{courseName}
+			logoUrl={courseLogoUrl}
+			accentDark={courseColors.accentDark}
+			{availableVariables}
+		/>
 	</div>
 
 	<!-- Save and Test Buttons -->
@@ -442,6 +264,17 @@
 			{/if}
 		</div>
 		<div class="flex items-center gap-3">
+			{#if isSystemTemplate}
+				<button
+					type="button"
+					onclick={() => (showRestoreConfirm = true)}
+					disabled={isRestoring}
+					class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-50"
+				>
+					<RotateCcw size={16} />
+					Restore Default
+				</button>
+			{/if}
 			<button
 				type="button"
 				onclick={() => (showTestEmailModal = true)}
@@ -471,6 +304,8 @@
 		onclick={(e) => {
 			if (e.target === e.currentTarget) showTestEmailModal = false;
 		}}
+		role="dialog"
+		aria-modal="true"
 	>
 		<div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" onclick={(e) => e.stopPropagation()}>
 			<div class="p-6 border-b border-gray-200">
@@ -522,30 +357,16 @@
 	</div>
 {/if}
 
-<style>
-	/* Variable picker pills - always available */
-	.variable-picker-pill {
-		background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-		color: #374151;
-		border: 1px solid #d1d5db;
-	}
-
-	.variable-picker-pill:hover {
-		background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
-		color: #6b21a8;
-		border-color: #a855f7;
-	}
-
-	/* Variable picker pills - context-dependent */
-	.variable-picker-pill-dynamic {
-		background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-		color: #78350f;
-		border: 1px solid #fbbf24;
-	}
-
-	.variable-picker-pill-dynamic:hover {
-		background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
-		color: #78350f;
-		border-color: #f59e0b;
-	}
-</style>
+<!-- Restore to Default Confirmation Modal -->
+<ConfirmationModal
+	show={showRestoreConfirm}
+	title="Restore to Default"
+	loading={isRestoring}
+	loadingMessage="Restoring template..."
+	confirmText="Restore Default"
+	onConfirm={handleRestoreToDefault}
+	onCancel={() => (showRestoreConfirm = false)}
+>
+	<p>This will reset the template to its original default content.</p>
+	<p><strong>Any customizations you've made will be lost.</strong></p>
+</ConfirmationModal>

@@ -1,6 +1,6 @@
 # Courses Platform Documentation
 
-**Last Updated:** November 17, 2025
+**Last Updated:** November 26, 2025
 **Status:** Production Implementation
 
 ---
@@ -48,13 +48,19 @@ Top-level course definitions with branding and settings.
 CREATE TABLE courses (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL,                    -- e.g., "Archdiocesan Center for Catholic Formation"
+  short_name TEXT,                       -- e.g., "ACCF" (for display)
   slug TEXT UNIQUE NOT NULL,             -- e.g., "accf" (used in URLs)
   description TEXT,
 
   -- Settings (JSONB)
   settings JSONB DEFAULT '{}',           -- Includes theme: { accentDark, accentLight, fontFamily }
                                          -- Includes branding: { logoUrl, showLogo }
+  email_branding_config JSONB,           -- Email-specific branding overrides
   metadata JSONB DEFAULT '{}',
+
+  -- Status
+  status TEXT DEFAULT 'active',          -- 'active', 'archived'
+  is_active BOOLEAN DEFAULT true,
 
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -111,6 +117,9 @@ CREATE TABLE courses_cohorts (
   -- Status
   status TEXT DEFAULT 'upcoming',        -- 'upcoming', 'active', 'completed'
 
+  -- Email preferences
+  email_preferences JSONB DEFAULT '{}',  -- Per-cohort email settings
+
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -160,10 +169,13 @@ CREATE TABLE courses_materials (
   session_id UUID NOT NULL REFERENCES courses_sessions(id) ON DELETE CASCADE,
 
   -- Material details
-  type TEXT NOT NULL,                    -- 'video', 'link', 'native'
+  type TEXT NOT NULL,                    -- 'video', 'link', 'native', 'document', 'image'
   title TEXT NOT NULL,
   content TEXT NOT NULL,                 -- URL or native HTML content
   display_order INTEGER DEFAULT 0,
+
+  -- Access control
+  coordinator_only BOOLEAN DEFAULT false, -- If true, only hub coordinators can see
 
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -175,19 +187,39 @@ CREATE TABLE courses_materials (
 - `link` - External resources (auto-detects file type: PDF, Word, Excel, images, etc.)
 - `native` - Rich HTML content created in platform editor
 
-#### `courses_reflections`
+#### `courses_sessions`
+Session metadata within a module.
+
+```sql
+CREATE TABLE courses_sessions (
+  id UUID PRIMARY KEY,
+  module_id UUID NOT NULL REFERENCES courses_modules(id) ON DELETE CASCADE,
+  session_number INTEGER NOT NULL,        -- 0 = pre-start, 1-8+ = regular sessions
+  title TEXT,                             -- e.g., "Faith and Reason"
+  description TEXT,                       -- Session overview
+  learning_objectives TEXT[],             -- Array of objectives
+  reflections_enabled BOOLEAN DEFAULT true, -- Whether this session has reflections
+
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_reflection_questions`
 Reflection prompts for each session.
 
 ```sql
-CREATE TABLE courses_reflections (
+CREATE TABLE courses_reflection_questions (
   id UUID PRIMARY KEY,
-  module_id UUID NOT NULL REFERENCES courses_modules(id) ON DELETE CASCADE,
-  session_number INTEGER NOT NULL,
-  prompt TEXT NOT NULL,
+  session_id UUID NOT NULL REFERENCES courses_sessions(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
 
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+**Note:** Not every session has a reflection question. The system tracks which sessions have questions via `CourseQueries.getSessionsWithReflectionQuestions()`.
 
 #### `courses_reflection_responses`
 Student responses to reflection prompts.
@@ -195,18 +227,149 @@ Student responses to reflection prompts.
 ```sql
 CREATE TABLE courses_reflection_responses (
   id UUID PRIMARY KEY,
-  reflection_id UUID NOT NULL REFERENCES courses_reflections(id) ON DELETE CASCADE,
   enrollment_id UUID NOT NULL REFERENCES courses_enrollments(id) ON DELETE CASCADE,
+  cohort_id UUID NOT NULL REFERENCES courses_cohorts(id) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES courses_reflection_questions(id) ON DELETE CASCADE,
 
-  response TEXT NOT NULL,
+  response_text TEXT NOT NULL,
+  is_public BOOLEAN DEFAULT false,        -- Whether visible to cohort members
+  status reflection_status NOT NULL,       -- Enum: 'submitted', 'under_review', 'passed', 'needs_revision'
 
   -- Grading
   marked_by UUID REFERENCES user_profiles(id),
-  passing BOOLEAN,
-  feedback TEXT,
   marked_at TIMESTAMPTZ,
+  feedback TEXT,
 
-  submitted_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Reflection Status Enum:**
+- `submitted` - Response submitted, awaiting review
+- `under_review` - Admin is currently reviewing
+- `passed` - Marked as passing
+- `needs_revision` - Requires student revision
+
+### Supporting Tables
+
+#### `courses_hubs`
+Hub groups for in-person meetings within a course.
+
+```sql
+CREATE TABLE courses_hubs (
+  id UUID PRIMARY KEY,
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,                     -- e.g., "St Mary's Cathedral Hub"
+  location TEXT,                          -- Physical location
+  coordinator_id UUID REFERENCES user_profiles(id), -- Hub coordinator
+
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_attendance`
+Attendance tracking for sessions.
+
+```sql
+CREATE TABLE courses_attendance (
+  id UUID PRIMARY KEY,
+  enrollment_id UUID NOT NULL REFERENCES courses_enrollments(id) ON DELETE CASCADE,
+  cohort_id UUID NOT NULL REFERENCES courses_cohorts(id) ON DELETE CASCADE,
+  session_number INTEGER NOT NULL,
+  present BOOLEAN NOT NULL,
+  attendance_type TEXT,                   -- 'in_person', 'online', 'excused'
+  notes TEXT,
+  marked_by UUID REFERENCES user_profiles(id),
+
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_email_templates`
+Email templates for course communications.
+
+```sql
+CREATE TABLE courses_email_templates (
+  id UUID PRIMARY KEY,
+  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+  template_key TEXT NOT NULL,             -- e.g., 'welcome_enrolled', 'session_advance'
+  name TEXT NOT NULL,                     -- Display name
+  description TEXT,
+  category TEXT,                          -- 'system', 'custom', 'automated'
+
+  -- Template content
+  subject_template TEXT NOT NULL,         -- Subject with {{variables}}
+  body_template TEXT NOT NULL,            -- HTML body with {{variables}}
+  available_variables JSONB,              -- List of supported variables
+
+  -- Automation
+  trigger_event TEXT,                     -- Event that triggers this email
+  is_active BOOLEAN DEFAULT true,
+  is_deletable BOOLEAN DEFAULT true,      -- System templates can't be deleted
+
+  created_by UUID REFERENCES user_profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_activity_log`
+Activity tracking for cohort events.
+
+```sql
+CREATE TABLE courses_activity_log (
+  id UUID PRIMARY KEY,
+  cohort_id UUID NOT NULL REFERENCES courses_cohorts(id) ON DELETE CASCADE,
+  enrollment_id UUID REFERENCES courses_enrollments(id),
+  activity_type TEXT NOT NULL,            -- 'reflection_submitted', 'session_advanced', etc.
+  actor_name TEXT,                        -- Who performed the action
+  description TEXT,
+  metadata JSONB,
+
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_community_feed`
+Community feed posts for cohort engagement.
+
+```sql
+CREATE TABLE courses_community_feed (
+  id UUID PRIMARY KEY,
+  cohort_id UUID NOT NULL REFERENCES courses_cohorts(id) ON DELETE CASCADE,
+  feed_type TEXT NOT NULL,                -- 'announcement', 'reflection', 'discussion'
+  title TEXT,
+  content TEXT NOT NULL,
+  author_id UUID REFERENCES user_profiles(id),
+  author_name TEXT,
+  session_number INTEGER,
+  reflection_response_id UUID REFERENCES courses_reflection_responses(id),
+  image_url TEXT,
+  pinned BOOLEAN DEFAULT false,
+  email_notification_sent BOOLEAN DEFAULT false,
+
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `courses_enrollment_imports`
+Tracking for bulk CSV imports.
+
+```sql
+CREATE TABLE courses_enrollment_imports (
+  id UUID PRIMARY KEY,
+  imported_by UUID REFERENCES user_profiles(id),
+  filename TEXT,
+  total_rows INTEGER,
+  successful_rows INTEGER,
+  error_rows INTEGER,
+  status TEXT,                            -- 'processing', 'completed', 'failed'
+
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
@@ -242,6 +405,29 @@ Stored in `courses_materials` table with reference to `session_id`:
 - **Native** (`type: 'native'`)
   - Rich HTML content created using the platform's WYSIWYG editor
   - Rendered directly on the page
+
+### Coordinator-Only Materials
+
+Materials can be marked as `coordinator_only: true` to restrict visibility:
+
+- **Students** - Cannot see coordinator-only materials
+- **Hub Coordinators** - Can see all materials including coordinator-only
+- **Admins** - Can see all materials
+
+**Use Cases:**
+- Hub meeting guides
+- Coordinator discussion points
+- Administrative resources
+- Session facilitation notes
+
+**Implementation:**
+```typescript
+// In +page.server.ts
+const canSeeCoordinatorMaterials = enrollment.role === 'coordinator' || enrollment.role === 'admin';
+
+const filterMaterials = (materials) =>
+  materials.filter(m => !m.coordinator_only || canSeeCoordinatorMaterials);
+```
 
 **Upload Documents:**
 - Use the "Upload Document" material type in the form
@@ -368,17 +554,22 @@ Courses can be created/edited at `/courses` (internal admin route) with:
 ├── dashboard                             # Student dashboard (current cohort info)
 ├── materials                             # Session materials (student view)
 ├── reflections                           # Student reflection submission
+├── write/[questionId]                    # Reflection writing page
 ├── profile                               # Course profile
 └── admin/                                # Admin-only routes (course admins)
     ├── (dashboard)                       # Cohort management dashboard
+    ├── courses/                          # Module & cohort management
     ├── modules/                          # Module CRUD (modals, no detail pages)
     ├── sessions/                         # Session editor (materials + reflections)
     │   └── ?module={id}                  # Optional: pre-select module
     ├── reflections/                      # Review student submissions
-    ├── users/                            # Participant management
+    ├── participants/                     # Participant management
     ├── enrollments/                      # Enrollment management
     ├── attendance/                       # Attendance tracking
-    └── hubs/                             # Hub management
+    ├── hubs/                             # Hub management
+    ├── emails/                           # Email template management
+    │   └── ?view={send|logs|templateId}  # View modes
+    └── settings/                         # Course settings
 ```
 
 ### Key Route Concepts
@@ -703,14 +894,26 @@ Components automatically use course theme:
 
 **Course Admin:**
 - `/src/routes/courses/[slug]/admin/+page.svelte` - Cohort dashboard
-- `/src/routes/courses/[slug]/admin/modules/+page.svelte` - Materials editor
+- `/src/routes/courses/[slug]/admin/sessions/+page.svelte` - Session & materials editor
 - `/src/routes/courses/[slug]/admin/reflections/+page.svelte` - Reflection marking
+- `/src/routes/courses/[slug]/admin/emails/+page.svelte` - Email management
+
+**Email System:**
+- `/src/lib/utils/email-service.js` - Email sending & templating
+- `/src/lib/email/compiler.js` - MJML email compiler
+- `/src/lib/components/EmailTemplateEditor.svelte` - Template editor
+- `/src/lib/components/SendEmailView.svelte` - Email composition UI
+- `/src/routes/api/courses/[slug]/emails/+server.ts` - Template CRUD API
+- `/src/routes/api/courses/[slug]/send-email/+server.ts` - Email sending API
 
 **Auth:**
 - `/src/lib/server/auth.ts` - Unified authentication helpers
 
 **Data Repository:**
 - `/src/lib/server/course-data.ts` - Centralized course data access layer
+
+**Reflection Status:**
+- `/src/lib/utils/reflection-status.js` - Status calculation utilities
 
 ---
 
@@ -986,6 +1189,275 @@ The repository makes these easy to add:
 
 ---
 
+## 📧 Email Template System
+
+The platform includes a comprehensive email system for course communications with course-branded templates, variable substitution, and logging.
+
+### Architecture
+
+```
+Email Flow:
+1. Select template (system or custom)
+2. Choose recipients (cohort, hub, individuals)
+3. Variables auto-populated from recipient/course data
+4. Email wrapped in course-branded HTML
+5. Sent via Resend API
+6. Logged to platform_email_log
+```
+
+### Key Files
+
+- **Service:** `$lib/utils/email-service.js` - Core email functions
+- **MJML Compiler:** `$lib/email/compiler.js` - Email HTML generation
+- **Admin UI:** `/admin/courses/[slug]/emails/+page.svelte` - Template management
+- **API:** `/api/courses/[slug]/emails/+server.ts` - Template CRUD
+- **Send API:** `/api/courses/[slug]/send-email/+server.ts` - Email sending
+
+### Template Variables
+
+Templates support `{{variable}}` syntax. Available variables:
+
+**Student Variables:**
+- `{{firstName}}`, `{{lastName}}`, `{{fullName}}` - Student name
+- `{{email}}` - Student email address
+
+**Course Variables:**
+- `{{courseName}}` - Full course name
+- `{{courseSlug}}` - URL slug
+- `{{cohortName}}` - Cohort name
+- `{{startDate}}`, `{{endDate}}` - Formatted dates
+
+**Session Variables:**
+- `{{sessionNumber}}` - Current session number
+- `{{sessionTitle}}` - Session title
+- `{{currentSession}}` - Cohort's current session
+
+**Link Variables:**
+- `{{loginLink}}` - Course login page
+- `{{dashboardLink}}` - Student dashboard
+- `{{materialsLink}}` - Materials page
+- `{{reflectionLink}}` - Reflections page
+
+**System Variables:**
+- `{{supportEmail}}` - Support email address
+- `{{hubName}}` - Student's hub name
+
+### Email Service Functions
+
+```typescript
+import {
+  sendEmail,
+  sendBulkEmails,
+  sendCourseEmail,
+  renderTemplate,
+  createBrandedEmailHtml,
+  buildVariableContext,
+  getCourseEmailTemplate
+} from '$lib/utils/email-service.js';
+
+// Send single course email
+await sendCourseEmail({
+  to: 'student@email.com',
+  subject: 'Welcome to {{courseName}}',
+  bodyHtml: '<p>Hi {{firstName}},</p><p>Welcome!</p>',
+  emailType: 'welcome',
+  course,
+  cohortId,
+  enrollmentId,
+  resendApiKey,
+  supabase
+});
+
+// Build variable context for a recipient
+const variables = buildVariableContext({
+  enrollment,
+  course,
+  cohort,
+  session,
+  siteUrl: 'https://archdiocesanministries.org.au'
+});
+
+// Render template with variables
+const { subject, body } = renderTemplateForRecipient({
+  subjectTemplate: 'Welcome to {{courseName}}',
+  bodyTemplate: '<p>Hi {{firstName}}</p>',
+  variables
+});
+```
+
+### System Templates
+
+Default templates seeded for each course:
+
+| Template Key | Purpose |
+|--------------|---------|
+| `welcome_enrolled` | New enrollment welcome |
+| `session_advance` | Session advancement notification |
+| `reflection_reminder` | Reminder to submit reflection |
+| `reflection_feedback` | Feedback on marked reflection |
+
+### Admin Email UI
+
+Located at `/admin/courses/[slug]/emails`:
+
+- **Send Email** - Compose and send to recipients
+- **Templates** - View/edit system and custom templates
+- **Email Logs** - View sent email history
+
+**Recipient Selection:**
+- All cohort members
+- By hub
+- Individual selection
+- Filter by status
+
+### Email Branding
+
+Emails automatically apply course theme:
+
+```typescript
+createBrandedEmailHtml({
+  content: renderedBody,
+  courseName: course.name,
+  accentDark: course.settings?.theme?.accentDark,
+  accentLight: course.settings?.theme?.accentLight,
+  logoUrl: course.settings?.branding?.logoUrl
+});
+```
+
+The email HTML is generated via MJML for cross-client compatibility (including Outlook).
+
+---
+
+## 📊 Reflection Status System
+
+The platform uses a centralized reflection status system to ensure consistent calculations across all views (admin, student dashboard, hub coordinator).
+
+### Key Principle: Sessions with Questions
+
+**Not every session has a reflection question.** The system only counts sessions that actually have reflection questions when calculating a student's reflection status.
+
+**Example:**
+- Module has sessions 1-9
+- Only sessions 1 and 2 have reflection questions
+- Student at session 5 should only have 2 expected reflections (not 5)
+
+### Architecture
+
+#### Source of Truth: `getSessionsWithReflectionQuestions()`
+
+```typescript
+// In CourseQueries ($lib/server/course-data.ts)
+async getSessionsWithReflectionQuestions(moduleId: string) {
+  // Returns array of session numbers that have questions: [1, 2]
+}
+```
+
+**API Endpoint:**
+```
+GET /admin/courses/{slug}/api?endpoint=sessions_with_questions&module_id={id}
+// Returns: { success: true, data: [1, 2] }
+```
+
+#### Status Calculator: `getUserReflectionStatus()`
+
+```typescript
+// In $lib/utils/reflection-status.js
+import { getUserReflectionStatus } from '$lib/utils/reflection-status.js';
+
+const status = getUserReflectionStatus(
+  reflections,           // Array of user's reflection responses
+  currentSession,        // User's current session number
+  sessionsWithQuestions  // Array of session numbers with questions [1, 2]
+);
+
+// Returns:
+// {
+//   status: 'all_caught_up' | 'not_submitted' | 'submitted' | 'needs_revision' | 'overdue',
+//   count: number,  // Number of reflections in this status
+//   details: { notSubmitted: 0, submitted: 1, needsRevision: 0, ... }
+// }
+```
+
+### Usage Locations
+
+| Location | How It Gets `sessionsWithQuestions` |
+|----------|-------------------------------------|
+| `/admin/courses/[slug]` | Fetches via API when loading participants |
+| `CohortManager.svelte` | Fetches via API using `cohort.module.id` |
+| `/courses/[slug]/reflections` | Server-side: loops only through `questionsBySession` |
+| `HubCoordinatorBar.svelte` | Server-side: checks `questionsBySession[currentSession]` |
+
+### Status Values
+
+**Individual Reflection Status (`ReflectionStatus`):**
+| Status | Description |
+|--------|-------------|
+| `NOT_SUBMITTED` | No response exists |
+| `SUBMITTED` | Response submitted, awaiting review |
+| `NEEDS_REVISION` | Marked as needing revision |
+| `OVERDUE` | Submitted but past due date |
+| `MARKED_PASS` | Passed review |
+| `MARKED_FAIL` | Failed review |
+
+**User Overall Status (`UserReflectionStatus`):**
+| Status | Description |
+|--------|-------------|
+| `ALL_CAUGHT_UP` | All required reflections submitted/passed |
+| `NOT_SUBMITTED` | Has unsubmitted reflections |
+| `SUBMITTED` | Has pending reflections awaiting review |
+| `NEEDS_REVISION` | Has reflections needing revision |
+| `OVERDUE` | Has overdue reflections |
+
+### Important Implementation Notes
+
+1. **Always fetch `sessionsWithQuestions`** when calculating status for admin views
+2. **Pass it to `getUserReflectionStatus()`** - don't assume all sessions have questions
+3. **Hub coordinator view** checks `questionsBySession[currentSession]` server-side to determine if reflection status should be shown
+4. **Student reflections page** already handles this correctly by looping through `questionsBySession`
+
+### Example: Admin Page Loading
+
+```typescript
+// In +page.svelte loadParticipants()
+const moduleId = currentCohort.module?.id;
+
+const [enrollmentResponse, sessionsResponse] = await Promise.all([
+  fetch(`/api?endpoint=courses_enrollments&cohort_id=${cohortId}`),
+  fetch(`/api?endpoint=sessions_with_questions&module_id=${moduleId}`)
+]);
+
+const sessionsWithQuestions = sessionsResponse.data; // [1, 2]
+
+participants = enrollments.map(user => {
+  const status = getUserReflectionStatus(
+    userReflections,
+    user.current_session,
+    sessionsWithQuestions  // Pass this!
+  );
+  return { ...user, reflectionStatus: status };
+});
+```
+
+### Hub Coordinator Reflection Status
+
+Hub coordinators see reflection status for students in their hub. This is calculated server-side:
+
+```typescript
+// In /courses/[slug]/+page.server.ts
+const currentSessionHasQuestion = !!questionsBySession[cohortCurrentSession];
+
+students.map(student => ({
+  ...student,
+  reflectionStatus: currentSessionHasQuestion
+    ? (studentResponse?.status || 'not_started')
+    : null  // null = no reflection required for this session
+}));
+```
+
+The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
+
+---
+
 ## 🚀 Future Enhancements
 
 ### Multi-Course User Experience
@@ -1122,4 +1594,4 @@ Upload files directly to Supabase Storage:
 
 ---
 
-*Last updated: November 17, 2025*
+*Last updated: November 26, 2025*

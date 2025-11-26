@@ -285,7 +285,7 @@ export const CourseQueries = {
 			.eq('id', hubId)
 			.single();
 
-		// Get students in the hub
+		// Get students in the hub with their reflection responses
 		const studentsQuery = supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
@@ -297,6 +297,16 @@ export const CourseQueries = {
 				user_profile:user_profile_id (
 					full_name,
 					email
+				),
+				courses_reflection_responses (
+					id,
+					status,
+					question:question_id (
+						id,
+						session:session_id (
+							session_number
+						)
+					)
 				)
 			`)
 			.eq('hub_id', hubId)
@@ -363,6 +373,28 @@ export const CourseQueries = {
 			`)
 			.eq('cohort_id', cohortId)
 			.order('created_at', { ascending: true });
+	},
+
+	/**
+	 * Get session numbers that have reflection questions for a module
+	 */
+	async getSessionsWithReflectionQuestions(moduleId: string) {
+		const { data, error } = await supabaseAdmin
+			.from('courses_sessions')
+			.select(`
+				session_number,
+				courses_reflection_questions!inner (id)
+			`)
+			.eq('module_id', moduleId)
+			.order('session_number', { ascending: true });
+
+		if (error) {
+			return { data: [], error };
+		}
+
+		// Extract just the session numbers
+		const sessionNumbers = (data || []).map((s) => s.session_number);
+		return { data: sessionNumbers, error: null };
 	},
 
 	/**
@@ -1653,6 +1685,7 @@ export const CourseMutations = {
 		title: string;
 		content: string;
 		displayOrder?: number;
+		coordinatorOnly?: boolean;
 	}) {
 		return supabaseAdmin
 			.from('courses_materials')
@@ -1661,7 +1694,8 @@ export const CourseMutations = {
 				type: params.type,
 				title: params.title,
 				content: params.content,
-				display_order: params.displayOrder || 0
+				display_order: params.displayOrder || 0,
+				coordinator_only: params.coordinatorOnly || false
 			})
 			.select()
 			.single();
@@ -1677,6 +1711,7 @@ export const CourseMutations = {
 			title?: string;
 			content?: string;
 			displayOrder?: number;
+			coordinatorOnly?: boolean;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -1685,6 +1720,7 @@ export const CourseMutations = {
 		if (updates.title) payload.title = updates.title;
 		if (updates.content) payload.content = updates.content;
 		if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
+		if (updates.coordinatorOnly !== undefined) payload.coordinator_only = updates.coordinatorOnly;
 
 		return supabaseAdmin
 			.from('courses_materials')

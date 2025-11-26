@@ -296,6 +296,29 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'update_student_session': {
+				if (data.sessionNumber < 0 || data.sessionNumber > 8) {
+					throw error(400, 'Invalid session number');
+				}
+
+				const result = await CourseMutations.updateEnrollment({
+					userId: data.enrollmentId,
+					updates: {
+						current_session: data.sessionNumber
+					}
+				});
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to update session');
+				}
+
+				return json({
+					success: true,
+					data: result.data,
+					message: 'Session updated successfully'
+				});
+			}
+
 			default:
 				throw error(400, 'Invalid action');
 		}
@@ -359,6 +382,25 @@ export const GET: RequestHandler = async (event) => {
 
 			if (result.error) {
 				throw error(500, result.error.message || 'Failed to fetch reflections');
+			}
+
+			return json({
+				success: true,
+				data: result.data || []
+			});
+		}
+
+		// Handle sessions_with_questions endpoint
+		if (endpoint === 'sessions_with_questions') {
+			const moduleId = url.searchParams.get('module_id');
+			if (!moduleId) {
+				throw error(400, 'module_id is required');
+			}
+
+			const result = await CourseQueries.getSessionsWithReflectionQuestions(moduleId);
+
+			if (result.error) {
+				throw error(500, result.error.message || 'Failed to fetch sessions with questions');
 			}
 
 			return json({

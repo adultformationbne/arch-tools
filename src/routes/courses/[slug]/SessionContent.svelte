@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Download, Edit3, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-svelte';
+	import { Play, FileText, Book, Edit3, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-svelte';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 
 	let {
@@ -10,7 +10,6 @@
 		materials,
 		currentSessionData,
 		onSessionChange,
-		onOpenMaterial,
 		totalSessions,
 		maxSessionNumber
 	} = $props();
@@ -210,13 +209,11 @@
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
-									<div
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group"
-										class:primary={index === 0}
-										class:hover:opacity-90={material.viewable}
-										class:cursor-not-allowed={!material.viewable}
+									<a
+										href="/courses/{courseSlug}/materials?material={material.id}"
+										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
+										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
-										onclick={() => onOpenMaterial(material)}
 									>
 										<div class="flex items-center gap-4">
 											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
@@ -224,14 +221,7 @@
 												{material.title}
 											</span>
 										</div>
-
-										<!-- Hover Download Icon (for non-viewable materials) -->
-										{#if !material.viewable}
-											<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-												<Download size="20" class="text-gray-600" />
-											</div>
-										{/if}
-									</div>
+									</a>
 								{/each}
 							</div>
 						</div>
@@ -407,13 +397,11 @@
 							<div class="space-y-4">
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
-									<div
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group"
-										class:primary={index === 0}
-										class:hover:opacity-90={material.viewable}
-										class:cursor-not-allowed={!material.viewable}
+									<a
+										href="/courses/{courseSlug}/materials?material={material.id}"
+										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
+										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
-										onclick={() => onOpenMaterial(material)}
 									>
 										<div class="flex items-center gap-4">
 											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
@@ -421,14 +409,7 @@
 												{material.title}
 											</span>
 										</div>
-
-										<!-- Hover Download Icon (for non-viewable materials) -->
-										{#if !material.viewable}
-											<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-												<Download size="20" class="text-gray-600" />
-											</div>
-										{/if}
-									</div>
+									</a>
 								{/each}
 							</div>
 						</div>
@@ -599,13 +580,11 @@
 							<div class="space-y-4">
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
-									<div
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group"
-										class:primary={index === 0}
-										class:hover:opacity-90={material.viewable}
-										class:cursor-not-allowed={!material.viewable}
+									<a
+										href="/courses/{courseSlug}/materials?material={material.id}"
+										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
+										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
-										onclick={() => onOpenMaterial(material)}
 									>
 										<div class="flex items-center gap-4">
 											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
@@ -613,14 +592,7 @@
 												{material.title}
 											</span>
 										</div>
-
-										<!-- Hover Download Icon (for non-viewable materials) -->
-										{#if !material.viewable}
-											<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-												<Download size="20" class="text-gray-600" />
-											</div>
-										{/if}
-									</div>
+									</a>
 								{/each}
 							</div>
 						</div>

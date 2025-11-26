@@ -1,7 +1,6 @@
 <script>
 	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
 	import SessionContent from './SessionContent.svelte';
-	import MaterialViewer from './MaterialViewer.svelte';
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
 	import ReflectionModal from './ReflectionModal.svelte';
@@ -16,8 +15,6 @@
 	// Students can only access sessions up to their current_session
 	// If current_session is 0 (not started), they can't access any sessions
 	let availableSessions = $state(initialSession);
-	let showMaterialViewer = $state(false);
-	let selectedMaterial = $state(null);
 	let showReflectionModal = $state(false);
 	let selectedReflection = $state(null);
 
@@ -44,18 +41,6 @@
 				reflectionStatus: 'not_started' // TODO: Get actual status
 			}
 		};
-	};
-
-	const openMaterial = (material) => {
-		if (material.viewable) {
-			selectedMaterial = material;
-			showMaterialViewer = true;
-		}
-	};
-
-	const closeMaterialViewer = () => {
-		showMaterialViewer = false;
-		selectedMaterial = null;
 	};
 
 	const openReflectionModal = (reflection) => {
@@ -92,24 +77,9 @@
 		materials={materials}
 		currentSessionData={currentSessionData}
 		onSessionChange={handleSessionChange}
-		onOpenMaterial={openMaterial}
 		totalSessions={totalSessions}
 		maxSessionNumber={maxSessionNumber}
 	/>
-
-	<!-- Material Viewer Component -->
-	<div class="pb-8">
-		<div class="max-w-7xl mx-auto">
-			<MaterialViewer
-				bind:isVisible={showMaterialViewer}
-				material={selectedMaterial}
-				currentSession={currentSession}
-				materialsBySession={materialsBySession}
-				courseName={courseData.title || 'Course Materials'}
-				onClose={closeMaterialViewer}
-			/>
-		</div>
-	</div>
 
 	<!-- Past Reflections Section -->
 	<div class="pb-16">

@@ -75,7 +75,7 @@ export const POST: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { session_id, type, title, content, display_order } = body;
+		const { session_id, type, title, content, display_order, coordinator_only } = body;
 
 		// Validate required fields
 		if (!session_id || !type || !title || !content) {
@@ -97,7 +97,8 @@ export const POST: RequestHandler = async (event) => {
 			type,
 			title,
 			content,
-			displayOrder: display_order
+			displayOrder: display_order,
+			coordinatorOnly: coordinator_only
 		});
 
 		if (error) {
@@ -118,7 +119,7 @@ export const PUT: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { id, type, title, content, display_order } = body;
+		const { id, type, title, content, display_order, coordinator_only } = body;
 
 		if (!id) {
 			return json({ error: 'Material id is required' }, { status: 400 });
@@ -138,7 +139,8 @@ export const PUT: RequestHandler = async (event) => {
 			type,
 			title,
 			content,
-			displayOrder: display_order
+			displayOrder: display_order,
+			coordinatorOnly: coordinator_only
 		});
 
 		if (error) {

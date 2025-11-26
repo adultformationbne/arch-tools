@@ -80,15 +80,37 @@ export function getReflectionStatus(reflection) {
  * Prioritizes the most urgent status across all reflections
  * @param {Array} reflections - Array of reflection response objects
  * @param {number} currentSession - Student's current session number
+ * @param {Array} sessionsWithQuestions - Array of session numbers that have reflection questions
  * @returns {Object} - { status: string, count: number, details: Object }
  */
-export function getUserReflectionStatus(reflections, currentSession) {
+export function getUserReflectionStatus(reflections, currentSession, sessionsWithQuestions = []) {
+	// Get sessions that have questions and are within the student's current progress
+	const applicableSessions = sessionsWithQuestions.length > 0
+		? sessionsWithQuestions.filter(s => s <= currentSession)
+		: [];
+
+	// If no sessions with questions, or no applicable sessions yet
+	if (applicableSessions.length === 0) {
+		return {
+			status: UserReflectionStatus.ALL_CAUGHT_UP.key,
+			count: 0,
+			details: {
+				notSubmitted: 0,
+				submitted: 0,
+				needsRevision: 0,
+				overdue: 0,
+				markedPass: 0,
+				markedFail: 0
+			}
+		};
+	}
+
 	if (!reflections || reflections.length === 0) {
 		return {
 			status: UserReflectionStatus.NOT_SUBMITTED.key,
-			count: currentSession,
+			count: applicableSessions.length,
 			details: {
-				notSubmitted: currentSession,
+				notSubmitted: applicableSessions.length,
 				submitted: 0,
 				needsRevision: 0,
 				overdue: 0,
@@ -117,8 +139,8 @@ export function getUserReflectionStatus(reflections, currentSession) {
 		}
 	});
 
-	// Check all sessions up to currentSession
-	for (let session = 1; session <= currentSession; session++) {
+	// Only check sessions that actually have reflection questions
+	for (const session of applicableSessions) {
 		const reflection = reflectionMap.get(session);
 		const status = getReflectionStatus(reflection);
 

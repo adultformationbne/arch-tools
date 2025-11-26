@@ -20,6 +20,7 @@
 	};
 
 	const getReflectionStatusLabel = (status) => {
+		if (status === null) return 'N/A';
 		switch (status) {
 			case 'submitted':
 			case 'under_review':
@@ -36,6 +37,7 @@
 	};
 
 	const getReflectionStatusClass = (status) => {
+		if (status === null) return 'bg-gray-50 text-gray-400';
 		switch (status) {
 			case 'submitted':
 			case 'under_review':

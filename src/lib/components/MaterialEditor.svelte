@@ -23,7 +23,8 @@
 		title: '',
 		url: '',
 		content: '',
-		description: ''
+		description: '',
+		coordinatorOnly: false
 	});
 
 	let showNativeEditor = $state(false);
@@ -203,7 +204,8 @@
 					type: newMaterial.type,
 					title: newMaterial.title,
 					content: content,
-					display_order: materials.length + 1
+					display_order: materials.length + 1,
+					coordinator_only: newMaterial.coordinatorOnly
 				})
 			});
 
@@ -218,12 +220,13 @@
 					url: material.type === 'native' ? '' : material.content,
 					content: material.type === 'native' ? material.content : '',
 					description: newMaterial.description,
-					order: material.display_order
+					order: material.display_order,
+					coordinatorOnly: material.coordinator_only || false
 				};
 
 				const updatedMaterials = [...materials, newMaterialForUI];
 				onMaterialsChange(updatedMaterials);
-				newMaterial = { type: 'video', title: '', url: '', content: '', description: '' };
+				newMaterial = { type: 'video', title: '', url: '', content: '', description: '', coordinatorOnly: false };
 				showNativeEditor = false;
 
 				onSaveStatusChange(false, 'Saved');
@@ -268,7 +271,8 @@
 					type: editingMaterial.type,
 					title: editingMaterial.title,
 					content: content,
-					display_order: editingMaterial.order
+					display_order: editingMaterial.order,
+					coordinator_only: editingMaterial.coordinatorOnly
 				})
 			});
 
@@ -283,7 +287,8 @@
 					url: material.type === 'native' ? '' : material.content,
 					content: material.type === 'native' ? material.content : '',
 					description: editingMaterial.description,
-					order: material.display_order
+					order: material.display_order,
+					coordinatorOnly: material.coordinator_only || false
 				};
 
 				const updatedMaterials = materials.map(m =>
@@ -564,6 +569,18 @@
 						></textarea>
 					</div>
 
+					<div class="mb-4">
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input
+								type="checkbox"
+								bind:checked={editingMaterial.coordinatorOnly}
+								class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+							/>
+							<span class="text-sm font-semibold text-gray-700">Hub Coordinator Only</span>
+							<span class="text-xs text-gray-500">(Only visible to coordinators and admins)</span>
+						</label>
+					</div>
+
 					<div class="flex gap-2">
 						<button
 							onclick={saveEditMaterial}
@@ -591,7 +608,14 @@
 								<MaterialIcon size="20" style="color: #c59a6b;" />
 							</div>
 							<div class="flex-1">
-								<h3 class="font-semibold text-gray-800">{material.title}</h3>
+								<div class="flex items-center gap-2">
+									<h3 class="font-semibold text-gray-800">{material.title}</h3>
+									{#if material.coordinatorOnly}
+										<span class="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+											Coordinator Only
+										</span>
+									{/if}
+								</div>
 								<p class="text-sm text-gray-600">
 									{#if material.type === 'native'}
 										Native content
@@ -766,6 +790,18 @@
 				class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent resize-none"
 				style="focus:ring-color: #c59a6b;"
 			></textarea>
+		</div>
+
+		<div class="mb-4">
+			<label class="flex items-center gap-2 cursor-pointer">
+				<input
+					type="checkbox"
+					bind:checked={newMaterial.coordinatorOnly}
+					class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+				/>
+				<span class="text-sm font-semibold text-gray-700">Hub Coordinator Only</span>
+				<span class="text-xs text-gray-500">(Only visible to coordinators and admins)</span>
+			</label>
 		</div>
 
 		<button

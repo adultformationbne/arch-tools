@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
+import { generateSystemTemplatesForCourse } from '$lib/server/course-email-templates';
 
 /**
  * GET - List all courses with module counts
@@ -85,6 +86,13 @@ export const POST: RequestHandler = async (event) => {
 		if (createError) {
 			console.error('Error creating course:', createError);
 			throw error(500, 'Failed to create course');
+		}
+
+		// Generate system email templates for the new course
+		const templateResult = await generateSystemTemplatesForCourse(supabaseAdmin, course.id);
+		if (!templateResult.success) {
+			console.warn('Failed to generate email templates for course:', templateResult.error);
+			// Don't fail course creation, just log the warning
 		}
 
 		return json({ course }, { status: 201 });

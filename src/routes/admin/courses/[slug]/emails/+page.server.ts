@@ -3,9 +3,9 @@ import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase';
 
 /**
- * Email Templates Management Page
+ * Email Management Page
  *
- * Loads email templates for course admin panel.
+ * Loads email templates, cohorts, hubs for course admin panel.
  * Auth is handled in parent layout (+layout.server.ts).
  */
 export const load: PageServerLoad = async (event) => {
@@ -19,53 +19,88 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404, 'Course not found');
 	}
 
-	// Get all email templates for this course
-	const { data: templates, error: templatesError } = await supabaseAdmin
-		.from('courses_email_templates')
-		.select('*')
-		.eq('course_id', courseInfo.id)
-		.eq('is_active', true)
-		.order('category', { ascending: true })
-		.order('name', { ascending: true });
+	// Run all queries in parallel for performance
+	const [templatesResult, logsResult, cohortsResult, hubsResult] = await Promise.all([
+		// Get all email templates for this course
+		supabaseAdmin
+			.from('courses_email_templates')
+			.select('*')
+			.eq('course_id', courseInfo.id)
+			.eq('is_active', true)
+			.order('category', { ascending: true })
+			.order('name', { ascending: true }),
 
-	if (templatesError) {
-		console.error('Error loading templates:', templatesError);
+		// Get email logs for this course (most recent first)
+		supabaseAdmin
+			.from('platform_email_log')
+			.select(
+				`
+				id,
+				recipient_email,
+				subject,
+				sent_at,
+				status,
+				error_message,
+				resend_id,
+				template_id,
+				cohort_id,
+				enrollment_id,
+				courses_email_templates!template_id (
+					name,
+					template_key
+				)
+			`
+			)
+			.eq('course_id', courseInfo.id)
+			.order('sent_at', { ascending: false })
+			.limit(100),
+
+		// Get cohorts for recipient filtering
+		supabaseAdmin
+			.from('courses_cohorts')
+			.select(`
+				id,
+				name,
+				current_session,
+				status,
+				courses_modules!inner (
+					id,
+					name,
+					course_id
+				)
+			`)
+			.eq('courses_modules.course_id', courseInfo.id)
+			.in('status', ['active', 'upcoming'])
+			.order('start_date', { ascending: false }),
+
+		// Get hubs for recipient filtering
+		supabaseAdmin
+			.from('courses_hubs')
+			.select('id, name')
+			.eq('course_id', courseInfo.id)
+			.order('name', { ascending: true })
+	]);
+
+	if (templatesResult.error) {
+		console.error('Error loading templates:', templatesResult.error);
 		throw error(500, 'Failed to load email templates');
 	}
 
-	// Separate system and custom templates
+	if (logsResult.error) {
+		console.error('Error loading email logs:', logsResult.error);
+	}
+
+	if (cohortsResult.error) {
+		console.error('Error loading cohorts:', cohortsResult.error);
+	}
+
+	if (hubsResult.error) {
+		console.error('Error loading hubs:', hubsResult.error);
+	}
+
+	const templates = templatesResult.data || [];
 	const systemTemplates = templates.filter((t) => t.category === 'system');
 	const customTemplates = templates.filter((t) => t.category === 'custom');
-
-	// Get email logs for this course (most recent first)
-	const { data: emailLogs, error: logsError } = await supabaseAdmin
-		.from('platform_email_log')
-		.select(
-			`
-			id,
-			recipient_email,
-			subject,
-			sent_at,
-			status,
-			error_message,
-			resend_id,
-			template_id,
-			cohort_id,
-			enrollment_id,
-			courses_email_templates!template_id (
-				name,
-				template_key
-			)
-		`
-		)
-		.eq('course_id', courseInfo.id)
-		.order('sent_at', { ascending: false })
-		.limit(100);
-
-	if (logsError) {
-		console.error('Error loading email logs:', logsError);
-		// Don't throw error for logs - just show empty
-	}
 
 	return {
 		course: {
@@ -81,6 +116,8 @@ export const load: PageServerLoad = async (event) => {
 		systemTemplates,
 		customTemplates,
 		allTemplates: templates,
-		emailLogs: emailLogs || []
+		emailLogs: logsResult.data || [],
+		cohorts: cohortsResult.data || [],
+		hubs: hubsResult.data || []
 	};
 };
