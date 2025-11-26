@@ -249,10 +249,18 @@ export const load: PageServerLoad = async (event) => {
 						(r: any) => r.question?.session?.session_number === cohortCurrentSession
 					);
 
-					// Determine reflection status
-					let reflectionStatus = 'not_started';
+					// Determine reflection status - map database values to display values
+					let reflectionStatus: string | null = 'not_started';
 					if (currentSessionResponse) {
-						reflectionStatus = currentSessionResponse.status || 'submitted';
+						const dbStatus = currentSessionResponse.status || 'submitted';
+						if (dbStatus === 'passed') {
+							reflectionStatus = 'completed';
+						} else if (dbStatus === 'needs_revision') {
+							reflectionStatus = 'needs_revision';
+						} else {
+							// 'submitted', 'under_review', 'resubmitted' -> in_progress
+							reflectionStatus = 'in_progress';
+						}
 					}
 
 					return {
