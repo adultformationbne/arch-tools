@@ -1,5 +1,6 @@
 <script>
 	import { X, Download, Share, ChevronLeft, ChevronRight, Star, User } from 'lucide-svelte';
+	import { needsReview } from '$lib/utils/reflection-status.js';
 
 	let {
 		reflection = null,
@@ -19,9 +20,8 @@
 
 	const getGradeColor = (grade) => {
 		if (!grade) return '';
-		if (grade.startsWith('A')) return 'text-green-700 bg-green-100 border-green-200';
-		if (grade.startsWith('B')) return 'text-blue-700 bg-blue-100 border-blue-200';
-		if (grade.startsWith('C')) return 'text-orange-700 bg-orange-100 border-orange-200';
+		if (grade === 'Pass') return 'text-green-700 bg-green-100 border-green-200';
+		if (grade === 'Needs Work') return 'text-orange-700 bg-orange-100 border-orange-200';
 		return 'text-gray-700 bg-gray-100 border-gray-200';
 	};
 
@@ -99,8 +99,8 @@
 				<div>
 					<h3 class="text-lg font-semibold text-gray-800 mb-3">Your Response</h3>
 					<div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
-						<div class="prose prose-lg max-w-none">
-							<p class="text-gray-800 leading-relaxed whitespace-pre-line">{reflection.response}</p>
+						<div class="prose prose-lg max-w-none text-gray-800 leading-relaxed">
+							{@html reflection.response}
 						</div>
 					</div>
 				</div>
@@ -137,15 +137,15 @@
 							</div>
 						</div>
 					</div>
-				{:else if reflection.status === 'in_review'}
+				{:else if needsReview(reflection.status)}
 					<div>
 						<h3 class="text-lg font-semibold text-gray-800 mb-3">Status</h3>
-						<div class="bg-orange-50 rounded-2xl p-6 border border-orange-200">
+						<div class="bg-blue-50 rounded-2xl p-6 border border-blue-200">
 							<div class="flex items-center gap-3">
-								<div class="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+								<div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
 								<div>
-									<p class="text-orange-800 font-medium">Your reflection is currently being reviewed</p>
-									<p class="text-orange-600 text-sm mt-1">Feedback will be available within 2-3 business days</p>
+									<p class="text-blue-800 font-medium">Your reflection is awaiting review</p>
+									<p class="text-blue-600 text-sm mt-1">Feedback will be available within 2-3 business days</p>
 								</div>
 							</div>
 						</div>

@@ -38,7 +38,64 @@ export async function POST({ request, locals }) {
 	}
 
 	try {
-		const contributorData = await request.json();
+		const body = await request.json();
+
+		// Check if this is a bulk import
+		if (body.action === 'bulk_import' && Array.isArray(body.contributors)) {
+			const contributors = body.contributors;
+			const results = { successful: 0, failed: 0, errors: [] };
+
+			// Get existing emails to check for duplicates
+			const { data: existingContributors } = await supabase
+				.from('dgr_contributors')
+				.select('email');
+
+			const existingEmails = new Set(
+				(existingContributors || []).map((c) => c.email.toLowerCase())
+			);
+
+			for (const contributor of contributors) {
+				// Skip if email already exists
+				if (existingEmails.has(contributor.email.toLowerCase())) {
+					results.failed++;
+					results.errors.push(`${contributor.email}: Already exists`);
+					continue;
+				}
+
+				// Generate access token
+				const access_token = crypto.randomUUID();
+
+				const { error } = await supabase.from('dgr_contributors').insert({
+					name: contributor.name,
+					email: contributor.email.toLowerCase(),
+					notes: contributor.notes || null,
+					schedule_pattern: contributor.schedule_pattern || null,
+					access_token,
+					active: true
+				});
+
+				if (error) {
+					results.failed++;
+					results.errors.push(`${contributor.email}: ${error.message}`);
+				} else {
+					results.successful++;
+					existingEmails.add(contributor.email.toLowerCase());
+				}
+			}
+
+			return json({
+				success: true,
+				results
+			});
+		}
+
+		// Single contributor creation (original behavior)
+		const contributorData = body;
+
+		// Generate access token if not provided
+		if (!contributorData.access_token) {
+			contributorData.access_token = crypto.randomUUID();
+		}
 
 		const { data, error } = await supabase
 			.from('dgr_contributors')

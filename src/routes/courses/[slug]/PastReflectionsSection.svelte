@@ -1,5 +1,7 @@
 <script>
-	import { Eye, Clock, CheckCircle, AlertCircle, ChevronRight, Star } from 'lucide-svelte';
+	import { Eye, ChevronRight, Star, Edit2, Circle } from 'lucide-svelte';
+	import { isComplete } from '$lib/utils/reflection-status';
+	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 
 	let {
 		reflections = [],
@@ -12,45 +14,20 @@
 	let visibleReflections = $state(reflectionsList.slice(0, 6)); // Show first 6
 	let showAll = $state(false);
 
-	const getStatusIcon = (status) => {
-		switch (status) {
-			case 'submitted': return Clock;
-			case 'passed': return CheckCircle;
-			case 'graded': return CheckCircle; // Legacy support
-			case 'draft': return AlertCircle;
-			case 'needs_revision': return AlertCircle;
-			case 'resubmitted': return Clock;
-			default: return AlertCircle;
-		}
-	};
-
-	const getStatusColor = (status) => {
-		switch (status) {
-			case 'submitted': return 'text-blue-600 bg-blue-100';
-			case 'passed': return 'text-green-700 bg-green-50';
-			case 'graded': return 'text-green-700 bg-green-50'; // Legacy support
-			case 'draft': return 'text-gray-600 bg-gray-100';
-			case 'needs_revision': return 'text-amber-700 bg-amber-50';
-			case 'resubmitted': return 'text-blue-600 bg-blue-100';
-			default: return 'text-gray-600 bg-gray-50';
-		}
-	};
-
-	const getStatusText = (status) => {
-		switch (status) {
-			case 'submitted': return 'Submitted';
-			case 'passed': return 'Feedback received';
-			case 'graded': return 'Feedback received'; // Legacy support
-			case 'draft': return 'Draft';
-			case 'needs_revision': return 'Needs revision';
-			case 'resubmitted': return 'Resubmitted';
-			default: return 'Pending';
-		}
+	// Strip HTML tags for plain text display (add space to preserve word boundaries)
+	const stripHtml = (html) => {
+		if (!html) return '';
+		return html
+			.replace(/<[^>]*>/g, ' ')  // Replace tags with space
+			.replace(/\s+/g, ' ')       // Collapse multiple spaces
+			.trim();
 	};
 
 	const truncateText = (text, maxLength = 120) => {
-		if (!text || text.length <= maxLength) return text;
-		return text.substring(0, maxLength) + '...';
+		// Strip HTML first, then truncate
+		const plainText = stripHtml(text);
+		if (!plainText || plainText.length <= maxLength) return plainText;
+		return plainText.substring(0, maxLength) + '...';
 	};
 
 	const toggleShowAll = () => {
@@ -72,7 +49,7 @@
 				<div class="w-3 h-3 rounded-full bg-green-400"></div>
 				<span class="opacity-75">
 					{reflectionsList.length} reflection{reflectionsList.length !== 1 ? 's' : ''} ·
-					{reflectionsList.filter(r => r.status === 'graded' || r.status === 'passed').length} with feedback
+					{reflectionsList.filter(r => isComplete(r.status)).length} with feedback
 				</span>
 			</div>
 		</div>
@@ -82,81 +59,68 @@
 		{#each visibleReflections as reflection}
 			<button
 				onclick={() => handleReadReflection(reflection)}
-				class="rounded-2xl p-6 text-left transition-all duration-200 hover:shadow-lg cursor-pointer group border border-transparent hover:border-gray-200"
+				class="rounded-2xl text-left transition-all duration-200 hover:shadow-lg cursor-pointer group border border-gray-200/50 hover:border-gray-300 overflow-hidden"
 				style="background-color: #eae2d9;"
 			>
-				<!-- Card Header - Simple -->
-				<div class="flex items-start justify-between mb-4">
+				<!-- Card Header -->
+				<div class="flex items-center justify-between px-5 py-4 border-b border-gray-300/30">
 					<div class="flex items-center gap-3">
-						<div class="text-2xl font-bold text-gray-800">Session {reflection.session}</div>
+						<div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm" style="background-color: #334642;">
+							{reflection.session}
+						</div>
+						<span class="font-semibold text-gray-800">Session {reflection.session}</span>
 					</div>
-					<!-- Simple Status -->
-					<div class="text-xs {getStatusColor(reflection.status).split(' ')[0]}">
-						{getStatusText(reflection.status)}
-					</div>
+					<!-- Status Badge -->
+					<ReflectionStatusBadge status={reflection.status} />
 				</div>
 
-				<!-- Feedback First (if exists) - HIGHEST PRIORITY -->
-				{#if reflection.feedback}
-					<div class="mb-4">
-						<div class="text-xs text-gray-500 mb-1">Feedback</div>
-						<div class="font-semibold text-gray-900 leading-relaxed">
-							"{truncateText(reflection.feedback, 120)}"
-						</div>
-						{#if reflection.instructor}
-							<div class="text-xs text-gray-500 mt-1">— {reflection.instructor}</div>
-						{/if}
-					</div>
-				{/if}
-
-				<!-- Student Response - SECOND PRIORITY -->
-				{#if reflection.response}
-					<div class="mb-3">
-						<div class="text-xs text-gray-500 mb-1">Your response</div>
-						<div class="text-sm text-gray-700 leading-relaxed">
-							{truncateText(reflection.response, reflection.feedback ? 80 : 150)}
-						</div>
-					</div>
-				{/if}
-
-				<!-- Question - LOWEST PRIORITY (smallest) -->
-				<div class="mb-3">
-					<div class="text-xs text-gray-400 italic">
-						{truncateText(reflection.question, 50)}
-					</div>
-				</div>
-
-				<!-- Status Messages for pending states -->
-				{#if !reflection.feedback}
-					{#if reflection.status === 'needs_revision'}
-						<div class="mt-3 pt-3 border-t border-gray-200">
-							<div class="flex items-center gap-2 text-amber-600">
-								<AlertCircle size="14" />
-								<span class="text-xs">Needs revision</span>
+				<!-- Card Body -->
+				<div class="px-5 py-4 space-y-3">
+					<!-- Feedback Section (if exists) -->
+					{#if reflection.feedback}
+						<div class="bg-green-50/50 rounded-lg p-3 border-l-2 border-green-500">
+							<div class="flex items-center gap-1.5 text-xs text-green-700 font-medium mb-1">
+								<Star size="12" />
+								Feedback
 							</div>
-						</div>
-					{:else if reflection.status === 'submitted'}
-						<div class="mt-3 pt-3 border-t border-gray-200">
-							<div class="flex items-center gap-2 text-blue-600">
-								<Clock size="14" />
-								<span class="text-xs">Submitted {reflection.submittedDate}</span>
+							<div class="text-sm text-gray-800 leading-relaxed">
+								"{truncateText(reflection.feedback, 100)}"
 							</div>
+							{#if reflection.instructor}
+								<div class="text-xs text-gray-500 mt-1.5">— {reflection.instructor}</div>
+							{/if}
 						</div>
-					{:else if reflection.status === 'draft'}
-						<div class="mt-3 pt-3 border-t border-gray-200">
-							<div class="flex items-center gap-2 text-gray-500">
-								<AlertCircle size="14" />
-								<span class="text-xs">Draft saved</span>
+					{/if}
+
+					<!-- Your Response -->
+					{#if reflection.response}
+						<div>
+							<div class="flex items-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
+								<Edit2 size="11" />
+								Your response
+							</div>
+							<div class="text-sm text-gray-700 leading-relaxed">
+								{truncateText(reflection.response, reflection.feedback ? 60 : 120)}
 							</div>
 						</div>
 					{/if}
-				{/if}
 
-				<!-- Subtle hover indicator -->
-				<div class="mt-4 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-					<span class="text-xs text-gray-500 flex items-center gap-1">
-						Click to read full
-						<Eye size="12" />
+					<!-- Question Preview -->
+					<div class="pt-2 border-t border-gray-300/30">
+						<div class="flex items-start gap-1.5">
+							<Circle size="10" class="text-gray-400 mt-0.5 flex-shrink-0" />
+							<span class="text-xs text-gray-500 italic leading-relaxed">
+								{truncateText(reflection.question, 60)}
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Card Footer -->
+				<div class="px-5 py-3 bg-gray-100/30 border-t border-gray-300/30 flex items-center justify-between">
+					<span class="text-xs text-gray-500">{reflection.submittedDate}</span>
+					<span class="text-xs text-gray-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+						View full <Eye size="12" />
 					</span>
 				</div>
 			</button>

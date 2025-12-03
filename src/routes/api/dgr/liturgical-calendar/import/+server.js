@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { getYearCycles } from '$lib/server/liturgical-rules.js';
 
 const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 	auth: { autoRefreshToken: false, persistSession: false }
@@ -10,6 +11,8 @@ const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 /**
  * POST /api/dgr/liturgical-calendar/import
  * Import matched calendar entries into database
+ *
+ * Uses centralized liturgical-rules module to ensure correct year_cycle
  */
 export async function POST({ request }) {
 	try {
@@ -19,16 +22,21 @@ export async function POST({ request }) {
 			return json({ success: false, error: 'No entries to import' }, { status: 400 });
 		}
 
-		// Prepare ordo_calendar entries
-		const ordoEntries = entries.map(e => ({
-			calendar_date: e.calendar_date,
-			liturgical_year: e.liturgical_year,
-			liturgical_season: e.liturgical_season,
-			liturgical_week: e.liturgical_week ? parseInt(e.liturgical_week) : null,
-			liturgical_name: e.liturgical_name,
-			liturgical_rank: e.liturgical_rank,
-			year_cycle: e.year_cycle
-		}));
+		// Prepare ordo_calendar entries with CORRECTED year_cycle from centralized module
+		const ordoEntries = entries.map(e => {
+			const date = new Date(e.calendar_date);
+			const { sundayCycle, weekdayCycle } = getYearCycles(date);
+
+			return {
+				calendar_date: e.calendar_date,
+				liturgical_year: e.liturgical_year,
+				liturgical_season: e.liturgical_season,
+				liturgical_week: e.liturgical_week ? parseInt(e.liturgical_week) : null,
+				liturgical_name: e.liturgical_name,
+				liturgical_rank: e.liturgical_rank,
+				year_cycle: sundayCycle  // Always use centralized calculation
+			};
+		});
 
 		// Prepare mapping entries
 		const mappingEntries = entries

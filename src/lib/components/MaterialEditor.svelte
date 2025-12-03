@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, File } from 'lucide-svelte';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, File, Code } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import DocumentUpload from './DocumentUpload.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
@@ -36,6 +36,7 @@
 	const materialTypes = [
 		{ value: 'video', label: 'Video (YouTube)', icon: Video },
 		{ value: 'link', label: 'Link', icon: Link },
+		{ value: 'embed', label: 'Embed (SharePoint/iframe)', icon: Code },
 		...(allowNativeContent ? [{ value: 'native', label: 'Native Content', icon: BookOpen }] : []),
 		...(allowDocumentUpload ? [{ value: 'upload', label: 'Upload Document', icon: Upload }] : [])
 	];
@@ -71,6 +72,7 @@
 	const getMaterialIcon = (type, url = '') => {
 		if (type === 'video') return Video;
 		if (type === 'native') return BookOpen;
+		if (type === 'embed') return Code;
 		if (type === 'upload') return Upload;
 		if (type === 'link') return getFileTypeIcon(url);
 
@@ -177,6 +179,14 @@
 			}
 		}
 
+		// For embed content, we need content (the iframe code)
+		if (newMaterial.type === 'embed') {
+			if (!newMaterial.content.trim()) {
+				console.log('Embed type but no content');
+				return;
+			}
+		}
+
 		// For uploads, the user needs to upload files first
 		if (newMaterial.type === 'upload') {
 			console.log('Upload type - files should be uploaded via DocumentUpload component');
@@ -185,8 +195,8 @@
 		}
 
 		// For other types, we need a URL
-		if (newMaterial.type !== 'native' && !newMaterial.url.trim()) {
-			console.log('Non-native type but no URL');
+		if (newMaterial.type !== 'native' && newMaterial.type !== 'embed' && !newMaterial.url.trim()) {
+			console.log('Non-native/embed type but no URL');
 			return;
 		}
 
@@ -194,7 +204,7 @@
 			onSaveStatusChange(true, 'Saving material...');
 
 			// Prepare content based on type
-			const content = newMaterial.type === 'native' ? newMaterial.content : newMaterial.url;
+			const content = (newMaterial.type === 'native' || newMaterial.type === 'embed') ? newMaterial.content : newMaterial.url;
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'POST',
@@ -217,8 +227,8 @@
 					id: material.id,
 					type: material.type,
 					title: material.title,
-					url: material.type === 'native' ? '' : material.content,
-					content: material.type === 'native' ? material.content : '',
+					url: (material.type === 'native' || material.type === 'embed') ? '' : material.content,
+					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
 					description: newMaterial.description,
 					order: material.display_order,
 					coordinatorOnly: material.coordinator_only || false
@@ -261,7 +271,7 @@
 			onSaveStatusChange(true, 'Updating material...');
 
 			// Prepare content based on type
-			const content = editingMaterial.type === 'native' ? editingMaterial.content : editingMaterial.url;
+			const content = (editingMaterial.type === 'native' || editingMaterial.type === 'embed') ? editingMaterial.content : editingMaterial.url;
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'PUT',
@@ -284,8 +294,8 @@
 					id: material.id,
 					type: material.type,
 					title: material.title,
-					url: material.type === 'native' ? '' : material.content,
-					content: material.type === 'native' ? material.content : '',
+					url: (material.type === 'native' || material.type === 'embed') ? '' : material.content,
+					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
 					description: editingMaterial.description,
 					order: material.display_order,
 					coordinatorOnly: material.coordinator_only || false
@@ -453,11 +463,16 @@
 			if (!textContent) return true;
 		}
 
+		// For embed content, check if content exists
+		if (newMaterial.type === 'embed') {
+			if (!newMaterial.content.trim()) return true;
+		}
+
 		// For uploads, no URL validation needed (handled by upload modal)
 		if (newMaterial.type === 'upload') return false;
 
 		// For other types (video, document, link), must have URL
-		if (newMaterial.type !== 'native' && !newMaterial.url.trim()) return true;
+		if (newMaterial.type !== 'native' && newMaterial.type !== 'embed' && !newMaterial.url.trim()) return true;
 
 		return false;
 	};
@@ -519,6 +534,22 @@
 								bind:content={editingMaterial.content}
 								placeholder="Enter your content..."
 							/>
+						</div>
+					{:else if editingMaterial.type === 'embed'}
+						<div class="mb-4">
+							<label
+								for={getFieldId('edit-material-embed', material.id ?? index)}
+								class="block text-sm font-semibold text-gray-700 mb-1"
+							>Embed Code</label>
+							<textarea
+								id={getFieldId('edit-material-embed', material.id ?? index)}
+								bind:value={editingMaterial.content}
+								rows="4"
+								placeholder="Paste your embed code here (e.g., SharePoint iframe)..."
+								class="w-full px-3 py-2 border border-gray-300 rounded font-mono text-sm focus:ring-2 focus:border-transparent resize-none"
+								style="focus:ring-color: #c59a6b;"
+							></textarea>
+							<p class="text-xs text-gray-500 mt-1">Paste the full embed code from SharePoint, Stream, or other video platforms</p>
 						</div>
 					{:else if editingMaterial.type !== 'native'}
 						<div class="mb-4">
@@ -621,6 +652,8 @@
 										Native content
 									{:else if material.type === 'video'}
 										YouTube Video
+									{:else if material.type === 'embed'}
+										Embedded Video (SharePoint/Stream)
 									{:else if material.type === 'link' || material.type === 'document'}
 										{getFileTypeLabel(material.url)}
 									{:else}
@@ -726,6 +759,22 @@
 					bind:content={newMaterial.content}
 					placeholder="Enter your content..."
 				/>
+			</div>
+		{:else if newMaterial.type === 'embed'}
+			<div class="mb-4">
+				<label
+					for="new-material-embed"
+					class="block text-sm font-semibold text-gray-700 mb-1"
+				>Embed Code</label>
+				<textarea
+					id="new-material-embed"
+					bind:value={newMaterial.content}
+					rows="4"
+					placeholder="Paste your embed code here (e.g., SharePoint iframe)..."
+					class="w-full px-3 py-2 border border-gray-300 rounded font-mono text-sm focus:ring-2 focus:border-transparent resize-none"
+					style="focus:ring-color: #c59a6b;"
+				></textarea>
+				<p class="text-xs text-gray-500 mt-1">Paste the full embed code from SharePoint, Stream, or other video platforms</p>
 			</div>
 		{:else if newMaterial.type === 'upload'}
 			<div class="mb-4">

@@ -440,6 +440,9 @@
 	};
 
 	const handleSessionReorder = async (moduleId, sessionIds) => {
+		// Prevent concurrent reorder requests (race condition fix)
+		if (saving) return;
+
 		// Filter out any null IDs (unsaved sessions can't be reordered)
 		const validSessionIds = sessionIds.filter(id => id != null);
 		if (validSessionIds.length === 0) return;

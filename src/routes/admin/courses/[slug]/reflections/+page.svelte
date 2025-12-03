@@ -1,7 +1,10 @@
 <script>
-	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X } from 'lucide-svelte';
-	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X, Eye } from 'lucide-svelte';
+	import { toastSuccess, toastError, toastWarning } from '$lib/utils/toast-helpers.js';
 	import { goto, invalidateAll } from '$app/navigation';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
+	import { needsReview, isComplete, isOverdue, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
 
@@ -12,6 +15,11 @@
 	let selectedReflection = $state(null);
 	let showMarkingModal = $state(false);
 	let isSaving = $state(false);
+	let isClaiming = $state(false);
+
+	// For override confirmation
+	let showOverrideConfirm = $state(false);
+	let pendingOverrideReflection = $state(null);
 
 	// Real reflection data from server
 	let reflections = $state(data.reflections || []);
@@ -23,29 +31,32 @@
 		cohorts = data.cohorts || [];
 	});
 
+	// Poll for updates every 30 seconds to see claim changes from other users
+	$effect(() => {
+		const interval = setInterval(() => {
+			// Only refresh if modal is closed (don't interrupt active marking)
+			if (!showMarkingModal) {
+				invalidateAll();
+			}
+		}, 30000);
+		return () => clearInterval(interval);
+	});
+
 	let markingForm = $state({
 		feedback: '',
 		passStatus: 'pass',
 		isPublic: false
 	});
 
+	// Helper to check if reflection is overdue (needs review + > 7 days old)
+	const isReflectionOverdue = (r) => isOverdue(r.dbStatus || r.status, r.submittedAt);
+
 	const filterOptions = $derived.by(() => [
 		{ value: 'all', label: 'All Reflections', count: reflections.length },
-		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => r.status === 'submitted' || r.status === 'under_review').length },
-		{ value: 'overdue', label: 'Overdue', count: reflections.filter(r => r.status === 'overdue').length },
-		{ value: 'passed', label: 'Passed', count: reflections.filter(r => r.status === 'passed').length }
+		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => needsReview(r.dbStatus || r.status)).length },
+		{ value: 'overdue', label: 'Overdue', count: reflections.filter(r => isReflectionOverdue(r)).length },
+		{ value: 'passed', label: 'Passed', count: reflections.filter(r => isComplete(r.dbStatus || r.status)).length }
 	]);
-
-	const getStatusColor = (status) => {
-		switch (status) {
-			case 'submitted':
-			case 'under_review': return 'bg-orange-100 text-orange-800';
-			case 'overdue': return 'bg-red-100 text-red-800';
-			case 'passed': return 'bg-green-100 text-green-800';
-			case 'needs_revision': return 'bg-yellow-100 text-yellow-800';
-			default: return 'bg-gray-100 text-gray-800';
-		}
-	};
 
 	const getPassStatusIcon = (passStatus) => {
 		if (passStatus === 'pass') return CheckCircle;
@@ -67,9 +78,13 @@
 	const filteredReflections = $derived.by(() => {
 		let filtered = [...reflections]; // Create a copy to avoid mutating state
 
-		// Filter by status
-		if (selectedFilter !== 'all') {
-			filtered = filtered.filter(r => r.status === selectedFilter);
+		// Filter by status using utility functions
+		if (selectedFilter === 'pending') {
+			filtered = filtered.filter(r => needsReview(r.dbStatus || r.status) && !isReflectionOverdue(r));
+		} else if (selectedFilter === 'overdue') {
+			filtered = filtered.filter(r => isReflectionOverdue(r));
+		} else if (selectedFilter === 'passed') {
+			filtered = filtered.filter(r => isComplete(r.dbStatus || r.status));
 		}
 
 		// Filter by cohort
@@ -88,27 +103,98 @@
 		}
 
 		return filtered.sort((a, b) => {
-			// Sort by status priority (overdue first, then pending, then marked)
-			const statusOrder = { overdue: 0, pending: 1, marked: 2 };
-			if (statusOrder[a.status] !== statusOrder[b.status]) {
-				return statusOrder[a.status] - statusOrder[b.status];
-			}
+			// Sort by: overdue first, then pending review, then complete
+			const aOverdue = isReflectionOverdue(a);
+			const bOverdue = isReflectionOverdue(b);
+			const aNeedsReview = needsReview(a.dbStatus || a.status);
+			const bNeedsReview = needsReview(b.dbStatus || b.status);
+
+			if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+			if (aNeedsReview !== bNeedsReview) return aNeedsReview ? -1 : 1;
+
 			// Then by submission date (newest first)
 			return new Date(b.submittedAt) - new Date(a.submittedAt);
 		});
 	});
 
-	const openMarkingModal = (reflection) => {
-		selectedReflection = reflection;
-		markingForm = {
-			feedback: reflection.feedback || '',
-			passStatus: reflection.grade || 'pass',
-			isPublic: reflection.isPublic
-		};
-		showMarkingModal = true;
+	const openMarkingModal = async (reflection, forceOverride = false) => {
+		if (isClaiming) return;
+
+		// If being reviewed by someone else and not forcing override, show confirmation
+		if (reflection.isBeingReviewed && !forceOverride) {
+			pendingOverrideReflection = reflection;
+			showOverrideConfirm = true;
+			return;
+		}
+
+		isClaiming = true;
+
+		try {
+			// Claim the reflection
+			const response = await fetch(`/admin/courses/${courseSlug}/reflections/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ reflection_id: reflection.id })
+			});
+
+			const result = await response.json();
+
+			if (!result.success) {
+				if (result.alreadyMarked) {
+					toastWarning(result.message);
+					await invalidateAll();
+					return;
+				}
+				if (result.claimed) {
+					// Someone else just claimed it - show confirmation
+					toastWarning(`${result.claimedBy} is currently reviewing this reflection`);
+					await invalidateAll();
+					return;
+				}
+				throw new Error(result.message || 'Failed to claim reflection');
+			}
+
+			// Successfully claimed - open modal
+			selectedReflection = reflection;
+			markingForm = {
+				feedback: reflection.feedback || '',
+				passStatus: reflection.grade || 'pass',
+				isPublic: reflection.isPublic
+			};
+			showMarkingModal = true;
+		} catch (error) {
+			console.error('Claim error:', error);
+			toastError('Failed to open reflection for review');
+		} finally {
+			isClaiming = false;
+		}
 	};
 
-	const closeMarkingModal = () => {
+	const handleOverrideConfirm = async () => {
+		showOverrideConfirm = false;
+		if (pendingOverrideReflection) {
+			await openMarkingModal(pendingOverrideReflection, true);
+			pendingOverrideReflection = null;
+		}
+	};
+
+	const handleOverrideCancel = () => {
+		showOverrideConfirm = false;
+		pendingOverrideReflection = null;
+	};
+
+	const closeMarkingModal = async () => {
+		// Release the claim if we're closing without submitting
+		if (selectedReflection) {
+			try {
+				await fetch(`/admin/courses/${courseSlug}/reflections/api?reflection_id=${selectedReflection.id}`, {
+					method: 'DELETE'
+				});
+			} catch (error) {
+				console.error('Failed to release claim:', error);
+			}
+		}
+
 		showMarkingModal = false;
 		selectedReflection = null;
 		markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
@@ -132,16 +218,29 @@
 				})
 			});
 
-			if (!response.ok) {
-				throw new Error('Failed to mark reflection');
+			const result = await response.json();
+
+			if (!result.success) {
+				if (result.alreadyMarked) {
+					toastWarning(`This reflection was already marked by ${result.markedBy}`);
+					await invalidateAll();
+					// Close modal without releasing claim (it's already marked)
+					showMarkingModal = false;
+					selectedReflection = null;
+					markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
+					return;
+				}
+				throw new Error(result.message || 'Failed to mark reflection');
 			}
 
-			const result = await response.json();
 			toastSuccess(result.message || 'Reflection marked successfully');
 
-			// Refresh data
+			// Refresh data - claim is released by PUT handler
 			await invalidateAll();
-			closeMarkingModal();
+			// Close without releasing (already released by PUT)
+			showMarkingModal = false;
+			selectedReflection = null;
+			markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
 
 		} catch (error) {
 			console.error('Marking error:', error);
@@ -171,12 +270,12 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between mb-8">
 				<div>
-					<h1 class="text-5xl font-bold text-white mb-2">Reflection Review</h1>
-					<p class="text-xl text-white/80">Mark and provide feedback on student reflections</p>
+					<h1 class="text-5xl font-bold text-gray-900 mb-2">Reflection Review</h1>
+					<p class="text-xl text-gray-600">Mark and provide feedback on student reflections</p>
 				</div>
-				<div class="text-white/80">
-					<span class="text-2xl font-bold">{filteredReflections.filter(r => r.status === 'pending' || r.status === 'overdue').length}</span>
-					<span class="text-lg">pending review</span>
+				<div class="text-gray-700">
+					<span class="text-2xl font-bold">{reflections.filter(r => needsReview(r.dbStatus || r.status)).length}</span>
+					<span class="text-lg"> pending review</span>
 				</div>
 			</div>
 
@@ -252,25 +351,21 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-3">
-								<!-- Dual Badge System -->
-								{#if reflection.status === 'pending' || reflection.status === 'overdue'}
-									<!-- Student has submitted, awaiting feedback -->
-									<span class="px-3 py-1 rounded-full text-sm font-semibold border-2 border-green-300 bg-green-50 text-green-700 flex items-center gap-1">
-										<CheckCircle size="14" />
-										Submitted
+								<!-- Being Reviewed Badge -->
+								{#if reflection.isBeingReviewed}
+									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 flex items-center gap-1 animate-pulse">
+										<Eye size="14" />
+										{reflection.reviewingByName || 'Someone'} is reviewing
 									</span>
-									<span class="px-3 py-1 rounded-full text-sm font-semibold {reflection.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
-										{reflection.status === 'overdue' ? 'Overdue Review' : 'Awaiting Feedback'}
-									</span>
-								{:else if reflection.status === 'passed'}
-									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white flex items-center gap-1">
-										<CheckCircle size="14" />
-										Passed
-									</span>
-								{:else if reflection.status === 'needs_revision'}
-									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800 flex items-center gap-1">
-										<XCircle size="14" />
-										Needs Revision
+								{/if}
+
+								<!-- Status Badge -->
+								<ReflectionStatusBadge status={reflection.dbStatus || reflection.status} size="large" />
+
+								<!-- Overdue indicator -->
+								{#if isReflectionOverdue(reflection)}
+									<span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+										Overdue
 									</span>
 								{/if}
 
@@ -317,18 +412,24 @@
 								>
 									View Full
 								</button>
-								{#if reflection.status === 'pending' || reflection.status === 'overdue'}
+								{#if needsReview(reflection.dbStatus || reflection.status)}
 									<button
 										onclick={() => openMarkingModal(reflection)}
-										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+										disabled={isClaiming}
+										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
 										style="background-color: var(--course-accent-light); color: white;"
 									>
-										Mark Reflection
+										{#if reflection.isBeingReviewed}
+											Review Anyway
+										{:else}
+											Mark Reflection
+										{/if}
 									</button>
 								{:else}
 									<button
 										onclick={() => openMarkingModal(reflection)}
-										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
+										disabled={isClaiming}
+										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
 										style="background-color: var(--course-accent-dark); color: white;"
 									>
 										Edit Marking
@@ -449,3 +550,20 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Override Confirmation Modal -->
+<ConfirmationModal
+	show={showOverrideConfirm}
+	title="Reflection Being Reviewed"
+	confirmText="Review Anyway"
+	cancelText="Cancel"
+	onConfirm={handleOverrideConfirm}
+	onCancel={handleOverrideCancel}
+>
+	<p class="text-gray-700">
+		<strong>{pendingOverrideReflection?.reviewingByName || 'Another user'}</strong> is currently reviewing this reflection.
+	</p>
+	<p class="text-gray-600 mt-2">
+		If you proceed, you may overwrite their work. Are you sure you want to continue?
+	</p>
+</ConfirmationModal>

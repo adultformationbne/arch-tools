@@ -158,8 +158,8 @@
 			<!-- Header with Cohort Selector -->
 			<div class="mb-8 flex items-start justify-between gap-8">
 				<div>
-					<h1 class="text-5xl font-bold text-white mb-2">Attendance Management</h1>
-					<p class="text-xl text-white/80">Track student attendance by session</p>
+					<h1 class="text-5xl font-bold text-gray-900 mb-2">Attendance Management</h1>
+					<p class="text-xl text-gray-600">Track student attendance by session</p>
 				</div>
 
 				<div class="bg-white rounded-2xl p-4 shadow-sm min-w-[400px]">

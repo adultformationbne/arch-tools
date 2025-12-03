@@ -63,10 +63,11 @@ export const PATCH: RequestHandler = async (event) => {
 		console.log('[Reorder] Final order:', finalOrder.map(f => `${f.id.slice(0,8)}→${f.session_number}`).join(', '));
 
 		// Two-phase update to avoid unique constraint conflicts
-		// Phase 1: Move all to temp positions (50-99 range)
-		console.log('[Reorder] Phase 1: Moving to temp positions 50+');
+		// Phase 1: Move all to temp positions (use timestamp to avoid race condition conflicts)
+		const tempBase = Date.now() % 1000000 + 1000; // Unique base per request
+		console.log('[Reorder] Phase 1: Moving to temp positions', tempBase, '+');
 		for (let i = 0; i < finalOrder.length; i++) {
-			const tempPos = 50 + i;
+			const tempPos = tempBase + i;
 			const { error: tempError } = await supabaseAdmin
 				.from('courses_sessions')
 				.update({ session_number: tempPos })

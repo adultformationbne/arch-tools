@@ -21,7 +21,7 @@ export async function GET({ params }) {
 		// Validate token and get contributor
 		const { data: contributor, error: contributorError } = await supabase
 			.from('dgr_contributors')
-			.select('id, name, email, schedule_pattern')
+			.select('id, name, email, schedule_pattern, visit_count')
 			.eq('access_token', token)
 			.eq('active', true)
 			.single();
@@ -29,6 +29,15 @@ export async function GET({ params }) {
 		if (contributorError || !contributor) {
 			return json({ error: 'Invalid or expired access token' }, { status: 401 });
 		}
+
+		// Track the visit - update last_visited_at and increment visit_count
+		await supabase
+			.from('dgr_contributors')
+			.update({
+				last_visited_at: new Date().toISOString(),
+				visit_count: (contributor.visit_count || 0) + 1
+			})
+			.eq('id', contributor.id);
 
 		// Get assigned dates using the database function
 		const { data: dates, error: datesError } = await supabase.rpc(

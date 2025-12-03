@@ -9,8 +9,8 @@ export { cleanGospelText, formatReflectionText, getInitialDGRFormData } from './
 export function parseReadings(readingsStr) {
 	if (!readingsStr) return [];
 
-	// Split by semicolon to get individual readings
-	const readings = readingsStr.split(';').map(r => r.trim());
+	// Split by semicolon or pipe to get individual readings
+	const readings = readingsStr.split(/[;|]/).map(r => r.trim()).filter(r => r);
 
 	return readings.map(reading => {
 		// Extract book abbreviation and verses

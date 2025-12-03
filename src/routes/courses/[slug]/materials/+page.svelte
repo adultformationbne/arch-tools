@@ -52,6 +52,7 @@
 	const getIcon = (type) => {
 		switch(type) {
 			case 'video': return Play;
+			case 'embed': return Play;
 			case 'document': return FileText;
 			case 'native': return Book;
 			case 'link': return FileText;
@@ -216,7 +217,8 @@
 
 	<!-- Main Content Area -->
 	<div class="flex-1 bg-white">
-		<!-- Page Header -->
+		<!-- Page Header - Hidden for embed theatre mode -->
+		{#if selectedMaterial?.type !== 'embed'}
 		<div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
 			<div class="max-w-5xl mx-auto flex items-start justify-between">
 				<div>
@@ -254,10 +256,11 @@
 				{/if}
 			</div>
 		</div>
+		{/if}
 
 		<!-- Content Display -->
 		<div class="overflow-y-auto">
-			<div class="max-w-5xl mx-auto px-8 py-8">
+			<div class="{selectedMaterial?.type === 'embed' ? 'px-4 py-4' : 'max-w-5xl mx-auto px-8 py-8'}">
 				{#if selectedMaterial?.type === 'video'}
 					<!-- YouTube Video Embed -->
 					{@const videoId = getYouTubeId(selectedMaterial.content)}
@@ -282,6 +285,11 @@
 							</a>
 						</div>
 					{/if}
+				{:else if selectedMaterial?.type === 'embed'}
+					<!-- Embedded Video (SharePoint/Stream) - Theatre Mode -->
+					<div class="embed-theatre">
+						{@html selectedMaterial.content}
+					</div>
 				{:else if selectedMaterial?.type === 'native'}
 					<!-- Native HTML Content -->
 					<div class="bg-white rounded-xl border border-gray-200 p-8 content-html">
@@ -330,6 +338,22 @@
 </div>
 
 <style>
+	/* Embed Theatre Mode - override hardcoded sizes */
+	.embed-theatre {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.embed-theatre :global(div) {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	.embed-theatre :global(iframe) {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+
 	/* Custom HTML content styling */
 	:global(.content-html h1) {
 		font-size: 2.25rem;

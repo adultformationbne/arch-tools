@@ -3,6 +3,8 @@
 	import { Save, Send, Eye, EyeOff, X, CheckCircle, ArrowLeft } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from '$lib/components/SimplifiedRichTextEditor.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { getStatusLabel, isComplete, normalizeStatus } from '$lib/utils/reflection-status';
+	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 
 	let { data } = $props();
 	const { question, courseSlug, questionId, existingReflection, isEditable } = data;
@@ -56,6 +58,8 @@
 	// Watch for content changes (only auto-save if editable)
 	$effect(() => {
 		if (content && content.length > 0 && questionId && isEditable) {
+			console.log('💾 Content to save (cleaned):', content);
+			console.log('💾 Content length:', content.length, 'chars');
 			if (autoSaveTimer) clearTimeout(autoSaveTimer);
 			autoSaveTimer = setTimeout(autoSave, 2000);
 		}
@@ -230,19 +234,11 @@
 			<div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-lg">
 				<div class="flex items-start gap-3">
 					<div class="flex-1">
-						<h3 class="text-blue-900 font-semibold mb-2">
-							{#if existingReflection.status === 'under_review'}
-								Under Review
-							{:else if existingReflection.status === 'passed'}
-								Passed
-							{:else if existingReflection.status === 'resubmitted'}
-								Resubmitted - Awaiting Review
-							{:else}
-								Submitted - Awaiting Review
-							{/if}
-						</h3>
+						<div class="flex items-center gap-3 mb-2">
+							<ReflectionStatusBadge status={existingReflection.status} size="large" />
+						</div>
 						<p class="text-blue-800">
-							{#if existingReflection.status === 'passed'}
+							{#if isComplete(existingReflection.status)}
 								Your reflection has been reviewed and approved. You cannot edit it anymore.
 							{:else if existingReflection.marked_by}
 								Your reflection has been reviewed and can no longer be edited.
@@ -261,7 +257,7 @@
 			</div>
 		{/if}
 
-		{#if existingReflection?.status === 'needs_revision' && isEditable}
+		{#if normalizeStatus(existingReflection?.status) === 'needs_revision' && isEditable}
 			<div class="bg-orange-50 border-l-4 border-orange-500 p-6 mb-6 rounded-lg">
 				<div class="flex items-start gap-3">
 					<div class="flex-1">
@@ -289,7 +285,7 @@
 		</div>
 
 		<!-- Rich Text Editor -->
-		<div class="bg-white rounded-2xl shadow-sm overflow-hidden" class:read-only={!isEditable}>
+		<div class="bg-white rounded-2xl shadow-sm" class:read-only={!isEditable}>
 			<SimplifiedRichTextEditor
 				bind:content
 				placeholder="Begin writing your reflection here..."

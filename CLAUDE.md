@@ -114,6 +114,7 @@ $effect(() => { console.log(count); });
 - **Validation:** `$lib/utils/form-validator.js`
 - **Dropdown:** `$lib/utils/dropdown.js`
 - **Email:** `$lib/utils/email-service.js`
+- **Reflection Status:** `$lib/utils/reflection-status.ts` (status labels, badges, icons for courses reflections)
 - **DB Types:** `$lib/database.types.ts` (auto-generated)
 
 ## Database

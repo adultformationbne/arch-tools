@@ -1,5 +1,6 @@
 <script>
 	import { Users, CheckSquare, BookOpen, ChevronDown, ChevronUp, Calendar, MessageSquare } from 'lucide-svelte';
+	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 
 	// Props from parent
 	let { hubData = null } = $props();
@@ -16,39 +17,6 @@
 		const student = hubData?.students.find(s => s.id === studentId);
 		if (student) {
 			student.attendanceStatus = present ? 'present' : 'absent';
-		}
-	};
-
-	const getReflectionStatusLabel = (status) => {
-		if (status === null) return 'N/A';
-		switch (status) {
-			// Display values (mapped from database)
-			case 'completed':
-				return '✓ Completed';
-			case 'in_progress':
-				return '✓ Submitted';
-			case 'not_started':
-				return '⏳ Not Started';
-			case 'needs_revision':
-				return '⚠️ Needs Work';
-			default:
-				return '⏳ Not Started';
-		}
-	};
-
-	const getReflectionStatusClass = (status) => {
-		if (status === null) return 'bg-gray-50 text-gray-400';
-		switch (status) {
-			// Display values (mapped from database)
-			case 'completed':
-				return 'bg-green-100 text-green-700';
-			case 'in_progress':
-				return 'bg-blue-100 text-blue-700';
-			case 'needs_revision':
-				return 'bg-orange-100 text-orange-700';
-			case 'not_started':
-			default:
-				return 'bg-gray-100 text-gray-700';
 		}
 	};
 </script>
@@ -212,9 +180,13 @@
 												</div>
 												<div class="text-right">
 													<div class="text-sm text-gray-600 mb-1">Session {hubData.currentSession} Reflection</div>
-													<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {getReflectionStatusClass(student.reflectionStatus)}">
-														{getReflectionStatusLabel(student.reflectionStatus)}
-													</div>
+													{#if student.reflectionStatus && student.reflectionStatus !== 'not_started'}
+														<ReflectionStatusBadge status={student.reflectionStatus} />
+													{:else}
+														<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+															Not Started
+														</span>
+													{/if}
 												</div>
 											</div>
 											<!-- Current Session Status -->

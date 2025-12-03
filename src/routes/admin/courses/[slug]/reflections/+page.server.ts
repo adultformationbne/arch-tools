@@ -54,6 +54,18 @@ export const load: PageServerLoad = async (event) => {
 			// Map status to grade for UI compatibility
 			const grade = dbStatus === 'passed' ? 'pass' : (dbStatus === 'needs_revision' ? 'fail' : null);
 
+			// Check if currently being reviewed by someone else
+			const reviewingBy = r.reviewing_by;
+			const reviewingStartedAt = r.reviewing_started_at;
+			const isBeingReviewed = reviewingBy && reviewingBy !== user?.id;
+
+			// Calculate if review claim is still fresh (within 5 minutes)
+			let reviewClaimFresh = false;
+			if (isBeingReviewed && reviewingStartedAt) {
+				const claimAgeMinutes = (Date.now() - new Date(reviewingStartedAt).getTime()) / 1000 / 60;
+				reviewClaimFresh = claimAgeMinutes < 5;
+			}
+
 			return {
 				id: r.id,
 				student: {
@@ -78,7 +90,12 @@ export const load: PageServerLoad = async (event) => {
 				feedback: r.feedback || '',
 				markedAt: r.marked_at,
 				markedBy: r.marked_by_profile?.full_name || null,
-				assignedTo: r.assigned_admin_id
+				assignedTo: r.assigned_admin_id,
+				// Review locking info
+				reviewingBy: reviewingBy,
+				reviewingByName: r.reviewing_by_profile?.full_name || null,
+				reviewingStartedAt: reviewingStartedAt,
+				isBeingReviewed: isBeingReviewed && reviewClaimFresh
 			};
 		});
 

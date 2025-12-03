@@ -638,6 +638,9 @@ export const CourseAggregates = {
 					),
 					marked_by_profile:marked_by (
 						full_name
+					),
+					reviewing_by_profile:reviewing_by (
+						full_name
 					)
 				`
 				)

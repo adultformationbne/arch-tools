@@ -418,9 +418,10 @@
 						break;
 						
 					case 'Reflection written by':
-						if (line.includes(':\t') || line.match(/Reflection written by:\s+\S/)) {
-							const parts = lines[i].split(/Reflection written by:\s*/);
-							sections.author = parts[1]?.trim() || '';
+					case 'Written by':
+						if (line.includes(':\t') || line.match(/(Reflection written by|Written by):\s+\S/)) {
+							const parts = lines[i].split(/(Reflection written by|Written by):\s*/);
+							sections.author = parts[2]?.trim() || '';
 						} else if (nextLine && !nextLine.endsWith(':')) {
 							sections.author = nextLine;
 						}
@@ -497,7 +498,10 @@
 		// No need to extract reference here since parseGospelContent will handle it
 
 		// Find reflection text (everything after author line until "By" line)
-		const authorIndex = lines.indexOf('Reflection written by:');
+		let authorIndex = lines.indexOf('Reflection written by:');
+		if (authorIndex === -1) {
+			authorIndex = lines.indexOf('Written by:');
+		}
 		const byLineIndex = lines.findIndex((line) => line.startsWith('By '));
 		if (authorIndex !== -1 && byLineIndex !== -1) {
 			const reflectionLines = lines.slice(authorIndex + 2, byLineIndex);
