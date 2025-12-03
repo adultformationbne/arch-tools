@@ -138,16 +138,23 @@
 					continue;
 				}
 
-				// Build schedule_pattern if provided
+				// Build schedule_pattern if provided (supports comma-separated values like "14,31")
 				let schedule_pattern = null;
 				if (row.schedule_type && row.schedule_value) {
 					const type = row.schedule_type.toLowerCase().trim();
-					const value = parseInt(row.schedule_value);
+					// Parse comma-separated values
+					const rawValues = row.schedule_value.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
 
-					if (type === 'day_of_month' && value >= 1 && value <= 31) {
-						schedule_pattern = { type: 'day_of_month', value };
-					} else if (type === 'day_of_week' && value >= 0 && value <= 6) {
-						schedule_pattern = { type: 'day_of_week', value };
+					if (type === 'day_of_month' && rawValues.length > 0) {
+						const validValues = rawValues.filter(v => v >= 1 && v <= 31);
+						if (validValues.length > 0) {
+							schedule_pattern = { type: 'day_of_month', values: validValues };
+						}
+					} else if (type === 'day_of_week' && rawValues.length > 0) {
+						const validValues = rawValues.filter(v => v >= 0 && v <= 6);
+						if (validValues.length > 0) {
+							schedule_pattern = { type: 'day_of_week', values: validValues };
+						}
 					}
 				}
 
@@ -218,6 +225,7 @@
 		const template = `name,email,notes,schedule_type,schedule_value
 Sr. Mary Catherine,mary@example.com,Writes on Marian feast days,day_of_week,1
 Fr. John Smith,john@example.com,Available most weekends,day_of_month,15
+Mike Humphrys,mike@example.com,Covers extra days,day_of_month,"14,31"
 Deacon Thomas,thomas@example.com,Prefers Saturdays,,`;
 
 		const blob = new Blob([template], { type: 'text/csv' });

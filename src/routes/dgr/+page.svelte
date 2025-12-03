@@ -359,16 +359,28 @@
 		}
 	}
 
-	async function updateStatus(scheduleId, newStatus) {
+	async function updateStatus(entry, newStatus) {
 		try {
+			// For pattern entries, we need to create a schedule row first
+			const isPatternEntry = entry.from_pattern || !entry.id;
+
+			const requestBody = isPatternEntry
+				? {
+					action: 'create_with_status',
+					date: entry.date,
+					contributorId: entry.contributor_id,
+					status: newStatus
+				}
+				: {
+					action: 'update_status',
+					scheduleId: entry.id,
+					status: newStatus
+				};
+
 			const response = await fetch('/api/dgr-admin/schedule', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'update_status',
-					scheduleId,
-					status: newStatus
-				})
+				body: JSON.stringify(requestBody)
 			});
 
 			const data = await response.json();

@@ -62,7 +62,7 @@
 	async function updateContributor(contributorId, updates) {
 		try {
 			const response = await fetch('/api/dgr-admin/contributors', {
-				method: 'PATCH',
+				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ id: contributorId, ...updates })
 			});
@@ -71,12 +71,6 @@
 
 			if (data.error) throw new Error(data.error);
 
-			toast.success({
-				title: 'Contributor updated',
-				message: 'Changes saved successfully',
-				duration: DURATIONS.short
-			});
-
 			await loadContributors();
 		} catch (error) {
 			toast.error({
@@ -84,6 +78,30 @@
 				message: error.message,
 				duration: DURATIONS.medium
 			});
+			throw error;
+		}
+	}
+
+	async function deleteContributor(contributorId) {
+		try {
+			const response = await fetch('/api/dgr-admin/contributors', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: contributorId })
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			await loadContributors();
+		} catch (error) {
+			toast.error({
+				title: 'Failed to delete contributor',
+				message: error.message,
+				duration: DURATIONS.medium
+			});
+			throw error;
 		}
 	}
 </script>
@@ -106,6 +124,7 @@
 			{dayNames}
 			onAddContributor={addContributor}
 			onUpdateContributor={updateContributor}
+			onDeleteContributor={deleteContributor}
 			onBulkImport={loadContributors}
 			onRefresh={loadContributors}
 		/>

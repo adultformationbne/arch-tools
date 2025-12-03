@@ -1,6 +1,6 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
-	import { Copy, ExternalLink, RefreshCw, Plus, ChevronDown, ChevronUp, Upload, Mail, MailCheck, Eye, Send, AlertCircle, Loader2, Settings } from 'lucide-svelte';
+	import { Copy, ExternalLink, RefreshCw, Plus, ChevronDown, ChevronUp, Upload, Mail, MailCheck, Eye, Send, AlertCircle, Loader2, Settings, Pencil, Trash2, X, MoreVertical } from 'lucide-svelte';
 	import DGRContributorsCsvUpload from './DGRContributorsCsvUpload.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import DGRTemplateEditorModal from './DGRTemplateEditorModal.svelte';
@@ -10,6 +10,7 @@
 		dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 		onAddContributor = () => {},
 		onUpdateContributor = () => {},
+		onDeleteContributor = () => {},
 		onBulkImport = () => {},
 		onRefresh = () => {}
 	} = $props();
@@ -25,15 +26,42 @@
 	let welcomeTemplate = $state(null);
 	let loadingTemplate = $state(false);
 
+	// Edit/Delete state
+	let showEditModal = $state(false);
+	let editingContributor = $state(null);
+	let editForm = $state({ name: '', email: '', notes: '', schedule_pattern: null, pattern_value: null, active: true });
+	let showDeleteConfirm = $state(false);
+	let deletingContributor = $state(null);
+	let isDeleting = $state(false);
+	let isSavingEdit = $state(false);
+	let openMenuId = $state(null); // Track which contributor's menu is open
+
+	function toggleMenu(contributorId) {
+		openMenuId = openMenuId === contributorId ? null : contributorId;
+	}
+
+	function closeMenu() {
+		openMenuId = null;
+	}
+
 	let newContributor = $state({
 		name: '',
 		email: '',
 		schedule_pattern: null,
-		pattern_value: null,
+		pattern_values: [], // Array for multiple days
 		notes: ''
 	});
 
 	let formExpanded = $state(false);
+
+	function togglePatternValue(value) {
+		const idx = newContributor.pattern_values.indexOf(value);
+		if (idx === -1) {
+			newContributor.pattern_values = [...newContributor.pattern_values, value].sort((a, b) => a - b);
+		} else {
+			newContributor.pattern_values = newContributor.pattern_values.filter(v => v !== value);
+		}
+	}
 
 	async function handleAddContributor() {
 		if (!newContributor.name || !newContributor.email) {
@@ -47,20 +75,23 @@
 
 		// Build schedule_pattern JSON if pattern is selected
 		let schedule_pattern = null;
-		if (newContributor.schedule_pattern === 'day_of_month' && newContributor.pattern_value) {
-			schedule_pattern = { type: 'day_of_month', value: parseInt(newContributor.pattern_value) };
-		} else if (newContributor.schedule_pattern === 'day_of_week' && newContributor.pattern_value !== null) {
-			schedule_pattern = { type: 'day_of_week', value: parseInt(newContributor.pattern_value) };
+		if (newContributor.schedule_pattern && newContributor.pattern_values.length > 0) {
+			schedule_pattern = {
+				type: newContributor.schedule_pattern,
+				values: newContributor.pattern_values.map(v => parseInt(v))
+			};
 		}
 
-		await onAddContributor({ ...newContributor, schedule_pattern });
+		// Exclude local form fields from API payload
+		const { pattern_values, schedule_pattern: _patternType, ...contributorData } = newContributor;
+		await onAddContributor({ ...contributorData, schedule_pattern });
 
 		// Reset form and collapse
 		newContributor = {
 			name: '',
 			email: '',
 			schedule_pattern: null,
-			pattern_value: null,
+			pattern_values: [],
 			notes: ''
 		};
 		formExpanded = false;
@@ -96,8 +127,33 @@
 
 	function getPatternDescription(pattern) {
 		if (!pattern) return 'Manual assignment only';
-		if (pattern.type === 'day_of_month') return `Every ${pattern.value}${getOrdinalSuffix(pattern.value)} of month`;
-		if (pattern.type === 'day_of_week') return `Every ${dayNames[pattern.value]}`;
+
+		// Support both 'value' (single) and 'values' (array)
+		const getValues = (p) => {
+			if (p.values && Array.isArray(p.values)) return p.values;
+			if (p.value !== undefined) return [p.value];
+			return [];
+		};
+
+		const values = getValues(pattern);
+		if (values.length === 0) return 'Manual assignment only';
+
+		if (pattern.type === 'day_of_month') {
+			if (values.length === 1) {
+				return `Every ${values[0]}${getOrdinalSuffix(values[0])} of month`;
+			}
+			const formatted = values.map(v => `${v}${getOrdinalSuffix(v)}`).join(', ');
+			return `Every ${formatted} of month`;
+		}
+
+		if (pattern.type === 'day_of_week') {
+			if (values.length === 1) {
+				return `Every ${dayNames[values[0]]}`;
+			}
+			const formatted = values.map(v => dayNames[v]).join(', ');
+			return `Every ${formatted}`;
+		}
+
 		return 'Manual assignment';
 	}
 
@@ -337,7 +393,89 @@
 	function handleTemplateSave(updatedTemplate) {
 		welcomeTemplate = updatedTemplate;
 	}
+
+	// Edit contributor functions
+	function openEditModal(contributor) {
+		editingContributor = contributor;
+		const pattern = contributor.schedule_pattern;
+		editForm = {
+			name: contributor.name || '',
+			email: contributor.email || '',
+			notes: contributor.notes || '',
+			schedule_pattern: pattern?.type || null,
+			pattern_value: pattern?.value ?? null,
+			active: contributor.active ?? true
+		};
+		showEditModal = true;
+	}
+
+	async function handleSaveEdit() {
+		if (!editingContributor || !editForm.name.trim() || !editForm.email.trim()) {
+			toast.error({ title: 'Required Fields', message: 'Name and email are required', duration: 3000 });
+			return;
+		}
+
+		isSavingEdit = true;
+		try {
+			// Build schedule_pattern JSON
+			let schedule_pattern = null;
+			if (editForm.schedule_pattern === 'day_of_month' && editForm.pattern_value !== null) {
+				schedule_pattern = { type: 'day_of_month', value: parseInt(editForm.pattern_value) };
+			} else if (editForm.schedule_pattern === 'day_of_week' && editForm.pattern_value !== null) {
+				schedule_pattern = { type: 'day_of_week', value: parseInt(editForm.pattern_value) };
+			}
+
+			await onUpdateContributor(editingContributor.id, {
+				name: editForm.name.trim(),
+				email: editForm.email.trim().toLowerCase(),
+				notes: editForm.notes.trim() || null,
+				schedule_pattern,
+				active: editForm.active
+			});
+
+			toast.success({ title: 'Saved', message: 'Contributor updated successfully', duration: 2000 });
+			showEditModal = false;
+			editingContributor = null;
+			onRefresh();
+		} catch (error) {
+			toast.error({ title: 'Error', message: error.message || 'Failed to update contributor', duration: 3000 });
+		} finally {
+			isSavingEdit = false;
+		}
+	}
+
+	// Delete contributor functions
+	function openDeleteConfirm(contributor) {
+		deletingContributor = contributor;
+		showDeleteConfirm = true;
+	}
+
+	async function confirmDelete() {
+		if (!deletingContributor) return;
+
+		isDeleting = true;
+		try {
+			await onDeleteContributor(deletingContributor.id);
+			toast.success({ title: 'Deleted', message: `${deletingContributor.name} has been removed`, duration: 2000 });
+			showDeleteConfirm = false;
+			deletingContributor = null;
+			onRefresh();
+		} catch (error) {
+			toast.error({ title: 'Error', message: error.message || 'Failed to delete contributor', duration: 3000 });
+		} finally {
+			isDeleting = false;
+		}
+	}
+
+	// Close menu when clicking outside
+	function handleClickOutside(event) {
+		if (openMenuId && !event.target.closest('.relative')) {
+			closeMenu();
+		}
+	}
 </script>
+
+<svelte:window onclick={handleClickOutside} />
 
 <div class="space-y-6">
 	<!-- Action Buttons -->
@@ -478,40 +616,58 @@
 						<label for="pattern-type" class="mb-1 block text-sm font-medium text-gray-700">
 							Schedule Pattern
 						</label>
-						<div class="grid grid-cols-2 gap-4">
-							<select
-								id="pattern-type"
-								bind:value={newContributor.schedule_pattern}
-								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-							>
-								<option value={null}>Manual assignment only</option>
-								<option value="day_of_month">Day of Month</option>
-								<option value="day_of_week">Day of Week</option>
-							</select>
+						<select
+							id="pattern-type"
+							bind:value={newContributor.schedule_pattern}
+							onchange={() => { newContributor.pattern_values = []; }}
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						>
+							<option value={null}>Manual assignment only</option>
+							<option value="day_of_month">Day of Month</option>
+							<option value="day_of_week">Day of Week</option>
+						</select>
 
-							{#if newContributor.schedule_pattern === 'day_of_month'}
-								<select
-									bind:value={newContributor.pattern_value}
-									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-								>
-									<option value={null}>Select day...</option>
+						{#if newContributor.schedule_pattern === 'day_of_month'}
+							<div class="mt-3">
+								<p class="mb-2 text-sm text-gray-600">Select day(s) of month:</p>
+								<div class="grid grid-cols-7 gap-1">
 									{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
-										<option value={day}>{day}{getOrdinalSuffix(day)}</option>
+										<button
+											type="button"
+											onclick={() => togglePatternValue(day)}
+											class="h-9 w-full rounded text-sm font-medium transition-colors {newContributor.pattern_values.includes(day)
+												? 'bg-blue-600 text-white'
+												: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+										>
+											{day}
+										</button>
 									{/each}
-								</select>
-							{:else if newContributor.schedule_pattern === 'day_of_week'}
-								<select
-									bind:value={newContributor.pattern_value}
-									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-								>
-									<option value={null}>Select day...</option>
+								</div>
+								{#if newContributor.pattern_values.length > 0}
+									<p class="mt-2 text-sm text-blue-600">
+										Selected: {newContributor.pattern_values.map(v => `${v}${getOrdinalSuffix(v)}`).join(', ')}
+									</p>
+								{/if}
+							</div>
+						{:else if newContributor.schedule_pattern === 'day_of_week'}
+							<div class="mt-3">
+								<p class="mb-2 text-sm text-gray-600">Select day(s) of week:</p>
+								<div class="flex flex-wrap gap-2">
 									{#each dayNames as day, index}
-										<option value={index}>{day}</option>
+										<button
+											type="button"
+											onclick={() => togglePatternValue(index)}
+											class="rounded-full px-4 py-2 text-sm font-medium transition-colors {newContributor.pattern_values.includes(index)
+												? 'bg-blue-600 text-white'
+												: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+										>
+											{day}
+										</button>
 									{/each}
-								</select>
-							{/if}
-						</div>
-						<p class="mt-1 text-xs text-gray-500">
+								</div>
+							</div>
+						{/if}
+						<p class="mt-2 text-xs text-gray-500">
 							Set a recurring schedule pattern, or leave as manual for ad-hoc assignments
 						</p>
 					</div>
@@ -650,15 +806,14 @@
 									{/if}
 								</td>
 								<td class="px-4 py-3 whitespace-nowrap">
-									{#if contributor.access_token}
-										<div class="flex items-center gap-2">
+									<div class="flex items-center gap-1">
+										{#if contributor.access_token}
 											<button
 												onclick={() => copyLink(contributor)}
 												class="inline-flex items-center gap-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
 												title="Copy contributor link"
 											>
 												<Copy class="h-3 w-3" />
-												Copy
 											</button>
 											<a
 												href={getContributorLink(contributor)}
@@ -668,10 +823,41 @@
 											>
 												<ExternalLink class="h-3 w-3" />
 											</a>
+										{/if}
+										<!-- Kebab menu for edit/delete -->
+										<div class="relative">
+											<button
+												onclick={() => toggleMenu(contributor.id)}
+												class="inline-flex items-center rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+												title="More actions"
+											>
+												<MoreVertical class="h-4 w-4" />
+											</button>
+											{#if openMenuId === contributor.id}
+												<div
+													class="absolute right-0 z-10 mt-1 w-36 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+													role="menu"
+												>
+													<button
+														onclick={() => { openEditModal(contributor); closeMenu(); }}
+														class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+														role="menuitem"
+													>
+														<Pencil class="h-4 w-4" />
+														Edit
+													</button>
+													<button
+														onclick={() => { openDeleteConfirm(contributor); closeMenu(); }}
+														class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+														role="menuitem"
+													>
+														<Trash2 class="h-4 w-4" />
+														Delete
+													</button>
+												</div>
+											{/if}
 										</div>
-									{:else}
-										<span class="text-xs text-gray-400">-</span>
-									{/if}
+									</div>
 								</td>
 							</tr>
 						{/each}
@@ -746,3 +932,140 @@
 	onClose={() => showTemplateEditor = false}
 	onSave={handleTemplateSave}
 />
+
+<!-- Edit Contributor Modal -->
+{#if showEditModal && editingContributor}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+		onclick={(e) => { if (e.target === e.currentTarget) showEditModal = false; }}
+		onkeydown={(e) => { if (e.key === 'Escape') showEditModal = false; }}
+		role="dialog"
+		aria-modal="true"
+		tabindex="0"
+	>
+		<div class="w-full max-w-lg rounded-xl bg-white shadow-2xl">
+			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+				<h2 class="text-lg font-semibold text-gray-900">Edit Contributor</h2>
+				<button onclick={() => showEditModal = false} class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+					<X class="h-5 w-5" />
+				</button>
+			</div>
+
+			<div class="space-y-4 p-6">
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+					<div>
+						<label for="edit-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+						<input
+							id="edit-name"
+							type="text"
+							bind:value={editForm.name}
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						/>
+					</div>
+					<div>
+						<label for="edit-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+						<input
+							id="edit-email"
+							type="email"
+							bind:value={editForm.email}
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						/>
+					</div>
+				</div>
+
+				<div>
+					<label for="edit-pattern" class="mb-1 block text-sm font-medium text-gray-700">Schedule Pattern</label>
+					<div class="grid grid-cols-2 gap-4">
+						<select
+							id="edit-pattern"
+							bind:value={editForm.schedule_pattern}
+							class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						>
+							<option value={null}>Manual assignment only</option>
+							<option value="day_of_month">Day of Month</option>
+							<option value="day_of_week">Day of Week</option>
+						</select>
+
+						{#if editForm.schedule_pattern === 'day_of_month'}
+							<select
+								bind:value={editForm.pattern_value}
+								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={null}>Select day...</option>
+								{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+									<option value={day}>{day}{getOrdinalSuffix(day)}</option>
+								{/each}
+							</select>
+						{:else if editForm.schedule_pattern === 'day_of_week'}
+							<select
+								bind:value={editForm.pattern_value}
+								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={null}>Select day...</option>
+								{#each dayNames as day, index}
+									<option value={index}>{day}</option>
+								{/each}
+							</select>
+						{/if}
+					</div>
+				</div>
+
+				<div>
+					<label for="edit-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+					<textarea
+						id="edit-notes"
+						bind:value={editForm.notes}
+						rows="2"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					></textarea>
+				</div>
+
+				<div class="flex items-center gap-2">
+					<input
+						id="edit-active"
+						type="checkbox"
+						bind:checked={editForm.active}
+						class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+					/>
+					<label for="edit-active" class="text-sm text-gray-700">Active</label>
+				</div>
+			</div>
+
+			<div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+				<button
+					onclick={() => showEditModal = false}
+					class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={handleSaveEdit}
+					disabled={isSavingEdit}
+					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+				>
+					{isSavingEdit ? 'Saving...' : 'Save Changes'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete Confirmation Modal -->
+<ConfirmationModal
+	show={showDeleteConfirm}
+	onConfirm={confirmDelete}
+	onCancel={() => { showDeleteConfirm = false; deletingContributor = null; }}
+	confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+	confirmDisabled={isDeleting}
+	title="Delete Contributor"
+	danger={true}
+>
+	{#if deletingContributor}
+		<p class="text-gray-600">
+			Are you sure you want to delete <strong>{deletingContributor.name}</strong>?
+		</p>
+		<p class="mt-2 text-sm text-gray-500">
+			This will remove them from the system. Any assigned reflections will need to be reassigned.
+		</p>
+	{/if}
+</ConfirmationModal>

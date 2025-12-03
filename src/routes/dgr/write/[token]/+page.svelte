@@ -2,7 +2,7 @@
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
-	import { Calendar, Check, Clock, FileText, Send } from 'lucide-svelte';
+	import { Calendar, Check, ChevronDown, Clock, FileText, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 
 	const { data } = $props();
@@ -29,7 +29,13 @@
 	let loadingReadings = $state(false);
 	let gospelText = $state(null);
 	let loadingGospelText = $state(false);
-	let showGospelText = $state(false);
+	let showGospelText = $state(true);
+
+	// Mobile date picker
+	let showDatePicker = $state(false);
+
+	// Track if we just submitted (to show "Next" prompt)
+	let justSubmitted = $state(false);
 
 	// Auto-resize textarea ref
 	let textareaEl = $state(null);
@@ -70,7 +76,7 @@
 				<ol>
 					<li><strong>Title</strong> — A compelling headline</li>
 					<li><strong>Gospel Quote</strong> — A key phrase with verse reference</li>
-					<li><strong>Reflection</strong> — 200-400 words</li>
+					<li><strong>Reflection</strong> — ~250 words</li>
 				</ol>
 			`
 		},
@@ -158,7 +164,7 @@
 		reflectionContent = dateEntry.reflection_content || '';
 		readings = null;
 		gospelText = null;
-		showGospelText = false;
+		showGospelText = true;
 		lastSaved = null;
 
 		await fetchReadings(dateEntry);
@@ -272,7 +278,13 @@
 			lastSaved = new Date();
 
 			if (action === 'submit') {
-				toast.success({ title: 'Submitted!', message: 'Your reflection has been submitted for review', duration: 3000 });
+				justSubmitted = true;
+				const nextDate = getNextPendingDate();
+				if (nextDate) {
+					toast.success({ title: 'Submitted!', message: 'Your reflection has been submitted for review', duration: 3000 });
+				} else {
+					toast.success({ title: 'All Done!', message: 'You\'ve completed all your reflections', duration: 5000 });
+				}
 			}
 		} catch (error) {
 			toast.error({ title: 'Save Failed', message: error.message, duration: 3000 });
@@ -282,6 +294,7 @@
 	}
 
 	function handleContentChange() {
+		justSubmitted = false; // Reset when user starts editing
 		clearTimeout(saveDebounceTimeout);
 		saveDebounceTimeout = setTimeout(() => {
 			if (reflectionTitle.trim() && gospelQuote.trim() && reflectionContent.trim()) {
@@ -323,6 +336,39 @@
 		};
 		return badges[status] || badges.not_started;
 	}
+
+	// Find next pending/draft date (skips submitted/approved/published)
+	function getNextPendingDate() {
+		const currentIndex = selectedDate ? dates.findIndex(d => d.date === selectedDate.date) : -1;
+		for (let i = currentIndex + 1; i < dates.length; i++) {
+			const status = getStatusKey(dates[i]);
+			if (status === 'not_started' || status === 'draft') {
+				return dates[i];
+			}
+		}
+		return null;
+	}
+
+	// Select date and close mobile picker
+	function selectDateMobile(dateEntry) {
+		selectDate(dateEntry);
+		showDatePicker = false;
+	}
+
+	// Go to next pending date
+	function goToNext() {
+		const nextDate = getNextPendingDate();
+		if (nextDate) {
+			justSubmitted = false;
+			selectDate(nextDate);
+		}
+	}
+
+	// Count of remaining work
+	let pendingCount = $derived(dates.filter(d => {
+		const s = getStatusKey(d);
+		return s === 'not_started' || s === 'draft';
+	}).length);
 </script>
 
 <svelte:head>
@@ -344,43 +390,46 @@
 {:else}
 	<div class="min-h-screen bg-gray-100">
 		<!-- Fixed Header -->
-		<header class="fixed top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5">
-			<div class="flex items-center gap-3">
-				<img src="/archmin-logo.png" alt="Logo" class="h-8 w-auto" />
-				<div>
+		<header class="fixed top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5">
+			<div class="flex items-center gap-2 md:gap-3">
+				<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto md:h-8" />
+				<div class="hidden sm:block">
 					<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
 					<p class="text-xs text-gray-500">{contributor.name}</p>
 				</div>
 			</div>
 
 			{#if selectedDate}
-				<div class="flex items-center gap-3">
-					<!-- Save Status -->
-					<div class="hidden text-sm text-gray-500 sm:block">
+				<div class="flex items-center gap-2 md:gap-3">
+					<!-- Save Status - mobile shows icon only -->
+					<div class="text-sm text-gray-500">
 						{#if saving}
 							<span class="flex items-center gap-1">
 								<Clock class="h-3.5 w-3.5 animate-spin" />
-								Saving...
+								<span class="hidden sm:inline">Saving...</span>
 							</span>
 						{:else if lastSaved}
 							<span class="flex items-center gap-1 text-green-600">
 								<Check class="h-3.5 w-3.5" />
-								Saved
+								<span class="hidden sm:inline">Saved</span>
 							</span>
 						{/if}
 					</div>
 
+					<!-- Save Draft - hidden on mobile (auto-save handles it) -->
 					<button
 						onclick={() => saveReflection('save')}
 						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+						class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
 					>
 						Save Draft
 					</button>
+
+					<!-- Submit button -->
 					<button
 						onclick={() => saveReflection('submit')}
 						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="inline-flex items-center gap-2 rounded-lg bg-[#009199] px-4 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50"
+						class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
 					>
 						<Send class="h-4 w-4" />
 						Submit
@@ -391,8 +440,8 @@
 
 		<!-- Main Layout with Sidebar -->
 		<div class="flex pt-14">
-			<!-- Sidebar - Fixed -->
-			<aside class="fixed left-0 top-14 bottom-0 z-10 w-64 overflow-y-auto border-r border-gray-200 bg-white">
+			<!-- Sidebar - Fixed, hidden on mobile -->
+			<aside class="fixed left-0 top-14 bottom-0 z-10 hidden w-64 overflow-y-auto border-r border-gray-200 bg-white md:block">
 				<!-- Filter Pills -->
 				<div class="border-b border-gray-200 p-3">
 					<p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Filter by status</p>
@@ -455,25 +504,49 @@
 			</aside>
 
 			<!-- Main Content - Scrollable -->
-			<main class="ml-64 flex-1 p-6">
+			<main class="flex-1 p-4 md:ml-64 md:p-6">
 				{#if selectedDate}
 					{@const mobileBadge = getStatusBadge(selectedDate)}
 
-					<!-- Page Title -->
+					<!-- Page Title - Tappable on mobile to open date picker -->
 					<div class="mx-auto mb-4 max-w-3xl">
-						<h1 class="text-2xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
-						<p class="mt-1 text-sm text-gray-500">
-							{#if readings?.liturgical_day}
-								{readings.liturgical_day}
-							{:else}
-								Daily Gospel Reflection
-							{/if}
-						</p>
+						<!-- Mobile: Tappable date selector -->
+						<button
+							onclick={() => showDatePicker = true}
+							class="flex w-full items-center justify-between text-left md:hidden"
+						>
+							<div>
+								<h1 class="text-xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
+								<p class="mt-0.5 text-sm text-gray-500">
+									{#if readings?.liturgical_day}
+										{readings.liturgical_day}
+									{:else}
+										Daily Gospel Reflection
+									{/if}
+								</p>
+							</div>
+							<div class="flex items-center gap-2">
+								<span class="rounded-full px-2 py-0.5 text-xs {mobileBadge.class}">{mobileBadge.text}</span>
+								<ChevronDown class="h-5 w-5 text-gray-400" />
+							</div>
+						</button>
+
+						<!-- Desktop: Static title -->
+						<div class="hidden md:block">
+							<h1 class="text-2xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
+							<p class="mt-1 text-sm text-gray-500">
+								{#if readings?.liturgical_day}
+									{readings.liturgical_day}
+								{:else}
+									Daily Gospel Reflection
+								{/if}
+							</p>
+						</div>
 					</div>
 
 					<!-- Document -->
 					<div class="mx-auto max-w-3xl rounded-lg bg-white shadow-sm">
-						<!-- Readings Reference (collapsible) -->
+						<!-- Readings Reference (collapsible, open by default) -->
 						{#if readings}
 							<div class="border-b border-gray-100 px-6 py-4 sm:px-8">
 								<button
@@ -547,14 +620,35 @@
 							<!-- Word Count -->
 							<div class="mt-4 border-t border-gray-100 pt-4 text-right text-sm text-gray-400">
 								{wordCount} words
-								{#if wordCount > 0 && wordCount < 200}
-									<span class="text-amber-500">• Aim for 200-400</span>
-								{:else if wordCount >= 200 && wordCount <= 400}
+								{#if wordCount > 0 && wordCount < 225}
+									<span class="text-amber-500">• Aim for ~250 words</span>
+								{:else if wordCount >= 225 && wordCount <= 275}
 									<span class="text-green-500">• Good length</span>
-								{:else if wordCount > 400}
-									<span class="text-amber-500">• Consider trimming</span>
+								{:else if wordCount > 275}
+									<span class="text-amber-500">• Consider trimming (aim for ~250)</span>
 								{/if}
 							</div>
+
+							<!-- Success state with Next button -->
+							{#if justSubmitted && getNextPendingDate()}
+								<div class="mt-4 flex items-center justify-between rounded-lg bg-green-50 p-4">
+									<div>
+										<p class="font-medium text-green-800">Submitted!</p>
+										<p class="text-sm text-green-600">{pendingCount - 1} more to go</p>
+									</div>
+									<button
+										onclick={goToNext}
+										class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+									>
+										Next Reflection →
+									</button>
+								</div>
+							{:else if justSubmitted && !getNextPendingDate()}
+								<div class="mt-4 rounded-lg bg-green-50 p-4 text-center">
+									<p class="font-medium text-green-800">All done!</p>
+									<p class="text-sm text-green-600">You've completed all your assigned reflections</p>
+								</div>
+							{/if}
 						</div>
 					</div>
 				{:else}
@@ -567,6 +661,85 @@
 					</div>
 				{/if}
 			</main>
+		</div>
+	</div>
+{/if}
+
+<!-- Mobile Date Picker Modal -->
+{#if showDatePicker}
+	<div class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 md:hidden" onclick={() => showDatePicker = false}>
+		<div
+			class="max-h-[80vh] w-full overflow-hidden rounded-t-2xl bg-white"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- Header -->
+			<div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+				<div>
+					<h2 class="text-lg font-semibold text-gray-900">Select Date</h2>
+					<p class="text-sm text-gray-500">{pendingCount} remaining</p>
+				</div>
+				<button onclick={() => showDatePicker = false} class="rounded-full p-2 hover:bg-gray-100">
+					<X class="h-5 w-5 text-gray-500" />
+				</button>
+			</div>
+
+			<!-- Filter Pills -->
+			<div class="border-b border-gray-100 px-4 py-3">
+				<div class="flex flex-wrap gap-2">
+					<button
+						onclick={() => statusFilter = 'all'}
+						class="rounded-full px-3 py-1.5 text-sm font-medium {statusFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}"
+					>
+						All ({statusCounts.all})
+					</button>
+					<button
+						onclick={() => statusFilter = 'not_started'}
+						class="rounded-full px-3 py-1.5 text-sm font-medium {statusFilter === 'not_started' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-500'}"
+					>
+						To Do ({statusCounts.not_started})
+					</button>
+					<button
+						onclick={() => statusFilter = 'draft'}
+						class="rounded-full px-3 py-1.5 text-sm font-medium {statusFilter === 'draft' ? 'bg-yellow-500 text-white' : 'bg-yellow-50 text-yellow-700'}"
+					>
+						Drafts ({statusCounts.draft})
+					</button>
+					<button
+						onclick={() => statusFilter = 'submitted'}
+						class="rounded-full px-3 py-1.5 text-sm font-medium {statusFilter === 'submitted' ? 'bg-green-500 text-white' : 'bg-green-50 text-green-700'}"
+					>
+						Done ({statusCounts.submitted})
+					</button>
+				</div>
+			</div>
+
+			<!-- Date List -->
+			<div class="max-h-[50vh] overflow-y-auto p-2">
+				{#each filteredDates as dateEntry (dateEntry.date)}
+					{@const isSelected = selectedDate?.date === dateEntry.date}
+					{@const status = getStatusBadge(dateEntry)}
+					<button
+						onclick={() => selectDateMobile(dateEntry)}
+						class="mb-1 flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-all {isSelected ? 'bg-[#009199] text-white' : 'hover:bg-gray-50'}"
+					>
+						<div>
+							<span class="font-medium {isSelected ? 'text-white' : 'text-gray-900'}">{formatDateLong(dateEntry.date)}</span>
+							<div class="mt-0.5">
+								<span class="text-xs {isSelected ? 'text-white/80' : status.class} {isSelected ? '' : 'rounded px-1.5 py-0.5'}">
+									{status.text}
+								</span>
+							</div>
+						</div>
+						{#if dateEntry.has_content && !isSelected}
+							<Check class="h-5 w-5 text-green-500" />
+						{/if}
+					</button>
+				{/each}
+
+				{#if filteredDates.length === 0}
+					<p class="py-8 text-center text-sm text-gray-400">No dates match this filter</p>
+				{/if}
+			</div>
 		</div>
 	</div>
 {/if}
