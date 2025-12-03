@@ -183,6 +183,11 @@
 		if (rule.condition_liturgical_day_contains) conditions.push(`Contains: ${rule.condition_liturgical_day_contains}`);
 		return conditions.length > 0 ? conditions.join(', ') : 'All dates';
 	}
+
+	// Load rules on mount
+	$effect(() => {
+		loadRules();
+	});
 </script>
 
 <div class="space-y-6">

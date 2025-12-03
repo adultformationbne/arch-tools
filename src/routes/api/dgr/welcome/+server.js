@@ -93,11 +93,17 @@ export async function POST({ request, locals }) {
 			// Build the contributor's personal link
 			const writeUrl = `${process.env.ORIGIN || 'https://app.archdiocesanministries.org.au'}/dgr/write/${contributor.access_token}`;
 
+			// Generate styled button HTML
+			const buttonHtml = `<p style="text-align: center; margin: 24px 0;">
+				<a href="${writeUrl}" style="display: inline-block; background-color: #009199; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 14px 28px; border-radius: 8px;">Access Your Writing Portal</a>
+			</p>`;
+
 			// Build template variables
 			const variables = {
 				contributor_name: contributor.name,
 				contributor_email: contributor.email,
-				write_url: writeUrl
+				write_url: writeUrl,
+				write_url_button: buttonHtml
 			};
 
 			// Process template

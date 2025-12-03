@@ -76,14 +76,14 @@
 		)
 	);
 
-	async function updateStatus(scheduleId, newStatus) {
+	async function updateStatus(entry, newStatus) {
 		try {
 			const response = await fetch('/api/dgr-admin/schedule', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					action: 'update_status',
-					scheduleId,
+					scheduleId: entry.id,
 					status: newStatus
 				})
 			});

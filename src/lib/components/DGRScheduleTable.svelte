@@ -161,7 +161,7 @@
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">
 					{#each schedule as entry (entry.id || entry.date)}
-						<tr class:bg-blue-50={entry.from_pattern} class:bg-gray-50={!entry.id && !entry.from_pattern}>
+						<tr class:bg-gray-50={!entry.id && !entry.from_pattern}>
 							<!-- Liturgical Season Color Bar -->
 							<td class="relative p-0">
 								{#if entry.liturgical_season}
@@ -206,23 +206,18 @@
 							<td class="px-6 py-4 whitespace-nowrap">
 								{#if entry.from_pattern}
 									<!-- Pattern-based assignment (no schedule row yet) -->
-									<div class="flex items-center gap-2">
-										<select
-											value={entry.contributor_id || ''}
-											onchange={(e) => onUpdateAssignment(entry, e.target.value)}
-											class="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
-										>
-											<option value="">Unassigned</option>
-											{#each contributors as contributor}
-												<option value={contributor.id}>
-													{contributor.name}
-												</option>
-											{/each}
-										</select>
-										<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700" title="From recurring pattern - no schedule row exists yet">
-											Pattern
-										</span>
-									</div>
+									<select
+										value={entry.contributor_id || ''}
+										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+									>
+										<option value="">Unassigned</option>
+										{#each contributors as contributor}
+											<option value={contributor.id}>
+												{contributor.name}
+											</option>
+										{/each}
+									</select>
 								{:else if entry.id}
 									<!-- Actual schedule entry -->
 									<select
@@ -254,26 +249,13 @@
 								{/if}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
-								{#if entry.from_pattern}
-									<!-- Pattern-based: no schedule row yet -->
-									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-50 text-blue-600">
-										Awaiting
+								{#if entry.id || entry.from_pattern}
+									{@const status = entry.status || 'pending'}
+									{@const statusLabel = statusOptions.find(o => o.value === status)?.label || 'Pending'}
+									<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[status]}">
+										{statusLabel}
 									</span>
-								{:else if entry.id}
-									<!-- Has schedule row: show status dropdown -->
-									<select
-										value={entry.status}
-										onchange={(e) => onUpdateStatus(entry.id, e.target.value)}
-										class="rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none {statusColors[
-											entry.status
-										]} font-medium"
-									>
-										{#each statusOptions as option}
-											<option value={option.value}>{option.label}</option>
-										{/each}
-									</select>
 								{:else}
-									<!-- No schedule, no pattern: completely unassigned -->
 									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
 										—
 									</span>

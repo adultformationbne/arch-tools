@@ -6,6 +6,52 @@ import { PUBLIC_SITE_URL } from '$env/static/public';
 import { sendEmail } from '$lib/utils/email-service.js';
 import { generateInvitationEmail } from '$lib/email-templates/user-invitation.js';
 
+export async function GET(event) {
+	try {
+		// Check if user has platform admin access
+		await requireModule(event, 'platform.admin');
+
+		// Get all user profiles
+		const { data: profiles, error: profilesError } = await supabaseAdmin
+			.from('user_profiles')
+			.select('*')
+			.order('created_at', { ascending: false });
+
+		if (profilesError) {
+			console.error('Error fetching profiles:', profilesError);
+			throw error(500, 'Failed to fetch users');
+		}
+
+		// Get auth users to get last sign in info
+		const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+
+		if (authError) {
+			console.error('Error fetching auth users:', authError);
+			// Don't fail - just return profiles without auth info
+		}
+
+		// Merge auth data with profiles
+		const authMap = new Map(authUsers?.map(u => [u.id, u]) || []);
+
+		const users = profiles.map(profile => {
+			const authUser = authMap.get(profile.id);
+			return {
+				...profile,
+				last_sign_in_at: authUser?.last_sign_in_at || null,
+				email_confirmed_at: authUser?.email_confirmed_at || null,
+				created_at_auth: authUser?.created_at || null
+			};
+		});
+
+		return json({ users });
+
+	} catch (err) {
+		console.error('Error fetching users:', err);
+		if (err.status) throw err;
+		throw error(500, 'Internal server error');
+	}
+}
+
 export async function POST(event) {
 	try {
 		// Check if user has platform admin access

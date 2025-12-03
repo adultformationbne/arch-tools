@@ -150,7 +150,61 @@ export async function GET({ url, locals }) {
 			scheduleMap.set(entry.date, entry);
 		});
 
-		// 3. Fetch contributors with patterns (for virtual assignments)
+		// 3. Fetch assignment rules
+		const { data: rules, error: rulesError } = await supabase
+			.from('dgr_assignment_rules')
+			.select('*')
+			.eq('active', true)
+			.order('priority', { ascending: true });
+
+		if (rulesError) {
+			console.error('Failed to fetch assignment rules:', rulesError);
+		}
+
+		// Build calendar season lookup for rule checking
+		const calendarSeasonMap = new Map();
+		calendarData.forEach((cal) => {
+			calendarSeasonMap.set(cal.calendar_date, {
+				season: cal.liturgical_season,
+				rank: cal.liturgical_rank,
+				name: cal.liturgical_name
+			});
+		});
+
+		// Check if a date should skip patterns based on rules
+		function shouldSkipPattern(date) {
+			const calInfo = calendarSeasonMap.get(date);
+			if (!calInfo || !rules) return false;
+
+			for (const rule of rules) {
+				if (rule.action_type !== 'skip_pattern') continue;
+
+				// Check season condition
+				if (rule.condition_season && calInfo.season) {
+					if (calInfo.season.toLowerCase() === rule.condition_season.toLowerCase()) {
+						return true;
+					}
+				}
+
+				// Check day type condition
+				if (rule.condition_day_type && calInfo.rank) {
+					if (calInfo.rank.toLowerCase().includes(rule.condition_day_type.toLowerCase())) {
+						return true;
+					}
+				}
+
+				// Check liturgical day name contains
+				if (rule.condition_liturgical_day_contains && calInfo.name) {
+					if (calInfo.name.toLowerCase().includes(rule.condition_liturgical_day_contains.toLowerCase())) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		// 4. Fetch contributors with patterns (for virtual assignments)
 		const { data: contributors, error: contribError } = await supabase
 			.from('dgr_contributors')
 			.select('id, name, email, access_token, schedule_pattern')
@@ -158,7 +212,7 @@ export async function GET({ url, locals }) {
 
 		if (contribError) throw contribError;
 
-		// Build pattern lookup: date -> contributor
+		// Build pattern lookup: date -> contributor (respecting rules)
 		const patternMap = new Map();
 		contributors.forEach((contrib) => {
 			if (!contrib.schedule_pattern || !contrib.schedule_pattern.type) return;
@@ -167,6 +221,9 @@ export async function GET({ url, locals }) {
 			const dates = calculatePatternDates(pattern, startDate, endDate);
 
 			dates.forEach((date) => {
+				// Skip if rules say to skip patterns for this date
+				if (shouldSkipPattern(date)) return;
+
 				// Only set if no pattern already exists for this date
 				if (!patternMap.has(date)) {
 					patternMap.set(date, {
@@ -237,42 +294,75 @@ export async function GET({ url, locals }) {
 }
 
 // Helper function to calculate dates from pattern
+// Supports both single value and array of values
 function calculatePatternDates(pattern, startDate, endDate) {
 	const dates = [];
-	const start = new Date(startDate);
-	const end = new Date(endDate);
+
+	// Parse dates as UTC to avoid timezone issues
+	const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+	const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+	const start = new Date(Date.UTC(startYear, startMonth - 1, startDay));
+	const end = new Date(Date.UTC(endYear, endMonth - 1, endDay));
+
+	// Support both 'value' (single) and 'values' (array) for backward compatibility
+	const getValues = (pattern) => {
+		if (pattern.values && Array.isArray(pattern.values)) {
+			return pattern.values;
+		}
+		if (pattern.value !== undefined) {
+			return [pattern.value];
+		}
+		return [];
+	};
+
+	// Helper to format date as YYYY-MM-DD
+	const formatDate = (d) => {
+		const year = d.getUTCFullYear();
+		const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+		const day = String(d.getUTCDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	};
 
 	if (pattern.type === 'day_of_month') {
-		const dayOfMonth = pattern.value;
-		const current = new Date(start);
+		const daysOfMonth = getValues(pattern);
 
-		while (current <= end) {
-			const testDate = new Date(
-				current.getFullYear(),
-				current.getMonth(),
-				dayOfMonth
-			);
+		for (const dayOfMonth of daysOfMonth) {
+			const current = new Date(start);
 
-			if (testDate >= start && testDate <= end) {
-				dates.push(testDate.toISOString().split('T')[0]);
+			while (current <= end) {
+				// Check if this day exists in this month (e.g., 31st doesn't exist in Feb)
+				const lastDayOfMonth = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0)).getUTCDate();
+
+				if (dayOfMonth <= lastDayOfMonth) {
+					const testDate = new Date(Date.UTC(
+						current.getUTCFullYear(),
+						current.getUTCMonth(),
+						dayOfMonth
+					));
+
+					if (testDate >= start && testDate <= end) {
+						dates.push(formatDate(testDate));
+					}
+				}
+
+				// Move to next month
+				current.setUTCMonth(current.getUTCMonth() + 1);
 			}
-
-			// Move to next month
-			current.setMonth(current.getMonth() + 1);
 		}
 	} else if (pattern.type === 'day_of_week') {
-		const targetDay = pattern.value; // 0=Sunday, 6=Saturday
+		const targetDays = getValues(pattern); // 0=Sunday, 6=Saturday
 		const current = new Date(start);
 
 		while (current <= end) {
-			if (current.getDay() === targetDay) {
-				dates.push(current.toISOString().split('T')[0]);
+			if (targetDays.includes(current.getUTCDay())) {
+				dates.push(formatDate(current));
 			}
-			current.setDate(current.getDate() + 1);
+			current.setUTCDate(current.getUTCDate() + 1);
 		}
 	}
 
-	return dates;
+	// Sort and deduplicate
+	return [...new Set(dates)].sort();
 }
 
 export async function POST({ request, locals }) {
@@ -293,6 +383,8 @@ export async function POST({ request, locals }) {
 				return await approveReflection(data);
 			case 'update_status':
 				return await updateStatus(data);
+			case 'create_with_status':
+				return await createWithStatus(data);
 			case 'update_readings':
 				return await updateReadings(data);
 			case 'delete_schedule':
@@ -446,6 +538,93 @@ async function updateStatus({ scheduleId, status }) {
 			.update(updateData)
 			.eq('id', scheduleId)
 			.select()
+			.single();
+
+		if (error) throw error;
+
+		return json({ success: true, schedule: data });
+	} catch (error) {
+		throw error;
+	}
+}
+
+/**
+ * Create a new schedule entry with a specific status.
+ * Used for pattern-based entries when status is changed in UI.
+ */
+async function createWithStatus({ date, contributorId, status }) {
+	try {
+		// Validate status
+		const validStatuses = ['pending', 'submitted', 'approved', 'published'];
+		if (!validStatuses.includes(status)) {
+			throw new Error('Invalid status value');
+		}
+
+		// For new entries (pattern-based), only 'pending' makes sense
+		// Can't mark as submitted/approved/published without content
+		if (status !== 'pending') {
+			throw new Error('Cannot set status to ' + status + ' without content. Assign the date first, then the contributor can submit.');
+		}
+
+		// Check if entry already exists for this date
+		const { data: existing } = await supabase
+			.from('dgr_schedule')
+			.select('id')
+			.eq('date', date)
+			.maybeSingle();
+
+		if (existing) {
+			// Update existing entry instead
+			return await updateStatus({ scheduleId: existing.id, status });
+		}
+
+		// Get contributor details if provided
+		let contributor = null;
+		if (contributorId) {
+			const { data: contrib } = await supabase
+				.from('dgr_contributors')
+				.select('email')
+				.eq('id', contributorId)
+				.single();
+			contributor = contrib;
+		}
+
+		// Generate submission token
+		const { data: token } = await supabase.rpc('generate_submission_token');
+
+		// Fetch readings from database lectionary
+		const readingsData = await fetchReadingsFromDatabase(date);
+
+		// Create schedule entry
+		const scheduleEntry = {
+			date,
+			contributor_id: contributorId || null,
+			contributor_email: contributor?.email || null,
+			submission_token: token,
+			status
+		};
+
+		// Add readings if found
+		if (readingsData) {
+			scheduleEntry.gospel_reference = readingsData.reference;
+			scheduleEntry.liturgical_date = readingsData.liturgicalDate;
+			scheduleEntry.readings_data = readingsData.readings;
+		}
+
+		// Set timestamp based on status
+		if (status === 'approved') {
+			scheduleEntry.approved_at = new Date().toISOString();
+		} else if (status === 'published') {
+			scheduleEntry.published_at = new Date().toISOString();
+		}
+
+		const { data, error } = await supabase
+			.from('dgr_schedule')
+			.insert(scheduleEntry)
+			.select(`
+				*,
+				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+			`)
 			.single();
 
 		if (error) throw error;
