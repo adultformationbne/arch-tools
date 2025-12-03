@@ -1,5 +1,5 @@
 <script>
-	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check } from 'lucide-svelte';
+	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen } from 'lucide-svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { createDropdown } from '$lib/utils/dropdown.js';
 
@@ -80,6 +80,34 @@
 		return seasonBarColors[season] || 'bg-gray-400';
 	}
 
+	// Format readings for title attribute
+	function formatReadingsTitle(readings) {
+		if (!readings) return '';
+		const parts = [];
+		if (readings.first_reading) parts.push(`1st: ${readings.first_reading}`);
+		if (readings.psalm) parts.push(`Ps: ${readings.psalm}`);
+		if (readings.second_reading) parts.push(`2nd: ${readings.second_reading}`);
+		if (readings.gospel) parts.push(`Gospel: ${readings.gospel}`);
+		return parts.join('\n');
+	}
+
+	// State for readings popover
+	let readingsPopover = $state({ show: false, readings: null, x: 0, y: 0 });
+
+	function showReadings(event, readings) {
+		const rect = event.currentTarget.getBoundingClientRect();
+		readingsPopover = {
+			show: true,
+			readings,
+			x: rect.right + 8,
+			y: rect.top
+		};
+	}
+
+	function hideReadings() {
+		readingsPopover = { show: false, readings: null, x: 0, y: 0 };
+	}
+
 	// Check if entry date is within 14 days of today
 	function isWithin14Days(dateStr) {
 		const entryDate = new Date(dateStr + 'T00:00:00');
@@ -108,7 +136,7 @@
 
 	{#if schedule.length === 0}
 		<div class="px-6 py-8 text-center text-gray-500">
-			No schedule entries found. Generate a schedule to get started.
+			No dates found. Check your liturgical calendar data.
 		</div>
 	{:else}
 		<div class="overflow-x-auto">
@@ -133,7 +161,7 @@
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">
 					{#each schedule as entry (entry.id || entry.date)}
-						<tr class:bg-blue-50={entry.from_pattern}>
+						<tr class:bg-blue-50={entry.from_pattern} class:bg-gray-50={!entry.id && !entry.from_pattern}>
 							<!-- Liturgical Season Color Bar -->
 							<td class="relative p-0">
 								{#if entry.liturgical_season}
@@ -149,34 +177,72 @@
 								</div>
 							</td>
 							<td class="px-6 py-4">
-								<div class="text-sm text-gray-700">
-									{#if entry.liturgical_name}
-										<div class="max-w-xs truncate" title={entry.liturgical_name}>
-											{decodeHtmlEntities(entry.liturgical_name)}
-										</div>
-										{#if entry.liturgical_rank && entry.liturgical_rank !== 'Feria'}
-											<span class="text-xs text-gray-500">({entry.liturgical_rank})</span>
+								<div class="text-sm text-gray-700 flex items-center gap-2">
+									<div class="flex-1 min-w-0">
+										{#if entry.liturgical_name}
+											<div class="max-w-xs truncate" title={entry.liturgical_name}>
+												{decodeHtmlEntities(entry.liturgical_name)}
+											</div>
+											{#if entry.liturgical_rank && entry.liturgical_rank !== 'Feria'}
+												<span class="text-xs text-gray-500">({entry.liturgical_rank})</span>
+											{/if}
+										{:else}
+											—
 										{/if}
-									{:else}
-										—
+									</div>
+									{#if entry.readings}
+										<button
+											onmouseenter={(e) => showReadings(e, entry.readings)}
+											onmouseleave={hideReadings}
+											class="flex-shrink-0 p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-indigo-600 transition-colors"
+											type="button"
+											title={formatReadingsTitle(entry.readings)}
+										>
+											<BookOpen class="h-4 w-4" />
+										</button>
 									{/if}
 								</div>
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
 								{#if entry.from_pattern}
+									<!-- Pattern-based assignment (no schedule row yet) -->
 									<div class="flex items-center gap-2">
-										<span class="text-sm text-gray-700">
-											{entry.contributor?.name || 'Unknown'}
-										</span>
-										<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+										<select
+											value={entry.contributor_id || ''}
+											onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+											class="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										>
+											<option value="">Unassigned</option>
+											{#each contributors as contributor}
+												<option value={contributor.id}>
+													{contributor.name}
+												</option>
+											{/each}
+										</select>
+										<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700" title="From recurring pattern - no schedule row exists yet">
 											Pattern
 										</span>
 									</div>
-								{:else}
+								{:else if entry.id}
+									<!-- Actual schedule entry -->
 									<select
 										value={entry.contributor_id || ''}
-										onchange={(e) => onUpdateAssignment(entry.id, e.target.value)}
+										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
 										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+									>
+										<option value="">Unassigned</option>
+										{#each contributors as contributor}
+											<option value={contributor.id}>
+												{contributor.name}
+											</option>
+										{/each}
+									</select>
+								{:else}
+									<!-- Unassigned date (no schedule row, no pattern) -->
+									<select
+										value=""
+										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+										class="rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
@@ -189,10 +255,12 @@
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
 								{#if entry.from_pattern}
-									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
-										Not Started
+									<!-- Pattern-based: no schedule row yet -->
+									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-50 text-blue-600">
+										Awaiting
 									</span>
-								{:else}
+								{:else if entry.id}
+									<!-- Has schedule row: show status dropdown -->
 									<select
 										value={entry.status}
 										onchange={(e) => onUpdateStatus(entry.id, e.target.value)}
@@ -204,6 +272,11 @@
 											<option value={option.value}>{option.label}</option>
 										{/each}
 									</select>
+								{:else}
+									<!-- No schedule, no pattern: completely unassigned -->
+									<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
+										—
+									</span>
 								{/if}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap">
@@ -383,3 +456,28 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Readings Popover -->
+{#if readingsPopover.show && readingsPopover.readings}
+	<div
+		class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3 text-sm max-w-xs"
+		style="left: {readingsPopover.x}px; top: {readingsPopover.y}px;"
+		onmouseenter={() => readingsPopover.show = true}
+		onmouseleave={hideReadings}
+	>
+		<div class="space-y-1.5">
+			{#if readingsPopover.readings.first_reading}
+				<div><span class="font-semibold text-gray-500">1st:</span> {readingsPopover.readings.first_reading}</div>
+			{/if}
+			{#if readingsPopover.readings.psalm}
+				<div><span class="font-semibold text-gray-500">Ps:</span> {readingsPopover.readings.psalm}</div>
+			{/if}
+			{#if readingsPopover.readings.second_reading}
+				<div><span class="font-semibold text-gray-500">2nd:</span> {readingsPopover.readings.second_reading}</div>
+			{/if}
+			{#if readingsPopover.readings.gospel}
+				<div><span class="font-semibold text-gray-500">Gospel:</span> {readingsPopover.readings.gospel}</div>
+			{/if}
+		</div>
+	</div>
+{/if}

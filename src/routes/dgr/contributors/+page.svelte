@@ -106,6 +106,8 @@
 			{dayNames}
 			onAddContributor={addContributor}
 			onUpdateContributor={updateContributor}
+			onBulkImport={loadContributors}
+			onRefresh={loadContributors}
 		/>
 	{/if}
 </div>

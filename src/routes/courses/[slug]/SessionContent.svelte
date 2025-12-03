@@ -1,6 +1,7 @@
 <script>
 	import { Play, FileText, Book, Edit3, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-svelte';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
+	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 
 	let {
 		currentSession = $bindable(),
@@ -251,16 +252,14 @@
 									<div class="flex items-center justify-between">
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
-												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
 												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
 											></div>
 										</div>
 										<a
@@ -441,16 +440,14 @@
 									<div class="flex items-center justify-between">
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
-												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
 												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
 											></div>
 										</div>
 										<a
@@ -626,16 +623,14 @@
 									<div class="flex items-center justify-between">
 										<div class="flex items-center gap-3">
 											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' :
-												 currentSessionData.reflectionStatus === 'completed' ? 'Completed' :
-												 currentSessionData.reflectionStatus === 'needs_revision' ? 'Needs revision' : 'In progress'}
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
 											</span>
 											<div
 												class="w-3 h-3 rounded-full"
 												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={currentSessionData.reflectionStatus === 'completed'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
 												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={currentSessionData.reflectionStatus === 'in_progress'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
 											></div>
 										</div>
 										<a

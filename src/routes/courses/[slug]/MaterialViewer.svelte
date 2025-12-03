@@ -37,6 +37,7 @@
 	const getIcon = (type) => {
 		switch(type) {
 			case 'video': return Play;
+			case 'embed': return Play;
 			case 'document': return FileText;
 			case 'native': return Book;
 			case 'link': return FileText;
@@ -211,6 +212,7 @@
 							{#if selectedMaterial}
 								<p class="text-sm text-gray-600 mt-1">
 									{selectedMaterial.type === 'video' ? 'Video Content' :
+									 selectedMaterial.type === 'embed' ? 'Embedded Video' :
 									 selectedMaterial.type === 'native' ? 'Text Document' :
 									 selectedMaterial.type === 'document' ? 'PDF Document' : 'External Link'}
 								</p>
@@ -250,6 +252,11 @@
 									</a>
 								</div>
 							{/if}
+						{:else if selectedMaterial?.type === 'embed'}
+							<!-- Embedded Video (SharePoint/Stream) - Theatre Mode -->
+							<div class="embed-theatre w-full">
+								{@html selectedMaterial.content}
+							</div>
 						{:else if selectedMaterial?.type === 'native'}
 							<!-- Native HTML Content -->
 							<div class="max-w-4xl mx-auto content-html">
@@ -298,6 +305,8 @@
 							<div class="text-sm text-gray-600">
 								{#if selectedMaterial.type === 'video'}
 									<span>Video content • Click to expand for full screen</span>
+								{:else if selectedMaterial.type === 'embed'}
+									<span>Embedded video • SharePoint/Stream</span>
 								{:else if selectedMaterial.type === 'native'}
 									<span>Text content • Formatted document</span>
 								{:else if selectedMaterial.type === 'document'}
@@ -336,6 +345,21 @@
 {/if}
 
 <style>
+	/* Embed Theatre Mode - override hardcoded sizes */
+	.embed-theatre {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.embed-theatre :global(div) {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	.embed-theatre :global(iframe) {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
 
 	/* Custom HTML content styling - using direct CSS for compatibility */
 	:global(.content-html h1) {

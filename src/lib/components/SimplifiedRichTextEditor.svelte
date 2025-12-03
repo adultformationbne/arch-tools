@@ -1,5 +1,6 @@
 <script>
 	import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3 } from 'lucide-svelte';
+	import { cleanWordHtml } from '$lib/utils/html-cleaner.js';
 
 	let {
 		content = $bindable(''),
@@ -105,45 +106,15 @@
 		}, 0);
 	};
 
+	// NO inline styles - CSS handles all styling
 	const applyParagraphStyles = (element) => {
-		element.style.fontSize = '';
-		element.style.fontWeight = '';
-		element.style.lineHeight = '1.6';
-		element.style.marginBottom = '1rem';
-		element.style.color = '';
+		// Clear any Word garbage styles
+		element.removeAttribute('style');
 	};
 
 	const applyHeadingStyles = (element, level) => {
-		// Clear any existing styles
-		element.style.fontSize = '';
-		element.style.fontWeight = '';
-		element.style.lineHeight = '';
-		element.style.marginBottom = '';
-
-		// Apply appropriate styles
-		switch(level) {
-			case 1:
-				element.style.fontSize = '2rem';
-				element.style.fontWeight = 'bold';
-				element.style.lineHeight = '1.2';
-				element.style.marginBottom = '1rem';
-				element.style.color = '#1f2937';
-				break;
-			case 2:
-				element.style.fontSize = '1.5rem';
-				element.style.fontWeight = '600';
-				element.style.lineHeight = '1.3';
-				element.style.marginBottom = '0.75rem';
-				element.style.color = '#374151';
-				break;
-			case 3:
-				element.style.fontSize = '1.25rem';
-				element.style.fontWeight = '500';
-				element.style.lineHeight = '1.4';
-				element.style.marginBottom = '0.5rem';
-				element.style.color = '#374151';
-				break;
-		}
+		// Clear any Word garbage styles - CSS handles styling
+		element.removeAttribute('style');
 	};
 
 	const insertList = (ordered = false) => {
@@ -161,28 +132,38 @@
 	};
 
 	const applyListStyles = (listElement) => {
-		// Apply consistent list styling
-		listElement.style.paddingLeft = '1.5rem';
-		listElement.style.marginBottom = '1rem';
-
-		// Style list items
-		const items = listElement.querySelectorAll('li');
-		items.forEach(item => {
-			item.style.marginBottom = '0.25rem';
-			item.style.lineHeight = '1.5';
+		// Clear any Word garbage styles - CSS handles styling
+		listElement.removeAttribute('style');
+		listElement.querySelectorAll('li').forEach(item => {
+			item.removeAttribute('style');
 		});
-
-		// Ensure proper list style type
-		if (listElement.tagName === 'UL') {
-			listElement.style.listStyleType = 'disc';
-		} else if (listElement.tagName === 'OL') {
-			listElement.style.listStyleType = 'decimal';
-		}
 	};
 
 	const updateContent = () => {
 		if (!editor) return;
-		content = editor.innerHTML;
+		// Strip any inline styles before saving - store clean semantic HTML only
+		const temp = document.createElement('div');
+		temp.innerHTML = editor.innerHTML;
+
+		// Remove all inline styles
+		temp.querySelectorAll('*').forEach(el => el.removeAttribute('style'));
+
+		// Fix invalid nesting: headings containing block elements
+		temp.querySelectorAll('h1, h2, h3').forEach(heading => {
+			const hasBlockChildren = heading.querySelector('p, ul, ol, li, div, blockquote, table');
+			if (hasBlockChildren) {
+				// Unwrap the heading - it's invalid
+				heading.replaceWith(...heading.childNodes);
+			}
+		});
+
+		content = temp.innerHTML
+			.replace(/<p><\/p>/g, '')
+			.replace(/<p><br><\/p>/g, '')
+			.replace(/<strong><\/strong>/g, '')
+			.replace(/<em><\/em>/g, '')
+			.replace(/<h([123])><\/h\1>/g, '')      // Empty headings
+			.replace(/<h([123])><br><\/h\1>/g, ''); // Headings with just br
 	};
 
 	const handleKeyDown = (e) => {
@@ -280,21 +261,34 @@
 		}
 	});
 
-	// Handle paste - clean up Word/formatting
+	// Handle paste - clean up Word/formatting using smart cleaner
 	const handlePaste = (e) => {
 		e.preventDefault();
 
-		// Get clipboard data
 		const clipboardData = e.clipboardData || window.clipboardData;
 		const htmlData = clipboardData.getData('text/html');
 		const textData = clipboardData.getData('text/plain');
 
 		if (htmlData) {
-			// Clean Word HTML
-			const cleanedHtml = cleanWordHtml(htmlData);
+			console.log('═'.repeat(60));
+			console.log('📋 RAW PASTE HTML (first 2000 chars):');
+			console.log('═'.repeat(60));
+			console.log(htmlData.substring(0, 2000));
+			console.log('═'.repeat(60));
+
+			// Use smart cleaner with debug logging
+			const cleanedHtml = cleanWordHtml(htmlData, { debug: true });
+
+			console.log('═'.repeat(60));
+			console.log('✨ CLEANED HTML:');
+			console.log('═'.repeat(60));
+			console.log(cleanedHtml);
+			console.log('═'.repeat(60));
+
 			document.execCommand('insertHTML', false, cleanedHtml);
 		} else if (textData) {
 			// Plain text - insert as paragraphs
+			console.log('📝 Plain text paste');
 			const paragraphs = textData.split('\n\n').filter(p => p.trim());
 			const html = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
 			document.execCommand('insertHTML', false, html);
@@ -304,103 +298,6 @@
 			updateContent();
 			updateFormatState();
 		}, 0);
-	};
-
-	// Clean Word/pasted HTML - keep ONLY h1-h3, p, ul, ol, li, strong, em
-	const cleanWordHtml = (html) => {
-		// STEP 1: Remove ALL HTML comments (including Word conditional comments)
-		html = html.replace(/<!--[\s\S]*?-->/g, '');
-
-		// STEP 2: Remove XML declarations and CDATA
-		html = html.replace(/<\?xml[\s\S]*?\?>/g, '');
-		html = html.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
-
-		// STEP 3: Parse into DOM
-		const temp = document.createElement('div');
-		temp.innerHTML = html;
-
-		// STEP 4: Remove Word-specific elements (meta, link, style, script, xml)
-		temp.querySelectorAll('meta, link, style, script, xml').forEach(el => el.remove());
-
-		// STEP 5: Remove ALL namespaced elements (w:*, o:*, v:*, m:*)
-		Array.from(temp.querySelectorAll('*')).forEach(el => {
-			if (el.tagName.includes(':')) {
-				el.remove();
-			}
-		});
-
-		// STEP 6: Process remaining elements - keep only allowed tags
-		const allowedTags = ['P', 'H1', 'H2', 'H3', 'UL', 'OL', 'LI', 'STRONG', 'EM', 'B', 'I', 'BR'];
-
-		Array.from(temp.querySelectorAll('*')).forEach(el => {
-			// Remove ALL attributes (style, class, etc.) from every element
-			while (el.attributes.length > 0) {
-				el.removeAttribute(el.attributes[0].name);
-			}
-
-			// Handle disallowed tags
-			if (!allowedTags.includes(el.tagName)) {
-				if (el.tagName === 'SPAN') {
-					// Unwrap spans (Word uses these heavily for formatting)
-					el.replaceWith(...el.childNodes);
-				} else if (el.tagName === 'DIV') {
-					// Convert divs to paragraphs
-					const p = document.createElement('p');
-					p.innerHTML = el.innerHTML;
-					el.replaceWith(p);
-				} else {
-					// Other disallowed tags - unwrap if inline, convert to p if block
-					try {
-						const display = window.getComputedStyle(el).display;
-						if (display === 'block') {
-							const p = document.createElement('p');
-							p.innerHTML = el.innerHTML;
-							el.replaceWith(p);
-						} else {
-							el.replaceWith(...el.childNodes);
-						}
-					} catch {
-						// If getComputedStyle fails, just unwrap
-						el.replaceWith(...el.childNodes);
-					}
-				}
-				return;
-			}
-
-			// Convert B to STRONG, I to EM for consistency
-			if (el.tagName === 'B') {
-				const strong = document.createElement('strong');
-				strong.innerHTML = el.innerHTML;
-				el.replaceWith(strong);
-			} else if (el.tagName === 'I') {
-				const em = document.createElement('em');
-				em.innerHTML = el.innerHTML;
-				el.replaceWith(em);
-			}
-		});
-
-		// STEP 7: Clean up empty paragraphs and excessive line breaks
-		temp.querySelectorAll('p').forEach(p => {
-			if (!p.textContent.trim()) {
-				p.remove();
-			}
-		});
-
-		// STEP 8: Remove consecutive BR tags (Word adds lots of these)
-		let previousWasBr = false;
-		Array.from(temp.querySelectorAll('br')).forEach(br => {
-			if (previousWasBr) {
-				br.remove();
-			} else {
-				previousWasBr = true;
-			}
-			// Reset on non-br
-			if (br.nextSibling && br.nextSibling.nodeType !== 1) {
-				previousWasBr = false;
-			}
-		});
-
-		return temp.innerHTML;
 	};
 
 	// Apply formatting styles after any input
@@ -465,9 +362,9 @@
 	};
 </script>
 
-<div class="rich-text-editor border border-gray-300 rounded-lg overflow-hidden">
-	<!-- Toolbar -->
-	<div class="flex items-center gap-1 p-3 bg-gray-50 border-b border-gray-200">
+<div class="rich-text-editor rounded-lg shadow-sm border border-gray-200 bg-white">
+	<!-- Toolbar - sticky below page header -->
+	<div class="editor-toolbar flex items-center gap-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm sticky top-[70px] z-20">
 		<!-- Headings -->
 		<div class="flex border-r border-gray-300 pr-3 mr-3">
 			<button
@@ -546,8 +443,7 @@
 		role="textbox"
 		aria-multiline="true"
 		tabindex="0"
-		class="p-4 min-h-80 max-h-96 overflow-y-auto focus:outline-none prose prose-sm max-w-none"
-		style="focus:ring-color: #c59a6b;"
+		class="editor-area"
 		onkeydown={handleKeyDown}
 		oninput={handleInput}
 		onpaste={handlePaste}
@@ -558,38 +454,90 @@
 </div>
 
 <style>
-	.rich-text-editor [contenteditable]:empty:before {
+	/* Editor area - generous padding */
+	.editor-area {
+		padding: 2rem 3.5rem;
+		min-height: 350px;
+		outline: none;
+		background: white;
+	}
+
+	/* Placeholder */
+	.editor-area:empty:before {
 		content: attr(data-placeholder);
-		@apply text-gray-400 pointer-events-none italic;
+		color: #9ca3af;
+		pointer-events: none;
+		font-style: italic;
 	}
 
-	.rich-text-editor :global([contenteditable] p) {
-		@apply leading-relaxed mb-4 text-base;
+	/* Typography */
+	.rich-text-editor :global(.editor-area h1) {
+		font-size: 1.75rem !important;
+		font-weight: 700 !important;
+		line-height: 1.3 !important;
+		margin-bottom: 0.75rem !important;
+		margin-top: 1.25rem !important;
+		color: #1f2937 !important;
 	}
 
-	/* Ensure lists display properly in contenteditable */
-	.rich-text-editor :global([contenteditable] ul) {
-		@apply list-disc pl-6 mb-4;
+	.rich-text-editor :global(.editor-area h1:first-child) {
+		margin-top: 0 !important;
 	}
 
-	.rich-text-editor :global([contenteditable] ol) {
-		@apply list-decimal pl-6 mb-4;
+	.rich-text-editor :global(.editor-area h2) {
+		font-size: 1.375rem !important;
+		font-weight: 600 !important;
+		line-height: 1.35 !important;
+		margin-bottom: 0.5rem !important;
+		margin-top: 1rem !important;
+		color: #374151 !important;
 	}
 
-	.rich-text-editor :global([contenteditable] li) {
-		@apply list-item mb-1 leading-normal ml-0;
+	.rich-text-editor :global(.editor-area h3) {
+		font-size: 1.125rem !important;
+		font-weight: 600 !important;
+		line-height: 1.4 !important;
+		margin-bottom: 0.5rem !important;
+		margin-top: 0.75rem !important;
+		color: #374151 !important;
 	}
 
-	/* Ensure heading styles are preserved */
-	.rich-text-editor :global([contenteditable] h1) {
-		@apply text-3xl font-bold leading-tight mb-4 text-gray-800;
+	.rich-text-editor :global(.editor-area p) {
+		font-size: 1rem !important;
+		line-height: 1.7 !important;
+		margin-bottom: 0.75rem !important;
+		color: #374151 !important;
 	}
 
-	.rich-text-editor :global([contenteditable] h2) {
-		@apply text-2xl font-semibold leading-snug mb-3 text-gray-700;
+	.rich-text-editor :global(.editor-area ul),
+	.rich-text-editor :global(.editor-area ol) {
+		padding-left: 1.75rem !important;
+		margin-bottom: 0.75rem !important;
+		font-size: 1rem !important;
+		color: #374151 !important;
 	}
 
-	.rich-text-editor :global([contenteditable] h3) {
-		@apply text-xl font-medium leading-snug mb-2 text-gray-700;
+	.rich-text-editor :global(.editor-area ul) {
+		list-style-type: disc !important;
+	}
+
+	.rich-text-editor :global(.editor-area ol) {
+		list-style-type: decimal !important;
+	}
+
+	.rich-text-editor :global(.editor-area li) {
+		margin-bottom: 0.35rem !important;
+		line-height: 1.6 !important;
+		font-size: 1rem !important;
+	}
+
+	.rich-text-editor :global(.editor-area strong),
+	.rich-text-editor :global(.editor-area b) {
+		font-weight: 700 !important;
+	}
+
+	.rich-text-editor :global(.editor-area em),
+	.rich-text-editor :global(.editor-area i) {
+		font-style: italic !important;
 	}
 </style>

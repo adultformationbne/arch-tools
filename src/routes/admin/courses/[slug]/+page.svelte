@@ -7,7 +7,7 @@
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
-	import EmailCohortModal from '$lib/components/EmailCohortModal.svelte';
+	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 	import {
 		getUserReflectionStatus,
 		formatUserReflectionStatus,
@@ -29,7 +29,6 @@
 	let showDeleteConfirm = $state(false);
 	let showEmailModal = $state(false);
 	let emailRecipients = $state([]);
-	let emailModalRef = $state(null);
 
 	// Participants state
 	let participants = $state([]);
@@ -225,7 +224,6 @@
 	function handleEmailAll() {
 		emailRecipients = participants;
 		showEmailModal = true;
-		emailModalRef?.open();
 	}
 
 	function handleExport() {
@@ -240,7 +238,6 @@
 	function handleEmailSelected() {
 		emailRecipients = participants.filter(p => selectedParticipants.has(p.id));
 		showEmailModal = true;
-		emailModalRef?.open();
 	}
 
 	function handleAdvanceSelected() {
@@ -557,13 +554,12 @@
 	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
 </ConfirmationModal>
 
-<EmailCohortModal
-	bind:this={emailModalRef}
+<EmailSenderModal
 	show={showEmailModal}
 	{courseSlug}
-	courseName={data.course?.name || ''}
-	cohort={selectedCohort}
+	course={data.course}
 	recipients={emailRecipients}
+	cohortId={selectedCohort?.id}
 	onClose={() => showEmailModal = false}
 	onSent={() => selectedParticipants = new Set()}
 />

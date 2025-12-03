@@ -4,6 +4,7 @@
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
 	import ReflectionModal from './ReflectionModal.svelte';
+	import { isComplete, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
 
@@ -30,7 +31,7 @@
 		const sessionQuestion = data.questionsBySession[sessionNum] || null;
 		const sessionInfo = sessionsByNumber[sessionNum];
 
-		// Calculate reflection status for this session
+		// Get raw database status for this session (utility handles display)
 		let reflectionStatus = null;
 		if (sessionQuestion) {
 			// Find if user has a response for this session
@@ -38,16 +39,8 @@
 			if (!existingResponse) {
 				reflectionStatus = 'not_started';
 			} else {
-				// Map pastReflections status (which uses 'graded' for passed) to display status
-				const status = existingResponse.status;
-				if (status === 'graded' || status === 'passed') {
-					reflectionStatus = 'completed';
-				} else if (status === 'needs_revision') {
-					reflectionStatus = 'needs_revision';
-				} else {
-					// submitted, under_review, etc. -> in_progress
-					reflectionStatus = 'in_progress';
-				}
+				// Pass raw database status - SessionContent uses utility for display
+				reflectionStatus = normalizeStatus(existingResponse.status);
 			}
 		}
 

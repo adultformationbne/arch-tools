@@ -547,47 +547,47 @@ Courses can be created/edited at `/courses` (internal admin route) with:
                                          # - Managed by platform admins only
 ```
 
-### Course-Specific Routes
+### Participant Routes (Student-Facing)
 ```
 /courses/[slug]/                          # Course context (theme applied)
-├── login                                 # Course-specific login
-├── dashboard                             # Student dashboard (current cohort info)
-├── materials                             # Session materials (student view)
-├── reflections                           # Student reflection submission
+├── (dashboard)                           # Student dashboard (main page)
+├── materials                             # Session materials viewer
+├── reflections                           # Reflection submission & status
 ├── write/[questionId]                    # Reflection writing page
-├── profile                               # Course profile
-└── admin/                                # Admin-only routes (course admins)
-    ├── (dashboard)                       # Cohort management dashboard
-    ├── courses/                          # Module & cohort management
-    ├── modules/                          # Module CRUD (modals, no detail pages)
-    ├── sessions/                         # Session editor (materials + reflections)
-    │   └── ?module={id}                  # Optional: pre-select module
-    ├── reflections/                      # Review student submissions
-    ├── participants/                     # Participant management
-    ├── enrollments/                      # Enrollment management
-    ├── attendance/                       # Attendance tracking
-    ├── hubs/                             # Hub management
-    ├── emails/                           # Email template management
-    │   └── ?view={send|logs|templateId}  # View modes
-    └── settings/                         # Course settings
+└── profile                               # Student profile
+```
+
+### Admin Routes (Course Management)
+```
+/admin/courses/[slug]/                    # Admin context for course
+├── (dashboard)                           # Cohort management dashboard
+├── modules/                              # Module CRUD
+├── sessions/                             # Session editor (materials + reflections)
+│   └── ?module={id}                      # Pre-select module
+├── reflections/                          # Review & mark student submissions
+├── participants/                         # Enrollment management
+├── attendance/                           # Attendance tracking
+├── hubs/                                 # Hub management
+├── emails/                               # Email template management & sending
+└── settings/                             # Course settings
 ```
 
 ### Key Route Concepts
 
 **No Individual Module Pages:**
-- Modules are managed via modals on `/admin/modules`
-- Click "Edit" → redirects to `/admin/sessions?module={id}`
-- No `/admin/modules/[id]` route exists
+- Modules are managed via modals on `/admin/courses/[slug]/modules`
+- Click "Edit" → redirects to `/admin/courses/[slug]/sessions?module={id}`
+- No `/admin/courses/[slug]/modules/[id]` route exists
 
 **Single Sessions Editor:**
-- `/admin/sessions` handles ALL session content editing
+- `/admin/courses/[slug]/sessions` handles ALL session content editing
 - Module dropdown to switch between modules
-- Session tabs (1-8) to switch between sessions
+- Session tabs (0-9) to switch between sessions
 - Edit materials and reflections in one unified interface
 
 **Course Settings vs Management:**
-- **Settings** (theme, name, slug) → `/(internal)/courses` (platform level)
-- **Management** (modules, sessions, cohorts) → `/courses/[slug]/admin/*` (course level)
+- **Platform Settings** (create courses, theme) → `/(internal)/courses` (platform level)
+- **Course Management** (modules, sessions, cohorts) → `/admin/courses/[slug]/*` (course level)
 
 ---
 
@@ -692,13 +692,13 @@ Navigate to `/courses` as a platform admin:
 
 ### 2. Create Modules
 
-Navigate to `/courses/[slug]/admin/courses`:
+Navigate to `/admin/courses/[slug]/modules`:
 1. Create modules with names, descriptions, session counts
 2. Modules appear in order_number sequence
 
 ### 3. Add Materials & Reflections
 
-Navigate to `/courses/[slug]/admin/sessions`:
+Navigate to `/admin/courses/[slug]/sessions`:
 1. Select module from dropdown
 2. Select session (Pre-Start, 1-8, etc.)
 3. Add materials:
@@ -711,7 +711,7 @@ Navigate to `/courses/[slug]/admin/sessions`:
 
 ### 4. Create Cohorts
 
-Navigate to `/courses/[slug]/admin`:
+Navigate to `/admin/courses/[slug]`:
 1. Click **"New Cohort"** button
 2. Select module
 3. Set start/end dates
@@ -771,7 +771,7 @@ From cohort dashboard:
 
 ## 👨‍💼 Admin Experience
 
-### Cohort Management Dashboard (`/courses/[slug]/admin`)
+### Cohort Management Dashboard (`/admin/courses/[slug]`)
 - **Cohort pills** - Quick switch between cohorts (shows up to 4)
 - **Cohort details** - Module, dates, session progress, participant count
 - **Set current session** - Advance all students in cohort
@@ -779,7 +779,7 @@ From cohort dashboard:
 - **Participants list** - Full enrollment roster with progression tracking
 - **Bulk operations** - Advance students, manage attendance
 
-### Sessions Editor (`/courses/[slug]/admin/sessions`)
+### Sessions Editor (`/admin/courses/[slug]/sessions`)
 - **Module selector dropdown** - Switch between modules
 - **Session navigation** - Pre-Start + Sessions 1-8 (or custom count)
 - **Materials editor**:
@@ -794,7 +794,7 @@ From cohort dashboard:
 - **Live save status** indicator
 - Changes save automatically to database
 
-### Reflection Marking (`/courses/[slug]/admin/reflections`)
+### Reflection Marking (`/admin/courses/[slug]/reflections`)
 - Queue of ungraded reflections
 - Mark passing/not passing
 - Provide written feedback
@@ -893,10 +893,10 @@ Components automatically use course theme:
 - `/src/routes/courses/[slug]/+layout.svelte` - Apply theme as CSS variables
 
 **Course Admin:**
-- `/src/routes/courses/[slug]/admin/+page.svelte` - Cohort dashboard
-- `/src/routes/courses/[slug]/admin/sessions/+page.svelte` - Session & materials editor
-- `/src/routes/courses/[slug]/admin/reflections/+page.svelte` - Reflection marking
-- `/src/routes/courses/[slug]/admin/emails/+page.svelte` - Email management
+- `/src/routes/admin/courses/[slug]/+page.svelte` - Cohort dashboard
+- `/src/routes/admin/courses/[slug]/sessions/+page.svelte` - Session & materials editor
+- `/src/routes/admin/courses/[slug]/reflections/+page.svelte` - Reflection marking
+- `/src/routes/admin/courses/[slug]/emails/+page.svelte` - Email management
 
 **Email System:**
 - `/src/lib/utils/email-service.js` - Email sending & templating
@@ -1504,19 +1504,19 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 4. Save changes
 
 ### How to add a new module to a course?
-1. Go to `/courses/[slug]/admin/courses`
+1. Go to `/admin/courses/[slug]/modules`
 2. Create new module with name, description, session count
-3. Add materials via `/courses/[slug]/admin/modules`
+3. Add materials via `/admin/courses/[slug]/modules`
 
 ### How to start a cohort?
-1. Go to `/courses/[slug]/admin`
+1. Go to `/admin/courses/[slug]`
 2. Select cohort (should be at `current_session = 0` with status `'upcoming'`)
 3. Click "Advance to Session 1" button
 4. Cohort status automatically becomes `'active'`
 5. Students can now access Session 1 materials
 
 ### How to advance students to the next session?
-1. Go to `/courses/[slug]/admin`
+1. Go to `/admin/courses/[slug]`
 2. Click "Advance to Session [X]" button
 3. All students in cohort advance together
 4. Cohort remains `'active'` until manually marked complete
@@ -1538,7 +1538,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 **Important:** Course managers and admins should NOT be enrolled in cohorts. Cohort enrollments are for participants only (students and hub coordinators).
 
 ### How to mark a cohort as complete?
-1. Go to `/courses/[slug]/admin`
+1. Go to `/admin/courses/[slug]`
 2. Select the cohort
 3. Click "Mark Complete" button
 4. Status changes to `'completed'`

@@ -97,47 +97,60 @@ export async function GET({ url, locals }) {
 		const startDate = new Date().toISOString().split('T')[0];
 		const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-		// Get all actual schedule entries
-		let query = supabase
-			.from('dgr_schedule')
-			.select(
-				`
-        *,
-        contributor:dgr_contributors(name, email, access_token, schedule_pattern)
-      `
-			)
-			.gte('date', startDate)
-			.lte('date', endDate)
-			.order('date', { ascending: true });
-
-		if (status) {
-			query = query.eq('status', status);
-		}
-
-		const { data: scheduleEntries, error } = await query;
-
-		if (error) throw error;
-
-		// Fetch liturgical calendar data for all dates in range
+		// 1. Fetch calendar with readings using ordo tables
 		const { data: calendarData, error: calendarError } = await supabase
-			.from('liturgical_calendar')
-			.select('calendar_date, liturgical_season, liturgical_week, liturgical_name, liturgical_rank')
+			.from('ordo_calendar')
+			.select(`
+				calendar_date,
+				liturgical_name,
+				liturgical_rank,
+				liturgical_season,
+				liturgical_week,
+				ordo_lectionary_mapping!left (
+					lectionary!left (
+						first_reading,
+						psalm,
+						second_reading,
+						gospel_reading
+					)
+				)
+			`)
 			.gte('calendar_date', startDate)
-			.lte('calendar_date', endDate);
+			.lte('calendar_date', endDate)
+			.order('calendar_date', { ascending: true });
 
 		if (calendarError) {
 			console.error('Failed to fetch calendar data:', calendarError);
+			throw calendarError;
 		}
 
-		// Create a map for quick lookup
-		const calendarMap = new Map();
-		if (calendarData) {
-			calendarData.forEach((entry) => {
-				calendarMap.set(entry.calendar_date, entry);
-			});
+		// 2. Fetch actual schedule entries (rows only exist when activity has occurred)
+		let scheduleQuery = supabase
+			.from('dgr_schedule')
+			.select(
+				`
+				*,
+				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+			`
+			)
+			.gte('date', startDate)
+			.lte('date', endDate);
+
+		if (status) {
+			scheduleQuery = scheduleQuery.eq('status', status);
 		}
 
-		// Get all contributors with patterns
+		const { data: scheduleEntries, error: scheduleError } = await scheduleQuery;
+
+		if (scheduleError) throw scheduleError;
+
+		// Create schedule lookup map
+		const scheduleMap = new Map();
+		scheduleEntries.forEach((entry) => {
+			scheduleMap.set(entry.date, entry);
+		});
+
+		// 3. Fetch contributors with patterns (for virtual assignments)
 		const { data: contributors, error: contribError } = await supabase
 			.from('dgr_contributors')
 			.select('id, name, email, access_token, schedule_pattern')
@@ -145,26 +158,8 @@ export async function GET({ url, locals }) {
 
 		if (contribError) throw contribError;
 
-		// Build calendar: merge actual entries with pattern-based dates
-		const scheduleMap = new Map();
-
-		// Add existing schedule entries with calendar data
-		scheduleEntries.forEach((entry) => {
-			const calendar = calendarMap.get(entry.date);
-			scheduleMap.set(entry.date, {
-				...entry,
-				has_assignment: true,
-				has_content: !!(entry.reflection_content || entry.reflection_title),
-				from_pattern: false, // Actual schedule entries are not from pattern
-				// Add liturgical calendar data
-				liturgical_season: calendar?.liturgical_season || null,
-				liturgical_week: calendar?.liturgical_week || null,
-				liturgical_name: calendar?.liturgical_name || entry.liturgical_date || null,
-				liturgical_rank: calendar?.liturgical_rank || null
-			});
-		});
-
-		// Add pattern-based dates for each contributor
+		// Build pattern lookup: date -> contributor
+		const patternMap = new Map();
 		contributors.forEach((contrib) => {
 			if (!contrib.schedule_pattern || !contrib.schedule_pattern.type) return;
 
@@ -172,38 +167,69 @@ export async function GET({ url, locals }) {
 			const dates = calculatePatternDates(pattern, startDate, endDate);
 
 			dates.forEach((date) => {
-				if (!scheduleMap.has(date)) {
-					// Only add if no actual entry exists
-					const calendar = calendarMap.get(date);
-					scheduleMap.set(date, {
-						date,
-						contributor_id: contrib.id,
-						contributor: {
-							name: contrib.name,
-							email: contrib.email,
-							access_token: contrib.access_token,
-							schedule_pattern: contrib.schedule_pattern
-						},
-						status: 'pending',
-						has_assignment: false,
-						has_content: false,
-						from_pattern: true,
-						// Add liturgical calendar data
-						liturgical_season: calendar?.liturgical_season || null,
-						liturgical_week: calendar?.liturgical_week || null,
-						liturgical_name: calendar?.liturgical_name || null,
-						liturgical_rank: calendar?.liturgical_rank || null
+				// Only set if no pattern already exists for this date
+				if (!patternMap.has(date)) {
+					patternMap.set(date, {
+						id: contrib.id,
+						name: contrib.name,
+						email: contrib.email,
+						access_token: contrib.access_token,
+						pattern_type: pattern.type,
+						pattern_value: pattern.value
 					});
 				}
 			});
 		});
 
-		// Convert map to sorted array
-		const schedule = Array.from(scheduleMap.values()).sort(
-			(a, b) => new Date(a.date) - new Date(b.date)
-		);
+		// 4. Build calendar-first response
+		const calendar = calendarData.map((cal) => {
+			const date = cal.calendar_date;
+			const scheduleEntry = scheduleMap.get(date) || null;
+			const patternContributor = patternMap.get(date) || null;
 
-		return json({ schedule });
+			// Extract readings from nested join
+			const lectionary = cal.ordo_lectionary_mapping?.lectionary;
+			const readings = lectionary ? {
+				first_reading: lectionary.first_reading,
+				psalm: lectionary.psalm,
+				second_reading: lectionary.second_reading,
+				gospel: lectionary.gospel_reading
+			} : null;
+
+			return {
+				date,
+				liturgical_day: cal.liturgical_name,
+				liturgical_season: cal.liturgical_season,
+				liturgical_week: cal.liturgical_week,
+				liturgical_rank: cal.liturgical_rank,
+				readings,
+				// Actual schedule row (null if no activity yet)
+				schedule: scheduleEntry
+					? {
+							id: scheduleEntry.id,
+							contributor_id: scheduleEntry.contributor_id,
+							contributor: scheduleEntry.contributor,
+							status: scheduleEntry.status,
+							submission_token: scheduleEntry.submission_token,
+							reflection_title: scheduleEntry.reflection_title,
+							reflection_content: scheduleEntry.reflection_content,
+							gospel_quote: scheduleEntry.gospel_quote,
+							gospel_reference: scheduleEntry.gospel_reference,
+							readings_data: scheduleEntry.readings_data,
+							liturgical_date: scheduleEntry.liturgical_date,
+							reminder_history: scheduleEntry.reminder_history,
+							approved_at: scheduleEntry.approved_at,
+							published_at: scheduleEntry.published_at,
+							created_at: scheduleEntry.created_at,
+							updated_at: scheduleEntry.updated_at
+						}
+					: null,
+				// Virtual pattern-based contributor (shown in UI but no row exists)
+				pattern_contributor: patternContributor
+			};
+		});
+
+		return json({ calendar });
 	} catch (error) {
 		console.error('Schedule fetch error:', error);
 		return json({ error: error.message }, { status: 500 });
@@ -259,10 +285,10 @@ export async function POST({ request, locals }) {
 		const { action, ...data } = await request.json();
 
 		switch (action) {
-			case 'generate_schedule':
-				return await generateSchedule(data);
 			case 'update_assignment':
 				return await updateAssignment(data);
+			case 'assign_contributor':
+				return await assignContributor(data);
 			case 'approve_reflection':
 				return await approveReflection(data);
 			case 'update_status':
@@ -284,109 +310,69 @@ export async function POST({ request, locals }) {
 	}
 }
 
-async function generateSchedule({ startDate, days = 14 }) {
+/**
+ * Create a new schedule entry for a date with a contributor assignment.
+ * Used when admin manually assigns a contributor to a calendar date.
+ */
+async function assignContributor({ date, contributorId }) {
 	try {
-		const scheduleEntries = [];
-		const blockedDates = [];
-		const start = new Date(startDate);
+		// Check if entry already exists for this date
+		const { data: existing } = await supabase
+			.from('dgr_schedule')
+			.select('id')
+			.eq('date', date)
+			.maybeSingle();
 
-		for (let i = 0; i < days; i++) {
-			const date = new Date(start);
-			date.setDate(date.getDate() + i);
-			const dateStr = date.toISOString().split('T')[0];
-
-			// Check if entry already exists
-			const { data: existing } = await supabase
-				.from('dgr_schedule')
-				.select('id')
-				.eq('date', dateStr)
-				.maybeSingle();
-
-			if (existing) continue; // Skip if already exists
-
-			// Get contributor assignment (respects assignment rules)
-			const { data: contributorId } = await supabase.rpc('assign_contributor_to_date', {
-				target_date: dateStr
-			});
-
-			// If NULL, check if blocked by rules
-			if (!contributorId) {
-				const { data: ruleCheck } = await supabase.rpc('check_assignment_rules', {
-					target_date: dateStr
-				});
-
-				if (ruleCheck && ruleCheck.length > 0 && ruleCheck[0].is_blocked) {
-					blockedDates.push({
-						date: dateStr,
-						rule: ruleCheck[0].rule_name,
-						message: ruleCheck[0].rule_message
-					});
-				}
-				continue; // Skip blocked or unassignable dates
-			}
-
-			if (contributorId) {
-				const { data: contributor } = await supabase
-					.from('dgr_contributors')
-					.select('email')
-					.eq('id', contributorId)
-					.single();
-
-				// Generate submission token
-				const { data: token } = await supabase.rpc('generate_submission_token');
-
-				// Fetch readings from database lectionary
-				const readingsData = await fetchReadingsFromDatabase(dateStr);
-
-				// Build schedule entry
-				const scheduleEntry = {
-					date: dateStr,
-					contributor_id: contributorId,
-					contributor_email: contributor?.email,
-					submission_token: token,
-					status: 'pending'
-				};
-
-				// Add readings if found in database
-				if (readingsData) {
-					scheduleEntry.gospel_reference = readingsData.reference; // Backward compatibility
-					scheduleEntry.liturgical_date = readingsData.liturgicalDate;
-					scheduleEntry.readings_data = readingsData.readings; // JSONB with all readings
-				}
-
-				scheduleEntries.push(scheduleEntry);
-			}
+		if (existing) {
+			// Update existing entry instead
+			return await updateAssignment({ scheduleId: existing.id, contributorId });
 		}
 
-		if (scheduleEntries.length > 0) {
-			const { data, error } = await supabase.from('dgr_schedule').insert(scheduleEntries).select();
+		// Get contributor details
+		const { data: contributor } = await supabase
+			.from('dgr_contributors')
+			.select('email')
+			.eq('id', contributorId)
+			.single();
 
-			if (error) throw error;
-
-			const message = blockedDates.length > 0
-				? `Generated ${scheduleEntries.length} schedule entries. ${blockedDates.length} dates blocked by assignment rules.`
-				: `Generated ${scheduleEntries.length} schedule entries`;
-
-			return json({
-				success: true,
-				message,
-				entries: data,
-				blockedDates: blockedDates.length > 0 ? blockedDates : undefined
-			});
+		if (!contributor) {
+			throw new Error('Contributor not found');
 		}
 
-		if (blockedDates.length > 0) {
-			return json({
-				success: true,
-				message: `No new entries created. ${blockedDates.length} dates were blocked by assignment rules.`,
-				blockedDates
-			});
+		// Generate submission token
+		const { data: token } = await supabase.rpc('generate_submission_token');
+
+		// Fetch readings from database lectionary
+		const readingsData = await fetchReadingsFromDatabase(date);
+
+		// Create schedule entry
+		const scheduleEntry = {
+			date,
+			contributor_id: contributorId,
+			contributor_email: contributor.email,
+			submission_token: token,
+			status: 'pending'
+		};
+
+		// Add readings if found
+		if (readingsData) {
+			scheduleEntry.gospel_reference = readingsData.reference;
+			scheduleEntry.liturgical_date = readingsData.liturgicalDate;
+			scheduleEntry.readings_data = readingsData.readings;
 		}
 
-		return json({
-			success: true,
-			message: 'No new entries needed - schedule already exists for this period'
-		});
+		const { data, error } = await supabase
+			.from('dgr_schedule')
+			.insert(scheduleEntry)
+			.select(`
+				*,
+				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+			`)
+			.single();
+
+		if (error) throw error;
+
+		return json({ success: true, schedule: data });
 	} catch (error) {
 		throw error;
 	}

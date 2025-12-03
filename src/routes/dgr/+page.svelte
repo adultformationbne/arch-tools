@@ -58,11 +58,6 @@
 	let scheduleDays = $state(90); // Show 90 days by default
 
 	// Form states
-	let generateForm = $state({
-		startDate: new Date().toISOString().split('T')[0],
-		days: 30
-	});
-
 	let newContributor = $state({
 		name: '',
 		email: '',
@@ -99,7 +94,47 @@
 			const data = await response.json();
 
 			if (data.error) throw new Error(data.error);
-			schedule = data.schedule || [];
+
+			// Transform calendar response into flat schedule array for the table
+			schedule = (data.calendar || []).map((cal) => {
+				const base = {
+					date: cal.date,
+					liturgical_season: cal.liturgical_season,
+					liturgical_week: cal.liturgical_week,
+					liturgical_name: cal.liturgical_day,
+					liturgical_rank: cal.liturgical_rank,
+					readings: cal.readings
+				};
+
+				if (cal.schedule) {
+					// Has actual schedule row
+					return {
+						...cal.schedule,
+						...base,
+						from_pattern: false
+					};
+				} else if (cal.pattern_contributor) {
+					// Pattern-based (virtual)
+					return {
+						...base,
+						contributor_id: cal.pattern_contributor.id,
+						contributor: {
+							name: cal.pattern_contributor.name,
+							email: cal.pattern_contributor.email,
+							access_token: cal.pattern_contributor.access_token
+						},
+						from_pattern: true
+					};
+				} else {
+					// Unassigned date
+					return {
+						...base,
+						contributor_id: null,
+						contributor: null,
+						from_pattern: false
+					};
+				}
+			});
 		} catch (error) {
 			toast.error({
 				title: 'Failed to load schedule',
@@ -248,55 +283,27 @@
 		}
 	}
 
-	async function generateSchedule() {
-		const loadingId = toast.loading({
-			title: 'Generating schedule...',
-			message: 'Creating assignments for the next ' + generateForm.days + ' days'
-		});
-
+	async function updateAssignment(entry, contributorId) {
 		try {
-			const response = await fetch('/api/dgr-admin/schedule', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'generate_schedule',
-					startDate: generateForm.startDate,
-					days: generateForm.days
-				})
-			});
+			// Determine if this is an existing schedule entry or a new assignment
+			const isNewAssignment = !entry.id || entry.from_pattern;
 
-			const data = await response.json();
-
-			if (data.error) throw new Error(data.error);
-
-			toast.updateToast(loadingId, {
-				title: 'Schedule generated!',
-				message: data.message,
-				type: 'success',
-				duration: 4000
-			});
-
-			await loadSchedule();
-		} catch (error) {
-			toast.updateToast(loadingId, {
-				title: 'Generation failed',
-				message: error.message,
-				type: 'error',
-				duration: 5000
-			});
-		}
-	}
-
-	async function updateAssignment(scheduleId, contributorId) {
-		try {
-			const response = await fetch('/api/dgr-admin/schedule', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'update_assignment',
-					scheduleId,
+			const requestBody = isNewAssignment
+				? {
+					action: 'assign_contributor',
+					date: entry.date,
 					contributorId
-				})
+				}
+				: {
+					action: 'update_assignment',
+					scheduleId: entry.id,
+					contributorId
+				};
+
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(requestBody)
 			});
 
 			const data = await response.json();
@@ -304,8 +311,10 @@
 			if (data.error) throw new Error(data.error);
 
 			toast.success({
-				title: 'Assignment updated',
-				message: 'Contributor assignment changed successfully',
+				title: isNewAssignment ? 'Contributor assigned' : 'Assignment updated',
+				message: isNewAssignment
+					? 'Schedule entry created with contributor assignment'
+					: 'Contributor assignment changed successfully',
 				duration: DURATIONS.short
 			});
 

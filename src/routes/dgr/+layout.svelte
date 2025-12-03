@@ -4,6 +4,9 @@ import { page } from '$app/stores';
 
 let { children } = $props();
 
+	// Check if this is the public write page (no admin nav needed)
+	let isPublicWritePage = $derived($page.url.pathname.startsWith('/dgr/write/'));
+
 	// Determine active section and subsection based on current route
 	let activeSection = $derived.by(() => {
 		const path = $page.url.pathname;
@@ -31,8 +34,10 @@ let { children } = $props();
 	});
 </script>
 
-<!-- DGR Navigation -->
-<DGRNavigation {activeSection} {activeSubSection} />
+<!-- DGR Navigation (hidden for public write page) -->
+{#if !isPublicWritePage}
+	<DGRNavigation {activeSection} {activeSubSection} />
+{/if}
 
 <!-- Page Content -->
 {@render children()}

@@ -1,6 +1,7 @@
 <script>
-	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-svelte';
-	import { ReflectionStatus } from '$lib/utils/reflection-status.js';
+	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare } from 'lucide-svelte';
+	import { isEditable, isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
+	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 
 	// Get data from server load
 	let { data } = $props();
@@ -117,59 +118,24 @@
 								<div class="flex-1">
 									<div class="flex items-center gap-3 mb-2">
 										<h3 class="text-xl font-bold text-gray-800">Session {reflection.sessionNumber}</h3>
-
-										<!-- Dual Badge System -->
-										{#if reflection.status === ReflectionStatus.SUBMITTED}
-											<!-- Submitted and awaiting feedback -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border-2 border-green-300 bg-green-50 text-green-700">
-												<CheckCircle size="14" />
-												Submitted
-											</div>
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700">
-												<Clock size="14" />
-												Awaiting Feedback
-											</div>
-										{:else if reflection.status === ReflectionStatus.MARKED_PASS}
-											<!-- Passed -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-600 text-white">
-												<CheckCircle size="14" />
-												Passed
-											</div>
-										{:else if reflection.status === ReflectionStatus.NEEDS_REVISION}
-											<!-- Needs revision -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
-												<AlertCircle size="14" />
-												Needs Revision
-											</div>
-										{:else if reflection.status === ReflectionStatus.MARKED_FAIL}
-											<!-- Failed -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-												<AlertCircle size="14" />
-												Needs Work
-											</div>
-										{:else if reflection.status === ReflectionStatus.OVERDUE}
-											<!-- Overdue -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-												<AlertCircle size="14" />
-												Overdue
-											</div>
+										{#if reflection.status !== 'not_started'}
+											<ReflectionStatusBadge status={reflection.status} />
 										{:else}
-											<!-- Not started -->
-											<div class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-												<Edit3 size="14" />
+											<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+												<Edit3 size="12" />
 												Not Started
-											</div>
+											</span>
 										{/if}
 									</div>
 									<p class="text-gray-700 font-medium mb-3">{reflection.question}</p>
 								</div>
 							</div>
 
-							{#if reflection.status === ReflectionStatus.NOT_SUBMITTED || reflection.status === ReflectionStatus.OVERDUE}
-								<!-- Not started or overdue -->
+							{#if reflection.status === 'not_started'}
+								<!-- Not started -->
 								<div class="text-center py-8">
 									<p class="text-gray-600 mb-4">
-										{reflection.status === ReflectionStatus.OVERDUE ? 'This reflection is overdue for marking.' : 'You haven\'t written this reflection yet.'}
+										You haven't written this reflection yet.
 									</p>
 									<a
 										href="/courses/{courseSlug}/write/{reflection.questionId}"
@@ -177,10 +143,10 @@
 										style="background-color: var(--course-accent-dark);"
 									>
 										<Edit3 size="18" />
-										{reflection.status === ReflectionStatus.OVERDUE ? 'View Submitted Reflection' : 'Write Reflection'}
+										Write Reflection
 									</a>
 								</div>
-							{:else if reflection.status === ReflectionStatus.NEEDS_REVISION}
+							{:else if reflection.status === 'needs_revision'}
 								<!-- Needs revision - show content but highlight revision needed -->
 								<div class="space-y-4">
 									<div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-xl mb-4">
@@ -291,7 +257,7 @@
 									{/if}
 
 									<!-- Edit Button (if submitted but not reviewed yet) -->
-									{#if reflection.status === ReflectionStatus.SUBMITTED && !reflection.markedBy}
+									{#if isEditable(reflection.status) || (reflection.status === 'submitted' && !reflection.markedBy)}
 										<div class="pt-2 border-t border-gray-200">
 											<p class="text-sm text-gray-600 mb-3">
 												You can still edit this reflection until it's reviewed.

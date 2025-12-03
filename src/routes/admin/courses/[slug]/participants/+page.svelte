@@ -1,7 +1,7 @@
 <script>
 	import { Search, Filter, Users, Edit2, Mail, MapPin } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
-	import EmailComposerModal from '$lib/components/EmailComposerModal.svelte';
+	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -54,9 +54,15 @@
 		selectedStudents = new Set(selectedStudents);
 	}
 
-	// Get selected enrollments for email modal
+	// Get selected enrollments for email modal - transform to expected format
 	let selectedEnrollments = $derived(
-		students.filter(s => selectedStudents.has(s.id))
+		students
+			.filter(s => selectedStudents.has(s.id))
+			.map(s => ({
+				...s,
+				full_name: s.user_profile?.full_name || 'Unknown',
+				email: s.user_profile?.email || ''
+			}))
 	);
 
 	// Filtered students
@@ -353,11 +359,12 @@
 	</div>
 </div>
 
-<!-- Email Composer Modal -->
-<EmailComposerModal
+<!-- Email Sender Modal -->
+<EmailSenderModal
 	show={showEmailModal}
-	onclose={closeEmailModal}
-	selectedEnrollments={selectedEnrollments}
 	courseSlug={course?.slug}
-	courseName={course?.name}
+	{course}
+	recipients={selectedEnrollments}
+	onClose={closeEmailModal}
+	onSent={closeEmailModal}
 />

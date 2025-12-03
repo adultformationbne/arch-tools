@@ -5,6 +5,7 @@ import {
 	groupMaterialsBySession,
 	groupQuestionsBySession
 } from '$lib/server/course-data.js';
+import { isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -52,19 +53,21 @@ export const load: PageServerLoad = async (event) => {
 		};
 
 		const sessionNumber = response.question?.session?.session_number || 0;
+		// Normalize status - default to 'submitted' if null/undefined (consistent with admin parsing)
+		const dbStatus = response.status || 'submitted';
 
 		return {
 			session: sessionNumber,
 			title: `Session ${sessionNumber} Reflection`,
 			question: response.question?.question_text || '',
-			status: response.status === 'passed' ? 'graded' : response.status,
+			status: dbStatus === 'passed' ? 'passed' : dbStatus,
 			submittedDate: response.created_at ? formatDate(response.created_at) : 'Not submitted',
 			response: response.response_text || '',
 			feedback: response.feedback || null,
 			grade:
-				response.status === 'passed'
+				dbStatus === 'passed'
 					? 'Pass'
-					: response.status === 'needs_revision'
+					: dbStatus === 'needs_revision'
 						? 'Needs Work'
 						: null,
 			instructor: response.marked_by_profile?.full_name || null
@@ -98,9 +101,20 @@ export const load: PageServerLoad = async (event) => {
 				.slice(0, 2);
 		};
 
+		// Strip HTML tags for plain text excerpts (add space to preserve word boundaries)
+		const stripHtml = (html: string) => {
+			if (!html) return '';
+			return html
+				.replace(/<[^>]*>/g, ' ')  // Replace tags with space
+				.replace(/\s+/g, ' ')       // Collapse multiple spaces
+				.trim();
+		};
+
 		const truncateContent = (content: string, maxLength = 200) => {
-			if (!content || content.length <= maxLength) return content;
-			return content.substring(0, maxLength) + '...';
+			// Strip HTML first for clean excerpt
+			const plainText = stripHtml(content);
+			if (!plainText || plainText.length <= maxLength) return plainText;
+			return plainText.substring(0, maxLength) + '...';
 		};
 
 		const studentName = response.enrollment?.user_profile?.full_name || 'Anonymous';
@@ -166,8 +180,7 @@ export const load: PageServerLoad = async (event) => {
 		// Active session
 		const reflectionQuestion = questionsBySession[currentSession] || null;
 
-		// Get reflection status for current session
-		// Map database status to display status
+		// Get reflection status for current session (raw database status)
 		let reflectionStatus = null;
 		if (reflectionQuestion) {
 			const existingResponse = responses.find(
@@ -177,16 +190,7 @@ export const load: PageServerLoad = async (event) => {
 			if (!existingResponse) {
 				reflectionStatus = 'not_started';
 			} else {
-				// Map database status to display status
-				const dbStatus = existingResponse.status;
-				if (dbStatus === 'passed') {
-					reflectionStatus = 'completed';
-				} else if (dbStatus === 'needs_revision') {
-					reflectionStatus = 'needs_revision';
-				} else {
-					// 'submitted', 'under_review' -> in_progress
-					reflectionStatus = 'in_progress';
-				}
+				reflectionStatus = existingResponse.status || 'submitted';
 			}
 		}
 
@@ -249,18 +253,10 @@ export const load: PageServerLoad = async (event) => {
 						(r: any) => r.question?.session?.session_number === cohortCurrentSession
 					);
 
-					// Determine reflection status - map database values to display values
+					// Get raw database status (utility handles display)
 					let reflectionStatus: string | null = 'not_started';
 					if (currentSessionResponse) {
-						const dbStatus = currentSessionResponse.status || 'submitted';
-						if (dbStatus === 'passed') {
-							reflectionStatus = 'completed';
-						} else if (dbStatus === 'needs_revision') {
-							reflectionStatus = 'needs_revision';
-						} else {
-							// 'submitted', 'under_review', 'resubmitted' -> in_progress
-							reflectionStatus = 'in_progress';
-						}
+						reflectionStatus = currentSessionResponse.status || 'submitted';
 					}
 
 					return {

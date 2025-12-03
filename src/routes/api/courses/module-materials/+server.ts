@@ -85,7 +85,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Validate type
-		const validTypes = ['video', 'document', 'link', 'native', 'image'];
+		const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed'];
 		if (!validTypes.includes(type)) {
 			return json({
 				error: `Invalid type. Must be one of: ${validTypes.join(', ')}`
@@ -127,7 +127,7 @@ export const PUT: RequestHandler = async (event) => {
 
 		// Validate type if provided
 		if (type !== undefined) {
-			const validTypes = ['video', 'document', 'link', 'native', 'image'];
+			const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed'];
 			if (!validTypes.includes(type)) {
 				return json({
 					error: `Invalid type. Must be one of: ${validTypes.join(', ')}`
