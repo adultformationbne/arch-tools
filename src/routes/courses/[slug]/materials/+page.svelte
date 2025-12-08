@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/stores';
-	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from 'lucide-svelte';
+	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer, Upload } from 'lucide-svelte';
+	import MuxVideoPlayer from '$lib/components/MuxVideoPlayer.svelte';
 
 	let { data } = $props();
 
@@ -52,6 +53,7 @@
 	const getIcon = (type) => {
 		switch(type) {
 			case 'video': return Play;
+			case 'mux_video': return Play;
 			case 'embed': return Play;
 			case 'document': return FileText;
 			case 'native': return Book;
@@ -227,7 +229,8 @@
 					</h1>
 					{#if selectedMaterial}
 						<p class="text-sm text-gray-600 mt-1">
-							{selectedMaterial.type === 'video' ? 'Video Content' :
+							{selectedMaterial.type === 'video' ? 'YouTube Video' :
+							 selectedMaterial.type === 'mux_video' ? 'Video Content' :
 							 selectedMaterial.type === 'native' ? 'Text Document' :
 							 selectedMaterial.type === 'document' ? 'PDF Document' : 'External Link'}
 						</p>
@@ -285,6 +288,13 @@
 							</a>
 						</div>
 					{/if}
+				{:else if selectedMaterial?.type === 'mux_video'}
+					<!-- Mux Video Player -->
+					<MuxVideoPlayer
+						playbackId={selectedMaterial.mux_playback_id}
+						title={selectedMaterial.title}
+						status={selectedMaterial.mux_status}
+					/>
 				{:else if selectedMaterial?.type === 'embed'}
 					<!-- Embedded Video (SharePoint/Stream) - Theatre Mode -->
 					<div class="embed-theatre">

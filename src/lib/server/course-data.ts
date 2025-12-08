@@ -147,6 +147,17 @@ export const CourseQueries = {
 	},
 
 	/**
+	 * Get hubs for a course
+	 */
+	async getHubs(courseId: string) {
+		return supabaseAdmin
+			.from('courses_hubs')
+			.select('id, name, location')
+			.eq('course_id', courseId)
+			.order('name');
+	},
+
+	/**
 	 * Get sessions for a module
 	 */
 	async getSessions(moduleId: string) {
@@ -1038,17 +1049,15 @@ export const CourseMutations = {
 		courseId: string;
 		name: string;
 		location?: string;
-		coordinatorId?: string;
 	}) {
-		const { courseId, name, location, coordinatorId } = params;
+		const { courseId, name, location } = params;
 
 		return supabaseAdmin
 			.from('courses_hubs')
 			.insert({
 				course_id: courseId,
 				name: name,
-				location: location || null,
-				coordinator_id: coordinatorId || null
+				location: location || null
 			})
 			.select()
 			.single();
@@ -1061,9 +1070,8 @@ export const CourseMutations = {
 		hubId: string;
 		name?: string;
 		location?: string;
-		coordinatorId?: string;
 	}) {
-		const { hubId, name, location, coordinatorId } = params;
+		const { hubId, name, location } = params;
 
 		const updateData: any = {
 			updated_at: new Date().toISOString()
@@ -1071,7 +1079,6 @@ export const CourseMutations = {
 
 		if (name) updateData.name = name;
 		if (location !== undefined) updateData.location = location || null;
-		if (coordinatorId !== undefined) updateData.coordinator_id = coordinatorId || null;
 
 		return supabaseAdmin
 			.from('courses_hubs')
@@ -1684,11 +1691,15 @@ export const CourseMutations = {
 	 */
 	async createMaterial(params: {
 		sessionId: string;
-		type: 'video' | 'document' | 'link' | 'native' | 'image';
+		type: 'video' | 'document' | 'link' | 'native' | 'image' | 'embed' | 'mux_video';
 		title: string;
 		content: string;
 		displayOrder?: number;
 		coordinatorOnly?: boolean;
+		muxUploadId?: string;
+		muxAssetId?: string;
+		muxPlaybackId?: string;
+		muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored';
 	}) {
 		return supabaseAdmin
 			.from('courses_materials')
@@ -1698,7 +1709,11 @@ export const CourseMutations = {
 				title: params.title,
 				content: params.content,
 				display_order: params.displayOrder || 0,
-				coordinator_only: params.coordinatorOnly || false
+				coordinator_only: params.coordinatorOnly || false,
+				mux_upload_id: params.muxUploadId || null,
+				mux_asset_id: params.muxAssetId || null,
+				mux_playback_id: params.muxPlaybackId || null,
+				mux_status: params.muxStatus || null
 			})
 			.select()
 			.single();
@@ -1715,6 +1730,10 @@ export const CourseMutations = {
 			content?: string;
 			displayOrder?: number;
 			coordinatorOnly?: boolean;
+			muxUploadId?: string;
+			muxAssetId?: string;
+			muxPlaybackId?: string;
+			muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored' | null;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -1724,6 +1743,10 @@ export const CourseMutations = {
 		if (updates.content) payload.content = updates.content;
 		if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
 		if (updates.coordinatorOnly !== undefined) payload.coordinator_only = updates.coordinatorOnly;
+		if (updates.muxUploadId !== undefined) payload.mux_upload_id = updates.muxUploadId;
+		if (updates.muxAssetId !== undefined) payload.mux_asset_id = updates.muxAssetId;
+		if (updates.muxPlaybackId !== undefined) payload.mux_playback_id = updates.muxPlaybackId;
+		if (updates.muxStatus !== undefined) payload.mux_status = updates.muxStatus;
 
 		return supabaseAdmin
 			.from('courses_materials')

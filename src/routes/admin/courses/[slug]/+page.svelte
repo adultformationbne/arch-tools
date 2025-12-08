@@ -28,7 +28,9 @@
 	let showAdvancementModal = $state(false);
 	let showDeleteConfirm = $state(false);
 	let showEmailModal = $state(false);
+	let showHubAssignModal = $state(false);
 	let emailRecipients = $state([]);
+	let selectedHubId = $state('');
 
 	// Participants state
 	let participants = $state([]);
@@ -249,7 +251,42 @@
 	}
 
 	function handleAssignHub() {
-		toastWarning('Bulk hub assignment - coming soon');
+		if (selectedParticipants.size === 0) {
+			toastWarning('No participants selected');
+			return;
+		}
+		selectedHubId = '';
+		showHubAssignModal = true;
+	}
+
+	async function handleBulkHubAssignment() {
+		if (selectedParticipants.size === 0) return;
+
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'bulk_assign_hub',
+					enrollmentIds: Array.from(selectedParticipants),
+					hubId: selectedHubId || null
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to assign hub');
+			}
+
+			toastSuccess(result.message);
+			showHubAssignModal = false;
+			selectedParticipants = new Set();
+			await loadParticipants();
+		} catch (err) {
+			console.error('Error assigning hub:', err);
+			toastError(err.message || 'Failed to assign hub');
+		}
 	}
 
 	function handleRemoveSelected() {
@@ -563,3 +600,46 @@
 	onClose={() => showEmailModal = false}
 	onSent={() => selectedParticipants = new Set()}
 />
+
+<!-- Hub Assignment Modal -->
+{#if showHubAssignModal}
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+	<div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+		<h3 class="text-lg font-bold text-gray-900 mb-4">Assign to Hub</h3>
+		<p class="text-sm text-gray-600 mb-4">
+			Assign {selectedParticipants.size} selected participant(s) to a hub.
+		</p>
+
+		<select
+			bind:value={selectedHubId}
+			class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+		>
+			<option value="">No hub (remove from hub)</option>
+			{#each hubs as hub}
+				<option value={hub.id}>{hub.name}</option>
+			{/each}
+		</select>
+
+		{#if hubs.length === 0}
+			<p class="text-sm text-amber-600 mb-4">
+				No hubs available. Create hubs in the Hubs page first.
+			</p>
+		{/if}
+
+		<div class="flex justify-end gap-3">
+			<button
+				onclick={() => showHubAssignModal = false}
+				class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+			>
+				Cancel
+			</button>
+			<button
+				onclick={handleBulkHubAssignment}
+				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+			>
+				Assign
+			</button>
+		</div>
+	</div>
+</div>
+{/if}

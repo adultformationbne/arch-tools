@@ -46,6 +46,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration_weeks: number | null
+          email_branding_config: Json | null
           id: string
           is_active: boolean | null
           metadata: Json | null
@@ -60,6 +61,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_weeks?: number | null
+          email_branding_config?: Json | null
           id?: string
           is_active?: boolean | null
           metadata?: Json | null
@@ -74,6 +76,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_weeks?: number | null
+          email_branding_config?: Json | null
           id?: string
           is_active?: boolean | null
           metadata?: Json | null
@@ -308,6 +311,75 @@ export type Database = {
           },
         ]
       }
+      courses_email_templates: {
+        Row: {
+          available_variables: Json | null
+          body_template: string
+          category: string
+          course_id: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_deletable: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          trigger_event: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          available_variables?: Json | null
+          body_template: string
+          category: string
+          course_id: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_deletable?: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          trigger_event?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          available_variables?: Json | null
+          body_template?: string
+          category?: string
+          course_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_deletable?: boolean | null
+          name?: string
+          subject_template?: string
+          template_key?: string
+          trigger_event?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_email_templates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses_enrollment_imports: {
         Row: {
           created_at: string | null
@@ -444,7 +516,6 @@ export type Database = {
       }
       courses_hubs: {
         Row: {
-          coordinator_id: string | null
           course_id: string
           created_at: string
           id: string
@@ -453,7 +524,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          coordinator_id?: string | null
           course_id: string
           created_at?: string
           id?: string
@@ -462,7 +532,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          coordinator_id?: string | null
           course_id?: string
           created_at?: string
           id?: string
@@ -478,21 +547,19 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "hubs_coordinator_id_fkey"
-            columns: ["coordinator_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       courses_materials: {
         Row: {
           content: string
+          coordinator_only: boolean | null
           created_at: string | null
           display_order: number | null
           id: string
+          mux_asset_id: string | null
+          mux_playback_id: string | null
+          mux_status: string | null
+          mux_upload_id: string | null
           session_id: string
           title: string
           type: string
@@ -500,9 +567,14 @@ export type Database = {
         }
         Insert: {
           content: string
+          coordinator_only?: boolean | null
           created_at?: string | null
           display_order?: number | null
           id?: string
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_status?: string | null
+          mux_upload_id?: string | null
           session_id: string
           title: string
           type: string
@@ -510,9 +582,14 @@ export type Database = {
         }
         Update: {
           content?: string
+          coordinator_only?: boolean | null
           created_at?: string | null
           display_order?: number | null
           id?: string
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_status?: string | null
+          mux_upload_id?: string | null
           session_id?: string
           title?: string
           type?: string
@@ -586,7 +663,7 @@ export type Database = {
           {
             foreignKeyName: "module_reflection_questions_session_id_fkey"
             columns: ["session_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "courses_sessions"
             referencedColumns: ["id"]
           },
@@ -604,7 +681,8 @@ export type Database = {
           marked_by: string | null
           question_id: string
           response_text: string
-          session_number: number
+          reviewing_by: string | null
+          reviewing_started_at: string | null
           status: Database["public"]["Enums"]["reflection_status"]
           updated_at: string | null
         }
@@ -619,7 +697,8 @@ export type Database = {
           marked_by?: string | null
           question_id: string
           response_text: string
-          session_number: number
+          reviewing_by?: string | null
+          reviewing_started_at?: string | null
           status?: Database["public"]["Enums"]["reflection_status"]
           updated_at?: string | null
         }
@@ -634,11 +713,19 @@ export type Database = {
           marked_by?: string | null
           question_id?: string
           response_text?: string
-          session_number?: number
+          reviewing_by?: string | null
+          reviewing_started_at?: string | null
           status?: Database["public"]["Enums"]["reflection_status"]
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "courses_reflection_responses_reviewing_by_fkey"
+            columns: ["reviewing_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reflection_responses_cohort_id_fkey"
             columns: ["cohort_id"]
@@ -771,11 +858,15 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          last_visited_at: string | null
           name: string
           notes: string | null
           preferred_days: number[] | null
           schedule_pattern: Json | null
           updated_at: string | null
+          visit_count: number | null
+          welcome_email_sent_at: string | null
+          welcome_email_sent_by: string | null
         }
         Insert: {
           access_token: string
@@ -783,11 +874,15 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          last_visited_at?: string | null
           name: string
           notes?: string | null
           preferred_days?: number[] | null
           schedule_pattern?: Json | null
           updated_at?: string | null
+          visit_count?: number | null
+          welcome_email_sent_at?: string | null
+          welcome_email_sent_by?: string | null
         }
         Update: {
           access_token?: string
@@ -795,11 +890,57 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          last_visited_at?: string | null
           name?: string
           notes?: string | null
           preferred_days?: number[] | null
           schedule_pattern?: Json | null
           updated_at?: string | null
+          visit_count?: number | null
+          welcome_email_sent_at?: string | null
+          welcome_email_sent_by?: string | null
+        }
+        Relationships: []
+      }
+      dgr_email_templates: {
+        Row: {
+          available_variables: Json | null
+          body_template: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          available_variables?: Json | null
+          body_template: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject_template: string
+          template_key: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          available_variables?: Json | null
+          body_template?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject_template?: string
+          template_key?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1331,11 +1472,50 @@ export type Database = {
           },
         ]
       }
+      ordo_lectionary_mapping_temp: {
+        Row: {
+          calendar_date: string
+          first_reading: string | null
+          gospel: string | null
+          id: number
+          lectionary_id: number | null
+          lectionary_name: string | null
+          match_method: string | null
+          match_type: string | null
+          ordo_name: string | null
+        }
+        Insert: {
+          calendar_date: string
+          first_reading?: string | null
+          gospel?: string | null
+          id?: number
+          lectionary_id?: number | null
+          lectionary_name?: string | null
+          match_method?: string | null
+          match_type?: string | null
+          ordo_name?: string | null
+        }
+        Update: {
+          calendar_date?: string
+          first_reading?: string | null
+          gospel?: string | null
+          id?: number
+          lectionary_id?: number | null
+          lectionary_name?: string | null
+          match_method?: string | null
+          match_type?: string | null
+          ordo_name?: string | null
+        }
+        Relationships: []
+      }
       platform_email_log: {
         Row: {
           body: string
+          cohort_id: string | null
+          course_id: string | null
           created_at: string | null
           email_type: Database["public"]["Enums"]["email_type"]
+          enrollment_id: string | null
           error_message: string | null
           id: string
           metadata: Json | null
@@ -1345,11 +1525,15 @@ export type Database = {
           sent_at: string | null
           status: Database["public"]["Enums"]["email_status"] | null
           subject: string
+          template_id: string | null
         }
         Insert: {
           body: string
+          cohort_id?: string | null
+          course_id?: string | null
           created_at?: string | null
           email_type: Database["public"]["Enums"]["email_type"]
+          enrollment_id?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json | null
@@ -1359,11 +1543,15 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_status"] | null
           subject: string
+          template_id?: string | null
         }
         Update: {
           body?: string
+          cohort_id?: string | null
+          course_id?: string | null
           created_at?: string | null
           email_type?: Database["public"]["Enums"]["email_type"]
+          enrollment_id?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json | null
@@ -1373,6 +1561,7 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_status"] | null
           subject?: string
+          template_id?: string | null
         }
         Relationships: [
           {
@@ -1380,6 +1569,34 @@ export type Database = {
             columns: ["reference_id"]
             isOneToOne: false
             referencedRelation: "dgr_schedule"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_email_log_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_email_log_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_email_log_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_email_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "courses_email_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1422,6 +1639,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          from_email: string
+          id: string
+          logo_path: string
+          organization: string
+          platform_name: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          from_email?: string
+          id?: string
+          logo_path?: string
+          organization?: string
+          platform_name?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          from_email?: string
+          id?: string
+          logo_path?: string
+          organization?: string
+          platform_name?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
@@ -1566,6 +1821,14 @@ export type Database = {
           status: Database["public"]["Enums"]["dgr_status"]
         }[]
       }
+      get_course_email_variables: {
+        Args: never
+        Returns: {
+          category: string
+          description: string
+          variable_name: string
+        }[]
+      }
       get_lectionary_readings_for_date: {
         Args: { target_date: string }
         Returns: {
@@ -1621,7 +1884,12 @@ export type Database = {
     Enums: {
       dgr_status: "pending" | "submitted" | "approved" | "published"
       email_status: "pending" | "sent" | "failed"
-      email_type: "assignment" | "reminder" | "approval" | "published"
+      email_type:
+        | "assignment"
+        | "reminder"
+        | "approval"
+        | "published"
+        | "test_email"
       reflection_status:
         | "draft"
         | "submitted"
@@ -1766,7 +2034,13 @@ export const Constants = {
     Enums: {
       dgr_status: ["pending", "submitted", "approved", "published"],
       email_status: ["pending", "sent", "failed"],
-      email_type: ["assignment", "reminder", "approval", "published"],
+      email_type: [
+        "assignment",
+        "reminder",
+        "approval",
+        "published",
+        "test_email",
+      ],
       reflection_status: [
         "draft",
         "submitted",

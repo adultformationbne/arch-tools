@@ -7,7 +7,11 @@ import {
 	inferWeek,
 	normalize,
 	isMemorial,
-	getDayOfWeek
+	getDayOfWeek,
+	calculateLiturgicalWeek,
+	adjustBrisbaneWeekForLectionary,
+	findTriduumReading,
+	findFixedFeastByDate
 } from '$lib/server/liturgical-rules.js';
 
 /**
@@ -191,6 +195,28 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 	const dayOfWeek = getDayOfWeek(date);
 	const isSunday = dayOfWeek === 'Sunday';
 
+	// PRIORITY 0: Easter Triduum - Holy Thursday, Good Friday, Easter Vigil
+	// These have unique lectionary entries and must be matched by name
+	const triduumMatch = findTriduumReading(lectionary, liturgical_name, sundayCycle);
+	if (triduumMatch) {
+		return {
+			...triduumMatch,
+			match_type: 'exact',
+			match_method: 'triduum'
+		};
+	}
+
+	// PRIORITY 0.5: Fixed Feasts by date (e.g., "6 August – Transfiguration")
+	// Match by calendar date + feast keyword for entries that have date prefixes
+	const fixedFeastMatch = findFixedFeastByDate(lectionary, liturgical_name, date, sundayCycle);
+	if (fixedFeastMatch) {
+		return {
+			...fixedFeastMatch,
+			match_type: 'exact',
+			match_method: 'date'
+		};
+	}
+
 	// PRIORITY 1: Dec 17-24 with date-only names use Advent proper readings
 	// (e.g., "23 December" should match "23rd December" Advent, not saint feast)
 	const month = date.getMonth(); // 0-indexed, so December = 11
@@ -221,9 +247,27 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 		}
 	}
 
+	// PRIORITY 3: Early January (Jan 2-5) before Epiphany - use date-specific Christmas season entries
+	// e.g., "Saturday before Epiphany" on Jan 3 should match "3rd January", not "EPIPHANY"
+	if (month === 0 && day >= 2 && day <= 5 && !isSunday) {
+		const earlyJanMatch = findEarlyJanuaryReading(lectionary, day);
+		if (earlyJanMatch) {
+			return {
+				...earlyJanMatch,
+				match_type: 'exact',
+				match_method: 'early_january'
+			};
+		}
+	}
+
 	// For memorials, find the weekday reading instead of saint reading
-	if (isMemorial(liturgical_rank || '') && liturgical_week && liturgical_season) {
-		const weekdayMatch = findWeekdayReading(lectionary, dayOfWeek, liturgical_season, liturgical_week, weekdayCycle);
+	// Calculate week from date if not available in the name (e.g., "Saint Anthony" has no week)
+	const effectiveWeek = liturgical_week || (isMemorial(liturgical_rank || '') && liturgical_season
+		? calculateLiturgicalWeek(date, liturgical_season)
+		: null);
+
+	if (isMemorial(liturgical_rank || '') && effectiveWeek && liturgical_season) {
+		const weekdayMatch = findWeekdayReading(lectionary, dayOfWeek, liturgical_season, effectiveWeek, weekdayCycle);
 		if (weekdayMatch) {
 			return {
 				...weekdayMatch,
@@ -265,8 +309,10 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 	}
 
 	// Try pattern-based matching for Sundays
+	// Adjust Brisbane week number for OT Sundays after Pentecost (+1 to match lectionary)
 	if (isSunday && liturgical_week && liturgical_season) {
-		const sundayMatch = findSundayReading(lectionary, liturgical_season, liturgical_week, sundayCycle);
+		const adjustedWeek = adjustBrisbaneWeekForLectionary(liturgical_week, liturgical_season, date, true);
+		const sundayMatch = findSundayReading(lectionary, liturgical_season, adjustedWeek, sundayCycle);
 		if (sundayMatch) {
 			return {
 				...sundayMatch,
@@ -276,6 +322,21 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 		}
 	}
 
+	// Map our season names to lectionary 'time' field values for filtering
+	// NOTE: Lectionary uses 'Ordinary' not 'Ordinary Time'
+	const seasonToTime = {
+		'Advent': 'Advent',
+		'Lent': 'Lent',
+		'Easter': 'Easter',
+		'Ordinary Time': 'Ordinary',  // Lectionary uses 'Ordinary'
+		'Christmas': 'Christmas',
+		'Holy Week': 'Lent'  // Holy Week uses Lent time in lectionary
+	};
+	const expectedTime = liturgical_season ? seasonToTime[liturgical_season] : null;
+
+	// For solemnities and feasts, don't apply season filtering - they use Fixed/Moving Feast entries
+	const isFeastOrSolemnity = liturgical_rank === 'Solemnity' || liturgical_rank === 'Feast';
+
 	// Try partial match
 	const ordoWords = new Set(ordo_norm.split(/\s+/));
 	let bestMatch = null;
@@ -284,6 +345,14 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 	for (const lect of lectionary) {
 		const lect_norm = normalize(lect.liturgical_day);
 		const lectYear = lect.year;
+		const lectTime = lect.time;
+
+		// CRITICAL: Filter by liturgical season (time) to avoid cross-season matches
+		// e.g., Advent weekday matching Ordinary Time "Monday of the first week"
+		// BUT: Skip this filter for feasts/solemnities - they have Fixed/Moving Feast entries
+		if (!isFeastOrSolemnity && expectedTime && lectTime && lectTime !== expectedTime) {
+			continue;
+		}
 
 		// For Sundays, filter by year cycle (A/B/C)
 		if (isSunday && lectYear && !['Season', '1', '2', 'Feast'].includes(lectYear)) {
@@ -293,6 +362,14 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 		// For Ordinary Time weekdays, filter by year cycle (1/2)
 		if (!isSunday && liturgical_season === 'Ordinary Time' && ['1', '2'].includes(lectYear)) {
 			if (lectYear !== weekdayYear) continue;
+		}
+
+		// Handle Advent weekday Year A vs B/C matching
+		// Lectionary has "Year A" and "Year B/C" variants for some Advent weekdays
+		if (!isSunday && liturgical_season === 'Advent') {
+			const lectName = lect.liturgical_day.toLowerCase();
+			if (lectName.includes('year a') && sundayCycle !== 'A') continue;
+			if (lectName.includes('year b/c') && sundayCycle === 'A') continue;
 		}
 
 		const lectWords = new Set(lect_norm.split(/\s+/));
@@ -319,8 +396,20 @@ function findSundayReading(lectionary, season, week, yearCycle) {
 	const ordinal = weekToOrdinal(week);
 	const patterns = [];
 
+	// Map our season names to lectionary 'time' field values
+	// NOTE: Lectionary uses 'Ordinary' not 'Ordinary Time'
+	const seasonToTime = {
+		'Advent': 'Advent',
+		'Lent': 'Lent',
+		'Easter': 'Easter',
+		'Ordinary Time': 'Ordinary',  // Lectionary uses 'Ordinary'
+		'Christmas': 'Christmas'
+	};
+	const expectedTime = seasonToTime[season];
+
 	if (season === 'Advent') {
 		patterns.push(`${ordinal} sunday of advent, year ${yearCycle}`.toUpperCase());
+		patterns.push(`${ordinal} sunday of advent`.toUpperCase());
 	} else if (season === 'Lent') {
 		patterns.push(`${ordinal} sunday in lent, year ${yearCycle}`.toUpperCase());
 		patterns.push(`${ordinal} sunday of lent, year ${yearCycle}`.toUpperCase());
@@ -328,12 +417,39 @@ function findSundayReading(lectionary, season, week, yearCycle) {
 		patterns.push(`${ordinal} sunday of easter, year ${yearCycle}`.toUpperCase());
 	} else if (season === 'Ordinary Time') {
 		patterns.push(`${week} sunday in ordinary time, year ${yearCycle}`.toUpperCase());
+		patterns.push(`${ordinal} sunday in ordinary time, year ${yearCycle}`.toUpperCase());
 	}
 
 	for (const lect of lectionary) {
 		const lectNorm = normalize(lect.liturgical_day);
+		const lectYear = lect.year;
+		const lectTime = lect.time;
+
+		// CRITICAL: Filter by liturgical season (time) to avoid matching Ordinary Time for Lent/Easter
+		if (expectedTime && lectTime && lectTime !== expectedTime) {
+			continue;
+		}
+
+		// For Sundays, must match year cycle
+		if (lectYear && !['Season', '1', '2', 'Feast'].includes(lectYear)) {
+			if (lectYear !== yearCycle) continue;
+		}
+
 		for (const pattern of patterns) {
-			if (lectNorm.includes(normalize(pattern))) {
+			const patternNorm = normalize(pattern);
+			// Use word-boundary matching to avoid "9" matching inside "29"
+			const lectWords = lectNorm.split(/\s+/);
+			const patternWords = patternNorm.split(/\s+/);
+
+			// Check if all lectionary words appear in pattern (word-based, not substring)
+			const allWordsMatch = lectWords.every(w => patternWords.includes(w));
+
+			// ALSO check: the week number must appear in the lectionary entry
+			// This prevents "EASTER SUNDAY" matching "THIRD SUNDAY OF EASTER"
+			const weekNum = String(week);
+			const lectHasWeek = lectWords.includes(weekNum) || lectNorm.includes(ordinal.toUpperCase());
+
+			if (allWordsMatch && lectHasWeek) {
 				return {
 					admin_order: lect.admin_order,
 					first_reading: lect.first_reading,
@@ -409,6 +525,38 @@ function findAdventProperReading(lectionary, day) {
 				second_reading: lect.second_reading,
 				gospel_reading: lect.gospel_reading
 			};
+		}
+	}
+	return null;
+}
+
+/**
+ * Find early January reading (Jan 2-5 before Epiphany)
+ * These have date-specific entries in the Christmas season
+ */
+function findEarlyJanuaryReading(lectionary, day) {
+	// Build ordinal suffix for matching
+	const suffix = day === 2 ? 'nd' : day === 3 ? 'rd' : 'th';
+	const patterns = [
+		`${day}${suffix} january`.toLowerCase(),
+		`${day} january`.toLowerCase()
+	];
+
+	for (const lect of lectionary) {
+		// Only match Christmas season entries, not Fixed Feasts
+		if (lect.time !== 'Christmas') continue;
+
+		const lectName = lect.liturgical_day.toLowerCase();
+		for (const pattern of patterns) {
+			if (lectName.includes(pattern)) {
+				return {
+					admin_order: lect.admin_order,
+					first_reading: lect.first_reading,
+					psalm: lect.psalm,
+					second_reading: lect.second_reading,
+					gospel_reading: lect.gospel_reading
+				};
+			}
 		}
 	}
 	return null;
@@ -513,3 +661,4 @@ function findChristmasWeekReading(lectionary, liturgicalName, day, isSunday, yea
 
 	return null;
 }
+

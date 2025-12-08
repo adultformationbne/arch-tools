@@ -1,5 +1,5 @@
 <script>
-	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical, FileText } from 'lucide-svelte';
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 
@@ -259,15 +259,22 @@
 											/>
 										{:else}
 											<span class="flex-1 text-xs truncate">
-												{session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`)}
+												{session?.title || (isPreStart ? 'Pre-Start' : `Session ${session.session_number}`)}
 											</span>
+											<!-- Materials count badge -->
+											{#if session.materials_count > 0}
+												<span class="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full {isSessionSelected ? 'bg-white/20 text-white/90' : 'bg-white/10 text-white/50'}" title="{session.materials_count} material{session.materials_count === 1 ? '' : 's'}">
+													<FileText size={10} />
+													{session.materials_count}
+												</span>
+											{/if}
 											{#if isSessionSelected}
 												<div class="flex items-center gap-1">
 													<div
 														role="button"
 														tabindex="0"
-														onclick={(e) => startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`), e)}
-														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${sessionNumber}`), e); }}
+														onclick={(e) => startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${session.session_number}`), e)}
+														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startEditingTitle(session?.id, session?.title || (isPreStart ? 'Pre-Start' : `Session ${session.session_number}`), e); }}
 														class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
 														title="Edit session title"
 													>
@@ -276,8 +283,8 @@
 													<div
 														role="button"
 														tabindex="0"
-														onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); }}
-														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(session?.id, sessionNumber); } }}
+														onclick={(e) => { e.stopPropagation(); onSessionDelete(session?.id, session.session_number); }}
+														onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onSessionDelete(session?.id, session.session_number); } }}
 														class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded text-red-300 hover:text-red-200 cursor-pointer"
 														title="Delete session"
 													>

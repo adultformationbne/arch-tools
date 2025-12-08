@@ -71,10 +71,16 @@
 					id: m.id,
 					type: m.type,
 					title: m.title,
-					url: m.type === 'native' ? '' : m.content,
-					content: m.type === 'native' ? m.content : '',
+					url: (m.type === 'native' || m.type === 'embed') ? '' : m.content,
+					content: (m.type === 'native' || m.type === 'embed') ? m.content : '',
 					description: m.description || '',
-					order: m.display_order
+					order: m.display_order,
+					coordinatorOnly: m.coordinator_only || false,
+					// Mux video fields
+					mux_upload_id: m.mux_upload_id,
+					mux_asset_id: m.mux_asset_id,
+					mux_playback_id: m.mux_playback_id,
+					mux_status: m.mux_status
 				}));
 
 			// Get reflection question for this session
@@ -611,8 +617,13 @@
 			}
 		});
 
-		// Convert map back to array and sort by session number
-		return Array.from(sessionMap.values()).sort((a, b) => a.session_number - b.session_number);
+		// Convert map back to array, add materials count, and sort by session number
+		return Array.from(sessionMap.values())
+			.map(session => ({
+				...session,
+				materials_count: sessionData[session.session_number]?.materials?.length || 0
+			}))
+			.sort((a, b) => a.session_number - b.session_number);
 	})());
 </script>
 
