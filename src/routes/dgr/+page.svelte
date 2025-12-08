@@ -508,6 +508,112 @@
 		}
 	}
 
+	let bulkPublishing = $state(false);
+	let bulkPublishCancelled = $state(false);
+	let bulkPublishProgress = $state({ current: 0, total: 0, successes: 0, failures: [] });
+
+	async function bulkPublishApproved() {
+		// Get all approved entries with content
+		const approvedEntries = schedule.filter(
+			entry => entry.status === 'approved' &&
+			entry.reflection_content &&
+			entry.reflection_title
+		);
+
+		if (approvedEntries.length === 0) {
+			toast.warning({
+				title: 'No entries to publish',
+				message: 'There are no approved reflections ready to publish',
+				duration: 4000
+			});
+			return;
+		}
+
+		bulkPublishing = true;
+		bulkPublishCancelled = false;
+		bulkPublishProgress = { current: 0, total: approvedEntries.length, successes: 0, failures: [] };
+
+		const progressId = toast.loading({
+			title: `Publishing 0/${approvedEntries.length}...`,
+			message: 'Starting bulk publish to WordPress'
+		});
+
+		for (let i = 0; i < approvedEntries.length; i++) {
+			// Check for cancellation
+			if (bulkPublishCancelled) {
+				toast.updateToast(progressId, {
+					title: 'Bulk publish cancelled',
+					message: `Stopped after ${bulkPublishProgress.successes} of ${approvedEntries.length} published`,
+					type: 'warning',
+					duration: 5000
+				});
+				bulkPublishing = false;
+				await loadSchedule();
+				return;
+			}
+
+			const entry = approvedEntries[i];
+			bulkPublishProgress.current = i + 1;
+
+			toast.updateToast(progressId, {
+				title: `Publishing ${i + 1}/${approvedEntries.length}...`,
+				message: `${entry.date}: ${entry.reflection_title}`,
+				type: 'loading'
+			});
+
+			try {
+				const response = await fetch('/api/dgr-admin/schedule', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'send_to_wordpress',
+						scheduleId: entry.id
+					})
+				});
+
+				const data = await response.json();
+
+				if (data.error) throw new Error(data.error);
+
+				bulkPublishProgress.successes++;
+			} catch (error) {
+				bulkPublishProgress.failures.push({
+					date: entry.date,
+					title: entry.reflection_title,
+					error: error.message
+				});
+			}
+
+			// Delay between publishes to avoid rate limits (2.5 seconds)
+			if (i < approvedEntries.length - 1) {
+				await new Promise(resolve => setTimeout(resolve, 2500));
+			}
+		}
+
+		bulkPublishing = false;
+
+		// Final summary
+		if (bulkPublishProgress.failures.length === 0) {
+			toast.updateToast(progressId, {
+				title: 'Bulk publish complete!',
+				message: `Successfully published ${bulkPublishProgress.successes} reflections`,
+				type: 'success',
+				duration: 5000
+			});
+		} else {
+			toast.updateToast(progressId, {
+				title: 'Bulk publish finished with errors',
+				message: `${bulkPublishProgress.successes} succeeded, ${bulkPublishProgress.failures.length} failed`,
+				type: 'warning',
+				duration: 8000
+			});
+			// Log failures
+			console.error('Bulk publish failures:', bulkPublishProgress.failures);
+		}
+
+		await loadSchedule();
+	}
+
 	function openReviewModal(entry) {
 		selectedReflection = entry;
 		reviewModalOpen = true;
@@ -740,6 +846,51 @@
 		}
 
 		closeDeleteConfirm();
+	}
+
+	async function clearReflection(entry) {
+		if (!entry?.id) return;
+
+		const loadingId = toast.loading({
+			title: 'Clearing reflection...',
+			message: 'Removing reflection content'
+		});
+
+		try {
+			const response = await fetch('/api/dgr-admin/schedule', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'clear_reflection',
+					scheduleId: entry.id
+				})
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			// Update local schedule with cleared entry
+			schedule = schedule.map(e =>
+				e.id === entry.id
+					? { ...e, ...data.schedule, reflection_title: null, reflection_content: null, gospel_quote: null, status: 'pending' }
+					: e
+			);
+
+			toast.updateToast(loadingId, {
+				title: 'Cleared!',
+				message: `Reflection for ${formatDate(entry.date)} has been cleared`,
+				type: 'success',
+				duration: DURATIONS.short
+			});
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Clear Failed',
+				message: error.message,
+				type: 'error',
+				duration: DURATIONS.medium
+			});
+		}
 	}
 
 	function openQuickAddModal(entry) {
@@ -1169,6 +1320,34 @@
 								<option value={365}>1 year</option>
 							</select>
 						</div>
+
+						{#if schedule.filter(e => e.status === 'approved' && e.reflection_content).length > 0 || bulkPublishing}
+							{#if bulkPublishing}
+								<div class="flex items-center gap-2">
+									<span class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white">
+										<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+										</svg>
+										{bulkPublishProgress.current}/{bulkPublishProgress.total}
+									</span>
+									<button
+										onclick={() => bulkPublishCancelled = true}
+										class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+									>
+										Cancel
+									</button>
+								</div>
+							{:else}
+								<button
+									onclick={bulkPublishApproved}
+									class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+									title="Publish all approved reflections to WordPress (with rate limiting)"
+								>
+									Publish All Approved ({schedule.filter(e => e.status === 'approved' && e.reflection_content).length})
+								</button>
+							{/if}
+						{/if}
 					</div>
 				</div>
 
@@ -1181,7 +1360,7 @@
 					onUpdateStatus={updateStatus}
 					onOpenReviewModal={openReviewModal}
 					onSendToWordPress={sendToWordPress}
-					onOpenDeleteConfirm={openDeleteConfirm}
+					onClearReflection={clearReflection}
 					onCopySubmissionUrl={copySubmissionUrl}
 					onGetReadings={getReadingsForSchedule}
 					onEditReadings={openEditReadings}

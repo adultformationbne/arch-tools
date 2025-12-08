@@ -12,7 +12,7 @@
 		onUpdateStatus = () => {},
 		onOpenReviewModal = () => {},
 		onSendToWordPress = () => {},
-		onOpenDeleteConfirm = () => {},
+		onClearReflection = () => {},
 		onCopySubmissionUrl = () => {},
 		onGetReadings = () => {},
 		onEditReadings = () => {},
@@ -396,6 +396,21 @@
 														Quick Add Reflection
 													</button>
 
+													<!-- Republish (Only for published entries) -->
+													{#if entry.status === 'published' && entry.reflection_content}
+														<button
+															onclick={() => {
+																onSendToWordPress(entry.id);
+																const controller = dropdownControllers.get(entryKey);
+																if (controller) controller.hide();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-green-700 hover:bg-green-50"
+														>
+															<Send class="h-4 w-4" />
+															Republish
+														</button>
+													{/if}
+
 													<!-- Edit Readings (Only if entry has ID) -->
 													{#if entry.id}
 														<button
@@ -411,18 +426,18 @@
 														</button>
 													{/if}
 
-													<!-- Delete Entry (Only if entry has ID) -->
-													{#if entry.id}
+													<!-- Clear Reflection (Only if entry has reflection content) -->
+													{#if entry.id && entry.reflection_content}
 														<button
 															onclick={() => {
-																onOpenDeleteConfirm(entry);
+																onClearReflection(entry);
 																const controller = dropdownControllers.get(entryKey);
 																if (controller) controller.hide();
 															}}
 															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
 														>
 															<Trash2 class="h-4 w-4" />
-															Delete Entry
+															Clear Reflection
 														</button>
 													{/if}
 												</div>

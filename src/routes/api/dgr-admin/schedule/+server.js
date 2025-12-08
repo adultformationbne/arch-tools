@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { cleanGospelText, expandGospelReference } from '$lib/utils/dgr-common.js';
 
 const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 	auth: {
@@ -387,8 +388,8 @@ export async function POST({ request, locals }) {
 				return await createWithStatus(data);
 			case 'update_readings':
 				return await updateReadings(data);
-			case 'delete_schedule':
-				return await deleteSchedule(data);
+			case 'clear_reflection':
+				return await clearReflection(data);
 			case 'send_to_wordpress':
 				return await sendToWordPress(data);
 			case 'save_reflection':
@@ -841,18 +842,28 @@ async function saveReflection({
 	}
 }
 
-async function deleteSchedule({ scheduleId }) {
+async function clearReflection({ scheduleId }) {
 	try {
+		// Clear only the reflection content, keep contributor/readings/date
 		const { data, error } = await supabase
 			.from('dgr_schedule')
-			.delete()
+			.update({
+				reflection_title: null,
+				reflection_content: null,
+				gospel_quote: null,
+				status: 'pending',
+				submitted_at: null,
+				approved_at: null,
+				published_at: null,
+				updated_at: new Date().toISOString()
+			})
 			.eq('id', scheduleId)
 			.select()
 			.single();
 
 		if (error) throw error;
 
-		return json({ success: true, deleted: data });
+		return json({ success: true, schedule: data });
 	} catch (error) {
 		throw error;
 	}
@@ -877,6 +888,31 @@ async function sendToWordPress({ scheduleId }) {
 			throw new Error('Missing required fields: title, gospel quote, and content are required');
 		}
 
+		// Get gospel reference and expand abbreviations (Mt -> Matthew)
+		const gospelReferenceRaw = schedule.readings_data?.gospel?.source || schedule.gospel_reference || '';
+		const gospelReference = expandGospelReference(gospelReferenceRaw);
+
+		// Fetch gospel text by reference if we have one
+		let gospelFullText = '';
+		if (gospelReference) {
+			try {
+				const origin = process.env.ORIGIN || 'http://localhost:5173';
+				const scriptureResponse = await fetch(
+					`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
+				);
+				if (scriptureResponse.ok) {
+					const scriptureData = await scriptureResponse.json();
+					if (scriptureData.success && scriptureData.content) {
+						// Use cleanGospelText to properly parse - same as dgr/publish
+						gospelFullText = cleanGospelText(scriptureData.content);
+						console.log(`📖 Fetched gospel text for ${gospelReference}: ${gospelFullText.substring(0, 100)}...`);
+					}
+				}
+			} catch (err) {
+				console.warn('Could not fetch gospel text:', err.message);
+			}
+		}
+
 		// Prepare data for WordPress publish API
 		const publishData = {
 			date: schedule.date,
@@ -886,8 +922,8 @@ async function sendToWordPress({ scheduleId }) {
 			gospelQuote: schedule.gospel_quote,
 			reflectionText: schedule.reflection_content,
 			authorName: schedule.contributor?.name || 'Unknown',
-			gospelFullText: schedule.readings_data?.gospel?.text || '',
-			gospelReference: schedule.readings_data?.gospel?.source || '',
+			gospelFullText,
+			gospelReference,
 			templateKey: 'default'
 		};
 
