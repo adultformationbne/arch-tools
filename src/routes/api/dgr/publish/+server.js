@@ -1,12 +1,10 @@
 import { WORDPRESS_URL, WORDPRESS_USERNAME, WORDPRESS_APP_PASSWORD } from '$env/static/private';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { decodeHtmlEntities } from '$lib/utils/html.js';
 import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
 import { formatDGRDate, formatReflectionText } from '$lib/utils/dgr-common.js';
 import { minifyHTML } from '$lib/utils/wordpress-safe-html.js';
+import { headerImages, featuredImages } from '$lib/utils/dgr-images.js';
 
 // Initialize Supabase client
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
@@ -115,19 +113,7 @@ ${truncatedText}`;
 			console.warn('Could not fetch promo tiles:', err);
 		}
 
-		// Load header images from header-images.txt
-		let headerImages = [];
-		try {
-			const headerImagesPath = join(process.cwd(), 'header-images.txt');
-			const headerImagesContent = readFileSync(headerImagesPath, 'utf8');
-			headerImages = headerImagesContent
-				.split('\n')
-				.filter(line => line.trim())
-				.map(line => line.trim());
-			console.log(`📁 Loaded ${headerImages.length} header images from header-images.txt`);
-		} catch (error) {
-			console.warn('Could not load header images:', error);
-		}
+		console.log(`📁 Using ${headerImages.length} header images from dgr-images.js`);
 
 		console.log('=== Template Rendering ===');
 		console.log('Template key:', templateKey);
@@ -147,23 +133,15 @@ ${truncatedText}`;
 		content = minifyHTML(content);
 		console.log('HTML minified for WordPress - removed line breaks to prevent wpautop issues');
 
-		// Get random featured image from featured-images.txt (for WordPress metadata)
+		// Get random featured image from imported array (for WordPress metadata)
 		let featuredImageId;
 		let selectedImageUrl = null;
 		try {
-			// Read the featured images file
-			const featuredImagesPath = join(process.cwd(), 'featured-images.txt');
-			const featuredImagesContent = readFileSync(featuredImagesPath, 'utf8');
-			const imageUrls = featuredImagesContent
-				.split('\n')
-				.filter(line => line.trim())
-				.map(line => line.trim());
-
-			if (imageUrls.length > 0) {
+			if (featuredImages.length > 0) {
 				// Select a random image URL
-				const randomUrl = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+				const randomUrl = featuredImages[Math.floor(Math.random() * featuredImages.length)];
 				selectedImageUrl = randomUrl;
-				console.log('🎲 RANDOM IMAGE SELECTED:', randomUrl);
+				console.log('🎲 RANDOM FEATURED IMAGE SELECTED:', randomUrl);
 
 				// Fetch media items and find exact URL match
 				// Using per_page=100 to get all images (adjust if you have more than 100)

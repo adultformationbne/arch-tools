@@ -686,7 +686,7 @@
 
 	.content-preview :global(strong) {
 		font-weight: 600;
-		color: var(--course-accent-light, #c59a6b);
+		color: var(--course-accent-dark, #334642);
 	}
 
 	.content-preview :global(em) {
@@ -694,7 +694,7 @@
 	}
 
 	.content-preview :global(blockquote) {
-		border-left: 3px solid var(--course-accent-light, #c59a6b);
+		border-left: 3px solid var(--course-accent-dark, #334642);
 		padding-left: 0.75rem;
 		margin: 0.75rem 0;
 		color: #6b7280;
