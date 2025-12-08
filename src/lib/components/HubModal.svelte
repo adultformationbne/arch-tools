@@ -7,7 +7,6 @@
 		hub = null,
 		courseId,
 		courseSlug,
-		potentialCoordinators = [],
 		onClose = () => {},
 		onSave = () => {}
 	} = $props();
@@ -17,7 +16,6 @@
 	// Form state
 	let name = $state('');
 	let location = $state('');
-	let coordinatorId = $state('');
 	let saving = $state(false);
 	let error = $state('');
 
@@ -26,11 +24,9 @@
 		if (isOpen && hub) {
 			name = hub.name || '';
 			location = hub.location || '';
-			coordinatorId = hub.coordinator_id || '';
 		} else if (isOpen && !hub) {
 			name = '';
 			location = '';
-			coordinatorId = '';
 			error = '';
 		}
 	});
@@ -50,7 +46,7 @@
 		error = '';
 
 		try {
-			const response = await fetch('/courses/' + courseSlug + '/admin/api', {
+			const response = await fetch('/admin/courses/' + courseSlug + '/api', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -58,8 +54,7 @@
 					hubId: hub?.id,
 					courseId: courseId,
 					name: name.trim(),
-					location: location.trim(),
-					coordinatorId: coordinatorId || null
+					location: location.trim()
 				})
 			});
 
@@ -119,24 +114,9 @@
 			<p class="text-sm text-gray-500 mt-1">Physical address or meeting location</p>
 		</div>
 
-		<!-- Coordinator -->
-		<div>
-			<label for="hub-coordinator" class="block text-sm font-semibold mb-2 text-gray-700">
-				Hub Coordinator
-			</label>
-			<select
-				id="hub-coordinator"
-				bind:value={coordinatorId}
-				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-			>
-				<option value="">-- No Coordinator --</option>
-				{#each potentialCoordinators as coordinator}
-					<option value={coordinator.id}>
-						{coordinator.full_name} ({coordinator.email})
-					</option>
-				{/each}
-			</select>
-			<p class="text-sm text-gray-500 mt-1">Manages attendance for this hub</p>
+		<!-- Info about coordinators -->
+		<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+			<strong>Note:</strong> Coordinators can be assigned after creating the hub. Expand any hub row and click "Add" to assign coordinators.
 		</div>
 
 		<!-- Error Message -->

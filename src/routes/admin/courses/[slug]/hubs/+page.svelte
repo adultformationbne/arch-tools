@@ -1,13 +1,13 @@
 <script>
-	import { Plus, MapPin, Users, Edit, Trash2, UserCircle } from 'lucide-svelte';
+	import { Plus, MapPin, Edit, Trash2, ChevronDown, ChevronUp, Shield, UserPlus, X } from 'lucide-svelte';
 	import HubModal from '$lib/components/HubModal.svelte';
-	import { toastError } from '$lib/utils/toast-helpers.js';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
 	let hubs = $state(data.hubs || []);
-	let potentialCoordinators = $derived(data.potentialCoordinators || []);
+	let availableUsers = $state(data.availableUsers || []);
 
 	// Modal state
 	let showHubModal = $state(false);
@@ -16,6 +16,22 @@
 	// Delete confirmation state
 	let showDeleteConfirm = $state(false);
 	let hubToDelete = $state(null);
+
+	// Expanded hub state
+	let expandedHubs = $state({});
+
+	// Add coordinator state
+	let addingCoordinatorToHub = $state(null);
+	let selectedUserId = $state('');
+	let assigningCoordinator = $state(false);
+
+	// Users available to be coordinators (exclude those already coordinator of THIS hub)
+	const usersForCoordinatorDropdown = $derived(() => {
+		if (!addingCoordinatorToHub) return [];
+		const hub = hubs.find(h => h.id === addingCoordinatorToHub);
+		const currentCoordinatorIds = hub?.coordinators?.map(c => c.id) || [];
+		return availableUsers.filter(u => !currentCoordinatorIds.includes(u.id));
+	});
 
 	function handleCreateHub() {
 		editingHub = null;
@@ -81,6 +97,110 @@
 		showHubModal = false;
 		editingHub = null;
 	}
+
+	function toggleHubExpanded(hubId) {
+		expandedHubs[hubId] = !expandedHubs[hubId];
+	}
+
+	function startAddingCoordinator(hubId) {
+		addingCoordinatorToHub = hubId;
+		selectedUserId = '';
+	}
+
+	function cancelAddingCoordinator() {
+		addingCoordinatorToHub = null;
+		selectedUserId = '';
+	}
+
+	async function assignCoordinator(hubId) {
+		if (!selectedUserId) return;
+
+		assigningCoordinator = true;
+		try {
+			const response = await fetch('/admin/courses/' + course.slug + '/api', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'assign_hub_coordinator',
+					enrollmentId: selectedUserId,
+					hubId: hubId
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to assign coordinator');
+			}
+
+			// Update local state
+			const user = availableUsers.find(u => u.id === selectedUserId);
+			if (user) {
+				// Update user in availableUsers
+				user.role = 'coordinator';
+				user.hub_id = hubId;
+				availableUsers = [...availableUsers];
+
+				// Add to hub's coordinators
+				const hub = hubs.find(h => h.id === hubId);
+				if (hub) {
+					hub.coordinators = [...(hub.coordinators || []), {
+						id: user.id,
+						full_name: user.full_name,
+						email: user.email
+					}];
+					hubs = [...hubs];
+				}
+			}
+
+			toastSuccess('Coordinator assigned successfully');
+			cancelAddingCoordinator();
+		} catch (err) {
+			console.error('Error assigning coordinator:', err);
+			toastError(err.message || 'Failed to assign coordinator');
+		} finally {
+			assigningCoordinator = false;
+		}
+	}
+
+	async function removeCoordinator(hubId, coordinator) {
+		try {
+			const response = await fetch('/admin/courses/' + course.slug + '/api', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'remove_hub_coordinator',
+					enrollmentId: coordinator.id
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to remove coordinator');
+			}
+
+			// Update local state
+			const user = availableUsers.find(u => u.id === coordinator.id);
+			if (user) {
+				user.role = 'student';
+				user.hub_id = null;
+				availableUsers = [...availableUsers];
+			}
+
+			// Remove from hub's coordinators
+			const hub = hubs.find(h => h.id === hubId);
+			if (hub) {
+				hub.coordinators = hub.coordinators.filter(c => c.id !== coordinator.id);
+				hubs = [...hubs];
+			}
+
+			toastSuccess('Coordinator removed');
+		} catch (err) {
+			console.error('Error removing coordinator:', err);
+			toastError(err.message || 'Failed to remove coordinator');
+		}
+	}
 </script>
 
 <div class="px-16 py-8">
@@ -124,69 +244,162 @@
 			</button>
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		<div class="bg-white rounded-lg border overflow-hidden" style="border-color: var(--course-surface);">
+			<!-- Table Header -->
+			<div class="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b text-sm font-semibold text-gray-600" style="border-color: var(--course-surface);">
+				<div class="col-span-5">Hub</div>
+				<div class="col-span-5">Coordinators</div>
+				<div class="col-span-2 text-right">Actions</div>
+			</div>
+
+			<!-- Hub Rows -->
 			{#each hubs as hub}
+				<!-- Main Row -->
 				<div
-					class="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow"
+					class="grid grid-cols-12 gap-4 px-4 py-4 items-center border-b hover:bg-gray-50 cursor-pointer"
 					style="border-color: var(--course-surface);"
+					onclick={() => toggleHubExpanded(hub.id)}
 				>
-					<!-- Hub Header -->
-					<div class="flex items-start justify-between mb-4">
-						<div class="flex-1">
-							<h3 class="text-xl font-bold mb-1" style="color: var(--course-accent-dark);">
-								{hub.name}
-							</h3>
+					<!-- Hub Name & Location -->
+					<div class="col-span-5 flex items-center gap-3">
+						<button class="p-1 hover:bg-gray-200 rounded transition-colors">
+							{#if expandedHubs[hub.id]}
+								<ChevronUp size={18} class="text-gray-500" />
+							{:else}
+								<ChevronDown size={18} class="text-gray-500" />
+							{/if}
+						</button>
+						<div>
+							<div class="font-semibold text-gray-900">{hub.name}</div>
 							{#if hub.location}
-								<div class="flex items-center gap-2 text-sm text-gray-600">
-									<MapPin size={14} />
-									<span>{hub.location}</span>
+								<div class="text-xs text-gray-500 flex items-center gap-1">
+									<MapPin size={12} />
+									{hub.location}
 								</div>
 							{/if}
 						</div>
 					</div>
 
-					<!-- Coordinator -->
-					{#if hub.coordinator}
-						<div class="mb-4 p-3 bg-gray-50 rounded-lg">
-							<div class="flex items-center gap-2 text-sm">
-								<UserCircle size={16} style="color: var(--course-accent-light);" />
-								<div>
-									<div class="font-medium text-gray-700">{hub.coordinator.full_name}</div>
-									<div class="text-gray-500 text-xs">{hub.coordinator.email}</div>
+					<!-- Coordinators Preview -->
+					<div class="col-span-5">
+						{#if hub.coordinators?.length > 0}
+							<div class="flex items-center gap-2">
+								<div class="flex -space-x-2">
+									{#each hub.coordinators.slice(0, 3) as coordinator}
+										<div
+											class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white"
+											style="background-color: #d97706;"
+											title={coordinator.full_name}
+										>
+											{coordinator.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+										</div>
+									{/each}
 								</div>
+								<span class="text-sm text-gray-600">
+									{hub.coordinators.length} coordinator{hub.coordinators.length !== 1 ? 's' : ''}
+								</span>
 							</div>
-						</div>
-					{/if}
+						{:else}
+							<span class="text-sm text-gray-400 italic">None assigned</span>
+						{/if}
+					</div>
 
-					<!-- Stats -->
-					<div class="flex items-center justify-between pt-4 border-t" style="border-color: var(--course-surface);">
-						<div class="flex items-center gap-2">
-							<Users size={18} style="color: var(--course-accent-light);" />
-							<span class="text-lg font-bold" style="color: var(--course-accent-dark);">
-								{hub.enrollmentCount}
-							</span>
-							<span class="text-sm text-gray-500">participants</span>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2">
-							<button
-								onclick={() => handleEditHub(hub)}
-								class="p-2 hover:bg-gray-100 rounded transition-colors"
-								title="Edit hub"
-							>
-								<Edit size={18} style="color: var(--course-accent-dark);" />
-							</button>
-							<button
-								onclick={() => confirmDeleteHub(hub)}
-								class="p-2 hover:bg-red-50 rounded transition-colors"
-								title="Delete hub"
-							>
-								<Trash2 size={18} class="text-red-600" />
-							</button>
-						</div>
+					<!-- Actions -->
+					<div class="col-span-2 flex justify-end gap-1" onclick={(e) => e.stopPropagation()}>
+						<button
+							onclick={() => handleEditHub(hub)}
+							class="p-2 hover:bg-gray-200 rounded transition-colors"
+							title="Edit hub"
+						>
+							<Edit size={16} class="text-gray-600" />
+						</button>
+						<button
+							onclick={() => confirmDeleteHub(hub)}
+							class="p-2 hover:bg-red-100 rounded transition-colors"
+							title="Delete hub"
+						>
+							<Trash2 size={16} class="text-red-500" />
+						</button>
 					</div>
 				</div>
+
+				<!-- Expanded Details -->
+				{#if expandedHubs[hub.id]}
+					<div class="px-4 py-4 bg-gray-50 border-b" style="border-color: var(--course-surface);">
+						<div class="ml-8">
+							<!-- Coordinators List -->
+							<div class="max-w-md">
+								<div class="flex items-center justify-between mb-2">
+									<h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+										<Shield size={14} class="text-amber-600" />
+										Coordinators
+									</h4>
+									{#if addingCoordinatorToHub !== hub.id}
+										<button
+											onclick={() => startAddingCoordinator(hub.id)}
+											class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+										>
+											<UserPlus size={12} />
+											Add
+										</button>
+									{/if}
+								</div>
+
+								{#if hub.coordinators?.length > 0}
+									<div class="space-y-1">
+										{#each hub.coordinators as coordinator}
+											<div class="flex items-center gap-2 text-sm py-1 group">
+												<div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background-color: #d97706;">
+													{coordinator.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+												</div>
+												<span class="font-medium text-gray-800">{coordinator.full_name}</span>
+												<span class="text-gray-400">·</span>
+												<span class="text-gray-500 flex-1">{coordinator.email}</span>
+												<button
+													onclick={() => removeCoordinator(hub.id, coordinator)}
+													class="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+													title="Remove coordinator"
+												>
+													<X size={14} />
+												</button>
+											</div>
+										{/each}
+									</div>
+								{:else if addingCoordinatorToHub !== hub.id}
+									<p class="text-sm text-gray-400 italic">No coordinators assigned</p>
+								{/if}
+
+								<!-- Add coordinator form -->
+								{#if addingCoordinatorToHub === hub.id}
+									<div class="mt-2 flex items-center gap-2">
+										<select
+											bind:value={selectedUserId}
+											class="flex-1 text-sm px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white"
+										>
+											<option value="">Select person...</option>
+											{#each usersForCoordinatorDropdown() as user}
+												<option value={user.id}>{user.full_name}</option>
+											{/each}
+										</select>
+										<button
+											onclick={() => assignCoordinator(hub.id)}
+											disabled={!selectedUserId || assigningCoordinator}
+											class="px-3 py-1.5 text-xs font-medium rounded bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											{assigningCoordinator ? '...' : 'Assign'}
+										</button>
+										<button
+											onclick={cancelAddingCoordinator}
+											class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+										>
+											<X size={14} />
+										</button>
+									</div>
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/if}
 			{/each}
 		</div>
 	{/if}
@@ -198,7 +411,6 @@
 	hub={editingHub}
 	courseId={data.courseId}
 	courseSlug={course?.slug}
-	{potentialCoordinators}
 	onClose={handleCloseModal}
 	onSave={handleHubSaved}
 />
@@ -216,10 +428,5 @@
 	}}
 >
 	<p>Are you sure you want to delete "<strong>{hubToDelete?.name}</strong>"?</p>
-	{#if hubToDelete?.enrollmentCount > 0}
-		<p class="text-sm text-orange-600 mt-2">
-			This will remove {hubToDelete.enrollmentCount} participant(s) from this hub.
-		</p>
-	{/if}
 	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
 </ConfirmationModal>

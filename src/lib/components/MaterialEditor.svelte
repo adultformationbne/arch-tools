@@ -1,9 +1,10 @@
 <script>
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, File, Code } from 'lucide-svelte';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, ArrowUp, ArrowDown } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
-	import DocumentUpload from './DocumentUpload.svelte';
+	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
-	import { toastError } from '$lib/utils/toast-helpers.js';
+	import AddMaterialModal from './AddMaterialModal.svelte';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 
 	let {
 		materials = [],
@@ -18,250 +19,86 @@
 	} = $props();
 
 	let editingMaterial = $state(null);
-	let newMaterial = $state({
-		type: 'video',
-		title: '',
-		url: '',
-		content: '',
-		description: '',
-		coordinatorOnly: false
-	});
-
-	let showNativeEditor = $state(false);
 	let showDeleteConfirm = $state(false);
 	let materialToDelete = $state(null);
-	let fetchingVideoInfo = $state(false);
-	let videoPreviewId = $state(null);
+	let showAddModal = $state(false);
+	let expandedMaterialId = $state(null);
 
+	// Material types for editing (without embed)
 	const materialTypes = [
-		{ value: 'video', label: 'Video (YouTube)', icon: Video },
+		{ value: 'video', label: 'YouTube Video', icon: Video },
+		{ value: 'mux_video', label: 'Video Upload', icon: Upload },
 		{ value: 'link', label: 'Link', icon: Link },
-		{ value: 'embed', label: 'Embed (SharePoint/iframe)', icon: Code },
-		...(allowNativeContent ? [{ value: 'native', label: 'Native Content', icon: BookOpen }] : []),
-		...(allowDocumentUpload ? [{ value: 'upload', label: 'Upload Document', icon: Upload }] : [])
+		...(allowNativeContent ? [{ value: 'native', label: 'Document', icon: BookOpen }] : []),
+		...(allowDocumentUpload ? [{ value: 'upload', label: 'Upload File', icon: Upload }] : [])
 	];
 
 	// Detect file type from URL and return appropriate icon
 	const getFileTypeIcon = (url) => {
 		if (!url) return Link;
-
 		const urlLower = url.toLowerCase();
 
-		// PDF documents
 		if (urlLower.endsWith('.pdf')) return FileText;
-
-		// Word documents
 		if (urlLower.match(/\.(doc|docx)$/)) return FileText;
-
-		// Spreadsheets
 		if (urlLower.match(/\.(xls|xlsx|csv)$/)) return FileSpreadsheet;
-
-		// Presentations
 		if (urlLower.match(/\.(ppt|pptx)$/)) return Presentation;
-
-		// Archives
 		if (urlLower.match(/\.(zip|rar|7z|tar|gz)$/)) return Archive;
-
-		// Images
 		if (urlLower.match(/\.(jpg|jpeg|png|gif|svg|webp|bmp)$/)) return Image;
 
-		// Default link icon
 		return Link;
 	};
 
 	const getMaterialIcon = (type, url = '') => {
 		if (type === 'video') return Video;
+		if (type === 'mux_video') return Video;
 		if (type === 'native') return BookOpen;
-		if (type === 'embed') return Code;
+		if (type === 'embed') return FileText; // Legacy support
 		if (type === 'upload') return Upload;
 		if (type === 'link') return getFileTypeIcon(url);
-
-		// Fallback for old 'document' type (for backwards compatibility)
 		if (type === 'document') return getFileTypeIcon(url);
-
 		return Link;
 	};
 
-	// Get human-readable file type label
-	const getFileTypeLabel = (url) => {
-		if (!url) return 'Link';
-
-		const urlLower = url.toLowerCase();
-
-		if (urlLower.endsWith('.pdf')) return 'PDF Document';
-		if (urlLower.match(/\.(doc|docx)$/)) return 'Word Document';
-		if (urlLower.match(/\.(xls|xlsx|csv)$/)) return 'Spreadsheet';
-		if (urlLower.match(/\.(ppt|pptx)$/)) return 'Presentation';
-		if (urlLower.match(/\.(zip|rar|7z|tar|gz)$/)) return 'Archive';
-		if (urlLower.match(/\.(jpg|jpeg|png|gif|svg|webp|bmp)$/)) return 'Image';
-
-		return 'Link';
+	// Get type badge - use consistent course styling
+	const getTypeBadgeClass = () => {
+		return 'type-badge';
 	};
+
+	// Get type label
+	const getTypeLabel = (type) => {
+		switch (type) {
+			case 'video': return 'YouTube';
+			case 'mux_video': return 'Video';
+			case 'native': return 'Document';
+			case 'embed': return 'Embed';
+			case 'link': return 'Link';
+			case 'upload': return 'File';
+			default: return 'Link';
+		}
+	};
+
 	const getFieldId = (prefix, unique) => `${prefix}-${unique ?? 'value'}`;
 
 	// Extract YouTube video ID from various URL formats
 	const getYouTubeVideoId = (url) => {
 		if (!url) return null;
-
 		const patterns = [
 			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
 			/youtube\.com\/shorts\/([^&\n?#]+)/
 		];
-
 		for (const pattern of patterns) {
 			const match = url.match(pattern);
 			if (match) return match[1];
 		}
-
 		return null;
 	};
 
-	// Fetch YouTube video info using oEmbed API
-	const fetchYouTubeInfo = async (url) => {
-		try {
-			const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
-			if (response.ok) {
-				const data = await response.json();
-				return {
-					title: data.title,
-					author: data.author_name
-				};
-			}
-		} catch (error) {
-			console.error('Error fetching YouTube info:', error);
-		}
-		return null;
-	};
-
-	// Handle URL change for new material
-	let urlDebounceTimer;
-	const handleNewMaterialUrlChange = async () => {
-		clearTimeout(urlDebounceTimer);
-
-		if (newMaterial.type === 'video' && newMaterial.url) {
-			const videoId = getYouTubeVideoId(newMaterial.url);
-			if (videoId) {
-				videoPreviewId = videoId;
-
-				// Auto-fetch title if title is empty
-				if (!newMaterial.title.trim()) {
-					urlDebounceTimer = setTimeout(async () => {
-						fetchingVideoInfo = true;
-						const info = await fetchYouTubeInfo(newMaterial.url);
-						if (info) {
-							newMaterial.title = info.title;
-						}
-						fetchingVideoInfo = false;
-					}, 500);
-				}
-			} else {
-				videoPreviewId = null;
-			}
-		} else {
-			videoPreviewId = null;
-		}
-	};
-
-	const addMaterial = async () => {
-		console.log('Add material clicked', newMaterial);
-
-		if (!newMaterial.title.trim()) {
-			console.log('No title provided');
-			return;
-		}
-
-		// For native content, we need content instead of URL
-		if (newMaterial.type === 'native') {
-			const textContent = newMaterial.content.replace(/<[^>]*>/g, '').trim();
-			if (!textContent) {
-				console.log('Native type but no content');
-				return;
-			}
-		}
-
-		// For embed content, we need content (the iframe code)
-		if (newMaterial.type === 'embed') {
-			if (!newMaterial.content.trim()) {
-				console.log('Embed type but no content');
-				return;
-			}
-		}
-
-		// For uploads, the user needs to upload files first
-		if (newMaterial.type === 'upload') {
-			console.log('Upload type - files should be uploaded via DocumentUpload component');
-			toastError('Please upload files using the upload box below');
-			return;
-		}
-
-		// For other types, we need a URL
-		if (newMaterial.type !== 'native' && newMaterial.type !== 'embed' && !newMaterial.url.trim()) {
-			console.log('Non-native/embed type but no URL');
-			return;
-		}
-
-		try {
-			onSaveStatusChange(true, 'Saving material...');
-
-			// Prepare content based on type
-			const content = (newMaterial.type === 'native' || newMaterial.type === 'embed') ? newMaterial.content : newMaterial.url;
-
-			const response = await fetch('/api/courses/module-materials', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					session_id: sessionId,
-					type: newMaterial.type,
-					title: newMaterial.title,
-					content: content,
-					display_order: materials.length + 1,
-					coordinator_only: newMaterial.coordinatorOnly
-				})
-			});
-
-			if (response.ok) {
-				const { material } = await response.json();
-
-				// Convert database format to component format
-				const newMaterialForUI = {
-					id: material.id,
-					type: material.type,
-					title: material.title,
-					url: (material.type === 'native' || material.type === 'embed') ? '' : material.content,
-					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
-					description: newMaterial.description,
-					order: material.display_order,
-					coordinatorOnly: material.coordinator_only || false
-				};
-
-				const updatedMaterials = [...materials, newMaterialForUI];
-				onMaterialsChange(updatedMaterials);
-				newMaterial = { type: 'video', title: '', url: '', content: '', description: '', coordinatorOnly: false };
-				showNativeEditor = false;
-
-				onSaveStatusChange(false, 'Saved');
-				setTimeout(() => onSaveStatusChange(false, ''), 1000);
-				console.log('Material added successfully');
-			} else {
-				const errorData = await response.json();
-				console.error('Failed to add material:', errorData);
-				onSaveStatusChange(false, 'Save failed');
-				setTimeout(() => onSaveStatusChange(false, ''), 2000);
-				toastError(`Failed to add material: ${errorData.error}`);
-			}
-		} catch (error) {
-			console.error('Error adding material:', error);
-			onSaveStatusChange(false, 'Save failed');
-			setTimeout(() => onSaveStatusChange(false, ''), 2000);
-			toastError('Failed to add material');
-		}
+	const toggleExpanded = (materialId) => {
+		expandedMaterialId = expandedMaterialId === materialId ? null : materialId;
 	};
 
 	const startEditMaterial = (material) => {
 		editingMaterial = { ...material };
-		if (material.type === 'native') {
-			showNativeEditor = true;
-		}
 	};
 
 	const saveEditMaterial = async () => {
@@ -270,8 +107,9 @@
 		try {
 			onSaveStatusChange(true, 'Updating material...');
 
-			// Prepare content based on type
-			const content = (editingMaterial.type === 'native' || editingMaterial.type === 'embed') ? editingMaterial.content : editingMaterial.url;
+			const content = (editingMaterial.type === 'native' || editingMaterial.type === 'embed')
+				? editingMaterial.content
+				: editingMaterial.url;
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'PUT',
@@ -289,7 +127,6 @@
 			if (response.ok) {
 				const { material } = await response.json();
 
-				// Convert database format to component format and update local state
 				const updatedMaterialForUI = {
 					id: material.id,
 					type: material.type,
@@ -298,7 +135,10 @@
 					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
 					description: editingMaterial.description,
 					order: material.display_order,
-					coordinatorOnly: material.coordinator_only || false
+					coordinatorOnly: material.coordinator_only || false,
+					mux_status: editingMaterial.mux_status,
+					mux_playback_id: editingMaterial.mux_playback_id,
+					mux_asset_id: editingMaterial.mux_asset_id
 				};
 
 				const updatedMaterials = materials.map(m =>
@@ -306,29 +146,24 @@
 				);
 				onMaterialsChange(updatedMaterials);
 				editingMaterial = null;
-				showNativeEditor = false;
 
 				onSaveStatusChange(false, 'Saved');
 				setTimeout(() => onSaveStatusChange(false, ''), 1000);
-				console.log('Material updated successfully');
+				toastSuccess('Material updated');
 			} else {
 				const errorData = await response.json();
-				console.error('Failed to update material:', errorData);
-				onSaveStatusChange(false, 'Save failed');
-				setTimeout(() => onSaveStatusChange(false, ''), 2000);
 				toastError(`Failed to update material: ${errorData.error}`);
+				onSaveStatusChange(false, 'Save failed');
 			}
 		} catch (error) {
 			console.error('Error updating material:', error);
-			onSaveStatusChange(false, 'Save failed');
-			setTimeout(() => onSaveStatusChange(false, ''), 2000);
 			toastError('Failed to update material');
+			onSaveStatusChange(false, 'Save failed');
 		}
 	};
 
 	const cancelEditMaterial = () => {
 		editingMaterial = null;
-		showNativeEditor = false;
 	};
 
 	const confirmDelete = (materialId) => {
@@ -355,22 +190,17 @@
 			if (response.ok) {
 				const updatedMaterials = materials.filter(m => m.id !== materialId);
 				onMaterialsChange(updatedMaterials);
-
 				onSaveStatusChange(false, 'Deleted');
 				setTimeout(() => onSaveStatusChange(false, ''), 1000);
-				console.log('Material deleted successfully');
 			} else {
 				const errorData = await response.json();
-				console.error('Failed to delete material:', errorData);
-				onSaveStatusChange(false, 'Delete failed');
-				setTimeout(() => onSaveStatusChange(false, ''), 2000);
 				toastError(`Failed to delete material: ${errorData.error}`);
+				onSaveStatusChange(false, 'Delete failed');
 			}
 		} catch (error) {
 			console.error('Error deleting material:', error);
-			onSaveStatusChange(false, 'Delete failed');
-			setTimeout(() => onSaveStatusChange(false, ''), 2000);
 			toastError('Failed to delete material');
+			onSaveStatusChange(false, 'Delete failed');
 		}
 	};
 
@@ -383,18 +213,15 @@
 		} else if (direction === 'down' && index < materialsCopy.length - 1) {
 			[materialsCopy[index], materialsCopy[index + 1]] = [materialsCopy[index + 1], materialsCopy[index]];
 		} else {
-			return; // No change needed
+			return;
 		}
 
-		// Update order numbers locally
 		materialsCopy.forEach((material, i) => {
 			material.order = i + 1;
 		});
 
-		// Update UI immediately for responsiveness
 		onMaterialsChange(materialsCopy);
 
-		// Update database with new ordering
 		try {
 			const updatePromises = materialsCopy.map(material =>
 				fetch('/api/courses/module-materials', {
@@ -411,10 +238,7 @@
 			const failedUpdates = responses.filter(r => !r.ok);
 
 			if (failedUpdates.length > 0) {
-				console.error('Some material order updates failed');
-				toastError('Failed to update material order in database');
-			} else {
-				console.log('Material order updated successfully');
+				toastError('Failed to update material order');
 			}
 		} catch (error) {
 			console.error('Error updating material order:', error);
@@ -422,448 +246,357 @@
 		}
 	};
 
-	const handleDocumentUpload = async (uploadResults) => {
-		// Add each uploaded file as a material
-		for (const uploadResult of uploadResults) {
-			const material = {
-				id: Date.now() + Math.random(),
-				type: 'link',
-				title: uploadResult.name.replace(/\.[^/.]+$/, ""), // Remove extension
-				url: uploadResult.url,
-				description: `Uploaded document (${(uploadResult.size / 1024 / 1024).toFixed(2)} MB)`,
-				order: materials.length + 1
-			};
+	// Track which materials are being polled
+	let pollingMaterials = $state(new Set());
 
-			const updatedMaterials = [...materials, material];
-			onMaterialsChange(updatedMaterials);
+	// Auto-poll for processing videos
+	$effect(() => {
+		const processingMaterials = materials.filter(
+			m => m.type === 'mux_video' && m.mux_status === 'processing'
+		);
+
+		for (const material of processingMaterials) {
+			if (!pollingMaterials.has(material.id)) {
+				pollingMaterials.add(material.id);
+				pollingMaterials = new Set(pollingMaterials);
+				pollMuxStatus(material.id);
+			}
 		}
+	});
 
-		return uploadResults;
+	const pollMuxStatus = async (materialId) => {
+		let attempts = 0;
+		const maxAttempts = 60;
+
+		const poll = async () => {
+			attempts++;
+
+			try {
+				const response = await fetch('/api/courses/mux/sync', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ material_id: materialId })
+				});
+				if (response.ok) {
+					const { material: updated } = await response.json();
+					if (updated) {
+						const updatedMaterials = materials.map(m => {
+							if (m.id === materialId) {
+								return {
+									...m,
+									mux_status: updated.mux_status,
+									mux_playback_id: updated.mux_playback_id,
+									mux_asset_id: updated.mux_asset_id
+								};
+							}
+							return m;
+						});
+						onMaterialsChange(updatedMaterials);
+
+						if (updated.mux_status === 'ready') {
+							toastSuccess('Video is ready!');
+							pollingMaterials.delete(materialId);
+							pollingMaterials = new Set(pollingMaterials);
+							return;
+						} else if (updated.mux_status === 'errored') {
+							toastError('Video processing failed');
+							pollingMaterials.delete(materialId);
+							pollingMaterials = new Set(pollingMaterials);
+							return;
+						}
+					}
+				}
+			} catch (error) {
+				console.error('Failed to poll status:', error);
+			}
+
+			if (attempts < maxAttempts) {
+				setTimeout(poll, 5000);
+			} else {
+				pollingMaterials.delete(materialId);
+				pollingMaterials = new Set(pollingMaterials);
+			}
+		};
+
+		poll();
 	};
 
-	const handleTypeChange = (isNew = true) => {
-		const material = isNew ? newMaterial : editingMaterial;
-		if (!material) return;
-
-		if (material.type === 'native') {
-			showNativeEditor = true;
-		} else {
-			showNativeEditor = false;
-		}
-	};
-
-	const isAddButtonDisabled = () => {
-		// Must have a title
-		if (!newMaterial.title.trim()) return true;
-
-		// For native content, check if content exists (HTML content might have tags even if empty)
-		if (newMaterial.type === 'native') {
-			// Check if content has actual text (strip HTML tags)
-			const textContent = newMaterial.content.replace(/<[^>]*>/g, '').trim();
-			if (!textContent) return true;
-		}
-
-		// For embed content, check if content exists
-		if (newMaterial.type === 'embed') {
-			if (!newMaterial.content.trim()) return true;
-		}
-
-		// For uploads, no URL validation needed (handled by upload modal)
-		if (newMaterial.type === 'upload') return false;
-
-		// For other types (video, document, link), must have URL
-		if (newMaterial.type !== 'native' && newMaterial.type !== 'embed' && !newMaterial.url.trim()) return true;
-
-		return false;
+	const handleMaterialAdded = (newMaterial) => {
+		onMaterialsChange([...materials, newMaterial]);
 	};
 </script>
 
 <div class="bg-white rounded-2xl p-6 shadow-sm">
-	<h2 class="text-xl font-bold text-gray-800 mb-6">Materials</h2>
+	<div class="flex items-center justify-between mb-6">
+		<h2 class="text-xl font-bold text-gray-800">Materials</h2>
+		<button
+			onclick={() => showAddModal = true}
+			class="btn-primary flex items-center gap-2 px-4 py-2 font-semibold rounded-lg text-white transition-colors hover:opacity-90"
+		>
+			<Plus size="18" />
+			Add Material
+		</button>
+	</div>
 
-	<!-- Existing Materials -->
-	<div class="space-y-3 mb-6">
+	<!-- Materials List (Accordion Style) -->
+	<div class="space-y-2">
 		{#each materials as material, index}
 			{@const MaterialIcon = getMaterialIcon(material.type, material.url)}
-			{#if editingMaterial && editingMaterial.id === material.id}
-				<!-- Edit Mode -->
-				<div class="p-4">
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-						<div>
-							<label
-								for={getFieldId('edit-material-type', material.id ?? index)}
-								class="block text-sm font-semibold text-gray-700 mb-1"
-							>Type</label>
-							<select
-								id={getFieldId('edit-material-type', material.id ?? index)}
-								bind:value={editingMaterial.type}
-								onchange={() => handleTypeChange(false)}
-								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-								style="focus:ring-color: #c59a6b;"
-							>
-								{#each materialTypes as type}
-									<option value={type.value}>{type.label}</option>
-								{/each}
-							</select>
-						</div>
-						<div>
-							<label
-								for={getFieldId('edit-material-title', material.id ?? index)}
-								class="block text-sm font-semibold text-gray-700 mb-1"
-							>Title</label>
-							<input
-								id={getFieldId('edit-material-title', material.id ?? index)}
-								bind:value={editingMaterial.title}
-								type="text"
-								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-								style="focus:ring-color: #c59a6b;"
-							/>
-						</div>
+			{@const isExpanded = expandedMaterialId === material.id}
+			{@const isEditing = editingMaterial && editingMaterial.id === material.id}
+			{@const isProcessing = material.type === 'mux_video' && material.mux_status === 'processing'}
+
+			<div class="border border-gray-200 rounded-lg overflow-hidden transition-shadow hover:shadow-sm">
+				<!-- Material Row (Collapsed) -->
+				<div
+					class="flex items-center gap-3 p-3 cursor-pointer bg-white hover:bg-gray-50 transition-colors"
+					onclick={() => !isEditing && toggleExpanded(material.id)}
+					onkeydown={(e) => e.key === 'Enter' && !isEditing && toggleExpanded(material.id)}
+					role="button"
+					tabindex="0"
+				>
+					<!-- Expand/Collapse Icon -->
+					<div class="text-gray-400">
+						{#if isExpanded}
+							<ChevronDown size="18" />
+						{:else}
+							<ChevronRight size="18" />
+						{/if}
 					</div>
 
-					{#if editingMaterial.type === 'native' && showNativeEditor}
-						<div class="mb-4">
-							<label
-								id={getFieldId('edit-material-content-label', material.id ?? index)}
-								for={getFieldId('edit-material-content', material.id ?? index)}
-								class="block text-sm font-semibold text-gray-700 mb-1"
-							>Content</label>
-							<SimplifiedRichTextEditor
-								editorId={getFieldId('edit-material-content', material.id ?? index)}
-								labelledBy={getFieldId('edit-material-content-label', material.id ?? index)}
-								bind:content={editingMaterial.content}
-								placeholder="Enter your content..."
-							/>
-						</div>
-					{:else if editingMaterial.type === 'embed'}
-						<div class="mb-4">
-							<label
-								for={getFieldId('edit-material-embed', material.id ?? index)}
-								class="block text-sm font-semibold text-gray-700 mb-1"
-							>Embed Code</label>
-							<textarea
-								id={getFieldId('edit-material-embed', material.id ?? index)}
-								bind:value={editingMaterial.content}
-								rows="4"
-								placeholder="Paste your embed code here (e.g., SharePoint iframe)..."
-								class="w-full px-3 py-2 border border-gray-300 rounded font-mono text-sm focus:ring-2 focus:border-transparent resize-none"
-								style="focus:ring-color: #c59a6b;"
-							></textarea>
-							<p class="text-xs text-gray-500 mt-1">Paste the full embed code from SharePoint, Stream, or other video platforms</p>
-						</div>
-					{:else if editingMaterial.type !== 'native'}
-						<div class="mb-4">
-							<label
-								for={getFieldId('edit-material-url', material.id ?? index)}
-								class="block text-sm font-semibold text-gray-700 mb-1"
-							>URL</label>
-							<input
-								id={getFieldId('edit-material-url', material.id ?? index)}
-								bind:value={editingMaterial.url}
-								type="url"
-								class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-								style="focus:ring-color: #c59a6b;"
-							/>
+					<!-- Material Icon -->
+					<div class="flex-shrink-0 material-icon">
+						{#if isProcessing}
+							<Loader2 size="20" class="animate-spin" style="color: var(--course-accent-light, #c59a6b);" />
+						{:else}
+							<MaterialIcon size="20" style="color: var(--course-accent-light, #c59a6b);" />
+						{/if}
+					</div>
 
-							<!-- YouTube Preview for editing video materials -->
-							{#if editingMaterial.type === 'video' && editingMaterial.url}
-								{@const videoId = getYouTubeVideoId(editingMaterial.url)}
-								{#if videoId}
-									<div class="mt-3 rounded-lg overflow-hidden bg-gray-100">
-										<div class="aspect-video">
-											<iframe
-												src="https://www.youtube.com/embed/{videoId}"
-												title={editingMaterial.title}
-												frameborder="0"
-												allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-												allowfullscreen
-												class="w-full h-full"
-											></iframe>
-										</div>
-									</div>
-								{/if}
+					<!-- Title & Type Badge -->
+					<div class="flex-1 min-w-0">
+						<div class="flex items-center gap-2">
+							<span class="font-medium text-gray-800 truncate">{material.title}</span>
+							<span class="px-2 py-0.5 text-xs font-medium rounded-full {getTypeBadgeClass()}">
+								{getTypeLabel(material.type)}
+							</span>
+							{#if material.coordinatorOnly}
+								<span class="px-2 py-0.5 text-xs font-medium rounded-full coordinator-badge">
+									Coordinator
+								</span>
 							{/if}
 						</div>
-					{/if}
-
-					<div class="mb-4">
-						<label
-							for={getFieldId('edit-material-description', material.id ?? index)}
-							class="block text-sm font-semibold text-gray-700 mb-1"
-						>Description (optional)</label>
-						<textarea
-							id={getFieldId('edit-material-description', material.id ?? index)}
-							bind:value={editingMaterial.description}
-							rows="2"
-							class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent resize-none"
-							style="focus:ring-color: #c59a6b;"
-						></textarea>
 					</div>
 
-					<div class="mb-4">
-						<label class="flex items-center gap-2 cursor-pointer">
-							<input
-								type="checkbox"
-								bind:checked={editingMaterial.coordinatorOnly}
-								class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-							/>
-							<span class="text-sm font-semibold text-gray-700">Hub Coordinator Only</span>
-							<span class="text-xs text-gray-500">(Only visible to coordinators and admins)</span>
-						</label>
-					</div>
-
-					<div class="flex gap-2">
-						<button
-							onclick={saveEditMaterial}
-							class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-						>
-							<Save size="16" />
-							Save
-						</button>
-						<button
-							onclick={cancelEditMaterial}
-							class="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
-						>
-							<X size="16" />
-							Cancel
-						</button>
-					</div>
-				</div>
-			{:else}
-				<!-- View Mode -->
-				<div class="p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
-					<div class="flex items-center justify-between mb-3">
-						<div class="flex items-center gap-3 flex-1">
-							<div class="flex items-center gap-2">
-								<span class="text-sm font-semibold text-gray-500 w-6">{index + 1}</span>
-								<MaterialIcon size="20" style="color: #c59a6b;" />
-							</div>
-							<div class="flex-1">
-								<div class="flex items-center gap-2">
-									<h3 class="font-semibold text-gray-800">{material.title}</h3>
-									{#if material.coordinatorOnly}
-										<span class="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
-											Coordinator Only
-										</span>
-									{/if}
-								</div>
-								<p class="text-sm text-gray-600">
-									{#if material.type === 'native'}
-										Native content
-									{:else if material.type === 'video'}
-										YouTube Video
-									{:else if material.type === 'embed'}
-										Embedded Video (SharePoint/Stream)
-									{:else if material.type === 'link' || material.type === 'document'}
-										{getFileTypeLabel(material.url)}
-									{:else}
-										<a href={material.url} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
-											{material.url}
-										</a>
-									{/if}
-								</p>
-								{#if material.description}
-									<p class="text-xs text-gray-500">{material.description}</p>
-								{/if}
-							</div>
-						</div>
-						<div class="flex items-center gap-2">
+					<!-- Actions -->
+					<div class="flex items-center gap-1" onclick={(e) => e.stopPropagation()}>
 						<button
 							onclick={() => moveMaterial(material.id, 'up')}
-							class="p-1 text-gray-500 hover:text-gray-700"
+							class="p-1.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
 							disabled={index === 0}
+							title="Move up"
 						>
-							↑
+							<ArrowUp size="16" />
 						</button>
 						<button
 							onclick={() => moveMaterial(material.id, 'down')}
-							class="p-1 text-gray-500 hover:text-gray-700"
+							class="p-1.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
 							disabled={index === materials.length - 1}
+							title="Move down"
 						>
-							↓
+							<ArrowDown size="16" />
 						</button>
 						<button
 							onclick={() => startEditMaterial(material)}
-							class="p-2 text-blue-600 hover:text-blue-800"
+							class="p-1.5 text-blue-500 hover:text-blue-700"
+							title="Edit"
 						>
 							<Edit3 size="16" />
 						</button>
 						<button
 							onclick={() => confirmDelete(material.id)}
-							class="p-2 text-red-600 hover:text-red-800"
+							class="p-1.5 text-red-500 hover:text-red-700"
+							title="Delete"
 						>
 							<Trash2 size="16" />
 						</button>
 					</div>
-					</div>
 				</div>
-			{/if}
+
+				<!-- Expanded Content -->
+				{#if isExpanded}
+					<div class="border-t border-gray-100 bg-gray-50 p-4">
+						{#if isEditing}
+							<!-- Edit Form -->
+							<div class="space-y-4 bg-white p-4 rounded-lg">
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<label
+											for={getFieldId('edit-material-type', material.id)}
+											class="block text-sm font-semibold text-gray-700 mb-1"
+										>Type</label>
+										<select
+											id={getFieldId('edit-material-type', material.id)}
+											bind:value={editingMaterial.type}
+											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+										>
+											{#each materialTypes as type}
+												<option value={type.value}>{type.label}</option>
+											{/each}
+										</select>
+									</div>
+									<div>
+										<label
+											for={getFieldId('edit-material-title', material.id)}
+											class="block text-sm font-semibold text-gray-700 mb-1"
+										>Title</label>
+										<input
+											id={getFieldId('edit-material-title', material.id)}
+											bind:value={editingMaterial.title}
+											type="text"
+											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+										/>
+									</div>
+								</div>
+
+								{#if editingMaterial.type === 'native'}
+									<div>
+										<label
+											id={getFieldId('edit-material-content-label', material.id)}
+											class="block text-sm font-semibold text-gray-700 mb-1"
+										>Content</label>
+										<SimplifiedRichTextEditor
+											editorId={getFieldId('edit-material-content', material.id)}
+											labelledBy={getFieldId('edit-material-content-label', material.id)}
+											bind:content={editingMaterial.content}
+											placeholder="Enter your content..."
+										/>
+									</div>
+								{:else if editingMaterial.type !== 'mux_video'}
+									<div>
+										<label
+											for={getFieldId('edit-material-url', material.id)}
+											class="block text-sm font-semibold text-gray-700 mb-1"
+										>URL</label>
+										<input
+											id={getFieldId('edit-material-url', material.id)}
+											bind:value={editingMaterial.url}
+											type="url"
+											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+										/>
+									</div>
+								{/if}
+
+								<div>
+									<label class="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											bind:checked={editingMaterial.coordinatorOnly}
+											class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+										/>
+										<span class="text-sm font-medium text-gray-700">Hub Coordinator Only</span>
+									</label>
+								</div>
+
+								<div class="flex gap-2 pt-2">
+									<button
+										onclick={saveEditMaterial}
+										class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+									>
+										<Save size="16" />
+										Save
+									</button>
+									<button
+										onclick={cancelEditMaterial}
+										class="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600"
+									>
+										<X size="16" />
+										Cancel
+									</button>
+								</div>
+							</div>
+						{:else}
+							<!-- Preview Content -->
+							{#if material.type === 'video' && material.url}
+								{@const videoId = getYouTubeVideoId(material.url)}
+								{#if videoId}
+									<div class="aspect-video max-w-2xl rounded-lg overflow-hidden bg-black">
+										<iframe
+											src="https://www.youtube.com/embed/{videoId}"
+											title={material.title}
+											frameborder="0"
+											allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+											allowfullscreen
+											class="w-full h-full"
+										></iframe>
+									</div>
+								{/if}
+							{:else if material.type === 'mux_video'}
+								{#if material.mux_status === 'ready' && material.mux_playback_id}
+									<div class="max-w-2xl">
+										<MuxVideoPlayer
+											playbackId={material.mux_playback_id}
+											title={material.title}
+											status={material.mux_status}
+										/>
+									</div>
+								{:else if material.mux_status === 'processing'}
+									<div class="flex items-center gap-3 text-amber-600">
+										<Loader2 size="20" class="animate-spin" />
+										<span>Video is processing...</span>
+									</div>
+								{:else if material.mux_status === 'errored'}
+									<div class="text-red-600">Video processing failed</div>
+								{/if}
+							{:else if material.type === 'native' && material.content}
+								<div class="content-preview max-w-none">
+									{@html material.content}
+								</div>
+							{:else if material.type === 'embed' && material.content}
+								<div class="aspect-video max-w-2xl rounded-lg overflow-hidden">
+									{@html material.content}
+								</div>
+							{:else if material.url}
+								<a
+									href={material.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+								>
+									<Link size="16" />
+									{material.url}
+								</a>
+							{/if}
+
+							{#if material.description}
+								<p class="text-sm text-gray-500 mt-3">{material.description}</p>
+							{/if}
+						{/if}
+					</div>
+				{/if}
+			</div>
 		{/each}
 
 		{#if materials.length === 0}
-			<div class="text-center py-8 text-gray-500">
+			<div class="text-center py-12 text-gray-500">
 				<FileText size="48" class="mx-auto mb-3 opacity-50" />
-				<p>No materials added yet</p>
+				<p class="text-lg font-medium">No materials added yet</p>
+				<p class="text-sm mt-1">Click "Add Material" to get started</p>
 			</div>
 		{/if}
-	</div>
-
-
-	<!-- Add New Material -->
-	<div class="border-t pt-6">
-		<h3 class="font-semibold text-gray-800 mb-4">Add New Material</h3>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-			<div>
-				<label
-					for="new-material-type"
-					class="block text-sm font-semibold text-gray-700 mb-1"
-				>Type</label>
-				<select
-					id="new-material-type"
-					bind:value={newMaterial.type}
-					onchange={() => handleTypeChange(true)}
-					class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-					style="focus:ring-color: #c59a6b;"
-				>
-					{#each materialTypes as type}
-						<option value={type.value}>{type.label}</option>
-					{/each}
-				</select>
-			</div>
-			<div>
-				<label
-					for="new-material-title"
-					class="block text-sm font-semibold text-gray-700 mb-1"
-				>Title</label>
-				<input
-					id="new-material-title"
-					bind:value={newMaterial.title}
-					type="text"
-					placeholder="Material title"
-					class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-					style="focus:ring-color: #c59a6b;"
-				/>
-			</div>
-		</div>
-
-		{#if newMaterial.type === 'native' && showNativeEditor}
-			<div class="mb-4">
-				<label
-					id="new-material-content-label"
-					for="new-material-content"
-					class="block text-sm font-semibold text-gray-700 mb-1"
-				>Content</label>
-				<SimplifiedRichTextEditor
-					editorId="new-material-content"
-					labelledBy="new-material-content-label"
-					bind:content={newMaterial.content}
-					placeholder="Enter your content..."
-				/>
-			</div>
-		{:else if newMaterial.type === 'embed'}
-			<div class="mb-4">
-				<label
-					for="new-material-embed"
-					class="block text-sm font-semibold text-gray-700 mb-1"
-				>Embed Code</label>
-				<textarea
-					id="new-material-embed"
-					bind:value={newMaterial.content}
-					rows="4"
-					placeholder="Paste your embed code here (e.g., SharePoint iframe)..."
-					class="w-full px-3 py-2 border border-gray-300 rounded font-mono text-sm focus:ring-2 focus:border-transparent resize-none"
-					style="focus:ring-color: #c59a6b;"
-				></textarea>
-				<p class="text-xs text-gray-500 mt-1">Paste the full embed code from SharePoint, Stream, or other video platforms</p>
-			</div>
-		{:else if newMaterial.type === 'upload'}
-			<div class="mb-4">
-				<div class="block text-sm font-semibold text-gray-700 mb-1">
-					Upload Documents
-				</div>
-				<DocumentUpload
-					onUpload={handleDocumentUpload}
-					accept=".pdf,.doc,.docx,.txt,.md"
-					multiple={true}
-					cohortId={courseId || moduleId}
-					sessionNumber={sessionNumber}
-				/>
-			</div>
-		{:else if newMaterial.type !== 'native'}
-			<div class="mb-4">
-				<label
-					for="new-material-url"
-					class="block text-sm font-semibold text-gray-700 mb-1"
-				>URL</label>
-				<input
-					id="new-material-url"
-					bind:value={newMaterial.url}
-					oninput={handleNewMaterialUrlChange}
-					type="url"
-					placeholder="https://..."
-					class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent"
-					style="focus:ring-color: #c59a6b;"
-				/>
-
-				{#if fetchingVideoInfo}
-					<p class="text-xs text-gray-500 mt-1">Fetching video info...</p>
-				{/if}
-
-				{#if videoPreviewId}
-					<div class="mt-3 rounded-lg overflow-hidden bg-gray-100">
-						<div class="aspect-video">
-							<iframe
-								src="https://www.youtube.com/embed/{videoPreviewId}"
-								title="YouTube video preview"
-								frameborder="0"
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-								allowfullscreen
-								class="w-full h-full"
-							></iframe>
-						</div>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<div class="mb-4">
-			<label
-				for="new-material-description"
-				class="block text-sm font-semibold text-gray-700 mb-1"
-			>Description (optional)</label>
-			<textarea
-				id="new-material-description"
-				bind:value={newMaterial.description}
-				placeholder="Brief description of this material..."
-				rows="2"
-				class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:border-transparent resize-none"
-				style="focus:ring-color: #c59a6b;"
-			></textarea>
-		</div>
-
-		<div class="mb-4">
-			<label class="flex items-center gap-2 cursor-pointer">
-				<input
-					type="checkbox"
-					bind:checked={newMaterial.coordinatorOnly}
-					class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-				/>
-				<span class="text-sm font-semibold text-gray-700">Hub Coordinator Only</span>
-				<span class="text-xs text-gray-500">(Only visible to coordinators and admins)</span>
-			</label>
-		</div>
-
-		<button
-			onclick={addMaterial}
-			class="flex items-center gap-2 px-4 py-2 font-semibold rounded-lg transition-colors {isAddButtonDisabled() ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}"
-			style="background-color: #c59a6b; color: white;"
-			disabled={isAddButtonDisabled()}
-		>
-			<Plus size="16" />
-			Add Material
-		</button>
 	</div>
 </div>
+
+<!-- Add Material Modal -->
+<AddMaterialModal
+	isOpen={showAddModal}
+	{sessionId}
+	{courseId}
+	{sessionNumber}
+	materialsCount={materials.length}
+	onClose={() => showAddModal = false}
+	onMaterialAdded={handleMaterialAdded}
+/>
 
 <!-- Delete Confirmation Modal -->
 <ConfirmationModal
@@ -879,3 +612,101 @@
 >
 	<p>Are you sure you want to delete this material? This action cannot be undone.</p>
 </ConfirmationModal>
+
+<style>
+	.btn-primary {
+		background-color: var(--course-accent-light, #c59a6b);
+	}
+
+	.type-badge {
+		background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 15%, white);
+		color: var(--course-accent-dark, #334642);
+	}
+
+	.coordinator-badge {
+		background-color: color-mix(in srgb, var(--course-accent-dark, #334642) 15%, white);
+		color: var(--course-accent-dark, #334642);
+	}
+
+	/* Native content preview styling */
+	.content-preview :global(h1) {
+		font-size: 1.5rem;
+		font-weight: 700;
+		margin-bottom: 0.75rem;
+		margin-top: 1rem;
+		color: #111827;
+		line-height: 1.3;
+	}
+
+	.content-preview :global(h2) {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin-bottom: 0.5rem;
+		margin-top: 1rem;
+		color: #374151;
+		line-height: 1.3;
+	}
+
+	.content-preview :global(h3) {
+		font-size: 1.125rem;
+		font-weight: 600;
+		margin-bottom: 0.5rem;
+		margin-top: 0.75rem;
+		color: #374151;
+	}
+
+	.content-preview :global(p) {
+		font-size: 0.95rem;
+		line-height: 1.6;
+		margin-bottom: 0.75rem;
+		color: #374151;
+	}
+
+	.content-preview :global(ul),
+	.content-preview :global(ol) {
+		margin-bottom: 0.75rem;
+		margin-left: 1.25rem;
+		padding: 0;
+	}
+
+	.content-preview :global(ul) {
+		list-style-type: disc;
+	}
+
+	.content-preview :global(ol) {
+		list-style-type: decimal;
+	}
+
+	.content-preview :global(li) {
+		font-size: 0.95rem;
+		color: #374151;
+		line-height: 1.6;
+		margin-bottom: 0.25rem;
+	}
+
+	.content-preview :global(strong) {
+		font-weight: 600;
+		color: var(--course-accent-light, #c59a6b);
+	}
+
+	.content-preview :global(em) {
+		font-style: italic;
+	}
+
+	.content-preview :global(blockquote) {
+		border-left: 3px solid var(--course-accent-light, #c59a6b);
+		padding-left: 0.75rem;
+		margin: 0.75rem 0;
+		color: #6b7280;
+		font-style: italic;
+	}
+
+	.content-preview :global(a) {
+		color: #2563eb;
+		text-decoration: underline;
+	}
+
+	.content-preview :global(a:hover) {
+		color: #1d4ed8;
+	}
+</style>

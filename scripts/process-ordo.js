@@ -47,7 +47,13 @@ function loadYearCycleData() {
 			year,
 			sundayCycle: r.sunday_cycle,
 			weekdayCycle: r.weekday_cycle,
-			firstSundayOfAdvent: parseMonthDay(r.first_sunday_of_advent, year)
+			firstSundayOfAdvent: parseMonthDay(r.first_sunday_of_advent, year),
+			// Additional fields for week calculation
+			easterSunday: r.easter_sunday,
+			pentecostSunday: r.pentecost_sunday,
+			ashWednesday: r.ash_wednesday,
+			weekOfOtAfterPentecost: parseInt(r.week_of_ot_after_pentecost, 10),
+			weeksBeforeLent: parseInt(r.weeks_of_ot_before_lent, 10)
 		});
 	}
 	return yearDataCache;
@@ -67,6 +73,107 @@ function getYearCycles(date) {
 	}
 
 	return { sundayCycle: currentYear.sundayCycle, weekdayCycle: currentYear.weekdayCycle };
+}
+
+/**
+ * Calculate liturgical week number from date
+ * Used for memorials where the week isn't in the name
+ */
+function calculateLiturgicalWeek(date, season) {
+	const data = loadYearCycleData();
+	const calendarYear = date.getFullYear();
+	const yearData = data.get(calendarYear);
+	if (!yearData) return null;
+
+	// Parse key dates from year data
+	const easterSunday = parseMonthDay(yearData.easterSunday || 'Apr-05', calendarYear);
+	const pentecostSunday = parseMonthDay(yearData.pentecostSunday || 'May-24', calendarYear);
+	const ashWednesday = parseMonthDay(yearData.ashWednesday || 'Feb-18', calendarYear);
+	const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
+	const firstSundayOfAdvent = yearData.firstSundayOfAdvent;
+
+	// Calculate days since reference point
+	const msPerDay = 24 * 60 * 60 * 1000;
+	const daysSinceEaster = Math.floor((date - easterSunday) / msPerDay);
+	const daysSincePentecost = Math.floor((date - pentecostSunday) / msPerDay);
+	const daysSinceAshWednesday = Math.floor((date - ashWednesday) / msPerDay);
+
+	if (season === 'Easter') {
+		// Easter Week 1 = Easter Sunday week
+		// Week 2 starts 7 days after Easter, etc.
+		if (daysSinceEaster < 0) return null;
+		return Math.floor(daysSinceEaster / 7) + 1;
+	}
+
+	if (season === 'Lent') {
+		// Lent Week 1 starts with Ash Wednesday
+		if (daysSinceAshWednesday < 0) return null;
+		return Math.floor(daysSinceAshWednesday / 7) + 1;
+	}
+
+	if (season === 'Ordinary Time') {
+		// OT after Pentecost resumes at weekOfOtAfterPentecost
+		if (daysSincePentecost >= 0) {
+			// After Pentecost: week = weekOfOtAfterPentecost + weeks since Pentecost
+			return weekOfOtAfterPentecost + Math.floor(daysSincePentecost / 7);
+		}
+
+		// Before Lent: calculate from weeks_of_ot_before_lent working back from Ash Wednesday
+		// The day before Ash Wednesday is in the last week of OT before Lent
+		const daysUntilLent = Math.floor((ashWednesday - date) / msPerDay);
+		if (daysUntilLent > 0 && daysUntilLent < 70) {
+			// weeksOfOtBeforeLent from CSV tells us how many weeks of OT before Lent
+			// This value is stored in the CSV but not parsed yet, so calculate it
+			// Week 1 of OT starts after Baptism of the Lord (around Jan 13)
+			// For now, use a reasonable default based on typical range (5-9 weeks)
+			const weeksOfOtBeforeLent = yearData.weeksBeforeLent || 6;
+			const fullWeeksBeforeAsh = Math.floor((daysUntilLent - 1) / 7);
+			const week = weeksOfOtBeforeLent - fullWeeksBeforeAsh;
+			if (week >= 1) return week;
+		}
+		return null;
+	}
+
+	if (season === 'Advent') {
+		// Advent has 4 weeks, starting from First Sunday of Advent
+		if (firstSundayOfAdvent) {
+			const daysSinceAdventStart = Math.floor((date - firstSundayOfAdvent) / msPerDay);
+			if (daysSinceAdventStart >= 0 && daysSinceAdventStart < 28) {
+				return Math.floor(daysSinceAdventStart / 7) + 1;
+			}
+		}
+		return null;
+	}
+
+	return null;
+}
+
+/**
+ * Adjust Brisbane Ordo week number to match Roman Lectionary numbering
+ *
+ * Brisbane's OT Sunday numbering after Pentecost is 1 less than the lectionary
+ * for early/mid weeks, but catches up by week 33.
+ * e.g., Brisbane "11 ORDINARY" (June 14, 2026) = Lectionary "TWELFTH SUNDAY"
+ */
+function adjustBrisbaneWeekForLectionary(week, season, date, isSunday) {
+	if (!isSunday || season !== 'Ordinary Time' || !week) return week;
+
+	// Don't adjust weeks 33+ (Brisbane catches up by end of year)
+	if (week >= 33) return week;
+
+	const data = loadYearCycleData();
+	const calendarYear = date.getFullYear();
+	const yearData = data.get(calendarYear);
+	if (!yearData?.pentecostSunday) return week;
+
+	const pentecost = parseMonthDay(yearData.pentecostSunday, calendarYear);
+
+	// Only adjust for OT Sundays AFTER Pentecost
+	if (date > pentecost) {
+		return week + 1;
+	}
+
+	return week;
 }
 
 // ============================================================================
@@ -138,9 +245,40 @@ function inferWeek(name) {
 	return null;
 }
 
+// Map Brisbane feast names to lectionary names
+const FEAST_NAME_MAPPINGS = {
+	'THE MOST HOLY TRINITY': 'TRINITY SUNDAY',
+	'THE MOST HOLY BODY AND BLOOD OF CHRIST': 'THE BODY AND BLOOD OF CHRIST',
+	'THE NATIVITY OF SAINT JOHN THE BAPTIST': 'BIRTH OF JOHN THE BAPTIST',
+	'THE TRANSFIGURATION OF THE LORD': 'TRANSFIGURATION',
+	'TRANSFIGURATION OF THE LORD': 'TRANSFIGURATION',
+	'THE EXALTATION OF THE HOLY CROSS': 'EXALTATION OF THE CROSS',
+	'EXALTATION OF THE HOLY CROSS': 'EXALTATION OF THE CROSS',
+	'THE CHAIR OF ST PETER': 'CHAIR OF PETER',
+	'THE CHAIR OF SAINT PETER': 'CHAIR OF PETER',
+	'THE VISITATION OF THE BLESSED VIRGIN MARY': 'VISITATION',
+	'THE PRESENTATION OF THE LORD': 'PRESENTATION OF THE LORD',
+	'THE NATIVITY OF THE BLESSED VIRGIN MARY': 'BIRTH OF MARY',
+	'THE QUEENSHIP OF THE BLESSED VIRGIN MARY': 'QUEENSHIP OF MARY',
+	'THE PRESENTATION OF THE BLESSED VIRGIN MARY': 'PRESENTATION OF MARY',
+	'THE COMMEMORATION OF ALL THE FAITHFUL DEPARTED': 'ALL SOULS',
+	'THE DEDICATION OF THE LATERAN BASILICA': 'ST JOHN LATERAN',
+	'DEDICATION OF THE LATERAN BASILICA': 'ST JOHN LATERAN',
+	'SAINT THÉRÈSE OF THE CHILD JESUS': 'ST THERESE OF THE CHILD JESUS',
+	'SAINT THERESE OF THE CHILD JESUS': 'ST THERESE OF THE CHILD JESUS',
+};
+
 function normalize(text) {
 	if (!text) return '';
 	let n = text.toUpperCase().trim();
+
+	// Apply feast name mappings first
+	for (const [from, to] of Object.entries(FEAST_NAME_MAPPINGS)) {
+		if (n.includes(from)) {
+			n = n.replace(from, to);
+		}
+	}
+
 	n = n.replace(/^\d{1,2}\s+[A-Z]+\s*[–—-]\s*/, '');
 	n = n.replace(/,?\s*YEAR\s+[ABC]\s*$/i, '');
 
@@ -210,6 +348,18 @@ function findLectionaryMatch(ordoEntry, lectionary, yearCycles) {
 	const month = date.getMonth(); // 0-indexed, December = 11
 	const day = date.getDate();
 
+	// PRIORITY 0: Easter Triduum - Holy Thursday, Good Friday, Easter Vigil
+	const triduumMatch = findTriduumReading(lectionary, liturgical_name, sundayCycle);
+	if (triduumMatch) {
+		return { ...triduumMatch, match_type: 'exact', match_method: 'triduum' };
+	}
+
+	// PRIORITY 0.5: Fixed Feasts by date (e.g., "6 August – Transfiguration")
+	const fixedFeastMatch = findFixedFeastByDate(lectionary, liturgical_name, date, sundayCycle);
+	if (fixedFeastMatch) {
+		return { ...fixedFeastMatch, match_type: 'exact', match_method: 'date' };
+	}
+
 	// PRIORITY 1: Dec 17-24 with date-only names use Advent proper readings
 	const isDateOnlyName = /^\d{1,2}\s+(December|Dec)$/i.test(liturgical_name.trim());
 	if (month === 11 && day >= 17 && day <= 24 && !isSunday && isDateOnlyName) {
@@ -227,9 +377,21 @@ function findLectionaryMatch(ordoEntry, lectionary, yearCycles) {
 		}
 	}
 
+	// PRIORITY 3: Early January (Jan 2-5) before Epiphany - use date-specific Christmas season entries
+	// e.g., "Saturday before Epiphany" on Jan 3 should match "3rd January", not "EPIPHANY"
+	if (month === 0 && day >= 2 && day <= 5 && !isSunday) {
+		const earlyJanMatch = findEarlyJanuaryReading(lectionary, day);
+		if (earlyJanMatch) {
+			return { ...earlyJanMatch, match_type: 'exact', match_method: 'early_january' };
+		}
+	}
+
 	// For memorials, find the weekday reading instead of saint reading
-	if (isMemorial && week && season) {
-		const weekdayMatch = findWeekdayReading(lectionary, dayOfWeek, season, week, weekdayCycle);
+	// Calculate week from date if not available (e.g., "Saint Benedict" has no week in name)
+	const effectiveWeek = week || (isMemorial && season ? calculateLiturgicalWeek(date, season) : null);
+
+	if (isMemorial && effectiveWeek && season) {
+		const weekdayMatch = findWeekdayReading(lectionary, dayOfWeek, season, effectiveWeek, weekdayCycle);
 		if (weekdayMatch) {
 			return {
 				...weekdayMatch,
@@ -273,8 +435,10 @@ function findLectionaryMatch(ordoEntry, lectionary, yearCycles) {
 	}
 
 	// Try pattern-based matching for Sundays
+	// Adjust Brisbane week number for OT Sundays after Pentecost (+1 to match lectionary)
 	if (isSunday && week && season) {
-		const sundayMatch = findSundayReading(lectionary, season, week, sundayCycle);
+		const adjustedWeek = adjustBrisbaneWeekForLectionary(week, season, date, true);
+		const sundayMatch = findSundayReading(lectionary, season, adjustedWeek, sundayCycle);
 		if (sundayMatch) {
 			return {
 				...sundayMatch,
@@ -284,10 +448,33 @@ function findLectionaryMatch(ordoEntry, lectionary, yearCycles) {
 		}
 	}
 
+	// Map our season names to lectionary 'time' field values for filtering
+	// NOTE: Lectionary uses 'Ordinary' not 'Ordinary Time'
+	const seasonToTime = {
+		'Advent': 'Advent',
+		'Lent': 'Lent',
+		'Easter': 'Easter',
+		'Ordinary Time': 'Ordinary',  // Lectionary uses 'Ordinary'
+		'Christmas': 'Christmas',
+		'Holy Week': 'Lent'  // Holy Week uses Lent time in lectionary
+	};
+	const expectedTime = season ? seasonToTime[season] : null;
+
+	// For solemnities and feasts, don't apply season filtering - they use Fixed/Moving Feast entries
+	const isFeastOrSolemnity = rank === 'Solemnity' || rank === 'Feast';
+
 	// Try partial/substring match
 	for (const entry of lectionary) {
 		const lectNorm = normalize(entry.liturgical_day);
 		const lectYear = entry.year;
+		const lectTime = entry.time;
+
+		// CRITICAL: Filter by liturgical season (time) to avoid cross-season matches
+		// e.g., Advent weekday matching Ordinary Time "Monday of the first week"
+		// BUT: Skip this filter for feasts/solemnities - they have Fixed/Moving Feast entries
+		if (!isFeastOrSolemnity && expectedTime && lectTime && lectTime !== expectedTime) {
+			continue;
+		}
 
 		// Year filter for Sundays (A/B/C)
 		if (isSunday && lectYear && !['Season', '1', '2', 'Feast'].includes(lectYear)) {
@@ -297,6 +484,14 @@ function findLectionaryMatch(ordoEntry, lectionary, yearCycles) {
 		// Year filter for Ordinary Time weekdays (1/2)
 		if (!isSunday && season === 'Ordinary Time' && ['1', '2'].includes(lectYear)) {
 			if (lectYear !== weekdayYear) continue;
+		}
+
+		// Handle Advent weekday Year A vs B/C matching
+		// Lectionary has "Year A" and "Year B/C" variants for some Advent weekdays
+		if (!isSunday && season === 'Advent') {
+			const lectName = entry.liturgical_day.toLowerCase();
+			if (lectName.includes('year a') && sundayCycle !== 'A') continue;
+			if (lectName.includes('year b/c') && sundayCycle === 'A') continue;
 		}
 
 		if (ordoNorm.includes(lectNorm) || lectNorm.includes(ordoNorm)) {
@@ -320,6 +515,17 @@ function findSundayReading(lectionary, season, week, yearCycle) {
 	const ordinal = weekToOrdinal(week);
 	const patterns = [];
 
+	// Map our season names to lectionary 'time' field values
+	// NOTE: Lectionary uses 'Ordinary' not 'Ordinary Time'
+	const seasonToTime = {
+		'Advent': 'Advent',
+		'Lent': 'Lent',
+		'Easter': 'Easter',
+		'Ordinary Time': 'Ordinary',  // Lectionary uses 'Ordinary'
+		'Christmas': 'Christmas'
+	};
+	const expectedTime = seasonToTime[season];
+
 	if (season === 'Advent') {
 		patterns.push(`${ordinal} sunday of advent, year ${yearCycle}`.toUpperCase());
 		patterns.push(`${ordinal} sunday of advent`.toUpperCase());
@@ -335,8 +541,34 @@ function findSundayReading(lectionary, season, week, yearCycle) {
 
 	for (const entry of lectionary) {
 		const lectNorm = normalize(entry.liturgical_day);
+		const lectYear = entry.year;
+		const lectTime = entry.time;
+
+		// CRITICAL: Filter by liturgical season (time) to avoid matching Ordinary Time for Lent/Easter
+		if (expectedTime && lectTime && lectTime !== expectedTime) {
+			continue;
+		}
+
+		// For Sundays, must match year cycle
+		if (lectYear && !['Season', '1', '2', 'Feast'].includes(lectYear)) {
+			if (lectYear !== yearCycle) continue;
+		}
+
 		for (const pattern of patterns) {
-			if (lectNorm.includes(normalize(pattern)) || normalize(pattern).includes(lectNorm)) {
+			const patternNorm = normalize(pattern);
+			// Use word-boundary matching to avoid "9" matching inside "29"
+			const lectWords = lectNorm.split(/\s+/);
+			const patternWords = patternNorm.split(/\s+/);
+
+			// Check if all lectionary words appear in pattern (word-based, not substring)
+			const allWordsMatch = lectWords.every(w => patternWords.includes(w));
+
+			// ALSO check: the week number must appear in the lectionary entry
+			// This prevents "EASTER SUNDAY" matching "THIRD SUNDAY OF EASTER"
+			const weekNum = String(week);
+			const lectHasWeek = lectWords.includes(weekNum) || lectNorm.includes(ordinal.toUpperCase());
+
+			if (allWordsMatch && lectHasWeek) {
 				return {
 					lectionary_id: entry.admin_order,
 					lectionary_day: entry.liturgical_day,
@@ -355,6 +587,15 @@ function findWeekdayReading(lectionary, dayOfWeek, season, week, weekdayCycle) {
 	const ordinal = weekToOrdinal(week);
 	const patterns = [];
 
+	// Map season to expected lectionary time field
+	const seasonToTime = {
+		'Lent': 'Lent',
+		'Easter': 'Easter',
+		'Advent': 'Advent',
+		'Ordinary Time': 'Ordinary'  // Lectionary uses 'Ordinary'
+	};
+	const expectedTime = seasonToTime[season];
+
 	if (season === 'Lent') {
 		patterns.push(`${dayOfWeek} of the ${ordinal} week of lent`.toLowerCase());
 	} else if (season === 'Easter') {
@@ -371,6 +612,12 @@ function findWeekdayReading(lectionary, dayOfWeek, season, week, weekdayCycle) {
 	for (const entry of lectionary) {
 		const lectName = entry.liturgical_day.toLowerCase();
 		const entryYear = entry.year;
+		const lectTime = entry.time;
+
+		// Filter by liturgical season/time to avoid cross-season matches
+		if (expectedTime && lectTime && lectTime !== expectedTime) {
+			continue;
+		}
 
 		// For Ordinary Time weekdays, filter by year cycle (1 or 2)
 		if (season === 'Ordinary Time' && entryYear && ['1', '2'].includes(entryYear)) {
@@ -415,6 +662,240 @@ function findAdventProperReading(lectionary, day) {
 			};
 		}
 	}
+	return null;
+}
+
+/**
+ * Find early January reading (Jan 2-5 before Epiphany)
+ * These have date-specific entries in the Christmas season
+ */
+function findEarlyJanuaryReading(lectionary, day) {
+	// Build ordinal suffix for matching
+	const suffix = day === 2 ? 'nd' : day === 3 ? 'rd' : 'th';
+	const patterns = [
+		`${day}${suffix} january`.toLowerCase(),
+		`${day} january`.toLowerCase()
+	];
+
+	for (const entry of lectionary) {
+		// Only match Christmas season entries, not Fixed Feasts
+		if (entry.time !== 'Christmas') continue;
+
+		const lectName = entry.liturgical_day.toLowerCase();
+		for (const pattern of patterns) {
+			if (lectName.includes(pattern)) {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * Find Triduum reading - Holy Thursday, Good Friday, Easter Vigil
+ */
+function findTriduumReading(lectionary, liturgicalName, yearCycle) {
+	const nameUpper = liturgicalName.toUpperCase();
+
+	// HOLY THURSDAY
+	if (nameUpper.includes('HOLY THURSDAY') || nameUpper.includes("LORD'S SUPPER") || nameUpper.includes('MAUNDY')) {
+		for (const entry of lectionary) {
+			const lectName = entry.liturgical_day.toUpperCase();
+			if (lectName.includes('HOLY THURSDAY') || lectName.includes("LORD'S SUPPER")) {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+
+	// GOOD FRIDAY
+	if (nameUpper.includes('GOOD FRIDAY') || nameUpper.includes("LORD'S PASSION")) {
+		for (const entry of lectionary) {
+			const lectName = entry.liturgical_day.toUpperCase();
+			if (lectName.includes('GOOD FRIDAY') || lectName.includes("LORD'S PASSION")) {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+
+	// EASTER VIGIL
+	if (nameUpper.includes('EASTER VIGIL') && !nameUpper.includes('SUNDAY')) {
+		for (const entry of lectionary) {
+			const lectName = entry.liturgical_day.toUpperCase();
+			if (lectName.includes('EASTER VIGIL') && entry.year === yearCycle) {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+
+	// PENTECOST SUNDAY (not Vigil)
+	if (nameUpper === 'PENTECOST' || nameUpper.includes('PENTECOST SUNDAY')) {
+		for (const entry of lectionary) {
+			const lectName = entry.liturgical_day.toUpperCase();
+			if (lectName.includes('PENTECOST SUNDAY') && entry.year === yearCycle) {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Known fixed feasts with date prefixes in lectionary
+ */
+const FIXED_FEASTS = {
+	'TRANSFIGURATION': 'transfiguration',
+	'PRESENTATION OF THE LORD': 'presentation',
+	'ANNUNCIATION': 'annunciation',
+	'ASSUMPTION': 'assumption',
+	'BIRTH OF MARY': 'birth of mary',
+	'NATIVITY OF THE BLESSED VIRGIN': 'birth of mary',
+	'NATIVITY OF MARY': 'birth of mary',
+	'EXALTATION': 'exaltation',
+	'HOLY CROSS': 'exaltation',
+	'IMMACULATE CONCEPTION': 'immaculate conception',
+	'OUR LADY OF THE ROSARY': 'rosary',
+	'GUARDIAN ANGELS': 'guardian angels',
+	'ARCHANGELS': 'archangels',
+	'ALL SOULS': 'all souls',
+	'FAITHFUL DEPARTED': 'all souls',
+	'ST JOHN LATERAN': 'john lateran',
+	'LATERAN BASILICA': 'john lateran',
+	'DEDICATION OF THE LATERAN': 'john lateran',
+	'CHAIR OF PETER': 'chair of peter',
+	'CONVERSION OF PAUL': 'conversion of paul',
+	'BIRTH OF JOHN THE BAPTIST': 'birth of john',
+	'NATIVITY OF JOHN THE BAPTIST': 'birth of john',
+	'NATIVITY OF SAINT JOHN': 'birth of john',
+	'PETER AND PAUL': 'peter and paul',
+	'VISITATION': 'visitation',
+	'QUEENSHIP OF MARY': 'queenship',
+	'QUEENSHIP OF THE BLESSED': 'queenship',
+	// Australian-specific
+	'OUR LADY, HELP OF CHRISTIANS': 'mary help of christians',
+	'MARY HELP OF CHRISTIANS': 'mary help of christians',
+	'HELP OF CHRISTIANS': 'mary help of christians',
+	'MARY OF THE CROSS': 'mary of the cross'
+};
+
+/**
+ * Find Fixed Feast by calendar date
+ */
+function findFixedFeastByDate(lectionary, liturgicalName, date, yearCycle) {
+	const nameUpper = liturgicalName.toUpperCase();
+	const month = date.getMonth();
+	const day = date.getDate();
+
+	const monthNames = [
+		'january', 'february', 'march', 'april', 'may', 'june',
+		'july', 'august', 'september', 'october', 'november', 'december'
+	];
+	const monthName = monthNames[month];
+
+	// Find feast keyword
+	let feastKeyword = null;
+	for (const [ordo, lect] of Object.entries(FIXED_FEASTS)) {
+		if (nameUpper.includes(ordo)) {
+			feastKeyword = lect;
+			break;
+		}
+	}
+
+	if (!feastKeyword) return null;
+
+	// Build date patterns - include adjacent days for transferrable feasts
+	// Australian feasts like "Mary Help of Christians" (May 24) can be transferred
+	const datePatterns = [`${day} ${monthName}`, `${day}th ${monthName}`];
+
+	// For transferrable feasts, also check adjacent days
+	const transferrableFeasts = ['mary help of christians', 'mary of the cross'];
+	if (transferrableFeasts.includes(feastKeyword)) {
+		// Add day before and after
+		if (day > 1) datePatterns.push(`${day - 1} ${monthName}`);
+		datePatterns.push(`${day + 1} ${monthName}`);
+	}
+
+	// Search lectionary
+	for (const entry of lectionary) {
+		const lectName = entry.liturgical_day.toLowerCase();
+
+		const hasDatePrefix = datePatterns.some(p => lectName.includes(p));
+		const hasFeastKeyword = lectName.includes(feastKeyword);
+
+		if (hasDatePrefix && hasFeastKeyword) {
+			// For year-specific entries (Year A/B/C in name), match the year cycle
+			const lectHasYearSuffix = /year [abc]/i.test(entry.liturgical_day);
+			if (lectHasYearSuffix) {
+				const lectYear = entry.liturgical_day.match(/year ([abc])/i)?.[1]?.toUpperCase();
+				if (lectYear === yearCycle) {
+					return {
+						lectionary_id: entry.admin_order,
+						lectionary_day: entry.liturgical_day,
+						first_reading: entry.first_reading,
+						psalm: entry.psalm,
+						second_reading: entry.second_reading,
+						gospel_reading: entry.gospel_reading
+					};
+				}
+			} else if (entry.year && ['A', 'B', 'C'].includes(entry.year)) {
+				if (entry.year === yearCycle) {
+					return {
+						lectionary_id: entry.admin_order,
+						lectionary_day: entry.liturgical_day,
+						first_reading: entry.first_reading,
+						psalm: entry.psalm,
+						second_reading: entry.second_reading,
+						gospel_reading: entry.gospel_reading
+					};
+				}
+			} else {
+				return {
+					lectionary_id: entry.admin_order,
+					lectionary_day: entry.liturgical_day,
+					first_reading: entry.first_reading,
+					psalm: entry.psalm,
+					second_reading: entry.second_reading,
+					gospel_reading: entry.gospel_reading
+				};
+			}
+		}
+	}
+
 	return null;
 }
 

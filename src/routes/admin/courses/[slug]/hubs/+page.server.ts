@@ -20,14 +20,7 @@ export const load: PageServerLoad = async (event) => {
 		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
 			.from('courses_hubs')
-			.select(`
-				*,
-				coordinator:coordinator_id (
-					id,
-					full_name,
-					email
-				)
-			`)
+			.select('id, name, location, course_id, created_at, updated_at')
 			.eq('course_id', course.id)
 			.order('name');
 
@@ -39,56 +32,84 @@ export const load: PageServerLoad = async (event) => {
 		// ✅ OPTIMIZATION: Use cached cohort IDs from layout
 		const hubIds = hubs?.map((h) => h.id) || [];
 		const cohortIds = cohorts.map((c) => c.id);
-		let enrollmentCounts: Record<string, number> = {};
+
+		// Fetch coordinators for each hub
+		let hubCoordinators: Record<string, any[]> = {};
 
 		if (hubIds.length > 0 && cohortIds.length > 0) {
-			// Count enrollments per hub for this course
-			const { data: enrollments } = await supabaseAdmin
+			const { data: coordinators } = await supabaseAdmin
 				.from('courses_enrollments')
-				.select('hub_id')
+				.select(`
+					id,
+					hub_id,
+					full_name,
+					email,
+					user_profile:user_profile_id (
+						id,
+						full_name,
+						email
+					)
+				`)
 				.in('cohort_id', cohortIds)
-				.in('hub_id', hubIds);
+				.in('hub_id', hubIds)
+				.eq('role', 'coordinator')
+				.order('full_name');
 
-			// Build count map
-			enrollments?.forEach((e) => {
-				if (e.hub_id) {
-					enrollmentCounts[e.hub_id] = (enrollmentCounts[e.hub_id] || 0) + 1;
+			// Group by hub
+			coordinators?.forEach((e) => {
+				if (!e.hub_id) return;
+
+				if (!hubCoordinators[e.hub_id]) {
+					hubCoordinators[e.hub_id] = [];
 				}
+
+				hubCoordinators[e.hub_id].push({
+					id: e.id,
+					full_name: e.user_profile?.full_name || e.full_name,
+					email: e.user_profile?.email || e.email
+				});
 			});
 		}
 
-		// Add enrollment counts to hubs
-		const hubsWithCounts = hubs?.map((hub) => ({
+		// Add coordinators to hubs
+		const hubsWithMembers = hubs?.map((hub) => ({
 			...hub,
-			enrollmentCount: enrollmentCounts[hub.id] || 0
+			coordinators: hubCoordinators[hub.id] || []
 		}));
 
-		// Get all potential coordinators (users with relevant course modules)
-		const { data: potentialCoordinators, error: coordinatorsError } = await supabaseAdmin
-			.from('user_profiles')
-			.select('id, full_name, email, modules')
+		// Get all enrollments for this course (to allow assigning as coordinators)
+		const { data: allEnrollments } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select(`
+				id,
+				full_name,
+				email,
+				role,
+				hub_id,
+				user_profile:user_profile_id (
+					id,
+					full_name,
+					email
+				)
+			`)
+			.in('cohort_id', cohortIds)
+			.in('status', ['active', 'accepted', 'invited'])
 			.order('full_name');
 
-		if (coordinatorsError) {
-			console.error('Error fetching potential coordinators:', coordinatorsError);
-		}
-
-		const filteredCoordinators =
-			potentialCoordinators?.filter((user) => {
-				const modules: string[] = Array.isArray(user.modules) ? user.modules : [];
-				return (
-					modules.includes('courses.participant') ||
-					modules.includes('courses.manager') ||
-					modules.includes('courses.admin') ||
-					modules.includes('platform.admin')
-				);
-			}) ?? [];
+		// Format enrollments for assignment dropdown
+		const availableUsers = (allEnrollments || []).map(e => ({
+			id: e.id,
+			full_name: e.user_profile?.full_name || e.full_name,
+			email: e.user_profile?.email || e.email,
+			role: e.role,
+			hub_id: e.hub_id
+		}));
 
 		return {
 			course,
 			courseId: course.id,
-			hubs: hubsWithCounts || [],
-			potentialCoordinators: filteredCoordinators
+			hubs: hubsWithMembers || [],
+			availableUsers
 		};
 	} catch (err) {
 		console.error('Error in hubs page load:', err);

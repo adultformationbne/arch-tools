@@ -75,17 +75,35 @@ export const POST: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { session_id, type, title, content, display_order, coordinator_only } = body;
+		const {
+			session_id,
+			type,
+			title,
+			content,
+			display_order,
+			coordinator_only,
+			mux_upload_id,
+			mux_asset_id,
+			mux_playback_id,
+			mux_status
+		} = body;
 
-		// Validate required fields
-		if (!session_id || !type || !title || !content) {
+		// Validate required fields (content not required for mux_video)
+		if (!session_id || !type || !title) {
 			return json({
-				error: 'Missing required fields: session_id, type, title, content'
+				error: 'Missing required fields: session_id, type, title'
+			}, { status: 400 });
+		}
+
+		// Content is required for non-mux_video types
+		if (type !== 'mux_video' && !content) {
+			return json({
+				error: 'content is required for non-video upload types'
 			}, { status: 400 });
 		}
 
 		// Validate type
-		const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed'];
+		const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed', 'mux_video'];
 		if (!validTypes.includes(type)) {
 			return json({
 				error: `Invalid type. Must be one of: ${validTypes.join(', ')}`
@@ -96,9 +114,13 @@ export const POST: RequestHandler = async (event) => {
 			sessionId: session_id,
 			type,
 			title,
-			content,
+			content: content || '',
 			displayOrder: display_order,
-			coordinatorOnly: coordinator_only
+			coordinatorOnly: coordinator_only,
+			muxUploadId: mux_upload_id,
+			muxAssetId: mux_asset_id,
+			muxPlaybackId: mux_playback_id,
+			muxStatus: mux_status
 		});
 
 		if (error) {
@@ -119,7 +141,18 @@ export const PUT: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { id, type, title, content, display_order, coordinator_only } = body;
+		const {
+			id,
+			type,
+			title,
+			content,
+			display_order,
+			coordinator_only,
+			mux_upload_id,
+			mux_asset_id,
+			mux_playback_id,
+			mux_status
+		} = body;
 
 		if (!id) {
 			return json({ error: 'Material id is required' }, { status: 400 });
@@ -127,7 +160,7 @@ export const PUT: RequestHandler = async (event) => {
 
 		// Validate type if provided
 		if (type !== undefined) {
-			const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed'];
+			const validTypes = ['video', 'document', 'link', 'native', 'image', 'embed', 'mux_video'];
 			if (!validTypes.includes(type)) {
 				return json({
 					error: `Invalid type. Must be one of: ${validTypes.join(', ')}`
@@ -140,7 +173,11 @@ export const PUT: RequestHandler = async (event) => {
 			title,
 			content,
 			displayOrder: display_order,
-			coordinatorOnly: coordinator_only
+			coordinatorOnly: coordinator_only,
+			muxUploadId: mux_upload_id,
+			muxAssetId: mux_asset_id,
+			muxPlaybackId: mux_playback_id,
+			muxStatus: mux_status
 		});
 
 		if (error) {

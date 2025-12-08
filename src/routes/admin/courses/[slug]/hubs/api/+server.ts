@@ -24,7 +24,7 @@ export const GET: RequestHandler = async (event) => {
 		// Get hubs for THIS COURSE only
 		const { data: hubs, error: fetchError } = await supabaseAdmin
 			.from('courses_hubs')
-			.select('id, name, location, coordinator_id')
+			.select('id, name, location')
 			.eq('course_id', course.id)
 			.order('name', { ascending: true });
 

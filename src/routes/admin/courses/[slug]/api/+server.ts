@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { CourseMutations, CourseQueries } from '$lib/server/course-data';
+import { supabaseAdmin } from '$lib/server/supabase';
 import type { RequestHandler } from './$types';
 
 /**
@@ -80,8 +81,7 @@ export const POST: RequestHandler = async (event) => {
 				const result = await CourseMutations.createHub({
 					courseId: data.courseId,
 					name: data.name,
-					location: data.location,
-					coordinatorId: data.coordinatorId
+					location: data.location
 				});
 
 				if (result.error) {
@@ -99,8 +99,7 @@ export const POST: RequestHandler = async (event) => {
 				const result = await CourseMutations.updateHub({
 					hubId: data.hubId,
 					name: data.name,
-					location: data.location,
-					coordinatorId: data.coordinatorId
+					location: data.location
 				});
 
 				if (result.error) {
@@ -124,6 +123,49 @@ export const POST: RequestHandler = async (event) => {
 				return json({
 					success: true,
 					message: 'Hub deleted successfully'
+				});
+			}
+
+			case 'assign_hub_coordinator': {
+				// Assign a user as coordinator to a hub
+				// This sets their role to 'coordinator' and hub_id to the specified hub
+				const result = await CourseMutations.updateEnrollment({
+					userId: data.enrollmentId,
+					updates: {
+						role: 'coordinator',
+						hub_id: data.hubId
+					}
+				});
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to assign coordinator');
+				}
+
+				return json({
+					success: true,
+					data: result.data,
+					message: 'Coordinator assigned successfully'
+				});
+			}
+
+			case 'remove_hub_coordinator': {
+				// Remove coordinator from hub (set role back to student, clear hub_id)
+				const result = await CourseMutations.updateEnrollment({
+					userId: data.enrollmentId,
+					updates: {
+						role: 'student',
+						hub_id: null
+					}
+				});
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to remove coordinator');
+				}
+
+				return json({
+					success: true,
+					data: result.data,
+					message: 'Coordinator removed successfully'
 				});
 			}
 
@@ -319,6 +361,28 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'bulk_assign_hub': {
+				if (!data.enrollmentIds || data.enrollmentIds.length === 0) {
+					throw error(400, 'No participants selected');
+				}
+
+				// Update all selected enrollments with the hub_id
+				const { error: updateError } = await supabaseAdmin
+					.from('courses_enrollments')
+					.update({ hub_id: data.hubId || null })
+					.in('id', data.enrollmentIds);
+
+				if (updateError) {
+					throw error(500, updateError.message || 'Failed to assign hub');
+				}
+
+				const hubName = data.hubId ? 'hub' : 'no hub';
+				return json({
+					success: true,
+					message: `${data.enrollmentIds.length} participant(s) assigned to ${hubName}`
+				});
+			}
+
 			default:
 				throw error(400, 'Invalid action');
 		}
@@ -436,6 +500,25 @@ export const GET: RequestHandler = async (event) => {
 			return json({
 				success: true,
 				data: formattedActivities
+			});
+		}
+
+		// Handle hubs endpoint
+		if (endpoint === 'hubs') {
+			const { data: course } = await CourseQueries.getCourse(courseSlug);
+			if (!course) {
+				throw error(404, 'Course not found');
+			}
+
+			const result = await CourseQueries.getHubs(course.id);
+
+			if (result.error) {
+				throw error(500, result.error.message || 'Failed to fetch hubs');
+			}
+
+			return json({
+				success: true,
+				data: result.data || []
 			});
 		}
 

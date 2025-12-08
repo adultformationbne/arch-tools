@@ -80,7 +80,7 @@
 <!-- Single content wrapper with consistent margins -->
 <div class="px-16">
 	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
-	<HubCoordinatorBar {hubData} />
+	<HubCoordinatorBar {hubData} {courseSlug} />
 
 	<!-- Main Content with Session Navigation -->
 	<SessionContent
