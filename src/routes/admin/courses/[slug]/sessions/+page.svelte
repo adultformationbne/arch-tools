@@ -471,15 +471,34 @@
 				throw new Error(errorData.error || 'Reorder failed');
 			}
 
-			// Refresh data from server to get updated session numbers
-			await invalidate('app:sessions-data');
+			const { order: newOrder } = await response.json();
 
-			// Re-process server data to rebuild sessionData with correct session_numbers
-			// This is necessary because sessionData keys are session_numbers, which change after reorder
-			processServerData(moduleId);
+			// Update local sessionData with new session_numbers (no server reload needed!)
+			// Build new sessionData with correct keys based on API response
+			const newSessionData = {};
+			for (const { id, session_number } of newOrder) {
+				// Find the old session data by ID
+				const oldEntry = Object.values(sessionData).find(s => s.id === id);
+				if (oldEntry) {
+					newSessionData[session_number] = { ...oldEntry };
+				}
+			}
+			sessionData = newSessionData;
+
+			// Update selected session if it moved
+			if (selectedSession !== undefined) {
+				const currentSessionId = Object.values(sessionData).find((_, idx) =>
+					Object.keys(sessionData)[idx] == selectedSession
+				)?.id;
+				if (currentSessionId) {
+					const newPos = newOrder.find(o => o.id === currentSessionId)?.session_number;
+					if (newPos !== undefined) {
+						selectedSession = newPos;
+					}
+				}
+			}
 
 			saveMessage = 'Saved';
-			toastSuccess('Sessions reordered');
 			setTimeout(() => {
 				saving = false;
 				saveMessage = '';

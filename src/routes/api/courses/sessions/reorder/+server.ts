@@ -69,45 +69,60 @@ export const PATCH: RequestHandler = async (event) => {
 
 		console.log('[Reorder] Final order:', finalOrder.map(f => `${f.id.slice(0,8)}→${f.session_number}`).join(', '));
 
-		// Phase 1: Move all to temp positions in PARALLEL (much faster than sequential)
-		// Use offset of 50 to avoid unique constraint conflicts during transition
-		const phase1Start = Date.now();
-		console.log(`[Reorder] Phase 1: Moving ${finalOrder.length} sessions to temp positions (parallel)...`);
+		// Single SQL query approach - much faster than multiple requests
+		const sqlStart = Date.now();
 
-		const tempPromises = finalOrder.map(({ id, session_number }) =>
-			supabaseAdmin
-				.from('courses_sessions')
-				.update({ session_number: session_number + 50 })
-				.eq('id', id)
-		);
+		// Build VALUES list for the update: ('id1', 0), ('id2', 1), ...
+		const valuesList = finalOrder
+			.map(({ id, session_number }) => `('${id}'::uuid, ${session_number})`)
+			.join(', ');
 
-		const tempResults = await Promise.all(tempPromises);
-		console.log(`[Reorder] Phase 1 complete: ${Date.now() - phase1Start}ms`);
+		// Use a CTE to do atomic update - PostgreSQL checks constraints at statement end
+		const sql = `
+			WITH new_order(id, new_session_number) AS (
+				VALUES ${valuesList}
+			)
+			UPDATE courses_sessions cs
+			SET session_number = no.new_session_number,
+			    updated_at = NOW()
+			FROM new_order no
+			WHERE cs.id = no.id
+		`;
 
-		const tempError = tempResults.find(r => r.error);
-		if (tempError?.error) {
-			console.error('[Reorder] Temp phase error:', tempError.error);
-			throw error(500, `Failed to reorder sessions: ${tempError.error.message}`);
-		}
+		console.log(`[Reorder] Executing single SQL update for ${finalOrder.length} sessions...`);
 
-		// Phase 2: Set final positions in PARALLEL
-		const phase2Start = Date.now();
-		console.log(`[Reorder] Phase 2: Setting final positions (parallel)...`);
+		const { error: sqlError } = await supabaseAdmin.rpc('exec_sql', { sql_query: sql });
 
-		const finalPromises = finalOrder.map(({ id, session_number }) =>
-			supabaseAdmin
-				.from('courses_sessions')
-				.update({ session_number })
-				.eq('id', id)
-		);
+		// If RPC doesn't exist, fall back to parallel updates
+		if (sqlError?.code === '42883' || sqlError?.message?.includes('function')) {
+			console.log(`[Reorder] RPC not available (${Date.now() - sqlStart}ms), falling back to parallel updates`);
 
-		const finalResults = await Promise.all(finalPromises);
-		console.log(`[Reorder] Phase 2 complete: ${Date.now() - phase2Start}ms`);
+			// Phase 1: Temp positions
+			const phase1Start = Date.now();
+			const tempPromises = finalOrder.map(({ id, session_number }) =>
+				supabaseAdmin.from('courses_sessions').update({ session_number: session_number + 50 }).eq('id', id)
+			);
+			const tempResults = await Promise.all(tempPromises);
+			console.log(`[Reorder] Phase 1 (temp): ${Date.now() - phase1Start}ms`);
 
-		const finalError = finalResults.find(r => r.error);
-		if (finalError?.error) {
-			console.error('[Reorder] Final phase error:', finalError.error);
-			throw error(500, `Failed to reorder sessions: ${finalError.error.message}`);
+			const tempError = tempResults.find(r => r.error);
+			if (tempError?.error) throw error(500, `Reorder failed: ${tempError.error.message}`);
+
+			// Phase 2: Final positions
+			const phase2Start = Date.now();
+			const finalPromises = finalOrder.map(({ id, session_number }) =>
+				supabaseAdmin.from('courses_sessions').update({ session_number }).eq('id', id)
+			);
+			const finalResults = await Promise.all(finalPromises);
+			console.log(`[Reorder] Phase 2 (final): ${Date.now() - phase2Start}ms`);
+
+			const finalError = finalResults.find(r => r.error);
+			if (finalError?.error) throw error(500, `Reorder failed: ${finalError.error.message}`);
+		} else if (sqlError) {
+			console.error('[Reorder] SQL error:', sqlError);
+			throw error(500, `Failed to reorder: ${sqlError.message}`);
+		} else {
+			console.log(`[Reorder] SQL update complete: ${Date.now() - sqlStart}ms`);
 		}
 
 		console.log(`[Reorder] ====== SUCCESS ====== Total: ${Date.now() - startTime}ms`);
