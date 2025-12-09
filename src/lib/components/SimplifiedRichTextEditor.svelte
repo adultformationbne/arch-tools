@@ -168,7 +168,9 @@
 
 	const handleKeyDown = (e) => {
 		// Handle Enter key to ensure proper paragraph creation
-		if (e.key === 'Enter') {
+		if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+			// Stop propagation to prevent parent handlers from interfering
+			e.stopPropagation();
 			// Let the browser handle it naturally, but ensure it creates paragraphs
 			setTimeout(() => {
 				// Check if we're in a div (browser sometimes creates divs instead of p)

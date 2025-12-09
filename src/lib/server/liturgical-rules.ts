@@ -185,9 +185,14 @@ export function calculateLiturgicalWeek(date: Date, season: string | null): numb
 /**
  * Adjust Brisbane Ordo week number to match Roman Lectionary numbering
  *
- * Brisbane's OT Sunday numbering after Pentecost is 1 less than the lectionary
- * for early/mid weeks, but catches up by week 33.
- * e.g., Brisbane "11 ORDINARY" (June 14, 2026) = Lectionary "TWELFTH SUNDAY"
+ * Brisbane's OT Sunday numbering after Pentecost may differ from the lectionary
+ * depending on when Pentecost falls in a given year.
+ *
+ * When Pentecost is EARLY (week_of_ot_after_pentecost < 10), Brisbane's numbering
+ * is 1 less than the lectionary. e.g., Brisbane "11 ORDINARY" = Lectionary "12th Sunday"
+ *
+ * When Pentecost is LATE (week_of_ot_after_pentecost >= 10), Brisbane's numbering
+ * already matches the lectionary. e.g., Brisbane "27 ORDINARY" = Lectionary "27th Sunday"
  *
  * This only applies to OT Sundays after Pentecost with week < 33.
  */
@@ -208,10 +213,15 @@ export function adjustBrisbaneWeekForLectionary(
 	if (!yearData?.pentecostSunday) return week;
 
 	const pentecost = parseMonthDay(yearData.pentecostSunday, calendarYear);
+	const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
 
 	// Only adjust for OT Sundays AFTER Pentecost
 	if (date > pentecost) {
-		return week + 1;
+		// When Pentecost is late (week >= 10), Brisbane numbering already matches lectionary
+		// When Pentecost is early (week < 10), Brisbane numbering needs +1 adjustment
+		if (weekOfOtAfterPentecost < 10) {
+			return week + 1;
+		}
 	}
 
 	return week;
@@ -498,7 +508,6 @@ const FIXED_FEASTS: Record<string, string> = {
 	'IMMACULATE CONCEPTION': 'immaculate conception',
 	'OUR LADY OF THE ROSARY': 'rosary',
 	'GUARDIAN ANGELS': 'guardian angels',
-	'ARCHANGELS': 'archangels',
 	'ALL SOULS': 'all souls',
 	'FAITHFUL DEPARTED': 'all souls',
 	'ST JOHN LATERAN': 'john lateran',
@@ -512,7 +521,25 @@ const FIXED_FEASTS: Record<string, string> = {
 	'PETER AND PAUL': 'peter and paul',
 	'VISITATION': 'visitation',
 	'QUEENSHIP OF MARY': 'queenship',
-	'QUEENSHIP OF THE BLESSED': 'queenship'
+	'QUEENSHIP OF THE BLESSED': 'queenship',
+	// Australian-specific
+	'OUR LADY, HELP OF CHRISTIANS': 'mary help of christians',
+	'MARY HELP OF CHRISTIANS': 'mary help of christians',
+	'HELP OF CHRISTIANS': 'mary help of christians',
+	'MARY OF THE CROSS': 'mary of the cross',
+	// Apostle & Archangel Feasts (have proper readings, not weekday)
+	'MICHAEL, GABRIEL AND RAPHAEL': 'michael, gabriel and raphael',
+	'MICHAEL, GABRIEL, RAPHAEL': 'michael, gabriel and raphael',
+	'ARCHANGELS': 'michael, gabriel and raphael',
+	'SIMON AND JUDE': 'simon and jude',
+	'ANDREW': 'andrew',
+	'THOMAS': 'thomas',
+	'JAMES': 'james',
+	'PHILIP AND JAMES': 'philip and james',
+	'BARTHOLOMEW': 'bartholomew',
+	'MATTHEW': 'matthew',
+	'LUKE': 'luke',
+	'MARK': 'mark'
 };
 
 /**

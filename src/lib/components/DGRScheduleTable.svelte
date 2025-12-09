@@ -1,5 +1,5 @@
 <script>
-	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen } from 'lucide-svelte';
+	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen, Monitor } from 'lucide-svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { createDropdown } from '$lib/utils/dropdown.js';
 
@@ -18,7 +18,8 @@
 		onEditReadings = () => {},
 		onApproveReflection = () => {},
 		onQuickAddReflection = () => {},
-		onSendReminder = () => {}
+		onSendReminder = () => {},
+		onPreview = () => {}
 	} = $props();
 
 	let hoveredReminderId = $state(null);
@@ -395,6 +396,21 @@
 														<PlusCircle class="h-4 w-4" />
 														Quick Add Reflection
 													</button>
+
+													<!-- Preview (Only for entries with reflection content) -->
+													{#if entry.reflection_content && entry.reflection_title}
+														<button
+															onclick={() => {
+																onPreview(entry);
+																const controller = dropdownControllers.get(entryKey);
+																if (controller) controller.hide();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-purple-700 hover:bg-purple-50"
+														>
+															<Monitor class="h-4 w-4" />
+															Preview Output
+														</button>
+													{/if}
 
 													<!-- Republish (Only for published entries) -->
 													{#if entry.status === 'published' && entry.reflection_content}

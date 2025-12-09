@@ -3,6 +3,7 @@
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import DocumentUpload from './DocumentUpload.svelte';
 	import MuxVideoUploader from './MuxVideoUploader.svelte';
+	import ConfirmationModal from './ConfirmationModal.svelte';
 	import { Video, Upload, Link, BookOpen, FileText, ArrowLeft, Loader2 } from 'lucide-svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 
@@ -20,6 +21,9 @@
 	let step = $state('select');
 	let selectedType = $state(null);
 	let saving = $state(false);
+
+	// Unsaved changes confirmation
+	let showUnsavedConfirm = $state(false);
 
 	// Form state
 	let title = $state('');
@@ -94,10 +98,35 @@
 		// Keep form data in case user comes back
 	}
 
+	// Check if user has entered any data that would be lost
+	function hasUnsavedChanges() {
+		if (step === 'select') return false;
+
+		// Check if any form fields have content
+		if (title.trim()) return true;
+		if (url.trim()) return true;
+		if (content.replace(/<[^>]*>/g, '').trim()) return true; // Strip HTML tags for native content
+
+		return false;
+	}
+
 	function handleClose() {
-		if (!saving) {
+		if (saving) return;
+
+		if (hasUnsavedChanges()) {
+			showUnsavedConfirm = true;
+		} else {
 			onClose();
 		}
+	}
+
+	function confirmClose() {
+		showUnsavedConfirm = false;
+		onClose();
+	}
+
+	function cancelClose() {
+		showUnsavedConfirm = false;
 	}
 
 	// Extract YouTube video ID from various URL formats
@@ -519,6 +548,16 @@
 		</form>
 	{/if}
 </Modal>
+
+<!-- Unsaved Changes Confirmation -->
+<ConfirmationModal
+	show={showUnsavedConfirm}
+	onConfirm={confirmClose}
+	onCancel={cancelClose}
+>
+	<p class="text-gray-800 font-medium">You have unsaved changes</p>
+	<p class="text-sm text-gray-600 mt-2">Are you sure you want to close? Your changes will be lost.</p>
+</ConfirmationModal>
 
 <style>
 	.type-card:hover {
