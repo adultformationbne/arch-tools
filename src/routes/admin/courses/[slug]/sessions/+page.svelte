@@ -474,6 +474,10 @@
 			// Refresh data from server to get updated session numbers
 			await invalidate('app:sessions-data');
 
+			// Re-process server data to rebuild sessionData with correct session_numbers
+			// This is necessary because sessionData keys are session_numbers, which change after reorder
+			processServerData(moduleId);
+
 			saveMessage = 'Saved';
 			toastSuccess('Sessions reordered');
 			setTimeout(() => {

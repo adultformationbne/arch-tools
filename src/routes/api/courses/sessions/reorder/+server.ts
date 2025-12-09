@@ -11,9 +11,14 @@ import type { RequestHandler } from './$types';
  * session_order is an array of session IDs in the desired order
  */
 export const PATCH: RequestHandler = async (event) => {
+	const startTime = Date.now();
+	console.log('[Reorder] ====== START ======');
+
 	await requireAuth(event);
+	console.log(`[Reorder] Auth: ${Date.now() - startTime}ms`);
 
 	const { module_id, session_order } = await event.request.json();
+	console.log(`[Reorder] Module: ${module_id}, Sessions to reorder: ${session_order?.length}`);
 
 	if (!module_id || !session_order || !Array.isArray(session_order)) {
 		throw error(400, 'module_id and session_order array are required');
@@ -25,11 +30,13 @@ export const PATCH: RequestHandler = async (event) => {
 
 	try {
 		// Get ALL sessions for this module to handle unique constraint properly
+		const fetchStart = Date.now();
 		const { data: allSessions, error: fetchError } = await supabaseAdmin
 			.from('courses_sessions')
 			.select('id, session_number')
 			.eq('module_id', module_id)
 			.order('session_number', { ascending: true });
+		console.log(`[Reorder] Fetch sessions: ${Date.now() - fetchStart}ms, found ${allSessions?.length}`);
 
 		if (fetchError) {
 			console.error('Error fetching sessions:', fetchError);
@@ -62,37 +69,48 @@ export const PATCH: RequestHandler = async (event) => {
 
 		console.log('[Reorder] Final order:', finalOrder.map(f => `${f.id.slice(0,8)}→${f.session_number}`).join(', '));
 
-		// Two-phase update to avoid unique constraint conflicts
-		// Phase 1: Move all to temp positions (use timestamp to avoid race condition conflicts)
-		const tempBase = Date.now() % 1000000 + 1000; // Unique base per request
-		console.log('[Reorder] Phase 1: Moving to temp positions', tempBase, '+');
-		for (let i = 0; i < finalOrder.length; i++) {
-			const tempPos = tempBase + i;
-			const { error: tempError } = await supabaseAdmin
-				.from('courses_sessions')
-				.update({ session_number: tempPos })
-				.eq('id', finalOrder[i].id);
+		// Phase 1: Move all to temp positions in PARALLEL (much faster than sequential)
+		// Use offset of 50 to avoid unique constraint conflicts during transition
+		const phase1Start = Date.now();
+		console.log(`[Reorder] Phase 1: Moving ${finalOrder.length} sessions to temp positions (parallel)...`);
 
-			if (tempError) {
-				console.error(`[Reorder] Error moving ${finalOrder[i].id} to temp ${tempPos}:`, tempError);
-				throw error(500, `Failed to reorder sessions: ${tempError.message}`);
-			}
+		const tempPromises = finalOrder.map(({ id, session_number }) =>
+			supabaseAdmin
+				.from('courses_sessions')
+				.update({ session_number: session_number + 50 })
+				.eq('id', id)
+		);
+
+		const tempResults = await Promise.all(tempPromises);
+		console.log(`[Reorder] Phase 1 complete: ${Date.now() - phase1Start}ms`);
+
+		const tempError = tempResults.find(r => r.error);
+		if (tempError?.error) {
+			console.error('[Reorder] Temp phase error:', tempError.error);
+			throw error(500, `Failed to reorder sessions: ${tempError.error.message}`);
 		}
 
-		// Phase 2: Set final positions
-		console.log('[Reorder] Phase 2: Setting final positions');
-		for (const update of finalOrder) {
-			const { error: finalError } = await supabaseAdmin
-				.from('courses_sessions')
-				.update({ session_number: update.session_number })
-				.eq('id', update.id);
+		// Phase 2: Set final positions in PARALLEL
+		const phase2Start = Date.now();
+		console.log(`[Reorder] Phase 2: Setting final positions (parallel)...`);
 
-			if (finalError) {
-				console.error(`[Reorder] Error setting ${update.id} to final ${update.session_number}:`, finalError);
-				throw error(500, `Failed to reorder sessions: ${finalError.message}`);
-			}
+		const finalPromises = finalOrder.map(({ id, session_number }) =>
+			supabaseAdmin
+				.from('courses_sessions')
+				.update({ session_number })
+				.eq('id', id)
+		);
+
+		const finalResults = await Promise.all(finalPromises);
+		console.log(`[Reorder] Phase 2 complete: ${Date.now() - phase2Start}ms`);
+
+		const finalError = finalResults.find(r => r.error);
+		if (finalError?.error) {
+			console.error('[Reorder] Final phase error:', finalError.error);
+			throw error(500, `Failed to reorder sessions: ${finalError.error.message}`);
 		}
-		console.log('[Reorder] Success!');
+
+		console.log(`[Reorder] ====== SUCCESS ====== Total: ${Date.now() - startTime}ms`);
 
 		return json({ success: true, order: finalOrder });
 	} catch (err) {

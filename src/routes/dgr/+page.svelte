@@ -6,15 +6,15 @@
 	import DGRContributorManager from '$lib/components/DGRContributorManager.svelte';
 	import DGRPromoTilesEditor from '$lib/components/DGRPromoTilesEditor.svelte';
 	import DGRAssignmentRules from '$lib/components/DGRAssignmentRules.svelte';
-	import DGRForm from '$lib/components/DGRForm.svelte';
+	import DGREditor from '$lib/components/DGREditor.svelte';
 	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
-	import { getInitialDGRFormData } from '$lib/utils/dgr-utils.js';
-	import { fetchGospelTextForDate, extractGospelReference } from '$lib/utils/scripture.js';
+	import { getInitialDGRFormData, generateDGRHTML, cleanGospelText } from '$lib/utils/dgr-utils.js';
+	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
 
 	let schedule = $state([]);
@@ -46,6 +46,14 @@
 	let quickAddFetchingGospel = $state(false);
 	let quickAddGospelFullText = $state('');
 	let quickAddGospelReference = $state('');
+	let quickAddPromoTiles = $state([]);
+	let quickAddPreviewHtml = $state('');
+
+	// Preview modal state
+	let previewModalOpen = $state(false);
+	let previewEntry = $state(null);
+	let previewHtml = $state('');
+	let previewLoading = $state(false);
 
 	// Promo tiles state - start with 1 tile, can add up to 3
 	let promoTiles = $state([
@@ -924,194 +932,72 @@
 		quickAddResult = null;
 		quickAddGospelFullText = '';
 		quickAddGospelReference = '';
+		quickAddPromoTiles = [];
+		quickAddPreviewHtml = '';
 	}
 
-	async function pasteFromWordQuickAdd() {
-		const loadingId = toast.loading({
-			title: 'Reading clipboard...',
-			message: 'Getting text from clipboard'
-		});
+	async function openPreviewModal(entry) {
+		previewEntry = entry;
+		previewModalOpen = true;
+		previewLoading = true;
+		previewHtml = '';
 
 		try {
-			// Check for clipboard permission first
-			if (navigator.permissions) {
-				const permission = await navigator.permissions.query({ name: 'clipboard-read' });
-				if (permission.state === 'denied') {
-					toast.dismiss(loadingId);
-					toast.error({
-						title: 'Clipboard access denied',
-						message: 'Please enable clipboard permissions in your browser settings',
-						duration: 5000
-					});
-					return;
+			// Build form data from schedule entry
+			const formData = {
+				date: entry.date,
+				liturgicalDate: entry.liturgical_date || entry.liturgical_name || '',
+				readings: entry.readings_data ?
+					[
+						entry.readings_data.first_reading?.source,
+						entry.readings_data.psalm?.source,
+						entry.readings_data.second_reading?.source,
+						entry.readings_data.gospel?.source
+					].filter(Boolean).join('; ') : '',
+				title: entry.reflection_title || '',
+				gospelQuote: entry.gospel_quote || '',
+				reflectionText: entry.reflection_content || '',
+				authorName: entry.contributor?.name || ''
+			};
+
+			// Fetch gospel text by reference if available
+			let gospelFullText = '';
+			let gospelReference = entry.gospel_reference || entry.readings_data?.gospel?.source || '';
+
+			if (gospelReference) {
+				try {
+					const response = await fetch(`/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`);
+					if (response.ok) {
+						const data = await response.json();
+						if (data.success && data.content) {
+							gospelFullText = cleanGospelText(data.content);
+						}
+					}
+				} catch (err) {
+					console.error('Error fetching gospel for preview:', err);
 				}
 			}
 
-			const text = await navigator.clipboard.readText();
-			toast.dismiss(loadingId);
-
-			if (!text || text.trim().length === 0) {
-				toast.warning({
-					title: 'Clipboard is empty',
-					message: 'Please copy the text from Word first',
-					duration: 4000
-				});
-				return;
-			}
-
-			parseWordDocumentQuickAdd(text);
-
-			toast.success({
-				title: 'Content pasted!',
-				message: 'Form fields have been populated',
-				duration: 3000
+			// Generate preview HTML
+			previewHtml = await generateDGRHTML(formData, {
+				useNewDesign: true,
+				gospelFullText,
+				gospelReference,
+				includeWordPressCSS: false,
+				promoTiles
 			});
 		} catch (err) {
-			console.error('Clipboard error:', err);
-			toast.dismiss(loadingId);
-			toast.error({
-				title: 'Clipboard access denied',
-				message: 'Please allow clipboard access or paste manually',
-				duration: 5000
-			});
+			console.error('Error generating preview:', err);
+			previewHtml = '<div class="p-4 text-red-500">Error generating preview</div>';
+		} finally {
+			previewLoading = false;
 		}
 	}
 
-	function parseWordDocumentQuickAdd(text) {
-		const lines = text.split('\n').filter((line) => line.length > 0);
-
-		const sections = {};
-		let reflectionStartIndex = -1;
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim();
-
-			if (line.endsWith(':')) {
-				const label = line.slice(0, -1).trim();
-				const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-
-				switch (label) {
-					case 'Date':
-						if (line.includes(':\t') || line.match(/Date:\s+\S/)) {
-							const parts = lines[i].split(/Date:\s*/);
-							sections.date = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.date = nextLine;
-						}
-						break;
-
-					case 'Liturgical Date':
-						if (line.includes(':\t') || line.match(/Liturgical Date:\s+\S/)) {
-							const parts = lines[i].split(/Liturgical Date:\s*/);
-							sections.liturgicalDate = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.liturgicalDate = nextLine;
-						}
-						break;
-
-					case 'Readings':
-						if (line.includes(':\t') || line.match(/Readings:\s+\S/)) {
-							const parts = lines[i].split(/Readings:\s*/);
-							sections.readings = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.readings = nextLine;
-						}
-						break;
-
-					case 'Title':
-						if (line.includes(':\t') || line.match(/Title:\s+\S/)) {
-							const parts = lines[i].split(/Title:\s*/);
-							sections.title = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.title = nextLine;
-						}
-						break;
-
-					case 'Gospel quote':
-					case 'Gospel Quote':
-						if (line.includes(':\t') || line.match(/Gospel [Qq]uote:\s+\S/)) {
-							const parts = lines[i].split(/Gospel [Qq]uote:\s*/);
-							sections.gospelQuote = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.gospelQuote = nextLine;
-						}
-						break;
-
-					case 'Reflection written by':
-						if (line.includes(':\t') || line.match(/Reflection written by:\s+\S/)) {
-							const parts = lines[i].split(/Reflection written by:\s*/);
-							sections.author = parts[1]?.trim() || '';
-						} else if (nextLine && !nextLine.endsWith(':')) {
-							sections.author = nextLine;
-						}
-						reflectionStartIndex = sections.author && nextLine === sections.author ? i + 2 : i + 1;
-						break;
-				}
-			} else if (line.startsWith('By ') && i > lines.length - 5) {
-				sections.author = line.substring(3).trim();
-			}
-		}
-
-		// Find reflection text
-		if (reflectionStartIndex > 0 && reflectionStartIndex < lines.length) {
-			const reflectionLines = [];
-			let inReflection = true;
-
-			for (let i = reflectionStartIndex; i < lines.length && inReflection; i++) {
-				const line = lines[i].trim();
-
-				if (line.startsWith('By ') && i > reflectionStartIndex + 3) {
-					inReflection = false;
-					continue;
-				}
-
-				if (line === '') {
-					if (reflectionLines.length > 0 && reflectionLines[reflectionLines.length - 1] !== '') {
-						reflectionLines.push('');
-					}
-					continue;
-				}
-
-				reflectionLines.push(line);
-			}
-
-			sections.reflection = reflectionLines
-				.join('\n')
-				.split(/\n\n+/)
-				.filter(para => para.trim())
-				.join('\n\n');
-		}
-
-		// Parse the date
-		if (sections.date) {
-			const dateMatch = sections.date.match(/\w+\s+(\d+)\w*\s+(\w+)/);
-			if (dateMatch) {
-				const day = dateMatch[1];
-				const month = dateMatch[2];
-				const year = new Date().getFullYear();
-				const dateStr = `${month} ${day}, ${year}`;
-				const dateObj = new Date(dateStr + ' UTC');
-				if (!isNaN(dateObj)) {
-					const utcYear = dateObj.getUTCFullYear();
-					const utcMonth = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-					const utcDay = String(dateObj.getUTCDate()).padStart(2, '0');
-					quickAddFormData.date = `${utcYear}-${utcMonth}-${utcDay}`;
-				}
-			}
-		}
-
-		// Update form data
-		quickAddFormData.liturgicalDate = sections.liturgicalDate || quickAddFormData.liturgicalDate;
-		quickAddFormData.readings = sections.readings || quickAddFormData.readings;
-		quickAddFormData.title = sections.title || '';
-		quickAddFormData.gospelQuote = sections.gospelQuote || '';
-		quickAddFormData.reflectionText = sections.reflection || '';
-		quickAddFormData.authorName = sections.author || '';
-
-		// Extract gospel reference from readings
-		if (quickAddFormData.readings) {
-			quickAddGospelReference = extractGospelReference(quickAddFormData.readings);
-		}
+	function closePreviewModal() {
+		previewModalOpen = false;
+		previewEntry = null;
+		previewHtml = '';
 	}
 
 	async function saveQuickAddReflection() {
@@ -1367,6 +1253,7 @@
 					onApproveReflection={approveReflection}
 					onQuickAddReflection={openQuickAddModal}
 					onSendReminder={confirmSendReminder}
+					onPreview={openPreviewModal}
 				/>
 		</div>
 	{/if}
@@ -1549,7 +1436,7 @@
 			</p>
 
 			<div class="max-h-[calc(100vh-300px)] overflow-y-auto">
-				<DGRForm
+				<DGREditor
 					bind:formData={quickAddFormData}
 					bind:publishing={quickAddSaving}
 					bind:result={quickAddResult}
@@ -1557,7 +1444,9 @@
 					bind:fetchingGospel={quickAddFetchingGospel}
 					bind:gospelFullText={quickAddGospelFullText}
 					bind:gospelReference={quickAddGospelReference}
-					onPasteFromWord={pasteFromWordQuickAdd}
+					bind:promoTiles={quickAddPromoTiles}
+					bind:previewHtml={quickAddPreviewHtml}
+					showPreview={false}
 				/>
 			</div>
 		</div>
@@ -1578,6 +1467,72 @@
 			>
 				{quickAddSaving ? 'Saving...' : 'Save as Approved'}
 			</button>
+		</div>
+	{/snippet}
+</Modal>
+
+<!-- Preview Output Modal -->
+<Modal
+	isOpen={previewModalOpen}
+	title="Preview Output"
+	onClose={closePreviewModal}
+	size="full"
+>
+	{#if previewEntry}
+		<div class="flex flex-col h-full">
+			<div class="mb-4 flex items-center justify-between">
+				<div>
+					<p class="text-sm text-gray-600">
+						Preview for <strong>{formatDate(previewEntry.date)}</strong>
+					</p>
+					{#if previewEntry.reflection_title}
+						<p class="text-lg font-semibold text-gray-900">{previewEntry.reflection_title}</p>
+					{/if}
+				</div>
+				{#if previewEntry.status}
+					<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[previewEntry.status]}">
+						{statusOptions.find(o => o.value === previewEntry.status)?.label || previewEntry.status}
+					</span>
+				{/if}
+			</div>
+
+			<div class="flex-1 min-h-0 -mx-6 -mb-6">
+				{#if previewLoading}
+					<div class="flex items-center justify-center h-full">
+						<div class="text-center">
+							<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-purple-600 mx-auto mb-2"></div>
+							<p class="text-sm text-gray-500">Generating preview...</p>
+						</div>
+					</div>
+				{:else}
+					<PreviewPanel
+						{previewHtml}
+						isReady={!!previewHtml}
+					/>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+	{#snippet footer()}
+		<div class="flex gap-3">
+			<button
+				onclick={closePreviewModal}
+				class="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+			>
+				Close
+			</button>
+			{#if previewEntry?.status === 'approved'}
+				<button
+					onclick={() => {
+						sendToWordPress(previewEntry.id);
+						closePreviewModal();
+					}}
+					class="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+				>
+					Publish to WordPress
+				</button>
+			{/if}
 		</div>
 	{/snippet}
 </Modal>

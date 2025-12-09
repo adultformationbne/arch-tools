@@ -1,10 +1,12 @@
 <script>
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, ArrowUp, ArrowDown } from 'lucide-svelte';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { dndzone } from 'svelte-dnd-action';
+	import { flip } from 'svelte/animate';
 
 	let {
 		materials = [],
@@ -23,6 +25,55 @@
 	let materialToDelete = $state(null);
 	let showAddModal = $state(false);
 	let expandedMaterialId = $state(null);
+
+	// Drag-and-drop configuration
+	const DND_FLIP_DURATION = 200;
+	let draggableItems = $state([]);
+
+	// Sync draggable items when materials prop changes
+	$effect(() => {
+		draggableItems = materials.map(m => ({ ...m }));
+	});
+
+	// Drag-and-drop handlers
+	const handleDndConsider = (e) => {
+		draggableItems = e.detail.items;
+	};
+
+	const handleDndFinalize = async (e) => {
+		draggableItems = e.detail.items;
+
+		// Update order numbers
+		const reorderedMaterials = draggableItems.map((m, i) => ({
+			...m,
+			order: i + 1
+		}));
+
+		// Update parent immediately for responsiveness
+		onMaterialsChange(reorderedMaterials);
+
+		// Persist to database using batch endpoint
+		try {
+			const materialOrder = reorderedMaterials.map(m => m.id);
+
+			const response = await fetch('/api/courses/module-materials/reorder', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					session_id: sessionId,
+					material_order: materialOrder
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				toastError(`Failed to save order: ${errorData.message || 'Unknown error'}`);
+			}
+		} catch (error) {
+			console.error('Error updating material order:', error);
+			toastError('Failed to save new order');
+		}
+	};
 
 	// Material types for editing (without embed)
 	const materialTypes = [
@@ -99,6 +150,7 @@
 
 	const startEditMaterial = (material) => {
 		editingMaterial = { ...material };
+		expandedMaterialId = material.id; // Ensure material is expanded to show edit form
 	};
 
 	const saveEditMaterial = async () => {
@@ -204,47 +256,6 @@
 		}
 	};
 
-	const moveMaterial = async (materialId, direction) => {
-		const materialsCopy = [...materials];
-		const index = materialsCopy.findIndex(m => m.id === materialId);
-
-		if (direction === 'up' && index > 0) {
-			[materialsCopy[index], materialsCopy[index - 1]] = [materialsCopy[index - 1], materialsCopy[index]];
-		} else if (direction === 'down' && index < materialsCopy.length - 1) {
-			[materialsCopy[index], materialsCopy[index + 1]] = [materialsCopy[index + 1], materialsCopy[index]];
-		} else {
-			return;
-		}
-
-		materialsCopy.forEach((material, i) => {
-			material.order = i + 1;
-		});
-
-		onMaterialsChange(materialsCopy);
-
-		try {
-			const updatePromises = materialsCopy.map(material =>
-				fetch('/api/courses/module-materials', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						id: material.id,
-						display_order: material.order
-					})
-				})
-			);
-
-			const responses = await Promise.all(updatePromises);
-			const failedUpdates = responses.filter(r => !r.ok);
-
-			if (failedUpdates.length > 0) {
-				toastError('Failed to update material order');
-			}
-		} catch (error) {
-			console.error('Error updating material order:', error);
-			toastError('Failed to update material order');
-		}
-	};
 
 	// Track which materials are being polled
 	let pollingMaterials = $state(new Set());
@@ -338,23 +349,44 @@
 		</button>
 	</div>
 
-	<!-- Materials List (Accordion Style) -->
-	<div class="space-y-2">
-		{#each materials as material, index}
+	<!-- Materials List (Accordion Style with Drag-and-Drop) -->
+	<div
+		class="space-y-2"
+		use:dndzone={{
+			items: draggableItems,
+			flipDurationMs: DND_FLIP_DURATION,
+			dropTargetStyle: { outline: 'none', background: 'rgba(0,0,0,0.02)', borderRadius: '0.5rem' }
+		}}
+		onconsider={handleDndConsider}
+		onfinalize={handleDndFinalize}
+	>
+		{#each draggableItems as material, index (material.id)}
 			{@const MaterialIcon = getMaterialIcon(material.type, material.url)}
 			{@const isExpanded = expandedMaterialId === material.id}
 			{@const isEditing = editingMaterial && editingMaterial.id === material.id}
 			{@const isProcessing = material.type === 'mux_video' && material.mux_status === 'processing'}
 
-			<div class="border border-gray-200 rounded-lg overflow-hidden transition-shadow hover:shadow-sm">
+			<div
+				class="material-item border border-gray-200 rounded-lg overflow-hidden transition-shadow hover:shadow-sm bg-white"
+				animate:flip={{ duration: DND_FLIP_DURATION }}
+			>
 				<!-- Material Row (Collapsed) -->
 				<div
-					class="flex items-center gap-3 p-3 cursor-pointer bg-white hover:bg-gray-50 transition-colors"
+					class="flex items-center gap-2 p-3 cursor-pointer hover:bg-gray-50 transition-colors group"
 					onclick={() => !isEditing && toggleExpanded(material.id)}
 					onkeydown={(e) => e.key === 'Enter' && !isEditing && toggleExpanded(material.id)}
 					role="button"
 					tabindex="0"
 				>
+					<!-- Drag Handle -->
+					<div
+						class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-300 opacity-0 group-hover:opacity-100 hover:text-gray-500 transition-opacity"
+						onclick={(e) => e.stopPropagation()}
+						title="Drag to reorder"
+					>
+						<GripVertical size="16" />
+					</div>
+
 					<!-- Expand/Collapse Icon -->
 					<div class="text-gray-400">
 						{#if isExpanded}
@@ -391,31 +423,15 @@
 					<!-- Actions -->
 					<div class="flex items-center gap-1" onclick={(e) => e.stopPropagation()}>
 						<button
-							onclick={() => moveMaterial(material.id, 'up')}
-							class="p-1.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-							disabled={index === 0}
-							title="Move up"
-						>
-							<ArrowUp size="16" />
-						</button>
-						<button
-							onclick={() => moveMaterial(material.id, 'down')}
-							class="p-1.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-							disabled={index === materials.length - 1}
-							title="Move down"
-						>
-							<ArrowDown size="16" />
-						</button>
-						<button
 							onclick={() => startEditMaterial(material)}
-							class="p-1.5 text-blue-500 hover:text-blue-700"
+							class="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"
 							title="Edit"
 						>
 							<Edit3 size="16" />
 						</button>
 						<button
 							onclick={() => confirmDelete(material.id)}
-							class="p-1.5 text-red-500 hover:text-red-700"
+							class="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
 							title="Delete"
 						>
 							<Trash2 size="16" />
@@ -708,5 +724,19 @@
 
 	.content-preview :global(a:hover) {
 		color: #1d4ed8;
+	}
+
+	/* Drag-and-drop styles */
+	.material-item {
+		touch-action: none;
+	}
+
+	:global(.material-item[aria-grabbed="true"]) {
+		opacity: 0.9;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	:global(.material-item.svelte-dnd-zone-dragged) {
+		opacity: 0.4;
 	}
 </style>

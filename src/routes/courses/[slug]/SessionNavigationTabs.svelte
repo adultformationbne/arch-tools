@@ -22,8 +22,8 @@
 		}
 	};
 
-	// Navigation helpers
-	const canGoPrevious = $derived(currentSession > 1);
+	// Navigation helpers (session 0 is Pre-Start)
+	const canGoPrevious = $derived(currentSession > 0);
 	const canGoNext = $derived(currentSession < availableSessions);
 
 	const goToPrevious = () => {
@@ -42,7 +42,7 @@
 <div class="flex min-h-[600px]">
 		<!-- Session Navigation Tabs -->
 		<div class="flex flex-col rounded-l-3xl overflow-hidden min-h-full">
-			{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as sessionNum}
+			{#each Array.from({ length: totalSessions + 1 }, (_, i) => i) as sessionNum}
 				<button
 					class="w-20 flex-1 flex items-center justify-center text-2xl font-bold cursor-pointer transition-colors duration-200"
 					class:current={isCurrentSession(sessionNum)}
@@ -52,7 +52,7 @@
 					onclick={() => handleSessionClick(sessionNum)}
 					disabled={!isSessionAvailable(sessionNum)}
 				>
-					{sessionNum}
+					{sessionNum === 0 ? '★' : sessionNum}
 				</button>
 			{/each}
 		</div>
