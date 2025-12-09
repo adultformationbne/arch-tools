@@ -30,6 +30,17 @@ let {
     courseBranding = {}
 } = $props();
 
+// Sidebar expansion state - defaults to collapsed (icons only)
+let isExpanded = $state(false);
+
+function handleMouseEnterSidebar() {
+    isExpanded = true;
+}
+
+function handleMouseLeaveSidebar() {
+    isExpanded = false;
+}
+
 // Cohort list expansion state
 let showAllCohorts = $state(false);
 const INITIAL_COHORT_LIMIT = 5;
@@ -137,17 +148,26 @@ function handleMouseEnter(href) {
 }
 </script>
 
-<aside class="course-admin-sidebar">
-	<!-- Logo Section -->
+<aside
+	class="course-admin-sidebar"
+	class:expanded={isExpanded}
+	onmouseenter={handleMouseEnterSidebar}
+	onmouseleave={handleMouseLeaveSidebar}
+>
+	<!-- Logo Section - space always reserved, content only visible when expanded -->
 	{#if courseBranding?.logoUrl && courseBranding?.showLogo}
 		<div class="logo-section">
-			<img src={courseBranding.logoUrl} alt="Course logo" class="course-logo" />
+			{#if isExpanded}
+				<img src={courseBranding.logoUrl} alt="Course logo" class="course-logo" />
+			{/if}
 		</div>
 	{/if}
 
 	<nav class="nav-container">
 		<div class="nav-section">
-			<h3 class="nav-section-title">Course Management</h3>
+			<h3 class="nav-section-title">
+				<span class="section-title-text">Course Management</span>
+			</h3>
 			<ul class="nav-list">
 				{#each navItems as item}
 					<li>
@@ -155,7 +175,7 @@ function handleMouseEnter(href) {
 							href={item.href}
 							class="nav-item"
 							class:active={isActive(item.href)}
-							title={item.description}
+							title={isExpanded ? '' : item.label}
 							onmouseenter={() => handleMouseEnter(item.href)}
 							data-sveltekit-preload-data="tap"
 						>
@@ -167,10 +187,12 @@ function handleMouseEnter(href) {
 			</ul>
 		</div>
 
-		{#if cohorts.length > 0 || onNewCohort}
-			<div class="nav-section">
+		{#if (cohorts.length > 0 || onNewCohort) && isExpanded}
+			<div class="nav-section cohorts-section">
 				<div class="section-header">
-					<h3 class="nav-section-title">Active Cohorts</h3>
+					<h3 class="nav-section-title">
+						<span class="section-title-text">Active Cohorts</span>
+					</h3>
 					{#if onNewCohort}
 						<button onclick={onNewCohort} class="btn-new-cohort-small" title="Create New Cohort">
 							<Plus size={16} />
@@ -215,16 +237,22 @@ function handleMouseEnter(href) {
 		<a
 			href="/admin/courses?from=course"
 			class="footer-link"
+			title={isExpanded ? '' : 'Back to Courses'}
 			data-sveltekit-preload-data="tap"
 		>
 			<ArrowLeft size={18} />
-			<span>Back to Courses</span>
+			<span class="footer-label">Back to Courses</span>
 		</a>
 
 		{#if onSettingsClick}
-			<button onclick={onSettingsClick} class="footer-link" type="button">
+			<button
+				onclick={onSettingsClick}
+				class="footer-link"
+				type="button"
+				title={isExpanded ? '' : 'Course Settings'}
+			>
 				<Settings size={18} />
-				<span>Course Settings</span>
+				<span class="footer-label">Course Settings</span>
 			</button>
 		{/if}
 	</div>
@@ -232,7 +260,7 @@ function handleMouseEnter(href) {
 
 <style>
 	.course-admin-sidebar {
-		width: 260px;
+		width: 68px;
 		min-height: 100vh;
 		background: rgba(0, 0, 0, 0.2);
 		border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -240,59 +268,88 @@ function handleMouseEnter(href) {
 		top: 0;
 		left: 0;
 		overflow-y: auto;
-		overflow-x: hidden; /* Prevent horizontal scrolling */
+		overflow-x: hidden;
 		display: flex;
 		flex-direction: column;
+		transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 40;
+	}
+
+	.course-admin-sidebar.expanded {
+		width: 260px;
 	}
 
 	.logo-section {
-		padding: 16px;
+		height: 66px;
+		padding: 12px;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		overflow: hidden;
 	}
 
 	.course-logo {
 		max-width: 120px;
-		max-height: 50px;
+		max-height: 42px;
 		width: auto;
 		height: auto;
 		object-fit: contain;
+		animation: fadeIn 0.15s ease;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; transform: scale(0.95); }
+		to { opacity: 1; transform: scale(1); }
 	}
 
 	.nav-container {
-		padding: 24px 0;
+		padding: 16px 0;
 		flex: 1;
 	}
 
 	.nav-section {
-		margin-bottom: 32px;
+		margin-bottom: 24px;
 	}
 
 	.nav-section-title {
-		padding: 0 20px;
-		margin: 0 0 12px 0;
-		font-size: 0.75rem;
+		padding: 0 16px;
+		margin: 0 0 8px 0;
+		font-size: 0.7rem;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: rgba(255, 255, 255, 0.5);
+		height: 16px;
+		overflow: hidden;
+	}
+
+	.section-title-text {
+		display: block;
+		opacity: 0;
+		transform: translateX(-8px);
+		transition: opacity 0.2s ease, transform 0.2s ease;
+		white-space: nowrap;
+	}
+
+	.course-admin-sidebar.expanded .section-title-text {
+		opacity: 1;
+		transform: translateX(0);
 	}
 
 	.nav-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		overflow: hidden; /* Prevent horizontal overflow */
+		overflow: hidden;
 	}
 
 	.nav-item {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 12px 20px;
-		margin: 2px 12px;
+		padding: 12px 16px;
+		margin: 2px 8px;
 		border-radius: 8px;
 		color: rgba(255, 255, 255, 0.8);
 		text-decoration: none;
@@ -300,6 +357,13 @@ function handleMouseEnter(href) {
 		font-weight: 500;
 		transition: all 0.15s ease;
 		cursor: pointer;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+
+	.course-admin-sidebar.expanded .nav-item {
+		padding: 12px 20px;
+		margin: 2px 12px;
 	}
 
 	.nav-item:hover {
@@ -324,10 +388,22 @@ function handleMouseEnter(href) {
 
 	.nav-label {
 		flex: 1;
+		opacity: 0;
+		transform: translateX(-8px);
+		transition: opacity 0.15s ease 0.05s, transform 0.15s ease 0.05s;
+	}
+
+	.course-admin-sidebar.expanded .nav-label {
+		opacity: 1;
+		transform: translateX(0);
 	}
 
 	/* Scrollbar styling */
 	.course-admin-sidebar::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.course-admin-sidebar.expanded::-webkit-scrollbar {
 		width: 6px;
 	}
 
@@ -346,16 +422,22 @@ function handleMouseEnter(href) {
 
 	/* Footer */
 	.sidebar-footer {
-		padding: 16px 12px;
+		padding: 12px 8px;
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 		display: flex;
 		flex-direction: column;
+		gap: 4px;
+	}
+
+	.course-admin-sidebar.expanded .sidebar-footer {
+		padding: 16px 12px;
 		gap: 8px;
 	}
 
 	.footer-link {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: 10px;
 		padding: 10px 12px;
 		border-radius: 6px;
@@ -370,6 +452,11 @@ function handleMouseEnter(href) {
 		width: 100%;
 		text-align: left;
 		font-family: inherit;
+		overflow: hidden;
+	}
+
+	.course-admin-sidebar.expanded .footer-link {
+		justify-content: flex-start;
 	}
 
 	.footer-link:hover {
@@ -377,13 +464,45 @@ function handleMouseEnter(href) {
 		color: white;
 	}
 
-	/* Cohort Section */
+	.footer-label {
+		opacity: 0;
+		transform: translateX(-8px);
+		transition: opacity 0.15s ease 0.05s, transform 0.15s ease 0.05s;
+		white-space: nowrap;
+	}
+
+	.course-admin-sidebar.expanded .footer-label {
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	/* Cohort Section - only shows when expanded */
+	.cohorts-section {
+		animation: fadeSlideIn 0.2s ease forwards;
+	}
+
+	@keyframes fadeSlideIn {
+		from {
+			opacity: 0;
+			transform: translateY(-8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
 	.section-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		padding: 0 20px;
 		margin-bottom: 12px;
+	}
+
+	.section-header .nav-section-title {
+		padding: 0;
+		margin: 0;
 	}
 
 	.btn-new-cohort-small {
@@ -434,7 +553,7 @@ function handleMouseEnter(href) {
 		border: none;
 		background: transparent;
 		font-family: inherit;
-		min-width: 0; /* Prevent overflow */
+		min-width: 0;
 	}
 
 	.cohort-info {
@@ -442,7 +561,7 @@ function handleMouseEnter(href) {
 		flex-direction: column;
 		gap: 2px;
 		width: 100%;
-		min-width: 0; /* Allow flex children to shrink below content size */
+		min-width: 0;
 	}
 
 	.cohort-name {
