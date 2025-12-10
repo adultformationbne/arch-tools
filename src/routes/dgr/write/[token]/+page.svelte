@@ -7,6 +7,7 @@
 
 	const { data } = $props();
 	const token = data.token;
+	const isAuthenticated = data.isAuthenticated;
 
 	let contributor = $state(null);
 	let dates = $state([]);
@@ -389,57 +390,59 @@
 	</div>
 {:else}
 	<div class="min-h-screen bg-gray-100">
-		<!-- Fixed Header -->
-		<header class="fixed top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5">
-			<div class="flex items-center gap-2 md:gap-3">
-				<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto md:h-8" />
-				<div class="hidden sm:block">
-					<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
-					<p class="text-xs text-gray-500">{contributor.name}</p>
-				</div>
-			</div>
-
-			{#if selectedDate}
+		<!-- Fixed Header - ONLY for token-only users (not authenticated) -->
+		{#if !isAuthenticated}
+			<header class="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5">
 				<div class="flex items-center gap-2 md:gap-3">
-					<!-- Save Status - mobile shows icon only -->
-					<div class="text-sm text-gray-500">
-						{#if saving}
-							<span class="flex items-center gap-1">
-								<Clock class="h-3.5 w-3.5 animate-spin" />
-								<span class="hidden sm:inline">Saving...</span>
-							</span>
-						{:else if lastSaved}
-							<span class="flex items-center gap-1 text-green-600">
-								<Check class="h-3.5 w-3.5" />
-								<span class="hidden sm:inline">Saved</span>
-							</span>
-						{/if}
+					<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto md:h-8" />
+					<div class="hidden sm:block">
+						<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
+						<p class="text-xs text-gray-500">{contributor.name}</p>
 					</div>
-
-					<!-- Save Draft - hidden on mobile (auto-save handles it) -->
-					<button
-						onclick={() => saveReflection('save')}
-						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
-					>
-						Save Draft
-					</button>
-
-					<!-- Submit button -->
-					<button
-						onclick={() => saveReflection('submit')}
-						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
-					>
-						<Send class="h-4 w-4" />
-						Submit
-					</button>
 				</div>
-			{/if}
-		</header>
+
+				{#if selectedDate}
+					<div class="flex items-center gap-2 md:gap-3">
+						<!-- Save Status - mobile shows icon only -->
+						<div class="text-sm text-gray-500">
+							{#if saving}
+								<span class="flex items-center gap-1">
+									<Clock class="h-3.5 w-3.5 animate-spin" />
+									<span class="hidden sm:inline">Saving...</span>
+								</span>
+							{:else if lastSaved}
+								<span class="flex items-center gap-1 text-green-600">
+									<Check class="h-3.5 w-3.5" />
+									<span class="hidden sm:inline">Saved</span>
+								</span>
+							{/if}
+						</div>
+
+						<!-- Save Draft - hidden on mobile (auto-save handles it) -->
+						<button
+							onclick={() => saveReflection('save')}
+							disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+							class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
+						>
+							Save Draft
+						</button>
+
+						<!-- Submit button -->
+						<button
+							onclick={() => saveReflection('submit')}
+							disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+							class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
+						>
+							<Send class="h-4 w-4" />
+							Submit
+						</button>
+					</div>
+				{/if}
+			</header>
+		{/if}
 
 		<!-- Main Layout with Sidebar -->
-		<div class="flex pt-14">
+		<div class="flex {isAuthenticated ? '' : 'pt-14'}">
 			<!-- Sidebar - Fixed, hidden on mobile -->
 			<aside class="fixed left-0 top-14 bottom-0 z-10 hidden w-64 overflow-y-auto border-r border-gray-200 bg-white md:block">
 				<!-- Filter Pills -->
@@ -507,6 +510,46 @@
 			<main class="flex-1 p-4 md:ml-64 md:p-6">
 				{#if selectedDate}
 					{@const mobileBadge = getStatusBadge(selectedDate)}
+
+					<!-- Action bar for authenticated users (replaces fixed header) -->
+					{#if isAuthenticated}
+						<div class="mx-auto mb-4 max-w-3xl flex items-center justify-between">
+							<div class="text-sm text-gray-600">
+								Writing as <span class="font-medium">{contributor.name}</span>
+							</div>
+							<div class="flex items-center gap-2 md:gap-3">
+								<!-- Save Status -->
+								<div class="text-sm text-gray-500">
+									{#if saving}
+										<span class="flex items-center gap-1">
+											<Clock class="h-3.5 w-3.5 animate-spin" />
+											<span class="hidden sm:inline">Saving...</span>
+										</span>
+									{:else if lastSaved}
+										<span class="flex items-center gap-1 text-green-600">
+											<Check class="h-3.5 w-3.5" />
+											<span class="hidden sm:inline">Saved</span>
+										</span>
+									{/if}
+								</div>
+								<button
+									onclick={() => saveReflection('save')}
+									disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+									class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
+								>
+									Save Draft
+								</button>
+								<button
+									onclick={() => saveReflection('submit')}
+									disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+									class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
+								>
+									<Send class="h-4 w-4" />
+									Submit
+								</button>
+							</div>
+						</div>
+					{/if}
 
 					<!-- Page Title - Tappable on mobile to open date picker -->
 					<div class="mx-auto mb-4 max-w-3xl">

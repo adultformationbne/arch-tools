@@ -48,6 +48,10 @@ export interface ProcessedOrdoEntry {
 // Cache
 let yearDataCache: Map<number, YearCycleData> | null = null;
 
+// Cache for auto-detected Brisbane week adjustments per year
+// Key: year, Value: adjustment amount (0 or 1)
+const brisbaneAdjustmentCache: Map<number, number> = new Map();
+
 /**
  * Parse "Nov-30" or "Feb 27" into Date
  */
@@ -183,16 +187,47 @@ export function calculateLiturgicalWeek(date: Date, season: string | null): numb
 }
 
 /**
+ * Detect the Brisbane week adjustment needed for a specific year.
+ *
+ * Rule: Brisbane's OT Sunday numbering after Pentecost differs from the lectionary
+ * based on when Pentecost falls. When week_of_ot_after_pentecost >= 10 (late Pentecost),
+ * Brisbane matches lectionary directly. When < 10 (early Pentecost), Brisbane needs +1.
+ *
+ * Verified against:
+ * - 2025 (week=10): Brisbane "14 ORDINARY" = Lectionary 14th Sunday ✓
+ * - 2026 (week=8): Brisbane "11 ORDINARY" = Lectionary 12th Sunday ✓
+ *
+ * @param year - Calendar year to detect adjustment for
+ * @returns 0 if no adjustment needed, 1 if +1 adjustment needed
+ */
+export function detectBrisbaneAdjustment(year: number): number {
+	// Check cache first
+	if (brisbaneAdjustmentCache.has(year)) {
+		return brisbaneAdjustmentCache.get(year)!;
+	}
+
+	const data = loadYearCycleData();
+	const yearData = data.get(year);
+	if (!yearData) {
+		brisbaneAdjustmentCache.set(year, 0);
+		return 0;
+	}
+
+	const weekOfOt = yearData.weekOfOtAfterPentecost || 8;
+
+	// Rule: When Pentecost is late (week >= 10), Brisbane matches lectionary.
+	// When Pentecost is early (week < 10), Brisbane is 1 less than lectionary.
+	const adjustment = weekOfOt >= 10 ? 0 : 1;
+
+	brisbaneAdjustmentCache.set(year, adjustment);
+	return adjustment;
+}
+
+/**
  * Adjust Brisbane Ordo week number to match Roman Lectionary numbering
  *
- * Brisbane's OT Sunday numbering after Pentecost may differ from the lectionary
- * depending on when Pentecost falls in a given year.
- *
- * When Pentecost is EARLY (week_of_ot_after_pentecost < 10), Brisbane's numbering
- * is 1 less than the lectionary. e.g., Brisbane "11 ORDINARY" = Lectionary "12th Sunday"
- *
- * When Pentecost is LATE (week_of_ot_after_pentecost >= 10), Brisbane's numbering
- * already matches the lectionary. e.g., Brisbane "27 ORDINARY" = Lectionary "27th Sunday"
+ * This function uses auto-detected adjustments when available (via detectBrisbaneAdjustment),
+ * or falls back to a heuristic based on week_of_ot_after_pentecost.
  *
  * This only applies to OT Sundays after Pentecost with week < 33.
  */
@@ -213,18 +248,29 @@ export function adjustBrisbaneWeekForLectionary(
 	if (!yearData?.pentecostSunday) return week;
 
 	const pentecost = parseMonthDay(yearData.pentecostSunday, calendarYear);
-	const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
 
 	// Only adjust for OT Sundays AFTER Pentecost
 	if (date > pentecost) {
-		// When Pentecost is late (week >= 10), Brisbane numbering already matches lectionary
-		// When Pentecost is early (week < 10), Brisbane numbering needs +1 adjustment
+		// Check if we have a cached/detected adjustment for this year
+		if (brisbaneAdjustmentCache.has(calendarYear)) {
+			return week + brisbaneAdjustmentCache.get(calendarYear)!;
+		}
+
+		// Fallback: use heuristic based on week_of_ot_after_pentecost
+		const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
 		if (weekOfOtAfterPentecost < 10) {
 			return week + 1;
 		}
 	}
 
 	return week;
+}
+
+/**
+ * Clear the Brisbane adjustment cache (useful for testing)
+ */
+export function clearBrisbaneAdjustmentCache(): void {
+	brisbaneAdjustmentCache.clear();
 }
 
 /**
