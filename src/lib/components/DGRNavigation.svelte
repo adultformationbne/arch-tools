@@ -1,7 +1,7 @@
 <script>
-	import { Calendar, Users, BookOpen, PenTool, ChevronDown } from 'lucide-svelte';
+	import { Calendar, Users, BookOpen, PenTool, ChevronDown, FileEdit } from 'lucide-svelte';
 
-	let { activeSection = 'schedule', activeSubSection = 'schedule' } = $props();
+	let { activeSection = 'schedule', activeSubSection = 'schedule', contributorToken = null } = $props();
 	let navRoot = $state(null);
 
 	// Define the navigation structure with subsections and routes
@@ -138,6 +138,18 @@
 					<QuickIcon class="h-4 w-4" aria-hidden="true" />
 					<span class="hidden sm:inline">{quickPublishLink.name}</span>
 				</a>
+
+				<!-- My Reflections Link (only shown if user is a contributor) -->
+				{#if contributorToken}
+					<a
+						href="/dgr/write/{contributorToken}"
+						class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === 'my-reflections' ? 'bg-[#009199] text-white' : 'text-[#009199] hover:bg-[#009199]/10'}"
+						title="My Reflections"
+					>
+						<FileEdit class="h-4 w-4" aria-hidden="true" />
+						<span class="hidden sm:inline">My Reflections</span>
+					</a>
+				{/if}
 			</div>
 		</div>
 	</div>

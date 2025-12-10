@@ -749,17 +749,32 @@
 	}
 
 	/* Lists */
-	:global(.email-editor-content ul),
+	:global(.email-editor-content ul) {
+		color: #000000;
+		font-size: 15px;
+		line-height: 1.6;
+		margin: 0 0 15px 0;
+		padding-left: 25px;
+		list-style-type: disc;
+	}
+
 	:global(.email-editor-content ol) {
 		color: #000000;
 		font-size: 15px;
 		line-height: 1.6;
 		margin: 0 0 15px 0;
 		padding-left: 25px;
+		list-style-type: decimal;
 	}
 
 	:global(.email-editor-content li) {
 		margin-bottom: 8px;
+		display: list-item;
+	}
+
+	:global(.email-editor-content ul li::marker),
+	:global(.email-editor-content ol li::marker) {
+		color: #374151;
 	}
 
 	/* Links */
