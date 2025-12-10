@@ -31,11 +31,12 @@ export async function GET({ params }) {
 		}
 
 		// Track the visit - update last_visited_at and increment visit_count
+		const newVisitCount = (contributor.visit_count || 0) + 1;
 		await supabase
 			.from('dgr_contributors')
 			.update({
 				last_visited_at: new Date().toISOString(),
-				visit_count: (contributor.visit_count || 0) + 1
+				visit_count: newVisitCount
 			})
 			.eq('id', contributor.id);
 
@@ -58,7 +59,8 @@ export async function GET({ params }) {
 			contributor: {
 				name: contributor.name,
 				email: contributor.email,
-				pattern: contributor.schedule_pattern
+				pattern: contributor.schedule_pattern,
+				visit_count: newVisitCount
 			},
 			dates: dates || []
 		});
