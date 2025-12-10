@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { HelpCircle, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-svelte';
+	import { HelpCircle, X, ChevronLeft, ChevronRight, BookOpen, PlayCircle } from 'lucide-svelte';
 
 	let {
 		helpContent = [],
@@ -8,8 +8,13 @@
 		autoShow = false,
 		position = 'right', // 'left' | 'right' for sidebar, 'top-right' | 'bottom-right' etc for floating
 		onClose = () => {},
-		pageTitle = 'Page Guide'
+		pageTitle = 'Page Guide',
+		buttonLabel = '', // Optional text label next to the help icon
+		videoUrl = '', // Optional Loom/video embed URL
+		videoTitle = 'Watch Tutorial' // Title for video section
 	} = $props();
+
+	let showVideo = $state(false);
 
 	let isOpen = $state(false);
 	let currentSection = $state(0);
@@ -78,10 +83,13 @@
 {#if mode !== 'popup'}
 	<button
 		onclick={toggleHelp}
-		class="fixed {position === 'right' ? 'right-4' : 'left-4'} bottom-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-30 {isOpen && mode === 'sidebar' ? 'hidden' : ''}"
+		class="fixed {position === 'right' ? 'right-4' : 'left-4'} bottom-4 bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors z-30 {isOpen && mode === 'sidebar' ? 'hidden' : ''} {buttonLabel ? 'px-4 py-2.5 rounded-full flex items-center gap-2' : 'p-3 rounded-full'}"
 		title="Show page help"
 	>
 		<HelpCircle class="w-5 h-5" />
+		{#if buttonLabel}
+			<span class="text-sm font-medium">{buttonLabel}</span>
+		{/if}
 	</button>
 {/if}
 
@@ -165,6 +173,44 @@
 				</div>
 
 				{#if !collapsed}
+					<!-- Video Tutorial Button (if video URL provided) -->
+					{#if videoUrl}
+						<div class="border-b border-gray-200 p-3">
+							{#if showVideo}
+								<div class="space-y-2">
+									<div class="flex items-center justify-between">
+										<span class="text-sm font-medium text-gray-700">{videoTitle}</span>
+										<button
+											onclick={() => showVideo = false}
+											class="text-xs text-gray-500 hover:text-gray-700"
+										>
+											Hide
+										</button>
+									</div>
+									<div style="position: relative; padding-bottom: 56.25%; height: 0;">
+										<iframe
+											src={videoUrl}
+											frameborder="0"
+											webkitallowfullscreen
+											mozallowfullscreen
+											allowfullscreen
+											style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 6px;"
+											title={videoTitle}
+										></iframe>
+									</div>
+								</div>
+							{:else}
+								<button
+									onclick={() => showVideo = true}
+									class="w-full flex items-center gap-2 px-3 py-2.5 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
+								>
+									<PlayCircle class="w-5 h-5" />
+									<span class="text-sm font-medium">{videoTitle}</span>
+								</button>
+							{/if}
+						</div>
+					{/if}
+
 					<!-- Navigation (if multiple sections) -->
 					{#if helpContent.length > 1}
 						<div class="border-b border-gray-200">
