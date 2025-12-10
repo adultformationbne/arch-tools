@@ -2,10 +2,10 @@
 import DGRNavigation from '$lib/components/DGRNavigation.svelte';
 import { page } from '$app/stores';
 
-let { children } = $props();
+let { data, children } = $props();
 
-	// Check if this is the public write page (no admin nav needed)
-	let isPublicWritePage = $derived($page.url.pathname.startsWith('/dgr/write/'));
+	// Show nav for authenticated users, even on write page
+	let showNav = $derived(data.isAuthenticated || !$page.url.pathname.startsWith('/dgr/write/'));
 
 	// Determine active section and subsection based on current route
 	let activeSection = $derived.by(() => {
@@ -34,8 +34,8 @@ let { children } = $props();
 	});
 </script>
 
-<!-- DGR Navigation (hidden for public write page) -->
-{#if !isPublicWritePage}
+<!-- DGR Navigation (shown for authenticated users, hidden for token-only access) -->
+{#if showNav}
 	<DGRNavigation {activeSection} {activeSubSection} />
 {/if}
 

@@ -2,14 +2,15 @@ import type { LayoutServerLoad } from './$types';
 import { requireModule } from '$lib/server/auth';
 
 export const load: LayoutServerLoad = async (event) => {
-	// Skip auth for public contributor write page (token-based access)
+	// For public contributor write page - token access allowed, but check if user is logged in
 	if (event.url.pathname.startsWith('/dgr/write/')) {
-		return {};
+		const { user } = await event.locals.safeGetSession();
+		return { isAuthenticated: !!user };
 	}
 
 	await requireModule(event, 'dgr', {
 		mode: 'redirect',
 		redirectTo: '/login?error=insufficient_permissions'
 	});
-	return {};
+	return { isAuthenticated: true };
 };

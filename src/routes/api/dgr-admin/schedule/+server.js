@@ -417,8 +417,13 @@ async function assignContributor({ date, contributorId }) {
 			.maybeSingle();
 
 		if (existing) {
-			// Update existing entry instead
+			// Update existing entry instead (handles unassign case too)
 			return await updateAssignment({ scheduleId: existing.id, contributorId });
+		}
+
+		// Can't create a new entry without a contributor
+		if (!contributorId) {
+			return json({ success: true, message: 'No entry to unassign' });
 		}
 
 		// Get contributor details
@@ -473,6 +478,24 @@ async function assignContributor({ date, contributorId }) {
 
 async function updateAssignment({ scheduleId, contributorId }) {
 	try {
+		// Handle unassign case (empty string or null)
+		if (!contributorId) {
+			const { data, error } = await supabase
+				.from('dgr_schedule')
+				.update({
+					contributor_id: null,
+					contributor_email: null
+				})
+				.eq('id', scheduleId)
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			return json({ success: true, schedule: data });
+		}
+
+		// Normal assignment - look up contributor email
 		const { data: contributor } = await supabase
 			.from('dgr_contributors')
 			.select('email')

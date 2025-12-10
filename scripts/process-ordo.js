@@ -148,17 +148,77 @@ function calculateLiturgicalWeek(date, season) {
 	return null;
 }
 
+// Cache for auto-detected Brisbane week adjustments per year
+const brisbaneAdjustmentCache = new Map();
+
+/**
+ * Detect the Brisbane week adjustment needed for a specific year.
+ *
+ * Rule: Brisbane's OT Sunday numbering after Pentecost differs from the lectionary
+ * based on when Pentecost falls. When week_of_ot_after_pentecost >= 10 (late Pentecost),
+ * Brisbane matches lectionary directly. When < 10 (early Pentecost), Brisbane needs +1.
+ *
+ * This was verified against:
+ * - 2025 (week=10): Brisbane "14 ORDINARY" = Lectionary 14th Sunday ✓
+ * - 2026 (week=8): Brisbane "11 ORDINARY" = Lectionary 12th Sunday ✓
+ */
+function detectBrisbaneAdjustment(year, lectionary, ordoEntries) {
+	if (brisbaneAdjustmentCache.has(year)) {
+		return brisbaneAdjustmentCache.get(year);
+	}
+
+	const data = loadYearCycleData();
+	const yearData = data.get(year);
+	if (!yearData) {
+		brisbaneAdjustmentCache.set(year, 0);
+		return 0;
+	}
+
+	const weekOfOt = yearData.weekOfOtAfterPentecost || 8;
+
+	// Rule: When Pentecost is late (week >= 10), Brisbane matches lectionary.
+	// When Pentecost is early (week < 10), Brisbane is 1 less than lectionary.
+	const adjustment = weekOfOt >= 10 ? 0 : 1;
+
+	console.log(`  ${year}: week_of_ot_after_pentecost=${weekOfOt} → adjustment=${adjustment}`);
+	brisbaneAdjustmentCache.set(year, adjustment);
+	return adjustment;
+}
+
+/**
+ * Helper: Find an OT Sunday in the lectionary by week number
+ */
+function findOTSundayInLectionary(lectionary, week, yearCycle) {
+	const ordinalMap = {
+		1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth',
+		6: 'sixth', 7: 'seventh', 8: 'eighth', 9: 'ninth', 10: 'tenth',
+		11: 'eleventh', 12: 'twelfth', 13: 'thirteenth', 14: 'fourteenth',
+		15: 'fifteenth', 16: 'sixteenth', 17: 'seventeenth', 18: 'eighteenth',
+		19: 'nineteenth', 20: 'twentieth', 21: 'twenty-first', 22: 'twenty-second',
+		23: 'twenty-third', 24: 'twenty-fourth', 25: 'twenty-fifth',
+		26: 'twenty-sixth', 27: 'twenty-seventh', 28: 'twenty-eighth',
+		29: 'twenty-ninth', 30: 'thirtieth', 31: 'thirty-first',
+		32: 'thirty-second', 33: 'thirty-third', 34: 'thirty-fourth'
+	};
+
+	const ordinal = ordinalMap[week];
+	if (!ordinal) return null;
+
+	for (const entry of lectionary) {
+		if (entry.time !== 'Ordinary') continue;
+		if (entry.year !== yearCycle) continue;
+
+		const lectName = entry.liturgical_day.toLowerCase();
+		if (lectName.includes('sunday') && lectName.includes(ordinal)) {
+			return entry;
+		}
+	}
+	return null;
+}
+
 /**
  * Adjust Brisbane Ordo week number to match Roman Lectionary numbering
- *
- * Brisbane's OT Sunday numbering after Pentecost may differ from the lectionary
- * depending on when Pentecost falls in a given year.
- *
- * When Pentecost is EARLY (week_of_ot_after_pentecost < 10), Brisbane's numbering
- * is 1 less than the lectionary. e.g., Brisbane "11 ORDINARY" = Lectionary "12th Sunday"
- *
- * When Pentecost is LATE (week_of_ot_after_pentecost >= 10), Brisbane's numbering
- * already matches the lectionary. e.g., Brisbane "27 ORDINARY" = Lectionary "27th Sunday"
+ * Uses auto-detected adjustments when available, or falls back to heuristic.
  */
 function adjustBrisbaneWeekForLectionary(week, season, date, isSunday) {
 	if (!isSunday || season !== 'Ordinary Time' || !week) return week;
@@ -172,12 +232,16 @@ function adjustBrisbaneWeekForLectionary(week, season, date, isSunday) {
 	if (!yearData?.pentecostSunday) return week;
 
 	const pentecost = parseMonthDay(yearData.pentecostSunday, calendarYear);
-	const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
 
 	// Only adjust for OT Sundays AFTER Pentecost
 	if (date > pentecost) {
-		// When Pentecost is late (week >= 10), Brisbane numbering already matches lectionary
-		// When Pentecost is early (week < 10), Brisbane numbering needs +1 adjustment
+		// Use cached/detected adjustment if available
+		if (brisbaneAdjustmentCache.has(calendarYear)) {
+			return week + brisbaneAdjustmentCache.get(calendarYear);
+		}
+
+		// Fallback to heuristic
+		const weekOfOtAfterPentecost = yearData.weekOfOtAfterPentecost || 8;
 		if (weekOfOtAfterPentecost < 10) {
 			return week + 1;
 		}
@@ -1049,6 +1113,13 @@ async function main() {
 
 	if (ordoError) throw ordoError;
 	console.log(`  Loaded ${ordo.length} ordo entries`);
+
+	// Auto-detect Brisbane week adjustments for each year in the dataset
+	console.log('\nAuto-detecting Brisbane week adjustments...');
+	const years = [...new Set(ordo.map(e => new Date(e.calendar_date).getFullYear()))];
+	for (const year of years) {
+		detectBrisbaneAdjustment(year, lectionary, ordo);
+	}
 
 	// Process each entry
 	console.log('\nProcessing...');
