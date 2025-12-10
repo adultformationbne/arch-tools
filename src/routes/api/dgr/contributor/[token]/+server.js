@@ -71,7 +71,7 @@ export async function GET({ params }) {
 /**
  * POST /api/dgr/contributor/[token]
  * Creates or updates a reflection for a specific date
- * Body: { date, title, content, action: 'save' | 'submit' }
+ * Body: { date, title, content, action: 'save' | 'submit' | 'reset' }
  */
 export async function POST({ params, request }) {
 	const { token } = params;
@@ -90,6 +90,41 @@ export async function POST({ params, request }) {
 		}
 
 		const { date, title, gospel_quote, content, action = 'save' } = await request.json();
+
+		// Handle reset action - clears the reflection content
+		if (action === 'reset') {
+			if (!date) {
+				return json({ error: 'Date is required for reset' }, { status: 400 });
+			}
+
+			const { data: existing } = await supabase
+				.from('dgr_schedule')
+				.select('id')
+				.eq('date', date)
+				.eq('contributor_id', contributor.id)
+				.maybeSingle();
+
+			if (existing) {
+				const { data: updated, error: updateError } = await supabase
+					.from('dgr_schedule')
+					.update({
+						reflection_title: null,
+						gospel_quote: null,
+						reflection_content: null,
+						status: 'pending',
+						submitted_at: null,
+						updated_at: new Date().toISOString()
+					})
+					.eq('id', existing.id)
+					.select()
+					.single();
+
+				if (updateError) throw updateError;
+				return json({ success: true, schedule: updated, action: 'reset' });
+			}
+
+			return json({ success: true, schedule: null, action: 'reset' });
+		}
 
 		if (!date || !title || !gospel_quote || !content) {
 			return json({ error: 'Date, title, gospel quote, and content are required' }, { status: 400 });
