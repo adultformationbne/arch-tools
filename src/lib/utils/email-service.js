@@ -339,25 +339,57 @@ export function createBrandedEmailHtml({
 }
 
 /**
- * Create styled button link for emails using course colors
+ * Create bulletproof styled button link for emails
+ * Uses VML for Outlook compatibility + standard HTML/CSS for other clients
  * @param {string} text Button text
  * @param {string} url Button link URL
- * @param {string} accentDark Button background color (hex)
- * @returns {string} HTML for email-safe button
+ * @param {string} backgroundColor Button background color (hex)
+ * @param {Object} options Additional options
+ * @param {boolean} options.centered Center the button (default: true)
+ * @param {number} options.width Button width in pixels (default: 220)
+ * @param {number} options.height Button height in pixels (default: 50)
+ * @param {number} options.borderRadius Border radius in pixels (default: 6)
+ * @returns {string} HTML for bulletproof email button
+ * @see https://buttons.cm/ - Campaign Monitor's bulletproof button generator
  */
-export function createEmailButton(text, url, accentDark = '#334642') {
-	return `
-<table role="presentation" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
-	<tr>
-		<td style="border-radius: 6px; background-color: ${accentDark};">
-			<a href="${url}"
-			   style="display: inline-block; padding: 14px 32px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 6px; text-align: center;">
-				${text}
-			</a>
-		</td>
-	</tr>
+export function createEmailButton(text, url, backgroundColor = '#334642', options = {}) {
+	const {
+		centered = true,
+		width = 220,
+		height = 50,
+		borderRadius = 6
+	} = options;
+
+	const arcSize = Math.round((borderRadius / Math.min(width, height)) * 100);
+
+	const button = `
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${url}" style="height:${height}px;v-text-anchor:middle;width:${width}px;" arcsize="${arcSize}%" stroke="f" fillcolor="${backgroundColor}">
+<w:anchorlock/>
+<center>
+<![endif]-->
+<a href="${url}" style="background-color:${backgroundColor};border-radius:${borderRadius}px;color:#ffffff;display:inline-block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:600;line-height:${height}px;text-align:center;text-decoration:none;width:${width}px;-webkit-text-size-adjust:none;">
+${text}
+</a>
+<!--[if mso]>
+</center>
+</v:roundrect>
+<![endif]-->
+`.trim();
+
+	if (centered) {
+		return `
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:24px auto;">
+<tr>
+<td align="center">
+${button}
+</td>
+</tr>
 </table>
-	`.trim();
+`.trim();
+	}
+
+	return button;
 }
 
 /**

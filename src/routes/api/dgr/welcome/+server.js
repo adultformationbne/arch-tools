@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
-import { sendEmail } from '$lib/utils/email-service.js';
+import { sendEmail, createEmailButton } from '$lib/utils/email-service.js';
 
 /**
  * Process a template string, replacing {{variable}} with values
@@ -93,10 +93,13 @@ export async function POST({ request, locals }) {
 			// Build the contributor's personal link
 			const writeUrl = `${process.env.ORIGIN || 'https://app.archdiocesanministries.org.au'}/dgr/write/${contributor.access_token}`;
 
-			// Generate styled button HTML
-			const buttonHtml = `<p style="text-align: center; margin: 24px 0;">
-				<a href="${writeUrl}" style="display: inline-block; background-color: #009199; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; padding: 14px 28px; border-radius: 8px;">Access Your Writing Portal</a>
-			</p>`;
+			// Generate bulletproof button HTML (works in Outlook + all other clients)
+			const buttonHtml = createEmailButton(
+				'Access Your Writing Portal',
+				writeUrl,
+				'#009199',
+				{ width: 280, height: 50, borderRadius: 8 }
+			);
 
 			// Build template variables
 			const variables = {
