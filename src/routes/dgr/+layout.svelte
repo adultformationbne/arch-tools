@@ -10,6 +10,7 @@ let { data, children } = $props();
 	// Determine active section and subsection based on current route
 	let activeSection = $derived.by(() => {
 		const path = $page.url.pathname;
+		if (path.startsWith('/dgr/write/')) return 'my-reflections';
 		if (path === '/dgr' || path === '/dgr/schedule') return 'schedule';
 		if (path === '/dgr/submissions') return 'schedule';
 		if (path === '/dgr/contributors') return 'people';
@@ -36,7 +37,7 @@ let { data, children } = $props();
 
 <!-- DGR Navigation (shown for authenticated users, hidden for token-only access) -->
 {#if showNav}
-	<DGRNavigation {activeSection} {activeSubSection} />
+	<DGRNavigation {activeSection} {activeSubSection} contributorToken={data.contributorToken} />
 {/if}
 
 <!-- Page Content -->
