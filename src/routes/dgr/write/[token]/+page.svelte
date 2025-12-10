@@ -84,6 +84,7 @@
 					<li><strong>Select a date</strong> from the sidebar to begin writing</li>
 					<li>Your work is <strong>auto-saved</strong> every 2 seconds as you type</li>
 					<li>Click <strong>Submit</strong> when you're ready for review</li>
+					<li><strong>Bookmark this page</strong> for easy access next time</li>
 				</ul>
 			`
 		},
@@ -96,6 +97,18 @@
 					<li><strong>Gospel Quote</strong> — A key phrase with verse reference</li>
 					<li><strong>Reflection</strong> — ~250 words</li>
 				</ol>
+				<p class="mt-2"><strong>Pro tip:</strong> You can write in Word and copy/paste your content here.</p>
+			`
+		},
+		{
+			title: 'Pro Tips',
+			content: `
+				<ul>
+					<li><strong>Hide Gospel Text</strong> — Click "Hide" for a cleaner writing area</li>
+					<li><strong>Readings look wrong?</strong> — Use the Edit button to correct them</li>
+					<li><strong>Draft saves automatically</strong> — You can leave and come back anytime</li>
+					<li><strong>Copy/paste works</strong> — Write in Word if you prefer, then paste here</li>
+				</ul>
 			`
 		},
 		{
@@ -107,6 +120,16 @@
 					<li><strong>Submitted</strong> — Awaiting review</li>
 					<li><strong>Approved</strong> — Ready for publication</li>
 					<li><strong>Published</strong> — Live</li>
+				</ul>
+			`
+		},
+		{
+			title: 'Need Help?',
+			content: `
+				<p>If you have any questions or run into issues, contact Liam Desic:</p>
+				<ul class="mt-2">
+					<li><a href="mailto:desicl@bne.catholic.net.au">desicl@bne.catholic.net.au</a></li>
+					<li><a href="tel:+61733243974">+61 7 3324 3974</a></li>
 				</ul>
 			`
 		}
@@ -933,6 +956,9 @@
 		mode="floating"
 		position="bottom-4 right-4"
 		pageTitle="Writing Guide"
+		buttonLabel="Help"
+		videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
+		videoTitle="Watch Tutorial"
 	/>
 {/if}
 
