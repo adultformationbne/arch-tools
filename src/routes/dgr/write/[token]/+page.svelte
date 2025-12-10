@@ -2,7 +2,8 @@
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
-	import { Calendar, Check, ChevronDown, Clock, FileText, Send, X } from 'lucide-svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import { Calendar, Check, ChevronDown, Clock, FileText, RotateCcw, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 
 	const { data } = $props();
@@ -37,6 +38,9 @@
 
 	// Track if we just submitted (to show "Next" prompt)
 	let justSubmitted = $state(false);
+
+	// Reset confirmation modal
+	let showResetConfirm = $state(false);
 
 	// Auto-resize textarea ref
 	let textareaEl = $state(null);
@@ -304,6 +308,32 @@
 		}, 2000);
 	}
 
+	function resetReflection() {
+		reflectionTitle = '';
+		gospelQuote = '';
+		reflectionContent = '';
+		lastSaved = null;
+		justSubmitted = false;
+		showResetConfirm = false;
+
+		// Update local state to reflect cleared content
+		if (selectedDate) {
+			const dateIndex = dates.findIndex((d) => d.date === selectedDate.date);
+			if (dateIndex !== -1) {
+				dates[dateIndex] = {
+					...dates[dateIndex],
+					has_content: false,
+					reflection_title: '',
+					gospel_quote: '',
+					reflection_content: ''
+				};
+				selectedDate = dates[dateIndex];
+			}
+		}
+
+		toast.success({ title: 'Reset', message: 'Reflection cleared', duration: 2000 });
+	}
+
 	function formatDateShort(dateStr) {
 		const date = new Date(dateStr + 'T00:00:00');
 		return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
@@ -390,61 +420,69 @@
 	</div>
 {:else}
 	<div class="min-h-screen bg-gray-100">
-		<!-- Fixed Header - ONLY for token-only users (not authenticated) -->
-		{#if !isAuthenticated}
-			<header class="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5">
-				<div class="flex items-center gap-2 md:gap-3">
+		<!-- Sticky Write Header - stacks below DGRNavigation when authenticated -->
+		<header class="sticky z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5 {isAuthenticated ? 'top-14' : 'top-0'}">
+			<div class="flex items-center gap-2 md:gap-3">
+				{#if !isAuthenticated}
 					<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto md:h-8" />
-					<div class="hidden sm:block">
-						<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
-						<p class="text-xs text-gray-500">{contributor.name}</p>
-					</div>
-				</div>
-
-				{#if selectedDate}
-					<div class="flex items-center gap-2 md:gap-3">
-						<!-- Save Status - mobile shows icon only -->
-						<div class="text-sm text-gray-500">
-							{#if saving}
-								<span class="flex items-center gap-1">
-									<Clock class="h-3.5 w-3.5 animate-spin" />
-									<span class="hidden sm:inline">Saving...</span>
-								</span>
-							{:else if lastSaved}
-								<span class="flex items-center gap-1 text-green-600">
-									<Check class="h-3.5 w-3.5" />
-									<span class="hidden sm:inline">Saved</span>
-								</span>
-							{/if}
-						</div>
-
-						<!-- Save Draft - hidden on mobile (auto-save handles it) -->
-						<button
-							onclick={() => saveReflection('save')}
-							disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-							class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
-						>
-							Save Draft
-						</button>
-
-						<!-- Submit button -->
-						<button
-							onclick={() => saveReflection('submit')}
-							disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-							class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
-						>
-							<Send class="h-4 w-4" />
-							Submit
-						</button>
-					</div>
 				{/if}
-			</header>
-		{/if}
+				<div>
+					<p class="text-sm font-semibold text-gray-900">{isAuthenticated ? 'Writing Reflection' : 'Daily Gospel Reflection'}</p>
+					<p class="text-xs text-gray-500">{contributor.name}</p>
+				</div>
+			</div>
+
+			{#if selectedDate}
+				<div class="flex items-center gap-2 md:gap-3">
+					<!-- Save Status -->
+					<div class="text-sm text-gray-500">
+						{#if saving}
+							<span class="flex items-center gap-1">
+								<Clock class="h-3.5 w-3.5 animate-spin" />
+								<span class="hidden sm:inline">Saving...</span>
+							</span>
+						{:else if lastSaved}
+							<span class="flex items-center gap-1 text-green-600">
+								<Check class="h-3.5 w-3.5" />
+								<span class="hidden sm:inline">Saved</span>
+							</span>
+						{/if}
+					</div>
+
+					<!-- Reset button - subtle icon -->
+					<button
+						onclick={() => showResetConfirm = true}
+						disabled={saving || (!reflectionTitle.trim() && !gospelQuote.trim() && !reflectionContent.trim())}
+						class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+						title="Reset reflection"
+					>
+						<RotateCcw class="h-4 w-4" />
+					</button>
+
+					<button
+						onclick={() => saveReflection('save')}
+						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+						class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
+					>
+						Save Draft
+					</button>
+
+					<button
+						onclick={() => saveReflection('submit')}
+						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
+						class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
+					>
+						<Send class="h-4 w-4" />
+						Submit
+					</button>
+				</div>
+			{/if}
+		</header>
 
 		<!-- Main Layout with Sidebar -->
-		<div class="flex {isAuthenticated ? '' : 'pt-14'}">
-			<!-- Sidebar - Fixed, hidden on mobile -->
-			<aside class="fixed left-0 top-14 bottom-0 z-10 hidden w-64 overflow-y-auto border-r border-gray-200 bg-white md:block">
+		<div class="flex">
+			<!-- Sidebar - Sticky, hidden on mobile. Sticks below both headers -->
+			<aside class="sticky self-start hidden max-h-[calc(100vh-112px)] w-64 shrink-0 overflow-y-auto border-r border-gray-200 bg-white md:block {isAuthenticated ? 'top-28' : 'top-14'}">
 				<!-- Filter Pills -->
 				<div class="border-b border-gray-200 p-3">
 					<p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Filter by status</p>
@@ -507,49 +545,9 @@
 			</aside>
 
 			<!-- Main Content - Scrollable -->
-			<main class="flex-1 p-4 md:ml-64 md:p-6">
+			<main class="flex-1 p-4 md:p-6">
 				{#if selectedDate}
 					{@const mobileBadge = getStatusBadge(selectedDate)}
-
-					<!-- Action bar for authenticated users (replaces fixed header) -->
-					{#if isAuthenticated}
-						<div class="mx-auto mb-4 max-w-3xl flex items-center justify-between">
-							<div class="text-sm text-gray-600">
-								Writing as <span class="font-medium">{contributor.name}</span>
-							</div>
-							<div class="flex items-center gap-2 md:gap-3">
-								<!-- Save Status -->
-								<div class="text-sm text-gray-500">
-									{#if saving}
-										<span class="flex items-center gap-1">
-											<Clock class="h-3.5 w-3.5 animate-spin" />
-											<span class="hidden sm:inline">Saving...</span>
-										</span>
-									{:else if lastSaved}
-										<span class="flex items-center gap-1 text-green-600">
-											<Check class="h-3.5 w-3.5" />
-											<span class="hidden sm:inline">Saved</span>
-										</span>
-									{/if}
-								</div>
-								<button
-									onclick={() => saveReflection('save')}
-									disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-									class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
-								>
-									Save Draft
-								</button>
-								<button
-									onclick={() => saveReflection('submit')}
-									disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-									class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
-								>
-									<Send class="h-4 w-4" />
-									Submit
-								</button>
-							</div>
-						</div>
-					{/if}
 
 					<!-- Page Title - Tappable on mobile to open date picker -->
 					<div class="mx-auto mb-4 max-w-3xl">
@@ -796,6 +794,18 @@
 		pageTitle="Writing Guide"
 	/>
 {/if}
+
+<!-- Reset Confirmation Modal -->
+<ConfirmationModal
+	show={showResetConfirm}
+	title="Reset Reflection"
+	confirmText="Reset"
+	onConfirm={resetReflection}
+	onCancel={() => showResetConfirm = false}
+>
+	<p>Are you sure you want to clear this reflection? This will remove all content you've written.</p>
+	<p><strong>This cannot be undone.</strong></p>
+</ConfirmationModal>
 
 <ToastContainer />
 
