@@ -101,9 +101,17 @@ export async function POST({ request, locals }) {
 				{ width: 280, height: 50, borderRadius: 8 }
 			);
 
+			// Parse name into first/last
+			const fullName = contributor.name || '';
+			const nameParts = fullName.trim().split(/\s+/);
+			const firstName = nameParts[0] || '';
+			const lastName = nameParts.slice(1).join(' ') || '';
+
 			// Build template variables
 			const variables = {
-				contributor_name: contributor.name,
+				contributor_name: fullName,
+				contributor_first_name: firstName,
+				contributor_last_name: lastName,
 				contributor_email: contributor.email,
 				write_url: writeUrl,
 				write_url_button: buttonHtml
