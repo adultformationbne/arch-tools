@@ -76,7 +76,7 @@
 	}
 </script>
 
-<nav class="bg-gray-50 border-b border-gray-200 relative" bind:this={navRoot} data-nav-root>
+<nav class="bg-gray-50 border-b border-gray-200 sticky top-0 z-30" bind:this={navRoot} data-nav-root>
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="flex h-14 items-center justify-center relative">
 			<!-- Center: Section Navigation -->
