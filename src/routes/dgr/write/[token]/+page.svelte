@@ -3,7 +3,7 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
-	import { Calendar, Check, ChevronDown, Clock, FileText, RotateCcw, Send, X } from 'lucide-svelte';
+	import { Calendar, Check, ChevronDown, Clock, FileText, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 
 	const { data } = $props();
@@ -41,6 +41,16 @@
 
 	// Reset confirmation modal
 	let showResetConfirm = $state(false);
+
+	// Edit readings modal
+	let showEditReadings = $state(false);
+	let editedReadings = $state({
+		first_reading: '',
+		psalm: '',
+		second_reading: '',
+		gospel_reading: ''
+	});
+	let savingReadings = $state(false);
 
 	// Auto-resize textarea ref
 	let textareaEl = $state(null);
@@ -308,30 +318,108 @@
 		}, 2000);
 	}
 
-	function resetReflection() {
-		reflectionTitle = '';
-		gospelQuote = '';
-		reflectionContent = '';
-		lastSaved = null;
-		justSubmitted = false;
+	async function resetReflection() {
+		if (!selectedDate) return;
+
+		saving = true;
 		showResetConfirm = false;
 
-		// Update local state to reflect cleared content
-		if (selectedDate) {
+		try {
+			const response = await fetch(`/api/dgr/contributor/${token}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					date: selectedDate.date,
+					action: 'reset'
+				})
+			});
+
+			const result = await response.json();
+			if (result.error) throw new Error(result.error);
+
+			// Clear local form state
+			reflectionTitle = '';
+			gospelQuote = '';
+			reflectionContent = '';
+			lastSaved = null;
+			justSubmitted = false;
+
+			// Update local state to reflect cleared content
 			const dateIndex = dates.findIndex((d) => d.date === selectedDate.date);
 			if (dateIndex !== -1) {
 				dates[dateIndex] = {
 					...dates[dateIndex],
 					has_content: false,
+					status: 'pending',
 					reflection_title: '',
 					gospel_quote: '',
 					reflection_content: ''
 				};
 				selectedDate = dates[dateIndex];
 			}
+
+			toast.success({ title: 'Reset', message: 'Reflection cleared', duration: 2000 });
+		} catch (error) {
+			toast.error({ title: 'Reset Failed', message: error.message, duration: 3000 });
+		} finally {
+			saving = false;
+		}
+	}
+
+	function openEditReadings() {
+		editedReadings = {
+			first_reading: readings?.first_reading || '',
+			psalm: readings?.psalm || '',
+			second_reading: readings?.second_reading || '',
+			gospel_reading: readings?.gospel_reading || ''
+		};
+		showEditReadings = true;
+	}
+
+	async function saveEditedReadings() {
+		if (!selectedDate?.schedule_id) {
+			toast.error({ title: 'Error', message: 'No schedule entry to update', duration: 3000 });
+			return;
 		}
 
-		toast.success({ title: 'Reset', message: 'Reflection cleared', duration: 2000 });
+		savingReadings = true;
+		try {
+			const response = await fetch('/api/dgr/readings/update', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					schedule_id: selectedDate.schedule_id,
+					first_reading: editedReadings.first_reading.trim(),
+					psalm: editedReadings.psalm.trim(),
+					second_reading: editedReadings.second_reading.trim(),
+					gospel_reading: editedReadings.gospel_reading.trim()
+				})
+			});
+
+			const result = await response.json();
+			if (result.error) throw new Error(result.error);
+
+			// Update local readings state
+			readings = {
+				...readings,
+				first_reading: editedReadings.first_reading.trim(),
+				psalm: editedReadings.psalm.trim(),
+				second_reading: editedReadings.second_reading.trim(),
+				gospel_reading: editedReadings.gospel_reading.trim()
+			};
+
+			// Refetch gospel text if it changed
+			if (editedReadings.gospel_reading.trim() !== readings?.gospel_reading) {
+				await fetchGospelText(editedReadings.gospel_reading.trim());
+			}
+
+			showEditReadings = false;
+			toast.success({ title: 'Saved', message: 'Readings updated', duration: 2000 });
+		} catch (error) {
+			toast.error({ title: 'Save Failed', message: error.message, duration: 3000 });
+		} finally {
+			savingReadings = false;
+		}
 	}
 
 	function formatDateShort(dateStr) {
@@ -587,34 +675,73 @@
 
 					<!-- Document -->
 					<div class="mx-auto max-w-3xl rounded-lg bg-white shadow-sm">
-						<!-- Readings Reference (collapsible, open by default) -->
+						<!-- Readings Reference -->
 						{#if readings}
 							<div class="border-b border-gray-100 px-6 py-4 sm:px-8">
-								<button
-									onclick={() => showGospelText = !showGospelText}
-									class="flex w-full items-center justify-between text-left"
-								>
+								<!-- Header with edit button -->
+								<div class="flex items-center justify-between mb-3">
 									<div class="flex items-center gap-2 text-sm text-gray-600">
 										<FileText class="h-4 w-4 text-indigo-500" />
 										<span class="font-medium">{readings.liturgical_day || 'Readings'}</span>
-										{#if readings.gospel_reading}
-											<span class="hidden text-gray-400 sm:inline">• {readings.gospel_reading}</span>
-										{/if}
 									</div>
-									<span class="text-xs text-indigo-600">{showGospelText ? 'Hide' : 'Show'} Gospel</span>
-								</button>
+									<button
+										onclick={openEditReadings}
+										class="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600"
+									>
+										<Pencil class="h-3 w-3" />
+										Edit
+									</button>
+								</div>
 
-								{#if showGospelText && gospelText}
-									<div class="mt-4 rounded-lg bg-indigo-50 p-4">
-										<div class="prose prose-sm max-w-none text-gray-700">
-											{@html gospelText}
+								<!-- All readings list -->
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+									{#if readings.first_reading}
+										<div class="flex items-start gap-2">
+											<span class="text-gray-400 shrink-0">1st:</span>
+											<span class="text-gray-700">{readings.first_reading}</span>
 										</div>
-									</div>
-								{:else if showGospelText && loadingGospelText}
-									<div class="mt-4 flex items-center gap-2 text-sm text-gray-500">
-										<Clock class="h-4 w-4 animate-spin" />
-										Loading Gospel text...
-									</div>
+									{/if}
+									{#if readings.psalm}
+										<div class="flex items-start gap-2">
+											<span class="text-gray-400 shrink-0">Psalm:</span>
+											<span class="text-gray-700">{readings.psalm}</span>
+										</div>
+									{/if}
+									{#if readings.second_reading}
+										<div class="flex items-start gap-2">
+											<span class="text-gray-400 shrink-0">2nd:</span>
+											<span class="text-gray-700">{readings.second_reading}</span>
+										</div>
+									{/if}
+									{#if readings.gospel_reading}
+										<div class="flex items-start gap-2">
+											<span class="text-gray-400 shrink-0">Gospel:</span>
+											<span class="text-gray-700 font-medium">{readings.gospel_reading}</span>
+										</div>
+									{/if}
+								</div>
+
+								<!-- Gospel text toggle -->
+								{#if readings.gospel_reading}
+									<button
+										onclick={() => showGospelText = !showGospelText}
+										class="mt-3 text-xs text-indigo-600 hover:text-indigo-700"
+									>
+										{showGospelText ? 'Hide' : 'Show'} Gospel Text
+									</button>
+
+									{#if showGospelText && gospelText}
+										<div class="mt-3 rounded-lg bg-indigo-50 p-4">
+											<div class="prose prose-sm max-w-none text-gray-700">
+												{@html gospelText}
+											</div>
+										</div>
+									{:else if showGospelText && loadingGospelText}
+										<div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+											<Clock class="h-4 w-4 animate-spin" />
+											Loading Gospel text...
+										</div>
+									{/if}
 								{/if}
 							</div>
 						{:else if loadingReadings}
@@ -806,6 +933,85 @@
 	<p>Are you sure you want to clear this reflection? This will remove all content you've written.</p>
 	<p><strong>This cannot be undone.</strong></p>
 </ConfirmationModal>
+
+<!-- Edit Readings Modal -->
+{#if showEditReadings}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={() => showEditReadings = false}>
+		<div
+			class="mx-4 w-full max-w-md rounded-xl bg-white shadow-2xl"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+				<h3 class="text-lg font-semibold text-gray-900">Edit Readings</h3>
+				<button onclick={() => showEditReadings = false} class="rounded-lg p-1 hover:bg-gray-100">
+					<X class="h-5 w-5 text-gray-500" />
+				</button>
+			</div>
+
+			<div class="space-y-4 px-6 py-4">
+				<div>
+					<label for="first_reading" class="mb-1 block text-sm font-medium text-gray-700">First Reading</label>
+					<input
+						id="first_reading"
+						type="text"
+						bind:value={editedReadings.first_reading}
+						placeholder="e.g., Genesis 2:7-9; 3:1-7"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+					/>
+				</div>
+
+				<div>
+					<label for="psalm" class="mb-1 block text-sm font-medium text-gray-700">Psalm</label>
+					<input
+						id="psalm"
+						type="text"
+						bind:value={editedReadings.psalm}
+						placeholder="e.g., Psalm 51:3-6, 12-14, 17"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+					/>
+				</div>
+
+				<div>
+					<label for="second_reading" class="mb-1 block text-sm font-medium text-gray-700">Second Reading</label>
+					<input
+						id="second_reading"
+						type="text"
+						bind:value={editedReadings.second_reading}
+						placeholder="e.g., Romans 5:12-19"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+					/>
+				</div>
+
+				<div>
+					<label for="gospel_reading" class="mb-1 block text-sm font-medium text-gray-700">Gospel</label>
+					<input
+						id="gospel_reading"
+						type="text"
+						bind:value={editedReadings.gospel_reading}
+						placeholder="e.g., Matthew 4:1-11"
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+					/>
+				</div>
+			</div>
+
+			<div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+				<button
+					onclick={() => showEditReadings = false}
+					class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={saveEditedReadings}
+					disabled={savingReadings}
+					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+				>
+					{savingReadings ? 'Saving...' : 'Save'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <ToastContainer />
 
