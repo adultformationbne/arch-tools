@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseAggregates, groupQuestionsBySession } from '$lib/server/course-data.js';
 import { getReflectionStatus } from '$lib/utils/reflection-status.js';
+import { getUserInitials } from '$lib/utils/avatar.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -68,16 +69,6 @@ export const load: PageServerLoad = async (event) => {
 	// Process cohort reflections
 	const processedCohortReflections =
 		publicReflections?.map((response) => {
-			const getInitials = (fullName?: string) => {
-				if (!fullName) return 'AN';
-				return fullName
-					.split(' ')
-					.map((n) => n[0])
-					.join('')
-					.toUpperCase()
-					.slice(0, 2);
-			};
-
 			const studentName =
 				response.enrollment?.user_profile?.full_name ||
 				response.user_profile?.full_name ||
@@ -86,7 +77,7 @@ export const load: PageServerLoad = async (event) => {
 			return {
 				id: response.id,
 				studentName,
-				studentInitials: getInitials(studentName),
+				studentInitials: getUserInitials(studentName),
 				sessionNumber: response.question?.session?.session_number || 0,
 				question: response.question?.question_text || '',
 				response: response.response_text || '',

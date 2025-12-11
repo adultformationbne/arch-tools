@@ -115,7 +115,7 @@ $effect(() => { console.log(count); });
 - **Dropdown:** `$lib/utils/dropdown.js`
 - **Email:** `$lib/utils/email-service.js`
 - **Reflection Status:** `$lib/utils/reflection-status.ts` (status labels, badges, icons for courses reflections)
-- **DB Types:** `$lib/database.types.ts` (auto-generated)
+- **DB Types:** `$lib/database.types.ts` (regenerate with `npm run update-types`)
 
 ## Database
 
@@ -185,4 +185,4 @@ See `tests/README.md` for test details. Tests auto-cleanup after running.
 - **AGENTS.MD** - Database migration workflow
 - **AUTHENTICATION.md** - Detailed auth docs
 - **COURSES.md** - Course architecture
-- **EMAIL_SYSTEM.md** - Email setup
+- **UNIFIED_EMAIL_SYSTEM.md** - Email templates, sending, and branding (courses, DGR, platform)

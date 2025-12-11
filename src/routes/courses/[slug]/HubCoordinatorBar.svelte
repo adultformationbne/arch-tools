@@ -2,6 +2,7 @@
 	import { Users, CheckSquare, Calendar, ChevronDown, ChevronUp, Check, X, Loader2 } from 'lucide-svelte';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	// Props from parent
 	let { hubData = null, courseSlug = '' } = $props();
@@ -193,7 +194,7 @@
 												<div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
 													<div class="flex items-center gap-4">
 														<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style="background-color: #334642;">
-															{student.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+															{getUserInitials(student.name)}
 														</div>
 														<div>
 															<div class="font-semibold text-gray-800">{student.name}</div>
@@ -246,7 +247,7 @@
 												<div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
 													<div class="flex items-center gap-4">
 														<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style="background-color: #334642;">
-															{student.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+															{getUserInitials(student.name)}
 														</div>
 														<div>
 															<div class="font-semibold text-gray-800">{student.name}</div>

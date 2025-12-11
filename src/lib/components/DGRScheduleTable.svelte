@@ -215,7 +215,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{contributor.name}
+												{#if contributor.title}{contributor.title} {/if}{contributor.name}
 											</option>
 										{/each}
 									</select>
@@ -229,7 +229,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{contributor.name}
+												{#if contributor.title}{contributor.title} {/if}{contributor.name}
 											</option>
 										{/each}
 									</select>
@@ -243,7 +243,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{contributor.name}
+												{#if contributor.title}{contributor.title} {/if}{contributor.name}
 											</option>
 										{/each}
 									</select>

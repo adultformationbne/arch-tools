@@ -365,6 +365,7 @@
 	courseSlug={course?.slug}
 	{course}
 	recipients={selectedEnrollments}
+	currentUserEmail={data.currentUserEmail}
 	onClose={closeEmailModal}
 	onSent={closeEmailModal}
 />

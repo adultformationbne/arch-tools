@@ -6,8 +6,6 @@
 	let contributors = $state([]);
 	let loading = $state(true);
 
-	const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 	$effect(() => {
 		(async () => {
 			await loadContributors();
@@ -121,7 +119,6 @@
 	{:else}
 		<DGRContributorManager
 			{contributors}
-			{dayNames}
 			onAddContributor={addContributor}
 			onUpdateContributor={updateContributor}
 			onDeleteContributor={deleteContributor}

@@ -21,6 +21,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		modules,
 		cohorts,
-		courseSlug
+		courseSlug,
+		currentUserEmail: user?.email || ''
 	};
 };

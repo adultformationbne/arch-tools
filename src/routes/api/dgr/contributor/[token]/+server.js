@@ -21,7 +21,7 @@ export async function GET({ params }) {
 		// Validate token and get contributor
 		const { data: contributor, error: contributorError } = await supabase
 			.from('dgr_contributors')
-			.select('id, name, email, schedule_pattern, visit_count')
+			.select('id, name, title, email, schedule_pattern, visit_count')
 			.eq('access_token', token)
 			.eq('active', true)
 			.single();
@@ -58,6 +58,7 @@ export async function GET({ params }) {
 		return json({
 			contributor: {
 				name: contributor.name,
+				title: contributor.title,
 				email: contributor.email,
 				pattern: contributor.schedule_pattern,
 				visit_count: newVisitCount

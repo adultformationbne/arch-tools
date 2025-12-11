@@ -15,6 +15,9 @@ export const load: PageServerLoad = async (event) => {
 	const layoutData = await event.parent();
 	const courseInfo = layoutData?.courseInfo || {};
 
+	// Get current user email for test email default
+	const { user } = await event.locals.safeGetSession();
+
 	if (!courseInfo.id) {
 		throw error(404, 'Course not found');
 	}
@@ -23,9 +26,10 @@ export const load: PageServerLoad = async (event) => {
 	const [templatesResult, logsResult, cohortsResult, hubsResult] = await Promise.all([
 		// Get all email templates for this course
 		supabaseAdmin
-			.from('courses_email_templates')
+			.from('email_templates')
 			.select('*')
-			.eq('course_id', courseInfo.id)
+			.eq('context', 'course')
+			.eq('context_id', courseInfo.id)
 			.eq('is_active', true)
 			.order('category', { ascending: true })
 			.order('name', { ascending: true }),
@@ -45,7 +49,7 @@ export const load: PageServerLoad = async (event) => {
 				template_id,
 				cohort_id,
 				enrollment_id,
-				courses_email_templates!template_id (
+				email_templates!template_id (
 					name,
 					template_key
 				)
@@ -118,6 +122,7 @@ export const load: PageServerLoad = async (event) => {
 		allTemplates: templates,
 		emailLogs: logsResult.data || [],
 		cohorts: cohortsResult.data || [],
-		hubs: hubsResult.data || []
+		hubs: hubsResult.data || [],
+		currentUserEmail: user?.email || ''
 	};
 };

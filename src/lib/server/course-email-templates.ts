@@ -17,9 +17,10 @@ export async function generateSystemTemplatesForCourse(
 	try {
 		// Check if templates already exist for this course
 		const { data: existing } = await supabase
-			.from('courses_email_templates')
+			.from('email_templates')
 			.select('template_key')
-			.eq('course_id', courseId)
+			.eq('context', 'course')
+			.eq('context_id', courseId)
 			.eq('category', 'system');
 
 		const existingKeys = new Set((existing || []).map((t) => t.template_key));
@@ -34,9 +35,10 @@ export async function generateSystemTemplatesForCourse(
 		}
 
 		// Insert templates
-		const { error } = await supabase.from('courses_email_templates').insert(
+		const { error } = await supabase.from('email_templates').insert(
 			templatesToCreate.map((template) => ({
-				course_id: courseId,
+				context: 'course',
+				context_id: courseId,
 				template_key: template.template_key,
 				name: template.name,
 				description: template.description,
@@ -80,7 +82,7 @@ export async function restoreTemplateToDefault(
 
 		// Update the existing template
 		const { error } = await supabase
-			.from('courses_email_templates')
+			.from('email_templates')
 			.update({
 				name: defaultTemplate.name,
 				description: defaultTemplate.description,
@@ -89,7 +91,8 @@ export async function restoreTemplateToDefault(
 				available_variables: defaultTemplate.available_variables,
 				updated_at: new Date().toISOString()
 			})
-			.eq('course_id', courseId)
+			.eq('context', 'course')
+			.eq('context_id', courseId)
 			.eq('template_key', templateKey)
 			.eq('category', 'system');
 
