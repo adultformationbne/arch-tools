@@ -6,6 +6,7 @@ import {
 	groupQuestionsBySession
 } from '$lib/server/course-data.js';
 import { isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
+import { getUserInitials } from '$lib/utils/avatar.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -91,16 +92,6 @@ export const load: PageServerLoad = async (event) => {
 			return `${Math.floor(diffDays / 7)} weeks ago`;
 		};
 
-		const getInitials = (fullName?: string) => {
-			if (!fullName) return 'AN';
-			return fullName
-				.split(' ')
-				.map((n) => n[0])
-				.join('')
-				.toUpperCase()
-				.slice(0, 2);
-		};
-
 		// Strip HTML tags for plain text excerpts (add space to preserve word boundaries)
 		const stripHtml = (html: string) => {
 			if (!html) return '';
@@ -123,7 +114,7 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			id: response.id,
 			studentName,
-			studentInitials: getInitials(studentName),
+			studentInitials: getUserInitials(studentName),
 			cohortName: enrollment.cohort.module.name || 'Unknown Module',
 			sessionNumber,
 			reflectionExcerpt: truncateContent(response.response_text),

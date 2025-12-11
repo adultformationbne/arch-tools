@@ -1,15 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY } from '$env/static/private';
-import { sendEmail, textToHtml } from '$lib/utils/email-service.js';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
+import { RESEND_API_KEY } from '$env/static/private';
+import {
+	getDgrEmailTemplate,
+	sendDgrEmail,
+	createEmailButton,
+	renderTemplate
+} from '$lib/utils/email-service.js';
 
 /**
  * POST /api/dgr/reminder
@@ -29,10 +26,16 @@ export async function POST({ request, locals }) {
 			return json({ error: 'Missing required fields' }, { status: 400 });
 		}
 
+		// Get reminder email template
+		const template = await getDgrEmailTemplate(supabaseAdmin, 'reminder');
+		if (!template) {
+			throw new Error('Reminder email template not found or inactive');
+		}
+
 		// Get contributor details
-		const { data: contributor, error: contributorError } = await supabase
+		const { data: contributor, error: contributorError } = await supabaseAdmin
 			.from('dgr_contributors')
-			.select('name, email, access_token')
+			.select('name, title, email, access_token')
 			.eq('id', contributorId)
 			.single();
 
@@ -46,7 +49,7 @@ export async function POST({ request, locals }) {
 
 		if (scheduleId) {
 			// Fetch existing entry
-			const { data } = await supabase
+			const { data } = await supabaseAdmin
 				.from('dgr_schedule')
 				.select('id, date, liturgical_date, gospel_reference, readings_data, reminder_history')
 				.eq('id', scheduleId)
@@ -55,7 +58,7 @@ export async function POST({ request, locals }) {
 			scheduleEntry = data;
 		} else {
 			// No scheduleId - check if entry exists for this date/contributor
-			const { data: existing } = await supabase
+			const { data: existing } = await supabaseAdmin
 				.from('dgr_schedule')
 				.select('id, date, liturgical_date, gospel_reference, readings_data, reminder_history')
 				.eq('date', date)
@@ -68,10 +71,10 @@ export async function POST({ request, locals }) {
 			} else {
 				// Create new schedule entry for this reminder
 				// Generate submission token
-				const { data: token } = await supabase.rpc('generate_submission_token');
+				const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
 				// Fetch readings from database
-				const { data: readings } = await supabase.rpc('get_readings_for_date', {
+				const { data: readings } = await supabaseAdmin.rpc('get_readings_for_date', {
 					target_date: date
 				});
 
@@ -103,7 +106,7 @@ export async function POST({ request, locals }) {
 				}
 
 				// Create new schedule entry
-				const { data: newEntry, error: createError } = await supabase
+				const { data: newEntry, error: createError } = await supabaseAdmin
 					.from('dgr_schedule')
 					.insert({
 						date,
@@ -157,46 +160,59 @@ export async function POST({ request, locals }) {
 		// Build submission URL
 		const submissionUrl = `${process.env.ORIGIN || 'https://app.archdiocesanministries.org.au'}/dgr/write/${contributor.access_token}`;
 
-		// Compose reminder email
-		const subject = `DGR Reminder: Reflection due ${dueDateText}`;
+		// Generate bulletproof button HTML
+		const buttonHtml = createEmailButton(
+			'Submit Your Reflection',
+			submissionUrl,
+			'#009199',
+			{ width: 280, height: 50, borderRadius: 8 }
+		);
 
-		const message = `Hi ${contributor.name},
+		// Parse name into first/last, with title support
+		const fullName = contributor.name || '';
+		const nameParts = fullName.trim().split(/\s+/);
+		const firstName = nameParts[0] || '';
+		const title = contributor.title || '';
 
-This is a reminder that your Daily Gospel Reflection is due ${dueDateText}.
+		// Build addressed name: "Fr Michael" or just "Michael" if no title
+		const addressedFirstName = title ? `${title} ${firstName}` : firstName;
 
-Date: ${formattedDate}
-${scheduleEntry?.liturgical_date ? `Liturgical Day: ${scheduleEntry.liturgical_date}` : ''}
-${scheduleEntry?.gospel_reference ? `Gospel: ${scheduleEntry.gospel_reference}` : ''}
+		// Build template variables
+		const variables = {
+			contributor_name: fullName,
+			contributor_first_name: addressedFirstName,
+			contributor_title: title,
+			contributor_email: contributor.email,
+			write_url: submissionUrl,
+			write_url_button: buttonHtml,
+			due_date: formattedDate,
+			due_date_text: dueDateText,
+			liturgical_date: scheduleEntry?.liturgical_date || '',
+			gospel_reference: scheduleEntry?.gospel_reference || ''
+		};
 
-You can submit your reflection here:
-${submissionUrl}
+		// Render template with variables
+		const subject = renderTemplate(template.subject_template, variables);
+		const htmlBody = renderTemplate(template.body_template, variables);
 
-If you've already submitted your reflection, please disregard this reminder.
-
-Thank you for your contribution to the Daily Gospel Reflections!
-
-Best regards,
-ACCF Team`;
-
-		// Send email using email service
-		// TODO: Remove this override once testing is complete
+		// Send email with DGR branding
 		const emailTo = process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
 
-		const result = await sendEmail({
+		const result = await sendDgrEmail({
 			to: emailTo,
 			subject,
-			html: textToHtml(message),
+			bodyHtml: htmlBody,
 			emailType: 'dgr_reminder',
-			referenceId: scheduleId,
+			contributorId,
+			templateId: template.id,
 			metadata: {
-				contributorId,
-				contributorEmail: contributor.email, // Store real email in metadata for reference
+				contributorEmail: contributor.email,
 				date,
 				daysUntil: diffDays,
 				submissionUrl
 			},
 			resendApiKey: RESEND_API_KEY,
-			supabase
+			supabase: supabaseAdmin
 		});
 
 		if (!result.success) {
@@ -214,14 +230,17 @@ ACCF Team`;
 		});
 
 		// Update schedule entry with reminder history
-		await supabase
+		await supabaseAdmin
 			.from('dgr_schedule')
 			.update({ reminder_history: reminderHistory })
 			.eq('id', scheduleEntryId);
 
+		// Format name with title for display
+		const displayName = title ? `${title} ${contributor.name}` : contributor.name;
+
 		return json({
 			success: true,
-			message: `Reminder sent to ${contributor.name}`,
+			message: `Reminder sent to ${displayName}`,
 			emailId: result.emailId,
 			scheduleId: scheduleEntryId,
 			reminderCount: reminderHistory.length

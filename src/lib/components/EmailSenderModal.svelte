@@ -1,9 +1,11 @@
 <script>
-	import { X, Mail, Send, Loader2, TestTube, Pencil, FileText, ChevronDown, Eye, Check, ChevronLeft } from 'lucide-svelte';
+	import { X, Mail, Send, Loader2, TestTube, Pencil, FileText, ChevronDown, Eye, Check, ChevronLeft, AlertTriangle } from 'lucide-svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { apiGet, apiPost, apiPut } from '$lib/utils/api-handler.js';
 	import EmailBodyEditor from './EmailBodyEditor.svelte';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
+	import TestEmailPanel from './TestEmailPanel.svelte';
+	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
 		show = false,
@@ -11,6 +13,7 @@
 		course = null,
 		recipients = [],
 		cohortId = null,
+		currentUserEmail = '',
 		onClose = () => {},
 		onSent = () => {}
 	} = $props();
@@ -36,9 +39,8 @@
 
 	// Sending state
 	let sending = $state(false);
-	let sendingTest = $state(false);
-	let showTestInput = $state(false);
-	let testEmail = $state('');
+	let showTestEmailPanel = $state(false);
+	let showSendConfirm = $state(false);
 
 	// Derived
 	const selectedTemplate = $derived(templates.find(t => t.id === selectedTemplateId));
@@ -213,38 +215,7 @@
 		}
 	}
 
-	async function handleSendTest() {
-		if (!testEmail) {
-			toastError('Please enter a test email address');
-			return;
-		}
-		const subject = getCurrentSubject();
-		const body = getCurrentBody();
-		if (!subject || !body) {
-			toastError('Please enter a subject and body');
-			return;
-		}
-
-		sendingTest = true;
-		try {
-			await apiPost(`/api/courses/${courseSlug}/emails/test`, {
-				to: testEmail,
-				subject,
-				body,
-				course_name: course?.name,
-				logo_url: course?.logo_url,
-				colors: courseColors
-			}, { successMessage: 'Test email sent!' });
-			showTestInput = false;
-			testEmail = '';
-		} catch (err) {
-			// Handled by apiPost
-		} finally {
-			sendingTest = false;
-		}
-	}
-
-	async function handleSend() {
+	function handleSend() {
 		if (enabledRecipients.length === 0) {
 			toastError('No recipients selected');
 			return;
@@ -256,8 +227,18 @@
 			return;
 		}
 
+		// Show confirmation modal
+		showSendConfirm = true;
+	}
+
+	async function confirmSend() {
+		showSendConfirm = false;
 		sending = true;
+
 		try {
+			const subject = getCurrentSubject();
+			const body = getCurrentBody();
+
 			const payload = {
 				recipients: enabledRecipients.map(r => r.id),
 				cohort_id: cohortId || enabledRecipients[0]?.cohort_id
@@ -570,23 +551,9 @@
 								>
 									Save Template
 								</button>
-							{:else if showTestInput}
-								<input type="email" bind:value={testEmail} placeholder="test@example.com" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" />
-								<button
-									onclick={handleSendTest}
-									disabled={sendingTest || !testEmail}
-									class="px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-1 disabled:opacity-50"
-									style="background-color: color-mix(in srgb, {courseColors.accentLight} 30%, white); color: {courseColors.accentDarkest};"
-								>
-									{#if sendingTest}<Loader2 size={14} class="animate-spin" />{:else}<TestTube size={14} />{/if}
-									Send
-								</button>
-								<button onclick={() => { showTestInput = false; testEmail = ''; }} class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-									<X size={14} />
-								</button>
 							{:else}
 								<button
-									onclick={() => showTestInput = true}
+									onclick={() => showTestEmailPanel = true}
 									disabled={!getCurrentSubject() || !getCurrentBody()}
 									class="px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-2 border disabled:opacity-50"
 									style="color: {courseColors.accentDark}; border-color: {courseColors.accentLight};"
@@ -629,3 +596,56 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Test Email Panel -->
+{#if showTestEmailPanel}
+	<TestEmailPanel
+		context="course"
+		contextId={courseSlug}
+		contextData={{ course, cohorts: [] }}
+		template={{
+			subject_template: getCurrentSubject(),
+			body_template: getCurrentBody()
+		}}
+		branding={{
+			name: course?.name || 'Course',
+			logoUrl: course?.logo_url,
+			accentDark: courseColors.accentDark,
+			footerText: "You're receiving this because you're enrolled in this course."
+		}}
+		{currentUserEmail}
+		testApiUrl="/api/emails/test"
+		onClose={() => showTestEmailPanel = false}
+	/>
+{/if}
+
+<!-- Send Confirmation Modal -->
+<ConfirmationModal
+	show={showSendConfirm}
+	onConfirm={confirmSend}
+	onCancel={() => showSendConfirm = false}
+	confirmText="Send {enabledRecipients.length} Email{enabledRecipients.length !== 1 ? 's' : ''}"
+	confirmClass="bg-green-600 hover:bg-green-700 text-white"
+>
+	<div class="flex items-start gap-3">
+		<div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+			<AlertTriangle class="w-5 h-5 text-amber-600" />
+		</div>
+		<div class="flex-1">
+			<h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Send</h3>
+			<p class="text-gray-600 mb-4">
+				You're about to send an email to <strong class="text-gray-900">{enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}</strong>.
+			</p>
+
+			<div class="bg-gray-50 rounded-lg p-3 mb-3">
+				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Subject</div>
+				<div class="text-sm text-gray-900 font-medium">{getCurrentSubject()}</div>
+			</div>
+
+			<div class="text-xs text-gray-500">
+				<span class="font-medium">Recipients:</span>
+				{enabledRecipients.slice(0, 3).map(r => r.full_name).join(', ')}{enabledRecipients.length > 3 ? ` and ${enabledRecipients.length - 3} more...` : ''}
+			</div>
+		</div>
+	</div>
+</ConfirmationModal>

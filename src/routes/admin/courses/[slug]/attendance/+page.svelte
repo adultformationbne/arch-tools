@@ -1,5 +1,6 @@
 <script>
 	import { Calendar, Users, CheckCircle, XCircle, ChevronDown, ChevronRight, User, Building, AlertCircle } from 'lucide-svelte';
+	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	let { data } = $props();
 
@@ -247,7 +248,7 @@
 													<div class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
 														<div class="flex items-center gap-3">
 															<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-sm" style="background-color: var(--course-accent-dark);">
-																{student.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+																{getUserInitials(student.full_name)}
 															</div>
 															<div>
 																<div class="font-semibold text-gray-800">{student.full_name}</div>
@@ -369,7 +370,7 @@
 																<div class="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-blue-100">
 																	<div class="flex items-center gap-3">
 																		<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-sm" style="background-color: var(--course-accent-dark);">
-																			{student.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+																			{getUserInitials(student.full_name)}
 																		</div>
 																		<div>
 																			<div class="font-semibold text-gray-800">{student.full_name}</div>

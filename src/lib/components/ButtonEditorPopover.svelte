@@ -165,7 +165,7 @@
 								class="variable-pill"
 								title={variable.description}
 							>
-								{variable.name}
+								{`{{${variable.name}}}`}
 							</button>
 						{/each}
 					</div>

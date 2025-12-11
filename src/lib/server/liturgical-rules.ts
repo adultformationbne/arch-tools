@@ -12,6 +12,7 @@
 import { parse } from 'csv-parse/sync';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { DAY_NAMES } from '$lib/utils/dgr-helpers';
 
 // Types
 export interface YearCycleData {
@@ -452,7 +453,7 @@ export function normalize(text: string): string {
  * Get day of week from date
  */
 export function getDayOfWeek(date: Date): string {
-	return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
+	return DAY_NAMES[date.getDay()];
 }
 
 /**

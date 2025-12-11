@@ -3,6 +3,7 @@
 	import HubModal from '$lib/components/HubModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -291,7 +292,7 @@
 											style="background-color: #d97706;"
 											title={coordinator.full_name}
 										>
-											{coordinator.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+											{getUserInitials(coordinator.full_name)}
 										</div>
 									{/each}
 								</div>
@@ -350,7 +351,7 @@
 										{#each hub.coordinators as coordinator}
 											<div class="flex items-center gap-2 text-sm py-1 group">
 												<div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background-color: #d97706;">
-													{coordinator.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+													{getUserInitials(coordinator.full_name)}
 												</div>
 												<span class="font-medium text-gray-800">{coordinator.full_name}</span>
 												<span class="text-gray-400">·</span>

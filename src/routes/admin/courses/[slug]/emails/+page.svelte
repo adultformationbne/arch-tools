@@ -84,6 +84,7 @@
 				cohorts={data.cohorts || []}
 				hubs={data.hubs || []}
 				{initialMode}
+				currentUserEmail={data.currentUserEmail}
 			/>
 
 		{:else if selectedView === 'logs'}
@@ -156,11 +157,11 @@
 												</div>
 											</td>
 											<td class="px-6 py-4 whitespace-nowrap text-sm">
-												{#if log.courses_email_templates?.name}
+												{#if log.email_templates?.name}
 													<span
 														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
 													>
-														{log.courses_email_templates.name}
+														{log.email_templates.name}
 													</span>
 												{:else}
 													<span class="text-gray-400 italic">No template</span>
@@ -214,6 +215,7 @@
 
 				<div class="bg-white rounded-lg p-8">
 					<EmailTemplateEditor
+						context="course"
 						courseId={data.course.id}
 						courseSlug={data.courseSlug}
 						courseName={data.course.name}
@@ -223,6 +225,8 @@
 							accentLight: data.course.accent_light || '#eae2d9',
 							accentDarkest: data.course.accent_darkest || '#1e2322'
 						}}
+						contextData={{ course: data.course, cohorts: data.cohorts }}
+						currentUserEmail={data.currentUserEmail}
 						onSave={handleSaveTemplate}
 						onCancel={() => handleViewChange('logs')}
 					/>
@@ -266,6 +270,7 @@
 				<div class="bg-white rounded-lg p-8">
 					<EmailTemplateEditor
 						template={selectedTemplate}
+						context="course"
 						courseId={data.course.id}
 						courseSlug={data.courseSlug}
 						courseName={data.course.name}
@@ -275,6 +280,8 @@
 							accentLight: data.course.accent_light || '#eae2d9',
 							accentDarkest: data.course.accent_darkest || '#1e2322'
 						}}
+						contextData={{ course: data.course, cohorts: data.cohorts }}
+						currentUserEmail={data.currentUserEmail}
 						onSave={handleSaveTemplate}
 						onCancel={() => handleViewChange('logs')}
 					/>

@@ -1,6 +1,7 @@
 <script>
 	import { MessageSquare, Mail, ArrowRight, UserPlus, UserMinus } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { formatRelativeTime } from '$lib/utils/dgr-helpers';
 
 	let { cohort, courseSlug } = $props();
 
@@ -34,19 +35,6 @@
 		} finally {
 			loading = false;
 		}
-	}
-
-	function formatRelativeTime(dateString) {
-		const date = new Date(dateString);
-		const now = new Date();
-		const diffInSeconds = Math.floor((now - date) / 1000);
-
-		if (diffInSeconds < 60) return 'Just now';
-		if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-		if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-		if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-
-		return date.toLocaleDateString();
 	}
 
 	function getActivityIcon(type) {

@@ -28,9 +28,10 @@ export const GET: RequestHandler = async (event) => {
 
 		// Get all templates for this course
 		const { data: templates, error: templatesError } = await supabaseAdmin
-			.from('courses_email_templates')
+			.from('email_templates')
 			.select('*')
-			.eq('course_id', course.id)
+			.eq('context', 'course')
+			.eq('context_id', course.id)
 			.eq('is_active', true)
 			.order('category', { ascending: true })
 			.order('name', { ascending: true });
@@ -104,9 +105,10 @@ export const POST: RequestHandler = async (event) => {
 
 		// Create template (always custom, always deletable)
 		const { data: template, error: createError } = await supabaseAdmin
-			.from('courses_email_templates')
+			.from('email_templates')
 			.insert({
-				course_id: course.id,
+				context: 'course',
+				context_id: course.id,
 				template_key,
 				name,
 				description: description || null,
@@ -181,16 +183,17 @@ export const PUT: RequestHandler = async (event) => {
 
 		// Get existing template to verify it belongs to this course
 		const { data: existingTemplate, error: fetchError } = await supabaseAdmin
-			.from('courses_email_templates')
-			.select('id, course_id, category')
+			.from('email_templates')
+			.select('id, context_id, category')
 			.eq('id', template_id)
+			.eq('context', 'course')
 			.single();
 
 		if (fetchError || !existingTemplate) {
 			return json({ error: 'Template not found' }, { status: 404 });
 		}
 
-		if (existingTemplate.course_id !== course.id) {
+		if (existingTemplate.context_id !== course.id) {
 			return json({ error: 'Template does not belong to this course' }, { status: 403 });
 		}
 
@@ -207,9 +210,10 @@ export const PUT: RequestHandler = async (event) => {
 
 		// Update template
 		const { data: template, error: updateError } = await supabaseAdmin
-			.from('courses_email_templates')
+			.from('email_templates')
 			.update(updates)
 			.eq('id', template_id)
+			.eq('context', 'course')
 			.select()
 			.single();
 
@@ -262,16 +266,17 @@ export const DELETE: RequestHandler = async (event) => {
 
 		// Verify template exists and is deletable
 		const { data: template, error: fetchError } = await supabaseAdmin
-			.from('courses_email_templates')
-			.select('id, course_id, is_deletable, category')
+			.from('email_templates')
+			.select('id, context_id, is_deletable, category')
 			.eq('id', template_id)
+			.eq('context', 'course')
 			.single();
 
 		if (fetchError || !template) {
 			return json({ error: 'Template not found' }, { status: 404 });
 		}
 
-		if (template.course_id !== course.id) {
+		if (template.context_id !== course.id) {
 			return json({ error: 'Template does not belong to this course' }, { status: 403 });
 		}
 
@@ -286,9 +291,10 @@ export const DELETE: RequestHandler = async (event) => {
 
 		// Delete the template
 		const { error: deleteError } = await supabaseAdmin
-			.from('courses_email_templates')
+			.from('email_templates')
 			.delete()
-			.eq('id', template_id);
+			.eq('id', template_id)
+			.eq('context', 'course');
 
 		if (deleteError) {
 			console.error('Error deleting template:', deleteError);
@@ -341,9 +347,10 @@ export const PATCH: RequestHandler = async (event) => {
 
 			// Verify template exists and is a system template
 			const { data: template, error: fetchError } = await supabaseAdmin
-				.from('courses_email_templates')
-				.select('id, course_id, category, template_key')
-				.eq('course_id', course.id)
+				.from('email_templates')
+				.select('id, context_id, category, template_key')
+				.eq('context', 'course')
+				.eq('context_id', course.id)
 				.eq('template_key', template_key)
 				.single();
 
@@ -366,9 +373,10 @@ export const PATCH: RequestHandler = async (event) => {
 
 			// Fetch updated template
 			const { data: updatedTemplate } = await supabaseAdmin
-				.from('courses_email_templates')
+				.from('email_templates')
 				.select('*')
-				.eq('course_id', course.id)
+				.eq('context', 'course')
+				.eq('context_id', course.id)
 				.eq('template_key', template_key)
 				.single();
 

@@ -99,13 +99,15 @@ export function textToHtml(text, organization = 'Archdiocesan Ministries') {
  * Get email template from database
  * @param {Object} supabase Supabase client
  * @param {string} templateKey Template key (e.g., 'session_advance')
+ * @param {string} [context='platform'] Template context ('platform', 'dgr', or 'course')
  * @returns {Promise<{subject: string, body: string, variables: string[]} | null>}
  */
-export async function getEmailTemplate(supabase, templateKey) {
+export async function getEmailTemplate(supabase, templateKey, context = 'platform') {
 	const { data, error } = await supabase
-		.from('platform_email_templates')
+		.from('email_templates')
 		.select('subject_template, body_template, available_variables')
 		.eq('template_key', templateKey)
+		.eq('context', context)
 		.eq('is_active', true)
 		.single();
 
@@ -402,9 +404,10 @@ ${button}
  */
 export async function getCourseEmailTemplate(supabase, courseId, templateKey, templateId = null) {
 	let query = supabase
-		.from('courses_email_templates')
+		.from('email_templates')
 		.select('*')
-		.eq('course_id', courseId)
+		.eq('context', 'course')
+		.eq('context_id', courseId)
 		.eq('is_active', true);
 
 	// Fetch by ID or by key
@@ -512,6 +515,79 @@ export function renderTemplateForRecipient({ subjectTemplate, bodyTemplate, vari
 }
 
 /**
+ * Send branded email for any context (platform, dgr, course)
+ * Unified function for all email sending with consistent branding
+ * @param {Object} options Email options
+ * @param {string} options.to Recipient email
+ * @param {string} options.subject Rendered subject
+ * @param {string} options.bodyHtml Rendered body HTML
+ * @param {string} options.emailType Email type for logging (e.g., 'course_welcome', 'dgr_reminder')
+ * @param {Object} options.branding Branding configuration
+ * @param {string} options.branding.name Brand/organization name for header
+ * @param {string} [options.branding.logoUrl] Logo URL
+ * @param {string} [options.branding.accentDark] Dark accent color (default: #334642)
+ * @param {string} [options.branding.accentLight] Light accent color (default: #eae2d9)
+ * @param {string} [options.branding.accentDarkest] Darkest accent color (default: #1e2322)
+ * @param {string} [options.context] Context type ('platform', 'dgr', 'course')
+ * @param {string} [options.contextId] Context ID (e.g., course_id)
+ * @param {string} [options.templateId] Template UUID for logging
+ * @param {Object} [options.metadata] Additional metadata
+ * @param {string} options.resendApiKey Resend API key
+ * @param {Object} options.supabase Supabase client
+ * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
+ */
+export async function sendBrandedEmail({
+	to,
+	subject,
+	bodyHtml,
+	emailType,
+	branding = {},
+	context = 'platform',
+	contextId = null,
+	templateId = null,
+	metadata = {},
+	resendApiKey,
+	supabase
+}) {
+	// Set branding defaults
+	const brandName = branding.name || 'Archdiocesan Ministries';
+	const accentDark = branding.accentDark || '#334642';
+	const accentLight = branding.accentLight || '#eae2d9';
+	const accentDarkest = branding.accentDarkest || '#1e2322';
+	const logoUrl = branding.logoUrl || null;
+
+	// Wrap body in branded HTML
+	const html = createBrandedEmailHtml({
+		content: bodyHtml,
+		courseName: brandName, // reusing courseName param for backwards compat
+		accentDark,
+		accentLight,
+		accentDarkest,
+		logoUrl,
+		siteUrl: metadata.siteUrl || 'https://archdiocesanministries.org.au'
+	});
+
+	// Send email
+	const result = await sendEmail({
+		to,
+		subject,
+		html,
+		emailType,
+		referenceId: contextId,
+		metadata: {
+			...metadata,
+			context,
+			context_id: contextId,
+			template_id: templateId
+		},
+		resendApiKey,
+		supabase
+	});
+
+	return result;
+}
+
+/**
  * Send course email with template rendering and branding
  * @param {Object} options Email options
  * @param {string} options.to Recipient email
@@ -601,4 +677,82 @@ export async function sendCourseEmail({
 	}
 
 	return result;
+}
+
+// =====================================================
+// DGR EMAIL HELPERS
+// =====================================================
+
+/**
+ * Get DGR email template from database
+ * @param {Object} supabase Supabase client
+ * @param {string} templateKey Template key (e.g., 'welcome', 'reminder')
+ * @returns {Promise<Object|null>} Template data or null
+ */
+export async function getDgrEmailTemplate(supabase, templateKey) {
+	const { data, error } = await supabase
+		.from('email_templates')
+		.select('*')
+		.eq('context', 'dgr')
+		.eq('template_key', templateKey)
+		.eq('is_active', true)
+		.single();
+
+	if (error) {
+		console.error('Error fetching DGR email template:', error);
+		return null;
+	}
+
+	return data;
+}
+
+/**
+ * Default DGR branding configuration
+ */
+export const DGR_BRANDING = {
+	name: 'Daily Gospel Reflections',
+	accentDark: '#009199', // DGR teal
+	accentLight: '#e0f2f1',
+	accentDarkest: '#00695c',
+	logoUrl: null // Could be configured per project
+};
+
+/**
+ * Send DGR email with template rendering and branding
+ * @param {Object} options Email options
+ * @param {string} options.to Recipient email
+ * @param {string} options.subject Rendered subject
+ * @param {string} options.bodyHtml Rendered body HTML
+ * @param {string} options.emailType Email type for logging (e.g., 'dgr_welcome', 'dgr_reminder')
+ * @param {string} [options.contributorId] Contributor UUID
+ * @param {string} [options.templateId] Template UUID for logging
+ * @param {Object} [options.metadata] Additional metadata
+ * @param {string} options.resendApiKey Resend API key
+ * @param {Object} options.supabase Supabase client
+ * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
+ */
+export async function sendDgrEmail({
+	to,
+	subject,
+	bodyHtml,
+	emailType,
+	contributorId = null,
+	templateId = null,
+	metadata = {},
+	resendApiKey,
+	supabase
+}) {
+	return sendBrandedEmail({
+		to,
+		subject,
+		bodyHtml,
+		emailType,
+		branding: DGR_BRANDING,
+		context: 'dgr',
+		contextId: contributorId,
+		templateId,
+		metadata,
+		resendApiKey,
+		supabase
+	});
 }

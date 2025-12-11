@@ -15,8 +15,9 @@ export async function GET({ url, locals }) {
 		const templateKey = url.searchParams.get('key');
 
 		let query = supabaseAdmin
-			.from('dgr_email_templates')
+			.from('email_templates')
 			.select('*')
+			.eq('context', 'dgr')
 			.order('name');
 
 		if (templateKey) {
@@ -37,6 +38,7 @@ export async function GET({ url, locals }) {
 /**
  * PUT /api/dgr/templates
  * Update a DGR email template
+ * Compatible with EmailTemplateEditor (accepts template_id or id)
  */
 export async function PUT({ request, locals }) {
 	const { user } = await locals.safeGetSession();
@@ -45,9 +47,12 @@ export async function PUT({ request, locals }) {
 	}
 
 	try {
-		const { id, subject_template, body_template, is_active } = await request.json();
+		const body = await request.json();
+		// Support both 'template_id' (from EmailTemplateEditor) and 'id' (legacy)
+		const templateId = body.template_id || body.id;
+		const { name, subject_template, body_template, available_variables, is_active } = body;
 
-		if (!id) {
+		if (!templateId) {
 			return json({ error: 'Template ID is required' }, { status: 400 });
 		}
 
@@ -56,14 +61,17 @@ export async function PUT({ request, locals }) {
 			updated_by: user.id
 		};
 
+		if (name !== undefined) updateData.name = name;
 		if (subject_template !== undefined) updateData.subject_template = subject_template;
 		if (body_template !== undefined) updateData.body_template = body_template;
+		if (available_variables !== undefined) updateData.available_variables = available_variables;
 		if (is_active !== undefined) updateData.is_active = is_active;
 
 		const { data, error } = await supabaseAdmin
-			.from('dgr_email_templates')
+			.from('email_templates')
 			.update(updateData)
-			.eq('id', id)
+			.eq('id', templateId)
+			.eq('context', 'dgr')
 			.select()
 			.single();
 

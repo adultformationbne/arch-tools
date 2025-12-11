@@ -11,12 +11,21 @@
 		pageTitle = 'Page Guide',
 		buttonLabel = '', // Optional text label next to the help icon
 		videoUrl = '', // Optional Loom/video embed URL
-		videoTitle = 'Watch Tutorial' // Title for video section
+		videoTitle = 'Watch Tutorial', // Title for video section
+		open = $bindable(false), // External control for open state
+		showTriggerButton = true // Whether to show the floating trigger button
 	} = $props();
 
 	let showVideo = $state(false);
 
 	let isOpen = $state(false);
+
+	// Sync with external open prop
+	$effect(() => {
+		if (open !== isOpen) {
+			isOpen = open;
+		}
+	});
 	let currentSection = $state(0);
 	let collapsed = $state(false);
 
@@ -35,6 +44,7 @@
 
 	function toggleHelp() {
 		isOpen = !isOpen;
+		open = isOpen;
 		if (!isOpen) {
 			onClose();
 		}
@@ -42,6 +52,7 @@
 
 	function closeHelp() {
 		isOpen = false;
+		open = false;
 		onClose();
 
 		// Mark as seen
@@ -80,10 +91,12 @@
 </script>
 
 <!-- Trigger Button (always visible for sidebar/floating modes) -->
-{#if mode !== 'popup'}
+{#if mode !== 'popup' && showTriggerButton}
+	{@const bottomMatch = position.match(/bottom-(\d+)/)}
+	{@const bottomClass = bottomMatch ? `bottom-${bottomMatch[1]}` : 'bottom-4'}
 	<button
 		onclick={toggleHelp}
-		class="fixed {position === 'right' ? 'right-4' : 'left-4'} bottom-4 bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors z-30 {isOpen && mode === 'sidebar' ? 'hidden' : ''} {buttonLabel ? 'px-4 py-2.5 rounded-full flex items-center gap-2' : 'p-3 rounded-full'}"
+		class="fixed {position.includes('right') ? 'right-4' : 'left-4'} {bottomClass} bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors z-30 {isOpen && mode === 'sidebar' ? 'hidden' : ''} {buttonLabel ? 'px-4 py-2.5 rounded-full flex items-center gap-2' : 'p-3 rounded-full'}"
 		title="Show page help"
 	>
 		<HelpCircle class="w-5 h-5" />

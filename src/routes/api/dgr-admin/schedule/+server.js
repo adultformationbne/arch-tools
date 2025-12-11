@@ -131,7 +131,7 @@ export async function GET({ url, locals }) {
 			.select(
 				`
 				*,
-				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+				contributor:dgr_contributors(name, title, email, access_token, schedule_pattern)
 			`
 			)
 			.gte('date', startDate)
@@ -464,7 +464,7 @@ async function assignContributor({ date, contributorId }) {
 			.insert(scheduleEntry)
 			.select(`
 				*,
-				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+				contributor:dgr_contributors(name, title, email, access_token, schedule_pattern)
 			`)
 			.single();
 
@@ -647,7 +647,7 @@ async function createWithStatus({ date, contributorId, status }) {
 			.insert(scheduleEntry)
 			.select(`
 				*,
-				contributor:dgr_contributors(name, email, access_token, schedule_pattern)
+				contributor:dgr_contributors(name, title, email, access_token, schedule_pattern)
 			`)
 			.single();
 
@@ -899,7 +899,7 @@ async function sendToWordPress({ scheduleId }) {
 			.from('dgr_schedule')
 			.select(`
 				*,
-				contributor:dgr_contributors(name, email)
+				contributor:dgr_contributors(name, title, email)
 			`)
 			.eq('id', scheduleId)
 			.single();
@@ -944,7 +944,9 @@ async function sendToWordPress({ scheduleId }) {
 			title: schedule.reflection_title,
 			gospelQuote: schedule.gospel_quote,
 			reflectionText: schedule.reflection_content,
-			authorName: schedule.contributor?.name || 'Unknown',
+			authorName: schedule.contributor?.title
+				? `${schedule.contributor.title} ${schedule.contributor.name}`
+				: (schedule.contributor?.name || 'Unknown'),
 			gospelFullText,
 			gospelReference,
 			templateKey: 'default'

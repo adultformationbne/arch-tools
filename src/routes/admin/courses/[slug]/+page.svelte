@@ -597,6 +597,7 @@
 	course={data.course}
 	recipients={emailRecipients}
 	cohortId={selectedCohort?.id}
+	currentUserEmail={data.currentUserEmail}
 	onClose={() => showEmailModal = false}
 	onSent={() => selectedParticipants = new Set()}
 />

@@ -1,29 +1,12 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
-import { sendEmail, createEmailButton } from '$lib/utils/email-service.js';
-
-/**
- * Process a template string, replacing {{variable}} with values
- * @param {string} template - Template string with {{variables}}
- * @param {object} variables - Object with variable values
- * @returns {string} - Processed template
- */
-function processTemplate(template, variables) {
-	if (!template) return '';
-
-	return template.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
-		const trimmedKey = key.trim();
-
-		// Handle conditional blocks like {{#if variable}}...{{/if}}
-		// For now, just replace simple variables
-		if (trimmedKey.startsWith('#if ') || trimmedKey.startsWith('/if')) {
-			return match; // Keep conditional syntax for now (could expand later)
-		}
-
-		return variables[trimmedKey] !== undefined ? variables[trimmedKey] : match;
-	});
-}
+import {
+	getDgrEmailTemplate,
+	sendDgrEmail,
+	createEmailButton,
+	renderTemplate
+} from '$lib/utils/email-service.js';
 
 /**
  * POST /api/dgr/welcome
@@ -44,22 +27,16 @@ export async function POST({ request, locals }) {
 			return json({ error: 'contributorIds array is required' }, { status: 400 });
 		}
 
-		// Get welcome email template from database
-		const { data: template, error: templateError } = await supabaseAdmin
-			.from('dgr_email_templates')
-			.select('*')
-			.eq('template_key', 'welcome')
-			.eq('is_active', true)
-			.single();
-
-		if (templateError || !template) {
+		// Get welcome email template using unified helper
+		const template = await getDgrEmailTemplate(supabaseAdmin, 'welcome');
+		if (!template) {
 			throw new Error('Welcome email template not found or inactive');
 		}
 
 		// Get contributors
 		const { data: contributors, error: fetchError } = await supabaseAdmin
 			.from('dgr_contributors')
-			.select('id, name, email, access_token, welcome_email_sent_at')
+			.select('id, name, title, email, access_token, welcome_email_sent_at')
 			.in('id', contributorIds);
 
 		if (fetchError) {
@@ -101,42 +78,46 @@ export async function POST({ request, locals }) {
 				{ width: 280, height: 50, borderRadius: 8 }
 			);
 
-			// Parse name into first/last
+			// Parse name into first/last, with title support
 			const fullName = contributor.name || '';
 			const nameParts = fullName.trim().split(/\s+/);
 			const firstName = nameParts[0] || '';
 			const lastName = nameParts.slice(1).join(' ') || '';
+			const title = contributor.title || '';
+
+			// Build addressed name: "Fr Michael" or just "Michael" if no title
+			const addressedFirstName = title ? `${title} ${firstName}` : firstName;
 
 			// Build template variables
 			const variables = {
 				contributor_name: fullName,
-				contributor_first_name: firstName,
+				contributor_first_name: addressedFirstName,
 				contributor_last_name: lastName,
+				contributor_title: title,
 				contributor_email: contributor.email,
 				write_url: writeUrl,
 				write_url_button: buttonHtml
 			};
 
-			// Process template
-			const subject = processTemplate(template.subject_template, variables);
-			const htmlBody = processTemplate(template.body_template, variables);
+			// Render template with variables
+			const subject = renderTemplate(template.subject_template, variables);
+			const htmlBody = renderTemplate(template.body_template, variables);
 
 			try {
-				// Send email
+				// Send email with DGR branding using unified helper
 				const emailTo =
 					process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
 
-				const result = await sendEmail({
+				const result = await sendDgrEmail({
 					to: emailTo,
 					subject,
-					html: htmlBody,
+					bodyHtml: htmlBody,
 					emailType: 'dgr_welcome',
-					referenceId: contributor.id,
+					contributorId: contributor.id,
+					templateId: template.id,
 					metadata: {
-						contributorId: contributor.id,
 						contributorEmail: contributor.email,
-						writeUrl,
-						templateId: template.id
+						writeUrl
 					},
 					resendApiKey: RESEND_API_KEY,
 					supabase: supabaseAdmin

@@ -29,6 +29,7 @@
 		hideVariablePicker = false,
 		showFixedToolbar = false,
 		verticalToolbar = false,
+		accentColor = '#334642', // Button/accent color for this context
 		editor = $bindable(),
 		hasSelection = $bindable(false)
 	} = $props();
@@ -167,7 +168,13 @@
 		parseHTML() {
 			return [
 				{
-					tag: 'div[data-type="email-button"]'
+					tag: 'div[data-type="email-button"]',
+					getAttrs: (dom) => {
+						return {
+							text: dom.getAttribute('data-text') || 'Click Here',
+							href: dom.getAttribute('data-href') || 'https://example.com'
+						};
+					}
 				}
 			];
 		},
@@ -205,7 +212,8 @@
 				const button = document.createElement('a');
 				button.href = node.attrs.href;
 				button.className = 'email-button';
-				button.style.cssText = 'display: inline-block; padding: 12px 32px; background-color: #334642; color: #ffffff !important; text-decoration: none !important; border-radius: 6px; font-weight: 600; font-size: 16px; cursor: default; transition: background-color 0.2s; pointer-events: none;';
+				// Note: background-color comes from CSS using --button-accent custom property
+				button.style.cssText = 'display: inline-block; padding: 12px 32px; color: #ffffff !important; text-decoration: none !important; border-radius: 6px; font-weight: 600; font-size: 16px; cursor: default; transition: background-color 0.2s; pointer-events: none;';
 				button.contentEditable = 'false';
 				button.textContent = node.attrs.text;
 
@@ -281,6 +289,12 @@
 	});
 
 	onMount(() => {
+		// Cleanup any existing editor (helps with HMR)
+		if (editor) {
+			editor.destroy();
+			editor = null;
+		}
+
 		// Convert existing {{variable}} syntax to Variable nodes on load
 		const initialContent = processValueForEditor(value);
 		lastSetValue = value;
@@ -577,7 +591,7 @@
 />
 
 <!-- Container -->
-<div class={verticalToolbar ? 'flex' : ''}>
+<div class={verticalToolbar ? 'flex' : ''} style="--button-accent: {accentColor};">
 	<!-- Fixed Toolbar (optional - appears above or beside editor) -->
 	{#if showFixedToolbar}
 		<div class="{verticalToolbar ? 'flex flex-col items-center gap-1 p-2 bg-gray-50 border-r border-gray-200 w-14' : 'flex items-center gap-1 p-3 bg-gray-50 border-b border-gray-200 flex-wrap'}">
@@ -841,7 +855,7 @@
 	:global(.email-button) {
 		display: inline-block;
 		padding: 12px 32px;
-		background-color: #334642;
+		background-color: var(--button-accent, #334642);
 		color: #ffffff;
 		text-decoration: none;
 		border-radius: 6px;
@@ -852,7 +866,7 @@
 	}
 
 	:global(.email-button:hover) {
-		background-color: #1e2322;
+		filter: brightness(0.85);
 	}
 
 	/* Email Divider Styling */

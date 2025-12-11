@@ -3,7 +3,7 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
-	import { Calendar, Check, ChevronDown, Clock, FileText, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
+	import { Calendar, Check, ChevronDown, Clock, FileText, HelpCircle, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 
 	const { data } = $props();
@@ -31,10 +31,13 @@
 	let loadingReadings = $state(false);
 	let gospelText = $state(null);
 	let loadingGospelText = $state(false);
-	let showGospelText = $state(true);
+	let readingsExpanded = $state(false); // Collapsed by default on mobile
 
 	// Mobile date picker
 	let showDatePicker = $state(false);
+
+	// Help panel (for mobile header trigger)
+	let showHelp = $state(false);
 
 	// Track if we just submitted (to show "Next" prompt)
 	let justSubmitted = $state(false);
@@ -216,7 +219,7 @@
 		reflectionContent = dateEntry.reflection_content || '';
 		readings = null;
 		gospelText = null;
-		showGospelText = true;
+		readingsExpanded = false; // Collapse readings when switching dates
 		lastSaved = null;
 
 		await fetchReadings(dateEntry);
@@ -464,6 +467,11 @@
 		return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 	}
 
+	function formatDateCompact(dateStr) {
+		const date = new Date(dateStr + 'T00:00:00');
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
+
 	function formatDateLong(dateStr) {
 		const date = new Date(dateStr + 'T00:00:00');
 		return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -525,6 +533,16 @@
 		const s = getStatusKey(d);
 		return s === 'not_started' || s === 'draft';
 	}).length);
+
+	// Check if form has content for submit button visibility
+	let hasContent = $derived(
+		reflectionTitle.trim() !== '' &&
+		gospelQuote.trim() !== '' &&
+		reflectionContent.trim() !== ''
+	);
+
+	// Get liturgical info for header display
+	let liturgicalLabel = $derived(readings?.liturgical_day || selectedDate?.liturgical_date || '');
 </script>
 
 <svelte:head>
@@ -545,40 +563,86 @@
 	</div>
 {:else}
 	<div class="min-h-screen bg-gray-100">
-		<!-- Sticky Write Header - stacks below DGRNavigation when authenticated -->
-		<header class="sticky z-20 flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:px-4 md:py-2.5 {isAuthenticated ? 'top-14' : 'top-0'}">
-			<div class="flex items-center gap-2 md:gap-3">
+		<!-- Mobile Header - Date picker prominent -->
+		<header class="sticky z-20 border-b border-gray-200 bg-white {isAuthenticated ? 'top-14' : 'top-0'} md:hidden">
+			{#if selectedDate}
+				{@const badge = getStatusBadge(selectedDate)}
+				<div class="flex items-center justify-between px-3 py-2">
+					<!-- Date Picker Button - Prominent -->
+					<button
+						onclick={() => showDatePicker = true}
+						class="flex flex-1 items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-left"
+					>
+						<Calendar class="h-5 w-5 text-[#009199]" />
+						<span class="font-semibold text-gray-900">{formatDateCompact(selectedDate.date)}</span>
+						<span class="rounded-full px-2 py-0.5 text-xs {badge.class}">{badge.text}</span>
+						<span class="ml-auto flex items-center gap-1 text-xs text-[#009199]">
+							Change
+							<ChevronDown class="h-3.5 w-3.5" />
+						</span>
+					</button>
+
+					<!-- Save Status & Help -->
+					<div class="ml-2 flex items-center gap-2">
+						{#if saving}
+							<Clock class="h-4 w-4 animate-spin text-gray-400" />
+						{:else if lastSaved}
+							<Check class="h-4 w-4 text-green-500" />
+						{/if}
+						<button
+							onclick={() => showHelp = true}
+							class="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+							title="Help"
+						>
+							<HelpCircle class="h-5 w-5" />
+						</button>
+					</div>
+				</div>
+			{:else}
+				<div class="flex items-center gap-2 px-3 py-2">
+					<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto" />
+					<div>
+						<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
+						<p class="text-xs text-gray-500">{contributor.title ? `${contributor.title} ${contributor.name}` : contributor.name}</p>
+					</div>
+				</div>
+			{/if}
+		</header>
+
+		<!-- Desktop Header - Original style -->
+		<header class="sticky z-20 hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex {isAuthenticated ? 'top-14' : 'top-0'}">
+			<div class="flex items-center gap-3">
 				{#if !isAuthenticated}
-					<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto md:h-8" />
+					<img src="/archmin-logo.png" alt="Logo" class="h-8 w-auto" />
 				{/if}
 				<div>
 					<p class="text-sm font-semibold text-gray-900">{isAuthenticated ? 'Writing Reflection' : 'Daily Gospel Reflection'}</p>
-					<p class="text-xs text-gray-500">{contributor.name}</p>
+					<p class="text-xs text-gray-500">{contributor.title ? `${contributor.title} ${contributor.name}` : contributor.name}</p>
 				</div>
 			</div>
 
 			{#if selectedDate}
-				<div class="flex items-center gap-2 md:gap-3">
+				<div class="flex items-center gap-3">
 					<!-- Save Status -->
 					<div class="text-sm text-gray-500">
 						{#if saving}
 							<span class="flex items-center gap-1">
 								<Clock class="h-3.5 w-3.5 animate-spin" />
-								<span class="hidden sm:inline">Saving...</span>
+								Saving...
 							</span>
 						{:else if lastSaved}
 							<span class="flex items-center gap-1 text-green-600">
 								<Check class="h-3.5 w-3.5" />
-								<span class="hidden sm:inline">Saved</span>
+								Saved
 							</span>
 						{/if}
 					</div>
 
-					<!-- Reset button - subtle icon -->
+					<!-- Reset button -->
 					<button
 						onclick={() => showResetConfirm = true}
-						disabled={saving || (!reflectionTitle.trim() && !gospelQuote.trim() && !reflectionContent.trim())}
-						class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+						disabled={saving || !hasContent}
+						class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30"
 						title="Reset reflection"
 					>
 						<RotateCcw class="h-4 w-4" />
@@ -586,16 +650,16 @@
 
 					<button
 						onclick={() => saveReflection('save')}
-						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:block"
+						disabled={saving || !hasContent}
+						class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 					>
 						Save Draft
 					</button>
 
 					<button
 						onclick={() => saveReflection('submit')}
-						disabled={saving || !reflectionTitle.trim() || !gospelQuote.trim() || !reflectionContent.trim()}
-						class="inline-flex items-center gap-1.5 rounded-lg bg-[#009199] px-3 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50 md:gap-2 md:px-4"
+						disabled={saving || !hasContent}
+						class="inline-flex items-center gap-2 rounded-lg bg-[#009199] px-4 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50"
 					>
 						<Send class="h-4 w-4" />
 						Submit
@@ -670,51 +734,97 @@
 			</aside>
 
 			<!-- Main Content - Scrollable -->
-			<main class="flex-1 p-4 md:p-6">
+			<main class="flex-1 p-3 pb-24 md:p-6 md:pb-6">
 				{#if selectedDate}
-					{@const mobileBadge = getStatusBadge(selectedDate)}
-
-					<!-- Page Title - Tappable on mobile to open date picker -->
-					<div class="mx-auto mb-4 max-w-3xl">
-						<!-- Mobile: Tappable date selector -->
-						<button
-							onclick={() => showDatePicker = true}
-							class="flex w-full items-center justify-between text-left md:hidden"
-						>
-							<div>
-								<h1 class="text-xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
-								<p class="mt-0.5 text-sm text-gray-500">
-									{#if readings?.liturgical_day}
-										{readings.liturgical_day}
-									{:else}
-										Daily Gospel Reflection
-									{/if}
-								</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<span class="rounded-full px-2 py-0.5 text-xs {mobileBadge.class}">{mobileBadge.text}</span>
-								<ChevronDown class="h-5 w-5 text-gray-400" />
-							</div>
-						</button>
-
-						<!-- Desktop: Static title -->
-						<div class="hidden md:block">
-							<h1 class="text-2xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
-							<p class="mt-1 text-sm text-gray-500">
-								{#if readings?.liturgical_day}
-									{readings.liturgical_day}
-								{:else}
-									Daily Gospel Reflection
-								{/if}
-							</p>
-						</div>
+					<!-- Desktop: Page Title -->
+					<div class="mx-auto mb-4 max-w-3xl hidden md:block">
+						<h1 class="text-2xl font-bold text-gray-900">{formatDateLong(selectedDate.date)}</h1>
+						<p class="mt-1 text-sm text-gray-500">
+							{#if readings?.liturgical_day}
+								{readings.liturgical_day}
+							{:else}
+								Daily Gospel Reflection
+							{/if}
+						</p>
 					</div>
 
 					<!-- Document -->
 					<div class="mx-auto max-w-3xl rounded-lg bg-white shadow-sm">
-						<!-- Readings Reference -->
+						<!-- Readings Section - Collapsed on mobile, expanded on desktop -->
 						{#if readings}
-							<div class="border-b border-gray-100 px-6 py-4 sm:px-8">
+							<!-- Mobile: Collapsible readings -->
+							<div class="border-b border-gray-100 md:hidden">
+								<button
+									onclick={() => readingsExpanded = !readingsExpanded}
+									class="flex w-full items-center justify-between px-4 py-3"
+								>
+									<div class="flex items-center gap-2 min-w-0">
+										<FileText class="h-4 w-4 text-indigo-500 shrink-0" />
+										<span class="font-medium text-gray-900 truncate">
+											{readings.gospel_reading || 'Readings'}{#if readings.liturgical_day} · {readings.liturgical_day}{/if}
+										</span>
+									</div>
+									<ChevronDown class="h-4 w-4 text-gray-400 shrink-0 transition-transform {readingsExpanded ? 'rotate-180' : ''}" />
+								</button>
+
+								{#if readingsExpanded}
+									<div class="border-t border-gray-100 px-4 py-3 space-y-3">
+										<!-- All readings -->
+										<div class="space-y-1.5 text-sm">
+											{#if readings.first_reading}
+												<div class="flex gap-2">
+													<span class="text-gray-400 w-12 shrink-0">1st:</span>
+													<span class="text-gray-700">{readings.first_reading}</span>
+												</div>
+											{/if}
+											{#if readings.psalm}
+												<div class="flex gap-2">
+													<span class="text-gray-400 w-12 shrink-0">Psalm:</span>
+													<span class="text-gray-700">{readings.psalm}</span>
+												</div>
+											{/if}
+											{#if readings.second_reading}
+												<div class="flex gap-2">
+													<span class="text-gray-400 w-12 shrink-0">2nd:</span>
+													<span class="text-gray-700">{readings.second_reading}</span>
+												</div>
+											{/if}
+											{#if readings.gospel_reading}
+												<div class="flex gap-2">
+													<span class="text-gray-400 w-12 shrink-0">Gospel:</span>
+													<span class="text-gray-700 font-medium">{readings.gospel_reading}</span>
+												</div>
+											{/if}
+										</div>
+
+										<!-- Gospel text -->
+										{#if gospelText}
+											<div class="rounded-lg bg-indigo-50 p-3">
+												<div class="prose prose-sm max-w-none text-gray-700">
+													{@html gospelText}
+												</div>
+											</div>
+										{:else if loadingGospelText}
+											<div class="flex items-center gap-2 text-sm text-gray-500">
+												<Clock class="h-4 w-4 animate-spin" />
+												Loading Gospel text...
+											</div>
+										{/if}
+
+										<!-- Edit button -->
+										<button
+											onclick={openEditReadings}
+											class="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600"
+										>
+											<Pencil class="h-3 w-3" />
+											Edit readings
+										</button>
+									</div>
+								{/if}
+							</div>
+
+							<!-- Desktop: Always expanded readings -->
+							<div class="hidden md:block border-b border-gray-100 px-8 py-4">
 								<!-- Header with edit button -->
 								<div class="flex items-center justify-between mb-3">
 									<div class="flex items-center gap-2 text-sm text-gray-600">
@@ -731,7 +841,7 @@
 								</div>
 
 								<!-- All readings list -->
-								<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+								<div class="grid grid-cols-2 gap-2 text-sm">
 									{#if readings.first_reading}
 										<div class="flex items-start gap-2">
 											<span class="text-gray-400 shrink-0">1st:</span>
@@ -758,27 +868,18 @@
 									{/if}
 								</div>
 
-								<!-- Gospel text toggle -->
-								{#if readings.gospel_reading}
-									<button
-										onclick={() => showGospelText = !showGospelText}
-										class="mt-3 text-xs text-indigo-600 hover:text-indigo-700"
-									>
-										{showGospelText ? 'Hide' : 'Show'} Gospel Text
-									</button>
-
-									{#if showGospelText && gospelText}
-										<div class="mt-3 rounded-lg bg-indigo-50 p-4">
-											<div class="prose prose-sm max-w-none text-gray-700">
-												{@html gospelText}
-											</div>
+								<!-- Gospel text (desktop) -->
+								{#if gospelText}
+									<div class="mt-3 rounded-lg bg-indigo-50 p-4">
+										<div class="prose prose-sm max-w-none text-gray-700">
+											{@html gospelText}
 										</div>
-									{:else if showGospelText && loadingGospelText}
-										<div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
-											<Clock class="h-4 w-4 animate-spin" />
-											Loading Gospel text...
-										</div>
-									{/if}
+									</div>
+								{:else if loadingGospelText}
+									<div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
+										<Clock class="h-4 w-4 animate-spin" />
+										Loading Gospel text...
+									</div>
 								{/if}
 							</div>
 						{:else if loadingReadings}
@@ -793,34 +894,41 @@
 						<!-- Document-style Editor -->
 						<div class="px-6 py-6 sm:px-8">
 							<!-- Title -->
-							<input
-								type="text"
-								bind:value={reflectionTitle}
-								oninput={handleContentChange}
-								placeholder="Reflection Title"
-								class="mb-4 w-full border-0 bg-transparent text-2xl font-bold text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-3xl"
-							/>
+							<div class="mb-4">
+								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Title</span>
+								<input
+									type="text"
+									bind:value={reflectionTitle}
+									oninput={handleContentChange}
+									placeholder="Enter a compelling title..."
+									class="w-full border-0 bg-transparent text-2xl font-bold text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-3xl"
+								/>
+							</div>
 
 							<!-- Gospel Quote -->
 							<div class="mb-6">
+								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Gospel Quote</span>
 								<input
 									type="text"
 									bind:value={gospelQuote}
 									oninput={handleContentChange}
-									placeholder={'Gospel quote with reference, e.g., "Love one another" (John 15:12)'}
+									placeholder={'"Quote from the Gospel" (Book 1:23)'}
 									class="w-full border-0 bg-transparent text-base italic text-gray-600 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-lg"
 								/>
 							</div>
 
 							<!-- Main Content -->
-							<textarea
-								bind:this={textareaEl}
-								bind:value={reflectionContent}
-								oninput={() => { handleContentChange(); autoResize(); }}
-								placeholder="Begin writing your reflection..."
-								rows="12"
-								class="w-full resize-none overflow-hidden border-0 bg-transparent text-base leading-relaxed text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-lg"
-							></textarea>
+							<div>
+								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Reflection</span>
+								<textarea
+									bind:this={textareaEl}
+									bind:value={reflectionContent}
+									oninput={() => { handleContentChange(); autoResize(); }}
+									placeholder="Begin writing your reflection..."
+									rows="12"
+									class="w-full resize-none overflow-hidden border-0 bg-transparent text-base leading-relaxed text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-lg"
+								></textarea>
+							</div>
 
 							<!-- Word Count -->
 							<div class="mt-4 border-t border-gray-100 pt-4 text-right text-sm text-gray-400">
@@ -867,14 +975,60 @@
 				{/if}
 			</main>
 		</div>
+
+		<!-- Mobile Sticky Submit Button -->
+		{#if selectedDate}
+			<div class="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 bg-white p-3 md:hidden">
+				{#if justSubmitted && getNextPendingDate()}
+					<!-- Success state with Next button -->
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="font-medium text-green-700">Submitted!</p>
+							<p class="text-xs text-green-600">{pendingCount - 1} more to go</p>
+						</div>
+						<button
+							onclick={goToNext}
+							class="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+						>
+							Next Reflection →
+						</button>
+					</div>
+				{:else if justSubmitted && !getNextPendingDate()}
+					<!-- All done state -->
+					<div class="text-center py-1">
+						<p class="font-medium text-green-700">All done! You've completed all your reflections.</p>
+					</div>
+				{:else}
+					<!-- Normal submit button -->
+					<div class="flex items-center gap-3">
+						<button
+							onclick={() => showResetConfirm = true}
+							disabled={saving || !hasContent}
+							class="rounded-lg p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30"
+							title="Reset reflection"
+						>
+							<RotateCcw class="h-5 w-5" />
+						</button>
+						<button
+							onclick={() => saveReflection('submit')}
+							disabled={saving || !hasContent}
+							class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#009199] py-3 text-base font-medium text-white hover:bg-[#007580] disabled:opacity-50"
+						>
+							<Send class="h-5 w-5" />
+							Submit for Review
+						</button>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 {/if}
 
 <!-- Mobile Date Picker Modal -->
 {#if showDatePicker}
-	<div class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 md:hidden" onclick={() => showDatePicker = false}>
+	<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 md:hidden" onclick={() => showDatePicker = false}>
 		<div
-			class="max-h-[80vh] w-full overflow-hidden rounded-t-2xl bg-white"
+			class="max-h-[80vh] w-full overflow-hidden rounded-b-2xl bg-white"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
@@ -951,15 +1105,29 @@
 
 <!-- Help System -->
 {#if contributor}
-	<ContextualHelp
-		{helpContent}
-		mode="floating"
-		position="bottom-4 right-4"
-		pageTitle="Writing Guide"
-		buttonLabel="Help"
-		videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
-		videoTitle="Watch Tutorial"
-	/>
+	<div class="hidden md:block">
+		<ContextualHelp
+			{helpContent}
+			mode="floating"
+			position="bottom-16 right-4"
+			pageTitle="Writing Guide"
+			buttonLabel="Help"
+			videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
+			videoTitle="Watch Tutorial"
+		/>
+	</div>
+	<div class="md:hidden">
+		<ContextualHelp
+			{helpContent}
+			mode="floating"
+			position="bottom-20 right-4"
+			pageTitle="Writing Guide"
+			bind:open={showHelp}
+			showTriggerButton={false}
+			videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
+			videoTitle="Watch Tutorial"
+		/>
+	</div>
 {/if}
 
 <!-- Onboarding Modal for First-Time Users -->

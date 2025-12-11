@@ -17,6 +17,12 @@
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
 
+	// Helper to format contributor name with title
+	function formatContributorName(contributor) {
+		if (!contributor) return '';
+		return contributor.title ? `${contributor.title} ${contributor.name}` : (contributor.name || '');
+	}
+
 	let schedule = $state([]);
 	let contributors = $state([]);
 	let assignmentRules = $state([]);
@@ -74,7 +80,6 @@
 		notes: ''
 	});
 
-	const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 	const statusColors = {
 		pending: 'bg-yellow-100 text-yellow-800',
 		submitted: 'bg-blue-100 text-blue-800',
@@ -128,6 +133,7 @@
 						contributor_id: cal.pattern_contributor.id,
 						contributor: {
 							name: cal.pattern_contributor.name,
+							title: cal.pattern_contributor.title,
 							email: cal.pattern_contributor.email,
 							access_token: cal.pattern_contributor.access_token
 						},
@@ -957,7 +963,7 @@
 				title: entry.reflection_title || '',
 				gospelQuote: entry.gospel_quote || '',
 				reflectionText: entry.reflection_content || '',
-				authorName: entry.contributor?.name || ''
+				authorName: formatContributorName(entry.contributor)
 			};
 
 			// Fetch gospel text by reference if available
@@ -1082,10 +1088,10 @@
 		const reminderCount = entry.reminder_history?.length || 0;
 
 		const confirmMessage = entry.from_pattern
-			? `Send reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.\n\nNote: This will create a schedule entry for this date.`
+			? `Send reminder email to ${formatContributorName(contributor)} (${contributor?.email})?\n\nReflection due ${daysText}.\n\nNote: This will create a schedule entry for this date.`
 			: reminderCount > 0
-			? `Send another reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.\n${reminderCount} reminder${reminderCount > 1 ? 's' : ''} already sent.`
-			: `Send reminder email to ${contributor?.name} (${contributor?.email})?\n\nReflection due ${daysText}.`;
+			? `Send another reminder email to ${formatContributorName(contributor)} (${contributor?.email})?\n\nReflection due ${daysText}.\n${reminderCount} reminder${reminderCount > 1 ? 's' : ''} already sent.`
+			: `Send reminder email to ${formatContributorName(contributor)} (${contributor?.email})?\n\nReflection due ${daysText}.`;
 
 		sendReminderConfirmModal = { open: true, entry, message: confirmMessage };
 	}
@@ -1100,7 +1106,7 @@
 
 		const loadingId = toast.loading({
 			title: 'Sending reminder...',
-			message: `Emailing ${contributor?.name}`
+			message: `Emailing ${formatContributorName(contributor)}`
 		});
 
 		try {
@@ -1121,8 +1127,8 @@
 			const message = entry.from_pattern
 				? `Reminder sent and schedule entry created!`
 				: data.reminderCount > 1
-				? `Reminder ${data.reminderCount} sent to ${contributor?.name}`
-				: `Reminder sent to ${contributor?.name}`;
+				? `Reminder ${data.reminderCount} sent to ${formatContributorName(contributor)}`
+				: `Reminder sent to ${formatContributorName(contributor)}`;
 
 			toast.updateToast(loadingId, {
 				title: 'Reminder sent!',

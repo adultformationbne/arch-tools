@@ -4,21 +4,60 @@
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import EmailBodyEditor from './EmailBodyEditor.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
+	import TestEmailPanel from './TestEmailPanel.svelte';
 
+	/**
+	 * Unified Email Template Editor
+	 * Works with any context (course, dgr, platform)
+	 *
+	 * @prop {string} context - Template context: 'course', 'dgr', or 'platform'
+	 * @prop {string} apiBaseUrl - Base URL for API calls (e.g., '/api/courses/my-course/emails')
+	 * @prop {Array} variables - Available template variables
+	 * @prop {Object} branding - Brand settings { name, logoUrl, accentDark, footerText }
+	 * @prop {Object} contextData - Additional context data for variable building (course, cohorts, etc.)
+	 * @prop {string} currentUserEmail - Default email for test sends
+	 */
 	let {
 		template = null,
-		courseId,
-		courseSlug,
-		courseName = 'Course Name',
-		courseLogoUrl = null,
-		courseColors = {
+		// Context configuration
+		context = 'course',
+		contextId = null,
+		apiBaseUrl = null,
+		// Branding
+		branding = {
+			name: 'Email',
+			logoUrl: null,
 			accentDark: '#334642',
-			accentLight: '#eae2d9',
-			accentDarkest: '#1e2322'
+			footerText: "You're receiving this email from our platform."
 		},
+		// Variables available for this template
+		variables = [],
+		// Context data for variable building (course, cohorts, etc.)
+		contextData = {},
+		// Current user email for test sends
+		currentUserEmail = '',
+		// Event handlers
 		onSave = () => {},
-		onCancel = () => {}
+		onCancel = () => {},
+		// Backwards compatibility with course-specific props
+		courseId = null,
+		courseSlug = null,
+		courseName = null,
+		courseLogoUrl = null,
+		courseColors = null
 	} = $props();
+
+	// Backwards compatibility: derive settings from course props if provided
+	const effectiveApiBaseUrl = $derived(
+		apiBaseUrl || (courseSlug ? `/api/courses/${courseSlug}/emails` : null)
+	);
+	const effectiveBranding = $derived({
+		name: branding.name || courseName || 'Email',
+		logoUrl: branding.logoUrl || courseLogoUrl || null,
+		accentDark: branding.accentDark || courseColors?.accentDark || '#334642',
+		footerText: branding.footerText || "You're receiving this because you're enrolled in this course."
+	});
+	const effectiveContextId = $derived(contextId || courseId);
 
 	// Generate template_key from name (lowercase, underscores, no special chars)
 	function generateTemplateKey(name) {
@@ -42,9 +81,7 @@
 
 	let isSubmitting = $state(false);
 	let hasUnsavedChanges = $state(false);
-	let showTestEmailModal = $state(false);
-	let testEmail = $state('');
-	let isSendingTest = $state(false);
+	let showTestEmailPanel = $state(false);
 	let showRestoreConfirm = $state(false);
 	let isRestoring = $state(false);
 
@@ -60,8 +97,8 @@
 		hasUnsavedChanges = false;
 	});
 
-	// Available variables
-	const availableVariables = [
+	// Default variables for each context type
+	const DEFAULT_COURSE_VARIABLES = [
 		{ name: 'firstName', description: 'Student first name' },
 		{ name: 'lastName', description: 'Student last name' },
 		{ name: 'fullName', description: 'Student full name' },
@@ -82,7 +119,41 @@
 		{ name: 'supportEmail', description: 'Support contact email' }
 	];
 
+	const DEFAULT_DGR_VARIABLES = [
+		{ name: 'contributor_name', description: 'Contributor full name' },
+		{ name: 'contributor_first_name', description: 'Contributor first name' },
+		{ name: 'contributor_email', description: 'Contributor email address' },
+		{ name: 'write_url', description: 'Writing portal URL' },
+		{ name: 'write_url_button', description: 'Writing portal button HTML' },
+		{ name: 'due_date', description: 'Submission due date' },
+		{ name: 'due_date_text', description: 'Due date as text (e.g., "tomorrow")' }
+	];
+
+	const DEFAULT_PLATFORM_VARIABLES = [
+		{ name: 'userName', description: 'User full name' },
+		{ name: 'userEmail', description: 'User email address' },
+		{ name: 'platformName', description: 'Platform name' },
+		{ name: 'supportEmail', description: 'Support contact email' }
+	];
+
+	// Use provided variables or defaults based on context
+	const availableVariables = $derived(() => {
+		if (variables.length > 0) return variables;
+		switch (context) {
+			case 'dgr':
+				return DEFAULT_DGR_VARIABLES;
+			case 'platform':
+				return DEFAULT_PLATFORM_VARIABLES;
+			default:
+				return DEFAULT_COURSE_VARIABLES;
+		}
+	});
+
 	async function handleSubmit() {
+		if (!effectiveApiBaseUrl) {
+			toastError('API endpoint not configured');
+			return;
+		}
 		if (!formData.name.trim()) {
 			toastError('Template name is required');
 			return;
@@ -111,19 +182,20 @@
 			const payload = {
 				...formData,
 				template_key,
-				course_id: courseId,
+				context,
+				context_id: effectiveContextId,
 				category: template?.category || 'custom',
 				available_variables: usedVariables
 			};
 
 			if (template) {
 				await apiPut(
-					`/api/courses/${courseSlug}/emails`,
+					effectiveApiBaseUrl,
 					{ template_id: template.id, ...payload },
 					{ successMessage: 'Template saved' }
 				);
 			} else {
-				await apiPost(`/api/courses/${courseSlug}/emails`, payload, {
+				await apiPost(effectiveApiBaseUrl, payload, {
 					successMessage: 'Template created'
 				});
 			}
@@ -142,51 +214,14 @@
 		hasUnsavedChanges = true;
 	}
 
-	async function handleSendTestEmail() {
-		if (!testEmail.trim()) {
-			toastError('Please enter an email address');
-			return;
-		}
-
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(testEmail.trim())) {
-			toastError('Please enter a valid email address');
-			return;
-		}
-
-		isSendingTest = true;
-
-		try {
-			await apiPost(
-				`/api/courses/${courseSlug}/emails/test`,
-				{
-					to: testEmail.trim(),
-					subject: formData.subject_template,
-					body: formData.body_template,
-					course_name: courseName,
-					logo_url: courseLogoUrl,
-					colors: courseColors
-				},
-				{ successMessage: `Test email sent to ${testEmail}` }
-			);
-
-			showTestEmailModal = false;
-			testEmail = '';
-		} catch (error) {
-			console.error('Error sending test email:', error);
-		} finally {
-			isSendingTest = false;
-		}
-	}
-
 	async function handleRestoreToDefault() {
-		if (!template?.template_key) return;
+		if (!template?.template_key || !effectiveApiBaseUrl) return;
 
 		isRestoring = true;
 
 		try {
 			const result = await apiPatch(
-				`/api/courses/${courseSlug}/emails`,
+				effectiveApiBaseUrl,
 				{
 					action: 'restore_default',
 					template_key: template.template_key
@@ -213,7 +248,7 @@
 	}
 </script>
 
-<div class="max-w-4xl mx-auto space-y-6">
+<div class="max-w-4xl mx-auto space-y-6 overflow-visible">
 	<!-- Template name (only for new templates) -->
 	{#if !template}
 		<div>
@@ -247,10 +282,11 @@
 			value={formData.body_template}
 			onchange={handleBodyChange}
 			placeholder="Click here to start writing..."
-			{courseName}
-			logoUrl={courseLogoUrl}
-			accentDark={courseColors.accentDark}
-			{availableVariables}
+			brandName={effectiveBranding.name}
+			logoUrl={effectiveBranding.logoUrl}
+			accentDark={effectiveBranding.accentDark}
+			footerText={effectiveBranding.footerText}
+			availableVariables={availableVariables()}
 		/>
 	</div>
 
@@ -277,7 +313,7 @@
 			{/if}
 			<button
 				type="button"
-				onclick={() => (showTestEmailModal = true)}
+				onclick={() => (showTestEmailPanel = true)}
 				class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-colors bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50"
 			>
 				<Send size={16} />
@@ -297,64 +333,21 @@
 	</div>
 </div>
 
-<!-- Test Email Modal -->
-{#if showTestEmailModal}
-	<div
-		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) showTestEmailModal = false;
+<!-- Test Email Panel (unified component with real recipient preview) -->
+{#if showTestEmailPanel}
+	<TestEmailPanel
+		{context}
+		contextId={effectiveContextId || courseSlug}
+		{contextData}
+		template={{
+			subject_template: formData.subject_template,
+			body_template: formData.body_template
 		}}
-		role="dialog"
-		aria-modal="true"
-	>
-		<div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" onclick={(e) => e.stopPropagation()}>
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-bold text-gray-900">Send Test Email</h2>
-				<p class="text-sm text-gray-600 mt-1">
-					Enter an email address to receive a test version of this template
-				</p>
-			</div>
-
-			<div class="p-6">
-				<label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-				<input
-					type="email"
-					bind:value={testEmail}
-					placeholder="recipient@example.com"
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-					onkeydown={(e) => {
-						if (e.key === 'Enter') handleSendTestEmail();
-					}}
-				/>
-				<p class="text-xs text-gray-500 mt-2">
-					Variables will be replaced with placeholder values
-				</p>
-			</div>
-
-			<div class="p-6 bg-gray-50 rounded-b-xl flex items-center justify-end gap-3">
-				<button
-					type="button"
-					onclick={() => {
-						showTestEmailModal = false;
-						testEmail = '';
-					}}
-					class="px-5 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-				>
-					Cancel
-				</button>
-				<button
-					type="button"
-					onclick={handleSendTestEmail}
-					disabled={isSendingTest}
-					class="flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-					style="background-color: var(--course-accent-dark);"
-				>
-					<Send size={16} />
-					{isSendingTest ? 'Sending...' : 'Send Test'}
-				</button>
-			</div>
-		</div>
-	</div>
+		branding={effectiveBranding}
+		{currentUserEmail}
+		testApiUrl="/api/emails/test"
+		onClose={() => (showTestEmailPanel = false)}
+	/>
 {/if}
 
 <!-- Restore to Default Confirmation Modal -->

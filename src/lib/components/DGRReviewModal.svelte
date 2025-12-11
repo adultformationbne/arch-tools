@@ -133,7 +133,7 @@
 						{#if reflection.contributor}
 							<span class="flex items-center gap-1">
 								<User class="h-4 w-4" />
-								{reflection.contributor.name}
+								{#if reflection.contributor.title}{reflection.contributor.title} {/if}{reflection.contributor.name}
 							</span>
 						{/if}
 					</div>

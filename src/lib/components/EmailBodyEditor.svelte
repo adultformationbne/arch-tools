@@ -1,7 +1,9 @@
 <script>
-	import { Zap, SquareMousePointer } from 'lucide-svelte';
+	import { onDestroy } from 'svelte';
+	import { Zap, SquareMousePointer, Braces } from 'lucide-svelte';
 	import TipTapEmailEditor from './TipTapEmailEditor.svelte';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
+	import { createDropdown } from '$lib/utils/dropdown.js';
 
 	/**
 	 * Shared email body editor with sidebar toolbar, branded preview frame, and variable picker.
@@ -11,16 +13,41 @@
 		value = '',
 		onchange = () => {},
 		placeholder = 'Write your email message...',
-		courseName = 'Course Name',
+		brandName = 'Course Name',
 		logoUrl = null,
 		accentDark = '#334642',
-		availableVariables = []
+		footerText = "You're receiving this because you're enrolled in this course.",
+		availableVariables = [],
+		// Backwards compatibility
+		courseName = null
 	} = $props();
+
+	// Use courseName if provided (backwards compatibility)
+	const displayName = $derived(courseName || brandName);
 
 	// Editor references (exposed for parent components)
 	let editorComponent = $state(null);
 	let tiptapEditor = $state(null);
 	let hasTextSelection = $state(false);
+
+	// Variable picker dropdown
+	let variableButtonEl = $state(null);
+	let variableMenuEl = $state(null);
+	let dropdown = $state(null);
+
+	// Initialize dropdown when elements are ready
+	$effect(() => {
+		if (variableButtonEl && variableMenuEl && !dropdown) {
+			dropdown = createDropdown(variableButtonEl, variableMenuEl, {
+				placement: 'right-start',
+				offset: 8
+			});
+		}
+	});
+
+	onDestroy(() => {
+		if (dropdown) dropdown.destroy();
+	});
 
 	// Expose editor references
 	export function getEditor() {
@@ -33,6 +60,7 @@
 
 	function handleInsertVariable(variableName) {
 		if (!tiptapEditor) return;
+		if (dropdown) dropdown.hide();
 		tiptapEditor
 			.chain()
 			.focus()
@@ -144,13 +172,50 @@
 			>
 				<SquareMousePointer size={18} />
 			</button>
+			<div class="w-full h-px bg-gray-300 my-1"></div>
+			<!-- Variable Picker Dropdown -->
+			<button
+				bind:this={variableButtonEl}
+				type="button"
+				onclick={() => dropdown?.toggle()}
+				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
+				title="Insert Variable"
+			>
+				<Braces size={18} />
+			</button>
+		</div>
+
+		<!-- Variable Picker Menu (hidden, positioned by dropdown.js) -->
+		<div
+			bind:this={variableMenuEl}
+			class="w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-80 overflow-y-auto hidden"
+		>
+			<div class="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+				Insert Variable
+			</div>
+			{#each availableVariables as variable}
+				<button
+					type="button"
+					onclick={() => handleInsertVariable(variable.name)}
+					class="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+				>
+					{#if variable.dynamic}
+						<Zap size={12} class="text-amber-500 flex-shrink-0" />
+					{/if}
+					<div class="flex-1 min-w-0">
+						<div class="text-sm font-medium text-gray-900 font-mono">{`{{${variable.name}}}`}</div>
+						<div class="text-xs text-gray-500 truncate">{variable.description}</div>
+					</div>
+				</button>
+			{/each}
 		</div>
 
 		<!-- Email Preview Frame with Editor -->
 		<EmailPreviewFrame
-			{courseName}
-			logoUrl={logoUrl}
-			accentDark={accentDark}
+			brandName={displayName}
+			{logoUrl}
+			{accentDark}
+			{footerText}
 			withContainer={false}
 			headerPadding="py-12 px-8"
 		>
@@ -162,6 +227,7 @@
 				{onchange}
 				{placeholder}
 				{availableVariables}
+				accentColor={accentDark}
 				hideVariablePicker={true}
 				showFixedToolbar={false}
 				verticalToolbar={false}

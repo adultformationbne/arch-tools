@@ -5,6 +5,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
 	// Layout protects all nested admin routes
+	const { user } = await event.locals.safeGetSession();
 
 	try {
 		// Get layout data (course, modules, cohorts already loaded)
@@ -18,7 +19,8 @@ export const load: PageServerLoad = async (event) => {
 			return {
 				course: courseInfo,
 				users: [],
-				hubs: []
+				hubs: [],
+				currentUserEmail: user?.email || ''
 			};
 		}
 
@@ -68,7 +70,8 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			course: courseInfo,
 			users: enrollments || [],
-			hubs: hubs || []
+			hubs: hubs || [],
+			currentUserEmail: user?.email || ''
 		};
 
 	} catch (err) {

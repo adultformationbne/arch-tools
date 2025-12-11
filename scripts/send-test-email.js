@@ -138,9 +138,10 @@ async function main() {
 
 	// Get a template (session_materials_ready)
 	const { data: template, error: templateError } = await supabase
-		.from('courses_email_templates')
+		.from('email_templates')
 		.select('*')
-		.eq('course_id', course.id)
+		.eq('context', 'course')
+		.eq('context_id', course.id)
 		.eq('template_key', 'session_materials_ready')
 		.single();
 
