@@ -2,6 +2,7 @@
 	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen, Monitor } from 'lucide-svelte';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { createDropdown } from '$lib/utils/dropdown.js';
+	import { formatContributorName, formatReading } from '$lib/utils/dgr-helpers';
 
 	let {
 		schedule = [],
@@ -85,10 +86,10 @@
 	function formatReadingsTitle(readings) {
 		if (!readings) return '';
 		const parts = [];
-		if (readings.first_reading) parts.push(`1st: ${readings.first_reading}`);
-		if (readings.psalm) parts.push(`Ps: ${readings.psalm}`);
-		if (readings.second_reading) parts.push(`2nd: ${readings.second_reading}`);
-		if (readings.gospel) parts.push(`Gospel: ${readings.gospel}`);
+		if (readings.first_reading) parts.push(`1st: ${formatReading(readings.first_reading)}`);
+		if (readings.psalm) parts.push(`Ps: ${formatReading(readings.psalm)}`);
+		if (readings.second_reading) parts.push(`2nd: ${formatReading(readings.second_reading)}`);
+		if (readings.gospel) parts.push(`Gospel: ${formatReading(readings.gospel)}`);
 		return parts.join('\n');
 	}
 
@@ -215,7 +216,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{#if contributor.title}{contributor.title} {/if}{contributor.name}
+												{formatContributorName(contributor)}
 											</option>
 										{/each}
 									</select>
@@ -229,7 +230,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{#if contributor.title}{contributor.title} {/if}{contributor.name}
+												{formatContributorName(contributor)}
 											</option>
 										{/each}
 									</select>
@@ -243,7 +244,7 @@
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
 											<option value={contributor.id}>
-												{#if contributor.title}{contributor.title} {/if}{contributor.name}
+												{formatContributorName(contributor)}
 											</option>
 										{/each}
 									</select>
@@ -480,16 +481,16 @@
 	>
 		<div class="space-y-1.5">
 			{#if readingsPopover.readings.first_reading}
-				<div><span class="font-semibold text-gray-500">1st:</span> {readingsPopover.readings.first_reading}</div>
+				<div><span class="font-semibold text-gray-500">1st:</span> {formatReading(readingsPopover.readings.first_reading)}</div>
 			{/if}
 			{#if readingsPopover.readings.psalm}
-				<div><span class="font-semibold text-gray-500">Ps:</span> {readingsPopover.readings.psalm}</div>
+				<div><span class="font-semibold text-gray-500">Ps:</span> {formatReading(readingsPopover.readings.psalm)}</div>
 			{/if}
 			{#if readingsPopover.readings.second_reading}
-				<div><span class="font-semibold text-gray-500">2nd:</span> {readingsPopover.readings.second_reading}</div>
+				<div><span class="font-semibold text-gray-500">2nd:</span> {formatReading(readingsPopover.readings.second_reading)}</div>
 			{/if}
 			{#if readingsPopover.readings.gospel}
-				<div><span class="font-semibold text-gray-500">Gospel:</span> {readingsPopover.readings.gospel}</div>
+				<div><span class="font-semibold text-gray-500">Gospel:</span> {formatReading(readingsPopover.readings.gospel)}</div>
 			{/if}
 		</div>
 	</div>

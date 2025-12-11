@@ -5,6 +5,7 @@
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { Calendar, Check, ChevronDown, Clock, FileText, HelpCircle, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
+	import { formatReading, formatContributorName } from '$lib/utils/dgr-helpers';
 
 	const { data } = $props();
 	const token = data.token;
@@ -761,7 +762,7 @@
 									<div class="flex items-center gap-2 min-w-0">
 										<FileText class="h-4 w-4 text-indigo-500 shrink-0" />
 										<span class="font-medium text-gray-900 truncate">
-											{readings.gospel_reading || 'Readings'}{#if readings.liturgical_day} · {readings.liturgical_day}{/if}
+											{formatReading(readings.gospel_reading) || 'Readings'}{#if readings.liturgical_day} · {readings.liturgical_day}{/if}
 										</span>
 									</div>
 									<ChevronDown class="h-4 w-4 text-gray-400 shrink-0 transition-transform {readingsExpanded ? 'rotate-180' : ''}" />
@@ -774,25 +775,25 @@
 											{#if readings.first_reading}
 												<div class="flex gap-2">
 													<span class="text-gray-400 w-12 shrink-0">1st:</span>
-													<span class="text-gray-700">{readings.first_reading}</span>
+													<span class="text-gray-700">{formatReading(readings.first_reading)}</span>
 												</div>
 											{/if}
 											{#if readings.psalm}
 												<div class="flex gap-2">
 													<span class="text-gray-400 w-12 shrink-0">Psalm:</span>
-													<span class="text-gray-700">{readings.psalm}</span>
+													<span class="text-gray-700">{formatReading(readings.psalm)}</span>
 												</div>
 											{/if}
 											{#if readings.second_reading}
 												<div class="flex gap-2">
 													<span class="text-gray-400 w-12 shrink-0">2nd:</span>
-													<span class="text-gray-700">{readings.second_reading}</span>
+													<span class="text-gray-700">{formatReading(readings.second_reading)}</span>
 												</div>
 											{/if}
 											{#if readings.gospel_reading}
 												<div class="flex gap-2">
 													<span class="text-gray-400 w-12 shrink-0">Gospel:</span>
-													<span class="text-gray-700 font-medium">{readings.gospel_reading}</span>
+													<span class="text-gray-700 font-medium">{formatReading(readings.gospel_reading)}</span>
 												</div>
 											{/if}
 										</div>
@@ -845,25 +846,25 @@
 									{#if readings.first_reading}
 										<div class="flex items-start gap-2">
 											<span class="text-gray-400 shrink-0">1st:</span>
-											<span class="text-gray-700">{readings.first_reading}</span>
+											<span class="text-gray-700">{formatReading(readings.first_reading)}</span>
 										</div>
 									{/if}
 									{#if readings.psalm}
 										<div class="flex items-start gap-2">
 											<span class="text-gray-400 shrink-0">Psalm:</span>
-											<span class="text-gray-700">{readings.psalm}</span>
+											<span class="text-gray-700">{formatReading(readings.psalm)}</span>
 										</div>
 									{/if}
 									{#if readings.second_reading}
 										<div class="flex items-start gap-2">
 											<span class="text-gray-400 shrink-0">2nd:</span>
-											<span class="text-gray-700">{readings.second_reading}</span>
+											<span class="text-gray-700">{formatReading(readings.second_reading)}</span>
 										</div>
 									{/if}
 									{#if readings.gospel_reading}
 										<div class="flex items-start gap-2">
 											<span class="text-gray-400 shrink-0">Gospel:</span>
-											<span class="text-gray-700 font-medium">{readings.gospel_reading}</span>
+											<span class="text-gray-700 font-medium">{formatReading(readings.gospel_reading)}</span>
 										</div>
 									{/if}
 								</div>

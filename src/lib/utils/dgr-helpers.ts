@@ -106,3 +106,27 @@ export function getContributorLink(contributor: Contributor): string | null {
 	if (typeof window === 'undefined') return null;
 	return `${window.location.origin}/dgr/write/${contributor.access_token}`;
 }
+
+/**
+ * Format a contributor's name with their title (Fr, Sr, Br, Deacon) if present.
+ * @example formatContributorName({ name: 'Michael Grace', title: 'Fr' }) => 'Fr Michael Grace'
+ * @example formatContributorName({ name: 'Jane Doe' }) => 'Jane Doe'
+ */
+export function formatContributorName(contributor: { name?: string; title?: string } | null | undefined): string {
+	if (!contributor) return '';
+	const name = contributor.name || '';
+	const title = contributor.title || '';
+	return title ? `${title} ${name}` : name;
+}
+
+/**
+ * Format a scripture reference for display.
+ * Converts periods between verse numbers to commas.
+ * @example formatReading('Psalm 121:1-2.4-5.6-9') => 'Psalm 121:1-2, 4-5, 6-9'
+ * @example formatReading('Romans 4:13.16-18.22') => 'Romans 4:13, 16-18, 22'
+ */
+export function formatReading(reading: string | null | undefined): string {
+	if (!reading) return '';
+	// Replace periods between numbers with ", "
+	return reading.replace(/(\d)\.(\d)/g, '$1, $2');
+}

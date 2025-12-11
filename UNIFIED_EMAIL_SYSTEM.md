@@ -276,9 +276,53 @@ Rich text editor with toolbar and variable picker.
 />
 ```
 
+### TestEmailPanel
+Unified test email modal with native MJML preview.
+
+```svelte
+<TestEmailPanel
+  context="dgr"
+  contextId={null}
+  template={{ subject_template, body_template }}
+  branding={{ name: 'DGR', logoUrl, accentDark: '#009199' }}
+  currentUserEmail="admin@example.com"
+  testApiUrl="/api/emails/test"
+  onClose={() => showTestPanel = false}
+/>
+```
+
+**Features:**
+- **Real recipient selection**: Dropdown to preview with actual user data
+- **Native MJML preview**: Server-side compilation displayed in iframe (pixel-perfect)
+- **Sample data fallback**: Works without selecting a real recipient
+
 ---
 
 ## API Endpoints
+
+### Unified Test Email
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/emails/test` | Send test email OR get MJML preview |
+
+**Request body:**
+```json
+{
+  "context": "course|dgr|platform",
+  "context_id": "optional-id",
+  "recipient_id": "uuid|null",
+  "to": "test@example.com",
+  "subject_template": "Subject with {{variable}}",
+  "body_template": "<p>Body HTML</p>",
+  "branding": { "name": "...", "logo_url": "...", "accent_dark": "#009199" },
+  "preview_only": false
+}
+```
+
+**With `preview_only: true`**: Returns rendered HTML without sending
+```json
+{ "success": true, "preview": true, "subject": "Rendered subject", "html": "<full MJML output>" }
+```
 
 ### Course Emails
 | Method | Endpoint | Description |
@@ -297,9 +341,14 @@ Rich text editor with toolbar and variable picker.
 | GET | `/api/dgr/templates` | List all DGR templates |
 | GET | `/api/dgr/templates?key=welcome` | Get specific template |
 | PUT | `/api/dgr/templates` | Update template (accepts `template_id` or `id`) |
-| POST | `/api/dgr/templates/test` | Send test email |
 | POST | `/api/dgr/welcome` | Send welcome email(s) |
 | POST | `/api/dgr/reminder` | Send reminder email |
+
+*Note: DGR test emails use unified `/api/emails/test` endpoint*
+
+### DGR Email Logs
+DGR emails are logged to `platform_email_log` with `metadata->>'context' = 'dgr'`.
+View logs at `/dgr/emails?view=logs`.
 
 ---
 
@@ -343,93 +392,116 @@ All existing data was migrated. The old tables no longer exist.
 
 ## Files Reference
 
+### Core
 | File | Purpose |
 |------|---------|
 | `src/lib/utils/email-service.js` | Core email functions |
-| `src/lib/components/EmailTemplateEditor.svelte` | Unified template editor (used by courses & DGR) |
-| `src/lib/components/EmailPreviewFrame.svelte` | Branded preview wrapper |
-| `src/lib/components/EmailBodyEditor.svelte` | Rich text editor |
-| `src/lib/server/course-email-templates.ts` | Course template generation |
-| `src/lib/server/default-email-templates.ts` | Default template definitions |
 | `src/lib/email/compiler.js` | MJML email compilation |
-| `src/routes/api/courses/[slug]/emails/+server.ts` | Course email API |
-| `src/routes/api/courses/[slug]/emails/test/+server.ts` | Course test email API |
+| `src/lib/email/context-config.ts` | Context registry (SSOT for courses/dgr/platform) |
+
+### Components
+| File | Purpose |
+|------|---------|
+| `src/lib/components/EmailTemplateEditor.svelte` | Unified template editor |
+| `src/lib/components/EmailBodyEditor.svelte` | Rich text editor with toolbar |
+| `src/lib/components/EmailPreviewFrame.svelte` | Branded preview wrapper |
+| `src/lib/components/TestEmailPanel.svelte` | Unified test email modal |
+| `src/lib/components/TipTapEmailEditor.svelte` | WYSIWYG core (buttons, variables, dividers) |
+| `src/lib/components/SendEmailView.svelte` | Course bulk send view |
+| `src/lib/components/EmailSenderModal.svelte` | Course bulk send modal |
+| `src/lib/components/EmailTreeSidebar.svelte` | Course template navigation |
+
+### API Endpoints
+| File | Purpose |
+|------|---------|
+| `src/routes/api/emails/test/+server.ts` | Unified test email API |
+| `src/routes/api/courses/[slug]/emails/+server.ts` | Course email CRUD |
+| `src/routes/api/courses/[slug]/emails/send/+server.ts` | Course bulk send |
 | `src/routes/api/dgr/templates/+server.js` | DGR template API |
-| `src/routes/api/dgr/templates/test/+server.js` | DGR test email API |
 | `src/routes/api/dgr/welcome/+server.js` | DGR welcome email sender |
 | `src/routes/api/dgr/reminder/+server.js` | DGR reminder email sender |
-| `src/routes/admin/courses/[slug]/emails/` | Course email admin UI |
-| `src/routes/dgr/emails/` | DGR email admin UI (uses unified EmailTemplateEditor) |
+
+### Admin UI
+| File | Purpose |
+|------|---------|
+| `src/routes/admin/courses/[slug]/emails/` | Course email admin |
+| `src/routes/dgr/emails/` | DGR email admin (templates + logs) |
 
 ---
 
 ## Recent Updates (Dec 2025)
 
-### Completed
-- **Sticky toolbar fix**: Fixed toolbar sticking behavior for both courses (`h-screen`) and DGR (changed from `min-h-screen` to `h-screen`)
-- **Platform logo in DGR**: DGR email editor now uses the platform logo from settings
-- **Branding props unified**: EmailBodyEditor accepts both `brandName` and `courseName` (backwards compatible)
-- **Variable picker dropdown**: Added `{ }` button in toolbar with floating dropdown (uses `dropdown.js` for proper positioning)
-- **Variable display consistency**: Fixed ButtonEditorPopover to show `{{variable}}` with double braces
+### Unified Test Email System ✅
+- **TestEmailPanel component**: Unified modal for all contexts (courses, DGR, platform)
+- **Native MJML preview**: Server compiles template, displays in iframe (pixel-perfect)
+- **Real recipient selection**: Dropdown to preview with actual user data
+- **Unified endpoint**: `/api/emails/test` with `preview_only` mode for preview without sending
+- **Deleted old endpoints**: Removed context-specific test endpoints
+
+### Context-Aware Button Colors ✅
+- **TipTapEmailEditor**: Added `accentColor` prop using CSS custom property
+- **Courses**: Dark green (`#334642`)
+- **DGR**: Teal (`#009199`)
+- Buttons now render with correct color in editor
+
+### DGR Email Logs ✅
+- Added "Email Logs" view at `/dgr/emails?view=logs`
+- Queries `platform_email_log` where `metadata->>'context' = 'dgr'`
+- Shows date, recipient, subject, template, status
+
+### Bulk Send Confirmation ✅
+- **SendEmailView**: Added ConfirmationModal before sending
+- **EmailSenderModal**: Same confirmation pattern
+- Shows recipient count, subject preview, first 3 names
+
+### Button Parsing Fix ✅
+- Fixed `parseHTML` in TipTapEmailEditor to extract `data-text` and `data-href` attributes
+- Buttons now load correctly when editing saved templates
+
+### Other Fixes
+- **Sticky toolbar**: Fixed for both courses and DGR
+- **Platform logo in DGR**: Uses logo from platform settings
+- **Variable picker dropdown**: `{ }` button with floating dropdown
+- **Deleted dead code**: Removed unused EmailComposer, EmailTemplateCard, EmailTemplateEditorModal
 
 ### Design Decisions
 
 #### Button Variables vs Editor Buttons
-There are two ways to add buttons to emails:
+Two ways to add buttons:
 
 1. **Variable-based** (`{{write_url_button}}`):
    - Server replaces with pre-styled HTML at send time
-   - Cannot preview in editor (shows as variable pill)
+   - Shows as variable pill in editor
    - Fixed text and styling
 
 2. **Editor buttons** (recommended):
    - Use toolbar "Insert Button" feature
    - Set URL to `{{write_url}}` for dynamic links
-   - Full preview in editor
+   - Full preview in editor with correct colors
    - Customizable text
 
-**Recommendation:** Use editor buttons for flexibility. Consider deprecating `write_url_button` variable.
+**Recommendation:** Use editor buttons for flexibility.
 
 ---
 
-## TODO / Needs Design
+## TODO / Future Improvements
 
-### Test Email System
-Currently test emails use placeholder values for variables. Need to design:
+### Completed ✅
+- [x] Test with sample data
+- [x] Test with real user data (recipient dropdown)
+- [x] Native MJML preview in test panel
+- [x] Confirmation before bulk sending
+- [x] DGR email logs
 
-1. **Test with sample data**: Current behavior - shows `{{firstName}}` → "John" etc.
-
-2. **Test with real user data**: Select an actual recipient to preview real variable values
-   - **Courses**: Select a student from cohort to see their actual name, hub, etc.
-   - **DGR**: Select a contributor to see their portal URL, assigned dates, etc.
-
-3. **Questions to resolve**:
-   - Should test emails go to a custom address or the selected user's actual email?
-   - How to handle context-dependent variables (e.g., session info) in test mode?
-   - Should we show a preview panel with rendered variables before sending?
-
-### Send Email Flow
-Need to design the "Send Email" workflow for each context:
-
-#### Courses (`/admin/courses/[slug]/emails?view=send`)
-- [x] Template selection
-- [x] Recipient filtering (by cohort, hub)
-- [ ] Preview with real user data
-- [ ] Confirmation before sending
-- [ ] Batch sending with progress indicator
-- [ ] Email log integration
-
-#### DGR
-- [x] Welcome email to individual contributors
-- [x] Reminder email to contributors with upcoming deadlines
-- [ ] Bulk send to multiple contributors
-- [ ] Preview with real contributor data
+### Still TODO
 
 #### Platform
-- [ ] Admin UI for platform templates
+- [ ] Admin UI for platform email templates
 - [ ] Use cases TBD (password reset, announcements?)
 
-### Variable Picker Improvements
-- [ ] Group variables by category (recipient info, links, dates)
-- [ ] Show which variables are "context-dependent" (only available in certain sends)
+#### Nice to Have
+- [ ] Delivery tracking via Resend webhooks (foundation exists: `resend_id` stored)
+- [ ] Resend failed emails
+- [ ] Consolidate SendEmailView + EmailSenderModal (~1400 lines of duplication)
+- [ ] Group variables by category in picker
 - [ ] Search/filter for templates with many variables

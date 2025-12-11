@@ -1,7 +1,7 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { Copy, ExternalLink, RefreshCw, Mail, MailCheck, Eye, AlertCircle, Loader2, Pencil, Trash2, MoreVertical } from 'lucide-svelte';
-	import { getPatternDescription, formatDate, formatRelativeTime, needsFollowUp, getContributorLink } from '$lib/utils/dgr-helpers';
+	import { getPatternDescription, formatDate, formatRelativeTime, needsFollowUp, getContributorLink, formatContributorName } from '$lib/utils/dgr-helpers';
 
 	let {
 		contributor,
@@ -36,7 +36,7 @@
 	<td class="px-4 py-3 whitespace-nowrap">
 		<div class="flex items-center gap-2">
 			<div class="text-sm font-medium text-gray-900">
-				{#if contributor.title}<span class="text-gray-500">{contributor.title}</span> {/if}{contributor.name}
+				{formatContributorName(contributor)}
 			</div>
 			{#if !contributor.active}
 				<span class="inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">

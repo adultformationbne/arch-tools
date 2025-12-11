@@ -14,14 +14,9 @@
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
 	import { getInitialDGRFormData, generateDGRHTML, cleanGospelText } from '$lib/utils/dgr-utils.js';
+	import { formatContributorName } from '$lib/utils/dgr-helpers';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
-
-	// Helper to format contributor name with title
-	function formatContributorName(contributor) {
-		if (!contributor) return '';
-		return contributor.title ? `${contributor.title} ${contributor.name}` : (contributor.name || '');
-	}
 
 	let schedule = $state([]);
 	let contributors = $state([]);

@@ -2,6 +2,7 @@
 	import { X, Save, CheckCircle, FileText, Calendar, User, Send } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
+	import { formatContributorName } from '$lib/utils/dgr-helpers';
 
 	let {
 		isOpen = $bindable(false),
@@ -133,7 +134,7 @@
 						{#if reflection.contributor}
 							<span class="flex items-center gap-1">
 								<User class="h-4 w-4" />
-								{#if reflection.contributor.title}{reflection.contributor.title} {/if}{reflection.contributor.name}
+								{formatContributorName(reflection.contributor)}
 							</span>
 						{/if}
 					</div>
