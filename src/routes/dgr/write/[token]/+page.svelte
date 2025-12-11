@@ -604,7 +604,7 @@
 					<img src="/archmin-logo.png" alt="Logo" class="h-7 w-auto" />
 					<div>
 						<p class="text-sm font-semibold text-gray-900">Daily Gospel Reflection</p>
-						<p class="text-xs text-gray-500">{contributor.title ? `${contributor.title} ${contributor.name}` : contributor.name}</p>
+						<p class="text-xs text-gray-500">{formatContributorName(contributor)}</p>
 					</div>
 				</div>
 			{/if}
@@ -618,7 +618,7 @@
 				{/if}
 				<div>
 					<p class="text-sm font-semibold text-gray-900">{isAuthenticated ? 'Writing Reflection' : 'Daily Gospel Reflection'}</p>
-					<p class="text-xs text-gray-500">{contributor.title ? `${contributor.title} ${contributor.name}` : contributor.name}</p>
+					<p class="text-xs text-gray-500">{formatContributorName(contributor)}</p>
 				</div>
 			</div>
 

@@ -10,6 +10,8 @@
  * @module email/context-config
  */
 
+import { formatContributorName } from '$lib/utils/dgr-helpers';
+
 export type EmailContext = 'course' | 'dgr' | 'platform';
 
 export interface EmailRecipient {
@@ -193,18 +195,12 @@ const dgrContext: EmailContextConfig = {
 	normalizeRecipients: (apiResponse: unknown) => {
 		const response = apiResponse as { contributors?: Array<Record<string, unknown>> };
 		const contributors = response?.contributors || [];
-		return contributors.map((c) => {
-			const name = (c.name as string) || 'Unknown';
-			const title = (c.title as string) || '';
-			// Include title in display name if present (e.g., "Fr Michael Grace")
-			const displayName = title ? `${title} ${name}` : name;
-			return {
-				id: c.id as string,
-				displayName,
-				email: (c.email as string) || '',
-				raw: c
-			};
-		});
+		return contributors.map((c) => ({
+			id: c.id as string,
+			displayName: formatContributorName({ name: c.name as string, title: c.title as string }) || 'Unknown',
+			email: (c.email as string) || '',
+			raw: c
+		}));
 	},
 
 	buildVariables: (recipient, _contextData, origin) => {
