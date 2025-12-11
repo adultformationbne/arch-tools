@@ -6,21 +6,16 @@
  */
 
 import mjml2html from 'mjml';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { getTemplate } from './templates/course-email-template.js';
 
 /**
- * Load MJML template from file
- * @param {string} templateName - Template filename (e.g., 'course-email')
+ * Load MJML template
+ * Uses inlined templates to work in serverless environments (Vercel)
+ * @param {string} templateName - Template name (e.g., 'course-email')
  * @returns {string} MJML template content
  */
 export function loadMjmlTemplate(templateName) {
-	const templatePath = join(__dirname, 'templates', `${templateName}.mjml`);
-	return readFileSync(templatePath, 'utf-8');
+	return getTemplate(templateName);
 }
 
 /**
