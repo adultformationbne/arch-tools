@@ -3,10 +3,18 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
 import {
 	getDgrEmailTemplate,
-	sendDgrEmail,
+	sendBulkEmails,
 	createEmailButton,
 	renderTemplate
 } from '$lib/utils/email-service.js';
+import { generateEmailFromMjml } from '$lib/email/compiler.js';
+
+// DGR branding colors
+const DGR_COLORS = {
+	accentDark: '#009199',
+	accentLight: '#e6f4f5',
+	accentDarkest: '#006b70'
+};
 
 /**
  * POST /api/dgr/welcome
@@ -53,6 +61,10 @@ export async function POST({ request, locals }) {
 			failed: 0,
 			details: []
 		};
+
+		// Build all emails first
+		const emailsToSend = [];
+		const contributorMap = new Map(); // Map email -> contributor for post-send updates
 
 		for (const contributor of contributors) {
 			// Skip if no access token
@@ -103,56 +115,82 @@ export async function POST({ request, locals }) {
 			const subject = renderTemplate(template.subject_template, variables);
 			const htmlBody = renderTemplate(template.body_template, variables);
 
-			try {
-				// Send email with DGR branding using unified helper
-				const emailTo =
-					process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
+			// Compile with MJML for proper email rendering
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent: htmlBody,
+				courseName: 'Daily Gospel Reflection',
+				logoUrl: null,
+				colors: DGR_COLORS
+			});
 
-				const result = await sendDgrEmail({
-					to: emailTo,
-					subject,
-					bodyHtml: htmlBody,
-					emailType: 'dgr_welcome',
+			const emailTo =
+				process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
+
+			emailsToSend.push({
+				to: emailTo,
+				subject,
+				html: compiledHtml,
+				referenceId: contributor.id,
+				metadata: {
+					context: 'dgr',
 					contributorId: contributor.id,
+					contributorEmail: contributor.email,
 					templateId: template.id,
-					metadata: {
-						contributorEmail: contributor.email,
-						writeUrl
-					},
-					resendApiKey: RESEND_API_KEY,
-					supabase: supabaseAdmin
-				});
-
-				if (!result.success) {
-					throw new Error(result.error || 'Failed to send email');
+					writeUrl
 				}
+			});
 
-				// Update contributor with welcome email timestamp
-				await supabaseAdmin
-					.from('dgr_contributors')
-					.update({
-						welcome_email_sent_at: new Date().toISOString(),
-						welcome_email_sent_by: user.id
-					})
-					.eq('id', contributor.id);
+			contributorMap.set(emailTo, contributor);
+		}
 
-				results.sent++;
-				results.details.push({
-					id: contributor.id,
-					name: contributor.name,
-					email: contributor.email,
-					status: 'sent',
-					emailId: result.emailId
-				});
-			} catch (emailError) {
-				console.error(`Failed to send welcome email to ${contributor.email}:`, emailError);
-				results.failed++;
-				results.details.push({
-					id: contributor.id,
-					name: contributor.name,
-					status: 'failed',
-					reason: emailError.message
-				});
+		// Send all emails using batch API
+		if (emailsToSend.length > 0) {
+			const batchResults = await sendBulkEmails({
+				emails: emailsToSend,
+				emailType: 'dgr_welcome',
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			results.sent = batchResults.sent;
+			results.failed = batchResults.failed;
+
+			// Update contributors that were successfully sent
+			const successfulEmails = emailsToSend.filter(
+				(email) => !batchResults.errors.find((e) => e.to === email.to)
+			);
+
+			for (const email of successfulEmails) {
+				const contributor = contributorMap.get(email.to);
+				if (contributor) {
+					await supabaseAdmin
+						.from('dgr_contributors')
+						.update({
+							welcome_email_sent_at: new Date().toISOString(),
+							welcome_email_sent_by: user.id
+						})
+						.eq('id', contributor.id);
+
+					results.details.push({
+						id: contributor.id,
+						name: contributor.name,
+						email: contributor.email,
+						status: 'sent'
+					});
+				}
+			}
+
+			// Record failures
+			for (const error of batchResults.errors) {
+				const contributor = contributorMap.get(error.to);
+				if (contributor) {
+					results.details.push({
+						id: contributor.id,
+						name: contributor.name,
+						status: 'failed',
+						reason: error.error
+					});
+				}
 			}
 		}
 

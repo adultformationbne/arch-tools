@@ -521,6 +521,10 @@
 	let bulkPublishCancelled = $state(false);
 	let bulkPublishProgress = $state({ current: 0, total: 0, successes: 0, failures: [] });
 
+	// Bulk reminder state
+	let bulkReminderSending = $state(false);
+	let bulkReminderConfirmModal = $state({ open: false, entries: [] });
+
 	async function bulkPublishApproved() {
 		// Get all approved entries with content
 		const approvedEntries = schedule.filter(
@@ -621,6 +625,98 @@
 		}
 
 		await loadSchedule();
+	}
+
+	// Get pending entries due within 10 days that can receive reminders
+	let pendingReminderEntries = $derived.by(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const tenDaysFromNow = new Date(today);
+		tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
+
+		return schedule.filter(entry => {
+			if (!entry.contributor_id || !entry.contributor?.access_token) return false;
+			if (entry.status && entry.status !== 'pending') return false;
+			if (entry.reflection_content) return false;
+
+			// Check if due date is within 10 days
+			const dueDate = new Date(entry.date + 'T00:00:00');
+			return dueDate >= today && dueDate <= tenDaysFromNow;
+		});
+	});
+
+	function openBulkReminderConfirm() {
+		if (pendingReminderEntries.length === 0) {
+			toast.warning({
+				title: 'No reminders to send',
+				message: 'No pending reflections due in the next 10 days',
+				duration: 4000
+			});
+			return;
+		}
+		bulkReminderConfirmModal = { open: true, entries: pendingReminderEntries };
+	}
+
+	async function sendBulkReminders() {
+		const entries = bulkReminderConfirmModal.entries;
+		bulkReminderConfirmModal = { open: false, entries: [] };
+
+		if (entries.length === 0) return;
+
+		bulkReminderSending = true;
+
+		const loadingId = toast.loading({
+			title: `Sending ${entries.length} reminders...`,
+			message: 'Using batch API for fast delivery'
+		});
+
+		try {
+			// Build reminder payload for batch API
+			const reminders = entries.map(entry => ({
+				contributorId: entry.contributor_id,
+				date: entry.date,
+				scheduleId: entry.id || null
+			}));
+
+			const response = await fetch('/api/dgr/reminder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ reminders })
+			});
+
+			const data = await response.json();
+
+			if (data.error) throw new Error(data.error);
+
+			const results = data.results || {};
+
+			if (results.failed === 0) {
+				toast.updateToast(loadingId, {
+					title: 'All reminders sent!',
+					message: `Successfully sent ${results.sent} reminder${results.sent !== 1 ? 's' : ''}`,
+					type: 'success',
+					duration: 5000
+				});
+			} else {
+				toast.updateToast(loadingId, {
+					title: 'Reminders sent with some errors',
+					message: `${results.sent} sent, ${results.failed} failed, ${results.skipped || 0} skipped`,
+					type: 'warning',
+					duration: 6000
+				});
+			}
+
+			await loadSchedule();
+		} catch (error) {
+			toast.updateToast(loadingId, {
+				title: 'Failed to send reminders',
+				message: error.message,
+				type: 'error',
+				duration: 5000
+			});
+		} finally {
+			bulkReminderSending = false;
+		}
 	}
 
 	function openReviewModal(entry) {
@@ -902,25 +998,54 @@
 		}
 	}
 
-	function openQuickAddModal(entry) {
+	async function openQuickAddModal(entry) {
 		quickAddEntry = entry;
 
-		// Pre-populate the form with date and any existing readings
+		// Build readings string from readings_data or fall back to readings string
+		let readingsStr = '';
+		let liturgicalDate = entry.liturgical_name || '';
+
+		if (entry.readings_data) {
+			readingsStr = [
+				entry.readings_data.first_reading?.source,
+				entry.readings_data.psalm?.source,
+				entry.readings_data.second_reading?.source,
+				entry.readings_data.gospel?.source
+			].filter(Boolean).join('; ');
+		} else if (entry.readings) {
+			// Use the combined readings string from calendar
+			readingsStr = entry.readings;
+		}
+
+		// If no readings yet, fetch them from the API
+		if (!readingsStr && entry.date) {
+			try {
+				const response = await fetch('/api/dgr/readings', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ date: entry.date })
+				});
+				const data = await response.json();
+
+				if (data.readings) {
+					readingsStr = data.readings.combined_sources || '';
+					liturgicalDate = data.readings.liturgical_name || data.readings.liturgical_day || liturgicalDate;
+				}
+			} catch (err) {
+				console.error('Failed to fetch readings for quick add:', err);
+			}
+		}
+
+		// Pre-populate the form with date, readings, and contributor info
 		quickAddFormData = {
 			...getInitialDGRFormData(),
 			date: entry.date,
-			liturgicalDate: entry.liturgical_name || '',
-			readings: entry.readings_data ?
-				[
-					entry.readings_data.first_reading?.source,
-					entry.readings_data.psalm?.source,
-					entry.readings_data.second_reading?.source,
-					entry.readings_data.gospel?.source
-				].filter(Boolean).join('; ') : '',
+			liturgicalDate,
+			readings: readingsStr,
 			title: entry.reflection_title || '',
 			gospelQuote: entry.gospel_quote || '',
 			reflectionText: entry.reflection_content || '',
-			authorName: ''
+			authorName: formatContributorName(entry.contributor)
 		};
 
 		quickAddModalOpen = true;
@@ -1208,33 +1333,59 @@
 							</select>
 						</div>
 
-						{#if schedule.filter(e => e.status === 'approved' && e.reflection_content).length > 0 || bulkPublishing}
-							{#if bulkPublishing}
-								<div class="flex items-center gap-2">
-									<span class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white">
+						<!-- Bulk Action Buttons -->
+						<div class="flex items-center gap-2">
+							<!-- Send Reminders Button -->
+							{#if pendingReminderEntries.length > 0 || bulkReminderSending}
+								{#if bulkReminderSending}
+									<span class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">
 										<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
 											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 										</svg>
-										{bulkPublishProgress.current}/{bulkPublishProgress.total}
+										Sending...
 									</span>
+								{:else}
 									<button
-										onclick={() => bulkPublishCancelled = true}
-										class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+										onclick={openBulkReminderConfirm}
+										class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
+										title="Send reminder emails to pending contributors with reflections due in the next 10 days"
 									>
-										Cancel
+										<Send class="h-4 w-4" />
+										Remind Due Soon ({pendingReminderEntries.length})
 									</button>
-								</div>
-							{:else}
-								<button
-									onclick={bulkPublishApproved}
-									class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-									title="Publish all approved reflections to WordPress (with rate limiting)"
-								>
-									Publish All Approved ({schedule.filter(e => e.status === 'approved' && e.reflection_content).length})
-								</button>
+								{/if}
 							{/if}
-						{/if}
+
+							<!-- Publish All Approved Button -->
+							{#if schedule.filter(e => e.status === 'approved' && e.reflection_content).length > 0 || bulkPublishing}
+								{#if bulkPublishing}
+									<div class="flex items-center gap-2">
+										<span class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white">
+											<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+											{bulkPublishProgress.current}/{bulkPublishProgress.total}
+										</span>
+										<button
+											onclick={() => bulkPublishCancelled = true}
+											class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+										>
+											Cancel
+										</button>
+									</div>
+								{:else}
+									<button
+										onclick={bulkPublishApproved}
+										class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+										title="Publish all approved reflections to WordPress (with rate limiting)"
+									>
+										Publish All Approved ({schedule.filter(e => e.status === 'approved' && e.reflection_content).length})
+									</button>
+								{/if}
+							{/if}
+						</div>
 					</div>
 				</div>
 
@@ -1547,7 +1698,7 @@
 	autoShow={true}
 />
 
-<!-- Send Reminder Confirmation Modal -->
+<!-- Send Reminder Confirmation Modal (Single) -->
 <ConfirmationModal
 	show={sendReminderConfirmModal.open}
 	title="Send Reminder Email"
@@ -1557,6 +1708,47 @@
 	onCancel={() => sendReminderConfirmModal = { open: false, entry: null, message: '' }}
 >
 	<p class="whitespace-pre-line">{sendReminderConfirmModal.message}</p>
+</ConfirmationModal>
+
+<!-- Bulk Send Reminders Confirmation Modal -->
+<ConfirmationModal
+	show={bulkReminderConfirmModal.open}
+	title="Send Bulk Reminders"
+	confirmText="Send All"
+	cancelText="Cancel"
+	variant="warning"
+	onConfirm={sendBulkReminders}
+	onCancel={() => bulkReminderConfirmModal = { open: false, entries: [] }}
+>
+	<div class="space-y-3">
+		<p class="text-sm text-gray-700">
+			Send reminder emails to <strong>{bulkReminderConfirmModal.entries.length}</strong> contributor{bulkReminderConfirmModal.entries.length !== 1 ? 's' : ''} with reflections due in the next 10 days?
+		</p>
+
+		{#if bulkReminderConfirmModal.entries.length > 0}
+			<div class="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+				<p class="text-xs font-medium text-gray-500 mb-2">Recipients:</p>
+				<ul class="space-y-1 text-sm text-gray-600">
+					{#each bulkReminderConfirmModal.entries.slice(0, 10) as entry}
+						<li class="flex items-center gap-2">
+							<span class="font-medium">{formatContributorName(entry.contributor)}</span>
+							<span class="text-gray-400">·</span>
+							<span class="text-xs text-gray-500">{entry.date}</span>
+						</li>
+					{/each}
+					{#if bulkReminderConfirmModal.entries.length > 10}
+						<li class="text-xs text-gray-400 italic">
+							...and {bulkReminderConfirmModal.entries.length - 10} more
+						</li>
+					{/if}
+				</ul>
+			</div>
+		{/if}
+
+		<p class="text-xs text-gray-500">
+			This will use the batch API to send all emails efficiently.
+		</p>
+	</div>
 </ConfirmationModal>
 
 <ToastContainer />

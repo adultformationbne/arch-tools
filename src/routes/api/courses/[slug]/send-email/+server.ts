@@ -5,9 +5,10 @@ import { supabaseAdmin } from '$lib/server/supabase';
 import {
 	buildVariableContext,
 	renderTemplateForRecipient,
-	sendCourseEmail,
+	sendBulkEmails,
 	getCourseEmailTemplate
 } from '$lib/utils/email-service.js';
+import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
 
 // POST /api/courses/[slug]/send-email - Send email to recipients
@@ -107,12 +108,22 @@ export const POST: RequestHandler = async (event) => {
 			enrollments = enrollmentData;
 		}
 
-		// Send emails to all recipients
-		const results = {
-			sent: 0,
-			failed: 0,
-			errors: [] as Array<{ email: string; error: string }>
+		// Get course branding for MJML compilation
+		const courseSettings = course.settings || {};
+		const courseColors = {
+			accentDark: courseSettings.accentDark || '#334642',
+			accentLight: courseSettings.accentLight || '#eae2d9',
+			accentDarkest: courseSettings.accentDarkest || '#1e2322'
 		};
+
+		// Build all emails with personalized content
+		const emailsToSend: Array<{
+			to: string;
+			subject: string;
+			html: string;
+			metadata: Record<string, unknown>;
+			referenceId: string;
+		}> = [];
 
 		for (const enrollment of enrollments) {
 			try {
@@ -135,7 +146,7 @@ export const POST: RequestHandler = async (event) => {
 								current_session: cohort.current_session
 							}
 						: null,
-					session: null, // Could be passed in body if needed
+					session: null,
 					siteUrl: event.url.origin
 				});
 
@@ -150,9 +161,8 @@ export const POST: RequestHandler = async (event) => {
 						bodyTemplate: template.body_template,
 						variables
 					});
-
 					emailSubject = rendered.subject;
-					emailBody = rendered.body.replace(/\n/g, '<br>'); // Convert newlines to <br>
+					emailBody = rendered.body;
 				} else if (subject && body_html) {
 					// Quick email - also do variable substitution
 					const rendered = renderTemplateForRecipient({
@@ -160,50 +170,50 @@ export const POST: RequestHandler = async (event) => {
 						bodyTemplate: body_html,
 						variables
 					});
-
 					emailSubject = rendered.subject;
 					emailBody = rendered.body;
 				}
 
-				// Send email
-				const result = await sendCourseEmail({
+				// Compile with MJML for proper email rendering
+				const compiledHtml = generateEmailFromMjml({
+					bodyContent: emailBody,
+					courseName: course.name,
+					logoUrl: courseSettings.logoUrl || null,
+					colors: courseColors
+				});
+
+				emailsToSend.push({
 					to: enrollment.email,
 					subject: emailSubject,
-					bodyHtml: emailBody,
-					emailType: email_type || 'custom',
-					course,
-					cohortId: cohort?.id || null,
-					enrollmentId: enrollment.id,
-					templateId: template?.id || null,
+					html: compiledHtml,
+					referenceId: enrollment.id,
 					metadata: {
-						...metadata,
-						sentBy: user.id,
-						sentAt: new Date().toISOString()
-					},
-					resendApiKey: RESEND_API_KEY,
-					supabase: supabaseAdmin
+						context: 'course',
+						course_id: course.id,
+						cohort_id: cohort?.id || null,
+						enrollment_id: enrollment.id,
+						template_id: template?.id || null
+					}
 				});
-
-				if (result.success) {
-					results.sent++;
-				} else {
-					results.failed++;
-					results.errors.push({
-						email: enrollment.email,
-						error: result.error || 'Unknown error'
-					});
-				}
-
-				// Rate limiting: 100ms delay between emails
-				await new Promise((resolve) => setTimeout(resolve, 100));
 			} catch (error) {
-				results.failed++;
-				results.errors.push({
-					email: enrollment.email,
-					error: error instanceof Error ? error.message : 'Unknown error'
-				});
+				console.error(`Failed to prepare email for ${enrollment.email}:`, error);
 			}
 		}
+
+		// Send all emails using batch API (up to 100 per request)
+		const results = await sendBulkEmails({
+			emails: emailsToSend,
+			emailType: email_type || 'custom',
+			resendApiKey: RESEND_API_KEY,
+			supabase: supabaseAdmin,
+			options: {
+				commonMetadata: {
+					sentBy: user.id,
+					sentAt: new Date().toISOString(),
+					...metadata
+				}
+			}
+		});
 
 		// Return results
 		return json({
