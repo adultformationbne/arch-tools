@@ -240,8 +240,8 @@ export async function fetchGospelTextForDate(dateInput, version = 'NRSVAE', regi
 
 // Extract gospel reference from readings list (e.g., "Mt 1:1-16, 18-23" from full readings)
 export function extractGospelReference(readings) {
-	if (!readings) return '';
-	
+	if (!readings || typeof readings !== 'string') return '';
+
 	// Look for gospel references (Mt, Mk, Lk, Jn)
 	const gospelMatch = readings.match(/(Mt|Mk|Lk|Jn)\s+[\d:,-\s]+/);
 	if (gospelMatch) {

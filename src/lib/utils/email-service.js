@@ -226,43 +226,120 @@ export async function sendEmail({
 }
 
 /**
- * Send bulk emails (use sparingly - consider rate limits)
- * @param {Array<{to: string, subject: string, html: string}>} emails Array of email objects
+ * Send bulk emails using Resend Batch API (up to 100 emails per request)
+ * @param {Array<{to: string, subject: string, html: string, metadata?: Object}>} emails Array of email objects
  * @param {string} emailType Type of email for logging
  * @param {string} resendApiKey Resend API key
  * @param {Object} supabase Supabase client
+ * @param {Object} [options] Additional options
+ * @param {Object} [options.commonMetadata] Metadata to merge into all emails
  * @returns {Promise<{sent: number, failed: number, errors: Array}>}
  */
-export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase }) {
+export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase, options = {} }) {
+	if (!resendApiKey) {
+		console.error('RESEND_API_KEY not provided');
+		return { sent: 0, failed: emails.length, errors: [{ error: 'Email service not configured' }] };
+	}
+
+	const resend = new Resend(resendApiKey);
+	const platformSettings = await getPlatformSettings();
+
 	const results = {
 		sent: 0,
 		failed: 0,
 		errors: []
 	};
 
-	for (const email of emails) {
-		const result = await sendEmail({
-			...email,
-			emailType,
-			resendApiKey,
-			supabase
-		});
+	// Resend batch API supports up to 100 emails per request
+	const BATCH_SIZE = 100;
 
-		if (result.success) {
-			results.sent++;
-		} else {
-			results.failed++;
-			results.errors.push({
-				to: email.to,
-				error: result.error
-			});
+	for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+		const batch = emails.slice(i, i + BATCH_SIZE);
+
+		// Format emails for Resend batch API
+		const batchPayload = batch.map((email) => ({
+			from: platformSettings.fromEmail,
+			to: [email.to],
+			subject: email.subject,
+			html: email.html
+		}));
+
+		try {
+			// Send batch via Resend
+			const { data, error } = await resend.batch.send(batchPayload);
+
+			if (error) {
+				console.error('Resend batch error:', error);
+				// All emails in batch failed
+				results.failed += batch.length;
+				for (const email of batch) {
+					results.errors.push({ to: email.to, error: error.message });
+				}
+
+				// Log all as failed
+				await logBatchEmails(supabase, batch, emailType, 'failed', error.message, options.commonMetadata);
+			} else {
+				// Process batch results - data.data is array of {id} for each email
+				const emailResults = data?.data || [];
+
+				for (let j = 0; j < batch.length; j++) {
+					const email = batch[j];
+					const emailResult = emailResults[j];
+
+					if (emailResult?.id) {
+						results.sent++;
+					} else {
+						results.failed++;
+						results.errors.push({ to: email.to, error: 'No response ID' });
+					}
+				}
+
+				// Log all emails from this batch
+				await logBatchEmails(supabase, batch, emailType, 'sent', null, options.commonMetadata, emailResults);
+			}
+		} catch (err) {
+			console.error('Batch send error:', err);
+			results.failed += batch.length;
+			for (const email of batch) {
+				results.errors.push({ to: email.to, error: err.message });
+			}
+
+			// Log all as failed
+			await logBatchEmails(supabase, batch, emailType, 'failed', err.message, options.commonMetadata);
 		}
 
-		// Small delay to respect rate limits (adjust as needed)
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		// Small delay between batches (not between individual emails)
+		if (i + BATCH_SIZE < emails.length) {
+			await new Promise((resolve) => setTimeout(resolve, 500));
+		}
 	}
 
 	return results;
+}
+
+/**
+ * Log batch of emails to database
+ * @private
+ */
+async function logBatchEmails(supabase, emails, emailType, status, errorMessage = null, commonMetadata = {}, results = []) {
+	try {
+		const logs = emails.map((email, idx) => ({
+			recipient_email: email.to,
+			email_type: emailType,
+			subject: email.subject,
+			body: email.html,
+			status,
+			sent_at: status === 'sent' ? new Date().toISOString() : null,
+			error_message: errorMessage,
+			resend_id: results[idx]?.id || null,
+			reference_id: email.referenceId || null,
+			metadata: { ...commonMetadata, ...email.metadata }
+		}));
+
+		await supabase.from('platform_email_log').insert(logs);
+	} catch (logError) {
+		console.error('Failed to log batch emails:', logError);
+	}
 }
 
 /**
