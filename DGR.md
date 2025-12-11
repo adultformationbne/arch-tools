@@ -76,13 +76,53 @@ Rules in `dgr_assignment_rules` with `action_type = 'skip_pattern'` block automa
 
 ## Key Files
 
+### Pages & API
+
 | File | Purpose |
 |------|---------|
 | `src/routes/dgr/write/[token]/+page.svelte` | Contributor writing interface |
+| `src/routes/dgr/contributors/+page.svelte` | Contributors admin page |
 | `src/routes/api/dgr/contributor/[token]/+server.js` | Contributor API (get dates, save reflection) |
 | `src/routes/api/dgr-admin/schedule/+server.js` | Admin schedule management |
-| `src/lib/components/DGRContributorManager.svelte` | Admin contributor management UI |
-| `src/routes/dgr/contributors/+page.svelte` | Contributors admin page |
+
+### Components
+
+| File | Purpose |
+|------|---------|
+| `DGRContributorManager.svelte` | Orchestrator for contributor management (state, modals, API calls) |
+| `DGRActionButtons.svelte` | Add/Import/Send Welcome/Email Templates action cards |
+| `DGRContributorStats.svelte` | Stats badges (total, welcomed, visited, needs follow-up) |
+| `DGRAddContributorForm.svelte` | Expandable form to add new contributor |
+| `DGRContributorTable.svelte` | Table wrapper with headers |
+| `DGRContributorRow.svelte` | Individual table row with actions menu |
+| `DGREditContributorModal.svelte` | Edit contributor modal |
+| `DGRSchedulePatternSelector.svelte` | Reusable day-of-week/day-of-month picker |
+
+### Utilities
+
+| File | Purpose |
+|------|---------|
+| `$lib/utils/dgr-helpers.ts` | Shared utilities for DGR components |
+
+**`dgr-helpers.ts` exports:**
+
+```ts
+// Constants
+DAY_NAMES: string[]  // ['Sunday', 'Monday', ...]
+
+// Types
+interface SchedulePattern { type: 'day_of_month' | 'day_of_week'; value?: number; values?: number[] }
+interface Contributor { id, name, email, title?, active, access_token?, schedule_pattern?, ... }
+
+// Functions
+getOrdinalSuffix(num: number): string           // 1 → 'st', 2 → 'nd', 3 → 'rd', 4 → 'th'
+getPatternDescription(pattern): string          // { type: 'day_of_week', value: 2 } → 'Every Tuesday'
+formatDate(dateStr): string | null              // '2024-03-15T...' → '15 Mar'
+formatRelativeTime(dateStr): string | null      // '2024-03-15T...' → '2d ago'
+needsFollowUp(contributor): boolean             // True if welcomed >3 days ago but never visited
+getContributorLink(contributor): string | null  // Full URL to contributor's writing page
+formatContributorName(contributor): string      // { name: 'John', title: 'Fr' } → 'Fr John'
+```
 
 ## Database Function
 
