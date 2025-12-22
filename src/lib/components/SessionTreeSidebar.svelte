@@ -1,7 +1,20 @@
 <script>
+	import { onMount } from 'svelte';
 	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical, FileText } from 'lucide-svelte';
-	import { dndzone } from 'svelte-dnd-action';
+	import { getDndzone, noopDndzone } from '$lib/utils/resilient-dnd.js';
 	import { flip } from 'svelte/animate';
+
+	// Dynamic DnD loading - falls back to static list if unavailable
+	let dndzone = $state(noopDndzone);
+	let dndAvailable = $state(false);
+
+	onMount(async () => {
+		const loadedDnd = await getDndzone();
+		if (loadedDnd) {
+			dndzone = loadedDnd;
+			dndAvailable = true;
+		}
+	});
 
 	let {
 		modules = [],
@@ -221,13 +234,15 @@
 										class="w-full flex items-center gap-1 px-2 py-1.5 rounded-lg text-left transition-colors group {isSessionSelected ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
 										style={isSessionSelected ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
 									>
-										<!-- Drag Handle -->
+										<!-- Drag Handle (only shown when DnD is available) -->
+										{#if dndAvailable}
 										<div
 											class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
 											title="Drag to reorder"
 										>
 											<GripVertical size={12} />
 										</div>
+										{/if}
 
 										<!-- Session Number - shows POSITION in list (reactive during drag) -->
 										{#if isPreStart}

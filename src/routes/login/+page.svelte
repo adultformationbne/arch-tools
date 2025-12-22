@@ -129,6 +129,9 @@
 				return;
 			}
 
+			// Track login for course enrollments (non-blocking)
+			fetch('/api/auth/track-login', { method: 'POST' }).catch(() => {});
+
 			// Success - redirect based on user modules
 			const { data: profile } = await supabase
 				.from('user_profiles')
@@ -226,6 +229,9 @@
 				const next = $page.url.searchParams.get('next') ?? '/profile';
 				goto(`/login/setup-password?next=${encodeURIComponent(next)}`);
 			} else {
+				// Track login for course enrollments (non-blocking)
+				fetch('/api/auth/track-login', { method: 'POST' }).catch(() => {});
+
 				// Existing user logging in with OTP - redirect to dashboard
 				const { data: profile } = await supabase
 					.from('user_profiles')

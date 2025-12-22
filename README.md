@@ -1,38 +1,39 @@
-# sv
+# Arch Tools
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Platform for Archdiocesan ministries: course management (ACCF), Daily Gospel Reflections (DGR), liturgical calendar, and book editing tools.
 
-## Creating a project
+## Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **SvelteKit + Svelte 5** - Framework
+- **Supabase** - Database & Auth
+- **Tailwind CSS v4** - Styling
+- **Resend** - Email
 
-```sh
-# create a new project in the current directory
-npx sv create
+## Setup
 
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
+cp .env.example .env   # Add Supabase + Resend keys
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+## Documentation
 
-To create a production version of your app:
+- `CLAUDE.md` - Quick reference for development patterns
+- `AUTHENTICATION.md` - Auth system details
+- `COURSES.md` - Course platform architecture
+- `DGR.md` - Daily Gospel Reflections system
+- `LITURGICAL_SYSTEM.md` - Liturgical calendar and readings
+- `UNIFIED_EMAIL_SYSTEM.md` - Email template system
+- `SVELTE5_BEST_PRACTICES.md` - Svelte 5 patterns
+- `AGENTS.MD` - Database migration workflow
 
-```sh
-npm run build
+## Commands
+
+```bash
+npm run dev           # Start dev server
+npm run build         # Production build
+npm test              # Run tests
+npm run validate-api  # Check API contracts
+npm run update-types  # Regenerate DB types
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

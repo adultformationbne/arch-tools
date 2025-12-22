@@ -12,7 +12,6 @@ let { data, children } = $props();
 		const path = $page.url.pathname;
 		if (path.startsWith('/dgr/write/')) return 'my-reflections';
 		if (path === '/dgr' || path === '/dgr/schedule') return 'schedule';
-		if (path === '/dgr/submissions') return 'schedule';
 		if (path === '/dgr/contributors') return 'people';
 		if (path === '/dgr/rules') return 'people';
 		if (path === '/dgr/emails') return 'people';
@@ -26,7 +25,6 @@ let { data, children } = $props();
 	let activeSubSection = $derived.by(() => {
 		const path = $page.url.pathname;
 		if (path === '/dgr' || path === '/dgr/schedule') return 'schedule';
-		if (path === '/dgr/submissions') return 'submissions';
 		if (path === '/dgr/contributors') return 'contributors';
 		if (path === '/dgr/rules') return 'rules';
 		if (path === '/dgr/emails') return 'emails';

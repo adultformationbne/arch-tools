@@ -11,11 +11,13 @@ export const load: PageServerLoad = async (event) => {
 	const modules = layoutData?.modules || [];
 	const cohorts = layoutData?.cohorts || [];
 
-	// Auto-select first cohort if none selected
+	// Auto-select first cohort if none selected (preserve other params like action)
 	const cohortParam = event.url.searchParams.get('cohort');
 	if (!cohortParam && cohorts.length > 0) {
 		const firstCohort = cohorts[0];
-		throw redirect(303, `/admin/courses/${courseSlug}?cohort=${firstCohort.id}`);
+		const newUrl = new URL(event.url);
+		newUrl.searchParams.set('cohort', firstCohort.id);
+		throw redirect(303, newUrl.pathname + newUrl.search);
 	}
 
 	return {

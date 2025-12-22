@@ -8,12 +8,10 @@
 	const sections = [
 		{
 			id: 'schedule',
-			name: 'Schedule & Publishing',
+			name: 'Schedule',
 			icon: Calendar,
-			subsections: [
-				{ id: 'schedule', name: 'Schedule', path: '/dgr' },
-				{ id: 'submissions', name: 'Submissions', path: '/dgr/submissions' }
-			]
+			subsections: [],
+			path: '/dgr'
 		},
 		{
 			id: 'people',
@@ -85,27 +83,37 @@
 				{#each sections as section}
 					{@const Icon = section.icon}
 					{@const menuId = `dgr-nav-${section.id}-menu`}
+					{@const hasSubsections = section.subsections && section.subsections.length > 0}
 					<div class="relative">
-						<button
-							type="button"
-							onclick={() => handleSectionClick(section)}
-							onkeydown={(event) => handleSectionKeydown(event, section, menuId)}
-							class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
-							aria-haspopup="true"
-							aria-expanded={openDropdown === section.id}
-							aria-controls={section.subsections && section.subsections.length > 0 ? menuId : undefined}
-							id={`dgr-nav-${section.id}-button`}
-							title={section.name}
-						>
-							<Icon class="h-4 w-4" aria-hidden="true" />
-							<span class="hidden sm:inline">{section.name}</span>
-							{#if section.subsections && section.subsections.length > 0}
+						{#if hasSubsections}
+							<button
+								type="button"
+								onclick={() => handleSectionClick(section)}
+								onkeydown={(event) => handleSectionKeydown(event, section, menuId)}
+								class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+								aria-haspopup="true"
+								aria-expanded={openDropdown === section.id}
+								aria-controls={menuId}
+								id={`dgr-nav-${section.id}-button`}
+								title={section.name}
+							>
+								<Icon class="h-4 w-4" aria-hidden="true" />
+								<span class="hidden sm:inline">{section.name}</span>
 								<ChevronDown class="h-3 w-3 transition-transform {openDropdown === section.id ? 'rotate-180' : ''} hidden sm:inline" aria-hidden="true" />
-							{/if}
-						</button>
+							</button>
+						{:else}
+							<a
+								href={section.path || '/dgr'}
+								class="flex items-center gap-2 rounded-full px-2 sm:px-4 py-2 text-sm font-semibold transition-colors {activeSection === section.id ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+								title={section.name}
+							>
+								<Icon class="h-4 w-4" aria-hidden="true" />
+								<span class="hidden sm:inline">{section.name}</span>
+							</a>
+						{/if}
 
 						<!-- Dropdown menu for subsections -->
-						{#if section.subsections && section.subsections.length > 0 && openDropdown === section.id}
+						{#if hasSubsections && openDropdown === section.id}
 							<div
 								id={menuId}
 								role="menu"

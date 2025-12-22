@@ -1,5 +1,5 @@
 <script>
-	import { Upload, FileText, AlertCircle, CheckCircle, ClipboardPaste } from 'lucide-svelte';
+	import { Upload, FileText, AlertCircle, CheckCircle, ClipboardPaste, Download } from 'lucide-svelte';
 
 	let {
 		onUpload = (data) => {},
@@ -7,6 +7,22 @@
 		maxSize = 5 * 1024 * 1024, // 5MB
 		disabled = false
 	} = $props();
+
+	function downloadTemplate() {
+		const template = `full_name,email,role,hub
+Jane Smith,jane.smith@example.com,student,St Mary's Parish
+John Doe,john.doe@example.com,coordinator,Downtown Hub
+Mary Johnson,mary.johnson@example.com,student,St Mary's Parish
+Robert Williams,robert.w@example.com,student,Downtown Hub`;
+
+		const blob = new Blob([template], { type: 'text/csv' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'participants_template.csv';
+		a.click();
+		URL.revokeObjectURL(url);
+	}
 
 	let dragActive = $state(false);
 	let file = $state(null);
@@ -154,29 +170,27 @@
 				}
 
 				// Normalize role with expanded variations
+				// Database constraint allows: 'student', 'coordinator'
 				const roleMap = {
-					'participant': 'courses_student',
-					'participants': 'courses_student',
-					'student': 'courses_student',
-					'students': 'courses_student',
-					'attendee': 'courses_student',
-					'member': 'courses_student',
-					'hub coordinator': 'hub_coordinator',
-					'hub-coordinator': 'hub_coordinator',
-					'coordinator': 'hub_coordinator',
-					'hub leader': 'hub_coordinator',
-					'leader': 'hub_coordinator',
-					'facilitator': 'hub_coordinator',
-					'admin': 'admin',
-					'administrator': 'admin',
-					'staff': 'admin'
+					'participant': 'student',
+					'participants': 'student',
+					'student': 'student',
+					'students': 'student',
+					'attendee': 'student',
+					'member': 'student',
+					'hub coordinator': 'coordinator',
+					'hub-coordinator': 'coordinator',
+					'coordinator': 'coordinator',
+					'hub leader': 'coordinator',
+					'leader': 'coordinator',
+					'facilitator': 'coordinator'
 				};
 
 				const roleLower = row.role.toLowerCase().trim();
 				const normalizedRole = roleMap[roleLower] || roleLower;
 
-				if (!['courses_student', 'hub_coordinator', 'admin'].includes(normalizedRole)) {
-					errors.push(`Row ${i + 1}: Invalid role "${row.role}". Must be "Participant", "Hub Coordinator", or "Admin"`);
+				if (!['student', 'coordinator'].includes(normalizedRole)) {
+					errors.push(`Row ${i + 1}: Invalid role "${row.role}". Must be "Participant" or "Hub Coordinator"`);
 					continue;
 				}
 
@@ -264,6 +278,17 @@
 
 <div class="csv-upload">
 	{#if !file && !showPasteMode}
+		<!-- Template download -->
+		<div class="template-download">
+			<div class="template-text">
+				<strong>Need a template?</strong> Download our CSV template with sample data.
+			</div>
+			<button type="button" onclick={downloadTemplate} class="btn-template">
+				<Download size={16} />
+				Download Template
+			</button>
+		</div>
+
 		<div
 			class="upload-area"
 			class:drag-active={dragActive}
@@ -361,6 +386,47 @@ Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
 <style>
 	.csv-upload {
 		width: 100%;
+	}
+
+	.template-download {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 12px 16px;
+		background: #eff6ff;
+		border: 1px solid #bfdbfe;
+		border-radius: 8px;
+		margin-bottom: 16px;
+	}
+
+	.template-text {
+		font-size: 0.875rem;
+		color: #1e40af;
+	}
+
+	.template-text strong {
+		font-weight: 600;
+	}
+
+	.btn-template {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 14px;
+		background: #2563eb;
+		color: white;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s ease;
+		white-space: nowrap;
+	}
+
+	.btn-template:hover {
+		background: #1d4ed8;
 	}
 
 	.upload-area {

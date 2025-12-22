@@ -14,6 +14,7 @@
 		recipients = [],
 		cohortId = null,
 		currentUserEmail = '',
+		initialTemplateSlug = '',
 		onClose = () => {},
 		onSent = () => {}
 	} = $props();
@@ -81,9 +82,22 @@
 		}
 		if (show) {
 			// Reset state when opening
-			mode = 'choose';
+			mode = initialTemplateSlug ? 'template' : 'choose';
+			selectedTemplateId = '';
 			excludedIds = new Set();
 			previewRecipientId = recipients[0]?.id || null;
+			isEditingTemplate = false;
+		}
+	});
+
+	// Auto-select template when initialTemplateSlug is set and templates are loaded
+	$effect(() => {
+		if (show && initialTemplateSlug && templates.length > 0 && !selectedTemplateId) {
+			const template = templates.find(t => t.template_key === initialTemplateSlug);
+			if (template) {
+				selectedTemplateId = template.id;
+				mode = 'template';
+			}
 		}
 	});
 
@@ -104,6 +118,16 @@
 	function substituteVariables(template, recipient) {
 		if (!template || !recipient) return template || '';
 
+		// Get cohort data - could be nested as courses_cohorts or cohort
+		const cohortData = recipient.courses_cohorts || recipient.cohort || {};
+		const startDateRaw = cohortData.start_date;
+		const startDate = startDateRaw ? new Date(startDateRaw).toLocaleDateString('en-AU', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		}) : '';
+
 		const variables = {
 			firstName: recipient.full_name?.split(' ')[0] || '',
 			lastName: recipient.full_name?.split(' ').slice(1).join(' ') || '',
@@ -111,11 +135,11 @@
 			email: recipient.email || '',
 			courseName: course?.name || '',
 			courseSlug: courseSlug || '',
-			cohortName: recipient.cohort?.name || '',
+			cohortName: cohortData.name || '',
 			sessionNumber: recipient.current_session || 0,
-			currentSession: recipient.cohort?.current_session || 0,
-			startDate: recipient.cohort?.start_date ? new Date(recipient.cohort.start_date).toLocaleDateString() : '',
-			loginLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}`,
+			currentSession: cohortData.current_session || 0,
+			startDate: startDate,
+			loginLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/login`,
 			dashboardLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/dashboard`,
 			materialsLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/materials`,
 			reflectionLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/reflections`,
@@ -470,7 +494,7 @@
 									logoUrl={course?.logo_url}
 									accentDark={courseColors.accentDark}
 								>
-									<div class="p-6 prose prose-sm max-w-none min-h-[200px]">
+									<div class="p-6 prose prose-sm max-w-none min-h-[200px] email-preview-content">
 										{#if selectedTemplate?.body_template && previewRecipient}
 											{@html substituteVariables(selectedTemplate.body_template, previewRecipient).replace(/\n/g, '<br>')}
 										{:else if selectedTemplate?.body_template}
@@ -632,20 +656,41 @@
 			<AlertTriangle class="w-5 h-5 text-amber-600" />
 		</div>
 		<div class="flex-1">
-			<h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Send</h3>
-			<p class="text-gray-600 mb-4">
-				You're about to send an email to <strong class="text-gray-900">{enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}</strong>.
+			<h3 class="text-lg font-semibold text-white mb-2">Confirm Send</h3>
+			<p class="text-white/80 mb-4">
+				You're about to send an email to <strong class="text-white">{enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}</strong>.
 			</p>
 
-			<div class="bg-gray-50 rounded-lg p-3 mb-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Subject</div>
-				<div class="text-sm text-gray-900 font-medium">{getCurrentSubject()}</div>
+			<div class="bg-white/10 rounded-lg p-3 mb-3">
+				<div class="text-xs font-medium text-white/50 uppercase tracking-wide mb-1">Subject</div>
+				<div class="text-sm text-white font-medium">{substituteVariables(getCurrentSubject(), enabledRecipients[0])}</div>
 			</div>
 
-			<div class="text-xs text-gray-500">
+			<div class="text-xs text-white/50">
 				<span class="font-medium">Recipients:</span>
 				{enabledRecipients.slice(0, 3).map(r => r.full_name).join(', ')}{enabledRecipients.length > 3 ? ` and ${enabledRecipients.length - 3} more...` : ''}
 			</div>
 		</div>
 	</div>
 </ConfirmationModal>
+
+<style>
+	/* Style email buttons in preview to match how they'll look when sent */
+	:global(.email-preview-content [data-type="email-button"]) {
+		display: block;
+		text-align: center;
+		margin: 1.5rem 0;
+	}
+
+	:global(.email-preview-content [data-type="email-button"] a),
+	:global(.email-preview-content .email-button) {
+		display: inline-block;
+		padding: 12px 32px;
+		background-color: var(--course-accent-dark, #334642);
+		color: white !important;
+		text-decoration: none;
+		border-radius: 6px;
+		font-size: 16px;
+		font-weight: 600;
+	}
+</style>

@@ -4,10 +4,24 @@
 	 *
 	 * Handles video upload to Mux using Direct Upload.
 	 * Shows drop zone immediately - no click to initialize.
+	 * Falls back gracefully if Mux SDK fails to load.
 	 */
-	import '@mux/mux-uploader';
-	import { Loader2, CheckCircle, AlertCircle } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { Loader2, CheckCircle, AlertCircle, Upload } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
+
+	let muxLoaded = $state(false);
+	let muxLoadError = $state(false);
+
+	onMount(async () => {
+		try {
+			await import('@mux/mux-uploader');
+			muxLoaded = true;
+		} catch (err) {
+			console.warn('Mux uploader failed to load:', err.message);
+			muxLoadError = true;
+		}
+	});
 
 	let {
 		sessionId = null,
@@ -95,7 +109,24 @@
 </script>
 
 <div class="mux-uploader-container">
-	{#if isLoading}
+	{#if muxLoadError}
+		<!-- Fallback when Mux uploader fails to load -->
+		<div class="w-full p-8 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50">
+			<div class="flex flex-col items-center gap-3">
+				<Upload size="32" class="text-amber-500" />
+				<span class="font-medium text-amber-700">Video upload unavailable</span>
+				<span class="text-sm text-amber-600">Please try refreshing the page or contact support</span>
+			</div>
+		</div>
+	{:else if !muxLoaded}
+		<!-- Loading Mux SDK -->
+		<div class="w-full p-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+			<div class="flex flex-col items-center gap-3">
+				<Loader2 size="32" class="animate-spin text-gray-400" />
+				<span class="font-medium text-gray-600">Loading uploader...</span>
+			</div>
+		</div>
+	{:else if isLoading}
 		<!-- Loading upload URL -->
 		<div class="w-full p-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
 			<div class="flex flex-col items-center gap-3">

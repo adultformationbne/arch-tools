@@ -341,7 +341,7 @@ export const CourseQueries = {
 	async getEnrollments(cohortId?: string) {
 		let query = supabaseAdmin
 			.from('courses_enrollments')
-			.select('*, courses_cohorts(name), courses_hubs(name)')
+			.select('*, courses_cohorts(name, start_date, current_session), courses_hubs(name)')
 			.order('created_at', { ascending: false });
 
 		if (cohortId) {
@@ -1133,7 +1133,7 @@ export const CourseMutations = {
 				start_date: startDate,
 				end_date: calculatedEndDate,
 				current_session: 0,
-				status: 'upcoming',
+				status: 'draft',
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			})
@@ -1486,7 +1486,7 @@ export const CourseMutations = {
 
 		// Create import tracking record
 		const { data: importRecord, error: importError } = await supabaseAdmin
-			.from('accf_user_imports')
+			.from('courses_enrollment_imports')
 			.insert({
 				imported_by: importedBy,
 				filename: filename,
@@ -1500,168 +1500,203 @@ export const CourseMutations = {
 			return { data: null, error: importError };
 		}
 
+		// ========== BATCH PREFETCH FOR PERFORMANCE ==========
+
+		// 1. Get all emails from CSV
+		const csvEmails = rows.map(r => r.email.toLowerCase());
+
+		// 2. Batch check existing enrollments in this cohort
+		const { data: existingEnrollments } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('email')
+			.eq('cohort_id', cohortId)
+			.in('email', csvEmails);
+		const existingEnrollmentEmails = new Set((existingEnrollments || []).map(e => e.email.toLowerCase()));
+
+		// 3. Fetch ALL auth users once (not per row!)
+		const { data: { users: allAuthUsers } } = await supabaseAdmin.auth.admin.listUsers();
+		const authUsersByEmail = new Map((allAuthUsers || []).map(u => [u.email?.toLowerCase(), u]));
+
+		// 4. Fetch existing user profiles
+		const { data: existingProfiles } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, email')
+			.in('email', csvEmails);
+		const profilesByEmail = new Map((existingProfiles || []).map(p => [p.email?.toLowerCase(), p]));
+
+		// 5. Get all hubs for this course and prepare hub cache
+		const { data: existingHubs } = await supabaseAdmin
+			.from('courses_hubs')
+			.select('id, name')
+			.eq('course_id', courseId);
+		const hubsByName = new Map((existingHubs || []).map(h => [h.name.toLowerCase(), h.id]));
+
+		// 6. Pre-create any missing hubs in batch
+		const uniqueHubNames = [...new Set(rows.filter(r => r.hub?.trim()).map(r => r.hub.trim()))];
+		const missingHubs = uniqueHubNames.filter(name => !hubsByName.has(name.toLowerCase()));
+
+		if (missingHubs.length > 0) {
+			const { data: newHubs } = await supabaseAdmin
+				.from('courses_hubs')
+				.insert(missingHubs.map(name => ({ name, course_id: courseId })))
+				.select('id, name');
+
+			(newHubs || []).forEach(h => hubsByName.set(h.name.toLowerCase(), h.id));
+		}
+
+		// ========== PROCESS ROWS ==========
 		let successCount = 0;
 		let errorCount = 0;
-		const results = [];
-		const errorDetails = [];
+		const results: any[] = [];
+		const errorDetails: string[] = [];
+		const newUsersToCreate: any[] = [];
 
-		// Process each row
+		// First pass: identify which users need auth accounts created
 		for (const row of rows) {
+			const emailLower = row.email.toLowerCase();
+
+			// Skip if already enrolled
+			if (existingEnrollmentEmails.has(emailLower)) {
+				const errorMsg = `${row.full_name} (${row.email}): Already in this cohort`;
+				results.push({ email: row.email, status: 'skipped', message: 'Already in this cohort' });
+				errorDetails.push(errorMsg);
+				errorCount++;
+				continue;
+			}
+
+			// Check if user needs to be created
+			if (!authUsersByEmail.has(emailLower)) {
+				newUsersToCreate.push(row);
+			}
+		}
+
+		// Create new auth users (can't batch this, but at least we're not fetching all users each time)
+		const createdUsers = new Map<string, string>();
+		for (const row of newUsersToCreate) {
 			try {
-				// Check if already in courses_enrollments for THIS SPECIFIC COHORT
-				const { data: existingInCohort } = await supabaseAdmin
-					.from('courses_enrollments')
-					.select('email')
-					.eq('email', row.email)
-					.eq('cohort_id', cohortId)
-					.single();
-
-				if (existingInCohort) {
-					const errorMsg = `${row.full_name} (${row.email}): Already in this cohort`;
-					results.push({
-						email: row.email,
-						status: 'skipped',
-						message: 'Already in this cohort'
-					});
-					errorDetails.push(errorMsg);
-					errorCount++;
-					continue;
-				}
-
-				// Auto-create or find hub if hub name provided
-				let hubId = null;
-				if (row.hub && row.hub.trim()) {
-					const hubName = row.hub.trim();
-
-					// Check if hub exists for THIS COURSE (case-insensitive)
-					const { data: existingHub } = await supabaseAdmin
-						.from('courses_hubs')
-						.select('id')
-						.eq('course_id', courseId)
-						.ilike('name', hubName)
-						.single();
-
-					if (existingHub) {
-						hubId = existingHub.id;
-					} else {
-						// Create new hub for THIS COURSE
-						const { data: newHub } = await supabaseAdmin
-							.from('courses_hubs')
-							.insert({
-								name: hubName,
-								course_id: courseId
-							})
-							.select('id')
-							.single();
-
-						if (newHub) {
-							hubId = newHub.id;
+				const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+					type: 'invite',
+					email: row.email,
+					options: {
+						data: {
+							full_name: row.full_name || null,
+							invited_by: importedBy
 						}
 					}
-				}
-
-				// Create or get user account
-				let userId: string;
-
-				// Check if user already exists in auth system
-				const {
-					data: { users: existingAuthUsers }
-				} = await supabaseAdmin.auth.admin.listUsers();
-				const existingAuthUser = existingAuthUsers?.find((u) => u.email === row.email);
-
-				if (existingAuthUser) {
-					userId = existingAuthUser.id;
-				} else {
-					// Create new auth user without sending email
-					const { data: linkData, error: linkError } =
-						await supabaseAdmin.auth.admin.generateLink({
-							type: 'invite',
-							email: row.email,
-							options: {
-								data: {
-									full_name: row.full_name || null,
-									invited_by: importedBy
-								}
-							}
-						});
-
-					if (linkError) {
-						throw new Error(`Failed to create auth account: ${linkError.message}`);
-					}
-
-					userId = linkData.user.id;
-
-					// Wait briefly for trigger to create profile
-					await new Promise((resolve) => setTimeout(resolve, 500));
-				}
-
-				// Ensure user_profiles exists
-				let { data: existingProfile } = await supabaseAdmin
-					.from('user_profiles')
-					.select('id')
-					.eq('id', userId)
-					.single();
-
-				if (!existingProfile) {
-					// Create profile manually if trigger didn't
-					const { error: profileError } = await supabaseAdmin.from('user_profiles').insert({
-						id: userId,
-						email: row.email,
-						full_name: row.full_name || null,
-						modules: ['courses.participant']
-					});
-
-					if (profileError) {
-						// If profile creation fails, clean up auth user
-						await supabaseAdmin.auth.admin.deleteUser(userId);
-						throw new Error(`Failed to create user profile: ${profileError.message}`);
-					}
-				}
-
-				// Insert into courses_enrollments
-				const { error: insertError } = await supabaseAdmin.from('courses_enrollments').insert({
-					user_profile_id: userId,
-					email: row.email,
-					full_name: row.full_name,
-					role: row.role || 'student',
-					hub_id: hubId,
-					cohort_id: cohortId,
-					imported_by: importedBy,
-					status: 'pending'
 				});
 
-				if (insertError) {
-					const errorMsg = `${row.full_name} (${row.email}): ${insertError.message}`;
-					results.push({
-						email: row.email,
-						status: 'error',
-						message: insertError.message
-					});
-					errorDetails.push(errorMsg);
-					errorCount++;
-				} else {
-					results.push({
-						email: row.email,
-						status: 'success',
-						message: 'Added to cohort'
-					});
-					successCount++;
+				if (linkError) {
+					throw new Error(`Failed to create auth account: ${linkError.message}`);
 				}
+
+				createdUsers.set(row.email.toLowerCase(), linkData.user.id);
 			} catch (err: any) {
-				const errorMsg = `${row.full_name} (${row.email}): ${err.message || 'Unknown error'}`;
-				results.push({
-					email: row.email,
-					status: 'error',
-					message: err.message || 'Unknown error'
-				});
+				const errorMsg = `${row.full_name} (${row.email}): ${err.message}`;
+				results.push({ email: row.email, status: 'error', message: err.message });
 				errorDetails.push(errorMsg);
 				errorCount++;
 			}
 		}
 
+		// Brief wait for triggers to create profiles (one wait for all, not per user)
+		if (createdUsers.size > 0) {
+			await new Promise(resolve => setTimeout(resolve, 300));
+		}
+
+		// Batch create missing profiles
+		const profilesToCreate: any[] = [];
+		for (const [email, userId] of createdUsers) {
+			if (!profilesByEmail.has(email)) {
+				profilesToCreate.push({
+					id: userId,
+					email: email,
+					full_name: rows.find(r => r.email.toLowerCase() === email)?.full_name || null,
+					modules: ['courses.participant']
+				});
+			}
+		}
+
+		if (profilesToCreate.length > 0) {
+			await supabaseAdmin.from('user_profiles').upsert(profilesToCreate, { onConflict: 'id' });
+		}
+
+		// Build enrollments to insert
+		const enrollmentsToInsert: any[] = [];
+		for (const row of rows) {
+			const emailLower = row.email.toLowerCase();
+
+			// Skip already processed errors
+			if (results.find(r => r.email === row.email)) continue;
+
+			// Get user ID - check if existing user or newly created
+			const existingAuthUser = authUsersByEmail.get(emailLower);
+			const newlyCreatedUserId = createdUsers.get(emailLower);
+			const userId = existingAuthUser?.id || newlyCreatedUserId;
+
+			if (!userId) {
+				// User creation must have failed
+				continue;
+			}
+
+			// Get hub ID
+			const hubId = row.hub?.trim() ? hubsByName.get(row.hub.trim().toLowerCase()) || null : null;
+
+			// Determine status: existing users (already have account) start as 'active'
+			// New users (just created) start as 'pending' until they set password
+			const isExistingUser = existingAuthUser && !newlyCreatedUserId;
+			const now = new Date().toISOString();
+
+			enrollmentsToInsert.push({
+				user_profile_id: userId,
+				email: row.email,
+				full_name: row.full_name,
+				role: row.role || 'student',
+				hub_id: hubId,
+				cohort_id: cohortId,
+				imported_by: importedBy,
+				status: isExistingUser ? 'active' : 'pending',
+				// For existing users, they've already "signed up" - set login tracking
+				last_login_at: isExistingUser ? now : null,
+				login_count: isExistingUser ? 1 : 0
+			});
+		}
+
+		// Batch insert enrollments
+		if (enrollmentsToInsert.length > 0) {
+			const { data: insertedEnrollments, error: batchError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.insert(enrollmentsToInsert)
+				.select('email');
+
+			if (batchError) {
+				// If batch fails, try individual inserts to identify which ones failed
+				for (const enrollment of enrollmentsToInsert) {
+					const { error: insertError } = await supabaseAdmin
+						.from('courses_enrollments')
+						.insert(enrollment);
+
+					if (insertError) {
+						const errorMsg = `${enrollment.full_name} (${enrollment.email}): ${insertError.message}`;
+						results.push({ email: enrollment.email, status: 'error', message: insertError.message });
+						errorDetails.push(errorMsg);
+						errorCount++;
+					} else {
+						results.push({ email: enrollment.email, status: 'success', message: 'Added to cohort' });
+						successCount++;
+					}
+				}
+			} else {
+				// Batch succeeded
+				for (const enrollment of enrollmentsToInsert) {
+					results.push({ email: enrollment.email, status: 'success', message: 'Added to cohort' });
+					successCount++;
+				}
+			}
+		}
+
 		// Update import record
 		await supabaseAdmin
-			.from('accf_user_imports')
+			.from('courses_enrollment_imports')
 			.update({
 				successful_rows: successCount,
 				error_rows: errorCount,
@@ -1678,6 +1713,107 @@ export const CourseMutations = {
 				errorDetails: errorDetails,
 				results: results
 			},
+			error: null
+		};
+	},
+
+	/**
+	 * Send welcome emails to enrollments
+	 */
+	async sendWelcomeEmails(params: {
+		enrollmentIds: string[];
+		cohortId: string;
+		sentBy: string;
+		courseSlug: string;
+	}) {
+		const { enrollmentIds, cohortId, sentBy, courseSlug } = params;
+
+		if (!enrollmentIds || enrollmentIds.length === 0) {
+			return { data: { sent: 0, failed: 0 }, error: null };
+		}
+
+		// Get enrollments with cohort and course info
+		const { data: enrollments, error: fetchError } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select(`
+				id, email, full_name, user_profile_id,
+				courses_cohorts(
+					name, start_date,
+					courses_modules(
+						name,
+						courses(name, slug)
+					)
+				)
+			`)
+			.in('id', enrollmentIds)
+			.is('welcome_email_sent_at', null);
+
+		if (fetchError) {
+			return { data: null, error: fetchError };
+		}
+
+		let sentCount = 0;
+		let failedCount = 0;
+
+		// Import email service
+		const { sendCourseEmail } = await import('$lib/utils/email-service.js');
+
+		for (const enrollment of enrollments || []) {
+			try {
+				const cohortData = enrollment.courses_cohorts as any;
+				const moduleData = cohortData?.courses_modules as any;
+				const courseData = moduleData?.courses as any;
+
+				// Generate magic link for the user
+				const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+					type: 'magiclink',
+					email: enrollment.email,
+					options: {
+						redirectTo: `${process.env.PUBLIC_SITE_URL || 'https://arch-tools.vercel.app'}/courses/${courseSlug}/dashboard`
+					}
+				});
+
+				if (linkError) {
+					console.error(`Failed to generate link for ${enrollment.email}:`, linkError);
+					failedCount++;
+					continue;
+				}
+
+				// Send welcome email
+				await sendCourseEmail({
+					to: enrollment.email,
+					templateSlug: 'welcome',
+					courseSlug: courseSlug,
+					context: {
+						recipientName: enrollment.full_name,
+						recipientEmail: enrollment.email,
+						cohortName: cohortData?.name || 'Your Cohort',
+						courseName: courseData?.name || 'Course',
+						moduleName: moduleData?.name || 'Module',
+						startDate: cohortData?.start_date,
+						magicLink: linkData.properties?.action_link || '#'
+					}
+				});
+
+				// Update enrollment with sent timestamp
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.update({
+						welcome_email_sent_at: new Date().toISOString(),
+						welcome_email_sent_by: sentBy,
+						status: 'invited'
+					})
+					.eq('id', enrollment.id);
+
+				sentCount++;
+			} catch (err) {
+				console.error(`Failed to send welcome email to ${enrollment.email}:`, err);
+				failedCount++;
+			}
+		}
+
+		return {
+			data: { sent: sentCount, failed: failedCount },
 			error: null
 		};
 	},

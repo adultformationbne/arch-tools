@@ -563,7 +563,7 @@ export function buildVariableContext({
 		currentSession: cohort?.current_session || '',
 
 		// Link variables
-		loginLink: `${siteUrl}/courses/${course?.slug || ''}`,
+		loginLink: `${siteUrl}/login`,
 		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}/dashboard`,
 		materialsLink: `${siteUrl}/courses/${course?.slug || ''}/materials`,
 		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,

@@ -1,11 +1,8 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { X, UserPlus, Upload, Users } from 'lucide-svelte';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { cohort = null, show = false, courseSlug, onClose = () => {} } = $props();
-
-	const dispatch = createEventDispatcher();
+	let { cohort = null, show = false, courseSlug, onClose = () => {}, onComplete = () => {} } = $props();
 
 	let mode = $state('choice'); // 'choice', 'single', 'bulk'
 	let isLoading = $state(false);
@@ -43,7 +40,7 @@
 		error = '';
 
 		try {
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -59,7 +56,7 @@
 			const result = await response.json();
 
 			if (result.success) {
-				dispatch('complete', { cohortId: cohort.id });
+				onComplete({ cohortId: cohort.id });
 				handleClose();
 			} else {
 				error = result.message || 'Failed to add participant';
@@ -77,7 +74,7 @@
 		error = '';
 
 		try {
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -94,7 +91,7 @@
 				uploadResult = result.data;
 				// Auto-close after 2 seconds on success
 				setTimeout(() => {
-					dispatch('complete', { cohortId: cohort.id });
+					onComplete({ cohortId: cohort.id });
 					handleClose();
 				}, 2000);
 			} else {

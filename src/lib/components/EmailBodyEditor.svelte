@@ -1,9 +1,26 @@
 <script>
-	import { onDestroy } from 'svelte';
-	import { Zap, SquareMousePointer, Braces } from 'lucide-svelte';
-	import TipTapEmailEditor from './TipTapEmailEditor.svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { Zap, SquareMousePointer, Braces, AlertCircle } from 'lucide-svelte';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
+	import FallbackTextEditor from './FallbackTextEditor.svelte';
 	import { createDropdown } from '$lib/utils/dropdown.js';
+
+	// Dynamic import for TipTap - allows graceful fallback
+	let TipTapEmailEditor = $state(null);
+	let editorLoadError = $state(null);
+	let editorLoading = $state(true);
+
+	onMount(async () => {
+		try {
+			const module = await import('./TipTapEmailEditor.svelte');
+			TipTapEmailEditor = module.default;
+		} catch (err) {
+			console.warn('TipTap editor failed to load:', err.message);
+			editorLoadError = err;
+		} finally {
+			editorLoading = false;
+		}
+	});
 
 	/**
 	 * Shared email body editor with sidebar toolbar, branded preview frame, and variable picker.
@@ -84,7 +101,8 @@
 <div class="space-y-4">
 	<!-- Editor with sidebar toolbar -->
 	<div class="bg-gray-100 rounded-xl p-8 flex justify-center gap-4">
-		<!-- Side Toolbar -->
+		<!-- Side Toolbar (only shown when TipTap is available) -->
+		{#if TipTapEmailEditor && !editorLoadError}
 		<div
 			class="flex flex-col items-center gap-1 p-2 rounded-lg w-14 h-fit sticky top-8 transition-all duration-200 {hasTextSelection ? 'scale-105 shadow-xl bg-white border-2' : 'bg-gray-50 border border-gray-200'}"
 			style={hasTextSelection ? `border-color: ${accentDark}` : ''}
@@ -209,6 +227,7 @@
 				</button>
 			{/each}
 		</div>
+		{/if}
 
 		<!-- Email Preview Frame with Editor -->
 		<EmailPreviewFrame
@@ -219,19 +238,34 @@
 			withContainer={false}
 			headerPadding="py-12 px-8"
 		>
-			<TipTapEmailEditor
-				bind:this={editorComponent}
-				bind:editor={tiptapEditor}
-				bind:hasSelection={hasTextSelection}
-				{value}
-				{onchange}
-				{placeholder}
-				{availableVariables}
-				accentColor={accentDark}
-				hideVariablePicker={true}
-				showFixedToolbar={false}
-				verticalToolbar={false}
-			/>
+			{#if editorLoading}
+				<div class="flex items-center justify-center py-12 text-gray-500">
+					<div class="animate-spin w-5 h-5 border-2 border-gray-300 border-t-indigo-500 rounded-full mr-2"></div>
+					Loading editor...
+				</div>
+			{:else if TipTapEmailEditor && !editorLoadError}
+				<svelte:component
+					this={TipTapEmailEditor}
+					bind:this={editorComponent}
+					bind:editor={tiptapEditor}
+					bind:hasSelection={hasTextSelection}
+					{value}
+					{onchange}
+					{placeholder}
+					{availableVariables}
+					accentColor={accentDark}
+					hideVariablePicker={true}
+					showFixedToolbar={false}
+					verticalToolbar={false}
+				/>
+			{:else}
+				<!-- Fallback editor when TipTap fails -->
+				<FallbackTextEditor
+					{value}
+					{onchange}
+					{placeholder}
+				/>
+			{/if}
 		</EmailPreviewFrame>
 	</div>
 
