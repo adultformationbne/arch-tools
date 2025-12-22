@@ -9,12 +9,13 @@ import { supabaseAdmin } from '$lib/server/supabase';
  * Fetch enrollments with filtering support for email recipient selection.
  *
  * Query params:
- * - cohort_id (required): Filter by cohort
+ * - cohort_id (optional): Filter by cohort. If not provided, returns enrollments from all cohorts.
  * - status: Filter by enrollment status (default: 'active')
  * - role: Filter by role ('student' | 'coordinator')
  * - hub_id: Filter by hub assignment
  * - current_session: Filter by student's current session number
  * - has_pending_reflections: Filter students who have ANY outstanding reflections
+ * - limit: Maximum number of results (default: 100)
  */
 export const GET: RequestHandler = async (event) => {
 	try {
@@ -22,6 +23,17 @@ export const GET: RequestHandler = async (event) => {
 
 		// Auth check - require course admin
 		await requireCourseAdmin(event, slug);
+
+		// Get course first to filter enrollments
+		const { data: course, error: courseError } = await supabaseAdmin
+			.from('courses')
+			.select('id')
+			.eq('slug', slug)
+			.single();
+
+		if (courseError || !course) {
+			return json({ error: 'Course not found' }, { status: 404 });
+		}
 
 		// Parse query params
 		const url = new URL(event.request.url);
@@ -31,13 +43,9 @@ export const GET: RequestHandler = async (event) => {
 		const hubId = url.searchParams.get('hub_id');
 		const currentSession = url.searchParams.get('current_session');
 		const hasPendingReflections = url.searchParams.get('has_pending_reflections') === 'true';
+		const limit = parseInt(url.searchParams.get('limit') || '100');
 
-		// Validation
-		if (!cohortId) {
-			return json({ error: 'cohort_id is required' }, { status: 400 });
-		}
-
-		// Build query
+		// Build query - join through cohorts to filter by course
 		let query = supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
@@ -52,9 +60,18 @@ export const GET: RequestHandler = async (event) => {
 				courses_hubs (
 					id,
 					name
+				),
+				courses_cohorts!inner (
+					id,
+					course_id
 				)
 			`)
-			.eq('cohort_id', cohortId);
+			.eq('courses_cohorts.course_id', course.id);
+
+		// Filter by cohort if provided
+		if (cohortId) {
+			query = query.eq('cohort_id', cohortId);
+		}
 
 		// Apply filters
 		if (status) {
@@ -73,8 +90,8 @@ export const GET: RequestHandler = async (event) => {
 			query = query.eq('current_session', parseInt(currentSession));
 		}
 
-		// Order by name
-		query = query.order('full_name', { ascending: true });
+		// Order by name and apply limit
+		query = query.order('full_name', { ascending: true }).limit(limit);
 
 		const { data: enrollments, error: enrollmentsError } = await query;
 
@@ -87,7 +104,8 @@ export const GET: RequestHandler = async (event) => {
 
 		// Handle has_pending_reflections filter
 		// Returns students who have ANY outstanding reflections (for sessions up to their current_session)
-		if (hasPendingReflections) {
+		// Requires cohort_id to be specified since we need the module to check reflections
+		if (hasPendingReflections && cohortId) {
 			// Get the cohort's module
 			const { data: cohort } = await supabaseAdmin
 				.from('courses_cohorts')

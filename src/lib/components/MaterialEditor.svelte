@@ -1,12 +1,25 @@
 <script>
+	import { onMount } from 'svelte';
 	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical } from 'lucide-svelte';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
-	import { dndzone } from 'svelte-dnd-action';
+	import { getDndzone, noopDndzone } from '$lib/utils/resilient-dnd.js';
 	import { flip } from 'svelte/animate';
+
+	// Dynamic DnD loading - falls back to static list if unavailable
+	let dndzone = $state(noopDndzone);
+	let dndAvailable = $state(false);
+
+	onMount(async () => {
+		const loadedDnd = await getDndzone();
+		if (loadedDnd) {
+			dndzone = loadedDnd;
+			dndAvailable = true;
+		}
+	});
 
 	let {
 		materials = [],
@@ -378,7 +391,8 @@
 					role="button"
 					tabindex="0"
 				>
-					<!-- Drag Handle -->
+					<!-- Drag Handle (only shown when DnD is available) -->
+					{#if dndAvailable}
 					<div
 						class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-300 opacity-0 group-hover:opacity-100 hover:text-gray-500 transition-opacity"
 						onclick={(e) => e.stopPropagation()}
@@ -386,6 +400,7 @@
 					>
 						<GripVertical size="16" />
 					</div>
+					{/if}
 
 					<!-- Expand/Collapse Icon -->
 					<div class="text-gray-400">

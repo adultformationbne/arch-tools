@@ -41,6 +41,14 @@
 
 			if (error) throw error;
 
+			// Track first login for course enrollments
+			try {
+				await fetch('/api/auth/track-login', { method: 'POST' });
+			} catch (e) {
+				// Non-blocking - don't fail password setup if tracking fails
+				console.warn('Failed to track login:', e);
+			}
+
 			success = true;
 
 			// Wait a moment to show success message

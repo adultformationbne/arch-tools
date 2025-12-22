@@ -178,7 +178,7 @@ export const POST: RequestHandler = async (event) => {
 				marked_by: coordinator.id,
 				attendance_type: 'hub'
 			}, {
-				onConflict: 'enrollment_id,session_number'
+				onConflict: 'cohort_id,enrollment_id,session_number'
 			});
 
 		if (upsertError) {

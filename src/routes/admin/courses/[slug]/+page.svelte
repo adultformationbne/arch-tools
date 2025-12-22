@@ -1,7 +1,7 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { Check, X, AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, UserPlus, Trash2, MapPin } from 'lucide-svelte';
+	import { Check, X, AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, UserPlus, Trash2, MapPin, Send, MailCheck, MailX } from 'lucide-svelte';
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
@@ -30,6 +30,7 @@
 	let showEmailModal = $state(false);
 	let showHubAssignModal = $state(false);
 	let emailRecipients = $state([]);
+	let initialTemplateSlug = $state('');
 	let selectedHubId = $state('');
 
 	// Participants state
@@ -225,6 +226,7 @@
 
 	function handleEmailAll() {
 		emailRecipients = participants;
+		initialTemplateSlug = '';
 		showEmailModal = true;
 	}
 
@@ -239,6 +241,7 @@
 	// Bulk actions
 	function handleEmailSelected() {
 		emailRecipients = participants.filter(p => selectedParticipants.has(p.id));
+		initialTemplateSlug = '';
 		showEmailModal = true;
 	}
 
@@ -294,10 +297,34 @@
 		showDeleteConfirm = true;
 	}
 
+	function handleSendWelcome() {
+		if (selectedParticipants.size === 0) return;
+
+		// Get selected participants who haven't received welcome email
+		const pendingParticipants = participants.filter(
+			p => selectedParticipants.has(p.id) && !p.welcome_email_sent_at
+		);
+
+		if (pendingParticipants.length === 0) {
+			toastWarning('All selected participants have already received welcome emails');
+			return;
+		}
+
+		// Open email modal with welcome template pre-selected
+		emailRecipients = pendingParticipants;
+		initialTemplateSlug = 'welcome_enrolled';
+		showEmailModal = true;
+	}
+
 	// Modal handlers
-	async function handleWizardComplete() {
+	async function handleWizardComplete(result) {
 		showCohortWizard = false;
 		await invalidateAll();
+
+		// Navigate to the new cohort
+		if (result?.cohortId) {
+			goto(`/admin/courses/${courseSlug}?cohort=${result.cohortId}`);
+		}
 	}
 
 	async function handleEnrollmentComplete() {
@@ -355,6 +382,13 @@
 							<span class="text-sm font-medium text-white">
 								{selectedParticipants.size} selected
 							</span>
+							<button
+								onclick={handleSendWelcome}
+								class="px-3 py-1.5 rounded text-sm font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-2 transition-colors"
+							>
+								<Send size={14} />
+								Send Welcome
+							</button>
 							<button
 								onclick={handleEmailSelected}
 								class="px-3 py-1.5 rounded text-sm font-medium text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
@@ -443,6 +477,7 @@
 										/>
 									</th>
 									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
 									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Session</th>
 									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Hub</th>
 									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance</th>
@@ -475,6 +510,28 @@
 													{/if}
 												</div>
 											</div>
+										</td>
+										<td class="px-4 py-3">
+											{#if !participant.welcome_email_sent_at}
+												<!-- Step 1: Needs invite -->
+												<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+													<MailX size={12} />
+													Needs invite
+												</span>
+											{:else if !participant.last_login_at}
+												<!-- Step 2: Invited, awaiting signup -->
+												<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700" title="Invited {new Date(participant.welcome_email_sent_at).toLocaleDateString()}">
+													<Mail size={12} />
+													Awaiting signup
+												</span>
+											{:else if participant.status === 'held'}
+												<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">On Hold</span>
+											{:else if participant.status === 'withdrawn'}
+												<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Withdrawn</span>
+											{:else}
+												<!-- Active user - no badge needed -->
+												<span class="text-xs text-gray-400">—</span>
+											{/if}
 										</td>
 										<td class="px-4 py-3">
 											{#if editingSession && editingSession.id === participant.id}
@@ -557,7 +614,7 @@
 	{modules}
 	show={showCohortWizard}
 	onClose={() => showCohortWizard = false}
-	on:complete={handleWizardComplete}
+	onComplete={handleWizardComplete}
 />
 
 <ParticipantEnrollmentModal
@@ -565,7 +622,7 @@
 	cohort={selectedCohort}
 	show={showStudentEnrollment}
 	onClose={() => showStudentEnrollment = false}
-	on:complete={handleEnrollmentComplete}
+	onComplete={handleEnrollmentComplete}
 />
 
 <StudentAdvancementModal
@@ -594,12 +651,19 @@
 <EmailSenderModal
 	show={showEmailModal}
 	{courseSlug}
-	course={data.course}
+	course={data.courseInfo}
 	recipients={emailRecipients}
 	cohortId={selectedCohort?.id}
 	currentUserEmail={data.currentUserEmail}
-	onClose={() => showEmailModal = false}
-	onSent={() => selectedParticipants = new Set()}
+	{initialTemplateSlug}
+	onClose={() => {
+		showEmailModal = false;
+		initialTemplateSlug = '';
+	}}
+	onSent={async () => {
+		selectedParticipants = new Set();
+		await loadParticipants();
+	}}
 />
 
 <!-- Hub Assignment Modal -->

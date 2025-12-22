@@ -6,11 +6,13 @@
     "preview": "vite preview",
     "validate-schema": "node scripts/validate-schema.js",
     "validate-api": "node scripts/validate-api-contracts.js",
+    "validate-upsert": "node scripts/validate-upsert-constraints.js",
     "update-types": "node scripts/fetch-types.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:cleanup": "node scripts/cleanup-test-data.js"
+    "test:cleanup": "node scripts/cleanup-test-data.js",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
     "@codemirror/basic-setup": "^0.20.0",
@@ -40,7 +42,7 @@
     "fast-xml-parser": "^5.2.5",
     "js-beautify": "^1.15.4",
     "jsdom": "^26.1.0",
-    "lucide-svelte": "^0.542.0",
+    "lucide": "^0.562.0",
     "mjml": "^4.17.1",
     "prettier": "^3.6.2",
     "resend": "^6.1.1",

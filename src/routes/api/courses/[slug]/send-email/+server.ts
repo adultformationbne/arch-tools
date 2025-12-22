@@ -59,11 +59,12 @@ export const POST: RequestHandler = async (event) => {
 		// Get cohort if provided
 		let cohort = null;
 		if (cohort_id) {
+			// Cohorts are linked through modules, not directly to courses
+			// Just fetch by ID since cohort_id is already validated from the client
 			const { data: cohortData } = await supabaseAdmin
 				.from('courses_cohorts')
 				.select('id, name, start_date, end_date, current_session')
 				.eq('id', cohort_id)
-				.eq('course_id', course.id)
 				.single();
 
 			cohort = cohortData;
@@ -214,6 +215,25 @@ export const POST: RequestHandler = async (event) => {
 				}
 			}
 		});
+
+		// If this is a welcome email and we sent successfully, update enrollment tracking
+		if (email_type === 'welcome_enrolled' && results.sent > 0) {
+			const sentEnrollmentIds = emailsToSend.map((e) => e.referenceId);
+			const now = new Date().toISOString();
+
+			const { error: updateError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.update({
+					welcome_email_sent_at: now,
+					welcome_email_sent_by: user.id
+				})
+				.in('id', sentEnrollmentIds);
+
+			if (updateError) {
+				console.error('Failed to update welcome_email_sent_at:', updateError);
+				// Don't fail the request - emails were still sent
+			}
+		}
 
 		// Return results
 		return json({

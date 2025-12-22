@@ -62,8 +62,8 @@
 	]);
 	let savingTiles = $state(false);
 
-	// Filter state
-	let scheduleFilter = $state('all'); // 'all' or 'submissions'
+	// Filter state: 'all', 'needs_review', 'approved', 'published', 'unassigned'
+	let scheduleFilter = $state('all');
 	let scheduleDays = $state(90); // Show 90 days by default
 
 	// Form states
@@ -154,14 +154,29 @@
 	}
 
 	// Computed filtered schedule based on filter selection
-	let filteredSchedule = $derived(
-		scheduleFilter === 'submissions'
-			? schedule.filter(
-					(entry) =>
-						entry.reflection_content || entry.status === 'submitted' || entry.status === 'approved' || entry.status === 'published'
-				)
-			: schedule
-	);
+	let filteredSchedule = $derived.by(() => {
+		switch (scheduleFilter) {
+			case 'needs_review':
+				return schedule.filter(e => e.status === 'submitted');
+			case 'approved':
+				return schedule.filter(e => e.status === 'approved');
+			case 'published':
+				return schedule.filter(e => e.status === 'published');
+			case 'unassigned':
+				return schedule.filter(e => !e.contributor_id);
+			default:
+				return schedule;
+		}
+	});
+
+	// Filter counts for badges
+	let filterCounts = $derived({
+		all: schedule.length,
+		needs_review: schedule.filter(e => e.status === 'submitted').length,
+		approved: schedule.filter(e => e.status === 'approved').length,
+		published: schedule.filter(e => e.status === 'published').length,
+		unassigned: schedule.filter(e => !e.contributor_id).length
+	});
 
 	async function loadContributors() {
 		try {
@@ -1290,30 +1305,56 @@
 			<div class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
 					<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
 						<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
-							<span class="text-sm font-medium text-gray-700">View:</span>
-							<div class="flex gap-2">
+							<span class="text-sm font-medium text-gray-700 hidden sm:inline">Filter:</span>
+							<div class="flex flex-wrap gap-2">
 								<button
 									onclick={() => (scheduleFilter = 'all')}
-									class="flex-1 sm:flex-none rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'all'
-										? 'bg-blue-600 text-white'
+									class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {scheduleFilter === 'all'
+										? 'bg-gray-800 text-white'
 										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
 								>
-									All Dates ({schedule.length})
+									All <span class="text-xs opacity-70">({filterCounts.all})</span>
 								</button>
-								<button
-									onclick={() => (scheduleFilter = 'submissions')}
-									class="flex-1 sm:flex-none rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors {scheduleFilter === 'submissions'
-										? 'bg-blue-600 text-white'
-										: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-								>
-									Submissions Only ({schedule.filter(
-										(e) =>
-											e.reflection_content ||
-											e.status === 'submitted' ||
-											e.status === 'approved' ||
-											e.status === 'published'
-									).length})
-								</button>
+								{#if filterCounts.needs_review > 0}
+									<button
+										onclick={() => (scheduleFilter = 'needs_review')}
+										class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {scheduleFilter === 'needs_review'
+											? 'bg-blue-600 text-white'
+											: 'bg-blue-50 text-blue-700 hover:bg-blue-100'}"
+									>
+										Needs Review <span class="rounded-full bg-blue-200 text-blue-800 px-1.5 text-xs font-bold">{filterCounts.needs_review}</span>
+									</button>
+								{/if}
+								{#if filterCounts.approved > 0}
+									<button
+										onclick={() => (scheduleFilter = 'approved')}
+										class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {scheduleFilter === 'approved'
+											? 'bg-green-600 text-white'
+											: 'bg-green-50 text-green-700 hover:bg-green-100'}"
+									>
+										Approved <span class="text-xs opacity-70">({filterCounts.approved})</span>
+									</button>
+								{/if}
+								{#if filterCounts.published > 0}
+									<button
+										onclick={() => (scheduleFilter = 'published')}
+										class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {scheduleFilter === 'published'
+											? 'bg-purple-600 text-white'
+											: 'bg-purple-50 text-purple-700 hover:bg-purple-100'}"
+									>
+										Published <span class="text-xs opacity-70">({filterCounts.published})</span>
+									</button>
+								{/if}
+								{#if filterCounts.unassigned > 0}
+									<button
+										onclick={() => (scheduleFilter = 'unassigned')}
+										class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {scheduleFilter === 'unassigned'
+											? 'bg-amber-600 text-white'
+											: 'bg-amber-50 text-amber-700 hover:bg-amber-100'}"
+									>
+										Unassigned <span class="text-xs opacity-70">({filterCounts.unassigned})</span>
+									</button>
+								{/if}
 							</div>
 						</div>
 
@@ -1415,9 +1456,11 @@
 <DGRReviewModal
 	bind:isOpen={reviewModalOpen}
 	bind:reflection={selectedReflection}
+	submissions={schedule}
 	onSave={saveReflection}
 	onApprove={approveReflection}
 	onSendToWordPress={sendToWordPress}
+	onSelectSubmission={(s) => selectedReflection = s}
 />
 
 <!-- Delete Confirmation Modal -->

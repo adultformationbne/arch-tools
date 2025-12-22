@@ -1,6 +1,6 @@
 <script>
+  import { onMount } from 'svelte';
   import { Settings, Wand2 } from 'lucide-svelte';
-  import CodeMirrorEditor from './CodeMirrorEditor.svelte';
   import { formatHtml } from '$lib/utils/html-formatter.js';
 
   let {
@@ -11,6 +11,20 @@
 
   let editor;
   let isFormatting = $state(false);
+
+  // Dynamic import - if CodeMirror breaks, fallback to textarea
+  let CodeMirrorEditor = $state(null);
+  let loadFailed = $state(false);
+
+  onMount(async () => {
+    try {
+      const module = await import('./CodeMirrorEditor.svelte');
+      CodeMirrorEditor = module.default;
+    } catch (err) {
+      console.warn('CodeMirror failed to load:', err.message);
+      loadFailed = true;
+    }
+  });
 
   // Format HTML function
   async function handleFormat() {
@@ -59,11 +73,26 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <CodeMirrorEditor
-      bind:this={editor}
-      bind:value={html}
-      theme="dark"
-      placeholder="Enter your HTML template here..."
-    />
+    {#if CodeMirrorEditor}
+      <svelte:component
+        this={CodeMirrorEditor}
+        bind:this={editor}
+        bind:value={html}
+        theme="dark"
+        placeholder="Enter your HTML template here..."
+      />
+    {:else if loadFailed}
+      <!-- Fallback textarea when CodeMirror fails -->
+      <textarea
+        bind:value={html}
+        placeholder="Enter your HTML template here..."
+        class="w-full h-full bg-gray-900 text-gray-100 font-mono text-sm p-4 resize-none focus:outline-none"
+        spellcheck="false"
+      ></textarea>
+    {:else}
+      <div class="flex items-center justify-center h-full text-gray-500">
+        Loading editor...
+      </div>
+    {/if}
   </div>
 </div>

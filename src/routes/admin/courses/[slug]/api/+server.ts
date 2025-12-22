@@ -276,6 +276,25 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'send_welcome_emails': {
+				const result = await CourseMutations.sendWelcomeEmails({
+					enrollmentIds: data.enrollmentIds,
+					cohortId: data.cohortId,
+					sentBy: user.id,
+					courseSlug
+				});
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to send welcome emails');
+				}
+
+				return json({
+					success: true,
+					data: result.data,
+					message: `Welcome emails sent to ${result.data?.sent} participants`
+				});
+			}
+
 			case 'update_enrollment': {
 				const result = await CourseMutations.updateEnrollment({
 					userId: data.userId,

@@ -3,6 +3,7 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import DGRDocumentEditor from '$lib/components/DGRDocumentEditor.svelte';
 	import { Calendar, Check, ChevronDown, Clock, FileText, HelpCircle, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 	import { formatReading, formatContributorName } from '$lib/utils/dgr-helpers';
@@ -59,24 +60,6 @@
 	// Onboarding modal for first-time users
 	let showOnboarding = $state(false);
 
-	// Auto-resize textarea ref
-	let textareaEl = $state(null);
-
-	// Auto-resize textarea to fit content
-	function autoResize() {
-		if (textareaEl) {
-			textareaEl.style.height = 'auto';
-			textareaEl.style.height = textareaEl.scrollHeight + 'px';
-		}
-	}
-
-	// Resize on content change
-	$effect(() => {
-		if (reflectionContent !== undefined && textareaEl) {
-			// Small delay to ensure DOM is updated
-			requestAnimationFrame(autoResize);
-		}
-	});
 
 	// Help content for contributors
 	const helpContent = [
@@ -750,220 +733,40 @@
 					</div>
 
 					<!-- Document -->
-					<div class="mx-auto max-w-3xl rounded-lg bg-white shadow-sm">
-						<!-- Readings Section - Collapsed on mobile, expanded on desktop -->
-						{#if readings}
-							<!-- Mobile: Collapsible readings -->
-							<div class="border-b border-gray-100 md:hidden">
-								<button
-									onclick={() => readingsExpanded = !readingsExpanded}
-									class="flex w-full items-center justify-between px-4 py-3"
-								>
-									<div class="flex items-center gap-2 min-w-0">
-										<FileText class="h-4 w-4 text-indigo-500 shrink-0" />
-										<span class="font-medium text-gray-900 truncate">
-											{formatReading(readings.gospel_reading) || 'Readings'}{#if readings.liturgical_day} · {readings.liturgical_day}{/if}
-										</span>
+					<div class="mx-auto max-w-3xl">
+						<DGRDocumentEditor
+							bind:title={reflectionTitle}
+							bind:gospelQuote={gospelQuote}
+							bind:content={reflectionContent}
+							{readings}
+							{gospelText}
+							{loadingReadings}
+							{loadingGospelText}
+							onchange={handleContentChange}
+							onEditReadings={openEditReadings}
+						/>
+
+						<!-- Success state -->
+						{#if justSubmitted}
+							<div class="mt-4 rounded-lg bg-green-50 p-4">
+								<div class="flex items-center gap-3">
+									<svg class="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none">
+										<path
+											d="M4 12.5l6 6 10-12"
+											stroke="currentColor"
+											stroke-width="2.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="animate-tick"
+										/>
+									</svg>
+									<div>
+										<p class="font-medium text-green-800">Submitted!</p>
+										<p class="text-sm text-green-600">You're all set for now</p>
 									</div>
-									<ChevronDown class="h-4 w-4 text-gray-400 shrink-0 transition-transform {readingsExpanded ? 'rotate-180' : ''}" />
-								</button>
-
-								{#if readingsExpanded}
-									<div class="border-t border-gray-100 px-4 py-3 space-y-3">
-										<!-- All readings -->
-										<div class="space-y-1.5 text-sm">
-											{#if readings.first_reading}
-												<div class="flex gap-2">
-													<span class="text-gray-400 w-12 shrink-0">1st:</span>
-													<span class="text-gray-700">{formatReading(readings.first_reading)}</span>
-												</div>
-											{/if}
-											{#if readings.psalm}
-												<div class="flex gap-2">
-													<span class="text-gray-400 w-12 shrink-0">Psalm:</span>
-													<span class="text-gray-700">{formatReading(readings.psalm)}</span>
-												</div>
-											{/if}
-											{#if readings.second_reading}
-												<div class="flex gap-2">
-													<span class="text-gray-400 w-12 shrink-0">2nd:</span>
-													<span class="text-gray-700">{formatReading(readings.second_reading)}</span>
-												</div>
-											{/if}
-											{#if readings.gospel_reading}
-												<div class="flex gap-2">
-													<span class="text-gray-400 w-12 shrink-0">Gospel:</span>
-													<span class="text-gray-700 font-medium">{formatReading(readings.gospel_reading)}</span>
-												</div>
-											{/if}
-										</div>
-
-										<!-- Gospel text -->
-										{#if gospelText}
-											<div class="rounded-lg bg-indigo-50 p-3">
-												<div class="prose prose-sm max-w-none text-gray-700">
-													{@html gospelText}
-												</div>
-											</div>
-										{:else if loadingGospelText}
-											<div class="flex items-center gap-2 text-sm text-gray-500">
-												<Clock class="h-4 w-4 animate-spin" />
-												Loading Gospel text...
-											</div>
-										{/if}
-
-										<!-- Edit button -->
-										<button
-											onclick={openEditReadings}
-											class="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600"
-										>
-											<Pencil class="h-3 w-3" />
-											Edit readings
-										</button>
-									</div>
-								{/if}
-							</div>
-
-							<!-- Desktop: Always expanded readings -->
-							<div class="hidden md:block border-b border-gray-100 px-8 py-4">
-								<!-- Header with edit button -->
-								<div class="flex items-center justify-between mb-3">
-									<div class="flex items-center gap-2 text-sm text-gray-600">
-										<FileText class="h-4 w-4 text-indigo-500" />
-										<span class="font-medium">{readings.liturgical_day || 'Readings'}</span>
-									</div>
-									<button
-										onclick={openEditReadings}
-										class="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600"
-									>
-										<Pencil class="h-3 w-3" />
-										Edit
-									</button>
-								</div>
-
-								<!-- All readings list -->
-								<div class="grid grid-cols-2 gap-2 text-sm">
-									{#if readings.first_reading}
-										<div class="flex items-start gap-2">
-											<span class="text-gray-400 shrink-0">1st:</span>
-											<span class="text-gray-700">{formatReading(readings.first_reading)}</span>
-										</div>
-									{/if}
-									{#if readings.psalm}
-										<div class="flex items-start gap-2">
-											<span class="text-gray-400 shrink-0">Psalm:</span>
-											<span class="text-gray-700">{formatReading(readings.psalm)}</span>
-										</div>
-									{/if}
-									{#if readings.second_reading}
-										<div class="flex items-start gap-2">
-											<span class="text-gray-400 shrink-0">2nd:</span>
-											<span class="text-gray-700">{formatReading(readings.second_reading)}</span>
-										</div>
-									{/if}
-									{#if readings.gospel_reading}
-										<div class="flex items-start gap-2">
-											<span class="text-gray-400 shrink-0">Gospel:</span>
-											<span class="text-gray-700 font-medium">{formatReading(readings.gospel_reading)}</span>
-										</div>
-									{/if}
-								</div>
-
-								<!-- Gospel text (desktop) -->
-								{#if gospelText}
-									<div class="mt-3 rounded-lg bg-indigo-50 p-4">
-										<div class="prose prose-sm max-w-none text-gray-700">
-											{@html gospelText}
-										</div>
-									</div>
-								{:else if loadingGospelText}
-									<div class="mt-3 flex items-center gap-2 text-sm text-gray-500">
-										<Clock class="h-4 w-4 animate-spin" />
-										Loading Gospel text...
-									</div>
-								{/if}
-							</div>
-						{:else if loadingReadings}
-							<div class="border-b border-gray-100 px-6 py-4 sm:px-8">
-								<div class="flex items-center gap-2 text-sm text-gray-500">
-									<Clock class="h-4 w-4 animate-spin" />
-									Loading readings...
 								</div>
 							</div>
 						{/if}
-
-						<!-- Document-style Editor -->
-						<div class="px-6 py-6 sm:px-8">
-							<!-- Title -->
-							<div class="mb-4">
-								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Title</span>
-								<input
-									type="text"
-									bind:value={reflectionTitle}
-									oninput={handleContentChange}
-									placeholder="Enter a compelling title..."
-									class="w-full border-0 bg-transparent text-2xl font-bold text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-3xl"
-								/>
-							</div>
-
-							<!-- Gospel Quote -->
-							<div class="mb-6">
-								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Gospel Quote</span>
-								<input
-									type="text"
-									bind:value={gospelQuote}
-									oninput={handleContentChange}
-									placeholder={'"Quote from the Gospel" (Book 1:23)'}
-									class="w-full border-0 bg-transparent text-base italic text-gray-600 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-lg"
-								/>
-							</div>
-
-							<!-- Main Content -->
-							<div>
-								<span class="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-400">Reflection</span>
-								<textarea
-									bind:this={textareaEl}
-									bind:value={reflectionContent}
-									oninput={() => { handleContentChange(); autoResize(); }}
-									placeholder="Begin writing your reflection..."
-									rows="12"
-									class="w-full resize-none overflow-hidden border-0 bg-transparent text-base leading-relaxed text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-0 sm:text-lg"
-								></textarea>
-							</div>
-
-							<!-- Word Count -->
-							<div class="mt-4 border-t border-gray-100 pt-4 text-right text-sm text-gray-400">
-								{wordCount} words
-								{#if wordCount > 0 && wordCount < 225}
-									<span class="text-amber-500">• Aim for ~250 words</span>
-								{:else if wordCount >= 225 && wordCount <= 275}
-									<span class="text-green-500">• Good length</span>
-								{:else if wordCount > 275}
-									<span class="text-amber-500">• Consider trimming (aim for ~250)</span>
-								{/if}
-							</div>
-
-							<!-- Success state with Next button -->
-							{#if justSubmitted && getNextPendingDate()}
-								<div class="mt-4 flex items-center justify-between rounded-lg bg-green-50 p-4">
-									<div>
-										<p class="font-medium text-green-800">Submitted!</p>
-										<p class="text-sm text-green-600">{pendingCount - 1} more to go</p>
-									</div>
-									<button
-										onclick={goToNext}
-										class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-									>
-										Next Reflection →
-									</button>
-								</div>
-							{:else if justSubmitted && !getNextPendingDate()}
-								<div class="mt-4 rounded-lg bg-green-50 p-4 text-center">
-									<p class="font-medium text-green-800">All done!</p>
-									<p class="text-sm text-green-600">You've completed all your assigned reflections</p>
-								</div>
-							{/if}
-						</div>
 					</div>
 				{:else}
 					<!-- No date selected -->
@@ -981,22 +784,33 @@
 		{#if selectedDate}
 			<div class="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 bg-white p-3 md:hidden">
 				{#if justSubmitted && getNextPendingDate()}
-					<!-- Success state with Next button -->
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="font-medium text-green-700">Submitted!</p>
-							<p class="text-xs text-green-600">{pendingCount - 1} more to go</p>
-						</div>
-						<button
-							onclick={goToNext}
-							class="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
-						>
-							Next Reflection →
-						</button>
+					<!-- Success state -->
+					<div class="flex items-center justify-center gap-2 py-1">
+						<svg class="h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none">
+							<path
+								d="M4 12.5l6 6 10-12"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="animate-tick"
+							/>
+						</svg>
+						<p class="font-medium text-green-700">Submitted! You're all set for now</p>
 					</div>
 				{:else if justSubmitted && !getNextPendingDate()}
 					<!-- All done state -->
-					<div class="text-center py-1">
+					<div class="flex items-center justify-center gap-2 py-1">
+						<svg class="h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none">
+							<path
+								d="M4 12.5l6 6 10-12"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="animate-tick"
+							/>
+						</svg>
 						<p class="font-medium text-green-700">All done! You've completed all your reflections.</p>
 					</div>
 				{:else}
@@ -1261,6 +1075,18 @@
 
 <style>
 	@reference "../../../../app.css";
+
+	.animate-tick {
+		stroke-dasharray: 28;
+		stroke-dashoffset: 28;
+		animation: draw-tick 0.35s ease-out forwards;
+	}
+
+	@keyframes draw-tick {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
 
 	:global(.prose h2.passage-ref) {
 		@apply text-sm font-semibold text-indigo-800 mt-4 mb-2;
