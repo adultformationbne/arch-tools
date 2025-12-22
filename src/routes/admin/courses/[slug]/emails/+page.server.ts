@@ -74,7 +74,7 @@ export const load: PageServerLoad = async (event) => {
 				)
 			`)
 			.eq('courses_modules.course_id', courseInfo.id)
-			.in('status', ['active', 'upcoming'])
+			.in('status', ['active', 'upcoming', 'scheduled'])
 			.order('start_date', { ascending: false }),
 
 		// Get hubs for recipient filtering

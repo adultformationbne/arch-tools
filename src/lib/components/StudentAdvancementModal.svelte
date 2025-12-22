@@ -94,7 +94,7 @@
 						class="session-select"
 						disabled={isProcessing}
 					>
-						{#each [2, 3, 4, 5, 6, 7, 8] as session}
+						{#each [1, 2, 3, 4, 5, 6, 7, 8] as session}
 							<option value={session}>Session {session}</option>
 						{/each}
 					</select>
