@@ -182,7 +182,12 @@ export async function sendEmail({
 				status: 'failed',
 				error_message: error.message || 'Unknown error',
 				reference_id: referenceId,
-				metadata
+				metadata,
+				// Set course-specific columns from metadata for proper filtering
+				course_id: metadata?.course_id || null,
+				cohort_id: metadata?.cohort_id || null,
+				enrollment_id: metadata?.enrollment_id || null,
+				template_id: metadata?.template_id || null
 			});
 
 			return { success: false, error: error.message };
@@ -198,7 +203,12 @@ export async function sendEmail({
 			sent_at: new Date().toISOString(),
 			resend_id: data?.id,
 			reference_id: referenceId,
-			metadata
+			metadata,
+			// Set course-specific columns from metadata for proper filtering
+			course_id: metadata?.course_id || null,
+			cohort_id: metadata?.cohort_id || null,
+			enrollment_id: metadata?.enrollment_id || null,
+			template_id: metadata?.template_id || null
 		});
 
 		return { success: true, emailId: data?.id };
@@ -215,7 +225,12 @@ export async function sendEmail({
 				status: 'failed',
 				error_message: err.message || 'Unknown error',
 				reference_id: referenceId,
-				metadata
+				metadata,
+				// Set course-specific columns from metadata for proper filtering
+				course_id: metadata?.course_id || null,
+				cohort_id: metadata?.cohort_id || null,
+				enrollment_id: metadata?.enrollment_id || null,
+				template_id: metadata?.template_id || null
 			});
 		} catch (logError) {
 			console.error('Failed to log email error:', logError);
@@ -323,18 +338,26 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
  */
 async function logBatchEmails(supabase, emails, emailType, status, errorMessage = null, commonMetadata = {}, results = []) {
 	try {
-		const logs = emails.map((email, idx) => ({
-			recipient_email: email.to,
-			email_type: emailType,
-			subject: email.subject,
-			body: email.html,
-			status,
-			sent_at: status === 'sent' ? new Date().toISOString() : null,
-			error_message: errorMessage,
-			resend_id: results[idx]?.id || null,
-			reference_id: email.referenceId || null,
-			metadata: { ...commonMetadata, ...email.metadata }
-		}));
+		const logs = emails.map((email, idx) => {
+			const mergedMetadata = { ...commonMetadata, ...email.metadata };
+			return {
+				recipient_email: email.to,
+				email_type: emailType,
+				subject: email.subject,
+				body: email.html,
+				status,
+				sent_at: status === 'sent' ? new Date().toISOString() : null,
+				error_message: errorMessage,
+				resend_id: results[idx]?.id || null,
+				reference_id: email.referenceId || null,
+				metadata: mergedMetadata,
+				// Set course-specific columns from metadata for proper filtering
+				course_id: mergedMetadata.course_id || null,
+				cohort_id: mergedMetadata.cohort_id || null,
+				enrollment_id: mergedMetadata.enrollment_id || null,
+				template_id: mergedMetadata.template_id || null
+			};
+		});
 
 		await supabase.from('platform_email_log').insert(logs);
 	} catch (logError) {
@@ -712,6 +735,7 @@ export async function sendCourseEmail({
 	});
 
 	// Send email with course context logging
+	// Note: course_id, cohort_id, etc. are now set directly on insert via sendEmail
 	const result = await sendEmail({
 		to,
 		subject,
@@ -728,30 +752,6 @@ export async function sendCourseEmail({
 		resendApiKey,
 		supabase
 	});
-
-	// If successful, also update the new course context columns
-	if (result.success) {
-		// Get the most recent email log entry for this send
-		const { data: logEntry } = await supabase
-			.from('platform_email_log')
-			.select('id')
-			.eq('recipient_email', to)
-			.eq('resend_id', result.emailId)
-			.single();
-
-		if (logEntry) {
-			// Update with course context
-			await supabase
-				.from('platform_email_log')
-				.update({
-					course_id: course.id,
-					cohort_id: cohortId,
-					enrollment_id: enrollmentId,
-					template_id: templateId
-				})
-				.eq('id', logEntry.id);
-		}
-	}
 
 	return result;
 }

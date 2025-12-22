@@ -1,5 +1,5 @@
 <script>
-	import { Mail, ArrowRight } from 'lucide-svelte';
+	import { Mail, ArrowRight, Settings } from 'lucide-svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 
@@ -36,7 +36,7 @@
 		isProcessing = true;
 		try {
 			await apiPost(
-				'/admin/courses/${courseSlug}/api',
+				`/admin/courses/${courseSlug}/api`,
 				{
 					action: 'advance_students',
 					cohortId: cohort.id,
@@ -139,11 +139,22 @@
 					</div>
 				</div>
 
-				<label class="checkbox-label email-option">
-					<input type="checkbox" bind:checked={sendEmail} disabled={isProcessing} />
-					<Mail size={18} />
-					<span>Send "Session {selectedSession} Available" email notification</span>
-				</label>
+				<div class="flex flex-col gap-2">
+					<label class="checkbox-label email-option">
+						<input type="checkbox" bind:checked={sendEmail} disabled={isProcessing} />
+						<Mail size={18} />
+						<span>Send "Session {selectedSession} Available" email notification</span>
+					</label>
+					<a
+						href="/admin/courses/{courseSlug}/emails"
+						target="_blank"
+						class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 hover:underline pl-3"
+						title="Edit the Session Materials Ready template"
+					>
+						<Settings size={14} />
+						<span>Edit email template</span>
+					</a>
+				</div>
 			</div>
 
 			<div class="modal-actions">
