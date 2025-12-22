@@ -1620,6 +1620,35 @@ export const CourseMutations = {
 			await supabaseAdmin.from('user_profiles').upsert(profilesToCreate, { onConflict: 'id' });
 		}
 
+		// Also ensure existing profiles have courses.participant module
+		// (handles case where profile was created by auth trigger with empty modules)
+		const existingProfilesWithoutModule: string[] = [];
+		for (const [email, profile] of profilesByEmail) {
+			// Check if this email is being enrolled
+			if (csvEmails.includes(email)) {
+				existingProfilesWithoutModule.push(profile.id);
+			}
+		}
+
+		if (existingProfilesWithoutModule.length > 0) {
+			// Add courses.participant to any existing profiles that don't have it
+			for (const profileId of existingProfilesWithoutModule) {
+				const { data: existingProfile } = await supabaseAdmin
+					.from('user_profiles')
+					.select('modules')
+					.eq('id', profileId)
+					.single();
+
+				const currentModules = existingProfile?.modules || [];
+				if (!currentModules.includes('courses.participant')) {
+					await supabaseAdmin
+						.from('user_profiles')
+						.update({ modules: [...currentModules, 'courses.participant'] })
+						.eq('id', profileId);
+				}
+			}
+		}
+
 		// Build enrollments to insert
 		const enrollmentsToInsert: any[] = [];
 		for (const row of rows) {

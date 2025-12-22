@@ -12,6 +12,15 @@
 	let errorMessage = $state('');
 	let success = $state(false);
 
+	function determineRedirect(modules) {
+		if (modules.includes('platform.admin')) return '/settings';
+		if (modules.includes('courses.admin') || modules.includes('courses.manager')) return '/courses';
+		if (modules.includes('dgr')) return '/dgr';
+		if (modules.includes('editor')) return '/editor';
+		if (modules.includes('courses.participant')) return '/my-courses';
+		return '/profile';
+	}
+
 	async function handleSetPassword(event) {
 		event?.preventDefault();
 		loading = true;
@@ -51,10 +60,36 @@
 
 			success = true;
 
+			// Fetch user's modules to determine the best redirect
+			const { data: profile } = await supabase
+				.from('user_profiles')
+				.select('modules')
+				.eq('id', user.id)
+				.single();
+
+			const modules = profile?.modules || [];
+			let defaultRedirect = determineRedirect(modules);
+
+			// If no module-based redirect, check for course enrollments
+			if (defaultRedirect === '/profile') {
+				const { data: enrollments } = await supabase
+					.from('courses_enrollments')
+					.select('id')
+					.eq('email', user.email)
+					.eq('status', 'active')
+					.limit(1);
+
+				if (enrollments && enrollments.length > 0) {
+					defaultRedirect = '/my-courses';
+				}
+			}
+
+			// Use URL param if provided and not /profile, otherwise use smart default
+			const nextParam = $page.url.searchParams.get('next');
+			const next = (nextParam && nextParam !== '/profile') ? nextParam : defaultRedirect;
+
 			// Wait a moment to show success message
 			setTimeout(() => {
-				// Redirect to appropriate page based on user's modules
-				const next = $page.url.searchParams.get('next') ?? '/profile';
 				goto(next);
 			}, 1500);
 

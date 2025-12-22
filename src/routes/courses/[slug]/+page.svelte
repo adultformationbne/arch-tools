@@ -78,7 +78,7 @@
 </script>
 
 <!-- Single content wrapper with consistent margins -->
-<div class="px-16">
+<div class="px-16" class:pt-6={!hubData}>
 	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
 	<HubCoordinatorBar {hubData} {courseSlug} />
 
