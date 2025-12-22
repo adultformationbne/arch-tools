@@ -2,6 +2,14 @@ import { error, json } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { CourseMutations, CourseQueries } from '$lib/server/course-data';
 import { supabaseAdmin } from '$lib/server/supabase';
+import {
+	buildVariableContext,
+	renderTemplateForRecipient,
+	sendBulkEmails,
+	getCourseEmailTemplate
+} from '$lib/utils/email-service.js';
+import { generateEmailFromMjml } from '$lib/email/compiler.js';
+import { RESEND_API_KEY } from '$env/static/private';
 import type { RequestHandler } from './$types';
 
 /**
@@ -346,13 +354,160 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to advance students');
 				}
 
+				// Send advancement emails if requested
+				let emailResults = { sent: 0, failed: 0 };
+				if (data.sendEmail) {
+					try {
+						// Get course info
+						const { data: course } = await supabaseAdmin
+							.from('courses')
+							.select('id, name, slug, settings')
+							.eq('slug', courseSlug)
+							.single();
+
+						if (course) {
+							// Get cohort info
+							const { data: cohort } = await supabaseAdmin
+								.from('courses_cohorts')
+								.select('id, name, module_id')
+								.eq('id', data.cohortId)
+								.single();
+
+							// Get session info for the target session
+							const { data: session } = await supabaseAdmin
+								.from('courses_sessions')
+								.select('id, title, session_number')
+								.eq('module_id', cohort?.module_id)
+								.eq('session_number', data.targetSession)
+								.single();
+
+							// Get the session_materials_ready template
+							const template = await getCourseEmailTemplate(
+								supabaseAdmin,
+								course.id,
+								'session_materials_ready'
+							);
+
+							if (template) {
+								// Get enrollments for the advanced students
+								const { data: enrollments } = await supabaseAdmin
+									.from('courses_enrollments')
+									.select(`
+										id,
+										email,
+										full_name,
+										current_session,
+										courses_hubs (id, name)
+									`)
+									.in('id', data.studentIds);
+
+								if (enrollments && enrollments.length > 0) {
+									const courseSettings = course.settings || {};
+									const courseColors = {
+										accentDark: courseSettings.accentDark || '#334642',
+										accentLight: courseSettings.accentLight || '#eae2d9',
+										accentDarkest: courseSettings.accentDarkest || '#1e2322'
+									};
+
+									const siteUrl = event.url.origin;
+									const emailsToSend: Array<{
+										to: string;
+										subject: string;
+										html: string;
+										metadata: Record<string, unknown>;
+										referenceId: string;
+									}> = [];
+
+									for (const enrollment of enrollments) {
+										// Build variable context
+										const variables = buildVariableContext({
+											enrollment: {
+												full_name: enrollment.full_name,
+												email: enrollment.email,
+												hub_name: enrollment.courses_hubs?.name || null,
+												current_session: data.targetSession
+											},
+											course: {
+												name: course.name,
+												slug: course.slug
+											},
+											cohort: cohort ? {
+												name: cohort.name,
+												start_date: null,
+												current_session: data.targetSession
+											} : null,
+											session: session ? {
+												session_number: session.session_number,
+												title: session.title
+											} : { session_number: data.targetSession, title: `Session ${data.targetSession}` },
+											siteUrl
+										});
+
+										// Render template
+										const rendered = renderTemplateForRecipient({
+											subjectTemplate: template.subject_template,
+											bodyTemplate: template.body_template,
+											variables
+										});
+
+										// Compile with MJML
+										const compiledHtml = generateEmailFromMjml({
+											bodyContent: rendered.body,
+											courseName: course.name,
+											logoUrl: courseSettings.logoUrl || null,
+											colors: courseColors
+										});
+
+										emailsToSend.push({
+											to: enrollment.email,
+											subject: rendered.subject,
+											html: compiledHtml,
+											referenceId: enrollment.id,
+											metadata: {
+												context: 'course',
+												course_id: course.id,
+												cohort_id: data.cohortId,
+												enrollment_id: enrollment.id,
+												template_id: template.id,
+												session_number: data.targetSession
+											}
+										});
+									}
+
+									// Send emails
+									if (emailsToSend.length > 0) {
+										emailResults = await sendBulkEmails({
+											emails: emailsToSend,
+											emailType: 'session_advance',
+											resendApiKey: RESEND_API_KEY,
+											supabase: supabaseAdmin,
+											options: {
+												commonMetadata: {
+													sentBy: user.id,
+													sentAt: new Date().toISOString()
+												}
+											}
+										});
+									}
+								}
+							} else {
+								console.warn('session_materials_ready template not found for course', course.id);
+							}
+						}
+					} catch (emailError) {
+						console.error('Error sending advancement emails:', emailError);
+						// Don't fail the whole operation if email fails
+					}
+				}
+
 				return json({
 					success: true,
-					message: `Advanced ${data.studentIds.length} students to Session ${data.targetSession}`,
+					message: `Advanced ${data.studentIds.length} students to Session ${data.targetSession}${data.sendEmail ? ` (${emailResults.sent} emails sent)` : ''}`,
 					data: {
 						studentIds: data.studentIds,
 						targetSession: data.targetSession,
-						emailSent: data.sendEmail
+						emailSent: data.sendEmail,
+						emailResults
 					}
 				});
 			}

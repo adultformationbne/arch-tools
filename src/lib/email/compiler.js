@@ -75,6 +75,45 @@ export function compileMjml(mjmlString, options = {}) {
 }
 
 /**
+ * Convert plain text to HTML
+ * Handles newlines and basic URL linking
+ * @param {string} text - Plain text content
+ * @returns {string} HTML with <br> tags and linked URLs
+ */
+function plainTextToHtml(text) {
+	if (!text) return '';
+
+	// Check if already contains HTML tags (from TipTap editor)
+	if (/<[a-z][\s\S]*>/i.test(text)) {
+		return text; // Already HTML, return as-is
+	}
+
+	// Escape HTML entities first
+	let result = text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+
+	// Convert URLs to clickable links
+	result = result.replace(
+		/(https?:\/\/[^\s<]+)/g,
+		'<a href="$1" style="color: #334642; text-decoration: underline;">$1</a>'
+	);
+
+	// Convert double newlines to paragraph breaks, single newlines to <br>
+	// Split by double newline first
+	const paragraphs = result.split(/\n\n+/);
+	if (paragraphs.length > 1) {
+		result = paragraphs.map(p => `<p style="margin: 0 0 16px 0;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+	} else {
+		// Just single newlines
+		result = result.replace(/\n/g, '<br>');
+	}
+
+	return result;
+}
+
+/**
  * Convert TipTap HTML elements to MJML components
  * @param {string} html - HTML content from TipTap
  * @param {string} accentDark - Accent color for buttons
@@ -83,7 +122,8 @@ export function compileMjml(mjmlString, options = {}) {
 function convertToMjmlComponents(html, accentDark) {
 	if (!html) return '';
 
-	let result = html;
+	// First convert plain text to HTML if needed
+	let result = plainTextToHtml(html);
 
 	// Convert email buttons to MJML buttons
 	// Match: <div data-type="email-button" data-text="..." data-href="..."><a href="..." class="email-button">...</a></div>

@@ -38,7 +38,7 @@
 
 	async function saveCohortEdits() {
 		try {
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -75,7 +75,7 @@
 
 		updatingSession = true;
 		try {
-			const response = await fetch('/admin/courses/${courseSlug}/api', {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

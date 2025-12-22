@@ -1,5 +1,5 @@
 <script>
-	import { ChevronDown, ChevronRight, Mail, Lock, FileText, Plus, List, Send } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Mail, Settings, FileText, Plus, List, Send, Edit3 } from 'lucide-svelte';
 
 	let {
 		systemTemplates = [],
@@ -68,21 +68,24 @@
 						<ChevronRight size={16} />
 					{/if}
 				</div>
-				<Lock size={16} class="flex-shrink-0" />
+				<Settings size={16} class="flex-shrink-0" />
 				<span class="text-sm font-medium">System Templates</span>
 				<span class="ml-auto text-xs text-white/50">({systemTemplates.length})</span>
 			</button>
 
 			{#if expandedSections.system}
 				<div class="ml-6 mt-1 space-y-0.5">
+					<p class="text-xs text-white/40 px-3 py-1 italic">Click to edit</p>
 					{#each systemTemplates as template}
 						<button
 							onclick={() => handleViewChange(template.id)}
-							class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
+							class="template-item w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
 							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+							title="Click to edit this template"
 						>
-							<Lock size={12} class="flex-shrink-0" />
-							<span class="truncate">{template.name}</span>
+							<Settings size={12} class="flex-shrink-0" />
+							<span class="truncate flex-1">{template.name}</span>
+							<Edit3 size={12} class="edit-icon flex-shrink-0 opacity-0 transition-opacity" />
 						</button>
 					{/each}
 				</div>
@@ -109,14 +112,19 @@
 
 			{#if expandedSections.custom}
 				<div class="ml-6 mt-1 space-y-0.5">
+					{#if customTemplates.length > 0}
+						<p class="text-xs text-white/40 px-3 py-1 italic">Click to edit</p>
+					{/if}
 					{#each customTemplates as template}
 						<button
 							onclick={() => handleViewChange(template.id)}
-							class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
+							class="template-item w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
 							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+							title="Click to edit this template"
 						>
 							<FileText size={12} class="flex-shrink-0" />
-							<span class="truncate">{template.name}</span>
+							<span class="truncate flex-1">{template.name}</span>
+							<Edit3 size={12} class="edit-icon flex-shrink-0 opacity-0 transition-opacity" />
 						</button>
 					{/each}
 
@@ -126,7 +134,7 @@
 						class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm text-white/60 hover:bg-white/5 hover:text-white/80 border border-dashed border-white/20 mt-2"
 					>
 						<Plus size={12} class="flex-shrink-0" />
-						<span>Add Template</span>
+						<span>Create New Template</span>
 					</button>
 				</div>
 			{/if}
@@ -135,6 +143,11 @@
 </div>
 
 <style>
+	/* Show edit icon on hover */
+	.template-item:hover :global(.edit-icon) {
+		opacity: 0.6;
+	}
+
 	/* Scrollbar styling */
 	.overflow-y-auto::-webkit-scrollbar {
 		width: 6px;
