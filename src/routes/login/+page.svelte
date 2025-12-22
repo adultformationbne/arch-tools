@@ -140,7 +140,22 @@
 				.single();
 
 			const modules = profile?.modules || [];
-			const defaultRedirect = determineRedirect(modules);
+			let defaultRedirect = determineRedirect(modules);
+
+			// If no module-based redirect, check for course enrollments
+			if (defaultRedirect === '/profile') {
+				const { data: enrollments } = await supabase
+					.from('courses_enrollments')
+					.select('id')
+					.eq('email', email)
+					.eq('status', 'active')
+					.limit(1);
+
+				if (enrollments && enrollments.length > 0) {
+					defaultRedirect = '/my-courses';
+				}
+			}
+
 			const next = $page.url.searchParams.get('next') ?? defaultRedirect;
 			goto(next);
 		} catch (error) {
@@ -226,7 +241,31 @@
 
 			if (isPendingUser || isForgotPasswordFlow) {
 				// New/pending user OR forgot password flow - needs to set/reset password
-				const next = $page.url.searchParams.get('next') ?? '/profile';
+				// Determine best redirect based on user's modules
+				const { data: profile } = await supabase
+					.from('user_profiles')
+					.select('modules')
+					.eq('id', user.id)
+					.single();
+
+				const modules = profile?.modules || [];
+				let defaultRedirect = determineRedirect(modules);
+
+				// If no module-based redirect, check for course enrollments
+				if (defaultRedirect === '/profile') {
+					const { data: enrollments } = await supabase
+						.from('courses_enrollments')
+						.select('id')
+						.eq('email', email)
+						.eq('status', 'active')
+						.limit(1);
+
+					if (enrollments && enrollments.length > 0) {
+						defaultRedirect = '/my-courses';
+					}
+				}
+
+				const next = $page.url.searchParams.get('next') ?? defaultRedirect;
 				goto(`/login/setup-password?next=${encodeURIComponent(next)}`);
 			} else {
 				// Track login for course enrollments (non-blocking)
@@ -240,7 +279,22 @@
 					.single();
 
 				const modules = profile?.modules || [];
-				const defaultRedirect = determineRedirect(modules);
+				let defaultRedirect = determineRedirect(modules);
+
+				// If no module-based redirect, check for course enrollments
+				if (defaultRedirect === '/profile') {
+					const { data: enrollments } = await supabase
+						.from('courses_enrollments')
+						.select('id')
+						.eq('email', email)
+						.eq('status', 'active')
+						.limit(1);
+
+					if (enrollments && enrollments.length > 0) {
+						defaultRedirect = '/my-courses';
+					}
+				}
+
 				const next = $page.url.searchParams.get('next') ?? defaultRedirect;
 				goto(next);
 			}

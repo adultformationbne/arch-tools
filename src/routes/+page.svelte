@@ -1,6 +1,5 @@
 <script>
 import { goto } from '$app/navigation';
-import { onMount } from 'svelte';
 import {
 	Edit,
 	Wrench,
@@ -13,12 +12,7 @@ import {
 export let data;
 $: ({ session, userModules = [], platform } = data);
 
-// Redirect participants to /my-courses ONLY if that's their only module
-onMount(() => {
-	if (userModules?.length === 1 && userModules[0] === 'courses.participant') {
-		goto('/my-courses');
-	}
-});
+// Note: courses.participant-only users are redirected server-side in +page.server.ts
 
 // Module-based route configuration
 const moduleRoutes = [

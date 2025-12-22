@@ -58,13 +58,25 @@ export async function POST({ request }) {
 
 		// Priority 2: For existing users (backward compatibility) - if they've signed in and don't have the flag,
 		// assume they have a password (they were created before we added the flag)
-		const isExistingUserWithSignIn = fullUser.last_sign_in_at !== null &&
-		                                  !fullUser.user_metadata?.hasOwnProperty('password_setup_completed');
+		const hasPasswordProperty = fullUser.user_metadata && 'password_setup_completed' in fullUser.user_metadata;
+		// Note: Use !! to handle both null AND undefined - Supabase returns undefined for users who never signed in
+		const isExistingUserWithSignIn = !!fullUser.last_sign_in_at && !hasPasswordProperty;
 
 		// User has password if:
 		// 1. They have the password_setup_completed flag set to true (most reliable), OR
 		// 2. They're an existing user who has signed in before (created before we added the flag)
 		const hasPassword = hasPasswordSetupFlag || isExistingUserWithSignIn;
+
+		// Debug logging
+		console.log('[check-email]', email, {
+			last_sign_in_at: fullUser.last_sign_in_at,
+			user_metadata: fullUser.user_metadata,
+			hasPasswordSetupFlag,
+			hasPasswordProperty,
+			isExistingUserWithSignIn,
+			hasPassword,
+			nextStep: hasPassword ? 'password' : 'otp'
+		});
 
 		if (hasPassword) {
 			// User has password - allow password login
