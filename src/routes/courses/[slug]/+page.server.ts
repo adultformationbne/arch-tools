@@ -115,15 +115,11 @@ export const load: PageServerLoad = async (event) => {
 			id: response.id,
 			studentName,
 			studentInitials: getUserInitials(studentName),
-			cohortName: enrollment.cohort.module.name || 'Unknown Module',
 			sessionNumber,
 			reflectionExcerpt: truncateContent(response.response_text),
 			submittedAt: response.created_at ? formatDate(response.created_at) : 'Unknown',
-			likes: 0,
-			comments: 0,
 			question: response.question?.question_text || '',
-			response: response.response_text || '',
-			status: response.status || 'submitted'
+			response: response.response_text || ''
 		};
 	});
 

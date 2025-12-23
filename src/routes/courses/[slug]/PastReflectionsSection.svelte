@@ -1,7 +1,6 @@
 <script>
-	import { Eye, ChevronRight, Star, Edit2, Circle } from 'lucide-svelte';
-	import { isComplete } from '$lib/utils/reflection-status';
-	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
+	import { ChevronRight, ArrowRight, HelpCircle, MessageSquare } from 'lucide-svelte';
+	import { isComplete, needsReview } from '$lib/utils/reflection-status';
 
 	let {
 		reflections = [],
@@ -38,89 +37,75 @@
 	const handleReadReflection = (reflection) => {
 		onReadReflection(reflection);
 	};
+
+	const getStatusLabel = (status) => {
+		if (isComplete(status)) return 'Passed';
+		if (status === 'needs_revision') return 'Needs Revision';
+		return 'Waiting for Feedback';
+	};
+
+	const getStatusColor = (status) => {
+		if (isComplete(status)) return 'text-green-600';
+		if (status === 'needs_revision') return 'text-orange-600';
+		return 'text-gray-500';
+	};
 </script>
 
 <!-- Past Reflections Section -->
 <div>
 	<div class="flex items-center justify-between mb-8">
 		<h2 class="text-4xl font-bold text-white">Past Reflections</h2>
-		<div class="flex items-center gap-4 text-white text-lg">
-			<div class="flex items-center gap-2">
-				<div class="w-3 h-3 rounded-full bg-green-400"></div>
-				<span class="opacity-75">
-					{reflectionsList.length} reflection{reflectionsList.length !== 1 ? 's' : ''} ·
-					{reflectionsList.filter(r => isComplete(r.status)).length} with feedback
-				</span>
-			</div>
-		</div>
+		<span class="text-white/70 text-lg">
+			{reflectionsList.length} reflection{reflectionsList.length !== 1 ? 's' : ''}
+		</span>
 	</div>
 
-	<div class="grid grid-cols-3 gap-6 mb-8">
+	<div class="grid grid-cols-3 gap-5 mb-8">
 		{#each visibleReflections as reflection}
 			<button
 				onclick={() => handleReadReflection(reflection)}
-				class="rounded-2xl text-left transition-all duration-200 hover:shadow-lg cursor-pointer group border border-gray-200/50 hover:border-gray-300 overflow-hidden"
-				style="background-color: #eae2d9;"
+				class="rounded-2xl text-left transition-all duration-200 hover:shadow-lg cursor-pointer group bg-white p-5 flex flex-col h-full"
 			>
-				<!-- Card Header -->
-				<div class="flex items-center justify-between px-5 py-4 border-b border-gray-300/30">
-					<div class="flex items-center gap-3">
-						<div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm" style="background-color: #334642;">
-							{reflection.session}
-						</div>
-						<span class="font-semibold text-gray-800">Session {reflection.session}</span>
-					</div>
-					<!-- Status Badge -->
-					<ReflectionStatusBadge status={reflection.status} />
+				<!-- Session & Status -->
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-sm font-medium text-gray-500">Session {reflection.session}</span>
+					<span class="text-sm font-medium {getStatusColor(reflection.status)}">
+						{getStatusLabel(reflection.status)}
+					</span>
 				</div>
 
-				<!-- Card Body -->
-				<div class="px-5 py-4 space-y-3">
-					<!-- Feedback Section (if exists) -->
-					{#if reflection.feedback}
-						<div class="bg-green-50/50 rounded-lg p-3 border-l-2 border-green-500">
-							<div class="flex items-center gap-1.5 text-xs text-green-700 font-medium mb-1">
-								<Star size="12" />
-								Feedback
-							</div>
-							<div class="text-sm text-gray-800 leading-relaxed">
-								"{truncateText(reflection.feedback, 100)}"
-							</div>
-							{#if reflection.instructor}
-								<div class="text-xs text-gray-500 mt-1.5">— {reflection.instructor}</div>
-							{/if}
-						</div>
-					{/if}
-
-					<!-- Your Response -->
-					{#if reflection.response}
-						<div>
-							<div class="flex items-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
-								<Edit2 size="11" />
-								Your response
-							</div>
-							<div class="text-sm text-gray-700 leading-relaxed">
-								{truncateText(reflection.response, reflection.feedback ? 60 : 120)}
-							</div>
-						</div>
-					{/if}
-
-					<!-- Question Preview -->
-					<div class="pt-2 border-t border-gray-300/30">
-						<div class="flex items-start gap-1.5">
-							<Circle size="10" class="text-gray-400 mt-0.5 flex-shrink-0" />
-							<span class="text-xs text-gray-500 italic leading-relaxed">
-								{truncateText(reflection.question, 60)}
-							</span>
-						</div>
+				<!-- Question -->
+				<div class="mb-3">
+					<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 mb-1">
+						<HelpCircle size="12" />
+						Question
 					</div>
+					<p class="font-semibold text-gray-900 leading-snug">
+						{truncateText(reflection.question, 80)}
+					</p>
 				</div>
 
-				<!-- Card Footer -->
-				<div class="px-5 py-3 bg-gray-100/30 border-t border-gray-300/30 flex items-center justify-between">
-					<span class="text-xs text-gray-500">{reflection.submittedDate}</span>
-					<span class="text-xs text-gray-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-						View full <Eye size="12" />
+				<!-- Divider -->
+				<div class="border-t border-gray-100 my-3"></div>
+
+				<!-- Response -->
+				{#if reflection.response}
+					<div class="flex-1">
+						<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 mb-1">
+							<MessageSquare size="12" />
+							Your Response
+						</div>
+						<p class="text-sm text-gray-600 leading-relaxed">
+							{truncateText(reflection.response, 100)}
+						</p>
+					</div>
+				{/if}
+
+				<!-- CTA -->
+				<div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+					<span class="text-xs text-gray-400">{reflection.submittedDate}</span>
+					<span class="text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all" style="color: var(--course-accent-dark);">
+						View <ArrowRight size="14" />
 					</span>
 				</div>
 			</button>
@@ -132,12 +117,12 @@
 		<div class="text-center">
 			<button
 				onclick={toggleShowAll}
-				class="flex items-center gap-2 mx-auto px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-xl transition-colors"
+				class="flex items-center gap-2 mx-auto px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-xl transition-colors"
 			>
 				{#if showAll}
 					Show Less
 				{:else}
-					Show All {reflectionsList.length} Sessions
+					Show All {reflectionsList.length} Reflections
 				{/if}
 				<ChevronRight size="16" class={`transform transition-transform ${showAll ? 'rotate-90' : ''}`} />
 			</button>

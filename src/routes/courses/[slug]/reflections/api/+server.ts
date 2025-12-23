@@ -62,7 +62,45 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Student enrollment not found');
 		}
 
-		// Use upsert to avoid race conditions when multiple requests happen simultaneously
+		// Check existing reflection to enforce status transition rules
+		const { data: existingReflection } = await supabaseAdmin
+			.from('courses_reflection_responses')
+			.select('id, status, marked_by')
+			.eq('enrollment_id', studentData.id)
+			.eq('question_id', reflection_question_id)
+			.maybeSingle();
+
+		// Validate status - only allow valid student-submittable statuses
+		const validStatuses = ['draft', 'submitted', 'resubmitted'];
+		let finalStatus = validStatuses.includes(status) ? status : 'submitted';
+
+		// Enforce status transition rules to prevent race conditions and invalid states
+		if (existingReflection) {
+			const currentStatus = existingReflection.status;
+
+			// If already passed or under_review, student can't modify
+			if (['passed', 'under_review'].includes(currentStatus)) {
+				throw error(403, 'This reflection has been reviewed and cannot be modified');
+			}
+
+			// If submitted (not yet reviewed), student can't downgrade to draft
+			if (currentStatus === 'submitted' && !existingReflection.marked_by && finalStatus === 'draft') {
+				// Allow auto-save to preserve content without changing status
+				finalStatus = 'submitted';
+			}
+
+			// If needs_revision, only allow resubmitted (not draft downgrade)
+			if (currentStatus === 'needs_revision' && finalStatus === 'draft') {
+				// Auto-save while editing needs_revision - keep status as needs_revision
+				finalStatus = 'needs_revision';
+			}
+
+			// If resubmitted (awaiting re-review), don't allow changes
+			if (currentStatus === 'resubmitted' && finalStatus === 'draft') {
+				finalStatus = 'resubmitted';
+			}
+		}
+
 		console.log('Upserting reflection response...');
 		const responseData = {
 			enrollment_id: studentData.id,
@@ -71,7 +109,7 @@ export const POST: RequestHandler = async (event) => {
 			// session_number removed - obtained via question_id -> session_id -> session.session_number
 			response_text: content.trim(),
 			is_public: is_public || false,
-			status: status === 'draft' ? 'draft' : 'submitted',
+			status: finalStatus,
 			updated_at: new Date().toISOString()
 		};
 
@@ -96,11 +134,40 @@ export const POST: RequestHandler = async (event) => {
 			throw error(500, 'Failed to save reflection');
 		}
 
+		// Log activity for submissions (not drafts)
+		if (finalStatus === 'submitted' || finalStatus === 'resubmitted') {
+			// Get student name for activity log
+			const { data: profile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('full_name')
+				.eq('id', userId)
+				.single();
+
+			const studentName = profile?.full_name || 'Student';
+			await supabaseAdmin.from('courses_activity_log').insert({
+				cohort_id: studentData.cohort_id,
+				enrollment_id: studentData.id,
+				activity_type: finalStatus === 'resubmitted' ? 'reflection_resubmitted' : 'reflection_submitted',
+				actor_name: studentName,
+				description: `${studentName} ${finalStatus === 'resubmitted' ? 'resubmitted' : 'submitted'} reflection for Session ${questionData.courses_sessions.session_number}`,
+				metadata: {
+					session_number: questionData.courses_sessions.session_number,
+					question_id: reflection_question_id
+				}
+			});
+		}
+
 		console.log('Returning success response');
+		const message = finalStatus === 'draft'
+			? 'Draft saved'
+			: finalStatus === 'resubmitted'
+				? 'Reflection resubmitted successfully'
+				: 'Reflection submitted successfully';
+
 		return json({
 			success: true,
 			data: result,
-			message: status === 'submitted' ? 'Reflection submitted successfully' : 'Draft saved'
+			message
 		});
 
 	} catch (err) {

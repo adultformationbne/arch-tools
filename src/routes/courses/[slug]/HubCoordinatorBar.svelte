@@ -1,6 +1,5 @@
 <script>
-	import { Users, CheckSquare, Calendar, ChevronDown, ChevronUp, Check, X, Loader2 } from 'lucide-svelte';
-	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
+	import { Users, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, X, Loader2 } from 'lucide-svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { getUserInitials } from '$lib/utils/avatar.js';
 
@@ -8,13 +7,14 @@
 	let { hubData = null, courseSlug = '' } = $props();
 
 	let isExpanded = $state(false);
-	let activeTab = $state('attendance');
 	let isLoading = $state(false);
 	let isSaving = $state(false);
 
 	// Live data fetched from API
 	let liveHubData = $state(null);
-	let pendingChanges = $state({});
+
+	// Selected session for viewing/editing (defaults to current)
+	let selectedSession = $state(null);
 
 	const toggleExpanded = async () => {
 		isExpanded = !isExpanded;
@@ -32,6 +32,10 @@
 			}
 			const data = await response.json();
 			liveHubData = data;
+			// Initialize selected session to current
+			if (selectedSession === null) {
+				selectedSession = data.currentSession;
+			}
 		} catch (err) {
 			console.error('Error loading hub data:', err);
 			toastError('Failed to load hub data');
@@ -44,12 +48,10 @@
 		// Optimistically update UI
 		const student = liveHubData?.students?.find(s => s.id === studentId);
 		if (student) {
-			student.attendanceStatus = present ? 'present' : 'absent';
+			if (!student.attendance) student.attendance = {};
+			student.attendance[selectedSession] = present;
 			liveHubData = { ...liveHubData };
 		}
-
-		// Track pending change
-		pendingChanges[studentId] = present;
 
 		try {
 			const response = await fetch(`/courses/${courseSlug}/coordinator/api`, {
@@ -59,69 +61,133 @@
 					action: 'mark_attendance',
 					studentId,
 					present,
-					sessionNumber: liveHubData?.currentSession || hubData?.currentSession
+					sessionNumber: selectedSession
 				})
 			});
 
 			if (!response.ok) {
 				throw new Error('Failed to mark attendance');
 			}
-
-			// Clear pending change on success
-			delete pendingChanges[studentId];
 		} catch (err) {
 			console.error('Error marking attendance:', err);
 			toastError('Failed to save attendance');
-			// Reload to get accurate state
 			await loadHubData();
+		}
+	};
+
+	const markAllAttendance = async (present) => {
+		isSaving = true;
+		const studentsToMark = students.filter(s => {
+			const status = s.attendance?.[selectedSession];
+			return status === undefined || status !== present;
+		});
+
+		try {
+			await Promise.all(studentsToMark.map(s => markAttendance(s.id, present)));
+			toastSuccess(`Marked all students ${present ? 'present' : 'absent'}`);
+		} catch (err) {
+			toastError('Failed to mark all attendance');
+		} finally {
+			isSaving = false;
+		}
+	};
+
+	const navigateSession = (direction) => {
+		if (direction === 'prev' && selectedSession > 1) {
+			selectedSession--;
+		} else if (direction === 'next' && selectedSession < currentSession) {
+			selectedSession++;
+		}
+	};
+
+	const selectSession = (sessionNum) => {
+		if (sessionNum <= currentSession) {
+			selectedSession = sessionNum;
 		}
 	};
 
 	// Use live data if available, otherwise fall back to initial props
 	const displayData = $derived(liveHubData || hubData);
 	const students = $derived(displayData?.students || []);
-	const currentSession = $derived(displayData?.currentSession || hubData?.currentSession || 1);
+	const currentSession = $derived(liveHubData?.currentSession || hubData?.currentSession || 1);
+	const totalSessions = $derived(liveHubData?.totalSessions || 8);
 	const hubName = $derived(liveHubData?.hub?.name || hubData?.hubName || 'Your Hub');
 
-	// Stats
-	const attendanceStats = $derived(() => {
-		const present = students.filter(s => s.attendanceStatus === 'present').length;
-		const absent = students.filter(s => s.attendanceStatus === 'absent').length;
-		const unmarked = students.length - present - absent;
+	// Stats for selected session
+	const sessionStats = $derived(() => {
+		let present = 0;
+		let absent = 0;
+		let unmarked = 0;
+		students.forEach(s => {
+			const status = s.attendance?.[selectedSession];
+			if (status === true) present++;
+			else if (status === false) absent++;
+			else unmarked++;
+		});
 		return { present, absent, unmarked };
 	});
+
+	// Generate session numbers array
+	const sessionNumbers = $derived(Array.from({ length: totalSessions }, (_, i) => i + 1));
+
+	// Get attendance status for a student in the selected session
+	const getAttendanceStatus = (student) => {
+		const status = student.attendance?.[selectedSession];
+		if (status === true) return 'present';
+		if (status === false) return 'absent';
+		return 'unmarked';
+	};
 </script>
 
 <!-- Hub Coordinator Bar -->
 {#if hubData}
 <div class="py-4">
 	<div class="max-w-7xl mx-auto">
-		<div class="rounded-2xl border-2 transition-all duration-300 overflow-hidden" style="background-color: #eae2d9; border-color: #c59a6b;">
+		<div
+			class="rounded-2xl border-2 transition-all duration-300 overflow-hidden"
+			style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white); border-color: var(--course-accent-light);"
+		>
 			<!-- Collapsed Header -->
-			<div class="px-8 py-4">
+			<div class="px-6 py-4">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-4">
 						<div class="flex items-center gap-2">
-							<Users size="20" style="color: #334642;" />
-							<span class="font-semibold text-lg" style="color: #334642;">Hub Coordinator</span>
+							<Users size="20" style="color: var(--course-accent-dark);" />
+							<span class="font-semibold text-lg" style="color: var(--course-accent-dark);">Hub Coordinator</span>
 						</div>
-						<div class="h-6 w-px" style="background-color: #c59a6b;"></div>
-						<div class="text-sm" style="color: #334642;">
+						<div class="h-6 w-px" style="background-color: var(--course-accent-light);"></div>
+						<div class="text-sm" style="color: var(--course-accent-dark);">
 							<span class="font-medium">{hubName}</span> •
 							<span>{students.length} students</span>
 						</div>
 					</div>
 
 					<div class="flex items-center gap-4">
-						<div class="text-sm" style="color: #334642;">
-							Session {currentSession}
+						{#if !isExpanded && liveHubData}
+							<div class="flex items-center gap-2 text-sm" style="color: var(--course-accent-dark);">
+								<span class="flex items-center gap-1">
+									<span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+									{sessionStats().present}
+								</span>
+								<span class="flex items-center gap-1">
+									<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+									{sessionStats().absent}
+								</span>
+								<span class="flex items-center gap-1">
+									<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+									{sessionStats().unmarked}
+								</span>
+							</div>
+						{/if}
+						<div class="text-sm font-medium" style="color: var(--course-accent-dark);">
+							Session {currentSession} of {totalSessions}
 						</div>
 						<button
 							onclick={toggleExpanded}
 							class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors hover:opacity-90"
-							style="background-color: #334642; color: white;"
+							style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
 						>
-							{isExpanded ? 'Collapse' : 'Manage Hub'}
+							{isExpanded ? 'Collapse' : 'Manage Attendance'}
 							{#if isExpanded}
 								<ChevronUp size="16" />
 							{:else}
@@ -134,154 +200,152 @@
 
 			<!-- Expanded Content -->
 			{#if isExpanded}
-				<div class="border-t" style="border-color: #c59a6b;">
-					<!-- Tab Navigation -->
-					<div class="px-8 py-3" style="background-color: #d4c4b0;">
-						<div class="flex gap-6">
-							<button
-								onclick={() => activeTab = 'attendance'}
-								class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
-								class:active-tab={activeTab === 'attendance'}
-								class:inactive-tab={activeTab !== 'attendance'}
-							>
-								<CheckSquare size="16" />
-								Mark Attendance
-							</button>
-							<button
-								onclick={() => activeTab = 'progress'}
-								class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
-								class:active-tab={activeTab === 'progress'}
-								class:inactive-tab={activeTab !== 'progress'}
-							>
-								<Calendar size="16" />
-								Student Progress
-							</button>
-						</div>
-					</div>
-
-					<!-- Tab Content -->
-					<div class="px-8 py-6" style="background-color: #eae2d9;">
+				<div class="border-t" style="border-color: var(--course-accent-light);">
+					<div class="px-6 py-5" style="background-color: color-mix(in srgb, var(--course-accent-light) 20%, white);">
 						{#if isLoading}
 							<div class="flex items-center justify-center py-12">
-								<Loader2 size="32" class="animate-spin" style="color: #334642;" />
+								<Loader2 size="32" class="animate-spin" style="color: var(--course-accent-dark);" />
 							</div>
-						{:else if activeTab === 'attendance'}
-							<!-- Attendance Marking -->
-							<div>
-								<div class="flex items-center justify-between mb-4">
-									<h3 class="text-xl font-bold" style="color: #334642;">Session {currentSession} Attendance</h3>
-									<div class="flex items-center gap-4 text-sm">
-										<span class="flex items-center gap-1">
+						{:else}
+							<!-- Session Navigation -->
+							<div class="flex items-center justify-between mb-5">
+								<div class="flex items-center gap-2">
+									<!-- Prev -->
+									<button
+										onclick={() => navigateSession('prev')}
+										disabled={selectedSession <= 1}
+										class="p-2 rounded-lg transition-colors disabled:opacity-30"
+										style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
+									>
+										<ChevronLeft size="18" />
+									</button>
+
+									<!-- Session Buttons -->
+									{#each sessionNumbers as sNum}
+										<button
+											onclick={() => selectSession(sNum)}
+											disabled={sNum > currentSession}
+											class="w-9 h-9 rounded-lg text-sm font-bold transition-all"
+											style={selectedSession === sNum
+												? `background-color: var(--course-accent-dark); color: var(--course-text-on-dark);`
+												: sNum > currentSession
+													? 'background-color: #e5e7eb; color: #9ca3af;'
+													: 'background-color: white; color: var(--course-accent-dark); border: 1px solid var(--course-accent-light);'}
+										>
+											{sNum}
+										</button>
+									{/each}
+
+									<!-- Next -->
+									<button
+										onclick={() => navigateSession('next')}
+										disabled={selectedSession >= currentSession}
+										class="p-2 rounded-lg transition-colors disabled:opacity-30"
+										style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
+									>
+										<ChevronRight size="18" />
+									</button>
+
+									{#if selectedSession < currentSession}
+										<span class="ml-3 px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+											Past Session
+										</span>
+									{/if}
+								</div>
+
+								<!-- Stats & Bulk Actions -->
+								<div class="flex items-center gap-4">
+									<div class="flex items-center gap-3 text-sm font-medium" style="color: var(--course-accent-dark);">
+										<span class="flex items-center gap-1.5">
 											<span class="w-3 h-3 rounded-full bg-green-500"></span>
-											{attendanceStats().present} present
+											{sessionStats().present}
 										</span>
-										<span class="flex items-center gap-1">
+										<span class="flex items-center gap-1.5">
 											<span class="w-3 h-3 rounded-full bg-red-500"></span>
-											{attendanceStats().absent} absent
+											{sessionStats().absent}
 										</span>
-										<span class="flex items-center gap-1">
-											<span class="w-3 h-3 rounded-full bg-gray-300"></span>
-											{attendanceStats().unmarked} unmarked
+										<span class="flex items-center gap-1.5">
+											<span class="w-3 h-3 rounded-full bg-amber-400"></span>
+											{sessionStats().unmarked}
 										</span>
 									</div>
-								</div>
-								<div class="bg-white rounded-2xl p-6 shadow-sm">
-									{#if students.length === 0}
-										<p class="text-center text-gray-500 py-8">No students assigned to your hub</p>
-									{:else}
-										<div class="space-y-3">
-											{#each students as student}
-												<div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-													<div class="flex items-center gap-4">
-														<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style="background-color: #334642;">
-															{getUserInitials(student.name)}
-														</div>
-														<div>
-															<div class="font-semibold text-gray-800">{student.name}</div>
-															<div class="text-sm text-gray-500">{student.email}</div>
-														</div>
-													</div>
-													<div class="flex items-center gap-2">
-														<button
-															onclick={() => markAttendance(student.id, true)}
-															class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-															class:bg-green-500={student.attendanceStatus === 'present'}
-															class:text-white={student.attendanceStatus === 'present'}
-															class:bg-gray-100={student.attendanceStatus !== 'present'}
-															class:text-gray-600={student.attendanceStatus !== 'present'}
-															class:hover:bg-green-100={student.attendanceStatus !== 'present'}
-														>
-															<Check size="16" />
-															Present
-														</button>
-														<button
-															onclick={() => markAttendance(student.id, false)}
-															class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-															class:bg-red-500={student.attendanceStatus === 'absent'}
-															class:text-white={student.attendanceStatus === 'absent'}
-															class:bg-gray-100={student.attendanceStatus !== 'absent'}
-															class:text-gray-600={student.attendanceStatus !== 'absent'}
-															class:hover:bg-red-100={student.attendanceStatus !== 'absent'}
-														>
-															<X size="16" />
-															Absent
-														</button>
-													</div>
-												</div>
-											{/each}
-										</div>
-									{/if}
+									<button
+										onclick={() => markAllAttendance(true)}
+										disabled={isSaving}
+										class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+									>
+										<Check size="14" />
+										All Present
+									</button>
+									<button
+										onclick={() => markAllAttendance(false)}
+										disabled={isSaving}
+										class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+									>
+										<X size="14" />
+										All Absent
+									</button>
 								</div>
 							</div>
 
-						{:else if activeTab === 'progress'}
-							<!-- Student Progress Overview -->
-							<div>
-								<h3 class="text-xl font-bold mb-4" style="color: #334642;">Hub Student Progress</h3>
-								<div class="bg-white rounded-2xl p-6 shadow-sm">
-									{#if students.length === 0}
-										<p class="text-center text-gray-500 py-8">No students assigned to your hub</p>
-									{:else}
-										<div class="space-y-4">
-											{#each students as student}
-												<div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-													<div class="flex items-center gap-4">
-														<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style="background-color: #334642;">
-															{getUserInitials(student.name)}
-														</div>
-														<div>
-															<div class="font-semibold text-gray-800">{student.name}</div>
-															<div class="text-sm text-gray-500">Session {student.currentSession || 0}</div>
-														</div>
+							<!-- Student List -->
+							<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+								{#if students.length === 0}
+									<p class="text-center text-gray-500 py-12">No students assigned to your hub</p>
+								{:else}
+									<div class="divide-y divide-gray-100">
+										{#each students as student}
+											{@const status = getAttendanceStatus(student)}
+											<div class="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+												<!-- Student Info -->
+												<div class="flex items-center gap-4">
+													<div
+														class="w-11 h-11 rounded-full flex items-center justify-center font-semibold text-white text-sm"
+														style="background-color: var(--course-accent-dark);"
+													>
+														{getUserInitials(student.name)}
 													</div>
-													<div class="flex items-center gap-6">
-														<!-- Attendance Status -->
-														<div class="text-sm">
-															<span class="text-gray-500">Attendance:</span>
-															{#if student.attendanceStatus === 'present'}
-																<span class="ml-1 text-green-600 font-medium">Present</span>
-															{:else if student.attendanceStatus === 'absent'}
-																<span class="ml-1 text-red-600 font-medium">Absent</span>
-															{:else}
-																<span class="ml-1 text-gray-400">Not marked</span>
-															{/if}
-														</div>
-														<!-- Reflection Status -->
-														<div>
-															{#if student.reflectionStatus && student.reflectionStatus !== 'not_started'}
-																<ReflectionStatusBadge status={student.reflectionStatus} />
-															{:else}
-																<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-																	Not Started
-																</span>
-															{/if}
-														</div>
+													<div>
+														<div class="font-semibold text-gray-800">{student.name}</div>
+														<div class="text-sm text-gray-500">{student.email}</div>
 													</div>
 												</div>
-											{/each}
-										</div>
-									{/if}
-								</div>
+
+												<!-- Attendance Buttons -->
+												<div class="flex items-center gap-2">
+													<button
+														onclick={() => markAttendance(student.id, true)}
+														class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all"
+														class:bg-green-500={status === 'present'}
+														class:text-white={status === 'present'}
+														class:shadow-sm={status === 'present'}
+														class:bg-gray-100={status !== 'present'}
+														class:text-gray-600={status !== 'present'}
+														class:hover:bg-green-50={status !== 'present'}
+														class:hover:text-green-700={status !== 'present'}
+													>
+														<Check size="16" />
+														Present
+													</button>
+													<button
+														onclick={() => markAttendance(student.id, false)}
+														class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all"
+														class:bg-red-500={status === 'absent'}
+														class:text-white={status === 'absent'}
+														class:shadow-sm={status === 'absent'}
+														class:bg-gray-100={status !== 'absent'}
+														class:text-gray-600={status !== 'absent'}
+														class:hover:bg-red-50={status !== 'absent'}
+														class:hover:text-red-700={status !== 'absent'}
+													>
+														<X size="16" />
+														Absent
+													</button>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
@@ -291,18 +355,3 @@
 	</div>
 </div>
 {/if}
-
-<style>
-	.active-tab {
-		background-color: #c59a6b;
-		color: #334642;
-	}
-
-	.inactive-tab {
-		color: #334642;
-	}
-
-	.inactive-tab:hover {
-		background-color: rgba(197, 154, 107, 0.2);
-	}
-</style>

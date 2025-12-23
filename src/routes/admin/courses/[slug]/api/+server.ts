@@ -656,17 +656,23 @@ export const GET: RequestHandler = async (event) => {
 			}
 
 			// Map activity_type to icon type expected by component
+			const getActivityType = (activityType) => {
+				const typeMap = {
+					'reflection_submitted': 'reflection',
+					'reflection_resubmitted': 'reflection',
+					'reflection_passed': 'reflection',
+					'reflection_needs_revision': 'reflection',
+					'reflections_marked': 'reflection',
+					'attendance_marked': 'attendance',
+					'attendance_submitted': 'attendance',
+					'session_changed': 'advancement',
+					'advancement_email_sent': 'email'
+				};
+				return typeMap[activityType] || 'reflection';
+			};
+
 			const formattedActivities = (result.data || []).map((a) => ({
-				type:
-					a.activity_type === 'reflections_marked'
-						? 'reflection'
-						: a.activity_type === 'advancement_email_sent'
-							? 'email'
-							: a.activity_type === 'session_changed'
-								? 'advancement'
-								: a.activity_type === 'attendance_submitted'
-									? 'attendance'
-									: 'reflection',
+				type: getActivityType(a.activity_type),
 				description: a.description,
 				created_at: a.created_at
 			}));

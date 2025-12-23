@@ -4,7 +4,7 @@ import { requireCourseAccess } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types';
 
 /**
- * GET: Fetch hub data for coordinator (students, attendance, reflections)
+ * GET: Fetch hub data for coordinator (students, attendance for ALL sessions)
  */
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
@@ -45,6 +45,22 @@ export const GET: RequestHandler = async (event) => {
 		.eq('id', hubId)
 		.single();
 
+	// Get total sessions for this module
+	let totalSessions = 8; // Default fallback
+	if (moduleId) {
+		const { data: sessions } = await supabaseAdmin
+			.from('courses_sessions')
+			.select('session_number')
+			.eq('module_id', moduleId)
+			.gt('session_number', 0)
+			.order('session_number', { ascending: false })
+			.limit(1);
+
+		if (sessions && sessions.length > 0) {
+			totalSessions = sessions[0].session_number;
+		}
+	}
+
 	// Get students in this hub
 	const { data: students } = await supabaseAdmin
 		.from('courses_enrollments')
@@ -63,66 +79,55 @@ export const GET: RequestHandler = async (event) => {
 		.eq('role', 'student')
 		.order('full_name');
 
-	// Get attendance for current session
+	// Get ALL attendance records for all students (all sessions)
 	const studentIds = students?.map(s => s.id) || [];
-	let attendanceMap: Record<string, boolean | null> = {};
+	// Map: { enrollmentId: { sessionNumber: boolean } }
+	let attendanceMap: Record<string, Record<number, boolean>> = {};
 
 	if (studentIds.length > 0) {
 		const { data: attendance } = await supabaseAdmin
 			.from('courses_attendance')
-			.select('enrollment_id, present')
+			.select('enrollment_id, session_number, present')
 			.in('enrollment_id', studentIds)
-			.eq('session_number', currentSession);
+			.eq('cohort_id', cohortId);
 
 		attendance?.forEach(a => {
-			attendanceMap[a.enrollment_id] = a.present;
+			if (!attendanceMap[a.enrollment_id]) {
+				attendanceMap[a.enrollment_id] = {};
+			}
+			attendanceMap[a.enrollment_id][a.session_number] = a.present;
 		});
 	}
 
-	// Get reflection responses for current session
-	let reflectionMap: Record<string, string> = {};
+	// Format student data with full attendance history
+	const formattedStudents = (students || []).map(s => {
+		const studentAttendance = attendanceMap[s.id] || {};
 
-	if (studentIds.length > 0 && moduleId) {
-		// First get the session ID for the current session
-		const { data: session } = await supabaseAdmin
-			.from('courses_sessions')
-			.select('id')
-			.eq('module_id', moduleId)
-			.eq('session_number', currentSession)
-			.single();
-
-		if (session) {
-			// Get the question for this session
-			const { data: question } = await supabaseAdmin
-				.from('courses_reflection_questions')
-				.select('id')
-				.eq('session_id', session.id)
-				.single();
-
-			if (question) {
-				// Get responses for this question from hub students
-				const { data: responses } = await supabaseAdmin
-					.from('courses_reflection_responses')
-					.select('enrollment_id, status')
-					.eq('question_id', question.id)
-					.in('enrollment_id', studentIds);
-
-				responses?.forEach(r => {
-					reflectionMap[r.enrollment_id] = r.status || 'submitted';
-				});
+		// Calculate attendance percentage (sessions 1 through currentSession)
+		let attendedCount = 0;
+		let markedCount = 0;
+		for (let i = 1; i <= currentSession; i++) {
+			if (studentAttendance[i] !== undefined) {
+				markedCount++;
+				if (studentAttendance[i] === true) {
+					attendedCount++;
+				}
 			}
 		}
-	}
 
-	// Format student data
-	const formattedStudents = (students || []).map(s => ({
-		id: s.id,
-		name: s.user_profile?.full_name || s.full_name || s.email,
-		email: s.user_profile?.email || s.email,
-		currentSession: s.current_session,
-		attendanceStatus: attendanceMap[s.id] === true ? 'present' : attendanceMap[s.id] === false ? 'absent' : null,
-		reflectionStatus: reflectionMap[s.id] || 'not_started'
-	}));
+		return {
+			id: s.id,
+			name: s.user_profile?.full_name || s.full_name || s.email,
+			email: s.user_profile?.email || s.email,
+			currentSession: s.current_session,
+			// Full attendance record: { 1: true, 2: false, 3: true, ... }
+			attendance: studentAttendance,
+			// Stats for quick display
+			attendedCount,
+			markedCount,
+			attendancePercent: markedCount > 0 ? Math.round((attendedCount / markedCount) * 100) : null
+		};
+	});
 
 	return json({
 		hub: {
@@ -131,6 +136,7 @@ export const GET: RequestHandler = async (event) => {
 			location: hub?.location
 		},
 		currentSession,
+		totalSessions,
 		students: formattedStudents
 	});
 };
@@ -175,7 +181,7 @@ export const POST: RequestHandler = async (event) => {
 				cohort_id: coordinator.cohort_id,
 				session_number: sessionNumber,
 				present,
-				marked_by: coordinator.id,
+				marked_by: user.id, // user.id is the user_profile_id
 				attendance_type: 'hub'
 			}, {
 				onConflict: 'cohort_id,enrollment_id,session_number'
@@ -185,6 +191,36 @@ export const POST: RequestHandler = async (event) => {
 			console.error('Error marking attendance:', upsertError);
 			throw error(500, 'Failed to mark attendance');
 		}
+
+		// Log activity (batch attendance marking will create many logs, so only log individual marks)
+		// Get student and coordinator names
+		const { data: studentEnrollment } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('full_name, user_profile:user_profile_id(full_name)')
+			.eq('id', studentId)
+			.single();
+
+		const { data: coordProfile } = await supabaseAdmin
+			.from('user_profiles')
+			.select('full_name')
+			.eq('id', user.id)
+			.single();
+
+		const studentName = studentEnrollment?.user_profile?.full_name || studentEnrollment?.full_name || 'Student';
+
+		await supabaseAdmin.from('courses_activity_log').insert({
+			cohort_id: coordinator.cohort_id,
+			enrollment_id: studentId,
+			activity_type: 'attendance_marked',
+			actor_name: coordProfile?.full_name || 'Coordinator',
+			description: `Marked ${studentName} as ${present ? 'present' : 'absent'} for Session ${sessionNumber}`,
+			metadata: {
+				student_name: studentName,
+				session_number: sessionNumber,
+				present,
+				marked_by_role: 'coordinator'
+			}
+		});
 
 		return json({ success: true });
 	}
