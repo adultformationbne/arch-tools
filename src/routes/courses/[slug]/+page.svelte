@@ -105,7 +105,7 @@
 	<!-- Public Reflections Feed -->
 	<div class="pb-16">
 		<div class="max-w-7xl mx-auto">
-			<PublicReflectionsFeed reflections={publicReflections} onReadReflection={openReflectionModal} />
+			<PublicReflectionsFeed reflections={publicReflections} />
 		</div>
 	</div>
 </div>

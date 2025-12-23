@@ -83,6 +83,12 @@
 	};
 
 	const handleSubmit = async () => {
+		// Cancel any pending auto-save to prevent race condition
+		if (autoSaveTimer) {
+			clearTimeout(autoSaveTimer);
+			autoSaveTimer = null;
+		}
+
 		if (!questionId || content.trim().length === 0) {
 			toastError('Please write something before submitting');
 			return;

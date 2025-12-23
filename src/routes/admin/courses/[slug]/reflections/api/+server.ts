@@ -164,6 +164,27 @@ export const PUT: RequestHandler = async (event) => {
 			}
 		}
 
+		// Get reflection details for activity log before marking
+		const { data: reflectionDetails } = await supabaseAdmin
+			.from('courses_reflection_responses')
+			.select(`
+				cohort_id,
+				enrollment_id,
+				question:question_id (
+					session:session_id (
+						session_number
+					)
+				),
+				enrollment:enrollment_id (
+					full_name,
+					user_profile:user_profile_id (
+						full_name
+					)
+				)
+			`)
+			.eq('id', reflection_id)
+			.single();
+
 		// Mark reflection using repository mutation
 		const result = await CourseMutations.markReflection(
 			reflection_id,
@@ -185,6 +206,34 @@ export const PUT: RequestHandler = async (event) => {
 				reviewing_started_at: null
 			})
 			.eq('id', reflection_id);
+
+		// Log activity
+		if (reflectionDetails) {
+			const { data: adminProfile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('full_name')
+				.eq('id', user.id)
+				.single();
+
+			const studentName = reflectionDetails.enrollment?.user_profile?.full_name
+				|| reflectionDetails.enrollment?.full_name
+				|| 'Student';
+			const sessionNum = reflectionDetails.question?.session?.session_number || '?';
+
+			await supabaseAdmin.from('courses_activity_log').insert({
+				cohort_id: reflectionDetails.cohort_id,
+				enrollment_id: reflectionDetails.enrollment_id,
+				activity_type: grade === 'pass' ? 'reflection_passed' : 'reflection_needs_revision',
+				actor_name: adminProfile?.full_name || 'Admin',
+				description: `Marked ${studentName}'s Session ${sessionNum} reflection as ${grade === 'pass' ? 'passed' : 'needs revision'}`,
+				metadata: {
+					student_name: studentName,
+					session_number: sessionNum,
+					grade,
+					has_feedback: !!feedback?.trim()
+				}
+			});
+		}
 
 		return json({
 			success: true,

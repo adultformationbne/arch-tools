@@ -242,8 +242,8 @@ export const CourseQueries = {
 	/**
 	 * Get public reflections for a cohort
 	 */
-	async getPublicReflections(cohortId: string, excludeEnrollmentId?: string) {
-		let query = supabaseAdmin
+	async getPublicReflections(cohortId: string) {
+		return supabaseAdmin
 			.from('courses_reflection_responses')
 			.select(`
 				*,
@@ -264,14 +264,9 @@ export const CourseQueries = {
 			`)
 			.eq('cohort_id', cohortId)
 			.eq('is_public', true)
+			.eq('status', 'passed')
 			.order('created_at', { ascending: false })
 			.limit(20);
-
-		if (excludeEnrollmentId) {
-			query = query.neq('enrollment_id', excludeEnrollmentId);
-		}
-
-		return query;
 	},
 
 	/**
@@ -466,7 +461,7 @@ export const CourseAggregates = {
 				CourseQueries.getMaterials(sessionIds),
 				CourseQueries.getReflectionQuestions(sessionIds),
 				CourseQueries.getReflectionResponses(enrollmentId),
-				CourseQueries.getPublicReflections(cohortId, enrollmentId),
+				CourseQueries.getPublicReflections(cohortId),
 				enrollment.role === 'coordinator' && enrollment.hub_id
 					? CourseQueries.getHubData(enrollment.hub_id, cohortId)
 					: Promise.resolve({ hub: null, students: [], error: null })

@@ -60,8 +60,8 @@
 		}, 0)
 	});
 
-	// Recent activity (mock for now - would come from API)
-	const recentActivity = $state([]);
+	// Recent activity
+	let recentActivity = $state([]);
 
 	// Filtered participants
 	const filteredParticipants = $derived(
@@ -113,14 +113,18 @@
 			// Get module ID for fetching sessions with questions
 			const moduleId = currentCohort.module?.id || currentCohort.module_id;
 
-			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse] = await Promise.all([
+			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse, activityResponse] = await Promise.all([
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`).then(r => r.json()),
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${selectedCohortId}`).then(r => r.json()),
 				fetchReflectionsByCohort(selectedCohortId, courseSlug),
 				moduleId
 					? fetch(`/admin/courses/${courseSlug}/api?endpoint=sessions_with_questions&module_id=${moduleId}`).then(r => r.json())
-					: Promise.resolve({ success: true, data: [] })
+					: Promise.resolve({ success: true, data: [] }),
+				fetch(`/admin/courses/${courseSlug}/api?endpoint=recent_activity&cohort_id=${selectedCohortId}`).then(r => r.json())
 			]);
+
+			// Update activity
+			recentActivity = activityResponse.success ? activityResponse.data : [];
 
 			reflectionsByUser = reflectionsData;
 			sessionsWithQuestions = sessionsResponse.success ? sessionsResponse.data : [];

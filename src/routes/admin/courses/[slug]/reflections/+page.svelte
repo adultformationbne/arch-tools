@@ -14,6 +14,8 @@
 	let searchQuery = $state('');
 	let selectedReflection = $state(null);
 	let showMarkingModal = $state(false);
+	let showViewModal = $state(false);
+	let viewingReflection = $state(null);
 	let isSaving = $state(false);
 	let isClaiming = $state(false);
 
@@ -124,6 +126,8 @@
 		if (reflection.isBeingReviewed && !forceOverride) {
 			pendingOverrideReflection = reflection;
 			showOverrideConfirm = true;
+			showViewModal = false;
+			viewingReflection = null;
 			return;
 		}
 
@@ -143,18 +147,24 @@
 				if (result.alreadyMarked) {
 					toastWarning(result.message);
 					await invalidateAll();
+					showViewModal = false;
+					viewingReflection = null;
 					return;
 				}
 				if (result.claimed) {
 					// Someone else just claimed it - show confirmation
 					toastWarning(`${result.claimedBy} is currently reviewing this reflection`);
 					await invalidateAll();
+					showViewModal = false;
+					viewingReflection = null;
 					return;
 				}
 				throw new Error(result.message || 'Failed to claim reflection');
 			}
 
-			// Successfully claimed - open modal
+			// Successfully claimed - close view modal and open marking modal
+			showViewModal = false;
+			viewingReflection = null;
 			selectedReflection = reflection;
 			markingForm = {
 				feedback: reflection.feedback || '',
@@ -165,6 +175,8 @@
 		} catch (error) {
 			console.error('Claim error:', error);
 			toastError('Failed to open reflection for review');
+			showViewModal = false;
+			viewingReflection = null;
 		} finally {
 			isClaiming = false;
 		}
@@ -262,6 +274,16 @@
 	const getWordCount = (text) => {
 		return text.trim().split(/\s+/).length;
 	};
+
+	const openViewModal = (reflection) => {
+		viewingReflection = reflection;
+		showViewModal = true;
+	};
+
+	const closeViewModal = () => {
+		showViewModal = false;
+		viewingReflection = null;
+	};
 </script>
 
 <div class="px-16">
@@ -270,12 +292,12 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between mb-8">
 				<div>
-					<h1 class="text-5xl font-bold text-gray-900 mb-2">Reflection Review</h1>
-					<p class="text-xl text-gray-600">Mark and provide feedback on student reflections</p>
+					<h1 class="text-5xl font-bold text-white mb-2">Reflection Review</h1>
+					<p class="text-xl text-white/70">Mark and provide feedback on student reflections</p>
 				</div>
-				<div class="text-gray-700">
+				<div class="text-white">
 					<span class="text-2xl font-bold">{reflections.filter(r => needsReview(r.dbStatus || r.status)).length}</span>
-					<span class="text-lg"> pending review</span>
+					<span class="text-lg text-white/70"> pending review</span>
 				</div>
 			</div>
 
@@ -405,46 +427,22 @@
 									<div class="text-sm text-blue-600 font-semibold">Feedback provided</div>
 								{/if}
 							</div>
-							<div class="flex gap-3">
-								<button
-									class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
-									style="background-color: var(--course-surface); color: var(--course-accent-dark);"
-								>
-									View Full
-								</button>
-								{#if needsReview(reflection.dbStatus || reflection.status)}
-									<button
-										onclick={() => openMarkingModal(reflection)}
-										disabled={isClaiming}
-										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-										style="background-color: var(--course-accent-light); color: white;"
-									>
-										{#if reflection.isBeingReviewed}
-											Review Anyway
-										{:else}
-											Mark Reflection
-										{/if}
-									</button>
-								{:else}
-									<button
-										onclick={() => openMarkingModal(reflection)}
-										disabled={isClaiming}
-										class="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-										style="background-color: var(--course-accent-dark); color: white;"
-									>
-										Edit Marking
-									</button>
-								{/if}
-							</div>
+							<button
+								onclick={() => openViewModal(reflection)}
+								class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700"
+							>
+								<Eye size="16" />
+								View Reflection
+							</button>
 						</div>
 					</div>
 				{/each}
 
 				{#if filteredReflections.length === 0}
 					<div class="text-center py-12">
-						<MessageSquare size="64" class="mx-auto mb-4 text-gray-400" />
-						<h3 class="text-xl font-bold text-gray-600 mb-2">No reflections found</h3>
-						<p class="text-gray-500">Try adjusting your filters or search criteria</p>
+						<MessageSquare size="64" class="mx-auto mb-4 text-white/40" />
+						<h3 class="text-xl font-bold text-white/70 mb-2">No reflections found</h3>
+						<p class="text-white/50">Try adjusting your filters or search criteria</p>
 					</div>
 				{/if}
 			</div>
@@ -533,8 +531,7 @@
 						<button
 							onclick={submitMarking}
 							disabled={isSaving}
-							class="flex-1 py-3 px-6 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							style="background-color: var(--course-accent-light); color: white;"
+							class="flex-1 py-3 px-6 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
 						>
 							{isSaving ? 'Submitting...' : 'Submit Marking'}
 						</button>
@@ -567,3 +564,142 @@
 		If you proceed, you may overwrite their work. Are you sure you want to continue?
 	</p>
 </ConfirmationModal>
+
+<!-- View Reflection Modal -->
+{#if showViewModal && viewingReflection}
+	<div
+		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+		onclick={closeViewModal}
+		role="button"
+		tabindex="0"
+		onkeydown={(e) => e.key === 'Escape' && closeViewModal()}
+	>
+		<div
+			class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
+		>
+			<!-- Modal Header -->
+			<div class="flex items-start justify-between p-6 border-b border-gray-200 bg-gray-50">
+				<div class="flex items-center gap-4">
+					<div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+						<User size="24" class="text-gray-600" />
+					</div>
+					<div>
+						<h2 class="text-xl font-bold text-gray-800">{viewingReflection.student.name}</h2>
+						<p class="text-sm text-gray-600">{viewingReflection.student.email}</p>
+						<p class="text-sm text-gray-500">{getCohortDisplayName(viewingReflection.cohort)} • Session {viewingReflection.session}</p>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					<ReflectionStatusBadge status={viewingReflection.dbStatus || viewingReflection.status} size="large" />
+					<button
+						onclick={closeViewModal}
+						class="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+					>
+						<X size="24" />
+					</button>
+				</div>
+			</div>
+
+			<!-- Modal Body -->
+			<div class="flex-1 overflow-y-auto p-6 space-y-6">
+				<!-- Reflection Question -->
+				<div>
+					<h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Reflection Question</h3>
+					<div class="bg-gray-50 rounded-xl p-4">
+						<p class="text-gray-800 italic">"{viewingReflection.question}"</p>
+					</div>
+				</div>
+
+				<!-- Student Response -->
+				<div>
+					<div class="flex items-center justify-between mb-2">
+						<h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Student Response</h3>
+						<span class="text-sm text-gray-500">{getWordCount(viewingReflection.content)} words • {formatDate(viewingReflection.submittedAt)}</span>
+					</div>
+					<div class="bg-blue-50 rounded-xl p-5 border border-blue-100">
+						<div class="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+							{@html viewingReflection.content}
+						</div>
+					</div>
+				</div>
+
+				<!-- Existing Feedback (if any) -->
+				{#if viewingReflection.feedback}
+					<div>
+						<div class="flex items-center gap-2 mb-2">
+							<Star size="16" class="text-amber-500" />
+							<h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Feedback Provided</h3>
+						</div>
+						<div class="bg-green-50 rounded-xl p-5 border border-green-200">
+							<p class="text-gray-800 leading-relaxed">{viewingReflection.feedback}</p>
+							{#if viewingReflection.markedBy}
+								<p class="text-sm text-gray-500 mt-3">— {viewingReflection.markedBy}</p>
+							{/if}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Visibility -->
+				<div class="flex items-center gap-3 pt-4 border-t border-gray-200">
+					{#if viewingReflection.isPublic}
+						<div class="flex items-center gap-2 text-green-700">
+							<div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+							<span class="text-sm font-medium">Public reflection - visible to cohort</span>
+						</div>
+					{:else}
+						<div class="flex items-center gap-2 text-gray-600">
+							<div class="w-2.5 h-2.5 bg-gray-400 rounded-full"></div>
+							<span class="text-sm font-medium">Private reflection</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="flex items-center justify-between p-6 bg-gray-50 border-t border-gray-200">
+				<div class="text-sm text-gray-500">
+					{viewingReflection.student.hub}
+				</div>
+				<div class="flex gap-3">
+					<button
+						onclick={closeViewModal}
+						disabled={isClaiming}
+						class="px-5 py-2.5 font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+					>
+						Close
+					</button>
+					{#if needsReview(viewingReflection.dbStatus || viewingReflection.status)}
+						<button
+							onclick={() => openMarkingModal(viewingReflection)}
+							disabled={isClaiming}
+							class="px-5 py-2.5 font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+						>
+							{#if isClaiming}
+								<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+								Claiming...
+							{:else}
+								Mark Reflection
+							{/if}
+						</button>
+					{:else}
+						<button
+							onclick={() => openMarkingModal(viewingReflection)}
+							disabled={isClaiming}
+							class="px-5 py-2.5 font-semibold rounded-lg bg-gray-800 text-white hover:bg-gray-900 transition-colors disabled:opacity-50 flex items-center gap-2"
+						>
+							{#if isClaiming}
+								<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+								Opening...
+							{:else}
+								Edit Marking
+							{/if}
+						</button>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
