@@ -115,8 +115,7 @@ export async function GET({ request }) {
 
 		// Send email to all DGR admins
 		const resend = new Resend(RESEND_API_KEY);
-		// TODO: Remove test override
-		const adminEmails = ['me@liamdesic.co']; // dgrAdmins.map(a => a.email).filter(Boolean);
+		const adminEmails = dgrAdmins.map(a => a.email).filter(Boolean);
 
 		const newCount = newPendingItems?.length || 0;
 		const subject = newCount > 0
