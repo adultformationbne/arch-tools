@@ -61,7 +61,7 @@ export async function GET({ request }) {
 		`;
 
 		await resend.emails.send({
-			from: 'DGR System <notifications@archdiocesanministries.org.au>',
+			from: 'DGR System <noreply@app.archdiocesanministries.org.au>',
 			to: 'me@liamdesic.co',
 			subject: `DGR Daily Digest: ${pendingCount || 0} pending reviews`,
 			html: emailHtml
