@@ -4,9 +4,10 @@ import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
 
+const TASK_TYPE = 'dgr_digest';
+
 export async function GET({ request }) {
-	// Verify cron secret (Vercel sends this header)
-	// Skip auth check if CRON_SECRET not configured (for testing)
+	// Verify cron secret
 	const cronSecret = env.CRON_SECRET;
 	if (cronSecret) {
 		const authHeader = request.headers.get('authorization');
@@ -16,65 +17,293 @@ export async function GET({ request }) {
 	}
 
 	try {
-		// Count pending reflections (status = 'submitted')
-		const { count: pendingCount } = await supabaseAdmin
-			.from('dgr_schedule')
-			.select('*', { count: 'exact', head: true })
-			.eq('status', 'submitted');
+		// Get task config from database
+		const { data: task } = await supabaseAdmin
+			.from('scheduled_tasks')
+			.select('*')
+			.eq('task_type', TASK_TYPE)
+			.eq('enabled', true)
+			.single();
 
-		// Count approved but not published
-		const { count: approvedCount } = await supabaseAdmin
-			.from('dgr_schedule')
-			.select('*', { count: 'exact', head: true })
-			.eq('status', 'approved');
-
-		// Get entries due in next 7 days that are still pending
-		const today = new Date().toISOString().split('T')[0];
-		const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-		const { count: dueSoonCount } = await supabaseAdmin
-			.from('dgr_schedule')
-			.select('*', { count: 'exact', head: true })
-			.eq('status', 'pending')
-			.gte('date', today)
-			.lte('date', nextWeek);
-
-		// Only send email if there's something to report
-		const hasItems = (pendingCount || 0) > 0 || (approvedCount || 0) > 0 || (dueSoonCount || 0) > 0;
-
-		if (!hasItems) {
-			return json({ success: true, message: 'No items to report, skipping email' });
+		if (!task) {
+			return json({ success: true, message: 'Task not found or disabled', skipped: true });
 		}
 
-		// Send digest email
-		const resend = new Resend(RESEND_API_KEY);
+		// Check if we should run today (weekday check)
+		const now = new Date();
+		const brisbaneTime = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Brisbane' }));
+		const dayOfWeek = brisbaneTime.getDay(); // 0 = Sunday, 6 = Saturday
+		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-		const emailHtml = `
-			<h2>DGR Daily Digest</h2>
-			<p>Here's your daily summary:</p>
-			<ul>
-				<li><strong>${pendingCount || 0}</strong> reflections awaiting review</li>
-				<li><strong>${approvedCount || 0}</strong> approved reflections ready to publish</li>
-				<li><strong>${dueSoonCount || 0}</strong> pending reflections due in the next 7 days</li>
-			</ul>
-			<p><a href="https://app.archdiocesanministries.org.au/dgr">View DGR Dashboard</a></p>
-		`;
+		if (isWeekend && !task.run_on_weekends) {
+			await updateTaskStatus(task.id, 'skipped', 'Weekend - task configured for weekdays only');
+			return json({ success: true, message: 'Skipped - weekend', skipped: true });
+		}
+
+		if (!isWeekend && !task.run_on_weekdays) {
+			await updateTaskStatus(task.id, 'skipped', 'Weekday - task configured for weekends only');
+			return json({ success: true, message: 'Skipped - weekday', skipped: true });
+		}
+
+		// Get DGR admins (users with 'dgr' module)
+		const { data: dgrAdmins } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, email, full_name')
+			.contains('modules', ['dgr']);
+
+		if (!dgrAdmins || dgrAdmins.length === 0) {
+			await updateTaskStatus(task.id, 'skipped', 'No DGR admins found');
+			return json({ success: true, message: 'No DGR admins to notify', skipped: true });
+		}
+
+		// Get date range (today + next 7 days)
+		const today = brisbaneTime.toISOString().split('T')[0];
+		const nextWeek = new Date(brisbaneTime);
+		nextWeek.setDate(nextWeek.getDate() + 7);
+		const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+		// Get all schedule entries for next 7 days
+		const { data: upcomingEntries } = await supabaseAdmin
+			.from('dgr_schedule')
+			.select(`
+				id, date, status, reflection_title, digest_notified_at,
+				contributor:dgr_contributors(name, title)
+			`)
+			.gte('date', today)
+			.lte('date', nextWeekStr)
+			.order('date', { ascending: true });
+
+		// Get NEW pending items (submitted but never in a digest)
+		const { data: newPendingItems } = await supabaseAdmin
+			.from('dgr_schedule')
+			.select(`
+				id, date, status, reflection_title, submitted_at,
+				contributor:dgr_contributors(name, title)
+			`)
+			.eq('status', 'submitted')
+			.is('digest_notified_at', null)
+			.order('submitted_at', { ascending: true });
+
+		// Get existing pending items (submitted and already notified before)
+		const { data: existingPendingItems } = await supabaseAdmin
+			.from('dgr_schedule')
+			.select(`
+				id, date, status, reflection_title, submitted_at, digest_notified_at,
+				contributor:dgr_contributors(name, title)
+			`)
+			.eq('status', 'submitted')
+			.not('digest_notified_at', 'is', null)
+			.order('submitted_at', { ascending: true });
+
+		// Build email content
+		const emailHtml = buildDigestEmail({
+			upcomingEntries: upcomingEntries || [],
+			newPendingItems: newPendingItems || [],
+			existingPendingItems: existingPendingItems || [],
+			today
+		});
+
+		// Check if there's anything to report
+		const hasNewItems = (newPendingItems?.length || 0) > 0;
+		const hasExistingPending = (existingPendingItems?.length || 0) > 0;
+		const hasUpcoming = (upcomingEntries?.length || 0) > 0;
+
+		if (!hasNewItems && !hasExistingPending && !hasUpcoming) {
+			await updateTaskStatus(task.id, 'skipped', 'No items to report');
+			return json({ success: true, message: 'Nothing to report', skipped: true });
+		}
+
+		// Send email to all DGR admins
+		const resend = new Resend(RESEND_API_KEY);
+		const adminEmails = dgrAdmins.map(a => a.email).filter(Boolean);
+
+		const newCount = newPendingItems?.length || 0;
+		const subject = newCount > 0
+			? `DGR Digest: ${newCount} NEW reflection${newCount !== 1 ? 's' : ''} awaiting review`
+			: `DGR Digest: Daily summary`;
 
 		await resend.emails.send({
 			from: 'DGR System <noreply@app.archdiocesanministries.org.au>',
-			to: 'me@liamdesic.co',
-			subject: `DGR Daily Digest: ${pendingCount || 0} pending reviews`,
+			to: adminEmails,
+			subject,
 			html: emailHtml
 		});
+
+		// Mark new items as notified
+		if (newPendingItems && newPendingItems.length > 0) {
+			const newItemIds = newPendingItems.map(item => item.id);
+			await supabaseAdmin
+				.from('dgr_schedule')
+				.update({ digest_notified_at: new Date().toISOString() })
+				.in('id', newItemIds);
+		}
+
+		await updateTaskStatus(task.id, 'success', `Sent to ${adminEmails.length} admin(s)`);
 
 		return json({
 			success: true,
 			message: 'Digest sent',
-			stats: { pendingCount, approvedCount, dueSoonCount }
+			recipients: adminEmails.length,
+			stats: {
+				newPending: newPendingItems?.length || 0,
+				existingPending: existingPendingItems?.length || 0,
+				upcoming: upcomingEntries?.length || 0
+			}
 		});
 
 	} catch (error) {
 		console.error('DGR daily digest error:', error);
+
+		// Try to update task status on error
+		try {
+			const { data: task } = await supabaseAdmin
+				.from('scheduled_tasks')
+				.select('id')
+				.eq('task_type', TASK_TYPE)
+				.single();
+			if (task) {
+				await updateTaskStatus(task.id, 'error', error.message);
+			}
+		} catch {}
+
 		return json({ error: error.message }, { status: 500 });
 	}
+}
+
+async function updateTaskStatus(taskId: string, status: string, message: string) {
+	await supabaseAdmin
+		.from('scheduled_tasks')
+		.update({
+			last_run_at: new Date().toISOString(),
+			last_run_status: status,
+			last_run_message: message,
+			updated_at: new Date().toISOString()
+		})
+		.eq('id', taskId);
+}
+
+function buildDigestEmail({
+	upcomingEntries,
+	newPendingItems,
+	existingPendingItems,
+	today
+}: {
+	upcomingEntries: any[];
+	newPendingItems: any[];
+	existingPendingItems: any[];
+	today: string;
+}) {
+	const formatDate = (dateStr: string) => {
+		const date = new Date(dateStr + 'T00:00:00');
+		return date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+	};
+
+	const formatContributor = (contributor: any) => {
+		if (!contributor) return 'Unassigned';
+		return contributor.title
+			? `${contributor.title} ${contributor.name}`
+			: contributor.name;
+	};
+
+	const statusBadge = (status: string) => {
+		const colors: Record<string, string> = {
+			pending: '#f59e0b',
+			submitted: '#3b82f6',
+			approved: '#22c55e',
+			published: '#8b5cf6'
+		};
+		const labels: Record<string, string> = {
+			pending: 'Pending',
+			submitted: 'Needs Review',
+			approved: 'Approved',
+			published: 'Published'
+		};
+		return `<span style="background-color: ${colors[status] || '#6b7280'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${labels[status] || status}</span>`;
+	};
+
+	let html = `
+		<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+			<h2 style="color: #009199; margin-bottom: 24px;">DGR Daily Digest</h2>
+	`;
+
+	// NEW items section (highlighted)
+	if (newPendingItems.length > 0) {
+		html += `
+			<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+				<h3 style="color: #92400e; margin: 0 0 12px 0;">🆕 NEW - Awaiting Review (${newPendingItems.length})</h3>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const item of newPendingItems) {
+			html += `
+				<tr>
+					<td style="padding: 8px 0; border-bottom: 1px solid #fde68a;">
+						<strong>${formatDate(item.date)}</strong><br>
+						<span style="color: #666;">${formatContributor(item.contributor)}</span>
+						${item.reflection_title ? `<br><em>"${item.reflection_title}"</em>` : ''}
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
+	// Existing pending items
+	if (existingPendingItems.length > 0) {
+		html += `
+			<div style="background-color: #f3f4f6; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+				<h3 style="color: #374151; margin: 0 0 12px 0;">Still Awaiting Review (${existingPendingItems.length})</h3>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const item of existingPendingItems) {
+			html += `
+				<tr>
+					<td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+						<strong>${formatDate(item.date)}</strong> - ${formatContributor(item.contributor)}
+						${item.reflection_title ? ` - <em>"${item.reflection_title}"</em>` : ''}
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
+	// Upcoming 7 days
+	if (upcomingEntries.length > 0) {
+		html += `
+			<div style="margin-bottom: 24px;">
+				<h3 style="color: #374151; margin: 0 0 12px 0;">Next 7 Days</h3>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const entry of upcomingEntries) {
+			const isToday = entry.date === today;
+			html += `
+				<tr style="${isToday ? 'background-color: #ecfdf5;' : ''}">
+					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb; width: 100px;">
+						<strong>${formatDate(entry.date)}</strong>
+						${isToday ? '<br><span style="color: #059669; font-size: 11px;">TODAY</span>' : ''}
+					</td>
+					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">
+						${formatContributor(entry.contributor)}
+					</td>
+					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+						${statusBadge(entry.status || 'pending')}
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
+	// Footer with link
+	html += `
+			<div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+				<a href="https://app.archdiocesanministries.org.au/dgr"
+				   style="display: inline-block; background-color: #009199; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+					View DGR Dashboard
+				</a>
+			</div>
+		</div>
+	`;
+
+	return html;
 }
