@@ -215,7 +215,7 @@ export async function POST({ request, locals }) {
 		const htmlBody = renderTemplate(template.body_template, variables);
 
 		// Send email with DGR branding
-		const emailTo = process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
+		const emailTo = contributor.email;
 
 		const result = await sendDgrEmail({
 			to: emailTo,
@@ -400,8 +400,7 @@ async function handleBulkReminders(reminders, user) {
 			colors: DGR_COLORS
 		});
 
-		const emailTo =
-			process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
+		const emailTo = contributor.email;
 
 		emailsToSend.push({
 			to: emailTo,

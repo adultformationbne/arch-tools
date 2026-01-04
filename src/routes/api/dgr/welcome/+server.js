@@ -123,8 +123,7 @@ export async function POST({ request, locals }) {
 				colors: DGR_COLORS
 			});
 
-			const emailTo =
-				process.env.NODE_ENV === 'development' ? 'me@liamdesic.co' : contributor.email;
+			const emailTo = contributor.email;
 
 			emailsToSend.push({
 				to: emailTo,
