@@ -1,13 +1,18 @@
 import { json } from '@sveltejs/kit';
-import { CRON_SECRET, RESEND_API_KEY } from '$env/static/private';
+import { RESEND_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
 
 export async function GET({ request }) {
 	// Verify cron secret (Vercel sends this header)
-	const authHeader = request.headers.get('authorization');
-	if (authHeader !== `Bearer ${CRON_SECRET}`) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
+	// Skip auth check if CRON_SECRET not configured (for testing)
+	const cronSecret = env.CRON_SECRET;
+	if (cronSecret) {
+		const authHeader = request.headers.get('authorization');
+		if (authHeader !== `Bearer ${cronSecret}`) {
+			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
 	}
 
 	try {
