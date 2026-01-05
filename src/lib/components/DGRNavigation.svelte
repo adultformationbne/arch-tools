@@ -20,7 +20,8 @@
 			subsections: [
 				{ id: 'contributors', name: 'Contributors', path: '/dgr/contributors' },
 				{ id: 'rules', name: 'Assignment Rules', path: '/dgr/rules' },
-				{ id: 'emails', name: 'Email Templates', path: '/dgr/emails' }
+				{ id: 'emails', name: 'Email Templates', path: '/dgr/emails' },
+				{ id: 'digest', name: 'Digest Settings', path: '/dgr/digest-settings' }
 			]
 		},
 		{

@@ -45,15 +45,21 @@ export async function GET({ request }) {
 			return json({ success: true, message: 'Skipped - weekday', skipped: true });
 		}
 
-		// Get DGR admins (users with 'dgr' module)
-		const { data: dgrAdmins } = await supabaseAdmin
-			.from('user_profiles')
-			.select('id, email, full_name')
-			.contains('modules', ['dgr']);
+		// Get recipients from task config (or fall back to all DGR admins)
+		let recipients = task.config?.recipients || [];
 
-		if (!dgrAdmins || dgrAdmins.length === 0) {
-			await updateTaskStatus(task.id, 'skipped', 'No DGR admins found');
-			return json({ success: true, message: 'No DGR admins to notify', skipped: true });
+		if (recipients.length === 0) {
+			// Fallback: get all DGR admins
+			const { data: dgrAdmins } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id, email, full_name')
+				.contains('modules', ['dgr']);
+			recipients = (dgrAdmins || []).map(a => ({ id: a.id, email: a.email, name: a.full_name }));
+		}
+
+		if (recipients.length === 0) {
+			await updateTaskStatus(task.id, 'skipped', 'No recipients configured');
+			return json({ success: true, message: 'No recipients to notify', skipped: true });
 		}
 
 		// Get date range (today + next 7 days)
@@ -113,9 +119,9 @@ export async function GET({ request }) {
 			return json({ success: true, message: 'Nothing to report', skipped: true });
 		}
 
-		// Send email to all DGR admins
+		// Send email to configured recipients
 		const resend = new Resend(RESEND_API_KEY);
-		const adminEmails = dgrAdmins.map(a => a.email).filter(Boolean);
+		const adminEmails = recipients.map((r: any) => r.email).filter(Boolean);
 
 		const newCount = newPendingItems?.length || 0;
 		const subject = newCount > 0
