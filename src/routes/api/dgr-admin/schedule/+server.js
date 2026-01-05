@@ -366,7 +366,7 @@ function calculatePatternDates(pattern, startDate, endDate) {
 	return [...new Set(dates)].sort();
 }
 
-export async function POST({ request, locals }) {
+export async function POST({ request, locals, url }) {
 	const { user } = await locals.safeGetSession();
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
@@ -391,7 +391,7 @@ export async function POST({ request, locals }) {
 			case 'clear_reflection':
 				return await clearReflection(data);
 			case 'send_to_wordpress':
-				return await sendToWordPress(data);
+				return await sendToWordPress({ ...data, origin: url.origin });
 			case 'save_reflection':
 				return await saveReflection(data);
 			default:
@@ -892,7 +892,7 @@ async function clearReflection({ scheduleId }) {
 	}
 }
 
-async function sendToWordPress({ scheduleId }) {
+async function sendToWordPress({ scheduleId, origin }) {
 	try {
 		// Get the schedule entry with all data
 		const { data: schedule, error: scheduleError } = await supabase
@@ -919,7 +919,6 @@ async function sendToWordPress({ scheduleId }) {
 		let gospelFullText = '';
 		if (gospelReference) {
 			try {
-				const origin = process.env.ORIGIN || 'http://localhost:5173';
 				const scriptureResponse = await fetch(
 					`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
 				);
@@ -953,7 +952,7 @@ async function sendToWordPress({ scheduleId }) {
 		};
 
 		// Call the WordPress publish API
-		const publishResponse = await fetch(`${process.env.ORIGIN || 'http://localhost:5173'}/api/dgr/publish`, {
+		const publishResponse = await fetch(`${origin}/api/dgr/publish`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(publishData)
