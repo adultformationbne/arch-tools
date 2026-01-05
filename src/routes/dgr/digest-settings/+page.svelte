@@ -1,8 +1,7 @@
 <script>
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
-	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
-	import { Mail, Clock, Calendar, Check, X } from 'lucide-svelte';
+	import { Mail, Clock, Calendar, Check } from 'lucide-svelte';
 
 	let { data } = $props();
 
@@ -71,8 +70,6 @@
 		selectedRecipientIds = [];
 	}
 </script>
-
-<DGRNavigation activeSection="people" activeSubSection="digest" />
 
 <div class="mx-auto max-w-3xl p-4 sm:p-6">
 	<div class="mb-6">
