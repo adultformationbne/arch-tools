@@ -115,7 +115,7 @@ CREATE TABLE courses_cohorts (
   current_session INTEGER DEFAULT 0,     -- Current session (0 = not started, 1-8 = in progress)
 
   -- Status
-  status TEXT DEFAULT 'upcoming',        -- 'upcoming', 'active', 'completed'
+  status TEXT DEFAULT 'scheduled',       -- 'draft', 'scheduled', 'active', 'completed'
 
   -- Email preferences
   email_preferences JSONB DEFAULT '{}',  -- Per-cohort email settings
@@ -810,7 +810,7 @@ Cohort status is determined by **session progression**, not dates:
 
 | `current_session` | `status` | Meaning | Student Access |
 |-------------------|----------|---------|----------------|
-| `0` | `'upcoming'` | Cohort created but not started | Can see start date, no materials |
+| `0` | `'scheduled'` | Cohort created but not started | Can see start date, no materials |
 | `1-8` | `'active'` | Cohort in progress | Can access current session materials |
 | Any | `'completed'` | Admin manually marked complete | Full archive access |
 
@@ -819,7 +819,7 @@ Cohort status is determined by **session progression**, not dates:
 ```typescript
 // Automatic (runtime calculation):
 if (current_session === 0 && status !== 'completed') {
-  status = 'upcoming';
+  status = 'scheduled';
 } else if (current_session >= 1 && status !== 'completed') {
   status = 'active';
 }
@@ -1510,7 +1510,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 
 ### How to start a cohort?
 1. Go to `/admin/courses/[slug]`
-2. Select cohort (should be at `current_session = 0` with status `'upcoming'`)
+2. Select cohort (should be at `current_session = 0` with status `'scheduled'`)
 3. Click "Advance to Session 1" button
 4. Cohort status automatically becomes `'active'`
 5. Students can now access Session 1 materials

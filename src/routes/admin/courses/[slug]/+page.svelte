@@ -143,7 +143,7 @@
 			}
 
 			participants = (enrollmentResponse.success ? enrollmentResponse.data : []).map(user => {
-				const userReflections = reflectionsByUser.get(user.auth_user_id) || [];
+				const userReflections = reflectionsByUser.get(user.user_profile_id) || [];
 				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session, sessionsWithQuestions);
 
 				return {

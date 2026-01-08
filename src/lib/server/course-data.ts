@@ -386,6 +386,9 @@ export const CourseQueries = {
 				marked_at,
 				created_at,
 				feedback,
+				enrollment:enrollment_id (
+					user_profile_id
+				),
 				question:question_id (
 					id,
 					session:session_id (
@@ -1416,14 +1419,14 @@ export const CourseMutations = {
 	 * Delete an enrollment (only if user hasn't signed up yet)
 	 */
 	async deleteEnrollment(userId: string) {
-		// Only allow deletion if user hasn't signed up yet (no auth_user_id)
+		// Only allow deletion if user hasn't signed up yet (no user_profile_id)
 		const { data: user } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('auth_user_id')
+			.select('user_profile_id')
 			.eq('id', userId)
 			.single();
 
-		if (user?.auth_user_id) {
+		if (user?.user_profile_id) {
 			return {
 				data: null,
 				error: { message: 'Cannot delete user who has completed signup' } as any
@@ -1448,16 +1451,16 @@ export const CourseMutations = {
 		// Get all enrollments to check which ones can be deleted
 		const { data: enrollments, error: fetchError } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('id, auth_user_id, full_name')
+			.select('id, user_profile_id, full_name')
 			.in('id', enrollmentIds);
 
 		if (fetchError) {
 			return { data: null, error: fetchError };
 		}
 
-		// Separate deletable (no auth_user_id) from non-deletable
-		const deletable = enrollments?.filter((e) => !e.auth_user_id) || [];
-		const skipped = enrollments?.filter((e) => e.auth_user_id) || [];
+		// Separate deletable (no user_profile_id) from non-deletable
+		const deletable = enrollments?.filter((e) => !e.user_profile_id) || [];
+		const skipped = enrollments?.filter((e) => e.user_profile_id) || [];
 
 		if (deletable.length === 0) {
 			return {

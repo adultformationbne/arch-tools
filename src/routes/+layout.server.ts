@@ -224,9 +224,6 @@ async function resolveFallbackCourse(): Promise<CourseRecord> {
 }
 
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }) => {
-	const startTime = Date.now();
-	console.log(`[ROOT LAYOUT] Loading: ${url.pathname}`);
-
 	const { session, user } = await safeGetSession();
 	const pathname = url.pathname;
 
@@ -246,14 +243,11 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 
 	let userProfile = null;
 	if (session && user) {
-		const profileStart = Date.now();
 		const { data: profile, error } = await supabaseAdmin
 			.from('user_profiles')
 			.select('id, email, full_name, modules')
 			.eq('id', user.id)
 			.single();
-
-		console.log(`[ROOT LAYOUT] User profile loaded in ${Date.now() - profileStart}ms`);
 
 		if (error) {
 			console.error('Error loading user profile:', error);
@@ -273,15 +267,10 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 
 	let courseRecord = null;
 	if (!skipCourseResolution) {
-		console.log(`[ROOT LAYOUT] Resolving course (not an admin route)...`);
-		const courseStart = Date.now();
 		courseRecord = await resolveCourseForUser(user?.id);
 		if (!courseRecord) {
 			courseRecord = await resolveFallbackCourse();
 		}
-		console.log(`[ROOT LAYOUT] Course resolved in ${Date.now() - courseStart}ms`);
-	} else {
-		console.log(`[ROOT LAYOUT] ⚡ Skipping course resolution (admin route)`);
 	}
 
 	const courseTheme = buildCourseTheme(courseRecord?.settings ?? null);
@@ -290,8 +279,6 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 
 	// Load platform settings from database
 	const platform = await getPlatformSettings();
-
-	console.log(`[ROOT LAYOUT] ✅ Complete in ${Date.now() - startTime}ms\n`);
 
 	return {
 		session,

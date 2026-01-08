@@ -14,13 +14,8 @@ import type { PageServerLoad } from './$types';
  * - Enrollment counts: Fetched here (page-specific)
  */
 export const load: PageServerLoad = async (event) => {
-	const startTime = Date.now();
-	console.log(`[MODULES PAGE] Loading...`);
-
 	// Get layout data (modules and cohorts already loaded, auth already checked)
-	const parentStart = Date.now();
 	const layoutData = await event.parent();
-	console.log(`[MODULES PAGE] ⚡ Parent data (cached): ${Date.now() - parentStart}ms`);
 
 	const modules = layoutData?.modules || [];
 	const cohorts = layoutData?.cohorts || [];
@@ -33,12 +28,10 @@ export const load: PageServerLoad = async (event) => {
 
 		if (moduleIds.length > 0) {
 			// Get session counts for each module
-			const sessionsStart = Date.now();
 			const { data: sessionCounts } = await supabaseAdmin
 				.from('courses_sessions')
 				.select('module_id')
 				.in('module_id', moduleIds);
-			console.log(`[MODULES PAGE] Session counts query: ${Date.now() - sessionsStart}ms`);
 
 			// Build session count map
 			const sessionCountMap = new Map();
@@ -59,17 +52,13 @@ export const load: PageServerLoad = async (event) => {
 		let totalEnrollments = 0;
 
 		if (cohortIds.length > 0) {
-			const enrollStart = Date.now();
 			const { count } = await supabaseAdmin
 				.from('courses_enrollments')
 				.select('*', { count: 'exact', head: true })
 				.in('cohort_id', cohortIds);
-			console.log(`[MODULES PAGE] Enrollment count query: ${Date.now() - enrollStart}ms`);
 
 			totalEnrollments = count || 0;
 		}
-
-		console.log(`[MODULES PAGE] ✅ Complete in ${Date.now() - startTime}ms\n`);
 
 		return {
 			course: courseInfo,
