@@ -107,5 +107,5 @@
 
 <!-- Click outside to close -->
 {#if showDetails}
-	<div class="fixed inset-0 z-40" onclick={() => (showDetails = false)}></div>
+	<div class="fixed inset-0 z-40" onmousedown={() => (showDetails = false)}></div>
 {/if}

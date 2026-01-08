@@ -256,11 +256,11 @@
 										</div>
 									{/if}
 
-									<!-- Edit Button (if submitted but not reviewed yet) -->
-									{#if isEditable(reflection.status) || (reflection.status === 'submitted' && !reflection.markedBy)}
+									<!-- Continue Button for drafts -->
+									{#if reflection.status === 'draft'}
 										<div class="pt-2 border-t border-gray-200">
 											<p class="text-sm text-gray-600 mb-3">
-												You can still edit this reflection until it's reviewed.
+												Continue writing your reflection when you're ready.
 											</p>
 											<a
 												href="/courses/{courseSlug}/write/{reflection.questionId}"
@@ -268,7 +268,20 @@
 												style="background-color: var(--course-accent-dark);"
 											>
 												<Edit3 size="16" />
-												Edit Reflection
+												Continue
+											</a>
+										</div>
+									{:else if isEditable(reflection.status) || (reflection.status === 'submitted' && !reflection.markedBy)}
+										<!-- Subtle edit link for submitted reflections -->
+										<div class="pt-2 border-t border-gray-200 flex items-center justify-between">
+											<p class="text-sm text-gray-500">
+												You can still edit until it's reviewed.
+											</p>
+											<a
+												href="/courses/{courseSlug}/write/{reflection.questionId}"
+												class="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+											>
+												Edit
 											</a>
 										</div>
 									{/if}

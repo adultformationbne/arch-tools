@@ -31,30 +31,45 @@ export const load: PageServerLoad = async (event) => {
 		console.error('Error fetching enrollments:', enrollmentError);
 	}
 
-	// Extract unique courses from enrollments
-	const coursesMap = new Map();
+	// Build course data with their enrollments
+	const coursesMap = new Map<string, {
+		course: any;
+		enrollments: any[];
+	}>();
 
 	if (enrollments) {
 		for (const enrollment of enrollments) {
 			const course = enrollment.cohort?.module?.course;
-			if (course && !coursesMap.has(course.id)) {
-				coursesMap.set(course.id, course);
+			if (course) {
+				if (!coursesMap.has(course.id)) {
+					coursesMap.set(course.id, { course, enrollments: [] });
+				}
+				coursesMap.get(course.id)!.enrollments.push({
+					id: enrollment.id,
+					cohortId: enrollment.cohort_id,
+					cohortName: enrollment.cohort?.name,
+					moduleName: enrollment.cohort?.module?.name,
+					role: enrollment.role,
+					status: enrollment.status
+				});
 			}
 		}
 	}
 
-	const userCourses = Array.from(coursesMap.values());
+	const courseData = Array.from(coursesMap.values());
+	const totalEnrollments = enrollments?.length ?? 0;
 
-	// If user is enrolled in exactly one course, redirect directly to it
-	if (userCourses.length === 1) {
-		const course = userCourses[0];
+	// Only auto-redirect if user has exactly ONE enrollment total
+	// (not just one course - they might have multiple cohorts in that course)
+	if (totalEnrollments === 1 && courseData.length === 1) {
+		const course = courseData[0].course;
 		throw redirect(303, `/courses/${course.slug}`);
 	}
 
-	// Multiple courses or no courses - show selector
+	// Multiple enrollments or no enrollments - show selector
 	return {
-		courses: userCourses,
+		courseData,
 		userRole: derivedRole,
-		noEnrollments: userCourses.length === 0
+		noEnrollments: totalEnrollments === 0
 	};
 };

@@ -6,7 +6,8 @@ import {
 	buildVariableContext,
 	renderTemplateForRecipient,
 	sendBulkEmails,
-	getCourseEmailTemplate
+	getCourseEmailTemplate,
+	createEmailButton
 } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
@@ -207,6 +208,7 @@ export const POST: RequestHandler = async (event) => {
 					startDate: data.startDate,
 					endDate: data.endDate,
 					currentSession: data.currentSession,
+					status: data.status,
 					actorName
 				});
 
@@ -333,6 +335,37 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'bulk_delete_enrollments': {
+				if (!data.enrollmentIds || data.enrollmentIds.length === 0) {
+					throw error(400, 'No participants selected');
+				}
+
+				const result = await CourseMutations.bulkDeleteEnrollments(data.enrollmentIds);
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to delete participants');
+				}
+
+				const { deleted, skipped, skippedNames } = result.data!;
+
+				let message = '';
+				if (deleted > 0 && skipped === 0) {
+					message = `Successfully removed ${deleted} participant(s)`;
+				} else if (deleted > 0 && skipped > 0) {
+					message = `Removed ${deleted} participant(s). ${skipped} could not be removed (already signed up)`;
+				} else if (deleted === 0 && skipped > 0) {
+					message = `Could not remove any participants. ${skipped} have already signed up and cannot be deleted`;
+				} else {
+					message = 'No participants to remove';
+				}
+
+				return json({
+					success: true,
+					data: { deleted, skipped, skippedNames },
+					message
+				});
+			}
+
 			case 'advance_students': {
 				if (!data.studentIds || data.studentIds.length === 0) {
 					throw error(400, 'No students selected');
@@ -442,6 +475,13 @@ export const POST: RequestHandler = async (event) => {
 											} : { session_number: data.targetSession, title: `Session ${data.targetSession}` },
 											siteUrl
 										});
+
+										// Add login button linking to dashboard
+										variables.loginButton = createEmailButton(
+											'Go to Course',
+											variables.dashboardLink,
+											courseColors.accentDark
+										);
 
 										// Render template
 										const rendered = renderTemplateForRecipient({

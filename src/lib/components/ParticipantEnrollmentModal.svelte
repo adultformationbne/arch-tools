@@ -116,18 +116,16 @@
 </script>
 
 {#if show}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="modal-overlay"
 		onclick={handleClose}
 		onkeydown={(event) => {
-			if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+			if (event.key === 'Escape') {
 				event.preventDefault();
 				handleClose();
 			}
 		}}
-		role="button"
-		tabindex="0"
-		aria-label="Close enrollment modal"
 	>
 		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && handleClose()} role="dialog" aria-modal="true" aria-labelledby="enrollment-title" tabindex="-1">
 			<!-- Header -->

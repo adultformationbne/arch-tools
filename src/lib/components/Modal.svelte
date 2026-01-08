@@ -30,11 +30,20 @@
 		}
 	}
 
-	// Handle backdrop click
-	function handleBackdropClick() {
-		if (closeOnBackdrop) {
+	// Track if mousedown started on backdrop (not modal content)
+	let mouseDownOnBackdrop = false;
+
+	function handleBackdropMouseDown(e) {
+		mouseDownOnBackdrop = e.target === e.currentTarget;
+	}
+
+	// Handle backdrop click - only close if both mousedown and click were on backdrop
+	// This prevents closing when selecting text inside the modal and releasing outside
+	function handleBackdropClick(e) {
+		if (closeOnBackdrop && mouseDownOnBackdrop && e.target === e.currentTarget) {
 			onClose();
 		}
+		mouseDownOnBackdrop = false;
 	}
 
 	// Focus management
@@ -56,8 +65,9 @@
 	<!-- Modal Backdrop -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+		onmousedown={handleBackdropMouseDown}
 		onclick={handleBackdropClick}
-		onkeydown={(e) => e.key === 'Enter' && handleBackdropClick()}
+		onkeydown={(e) => e.key === 'Enter' && closeOnBackdrop && onClose()}
 		role="presentation"
 	>
 		<!-- Modal Content -->

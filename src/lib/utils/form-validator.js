@@ -101,7 +101,7 @@ export const validators = {
 	},
 
 	/**
-	 * Validates URL format
+	 * Validates URL format (accepts URLs with or without protocol)
 	 * @param {string} value - URL to validate
 	 * @param {string} fieldName - Field name for error messages
 	 * @returns {string|null} Error message or null if valid
@@ -109,10 +109,17 @@ export const validators = {
 	url: (value, fieldName = 'URL') => {
 		if (!value) return null; // Use required validator separately
 		try {
+			// Try with the value as-is first
 			new URL(value);
 			return null;
 		} catch {
-			return `${fieldName} must be a valid URL`;
+			// If it fails, try adding https:// prefix
+			try {
+				new URL(`https://${value}`);
+				return null;
+			} catch {
+				return `${fieldName} must be a valid URL`;
+			}
 		}
 	},
 
@@ -206,6 +213,32 @@ export function validateField(value, validators, fieldName = 'Field') {
 		if (error) return error;
 	}
 	return null;
+}
+
+/**
+ * Normalizes a URL by adding https:// if no protocol is present
+ * @param {string} url - The URL to normalize
+ * @returns {string} The normalized URL with protocol
+ *
+ * @example
+ * normalizeUrl('facebook.com/page') // => 'https://facebook.com/page'
+ * normalizeUrl('https://google.com') // => 'https://google.com'
+ * normalizeUrl('http://example.com') // => 'http://example.com'
+ * normalizeUrl('mailto:test@example.com') // => 'mailto:test@example.com'
+ */
+export function normalizeUrl(url) {
+	if (!url || typeof url !== 'string') return url;
+
+	const trimmed = url.trim();
+	if (!trimmed) return trimmed;
+
+	// Already has a protocol (http, https, mailto, tel, etc.)
+	if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+		return trimmed;
+	}
+
+	// Add https:// by default
+	return `https://${trimmed}`;
 }
 
 /**

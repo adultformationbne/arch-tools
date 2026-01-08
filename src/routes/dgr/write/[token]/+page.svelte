@@ -841,7 +841,7 @@
 
 <!-- Mobile Date Picker Modal -->
 {#if showDatePicker}
-	<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 md:hidden" onclick={() => showDatePicker = false}>
+	<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 md:hidden" onmousedown={(e) => e.target === e.currentTarget && (showDatePicker = false)}>
 		<div
 			class="max-h-[80vh] w-full overflow-hidden rounded-b-2xl bg-white"
 			onclick={(e) => e.stopPropagation()}
@@ -994,7 +994,7 @@
 
 <!-- Edit Readings Modal -->
 {#if showEditReadings}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={() => showEditReadings = false}>
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onmousedown={(e) => e.target === e.currentTarget && (showEditReadings = false)}>
 		<div
 			class="mx-4 w-full max-w-md rounded-xl bg-white shadow-2xl"
 			onclick={(e) => e.stopPropagation()}

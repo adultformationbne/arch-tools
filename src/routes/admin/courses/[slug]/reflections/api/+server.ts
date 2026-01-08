@@ -17,10 +17,155 @@ import { error, json } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseMutations } from '$lib/server/course-data.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import {
+	getEmailTemplate,
+	renderTemplate,
+	buildVariableContext,
+	sendCourseEmail,
+	wasEmailSentToday,
+	createEmailButton
+} from '$lib/utils/email-service.js';
+import { RESEND_API_KEY } from '$env/static/private';
 import type { RequestHandler } from './$types';
 
 // Claim expiry time in minutes
 const CLAIM_EXPIRY_MINUTES = 5;
+
+/**
+ * Send reflection marked notification email
+ * Only sends if student hasn't received this email type today (prevents flooding)
+ */
+async function sendReflectionMarkedEmail({
+	enrollmentId,
+	cohortId,
+	sessionNumber,
+	courseSlug,
+	siteUrl
+}: {
+	enrollmentId: string;
+	cohortId: string;
+	sessionNumber: string | number;
+	courseSlug: string;
+	siteUrl: string;
+}) {
+	try {
+		// Get enrollment with email
+		const { data: enrollment } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select(`
+				id,
+				email,
+				full_name,
+				hub:hub_id (name)
+			`)
+			.eq('id', enrollmentId)
+			.single();
+
+		if (!enrollment?.email) {
+			console.log('No email found for enrollment:', enrollmentId);
+			return;
+		}
+
+		// Check if we already sent a reflection_marked email to this student today
+		const alreadySentToday = await wasEmailSentToday(
+			supabaseAdmin,
+			enrollment.email,
+			'reflection_marked'
+		);
+
+		if (alreadySentToday) {
+			console.log(`Skipping reflection_marked email - already sent today to ${enrollment.email}`);
+			return;
+		}
+
+		// Get cohort with course info
+		const { data: cohort } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select(`
+				id,
+				name,
+				start_date,
+				current_session,
+				module:module_id (
+					course:course_id (
+						id,
+						name,
+						slug,
+						settings
+					)
+				)
+			`)
+			.eq('id', cohortId)
+			.single();
+
+		const course = cohort?.module?.course;
+		if (!course) {
+			console.error('Course not found for cohort:', cohortId);
+			return;
+		}
+
+		// Get the email template
+		const template = await getEmailTemplate(supabaseAdmin, 'reflection_marked', 'course');
+		if (!template) {
+			console.error('reflection_marked email template not found');
+			return;
+		}
+
+		// Build variable context
+		const variables = buildVariableContext({
+			enrollment: {
+				full_name: enrollment.full_name,
+				email: enrollment.email,
+				hub_name: enrollment.hub?.name || null
+			},
+			course: {
+				name: course.name,
+				slug: course.slug
+			},
+			cohort: {
+				name: cohort.name,
+				start_date: cohort.start_date,
+				current_session: cohort.current_session
+			},
+			session: { session_number: sessionNumber },
+			siteUrl
+		});
+
+		// Add session number explicitly (buildVariableContext may not set it from session object)
+		variables.sessionNumber = String(sessionNumber);
+
+		// Create login button
+		const courseSettings = course.settings || {};
+		const accentDark = courseSettings.accentDark || '#334642';
+		variables.loginButton = createEmailButton('View Your Feedback', variables.loginLink, accentDark);
+
+		// Render template
+		const renderedSubject = renderTemplate(template.subject, variables);
+		const renderedBody = renderTemplate(template.body, variables);
+
+		// Send email with course branding
+		const result = await sendCourseEmail({
+			to: enrollment.email,
+			subject: renderedSubject,
+			bodyHtml: renderedBody,
+			emailType: 'reflection_marked',
+			course,
+			cohortId,
+			enrollmentId,
+			resendApiKey: RESEND_API_KEY,
+			supabase: supabaseAdmin
+		});
+
+		if (result.success) {
+			console.log(`Sent reflection_marked email to ${enrollment.email}`);
+		} else {
+			console.error(`Failed to send reflection_marked email:`, result.error);
+		}
+	} catch (err) {
+		// Don't fail the marking operation if email fails
+		console.error('Error sending reflection marked email:', err);
+	}
+}
 
 /**
  * POST: Claim a reflection for review
@@ -232,6 +377,15 @@ export const PUT: RequestHandler = async (event) => {
 					grade,
 					has_feedback: !!feedback?.trim()
 				}
+			});
+
+			// Send notification email (max 1 per day per student)
+			await sendReflectionMarkedEmail({
+				enrollmentId: reflectionDetails.enrollment_id,
+				cohortId: reflectionDetails.cohort_id,
+				sessionNumber: sessionNum,
+				courseSlug,
+				siteUrl: event.url.origin
 			});
 		}
 

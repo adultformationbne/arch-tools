@@ -1,5 +1,6 @@
 <script>
 	import { X } from 'lucide-svelte';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
 		show = false,
@@ -30,7 +31,9 @@
 		const trimmedUrl = url.trim();
 
 		if (trimmedText && trimmedUrl) {
-			onSave(trimmedText, trimmedUrl);
+			// Only normalize if it doesn't contain template variables
+			const normalizedUrl = trimmedUrl.includes('{{') ? trimmedUrl : normalizeUrl(trimmedUrl);
+			onSave(trimmedText, normalizedUrl);
 		}
 	}
 
@@ -53,8 +56,8 @@
 {#if show}
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-		onclick={onCancel}
-		onkeydown={(e) => e.key === 'Enter' && onCancel()}
+		onmousedown={(e) => e.target === e.currentTarget && onCancel()}
+		onkeydown={(e) => e.key === 'Escape' && onCancel()}
 		role="presentation"
 	>
 		<div
@@ -102,13 +105,13 @@
 					</label>
 					<input
 						id="button-url"
-						type="url"
+						type="text"
 						bind:value={url}
-						placeholder="https://example.com or {`{{variableName}}`}"
+						placeholder="example.com or {`{{variableName}}`}"
 						class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
 					/>
 					<p class="mt-2 text-xs text-gray-500">
-						Use {'{{variableName}}'} for dynamic links
+						https:// added automatically. Use {'{{variableName}}'} for dynamic links.
 					</p>
 				</div>
 

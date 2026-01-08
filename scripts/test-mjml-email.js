@@ -28,7 +28,7 @@ try {
 
 			<p><strong>Blessings</strong>,<br>The Course Team</p>
 		`,
-		courseName: 'Archdiocesan Center for Catholic Formation',
+		courseName: 'Archdiocesan Centre for Catholic Formation',
 		logoUrl: 'https://snuifqzfezxqnkzizija.supabase.co/storage/v1/object/public/public-assets/archmin%20primary%20logo%20col%20small.png',
 		colors: {
 			accentDark: '#334642',

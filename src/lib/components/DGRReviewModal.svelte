@@ -192,7 +192,7 @@
 
 {#if isOpen && reflection}
 	<!-- Backdrop -->
-	<div class="fixed inset-0 z-40 bg-black/60" onclick={handleClose}></div>
+	<div class="fixed inset-0 z-40 bg-black/60" onmousedown={handleClose}></div>
 
 	<!-- Centered panel with optional sidebar -->
 	<div class="fixed inset-4 z-50 flex items-center justify-center sm:inset-6 md:inset-8">

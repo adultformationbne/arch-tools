@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import {
+	CourseQueries,
 	CourseAggregates,
 	groupMaterialsBySession,
 	groupQuestionsBySession
@@ -15,8 +16,12 @@ export const load: PageServerLoad = async (event) => {
 	// Require user to be enrolled in this course (any role)
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get all dashboard data in one optimized call
-	const result = await CourseAggregates.getStudentDashboard(user.id, courseSlug);
+	const result = await CourseAggregates.getStudentDashboard(user.id, courseSlug, cohortId);
 
 	if (result.error || !result.data) {
 		throw error(500, 'Failed to load dashboard data');
@@ -142,7 +147,8 @@ export const load: PageServerLoad = async (event) => {
 				title: m.title,
 				content: m.content,
 				url: m.content,
-				viewable: true
+				viewable: true,
+				coordinatorOnly: m.coordinator_only || false
 			}));
 	};
 

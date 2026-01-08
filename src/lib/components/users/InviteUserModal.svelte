@@ -78,9 +78,9 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 px-4">
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center px-4">
 		<div
-			class="relative top-20 mx-auto p-5 border w-full max-w-[500px] shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto"
+			class="p-5 border w-full max-w-[500px] shadow-lg rounded-md bg-white"
 		>
 			<div class="mt-3">
 				<h3 class="text-lg font-medium text-gray-900 mb-2">Invite New User</h3>

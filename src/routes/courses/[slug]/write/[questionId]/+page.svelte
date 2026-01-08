@@ -174,35 +174,48 @@
 			<!-- Right: Actions -->
 			<div class="flex items-center gap-3">
 				{#if isEditable}
-					<!-- Privacy Toggle -->
-					<button
-						class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all border"
-						class:bg-green-50={!isPrivate}
-						class:border-green-600={!isPrivate}
-						class:text-green-700={!isPrivate}
-						class:bg-red-50={isPrivate}
-						class:border-red-600={isPrivate}
-						class:text-red-700={isPrivate}
-						onclick={() => isPrivate = !isPrivate}
+					<!-- Privacy Toggle Slider -->
+					<div
+						class="relative flex items-center rounded-full p-1 transition-colors duration-200"
+						class:bg-red-100={isPrivate}
+						class:bg-green-100={!isPrivate}
 						title={isPrivate ? 'Private - Only you and your marker can see' : 'Public - Visible to your cohort'}
 					>
-						{#if isPrivate}
-							<EyeOff size="16" />
-							<span class="text-sm font-semibold">Private</span>
-						{:else}
-							<Eye size="16" />
-							<span class="text-sm font-semibold">Public</span>
-						{/if}
-					</button>
+						<div
+							class="absolute h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-full shadow-sm transition-all duration-200 ease-in-out"
+							class:bg-red-500={isPrivate}
+							class:bg-green-500={!isPrivate}
+							style="transform: translateX({isPrivate ? '4px' : 'calc(100% + 4px)'});"
+						></div>
+						<button
+							class="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
+							class:text-white={isPrivate}
+							class:text-gray-400={!isPrivate}
+							onclick={() => isPrivate = true}
+						>
+							<EyeOff size="14" />
+							<span>Private</span>
+						</button>
+						<button
+							class="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
+							class:text-white={!isPrivate}
+							class:text-gray-400={isPrivate}
+							onclick={() => isPrivate = false}
+						>
+							<Eye size="14" />
+							<span>Public</span>
+						</button>
+					</div>
 
 					<!-- Save Draft -->
 					<button
 						onclick={handleSaveDraft}
-						class="p-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+						class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
 						disabled={isSaving || content.trim().length === 0}
 						title="Save draft"
 					>
-						<Save size="20" />
+						<Save size="18" />
+						<span class="text-sm font-medium">Save Draft</span>
 					</button>
 
 					<!-- Submit/Resubmit -->

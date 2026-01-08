@@ -119,14 +119,14 @@
 				<!-- Instructor Feedback -->
 				{#if reflection.feedback}
 					<div class="border-t border-gray-100 pt-6">
-						<div class="flex items-center gap-2 text-sm font-medium mb-3" style="color: var(--course-accent-dark);">
-							<Star size="16" />
-							Feedback
-						</div>
-						<div class="bg-gray-50 rounded-xl p-5">
-							<p class="text-gray-800 leading-relaxed">{reflection.feedback}</p>
+						<div class="rounded-xl p-5 border-l-4" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 25%, white); border-left-color: var(--course-accent-dark, #334642);">
+							<div class="flex items-center gap-2 text-base font-bold mb-3" style="color: var(--course-accent-dark, #334642);">
+								<Star size="18" class="fill-current" />
+								Instructor Feedback
+							</div>
+							<p class="text-gray-800 leading-relaxed text-base">{reflection.feedback}</p>
 							{#if reflection.instructor}
-								<p class="text-sm text-gray-500 mt-3">— {reflection.instructor}</p>
+								<p class="text-sm font-medium mt-4" style="color: var(--course-accent-dark, #334642);">— {reflection.instructor}</p>
 							{/if}
 						</div>
 					</div>

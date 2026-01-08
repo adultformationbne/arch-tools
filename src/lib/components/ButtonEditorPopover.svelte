@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { X } from 'lucide-svelte';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
 		show = false,
@@ -76,7 +77,9 @@
 		const trimmedUrl = url.trim();
 
 		if (trimmedText && trimmedUrl) {
-			onSave(trimmedText, trimmedUrl);
+			// Only normalize if it doesn't contain template variables
+			const normalizedUrl = trimmedUrl.includes('{{') ? trimmedUrl : normalizeUrl(trimmedUrl);
+			onSave(trimmedText, normalizedUrl);
 		}
 	}
 
@@ -146,9 +149,9 @@
 				<label for="button-url-input" class="popover-label">Button URL</label>
 				<input
 					id="button-url-input"
-					type="url"
+					type="text"
 					bind:value={url}
-					placeholder="https://example.com"
+					placeholder="example.com or https://example.com"
 					class="popover-input"
 				/>
 				<p class="popover-hint">Use {`{{variableName}}`} for dynamic links</p>

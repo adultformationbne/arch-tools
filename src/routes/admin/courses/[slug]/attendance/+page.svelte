@@ -459,7 +459,7 @@
 
 <!-- Override Confirmation Modal -->
 {#if overrideState.show}
-	<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onclick={cancelOverride}>
+	<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onmousedown={(e) => e.target === e.currentTarget && cancelOverride()}>
 		<div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4" onclick={(e) => e.stopPropagation()}>
 			<div class="p-6 border-b border-gray-200">
 				<h3 class="text-xl font-bold text-gray-800">Override Coordinator Marking</h3>

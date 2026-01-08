@@ -112,7 +112,7 @@
 	{#if isOpen}
 		<div class={modeClasses}>
 			<div class="flex min-h-full items-center justify-center p-4">
-				<div class="fixed inset-0 bg-gray-500 bg-opacity-50 transition-opacity" onclick={closeHelp}></div>
+				<div class="fixed inset-0 bg-gray-500 bg-opacity-50 transition-opacity" onmousedown={closeHelp}></div>
 
 				<div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
 					<!-- Modal Header -->

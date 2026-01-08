@@ -78,7 +78,7 @@
 </script>
 
 {#if show}
-	<div class="modal-overlay" onclick={closeModal} onkeydown={(e) => e.key === 'Enter' && !isProcessing && closeModal()} role="presentation">
+	<div class="modal-overlay" onmousedown={(e) => e.target === e.currentTarget && closeModal()} onkeydown={(e) => e.key === 'Enter' && !isProcessing && closeModal()} role="presentation">
 		<div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && !isProcessing && closeModal()} role="dialog" aria-modal="true" aria-labelledby="advancement-title" tabindex="-1">
 			<div class="modal-header">
 				<h2 id="advancement-title">Advance Students to Session {selectedSession}</h2>

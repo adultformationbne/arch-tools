@@ -179,7 +179,7 @@ function handleMouseEnter(href) {
 							onmouseenter={() => handleMouseEnter(item.href)}
 							data-sveltekit-preload-data="tap"
 						>
-							<item.icon size={20} class="nav-icon" />
+							<item.icon size={16} class="nav-icon" />
 							<span class="nav-label">{item.label}</span>
 						</a>
 					</li>
@@ -195,7 +195,7 @@ function handleMouseEnter(href) {
 					</h3>
 					{#if onNewCohort}
 						<button onclick={onNewCohort} class="btn-new-cohort-small" title="Create New Cohort">
-							<Plus size={16} />
+							<Plus size={14} />
 						</button>
 					{/if}
 				</div>
@@ -220,11 +220,11 @@ function handleMouseEnter(href) {
 				{#if hasMoreCohorts}
 					<button onclick={toggleShowAllCohorts} class="btn-show-more">
 						{#if showAllCohorts}
-							<ChevronUp size={16} />
+							<ChevronUp size={12} />
 							<span>Show Less</span>
 						{:else}
-							<ChevronDown size={16} />
-							<span>Show {cohorts.length - INITIAL_COHORT_LIMIT} More</span>
+							<ChevronDown size={12} />
+							<span>+{cohorts.length - INITIAL_COHORT_LIMIT} More</span>
 						{/if}
 					</button>
 				{/if}
@@ -240,7 +240,7 @@ function handleMouseEnter(href) {
 			title={isExpanded ? '' : 'Back to Courses'}
 			data-sveltekit-preload-data="tap"
 		>
-			<ArrowLeft size={18} />
+			<ArrowLeft size={14} />
 			<span class="footer-label">Back to Courses</span>
 		</a>
 
@@ -251,8 +251,8 @@ function handleMouseEnter(href) {
 				type="button"
 				title={isExpanded ? '' : 'Course Settings'}
 			>
-				<Settings size={18} />
-				<span class="footer-label">Course Settings</span>
+				<Settings size={14} />
+				<span class="footer-label">Settings</span>
 			</button>
 		{/if}
 	</div>
@@ -260,15 +260,14 @@ function handleMouseEnter(href) {
 
 <style>
 	.course-admin-sidebar {
-		width: 68px;
-		min-height: 100vh;
+		width: 52px;
+		height: 100vh;
 		background: rgba(0, 0, 0, 0.2);
 		border-right: 1px solid rgba(255, 255, 255, 0.1);
 		position: sticky;
 		top: 0;
 		left: 0;
-		overflow-y: auto;
-		overflow-x: hidden;
+		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -276,12 +275,13 @@ function handleMouseEnter(href) {
 	}
 
 	.course-admin-sidebar.expanded {
-		width: 260px;
+		width: 200px;
 	}
 
 	.logo-section {
-		height: 66px;
-		padding: 12px;
+		flex-shrink: 0;
+		height: 48px;
+		padding: 8px;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		display: flex;
 		justify-content: center;
@@ -290,8 +290,8 @@ function handleMouseEnter(href) {
 	}
 
 	.course-logo {
-		max-width: 120px;
-		max-height: 42px;
+		max-width: 100px;
+		max-height: 32px;
 		width: auto;
 		height: auto;
 		object-fit: contain;
@@ -304,23 +304,43 @@ function handleMouseEnter(href) {
 	}
 
 	.nav-container {
-		padding: 16px 0;
+		padding: 8px 0;
 		flex: 1;
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+
+	/* Scrollbar styling for nav container */
+	.nav-container::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.nav-container::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.2);
+	}
+
+	.nav-container::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 3px;
+	}
+
+	.nav-container::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.3);
 	}
 
 	.nav-section {
-		margin-bottom: 24px;
+		margin-bottom: 16px;
 	}
 
 	.nav-section-title {
-		padding: 0 16px;
-		margin: 0 0 8px 0;
-		font-size: 0.7rem;
+		padding: 0 12px;
+		margin: 0 0 4px 0;
+		font-size: 0.65rem;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: rgba(255, 255, 255, 0.5);
-		height: 16px;
+		height: 14px;
 		overflow: hidden;
 	}
 
@@ -347,13 +367,13 @@ function handleMouseEnter(href) {
 	.nav-item {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		padding: 12px 16px;
-		margin: 2px 8px;
-		border-radius: 8px;
+		gap: 8px;
+		padding: 8px 12px;
+		margin: 1px 6px;
+		border-radius: 6px;
 		color: rgba(255, 255, 255, 0.8);
 		text-decoration: none;
-		font-size: 0.9375rem;
+		font-size: 0.8125rem;
 		font-weight: 500;
 		transition: all 0.15s ease;
 		cursor: pointer;
@@ -362,8 +382,8 @@ function handleMouseEnter(href) {
 	}
 
 	.course-admin-sidebar.expanded .nav-item {
-		padding: 12px 20px;
-		margin: 2px 12px;
+		padding: 8px 12px;
+		margin: 1px 8px;
 	}
 
 	.nav-item:hover {
@@ -398,52 +418,31 @@ function handleMouseEnter(href) {
 		transform: translateX(0);
 	}
 
-	/* Scrollbar styling */
-	.course-admin-sidebar::-webkit-scrollbar {
-		width: 4px;
-	}
-
-	.course-admin-sidebar.expanded::-webkit-scrollbar {
-		width: 6px;
-	}
-
-	.course-admin-sidebar::-webkit-scrollbar-track {
-		background: rgba(0, 0, 0, 0.2);
-	}
-
-	.course-admin-sidebar::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.2);
-		border-radius: 3px;
-	}
-
-	.course-admin-sidebar::-webkit-scrollbar-thumb:hover {
-		background: rgba(255, 255, 255, 0.3);
-	}
-
-	/* Footer */
+	/* Footer - stays fixed at bottom */
 	.sidebar-footer {
-		padding: 12px 8px;
+		flex-shrink: 0;
+		padding: 8px 6px;
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 2px;
 	}
 
 	.course-admin-sidebar.expanded .sidebar-footer {
-		padding: 16px 12px;
-		gap: 8px;
+		padding: 10px 8px;
+		gap: 4px;
 	}
 
 	.footer-link {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 10px;
-		padding: 10px 12px;
+		gap: 8px;
+		padding: 8px 10px;
 		border-radius: 6px;
 		color: rgba(255, 255, 255, 0.7);
 		text-decoration: none;
-		font-size: 0.875rem;
+		font-size: 0.75rem;
 		font-weight: 500;
 		transition: all 0.15s ease;
 		cursor: pointer;
@@ -496,8 +495,8 @@ function handleMouseEnter(href) {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0 20px;
-		margin-bottom: 12px;
+		padding: 0 12px;
+		margin-bottom: 6px;
 	}
 
 	.section-header .nav-section-title {
@@ -506,10 +505,10 @@ function handleMouseEnter(href) {
 	}
 
 	.btn-new-cohort-small {
-		padding: 6px;
+		padding: 4px;
 		background: rgba(255, 255, 255, 0.1);
 		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 6px;
+		border-radius: 4px;
 		color: rgba(255, 255, 255, 0.8);
 		cursor: pointer;
 		transition: all 0.15s ease;
@@ -559,13 +558,13 @@ function handleMouseEnter(href) {
 	.cohort-info {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 1px;
 		width: 100%;
 		min-width: 0;
 	}
 
 	.cohort-name {
-		font-size: 0.9375rem;
+		font-size: 0.8125rem;
 		font-weight: 500;
 		color: inherit;
 		white-space: nowrap;
@@ -574,7 +573,7 @@ function handleMouseEnter(href) {
 	}
 
 	.cohort-session {
-		font-size: 0.75rem;
+		font-size: 0.6875rem;
 		color: rgba(255, 255, 255, 0.6);
 		white-space: nowrap;
 		overflow: hidden;
@@ -590,15 +589,15 @@ function handleMouseEnter(href) {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 6px;
-		width: calc(100% - 24px);
-		margin: 8px 12px 0 12px;
-		padding: 8px 12px;
+		gap: 4px;
+		width: calc(100% - 16px);
+		margin: 6px 8px 0 8px;
+		padding: 6px 8px;
 		background: rgba(255, 255, 255, 0.05);
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 6px;
+		border-radius: 4px;
 		color: rgba(255, 255, 255, 0.7);
-		font-size: 0.8125rem;
+		font-size: 0.6875rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.15s ease;

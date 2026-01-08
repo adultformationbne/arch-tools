@@ -129,7 +129,7 @@ const bodyWithButton = body.replace(/\n/g, '<br>') + '<br><br>' + button;
 
 const html = createBrandedEmailHtml({
 	content: bodyWithButton,
-	courseName: 'Archdiocesan Center for Catholic Formation',
+	courseName: 'Archdiocesan Centre for Catholic Formation',
 	accentDark: '#334642',
 	accentLight: '#c59a6b'
 });

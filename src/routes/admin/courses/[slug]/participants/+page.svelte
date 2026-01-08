@@ -1,5 +1,5 @@
 <script>
-	import { Search, Filter, Users, Edit2, Mail, MapPin } from 'lucide-svelte';
+	import { Search, Mail } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 
@@ -132,230 +132,206 @@
 	}
 </script>
 
-<div class="px-16 py-8">
-	<!-- Header -->
-	<div class="mb-8">
-		<h1 class="text-3xl font-bold text-white">
-			{course?.name} Participants
-		</h1>
-		<p class="text-white/80 mt-2">
-			View and manage all participants enrolled in this course across all cohorts
-		</p>
-	</div>
-
-	<!-- Stats Cards -->
-	<div class="grid grid-cols-3 gap-6 mb-8">
-		<div class="bg-white border rounded-lg p-6" style="border-color: var(--course-surface);">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-sm text-gray-600">Total Participants</p>
-					<p class="text-3xl font-bold mt-1" style="color: var(--course-accent-dark);">
-						{stats.total}
-					</p>
-				</div>
-				<Users size={32} style="color: var(--course-accent-light);" />
-			</div>
+<div class="flex min-h-screen">
+	<!-- Sidebar Filters -->
+	<div class="w-64 flex-shrink-0 h-screen flex flex-col border-r" style="background-color: var(--course-accent-dark); border-color: rgba(255,255,255,0.1);">
+		<!-- Header -->
+		<div class="p-4 border-b" style="border-color: rgba(255,255,255,0.1);">
+			<h2 class="text-sm font-bold text-white/90 uppercase tracking-wide">Participants</h2>
+			<p class="text-xs text-white/50 mt-1">
+				<span class="font-semibold text-white">{stats.total}</span> enrolled
+			</p>
 		</div>
 
-		<div class="bg-white border rounded-lg p-6" style="border-color: var(--course-surface);">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-sm text-gray-600">Active</p>
-					<p class="text-3xl font-bold mt-1 text-green-600">
-						{stats.active}
-					</p>
-				</div>
-				<div class="text-2xl">✓</div>
-			</div>
-		</div>
-
-		<div class="bg-white border rounded-lg p-6" style="border-color: var(--course-surface);">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-sm text-gray-600">Pending</p>
-					<p class="text-3xl font-bold mt-1 text-yellow-600">
-						{stats.pending}
-					</p>
-				</div>
-				<Mail size={32} class="text-yellow-500" />
-			</div>
-		</div>
-	</div>
-
-	<!-- Filters -->
-	<div class="bg-white border rounded-lg p-6 mb-6" style="border-color: var(--course-surface);">
-		<div class="grid grid-cols-3 gap-4">
+		<!-- Scrollable Content -->
+		<div class="flex-1 overflow-y-auto p-3 space-y-4">
 			<!-- Search -->
-			<div class="relative">
-				<Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-				<input
-					type="text"
-					bind:value={searchQuery}
-					placeholder="Search by name or email..."
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-				/>
+			<div>
+				<div class="relative">
+					<Search size="14" class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-white/40" />
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search..."
+						class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg text-white placeholder-white/40 focus:outline-none"
+						style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+					/>
+				</div>
+			</div>
+
+			<!-- Stats -->
+			<div class="grid grid-cols-2 gap-2">
+				<div class="rounded-lg p-2.5" style="background-color: rgba(255,255,255,0.05);">
+					<p class="text-[10px] text-white/50 uppercase tracking-wider">Active</p>
+					<p class="text-lg font-bold text-green-400">{stats.active}</p>
+				</div>
+				<div class="rounded-lg p-2.5" style="background-color: rgba(255,255,255,0.05);">
+					<p class="text-[10px] text-white/50 uppercase tracking-wider">Pending</p>
+					<p class="text-lg font-bold text-yellow-400">{stats.pending}</p>
+				</div>
+			</div>
+
+			<!-- Status Filter -->
+			<div>
+				<h3 class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 px-1">Status</h3>
+				<div class="space-y-0.5">
+					{#each [
+						{ value: 'all', label: 'All Statuses' },
+						{ value: 'active', label: 'Active' },
+						{ value: 'pending', label: 'Pending' },
+						{ value: 'invited', label: 'Invited' },
+						{ value: 'completed', label: 'Completed' },
+						{ value: 'withdrawn', label: 'Withdrawn' }
+					] as option}
+						<button
+							onclick={() => selectedStatus = option.value}
+							class="w-full flex items-center px-3 py-1.5 rounded-lg text-xs transition-colors {selectedStatus === option.value ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
+							style={selectedStatus === option.value ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
+						>
+							{option.label}
+						</button>
+					{/each}
+				</div>
 			</div>
 
 			<!-- Hub Filter -->
-			<select
-				bind:value={selectedHub}
-				class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-			>
-				<option value="all">All Hubs</option>
-				<option value="">No Hub</option>
-				{#each hubs as hub}
-					<option value={hub.id}>{hub.name}</option>
-				{/each}
-			</select>
-
-			<!-- Status Filter -->
-			<select
-				bind:value={selectedStatus}
-				class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-			>
-				<option value="all">All Statuses</option>
-				<option value="active">Active</option>
-				<option value="pending">Pending</option>
-				<option value="invited">Invited</option>
-				<option value="completed">Completed</option>
-				<option value="withdrawn">Withdrawn</option>
-			</select>
+			<div>
+				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="hub-filter">Hub</label>
+				<select
+					id="hub-filter"
+					bind:value={selectedHub}
+					class="w-full px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
+					style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+				>
+					<option value="all" class="text-gray-900">All Hubs</option>
+					<option value="" class="text-gray-900">No Hub</option>
+					{#each hubs as hub}
+						<option value={hub.id} class="text-gray-900">{hub.name}</option>
+					{/each}
+				</select>
+			</div>
 		</div>
 	</div>
 
-	<!-- Action Toolbar (appears when students selected) -->
-	{#if selectedStudents.size > 0}
-		<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center justify-between">
-			<div class="flex items-center gap-3">
-				<div class="text-sm font-medium text-blue-900">
-					{selectedStudents.size} {selectedStudents.size === 1 ? 'participant' : 'participants'} selected
+	<!-- Main Content -->
+	<div class="flex-1 p-6 overflow-y-auto">
+		<!-- Action Toolbar (appears when students selected) -->
+		{#if selectedStudents.size > 0}
+			<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="text-xs font-medium text-blue-900">
+						{selectedStudents.size} selected
+					</div>
+					<button
+						onclick={() => { selectedStudents.clear(); selectedStudents = new Set(selectedStudents); }}
+						class="text-xs text-blue-700 hover:text-blue-900 underline"
+					>
+						Clear
+					</button>
 				</div>
 				<button
-					onclick={() => { selectedStudents.clear(); selectedStudents = new Set(selectedStudents); }}
-					class="text-sm text-blue-700 hover:text-blue-900 underline"
+					onclick={openEmailModal}
+					class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 				>
-					Clear selection
+					<Mail size={14} />
+					Send Email
 				</button>
 			</div>
-			<button
-				onclick={openEmailModal}
-				class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-			>
-				<Mail size={18} />
-				Send Email
-			</button>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- Students Table -->
-	<div class="bg-white border rounded-lg overflow-hidden" style="border-color: var(--course-surface);">
-		<table class="w-full">
-			<thead class="bg-gray-50 border-b" style="border-color: var(--course-surface);">
-				<tr>
-					<th class="px-6 py-3 w-12">
-						<input
-							type="checkbox"
-							checked={allFilteredSelected}
-							onchange={toggleSelectAll}
-							class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-						/>
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-						Participant
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-						Cohort
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-						Hub
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-						Session
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-						Status
-					</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-gray-200">
-				{#if filteredStudents.length === 0}
+		<!-- Students Table -->
+		<div class="bg-white rounded-lg overflow-hidden shadow-sm">
+			<table class="w-full">
+				<thead class="border-b" style="background-color: var(--course-accent-light); border-color: var(--course-surface);">
 					<tr>
-						<td colspan="5" class="px-6 py-8 text-center text-gray-500">
-							No participants found matching your filters
-						</td>
+						<th class="px-4 py-2.5 w-10">
+							<input
+								type="checkbox"
+								checked={allFilteredSelected}
+								onchange={toggleSelectAll}
+								class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+							/>
+						</th>
+						<th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">
+							Participant
+						</th>
+						<th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">
+							Cohort
+						</th>
+						<th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">
+							Hub
+						</th>
+						<th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">
+							Session
+						</th>
+						<th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">
+							Status
+						</th>
 					</tr>
-				{:else}
-					{#each filteredStudents as student}
-						<tr class="hover:bg-gray-50 transition-colors">
-							<!-- Checkbox -->
-							<td class="px-6 py-4">
-								<input
-									type="checkbox"
-									checked={selectedStudents.has(student.id)}
-									onchange={() => toggleStudent(student.id)}
-									class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-								/>
-							</td>
-
-							<!-- Student Info -->
-							<td class="px-6 py-4">
-								<div>
-									<div class="font-medium text-gray-900">{student.user_profile?.full_name || 'Unknown'}</div>
-									<div class="text-sm text-gray-500">{student.user_profile?.email || 'No email'}</div>
-								</div>
-							</td>
-
-							<!-- Cohort -->
-							<td class="px-6 py-4">
-								<div class="text-sm">
-									{#if student.cohort}
-										<div class="font-medium text-gray-900">{student.cohort.name}</div>
-										{#if student.cohort.module}
-											<div class="text-gray-500">{student.cohort.module.name}</div>
-										{/if}
-									{:else}
-										<span class="text-gray-400">-</span>
-									{/if}
-								</div>
-							</td>
-
-							<!-- Hub (Editable) -->
-							<td class="px-6 py-4">
-								<select
-									value={student.hub_id || ''}
-									onchange={(e) => handleUpdateHub(student.id, e.target.value || null)}
-									class="text-sm px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-								>
-									<option value="">No Hub</option>
-									{#each hubs as hub}
-										<option value={hub.id}>{hub.name}</option>
-									{/each}
-								</select>
-							</td>
-
-							<!-- Session -->
-							<td class="px-6 py-4">
-								<div class="text-sm text-gray-900">
-									Session {student.current_session || 1}
-								</div>
-							</td>
-
-							<!-- Status -->
-							<td class="px-6 py-4">
-								<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {getStatusBadge(student.status)}">
-									{student.status}
-								</span>
+				</thead>
+				<tbody class="divide-y divide-gray-100">
+					{#if filteredStudents.length === 0}
+						<tr>
+							<td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">
+								No participants found
 							</td>
 						</tr>
-					{/each}
-				{/if}
-			</tbody>
-		</table>
-	</div>
+					{:else}
+						{#each filteredStudents as student}
+							<tr class="hover:bg-gray-50 transition-colors">
+								<td class="px-4 py-2.5">
+									<input
+										type="checkbox"
+										checked={selectedStudents.has(student.id)}
+										onchange={() => toggleStudent(student.id)}
+										class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+									/>
+								</td>
+								<td class="px-4 py-2.5">
+									<div class="text-sm font-medium text-gray-900">{student.user_profile?.full_name || 'Unknown'}</div>
+									<div class="text-xs text-gray-500">{student.user_profile?.email || 'No email'}</div>
+								</td>
+								<td class="px-4 py-2.5">
+									{#if student.cohort}
+										<div class="text-sm text-gray-900">{student.cohort.name}</div>
+										{#if student.cohort.module}
+											<div class="text-xs text-gray-500">{student.cohort.module.name}</div>
+										{/if}
+									{:else}
+										<span class="text-xs text-gray-400">-</span>
+									{/if}
+								</td>
+								<td class="px-4 py-2.5">
+									<select
+										value={student.hub_id || ''}
+										onchange={(e) => handleUpdateHub(student.id, e.target.value || null)}
+										class="text-xs px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
+									>
+										<option value="">No Hub</option>
+										{#each hubs as hub}
+											<option value={hub.id}>{hub.name}</option>
+										{/each}
+									</select>
+								</td>
+								<td class="px-4 py-2.5 text-sm text-gray-900">
+									{student.current_session || 1}
+								</td>
+								<td class="px-4 py-2.5">
+									<span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full {getStatusBadge(student.status)}">
+										{student.status}
+									</span>
+								</td>
+							</tr>
+						{/each}
+					{/if}
+				</tbody>
+			</table>
+		</div>
 
-	<!-- Results Count -->
-	<div class="mt-4 text-sm text-gray-600 text-center">
-		Showing {filteredStudents.length} of {students.length} participants
+		<!-- Results Count -->
+		<div class="mt-3 text-xs text-white/60 text-center">
+			Showing {filteredStudents.length} of {students.length} participants
+		</div>
 	</div>
 </div>
 

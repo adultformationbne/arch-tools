@@ -39,12 +39,12 @@
 	};
 </script>
 
-<div class="flex min-h-[600px]">
+<div class="flex items-stretch">
 		<!-- Session Navigation Tabs -->
-		<div class="flex flex-col rounded-l-3xl overflow-hidden min-h-full">
+		<div class="flex flex-col rounded-l-3xl overflow-hidden">
 			{#each Array.from({ length: totalSessions + 1 }, (_, i) => i) as sessionNum}
 				<button
-					class="w-20 flex-1 flex items-center justify-center text-2xl font-bold cursor-pointer transition-colors duration-200"
+					class="w-16 flex-1 flex items-center justify-center text-xl font-bold cursor-pointer transition-colors duration-200"
 					class:current={isCurrentSession(sessionNum)}
 					class:completed={isCompletedSession(sessionNum)}
 					class:available={isSessionAvailable(sessionNum) && !isCurrentSession(sessionNum) && !isCompletedSession(sessionNum)}

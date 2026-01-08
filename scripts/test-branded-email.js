@@ -192,7 +192,7 @@ The Formation Team</p>
 // Course branding (typical course colors)
 const courseBranding = {
 	content,
-	courseName: 'Archdiocesan Center for Catholic Formation',
+	courseName: 'Archdiocesan Centre for Catholic Formation',
 	accentDark: '#334642', // Dark green
 	accentLight: '#eae2d9', // Tan/beige
 	accentDarkest: '#1e2322', // Almost black
