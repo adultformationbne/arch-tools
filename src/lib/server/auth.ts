@@ -312,45 +312,34 @@ export async function requireCourseAdmin(
 	courseSlug: string,
 	options: AuthOptions = { mode: 'throw_error' }
 ) {
-	const authStart = Date.now();
 	const { user } = await requireAuth(event, options);
-	console.log(`  [AUTH] requireAuth: ${Date.now() - authStart}ms`);
-
-	const profileStart = Date.now();
-	const wasCached = event.locals.authCache?.has(user.id);
 	const profile = await getUserProfile(event, user.id);
-	console.log(`  [AUTH] getUserProfile: ${Date.now() - profileStart}ms (cached: ${wasCached ? 'yes' : 'no'})`);
 
 	// Check for courses.admin module (platform-wide access)
 	if (hasModuleLevel(profile?.modules, 'courses.admin')) {
-		console.log(`  [AUTH] ✅ Authorized via courses.admin module`);
 		return { user, profile, viaModule: 'courses.admin' };
 	}
 
 	// Check for courses.manager module + assignment to this specific course
 	if (hasModuleLevel(profile?.modules, 'courses.manager')) {
 		// Get the course ID from slug
-		const courseStart = Date.now();
 		const { data: course } = await event.locals.supabase
 			.from('courses')
 			.select('id')
 			.eq('slug', courseSlug)
 			.single();
-		console.log(`  [AUTH] Course lookup: ${Date.now() - courseStart}ms`);
 
 		if (course) {
 			// FIXED: Use profile from line 278 instead of re-querying
 			// assigned_course_ids should already be in profile if needed
 			const assignedCourseIds = profile?.assigned_course_ids || [];
 			if (Array.isArray(assignedCourseIds) && assignedCourseIds.includes(course.id)) {
-				console.log(`  [AUTH] ✅ Authorized via courses.manager module`);
 				return { user, profile, viaModule: 'courses.manager' };
 			}
 		}
 	}
 
 	// Not authorized
-	console.log(`  [AUTH] ❌ Not authorized`);
 	if (options.mode === 'redirect') {
 		throw redirect(303, options.redirectTo || '/my-courses');
 	}

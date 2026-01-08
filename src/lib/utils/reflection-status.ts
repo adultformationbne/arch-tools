@@ -239,7 +239,7 @@ export async function fetchReflectionsByCohort(cohortId: string, courseSlug: str
 	const reflectionMap = new Map<string, ReflectionResponse[]>();
 	if (result.success && result.data) {
 		result.data.forEach((reflection: any) => {
-			const userId = reflection.enrollment?.auth_user_id;
+			const userId = reflection.enrollment?.user_profile_id;
 			if (userId) {
 				if (!reflectionMap.has(userId)) {
 					reflectionMap.set(userId, []);
@@ -257,10 +257,15 @@ export async function fetchReflectionsByCohort(cohortId: string, courseSlug: str
 export function getUserReflectionStatus(
 	userReflections: ReflectionResponse[],
 	currentSession: number,
-	sessionsWithQuestions: SessionWithQuestion[]
+	sessionsWithQuestions: (SessionWithQuestion | number)[]
 ): UserReflectionStatus {
+	// Normalize session data - handle both array of numbers and array of objects
+	const sessionNumbers = sessionsWithQuestions.map(s =>
+		typeof s === 'number' ? s : s.session_number
+	);
+
 	// Get sessions with questions up to user's current session
-	const relevantSessions = sessionsWithQuestions.filter(s => s.session_number <= currentSession);
+	const relevantSessions = sessionNumbers.filter(num => num <= currentSession);
 	const totalQuestions = relevantSessions.length;
 
 	if (totalQuestions === 0) {

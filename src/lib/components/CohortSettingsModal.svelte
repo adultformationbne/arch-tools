@@ -16,7 +16,7 @@
 	let name = $state('');
 	let startDate = $state('');
 	let endDate = $state('');
-	let status = $state('upcoming');
+	let status = $state('scheduled');
 	let saving = $state(false);
 	let deleting = $state(false);
 	let showDeleteConfirm = $state(false);
@@ -188,13 +188,13 @@
 						bind:value={status}
 						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 					>
+						<option value="draft">Draft</option>
 						<option value="scheduled">Scheduled</option>
-						<option value="upcoming">Upcoming</option>
 						<option value="active">Active</option>
 						<option value="completed">Completed</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
-						Status changes how the cohort appears in lists. Session 0 = upcoming, Session 1+ = active.
+						Draft = hidden, Scheduled = visible but not started, Active = in progress, Completed = finished.
 					</p>
 				</div>
 
