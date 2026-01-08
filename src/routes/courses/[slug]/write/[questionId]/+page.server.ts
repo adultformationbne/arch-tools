@@ -11,6 +11,10 @@ export const load: PageServerLoad = async (event) => {
 	// Require user to be enrolled in this course
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get the reflection question with course verification
 	const { data: questionData, error: questionError } = await supabaseAdmin
 		.from('courses_reflection_questions')
@@ -42,7 +46,8 @@ export const load: PageServerLoad = async (event) => {
 	// Get user's enrollment
 	const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
 		user.id,
-		courseSlug
+		courseSlug,
+		cohortId
 	);
 
 	if (enrollmentError || !enrollment) {

@@ -42,9 +42,11 @@ export const CourseQueries = {
 
 	/**
 	 * Get user enrollment for a specific course (via cohort join)
+	 * If cohortId is provided, returns that specific enrollment
+	 * Otherwise, if user has multiple enrollments (different cohorts), returns the most recent one
 	 */
-	async getEnrollment(userId: string, courseSlug: string) {
-		return supabaseAdmin
+	async getEnrollment(userId: string, courseSlug: string, cohortId?: string) {
+		let query = supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
 				*,
@@ -63,7 +65,22 @@ export const CourseQueries = {
 			`)
 			.eq('user_profile_id', userId)
 			.eq('cohort.module.course.slug', courseSlug)
-			.single();
+			.in('status', ['active', 'invited', 'accepted']);
+
+		// If specific cohort requested, filter by it
+		if (cohortId) {
+			query = query.eq('cohort_id', cohortId);
+		}
+
+		const { data, error } = await query
+			.order('created_at', { ascending: false })
+			.limit(1);
+
+		// Return in same format as .single() for compatibility
+		return {
+			data: data && data.length > 0 ? data[0] : null,
+			error
+		};
 	},
 
 	/**
@@ -430,12 +447,14 @@ export const CourseAggregates = {
 	/**
 	 * Get complete student dashboard data
 	 * Optimized with parallel queries
+	 * @param cohortId - Optional cohort ID to select a specific enrollment
 	 */
-	async getStudentDashboard(userId: string, courseSlug: string) {
+	async getStudentDashboard(userId: string, courseSlug: string, selectedCohortId?: string) {
 		// Step 1: Get enrollment (must be first to get cohort/module info)
 		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
 			userId,
-			courseSlug
+			courseSlug,
+			selectedCohortId
 		);
 
 		if (enrollmentError || !enrollment) {
@@ -557,12 +576,14 @@ export const CourseAggregates = {
 	/**
 	 * Get student reflections page data
 	 * Optimized for reflections view with all necessary data
+	 * @param selectedCohortId - Optional cohort ID to select a specific enrollment
 	 */
-	async getReflectionsPage(userId: string, courseSlug: string) {
+	async getReflectionsPage(userId: string, courseSlug: string, selectedCohortId?: string) {
 		// Step 1: Get enrollment
 		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
 			userId,
-			courseSlug
+			courseSlug,
+			selectedCohortId
 		);
 
 		if (enrollmentError || !enrollment) {
@@ -1152,12 +1173,14 @@ export const CourseMutations = {
 		cohortId: string;
 		name?: string;
 		moduleId?: string;
-		startDate?: string;
-		endDate?: string;
+		startDate?: string | null;
+		endDate?: string | null;
 		currentSession?: number;
+		status?: string;
 		actorName?: string;
 	}) {
-		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName } = params;
+		const { cohortId, name, moduleId, startDate, endDate, currentSession, status, actorName } =
+			params;
 
 		// Get current cohort state to detect session changes
 		const { data: currentCohort } = await supabaseAdmin
@@ -1172,9 +1195,10 @@ export const CourseMutations = {
 
 		if (name) updateData.name = name;
 		if (moduleId) updateData.module_id = moduleId;
-		if (startDate) updateData.start_date = startDate;
-		if (endDate) updateData.end_date = endDate;
+		if (startDate !== undefined) updateData.start_date = startDate;
+		if (endDate !== undefined) updateData.end_date = endDate;
 		if (currentSession !== undefined) updateData.current_session = currentSession;
+		if (status) updateData.status = status;
 
 		const result = await supabaseAdmin
 			.from('courses_cohorts')
@@ -1407,6 +1431,64 @@ export const CourseMutations = {
 		}
 
 		return supabaseAdmin.from('courses_enrollments').delete().eq('id', userId);
+	},
+
+	/**
+	 * Bulk delete enrollments (only those who haven't signed up yet)
+	 * Returns counts of deleted and skipped enrollments
+	 */
+	async bulkDeleteEnrollments(enrollmentIds: string[]) {
+		if (!enrollmentIds || enrollmentIds.length === 0) {
+			return {
+				data: { deleted: 0, skipped: 0, skippedNames: [] },
+				error: null
+			};
+		}
+
+		// Get all enrollments to check which ones can be deleted
+		const { data: enrollments, error: fetchError } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id, auth_user_id, full_name')
+			.in('id', enrollmentIds);
+
+		if (fetchError) {
+			return { data: null, error: fetchError };
+		}
+
+		// Separate deletable (no auth_user_id) from non-deletable
+		const deletable = enrollments?.filter((e) => !e.auth_user_id) || [];
+		const skipped = enrollments?.filter((e) => e.auth_user_id) || [];
+
+		if (deletable.length === 0) {
+			return {
+				data: {
+					deleted: 0,
+					skipped: skipped.length,
+					skippedNames: skipped.map((e) => e.full_name)
+				},
+				error: null
+			};
+		}
+
+		// Delete the deletable enrollments
+		const deletableIds = deletable.map((e) => e.id);
+		const { error: deleteError } = await supabaseAdmin
+			.from('courses_enrollments')
+			.delete()
+			.in('id', deletableIds);
+
+		if (deleteError) {
+			return { data: null, error: deleteError };
+		}
+
+		return {
+			data: {
+				deleted: deletable.length,
+				skipped: skipped.length,
+				skippedNames: skipped.map((e) => e.full_name)
+			},
+			error: null
+		};
 	},
 
 	/**

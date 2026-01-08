@@ -6,6 +6,7 @@
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 	import { getDndzone, noopDndzone } from '$lib/utils/resilient-dnd.js';
 	import { flip } from 'svelte/animate';
 
@@ -172,9 +173,10 @@
 		try {
 			onSaveStatusChange(true, 'Updating material...');
 
+			// Normalize URLs for video and link types
 			const content = (editingMaterial.type === 'native' || editingMaterial.type === 'embed')
 				? editingMaterial.content
-				: editingMaterial.url;
+				: normalizeUrl(editingMaterial.url);
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'PUT',
@@ -512,7 +514,8 @@
 										<input
 											id={getFieldId('edit-material-url', material.id)}
 											bind:value={editingMaterial.url}
-											type="url"
+											type="text"
+											placeholder="example.com or https://example.com"
 											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
 										/>
 									</div>

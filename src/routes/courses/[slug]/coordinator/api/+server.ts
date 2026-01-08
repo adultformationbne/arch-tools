@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
+import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -10,8 +11,12 @@ export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get enrollment and verify coordinator role
-	const { data: enrollment } = await supabaseAdmin
+	let enrollmentQuery = supabaseAdmin
 		.from('courses_enrollments')
 		.select(`
 			id,
@@ -27,7 +32,17 @@ export const GET: RequestHandler = async (event) => {
 			)
 		`)
 		.eq('user_profile_id', user.id)
-		.single();
+		.eq('role', 'coordinator');
+
+	if (selectedCohortId) {
+		enrollmentQuery = enrollmentQuery.eq('cohort_id', selectedCohortId);
+	}
+
+	const { data: enrollmentArr } = await enrollmentQuery
+		.order('created_at', { ascending: false })
+		.limit(1);
+
+	const enrollment = enrollmentArr?.[0] || null;
 
 	if (!enrollment || enrollment.role !== 'coordinator' || !enrollment.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');
@@ -61,14 +76,15 @@ export const GET: RequestHandler = async (event) => {
 		}
 	}
 
-	// Get students in this hub
-	const { data: students } = await supabaseAdmin
+	// Get all members in this hub (students and coordinators, including self)
+	const { data: hubMembers } = await supabaseAdmin
 		.from('courses_enrollments')
 		.select(`
 			id,
 			full_name,
 			email,
 			current_session,
+			role,
 			user_profile:user_profile_id (
 				full_name,
 				email
@@ -76,19 +92,19 @@ export const GET: RequestHandler = async (event) => {
 		`)
 		.eq('hub_id', hubId)
 		.eq('cohort_id', cohortId)
-		.eq('role', 'student')
+		.in('role', ['student', 'coordinator'])
 		.order('full_name');
 
-	// Get ALL attendance records for all students (all sessions)
-	const studentIds = students?.map(s => s.id) || [];
+	// Get ALL attendance records for all hub members (all sessions)
+	const memberIds = hubMembers?.map(s => s.id) || [];
 	// Map: { enrollmentId: { sessionNumber: boolean } }
 	let attendanceMap: Record<string, Record<number, boolean>> = {};
 
-	if (studentIds.length > 0) {
+	if (memberIds.length > 0) {
 		const { data: attendance } = await supabaseAdmin
 			.from('courses_attendance')
 			.select('enrollment_id, session_number, present')
-			.in('enrollment_id', studentIds)
+			.in('enrollment_id', memberIds)
 			.eq('cohort_id', cohortId);
 
 		attendance?.forEach(a => {
@@ -99,17 +115,17 @@ export const GET: RequestHandler = async (event) => {
 		});
 	}
 
-	// Format student data with full attendance history
-	const formattedStudents = (students || []).map(s => {
-		const studentAttendance = attendanceMap[s.id] || {};
+	// Format hub member data with full attendance history
+	const formattedMembers = (hubMembers || []).map(s => {
+		const memberAttendance = attendanceMap[s.id] || {};
 
 		// Calculate attendance percentage (sessions 1 through currentSession)
 		let attendedCount = 0;
 		let markedCount = 0;
 		for (let i = 1; i <= currentSession; i++) {
-			if (studentAttendance[i] !== undefined) {
+			if (memberAttendance[i] !== undefined) {
 				markedCount++;
-				if (studentAttendance[i] === true) {
+				if (memberAttendance[i] === true) {
 					attendedCount++;
 				}
 			}
@@ -120,8 +136,9 @@ export const GET: RequestHandler = async (event) => {
 			name: s.user_profile?.full_name || s.full_name || s.email,
 			email: s.user_profile?.email || s.email,
 			currentSession: s.current_session,
+			role: s.role,
 			// Full attendance record: { 1: true, 2: false, 3: true, ... }
-			attendance: studentAttendance,
+			attendance: memberAttendance,
 			// Stats for quick display
 			attendedCount,
 			markedCount,
@@ -137,7 +154,7 @@ export const GET: RequestHandler = async (event) => {
 		},
 		currentSession,
 		totalSessions,
-		students: formattedStudents
+		students: formattedMembers
 	});
 };
 
@@ -150,12 +167,26 @@ export const POST: RequestHandler = async (event) => {
 
 	const { action, studentId, present, sessionNumber } = await event.request.json();
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get coordinator's enrollment
-	const { data: coordinator } = await supabaseAdmin
+	let coordinatorQuery = supabaseAdmin
 		.from('courses_enrollments')
 		.select('id, role, hub_id, cohort_id')
 		.eq('user_profile_id', user.id)
-		.single();
+		.eq('role', 'coordinator');
+
+	if (selectedCohortId) {
+		coordinatorQuery = coordinatorQuery.eq('cohort_id', selectedCohortId);
+	}
+
+	const { data: coordinatorArr } = await coordinatorQuery
+		.order('created_at', { ascending: false })
+		.limit(1);
+
+	const coordinator = coordinatorArr?.[0] || null;
 
 	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');

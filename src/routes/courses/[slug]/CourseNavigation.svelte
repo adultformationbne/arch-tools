@@ -32,23 +32,23 @@
 	<!-- Clean Background -->
 	<div class="absolute inset-0" style="background-color: rgba(52, 70, 66, 0.8);"></div>
 
-	<div class="relative flex items-center justify-between px-4 sm:px-6 lg:px-24 py-3">
+	<div class="relative flex items-center justify-between px-4 sm:px-6 lg:px-16 py-1.5">
 		<!-- Simple Logo Section -->
 		<div class="flex items-center">
 			{#if showLogo}
-				<img src={logoUrl} alt="Course Logo" class="h-9 sm:h-10 w-auto drop-shadow-lg" />
+				<img src={logoUrl} alt="Course Logo" class="h-7 sm:h-8 w-auto drop-shadow-lg" />
 			{/if}
 		</div>
 
 		<!-- Desktop Navigation Pills -->
-		<div class="hidden lg:flex items-center space-x-4">
+		<div class="hidden lg:flex items-center space-x-2">
 			<!-- Student Navigation -->
 			<a
 				href="/courses/{courseSlug}"
 				class="glass-link group"
 				class:active-glass={currentPage() === 'dashboard'}
 			>
-				<Home class="transition-transform group-hover:scale-110" size="18" />
+				<Home class="transition-transform group-hover:scale-110" size="14" />
 				<span>Dashboard</span>
 				<div class="glass-shine"></div>
 			</a>
@@ -57,7 +57,7 @@
 				class="glass-link group"
 				class:active-glass={currentPage() === 'materials'}
 			>
-				<BookOpen class="transition-transform group-hover:scale-110" size="18" />
+				<BookOpen class="transition-transform group-hover:scale-110" size="14" />
 				<span>Materials</span>
 				<div class="glass-shine"></div>
 			</a>
@@ -66,31 +66,31 @@
 				class="glass-link group"
 				class:active-glass={currentPage() === 'reflections'}
 			>
-				<MessageSquare class="transition-transform group-hover:scale-110" size="18" />
+				<MessageSquare class="transition-transform group-hover:scale-110" size="14" />
 				<span>Reflections</span>
 				<div class="glass-shine"></div>
 			</a>
 		</div>
 
 		<!-- Mobile Menu Button -->
-		<div class="lg:hidden flex items-center gap-3">
+		<div class="lg:hidden flex items-center gap-2">
 			<button
 				onclick={toggleMobileMenu}
-				class="glass-mobile-btn flex items-center justify-center w-10 h-10 rounded-full"
+				class="glass-mobile-btn flex items-center justify-center w-8 h-8 rounded-full"
 				aria-label="Toggle menu"
 			>
 				{#if mobileMenuOpen}
-					<X size="18" class="text-white/90" />
+					<X size="16" class="text-white/90" />
 				{:else}
-					<Menu size="18" class="text-white/90" />
+					<Menu size="16" class="text-white/90" />
 				{/if}
 			</button>
 			<a
 				href="/courses/{courseSlug}/profile"
-				class="flex items-center justify-center w-10 h-10 glass-avatar rounded-full"
+				class="flex items-center justify-center w-8 h-8 glass-avatar rounded-full"
 				class:profile-active={currentPage() === 'profile'}
 			>
-				<User size="18" class="text-white/90" />
+				<User size="16" class="text-white/90" />
 			</a>
 		</div>
 
@@ -98,11 +98,11 @@
 		<div class="hidden lg:flex items-center">
 			<a
 				href="/courses/{courseSlug}/profile"
-				class="flex items-center gap-2 px-4 py-2 glass-profile rounded-full transition-all cursor-pointer"
+				class="flex items-center gap-1.5 px-3 py-1 glass-profile rounded-full transition-all cursor-pointer"
 				class:profile-active={currentPage() === 'profile'}
 			>
-				<span class="text-white/90 font-medium text-sm">Hi, {userName}</span>
-				<User size="18" class="text-white/90" />
+				<span class="text-white/90 font-medium text-xs">Hi, {userName}</span>
+				<User size="14" class="text-white/90" />
 			</a>
 		</div>
 	</div>
@@ -110,7 +110,7 @@
 
 <!-- Mobile Menu Overlay -->
 {#if mobileMenuOpen}
-	<div class="mobile-menu-overlay lg:hidden fixed top-[73px] left-0 right-0 z-50">
+	<div class="mobile-menu-overlay lg:hidden fixed top-[44px] left-0 right-0 z-50">
 		<div class="mobile-menu-content">
 			<!-- Mobile Navigation Links -->
 			<div class="space-y-1 p-4">
@@ -177,8 +177,7 @@
 	.glass-link {
 		display: flex;
 		align-items: center;
-		space-x: 0.5rem;
-		padding: 0.5rem 1.25rem;
+		padding: 0.375rem 0.875rem;
 		border-radius: 2rem;
 		background: rgba(255, 255, 255, 0.08);
 		backdrop-filter: blur(10px);
@@ -186,11 +185,11 @@
 		color: white;
 		text-decoration: none;
 		font-weight: 500;
-		font-size: 0.875rem;
+		font-size: 0.75rem;
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
-		gap: 0.5rem;
+		gap: 0.375rem;
 	}
 
 	.glass-link:hover {

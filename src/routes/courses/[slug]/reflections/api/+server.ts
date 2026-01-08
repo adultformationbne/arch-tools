@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
+import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -9,6 +10,10 @@ export const POST: RequestHandler = async (event) => {
 	// Require authenticated user
 	const { user } = await requireCourseAccess(event, courseSlug);
 	const userId = user.id;
+
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
 	try {
 		const body = await event.request.json();
@@ -47,12 +52,23 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get student's courses_enrollments record (need id and cohort_id)
-		console.log('Looking up student by user_profile_id:', userId);
-		const { data: studentData, error: studentError } = await supabaseAdmin
+		// Use the cohort cookie if available to select the correct enrollment
+		console.log('Looking up student by user_profile_id:', userId, 'cohortId:', cohortId);
+		let enrollmentQuery = supabaseAdmin
 			.from('courses_enrollments')
 			.select('id, cohort_id')
 			.eq('user_profile_id', userId)
-			.single();
+			.in('status', ['active', 'invited', 'accepted']);
+
+		if (cohortId) {
+			enrollmentQuery = enrollmentQuery.eq('cohort_id', cohortId);
+		}
+
+		const { data: studentDataArr, error: studentError } = await enrollmentQuery
+			.order('created_at', { ascending: false })
+			.limit(1);
+
+		const studentData = studentDataArr?.[0] || null;
 
 		console.log('Student data:', studentData);
 		console.log('Student error:', studentError);

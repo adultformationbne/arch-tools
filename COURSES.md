@@ -7,7 +7,7 @@
 
 ## 🎯 Overview
 
-The ArchMin Courses platform is a flexible, multi-course system supporting programs like ACCF (Archdiocesan Center for Catholic Formation) and future programs. Each course has its own branding, modules, cohorts, and enrollments.
+The ArchMin Courses platform is a flexible, multi-course system supporting programs like ACCF (Archdiocesan Centre for Catholic Formation) and future programs. Each course has its own branding, modules, cohorts, and enrollments.
 
 ---
 
@@ -47,7 +47,7 @@ Top-level course definitions with branding and settings.
 ```sql
 CREATE TABLE courses (
   id UUID PRIMARY KEY,
-  name TEXT NOT NULL,                    -- e.g., "Archdiocesan Center for Catholic Formation"
+  name TEXT NOT NULL,                    -- e.g., "Archdiocesan Centre for Catholic Formation"
   short_name TEXT,                       -- e.g., "ACCF" (for display)
   slug TEXT UNIQUE NOT NULL,             -- e.g., "accf" (used in URLs)
   description TEXT,
@@ -1485,7 +1485,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 
 ## 📊 Current Production Courses
 
-### ACCF (Archdiocesan Center for Catholic Formation)
+### ACCF (Archdiocesan Centre for Catholic Formation)
 - **Slug:** `accf`
 - **Theme:** Dark green (#334642) & warm tan (#c59a6b)
 - **Font:** Inter

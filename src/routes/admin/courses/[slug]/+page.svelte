@@ -4,6 +4,7 @@
 	import { Check, X, AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, UserPlus, Trash2, MapPin, Send, MailCheck, MailX } from 'lucide-svelte';
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
+	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -24,6 +25,7 @@
 
 	// Modal state
 	let showCohortWizard = $state(false);
+	let showCohortSettings = $state(false);
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
 	let showDeleteConfirm = $state(false);
@@ -242,6 +244,21 @@
 		showStudentEnrollment = true;
 	}
 
+	function handleCohortSettings() {
+		showCohortSettings = true;
+	}
+
+	async function handleCohortUpdate() {
+		await invalidateAll();
+		await loadParticipants();
+	}
+
+	async function handleCohortDelete() {
+		await invalidateAll();
+		// Navigate to dashboard without cohort selected
+		goto(`/admin/courses/${courseSlug}`);
+	}
+
 	// Bulk actions
 	function handleEmailSelected() {
 		emailRecipients = participants.filter(p => selectedParticipants.has(p.id));
@@ -301,6 +318,43 @@
 		showDeleteConfirm = true;
 	}
 
+	async function confirmBulkDelete() {
+		showDeleteConfirm = false;
+
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'bulk_delete_enrollments',
+					enrollmentIds: Array.from(selectedParticipants)
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to remove participants');
+			}
+
+			const { deleted, skipped } = result.data;
+
+			if (deleted > 0 && skipped === 0) {
+				toastSuccess(result.message);
+			} else if (deleted > 0 && skipped > 0) {
+				toastWarning(result.message);
+			} else if (skipped > 0) {
+				toastError(result.message);
+			}
+
+			selectedParticipants = new Set();
+			await loadParticipants();
+		} catch (err) {
+			console.error('Error removing participants:', err);
+			toastError(err.message || 'Failed to remove participants');
+		}
+	}
+
 	function handleSendWelcome() {
 		if (selectedParticipants.size === 0) return;
 
@@ -316,6 +370,25 @@
 
 		// Open email modal with welcome template pre-selected
 		emailRecipients = pendingParticipants;
+		initialTemplateSlug = 'welcome_enrolled';
+		showEmailModal = true;
+	}
+
+	function handleResendWelcome() {
+		if (selectedParticipants.size === 0) return;
+
+		// Get selected participants who HAVE already received welcome email
+		const alreadySentParticipants = participants.filter(
+			p => selectedParticipants.has(p.id) && p.welcome_email_sent_at
+		);
+
+		if (alreadySentParticipants.length === 0) {
+			toastWarning('None of the selected participants have received welcome emails yet. Use "Welcome" instead.');
+			return;
+		}
+
+		// Open email modal with welcome template pre-selected
+		emailRecipients = alreadySentParticipants;
 		initialTemplateSlug = 'welcome_enrolled';
 		showEmailModal = true;
 	}
@@ -350,8 +423,8 @@
 </script>
 
 <div class="flex h-screen" style="background-color: var(--course-accent-dark);">
-	<!-- Left Sidebar -->
-	<div class="w-64 border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
+	<!-- Left Sidebar - Compact width -->
+	<div class="w-48 border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
 		<CohortAdminSidebar
 			cohort={selectedCohort}
 			{stats}
@@ -360,6 +433,7 @@
 			onEmailAll={handleEmailAll}
 			onExport={handleExport}
 			onAddParticipant={handleAddParticipant}
+			onCohortSettings={handleCohortSettings}
 		/>
 	</div>
 
@@ -368,228 +442,227 @@
 		{#if !selectedCohort}
 			<div class="flex items-center justify-center h-full">
 				<div class="text-center">
-					<h2 class="text-2xl font-bold text-white mb-2">Select a Cohort</h2>
-					<p class="text-white/70">Choose a cohort from the sidebar to view details and manage participants.</p>
+					<h2 class="text-xl font-bold text-white mb-2">Select a Cohort</h2>
+					<p class="text-sm text-white/70">Choose a cohort from the sidebar to view details and manage participants.</p>
 				</div>
 			</div>
 		{:else}
-			<div class="p-8">
-				<!-- Page Header -->
-				<div class="mb-6">
-					<h1 class="text-3xl font-bold text-white">Participants</h1>
+			<div class="p-4 lg:p-6">
+				<!-- Page Header + Search inline -->
+				<div class="flex items-center justify-between gap-4 mb-3">
+					<h1 class="text-xl font-bold text-white">Participants</h1>
+					<div class="flex items-center gap-2 flex-1 max-w-md">
+						<div class="flex-1 relative">
+							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+							<input
+								type="text"
+								bind:value={searchQuery}
+								placeholder="Search..."
+								class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							/>
+						</div>
+						<select
+							bind:value={filterHub}
+							class="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+						>
+							<option value="all">All Hubs</option>
+							{#each hubs as hub}
+								<option value={hub.id}>{hub.name}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
-				<!-- Bulk Action Bar (shows when participants selected) -->
+				<!-- Compact Bulk Action Bar (shows when participants selected) -->
 				{#if selectedParticipants.size > 0}
-					<div class="rounded-lg p-4 mb-4 flex items-center justify-between" style="background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
-						<div class="flex items-center gap-4">
-							<span class="text-sm font-medium text-white">
+					<div class="rounded px-3 py-2 mb-3 flex items-center justify-between flex-wrap gap-2" style="background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+						<div class="flex items-center gap-2 flex-wrap">
+							<span class="text-xs font-medium text-white">
 								{selectedParticipants.size} selected
 							</span>
 							<button
 								onclick={handleSendWelcome}
-								class="px-3 py-1.5 rounded text-sm font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-2 transition-colors"
+								class="px-2 py-1 rounded text-xs font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
 							>
-								<Send size={14} />
-								Send Welcome
+								<Send size={12} />
+								Welcome
+							</button>
+							<button
+								onclick={handleResendWelcome}
+								class="px-2 py-1 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+							>
+								<MailCheck size={12} />
+								Resend
 							</button>
 							<button
 								onclick={handleEmailSelected}
-								class="px-3 py-1.5 rounded text-sm font-medium text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+								class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
 							>
-								<Mail size={14} />
+								<Mail size={12} />
 								Email
 							</button>
 							{#if participantsBehind.length > 0}
 								<button
 									onclick={handleAdvanceSelected}
-									class="px-3 py-1.5 rounded text-sm font-medium text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+									class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
 								>
-									<ArrowRight size={14} />
+									<ArrowRight size={12} />
 									Advance ({participantsBehind.length})
 								</button>
 							{/if}
 							<button
 								onclick={handleAssignHub}
-								class="px-3 py-1.5 rounded text-sm font-medium text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+								class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
 							>
-								<MapPin size={14} />
-								Assign Hub
+								<MapPin size={12} />
+								Hub
 							</button>
 							<button
 								onclick={handleRemoveSelected}
-								class="px-3 py-1.5 rounded text-sm font-medium text-red-400 hover:bg-white/10 flex items-center gap-2 transition-colors"
+								class="px-2 py-1 rounded text-xs font-medium text-red-400 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
 							>
-								<Trash2 size={14} />
+								<Trash2 size={12} />
 								Remove
 							</button>
 						</div>
 						<button
 							onclick={() => selectedParticipants = new Set()}
-							class="text-sm text-white hover:bg-white/10 px-2 py-1 rounded transition-colors"
+							class="text-xs text-white/70 hover:bg-white/10 px-2 py-1 rounded transition-colors"
 						>
-							Clear selection
+							Clear
 						</button>
 					</div>
 				{/if}
 
-				<!-- Search and Filters -->
-				<div class="flex gap-4 mb-4">
-					<div class="flex-1 relative">
-						<Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-						<input
-							type="text"
-							bind:value={searchQuery}
-							placeholder="Search participants..."
-							class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-						/>
-					</div>
-					<select
-						bind:value={filterHub}
-						class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-					>
-						<option value="all">All Hubs</option>
-						{#each hubs as hub}
-							<option value={hub.id}>{hub.name}</option>
-						{/each}
-					</select>
-				</div>
-
 				<!-- Participants Table -->
 				{#if loadingParticipants}
-					<div class="flex items-center justify-center py-12">
-						<Loader2 size={32} class="animate-spin text-white/40" />
-						<span class="ml-3 text-white/70">Loading participants...</span>
+					<div class="flex items-center justify-center py-8">
+						<Loader2 size={24} class="animate-spin text-white/40" />
+						<span class="ml-2 text-sm text-white/70">Loading...</span>
 					</div>
 				{:else if filteredParticipants.length === 0}
-					<div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-						<p class="text-gray-500">
+					<div class="bg-white rounded border border-gray-200 p-8 text-center">
+						<p class="text-sm text-gray-500">
 							{participants.length === 0 ? 'No participants enrolled yet.' : 'No participants match your search.'}
 						</p>
 					</div>
 				{:else}
-					<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-						<table class="w-full">
+					<div class="bg-white rounded border border-gray-200 overflow-x-auto">
+						<table class="w-full min-w-[700px]">
 							<thead>
 								<tr class="bg-gray-50 border-b border-gray-200">
-									<th class="w-12 px-4 py-3">
+									<th class="w-8 px-2 py-2">
 										<input
 											type="checkbox"
 											onchange={toggleSelectAll}
 											checked={selectedParticipants.size > 0 && selectedParticipants.size === participants.length}
-											class="rounded border-gray-300"
+											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Session</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Hub</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance</th>
-									<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Reflections</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider w-16">Session</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Hub</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider w-20">Attend.</th>
+									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Reflect.</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-200">
 								{#each filteredParticipants as participant}
 									<tr class="hover:bg-gray-50">
-										<td class="px-4 py-3">
+										<td class="px-2 py-1.5">
 											<input
 												type="checkbox"
 												checked={selectedParticipants.has(participant.id)}
 												onchange={() => toggleSelectParticipant(participant.id)}
-												class="rounded border-gray-300"
+												class="rounded border-gray-300 w-3.5 h-3.5"
 											/>
 										</td>
-										<td class="px-4 py-3">
-											<div class="flex items-center gap-2">
+										<td class="px-2 py-1.5">
+											<div class="flex items-center gap-1.5">
 												{#if participant.isBehind}
-													<AlertTriangle size={16} class="text-orange-500" />
+													<AlertTriangle size={12} class="text-orange-500 flex-shrink-0" />
 												{/if}
-												<div>
-													<div class="font-medium text-gray-900">{participant.full_name}</div>
+												<div class="min-w-0">
+													<div class="text-sm font-medium text-gray-900 truncate">{participant.full_name}</div>
 													{#if participant.role === 'coordinator'}
-														<div class="flex items-center gap-1 text-xs text-purple-600">
-															<Home size={12} />
-															<span>Hub Coordinator</span>
+														<div class="flex items-center gap-1 text-[10px] text-purple-600">
+															<Home size={10} />
+															<span>Coordinator</span>
 														</div>
 													{/if}
 												</div>
 											</div>
 										</td>
-										<td class="px-4 py-3">
+										<td class="px-2 py-1.5">
 											{#if !participant.welcome_email_sent_at}
-												<!-- Step 1: Needs invite -->
-												<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-													<MailX size={12} />
-													Needs invite
+												<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
+													<MailX size={10} />
+													Invite
 												</span>
 											{:else if !participant.last_login_at}
-												<!-- Step 2: Invited, awaiting signup -->
-												<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700" title="Invited {new Date(participant.welcome_email_sent_at).toLocaleDateString()}">
-													<Mail size={12} />
-													Awaiting signup
+												<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700" title="Invited {new Date(participant.welcome_email_sent_at).toLocaleDateString()}">
+													<Mail size={10} />
+													Pending
 												</span>
 											{:else if participant.status === 'held'}
-												<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">On Hold</span>
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700">Hold</span>
 											{:else if participant.status === 'withdrawn'}
-												<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Withdrawn</span>
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">Left</span>
 											{:else}
-												<!-- Active user - no badge needed -->
-												<span class="text-xs text-gray-400">—</span>
+												<span class="text-[10px] text-gray-400">—</span>
 											{/if}
 										</td>
-										<td class="px-4 py-3">
+										<td class="px-2 py-1.5">
 											{#if editingSession && editingSession.id === participant.id}
-												<div class="flex items-center gap-2">
+												<div class="flex items-center gap-1">
 													<input
 														type="number"
 														bind:value={editingSession.value}
 														min="0"
 														max={selectedCohort.module?.total_sessions || 8}
-														class="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+														class="w-12 px-1 py-0.5 text-xs border border-gray-300 rounded"
 													/>
 													<button
 														onclick={saveEditSession}
-														class="p-1 text-green-600 hover:text-green-700"
+														class="p-0.5 text-green-600 hover:text-green-700"
 													>
-														<Check size={14} />
+														<Check size={12} />
 													</button>
 													<button
 														onclick={() => editingSession = null}
-														class="p-1 text-gray-600 hover:text-gray-700"
+														class="p-0.5 text-gray-600 hover:text-gray-700"
 													>
-														<X size={14} />
+														<X size={12} />
 													</button>
 												</div>
 											{:else}
 												<button
 													onclick={() => startEditSession(participant)}
-													class="text-gray-900 hover:text-blue-600"
+													class="text-xs text-gray-900 hover:text-blue-600"
 												>
 													{participant.current_session}/{selectedCohort.module?.total_sessions || 8}
 													{#if participant.isBehind}
-														<AlertTriangle size={12} class="inline text-orange-500" />
+														<AlertTriangle size={10} class="inline text-orange-500" />
 													{/if}
 												</button>
 											{/if}
 										</td>
-										<td class="px-4 py-3 text-sm text-gray-600">
+										<td class="px-2 py-1.5 text-xs text-gray-600 truncate max-w-[100px]">
 											{participant.courses_hubs?.name || '-'}
 										</td>
-										<td class="px-4 py-3 text-sm text-gray-600">
+										<td class="px-2 py-1.5 text-xs text-gray-600">
 											{#if selectedCohort.current_session === 0}
 												<span class="text-gray-400">—</span>
 											{:else}
 												{participant.attendanceCount}/{selectedCohort.current_session}
-												<span class="text-xs text-gray-400 ml-1">
-													({Math.round(participant.attendanceCount / selectedCohort.current_session * 100)}%)
-												</span>
 											{/if}
 										</td>
-										<td class="px-4 py-3">
+										<td class="px-2 py-1.5">
 											{#if participant.current_session === 0 || selectedCohort.current_session === 0}
 												<span class="text-gray-400">—</span>
 											{:else if participant.reflectionStatus}
-												<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getStatusBadgeClass(participant.reflectionStatus.status)}">
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {getStatusBadgeClass(participant.reflectionStatus.status)}">
 													{getReflectionStatusDisplay(participant)}
 												</span>
 											{:else}
@@ -603,8 +676,8 @@
 					</div>
 
 					<!-- Pagination info -->
-					<div class="mt-4 text-sm text-white/70 text-center">
-						Showing {filteredParticipants.length} of {participants.length} participants
+					<div class="mt-2 text-xs text-white/70 text-center">
+						{filteredParticipants.length} of {participants.length} participants
 					</div>
 				{/if}
 			</div>
@@ -619,6 +692,15 @@
 	show={showCohortWizard}
 	onClose={() => showCohortWizard = false}
 	onComplete={handleWizardComplete}
+/>
+
+<CohortSettingsModal
+	show={showCohortSettings}
+	cohort={selectedCohort}
+	{courseSlug}
+	onClose={() => showCohortSettings = false}
+	onUpdate={handleCohortUpdate}
+	onDelete={handleCohortDelete}
 />
 
 <ParticipantEnrollmentModal
@@ -642,14 +724,11 @@
 	title="Remove Participants"
 	confirmText="Remove"
 	cancelText="Cancel"
-	onConfirm={() => {
-		toastWarning('Bulk delete coming soon');
-		showDeleteConfirm = false;
-	}}
+	onConfirm={confirmBulkDelete}
 	onCancel={() => showDeleteConfirm = false}
 >
 	<p>Are you sure you want to remove {selectedParticipants.size} participant(s)?</p>
-	<p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+	<p class="text-sm text-gray-600 mt-2">Only participants who haven't signed up yet can be removed. Active users will be skipped.</p>
 </ConfirmationModal>
 
 <EmailSenderModal

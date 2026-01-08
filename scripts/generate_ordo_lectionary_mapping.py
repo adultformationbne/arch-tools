@@ -236,9 +236,14 @@ def find_weekday_lectionary_entry(lectionary_entries, weekday, season, week, yea
 
 
 def infer_season_and_week(ordo_date, ordo_data):
-    """Infer season and week for a date by looking at surrounding dates."""
+    """Infer season and week for a date by looking at surrounding dates.
+
+    Liturgical weeks start on Sunday. So if we find:
+    - A weekday with week N, and no Sunday between it and current date -> we're in week N
+    - A weekday with week N, and a Sunday between it and current date -> adjust week
+    - A Sunday with week N -> if looking back, we're in week N; if looking forward, we're in week N-1
+    """
     dt = datetime.datetime.strptime(ordo_date, '%Y-%m-%d')
-    current_weekday = dt.weekday()
 
     # Look back up to 7 days
     for days_back in range(1, 8):
@@ -248,19 +253,21 @@ def infer_season_and_week(ordo_date, ordo_data):
             entry = ordo_data[check_date]
             if entry.get('season') and entry.get('week'):
                 week = entry['week']
-                check_weekday = check_dt.weekday()
 
-                if current_weekday < 6 and check_weekday != 6:
-                    sundays_crossed = 0
-                    for d in range(1, days_back):
-                        test_dt = dt - datetime.timedelta(days=d)
-                        if test_dt.weekday() == 6:
-                            sundays_crossed += 1
-                    if sundays_crossed > 0:
-                        try:
-                            week = str(int(week) + sundays_crossed)
-                        except ValueError:
-                            pass
+                # Count Sundays BETWEEN reference date and current date (not including either)
+                sundays_crossed = 0
+                for d in range(1, days_back):
+                    test_dt = dt - datetime.timedelta(days=d)
+                    if test_dt.weekday() == 6:  # Sunday
+                        sundays_crossed += 1
+
+                # If we crossed Sundays going back, we're in a later week
+                if sundays_crossed > 0:
+                    try:
+                        week = str(int(week) + sundays_crossed)
+                    except ValueError:
+                        pass
+
                 return entry['season'], week
 
     # Look forward if needed
@@ -273,17 +280,27 @@ def infer_season_and_week(ordo_date, ordo_data):
                 week = entry['week']
                 check_weekday = check_dt.weekday()
 
-                if current_weekday < 6 and check_weekday != 6:
+                # If reference is a Sunday, we're in the previous week
+                if check_weekday == 6:
+                    try:
+                        week = str(int(week) - 1)
+                    except ValueError:
+                        pass
+                else:
+                    # Count Sundays between current date and reference date
                     sundays_crossed = 0
                     for d in range(1, days_forward):
                         test_dt = dt + datetime.timedelta(days=d)
                         if test_dt.weekday() == 6:
                             sundays_crossed += 1
+
+                    # If we crossed Sundays going forward, we're in an earlier week
                     if sundays_crossed > 0:
                         try:
                             week = str(int(week) - sundays_crossed)
                         except ValueError:
                             pass
+
                 return entry['season'], week
 
     return None, None

@@ -6,6 +6,7 @@
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import { Video, Upload, Link, BookOpen, FileText, ArrowLeft, Loader2 } from 'lucide-svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
 		isOpen = false,
@@ -208,7 +209,8 @@
 		saving = true;
 
 		try {
-			const materialContent = selectedType === 'native' ? content : url;
+			// Normalize URL for video and link types
+			const materialContent = selectedType === 'native' ? content : normalizeUrl(url);
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'POST',
@@ -456,9 +458,9 @@
 					</label>
 					<input
 						id="material-url"
-						type="url"
+						type="text"
 						bind:value={url}
-						placeholder="https://..."
+						placeholder="example.com or https://example.com"
 						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 bg-white"
 					/>
 				</div>

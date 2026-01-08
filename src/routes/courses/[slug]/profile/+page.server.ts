@@ -8,8 +8,12 @@ export const load: PageServerLoad = async (event) => {
 	// Require user to be enrolled in this course (any role)
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get user's enrollment details with cohort and hub information using repository
-	const { data: enrollment } = await CourseQueries.getEnrollment(user.id, courseSlug);
+	const { data: enrollment } = await CourseQueries.getEnrollment(user.id, courseSlug, cohortId);
 
 	const profileData = {
 		name: enrollment?.user_profile?.full_name || enrollment?.full_name || user.email,

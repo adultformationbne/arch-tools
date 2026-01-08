@@ -16,7 +16,7 @@ config();
 // Mock data
 const mockCourse = {
 	id: 'course-123',
-	name: 'Archdiocesan Center for Catholic Formation',
+	name: 'Archdiocesan Centre for Catholic Formation',
 	slug: 'accf',
 	settings: {
 		theme: {

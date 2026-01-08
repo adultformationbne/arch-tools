@@ -89,7 +89,7 @@
 	};
 </script>
 
-<div class="pb-16">
+<div class="pb-6">
 	<div class="max-w-7xl mx-auto">
 		{#if showTabbedSidebar}
 			<!-- Tabbed sidebar layout (for 6-12 sessions, including Pre-Start) -->
@@ -100,7 +100,7 @@
 				{onSessionChange}
 			>
 				<!-- Thin Top Navigation Bar -->
-				<div class="px-12 pt-4 pb-3">
+				<div class="px-6 pt-2 pb-2">
 					<div class="flex items-center justify-center gap-3 text-sm">
 						{#if canGoPrevious}
 							<button
@@ -181,112 +181,112 @@
 				</div>
 
 				<!-- Separator Line -->
-				<div class="border-t border-gray-300 mx-12"></div>
+				<div class="border-t border-gray-300 mx-6"></div>
 
-				<!-- Main Content -->
-				<div class="p-12">
-					<!-- Course Header - Full Width -->
-					<div class="mb-10">
-						<p class="text-sm font-medium text-gray-600 mb-2">{courseData.title}</p>
-						<h1 class="text-5xl font-bold text-gray-800 mb-4">
-							{currentSessionData.sessionTitle}
-						</h1>
-						<div class="flex items-center gap-4">
-							<h2 class="text-3xl font-semibold" style="color: #c59a6b;">{currentSession === 0 ? 'Pre-Start' : `Session ${currentSession}`}</h2>
-							<div class="h-1 w-20 rounded" style="background-color: #c59a6b;"></div>
+				<!-- Main Content - 2 Column Layout -->
+				<div class="p-8 min-h-[400px]">
+					<div class="grid grid-cols-2 gap-6 h-full">
+						<!-- Left Column: Title + Session Overview -->
+						<div class="flex flex-col">
+							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
+							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+								{currentSessionData.sessionTitle}
+							</h1>
+							<div class="flex items-center gap-2 mb-6">
+								<h2 class="text-base font-semibold" style="color: var(--course-accent-light, #c59a6b);">{currentSession === 0 ? 'Pre-Start' : `Session ${currentSession}`}</h2>
+								<div class="h-1 w-10 rounded" style="background-color: var(--course-accent-light, #c59a6b);"></div>
+							</div>
+
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
+							<p class="text-sm text-gray-700 leading-relaxed">
+								{currentSessionData.sessionOverview}
+							</p>
 						</div>
-					</div>
 
-					<!-- Session Overview - Full Width -->
-					<div class="mb-10">
-						<p class="text-lg font-semibold text-gray-800 leading-relaxed">
-							<span class="font-bold">Session overview:</span> {currentSessionData.sessionOverview}
-						</p>
-					</div>
-
-					<!-- Two Column: Materials + Question -->
-					<div class="grid grid-cols-2 gap-12">
-						<!-- Left Column - Materials -->
-						<div>
-							<h3 class="text-2xl font-bold text-gray-800 mb-8">{currentSession === 0 ? 'Welcome materials' : "This session's materials"}</h3>
-							<div class="space-y-4">
-								{#if materials.length === 0 && currentSession === 0}
-									<p class="text-gray-600 italic">No materials available yet. Check back closer to the start date.</p>
-								{/if}
-								{#each materials as material, index}
-									{@const IconComponent = getIcon(material.type)}
-									<a
-										href="/courses/{courseSlug}/materials?material={material.id}"
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
-										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
-									>
-										<div class="flex items-center gap-4">
-											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
-											<span class="font-semibold text-lg" class:text-white={index === 0} class:text-gray-800={index !== 0}>
+						<!-- Right Column: Materials + Reflection -->
+						<div class="flex flex-col gap-6">
+							<!-- Materials -->
+							<div>
+								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{currentSession === 0 ? 'Welcome Materials' : 'Materials'}</h3>
+								<div class="flex flex-wrap gap-2">
+									{#if materials.length === 0 && currentSession === 0}
+										<p class="text-gray-500 text-sm italic">No materials available yet.</p>
+									{/if}
+									{#each materials as material, index}
+										{@const IconComponent = getIcon(material.type)}
+										<a
+											href="/courses/{courseSlug}/materials?material={material.id}"
+											class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer no-underline text-sm font-medium"
+											class:hover:opacity-90={true}
+											style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
+										>
+											<IconComponent size="14" class={index === 0 ? "text-white" : "text-gray-600"} />
+											<span class:text-white={index === 0} class:text-gray-700={index !== 0}>
 												{material.title}
 											</span>
-										</div>
-									</a>
-								{/each}
+											{#if material.coordinatorOnly}
+												<span class="text-xs px-1.5 py-0.5 rounded-full {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600'}">
+													HC
+												</span>
+											{/if}
+										</a>
+									{/each}
+								</div>
 							</div>
-						</div>
 
-						<!-- Right Column - Reflection Question -->
-						<div>
+						<!-- Reflection -->
+							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
 							{#if currentSessionData.reflectionQuestion}
 								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
 								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<div class="bg-white rounded-3xl p-8 shadow-sm">
-									<div class="text-lg font-semibold mb-4" style="color: #c59a6b;">Question:</div>
-									<h4 class="text-2xl font-bold text-gray-800 mb-6 leading-tight">
-										{truncated}
-									</h4>
-
+								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+									{truncated}
 									{#if needsTruncation}
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-sm font-medium mb-6 transition-colors block no-underline hover:underline"
-											style="color: #c59a6b;"
+											class="text-xs font-medium ml-1 no-underline hover:underline"
+											style="color: var(--course-accent-dark, #c59a6b);"
 										>
-											Read more
+											more
 										</a>
 									{/if}
-
-									<!-- Status and Button -->
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3">
-											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-											</span>
-											<div
-												class="w-3 h-3 rounded-full"
-												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-											></div>
-										</div>
-										<a
-											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
-											style="background-color: #334642;"
-										>
-											<Edit3 size="20" />
-											Write Reflection
-										</a>
+								</p>
+								<div class="flex items-center justify-between mt-auto pt-2">
+									<div class="flex items-center gap-2">
+										<div
+											class="w-2.5 h-2.5 rounded-full"
+											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+										></div>
+										<span class="text-gray-600 text-xs font-medium">
+											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+										</span>
 									</div>
+									<a
+										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+										style="background-color: var(--course-accent-dark, #334642);"
+									>
+										<Edit3 size="14" />
+										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+									</a>
 								</div>
+							{:else}
+								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
+							</div>
 						</div>
 					</div>
 				</div>
 			</SessionNavigationTabs>
 		{:else if currentSession === 0}
 			<!-- Pre-Start: No tabs (for <6 or >12 sessions) -->
-			<div class="rounded-3xl" style="background-color: #eae2d9;">
+			<div class="rounded-xl" style="background-color: #eae2d9;">
 				<!-- Thin Top Navigation Bar -->
-				<div class="px-12 pt-4 pb-3">
+				<div class="px-6 pt-2 pb-2">
 					<div class="flex items-center justify-center gap-3 text-sm">
 						{#if canGoPrevious}
 							<button
@@ -367,102 +367,102 @@
 				</div>
 
 				<!-- Separator Line -->
-				<div class="border-t border-gray-300 mx-12"></div>
+				<div class="border-t border-gray-300 mx-6"></div>
 
-				<!-- Main Content -->
-				<div class="p-12">
-					<!-- Course Header - Full Width -->
-					<div class="mb-10">
-						<p class="text-sm font-medium text-gray-600 mb-2">{courseData.title}</p>
-						<h1 class="text-5xl font-bold text-gray-800 mb-4">
-							{currentSessionData.sessionTitle}
-						</h1>
-						<div class="flex items-center gap-4">
-							<h2 class="text-3xl font-semibold" style="color: #c59a6b;">Pre-Start</h2>
-							<div class="h-1 w-20 rounded" style="background-color: #c59a6b;"></div>
+				<!-- Main Content - 4 Quadrant Grid -->
+				<div class="p-8">
+					<div class="grid grid-cols-2 gap-6">
+						<!-- Top Left: Session Header -->
+						<div class="flex flex-col justify-start">
+							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
+							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+								{currentSessionData.sessionTitle}
+							</h1>
+							<div class="flex items-center gap-2">
+								<h2 class="text-base font-semibold" style="color: var(--course-accent-light, #c59a6b);">Pre-Start</h2>
+								<div class="h-1 w-10 rounded" style="background-color: var(--course-accent-light, #c59a6b);"></div>
+							</div>
 						</div>
-					</div>
 
-					<!-- Session Overview - Full Width -->
-					<div class="mb-10">
-						<p class="text-lg font-semibold text-gray-800 leading-relaxed">
-							<span class="font-bold">Session overview:</span> {currentSessionData.sessionOverview}
-						</p>
-					</div>
+						<!-- Top Right: Session Overview -->
+						<div class="flex flex-col">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
+							<p class="text-sm text-gray-700 leading-relaxed">
+								{currentSessionData.sessionOverview}
+							</p>
+						</div>
 
-					<!-- Two Column: Materials + Question -->
-					<div class="grid grid-cols-2 gap-12">
-						<!-- Left Column - Materials -->
-						<div>
-							<h3 class="text-2xl font-bold text-gray-800 mb-8">Welcome materials</h3>
-							<div class="space-y-4">
+						<!-- Bottom Left: Materials -->
+						<div class="flex flex-col">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Welcome Materials</h3>
+							<div class="space-y-2">
 								{#if materials.length === 0}
-									<p class="text-gray-600 italic">No materials available yet. Check back closer to the start date.</p>
+									<p class="text-gray-500 text-sm italic">No materials available yet.</p>
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
 									<a
 										href="/courses/{courseSlug}/materials?material={material.id}"
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
+										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
 									>
-										<div class="flex items-center gap-4">
-											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
-											<span class="font-semibold text-lg" class:text-white={index === 0} class:text-gray-800={index !== 0}>
-												{material.title}
+										<IconComponent size="16" class={index === 0 ? "text-white" : "text-gray-600"} />
+										<span class="font-medium text-sm" class:text-white={index === 0} class:text-gray-700={index !== 0}>
+											{material.title}
+										</span>
+										{#if material.coordinatorOnly}
+											<span class="ml-auto text-xs font-medium px-2 py-0.5 rounded {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'}">
+												Coordinator
 											</span>
-										</div>
+										{/if}
 									</a>
 								{/each}
 							</div>
 						</div>
 
-						<!-- Right Column - Reflection Question -->
-						<div>
+						<!-- Reflection -->
+							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
 							{#if currentSessionData.reflectionQuestion}
 								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
 								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<div class="bg-white rounded-3xl p-8 shadow-sm">
-									<div class="text-lg font-semibold mb-4" style="color: #c59a6b;">Question:</div>
-									<h4 class="text-2xl font-bold text-gray-800 mb-6 leading-tight">
-										{truncated}
-									</h4>
-
+								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+									{truncated}
 									{#if needsTruncation}
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-sm font-medium mb-6 transition-colors block no-underline hover:underline"
-											style="color: #c59a6b;"
+											class="text-xs font-medium ml-1 no-underline hover:underline"
+											style="color: var(--course-accent-dark, #c59a6b);"
 										>
-											Read more
+											more
 										</a>
 									{/if}
-
-									<!-- Status and Button -->
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3">
-											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-											</span>
-											<div
-												class="w-3 h-3 rounded-full"
-												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-											></div>
-										</div>
-										<a
-											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
-											style="background-color: #334642;"
-										>
-											<Edit3 size="20" />
-											Write Reflection
-										</a>
+								</p>
+								<div class="flex items-center justify-between mt-auto pt-2">
+									<div class="flex items-center gap-2">
+										<div
+											class="w-2.5 h-2.5 rounded-full"
+											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+										></div>
+										<span class="text-gray-600 text-xs font-medium">
+											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+										</span>
 									</div>
+									<a
+										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+										style="background-color: var(--course-accent-dark, #334642);"
+									>
+										<Edit3 size="14" />
+										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+									</a>
 								</div>
+							{:else}
+								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
 						</div>
 					</div>
@@ -470,9 +470,9 @@
 			</div>
 		{:else}
 			<!-- Regular sessions without tabs (for <6 or >12 sessions) -->
-			<div class="rounded-3xl" style="background-color: #eae2d9;">
+			<div class="rounded-xl" style="background-color: #eae2d9;">
 				<!-- Thin Top Navigation Bar -->
-				<div class="px-12 pt-4 pb-3">
+				<div class="px-6 pt-2 pb-2">
 					<div class="flex items-center justify-center gap-3 text-sm">
 						{#if canGoPrevious}
 							<button
@@ -553,99 +553,99 @@
 				</div>
 
 				<!-- Separator Line -->
-				<div class="border-t border-gray-300 mx-12"></div>
+				<div class="border-t border-gray-300 mx-6"></div>
 
-				<!-- Main Content -->
-				<div class="p-12">
-					<!-- Course Header - Full Width -->
-					<div class="mb-10">
-						<p class="text-sm font-medium text-gray-600 mb-2">{courseData.title}</p>
-						<h1 class="text-5xl font-bold text-gray-800 mb-4">
-							{currentSessionData.sessionTitle}
-						</h1>
-						<div class="flex items-center gap-4">
-							<h2 class="text-3xl font-semibold" style="color: #c59a6b;">Session {currentSession}</h2>
-							<div class="h-1 w-20 rounded" style="background-color: #c59a6b;"></div>
+				<!-- Main Content - 4 Quadrant Grid -->
+				<div class="p-8">
+					<div class="grid grid-cols-2 gap-6">
+						<!-- Top Left: Session Header -->
+						<div class="flex flex-col justify-start">
+							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
+							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+								{currentSessionData.sessionTitle}
+							</h1>
+							<div class="flex items-center gap-2">
+								<h2 class="text-base font-semibold" style="color: var(--course-accent-light, #c59a6b);">Session {currentSession}</h2>
+								<div class="h-1 w-10 rounded" style="background-color: var(--course-accent-light, #c59a6b);"></div>
+							</div>
 						</div>
-					</div>
 
-					<!-- Session Overview - Full Width -->
-					<div class="mb-10">
-						<p class="text-lg font-semibold text-gray-800 leading-relaxed">
-							<span class="font-bold">Session overview:</span> {currentSessionData.sessionOverview}
-						</p>
-					</div>
+						<!-- Top Right: Session Overview -->
+						<div class="flex flex-col">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
+							<p class="text-sm text-gray-700 leading-relaxed">
+								{currentSessionData.sessionOverview}
+							</p>
+						</div>
 
-					<!-- Two Column: Materials + Question -->
-					<div class="grid grid-cols-2 gap-12">
-						<!-- Left Column - Materials -->
-						<div>
-							<h3 class="text-2xl font-bold text-gray-800 mb-8">This session's materials</h3>
-							<div class="space-y-4">
+						<!-- Bottom Left: Materials -->
+						<div class="flex flex-col">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Materials</h3>
+							<div class="space-y-2">
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
 									<a
 										href="/courses/{courseSlug}/materials?material={material.id}"
-										class="flex items-center justify-between p-5 rounded-2xl transition-colors cursor-pointer group no-underline"
+										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: #c59a6b;" : "background-color: #f5f0e8;"}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
 									>
-										<div class="flex items-center gap-4">
-											<IconComponent size="24" class={index === 0 ? "text-white" : "text-gray-700"} />
-											<span class="font-semibold text-lg" class:text-white={index === 0} class:text-gray-800={index !== 0}>
-												{material.title}
+										<IconComponent size="16" class={index === 0 ? "text-white" : "text-gray-600"} />
+										<span class="font-medium text-sm" class:text-white={index === 0} class:text-gray-700={index !== 0}>
+											{material.title}
+										</span>
+										{#if material.coordinatorOnly}
+											<span class="ml-auto text-xs font-medium px-2 py-0.5 rounded {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'}">
+												Coordinator
 											</span>
-										</div>
+										{/if}
 									</a>
 								{/each}
 							</div>
 						</div>
 
-						<!-- Right Column - Reflection Question -->
-						<div>
+						<!-- Reflection -->
+							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
 							{#if currentSessionData.reflectionQuestion}
 								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
 								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<div class="bg-white rounded-3xl p-8 shadow-sm">
-									<div class="text-lg font-semibold mb-4" style="color: #c59a6b;">Question:</div>
-									<h4 class="text-2xl font-bold text-gray-800 mb-6 leading-tight">
-										{truncated}
-									</h4>
-
+								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+									{truncated}
 									{#if needsTruncation}
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-sm font-medium mb-6 transition-colors block no-underline hover:underline"
-											style="color: #c59a6b;"
+											class="text-xs font-medium ml-1 no-underline hover:underline"
+											style="color: var(--course-accent-dark, #c59a6b);"
 										>
-											Read more
+											more
 										</a>
 									{/if}
-
-									<!-- Status and Button -->
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3">
-											<span class="text-gray-700 font-semibold text-lg">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-											</span>
-											<div
-												class="w-3 h-3 rounded-full"
-												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-											></div>
-										</div>
-										<a
-											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="flex items-center gap-3 px-8 py-4 text-white font-semibold text-lg rounded-3xl transition-colors hover:opacity-90 no-underline"
-											style="background-color: #334642;"
-										>
-											<Edit3 size="20" />
-											Write Reflection
-										</a>
+								</p>
+								<div class="flex items-center justify-between mt-auto pt-2">
+									<div class="flex items-center gap-2">
+										<div
+											class="w-2.5 h-2.5 rounded-full"
+											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+										></div>
+										<span class="text-gray-600 text-xs font-medium">
+											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+										</span>
 									</div>
+									<a
+										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+										style="background-color: var(--course-accent-dark, #334642);"
+									>
+										<Edit3 size="14" />
+										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+									</a>
 								</div>
+							{:else}
+								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
 						</div>
 					</div>

@@ -98,7 +98,7 @@ export async function GET({ url, locals }) {
 		const startDate = new Date().toISOString().split('T')[0];
 		const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-		// 1. Fetch calendar with readings using ordo tables
+		// 1. Fetch calendar metadata from ordo tables (no readings JOIN - readings come from dgr_schedule)
 		const { data: calendarData, error: calendarError } = await supabase
 			.from('ordo_calendar')
 			.select(`
@@ -106,15 +106,7 @@ export async function GET({ url, locals }) {
 				liturgical_name,
 				liturgical_rank,
 				liturgical_season,
-				liturgical_week,
-				ordo_lectionary_mapping!left (
-					lectionary!left (
-						first_reading,
-						psalm,
-						second_reading,
-						gospel_reading
-					)
-				)
+				liturgical_week
 			`)
 			.gte('calendar_date', startDate)
 			.lte('calendar_date', endDate)
@@ -240,18 +232,19 @@ export async function GET({ url, locals }) {
 		});
 
 		// 4. Build calendar-first response
+		// Readings now come from dgr_schedule.readings_data (single source of truth)
 		const calendar = calendarData.map((cal) => {
 			const date = cal.calendar_date;
 			const scheduleEntry = scheduleMap.get(date) || null;
 			const patternContributor = patternMap.get(date) || null;
 
-			// Extract readings from nested join
-			const lectionary = cal.ordo_lectionary_mapping?.lectionary;
-			const readings = lectionary ? {
-				first_reading: lectionary.first_reading,
-				psalm: lectionary.psalm,
-				second_reading: lectionary.second_reading,
-				gospel: lectionary.gospel_reading
+			// Extract readings from schedule entry's readings_data (the single source of truth)
+			const readingsData = scheduleEntry?.readings_data;
+			const readings = readingsData ? {
+				first_reading: readingsData.first_reading?.source || null,
+				psalm: readingsData.psalm?.source || null,
+				second_reading: readingsData.second_reading?.source || null,
+				gospel: readingsData.gospel?.source || scheduleEntry?.gospel_reference || null
 			} : null;
 
 			return {

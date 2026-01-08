@@ -68,34 +68,16 @@ export async function GET({ request }) {
 		nextWeek.setDate(nextWeek.getDate() + 7);
 		const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
-		// Get all schedule entries for next 7 days
+		// Get all schedule entries for next 7 days (readings come from readings_data - single source of truth)
 		const { data: upcomingEntries } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select(`
-				id, date, status, reflection_title, digest_notified_at,
+				id, date, status, reflection_title, digest_notified_at, readings_data,
 				contributor:dgr_contributors(name, title)
 			`)
 			.gte('date', today)
 			.lte('date', nextWeekStr)
 			.order('date', { ascending: true });
-
-		// Get scripture readings for the date range
-		const { data: readings } = await supabaseAdmin
-			.from('ordo_lectionary_mapping')
-			.select(`
-				calendar_date,
-				lectionary:lectionary_readings(first_reading, psalm, gospel_reading, liturgical_day)
-			`)
-			.gte('calendar_date', today)
-			.lte('calendar_date', nextWeekStr);
-
-		// Create a map of date -> readings for easy lookup
-		const readingsMap = new Map();
-		for (const r of readings || []) {
-			if (r.lectionary) {
-				readingsMap.set(r.calendar_date, r.lectionary);
-			}
-		}
 
 		// Get NEW pending items (submitted but never in a digest)
 		const { data: newPendingItems } = await supabaseAdmin
@@ -124,7 +106,6 @@ export async function GET({ request }) {
 			upcomingEntries: upcomingEntries || [],
 			newPendingItems: newPendingItems || [],
 			existingPendingItems: existingPendingItems || [],
-			readingsMap,
 			today
 		});
 
@@ -211,13 +192,11 @@ function buildDigestEmail({
 	upcomingEntries,
 	newPendingItems,
 	existingPendingItems,
-	readingsMap,
 	today
 }: {
 	upcomingEntries: any[];
 	newPendingItems: any[];
 	existingPendingItems: any[];
-	readingsMap: Map<string, any>;
 	today: string;
 }) {
 	const formatDate = (dateStr: string) => {
@@ -248,12 +227,13 @@ function buildDigestEmail({
 		return `<span style="background-color: ${colors[status] || '#6b7280'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${labels[status] || status}</span>`;
 	};
 
-	const formatReadings = (readings: any) => {
-		if (!readings) return '';
+	// Format readings from readings_data (single source of truth)
+	const formatReadings = (readingsData: any) => {
+		if (!readingsData) return '';
 		const parts = [];
-		if (readings.first_reading) parts.push(readings.first_reading);
-		if (readings.psalm) parts.push(`Ps ${readings.psalm}`);
-		if (readings.gospel_reading) parts.push(readings.gospel_reading);
+		if (readingsData.first_reading?.source) parts.push(readingsData.first_reading.source);
+		if (readingsData.psalm?.source) parts.push(`Ps ${readingsData.psalm.source}`);
+		if (readingsData.gospel?.source) parts.push(readingsData.gospel.source);
 		if (parts.length === 0) return '';
 		return `<div style="font-size: 11px; color: #6b7280; margin-top: 4px;">${parts.join(' · ')}</div>`;
 	};
@@ -313,7 +293,6 @@ function buildDigestEmail({
 		`;
 		for (const entry of upcomingEntries) {
 			const isToday = entry.date === today;
-			const readings = readingsMap.get(entry.date);
 			html += `
 				<tr style="${isToday ? 'background-color: #ecfdf5;' : ''}">
 					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb; width: 100px; vertical-align: top;">
@@ -322,7 +301,7 @@ function buildDigestEmail({
 					</td>
 					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top;">
 						${formatContributor(entry.contributor)}
-						${formatReadings(readings)}
+						${formatReadings(entry.readings_data)}
 					</td>
 					<td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; vertical-align: top;">
 						${statusBadge(entry.status || 'pending')}

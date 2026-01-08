@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { X } from 'lucide-svelte';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
 		show = false,
@@ -70,7 +71,7 @@
 	function handleSave() {
 		const trimmedUrl = editUrl.trim();
 		if (trimmedUrl) {
-			onSave(trimmedUrl);
+			onSave(normalizeUrl(trimmedUrl));
 		} else {
 			onCancel();
 		}
@@ -126,9 +127,9 @@
 			<input
 				id="link-url-input"
 				bind:this={urlInput}
-				type="url"
+				type="text"
 				bind:value={editUrl}
-				placeholder="https://example.com"
+				placeholder="example.com or https://example.com"
 				class="popover-input"
 			/>
 		</div>

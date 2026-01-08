@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseAggregates, groupQuestionsBySession } from '$lib/server/course-data.js';
+import { CourseQueries, CourseAggregates, groupQuestionsBySession } from '$lib/server/course-data.js';
 import { getReflectionStatus } from '$lib/utils/reflection-status.js';
 import { getUserInitials } from '$lib/utils/avatar.js';
 import type { PageServerLoad } from './$types';
@@ -11,8 +11,12 @@ export const load: PageServerLoad = async (event) => {
 	// Require user to be enrolled in this course (any role)
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Get course ID to read the active cohort cookie
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
 	// Get all reflections page data in one optimized call
-	const result = await CourseAggregates.getReflectionsPage(user.id, courseSlug);
+	const result = await CourseAggregates.getReflectionsPage(user.id, courseSlug, cohortId);
 
 	if (result.error || !result.data) {
 		throw error(500, 'Failed to load reflections');

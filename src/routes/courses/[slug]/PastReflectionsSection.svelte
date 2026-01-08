@@ -1,5 +1,5 @@
 <script>
-	import { ChevronRight, ArrowRight, HelpCircle, MessageSquare } from 'lucide-svelte';
+	import { ChevronRight, ArrowRight, HelpCircle, MessageSquare, Star } from 'lucide-svelte';
 	import { isComplete, needsReview } from '$lib/utils/reflection-status';
 
 	let {
@@ -97,6 +97,19 @@
 						</div>
 						<p class="text-sm text-gray-600 leading-relaxed">
 							{truncateText(reflection.response, 100)}
+						</p>
+					</div>
+				{/if}
+
+				<!-- Feedback Preview -->
+				{#if reflection.feedback}
+					<div class="mt-3 p-3 rounded-lg border-l-4" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white); border-left-color: var(--course-accent-dark, #334642);">
+						<div class="flex items-center gap-1.5 text-xs font-semibold mb-1" style="color: var(--course-accent-dark, #334642);">
+							<Star size="12" />
+							Feedback Received
+						</div>
+						<p class="text-xs text-gray-700 leading-relaxed line-clamp-2">
+							{truncateText(reflection.feedback, 80)}
 						</p>
 					</div>
 				{/if}

@@ -366,6 +366,35 @@ async function logBatchEmails(supabase, emails, emailType, status, errorMessage 
 }
 
 /**
+ * Check if an email of a specific type was sent to a recipient today
+ * Used to prevent email flooding (e.g., max 1 "reflection_marked" email per day)
+ * @param {Object} supabase Supabase client
+ * @param {string} recipientEmail Recipient's email address
+ * @param {string} emailType The type of email to check for
+ * @returns {Promise<boolean>} True if email was already sent today
+ */
+export async function wasEmailSentToday(supabase, recipientEmail, emailType) {
+	// Get start of today in UTC
+	const today = new Date();
+	today.setUTCHours(0, 0, 0, 0);
+
+	const { count, error } = await supabase
+		.from('platform_email_log')
+		.select('id', { count: 'exact', head: true })
+		.eq('recipient_email', recipientEmail)
+		.eq('email_type', emailType)
+		.eq('status', 'sent')
+		.gte('sent_at', today.toISOString());
+
+	if (error) {
+		console.error('Error checking email log:', error);
+		return false; // On error, allow sending (fail open)
+	}
+
+	return (count || 0) > 0;
+}
+
+/**
  * Get email logs with optional filtering
  * @param {Object} supabase Supabase client
  * @param {Object} filters Optional filters

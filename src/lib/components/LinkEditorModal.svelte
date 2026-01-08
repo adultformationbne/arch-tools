@@ -1,5 +1,6 @@
 <script>
 	import { X } from 'lucide-svelte';
+	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
 		show = false,
@@ -24,7 +25,7 @@
 	function handleSave() {
 		const trimmedUrl = editUrl.trim();
 		if (trimmedUrl) {
-			onSave(trimmedUrl);
+			onSave(normalizeUrl(trimmedUrl));
 		} else {
 			onCancel();
 		}
@@ -44,8 +45,8 @@
 {#if show}
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-		onclick={onCancel}
-		onkeydown={(e) => e.key === 'Enter' && onCancel()}
+		onmousedown={(e) => e.target === e.currentTarget && onCancel()}
+		onkeydown={(e) => e.key === 'Escape' && onCancel()}
 		role="presentation"
 	>
 		<div
@@ -79,13 +80,13 @@
 				<input
 					id="link-url"
 					bind:this={urlInput}
-					type="url"
+					type="text"
 					bind:value={editUrl}
-					placeholder="https://example.com"
+					placeholder="example.com or https://example.com"
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
 				/>
 				<p class="mt-2 text-xs text-gray-500">
-					Enter a full URL including https://
+					https:// will be added automatically if not provided
 				</p>
 			</div>
 

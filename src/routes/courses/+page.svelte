@@ -1,10 +1,17 @@
 <script lang="ts">
-	import { BookOpen, ChevronRight } from 'lucide-svelte';
+	import { BookOpen, ChevronRight, Users, GraduationCap } from 'lucide-svelte';
 	import { Card } from '$lib/design-system';
 
 	let { data } = $props();
-	const courses = data.courses || [];
+	const courseData = data.courseData || [];
 	const noEnrollments = data.noEnrollments || false;
+
+	function getRoleBadge(role: string) {
+		if (role === 'coordinator') {
+			return { label: 'Coordinator', class: 'bg-purple-100 text-purple-800' };
+		}
+		return { label: 'Student', class: 'bg-blue-100 text-blue-800' };
+	}
 </script>
 
 <svelte:head>
@@ -23,59 +30,62 @@
 				{#if noEnrollments}
 					You are not currently enrolled in any courses
 				{:else}
-					Select a course to continue
+					Select a cohort to continue
 				{/if}
 			</p>
 		</div>
 
-		<!-- Courses Grid -->
-		{#if courses.length > 0}
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-				{#each courses as course}
+		<!-- Courses List -->
+		{#if courseData.length > 0}
+			<div class="space-y-8">
+				{#each courseData as { course, enrollments }}
 					{@const accentDark = course.settings?.theme?.accentDark || '#334642'}
 					{@const accentLight = course.settings?.theme?.accentLight || '#c59a6b'}
-					<Card padding="none" shadow="md" class="overflow-hidden transition-all hover:shadow-lg">
-						<!-- Accent color bar at top -->
+
+					<Card padding="none" shadow="md" class="overflow-hidden">
+						<!-- Course Header -->
 						<div
-							class="h-2"
+							class="px-6 py-4"
 							style="background: linear-gradient(90deg, {accentDark} 0%, {accentLight} 100%);"
-						></div>
-
-						<a href="/courses/{course.slug}" class="block">
-							<div class="p-6">
-								<!-- Course Header -->
-								<div class="mb-4 flex items-start justify-between">
-									<div class="flex-1">
-										<h3 class="text-xl font-semibold" style="color: {accentDark};">
-											{course.name}
-										</h3>
-										{#if course.short_name}
-											<p class="mt-1 text-sm font-medium text-gray-500">{course.short_name}</p>
-										{/if}
-									</div>
-									<div
-										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
-										style="background-color: {accentLight};"
-									>
-										<ChevronRight class="h-5 w-5" style="color: {accentDark};" />
-									</div>
-								</div>
-
-								<!-- Course Description -->
-								{#if course.description}
-									<p class="line-clamp-3 text-sm text-gray-600">
-										{course.description}
-									</p>
-								{/if}
-							</div>
-						</a>
-
-						<!-- Footer -->
-						<div
-							class="flex items-center justify-between border-t px-6 py-3"
-							style="background-color: {accentLight}20; border-color: {accentLight};"
 						>
-							<span class="text-sm font-medium" style="color: {accentDark};"> View Dashboard </span>
+							<h2 class="text-xl font-bold text-white">{course.name}</h2>
+							{#if course.short_name}
+								<p class="mt-1 text-sm text-white/80">{course.short_name}</p>
+							{/if}
+						</div>
+
+						<!-- Cohort Enrollments -->
+						<div class="divide-y divide-gray-100">
+							{#each enrollments as enrollment}
+								{@const roleBadge = getRoleBadge(enrollment.role)}
+								<a
+									href="/courses/select-cohort?course={course.slug}&cohort={enrollment.cohortId}&courseId={course.id}"
+									class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+								>
+									<div class="flex items-center gap-4">
+										<div
+											class="flex h-10 w-10 items-center justify-center rounded-full"
+											style="background-color: {accentLight}30;"
+										>
+											{#if enrollment.role === 'coordinator'}
+												<Users class="h-5 w-5" style="color: {accentDark};" />
+											{:else}
+												<GraduationCap class="h-5 w-5" style="color: {accentDark};" />
+											{/if}
+										</div>
+										<div>
+											<p class="font-medium text-gray-900">{enrollment.cohortName}</p>
+											<p class="text-sm text-gray-500">{enrollment.moduleName}</p>
+										</div>
+									</div>
+									<div class="flex items-center gap-3">
+										<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {roleBadge.class}">
+											{roleBadge.label}
+										</span>
+										<ChevronRight class="h-5 w-5 text-gray-400" />
+									</div>
+								</a>
+							{/each}
 						</div>
 					</Card>
 				{/each}
@@ -92,12 +102,3 @@
 		{/if}
 	</div>
 </div>
-
-<style>
-	.line-clamp-3 {
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-</style>

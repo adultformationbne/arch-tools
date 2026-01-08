@@ -424,7 +424,7 @@
 {/if}
 
 {#if activeFootnote}
-	<div class="footnote-backdrop" onclick={closeFootnote} aria-label="Close footnote"></div>
+	<div class="footnote-backdrop" onmousedown={closeFootnote} aria-label="Close footnote"></div>
 {/if}
 
 <style>

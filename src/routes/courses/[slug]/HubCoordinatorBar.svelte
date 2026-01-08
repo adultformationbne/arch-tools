@@ -84,7 +84,7 @@
 
 		try {
 			await Promise.all(studentsToMark.map(s => markAttendance(s.id, present)));
-			toastSuccess(`Marked all students ${present ? 'present' : 'absent'}`);
+			toastSuccess(`Marked all members ${present ? 'present' : 'absent'}`);
 		} catch (err) {
 			toastError('Failed to mark all attendance');
 		} finally {
@@ -141,57 +141,57 @@
 
 <!-- Hub Coordinator Bar -->
 {#if hubData}
-<div class="py-4">
+<div class="py-2">
 	<div class="max-w-7xl mx-auto">
 		<div
-			class="rounded-2xl border-2 transition-all duration-300 overflow-hidden"
+			class="rounded-xl border transition-all duration-300 overflow-hidden"
 			style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white); border-color: var(--course-accent-light);"
 		>
 			<!-- Collapsed Header -->
-			<div class="px-6 py-4">
+			<div class="px-4 py-2">
 				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-4">
-						<div class="flex items-center gap-2">
-							<Users size="20" style="color: var(--course-accent-dark);" />
-							<span class="font-semibold text-lg" style="color: var(--course-accent-dark);">Hub Coordinator</span>
+					<div class="flex items-center gap-3">
+						<div class="flex items-center gap-1.5">
+							<Users size="16" style="color: var(--course-accent-dark);" />
+							<span class="font-semibold text-sm" style="color: var(--course-accent-dark);">Hub Coordinator</span>
 						</div>
-						<div class="h-6 w-px" style="background-color: var(--course-accent-light);"></div>
-						<div class="text-sm" style="color: var(--course-accent-dark);">
+						<div class="h-4 w-px" style="background-color: var(--course-accent-light);"></div>
+						<div class="text-xs" style="color: var(--course-accent-dark);">
 							<span class="font-medium">{hubName}</span> •
-							<span>{students.length} students</span>
+							<span>{students.length} members</span>
 						</div>
 					</div>
 
-					<div class="flex items-center gap-4">
+					<div class="flex items-center gap-3">
 						{#if !isExpanded && liveHubData}
-							<div class="flex items-center gap-2 text-sm" style="color: var(--course-accent-dark);">
+							<div class="flex items-center gap-2 text-xs" style="color: var(--course-accent-dark);">
 								<span class="flex items-center gap-1">
-									<span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+									<span class="w-2 h-2 rounded-full bg-green-500"></span>
 									{sessionStats().present}
 								</span>
 								<span class="flex items-center gap-1">
-									<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+									<span class="w-2 h-2 rounded-full bg-red-500"></span>
 									{sessionStats().absent}
 								</span>
 								<span class="flex items-center gap-1">
-									<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+									<span class="w-2 h-2 rounded-full bg-amber-400"></span>
 									{sessionStats().unmarked}
 								</span>
 							</div>
 						{/if}
-						<div class="text-sm font-medium" style="color: var(--course-accent-dark);">
+						<div class="text-xs font-medium" style="color: var(--course-accent-dark);">
 							Session {currentSession} of {totalSessions}
 						</div>
 						<button
 							onclick={toggleExpanded}
-							class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors hover:opacity-90"
+							class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-90"
 							style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
 						>
 							{isExpanded ? 'Collapse' : 'Manage Attendance'}
 							{#if isExpanded}
-								<ChevronUp size="16" />
+								<ChevronUp size="14" />
 							{:else}
-								<ChevronDown size="16" />
+								<ChevronDown size="14" />
 							{/if}
 						</button>
 					</div>
@@ -291,13 +291,13 @@
 							<!-- Student List -->
 							<div class="bg-white rounded-xl shadow-sm overflow-hidden">
 								{#if students.length === 0}
-									<p class="text-center text-gray-500 py-12">No students assigned to your hub</p>
+									<p class="text-center text-gray-500 py-12">No members assigned to your hub</p>
 								{:else}
 									<div class="divide-y divide-gray-100">
 										{#each students as student}
 											{@const status = getAttendanceStatus(student)}
 											<div class="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
-												<!-- Student Info -->
+												<!-- Member Info -->
 												<div class="flex items-center gap-4">
 													<div
 														class="w-11 h-11 rounded-full flex items-center justify-center font-semibold text-white text-sm"
@@ -306,7 +306,12 @@
 														{getUserInitials(student.name)}
 													</div>
 													<div>
-														<div class="font-semibold text-gray-800">{student.name}</div>
+														<div class="flex items-center gap-2">
+															<span class="font-semibold text-gray-800">{student.name}</span>
+															{#if student.role === 'coordinator'}
+																<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700">Coordinator</span>
+															{/if}
+														</div>
 														<div class="text-sm text-gray-500">{student.email}</div>
 													</div>
 												</div>

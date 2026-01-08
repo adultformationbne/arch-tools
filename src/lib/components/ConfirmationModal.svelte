@@ -27,15 +27,26 @@
 		};
 	}
 
-	function handleOverlayClick() {
-		if (!loading) {
+	// Track if mousedown started on the overlay (not inside modal content)
+	let mouseDownOnOverlay = false;
+
+	function handleOverlayMouseDown(e) {
+		// Only set true if the mousedown target is the overlay itself
+		mouseDownOnOverlay = e.target === e.currentTarget;
+	}
+
+	function handleOverlayClick(e) {
+		// Only close if both mousedown and click were on the overlay
+		// This prevents closing when selecting text and releasing outside the modal
+		if (!loading && mouseDownOnOverlay && e.target === e.currentTarget) {
 			onCancel();
 		}
+		mouseDownOnOverlay = false;
 	}
 </script>
 
 {#if show}
-	<div class="modal-overlay" use:portal onclick={handleOverlayClick} onkeydown={(e) => e.key === 'Enter' && !loading && onCancel()} role="presentation">
+	<div class="modal-overlay" use:portal onmousedown={handleOverlayMouseDown} onclick={handleOverlayClick} onkeydown={(e) => e.key === 'Enter' && !loading && onCancel()} role="presentation">
 		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && !loading && onCancel()} role="dialog" aria-modal="true" aria-labelledby="confirmation-title" tabindex="-1">
 			{#if loading}
 				<div class="modal-loading">
