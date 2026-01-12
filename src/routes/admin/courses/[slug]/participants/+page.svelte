@@ -292,7 +292,33 @@
 									<div class="text-xs text-gray-500">{student.user_profile?.email || 'No email'}</div>
 								</td>
 								<td class="px-4 py-2.5">
-									{#if student.cohort}
+									{#if student.all_cohorts?.length > 0}
+									{@const firstCohort = student.all_cohorts[0]}
+									{@const extraCohorts = student.all_cohorts.slice(1).filter(c => c)}
+										{#if firstCohort}
+											<div class="text-sm text-gray-900">{firstCohort.name}</div>
+											{#if firstCohort.module}
+												<div class="text-xs text-gray-500">{firstCohort.module.name}</div>
+											{/if}
+										{/if}
+										{#if extraCohorts.length > 0}
+											<details class="mt-1">
+												<summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">
+													+{extraCohorts.length} more
+												</summary>
+												<div class="mt-1 pl-2 border-l-2 border-gray-200 space-y-1">
+													{#each extraCohorts as cohort}
+														<div>
+															<div class="text-sm text-gray-700">{cohort.name}</div>
+															{#if cohort.module}
+																<div class="text-xs text-gray-500">{cohort.module.name}</div>
+															{/if}
+														</div>
+													{/each}
+												</div>
+											</details>
+										{/if}
+									{:else if student.cohort}
 										<div class="text-sm text-gray-900">{student.cohort.name}</div>
 										{#if student.cohort.module}
 											<div class="text-xs text-gray-500">{student.cohort.module.name}</div>
