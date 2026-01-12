@@ -616,7 +616,7 @@ export function buildVariableContext({
 
 		// Link variables
 		loginLink: `${siteUrl}/login`,
-		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}/dashboard`,
+		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}`,
 		materialsLink: `${siteUrl}/courses/${course?.slug || ''}/materials`,
 		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,
 

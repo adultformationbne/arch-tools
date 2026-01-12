@@ -13,6 +13,9 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 		all_params: Object.fromEntries(url.searchParams.entries())
 	});
 
+	// Clear any existing session to prevent conflicts when signing in as a different user
+	await supabase.auth.signOut();
+
 	if (token_hash && type) {
 		// Verify the OTP and establish session
 		const { error } = await supabase.auth.verifyOtp({
