@@ -56,6 +56,30 @@ export const load: PageServerLoad = async (event) => {
 			throw error(500, 'Failed to load users');
 		}
 
+		// Deduplicate by email - show each participant once with their most recent enrollment
+		// but track all their cohorts
+		const userMap = new Map();
+		for (const enrollment of enrollments || []) {
+			const email = enrollment.email?.toLowerCase();
+			if (!email) continue;
+
+			if (!userMap.has(email)) {
+				// First enrollment for this user - use it as the base
+				userMap.set(email, {
+					...enrollment,
+					all_cohorts: [enrollment.cohort]
+				});
+			} else {
+				// User already exists - add this cohort to their list
+				const existing = userMap.get(email);
+				if (enrollment.cohort && !existing.all_cohorts.some(c => c?.id === enrollment.cohort?.id)) {
+					existing.all_cohorts.push(enrollment.cohort);
+				}
+			}
+		}
+
+		const deduplicatedUsers = Array.from(userMap.values());
+
 		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
 			.from('courses_hubs')
@@ -69,7 +93,7 @@ export const load: PageServerLoad = async (event) => {
 
 		return {
 			course: courseInfo,
-			users: enrollments || [],
+			users: deduplicatedUsers,
 			hubs: hubs || [],
 			currentUserEmail: user?.email || ''
 		};
