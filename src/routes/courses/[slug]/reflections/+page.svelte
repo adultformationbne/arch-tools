@@ -2,6 +2,7 @@
 	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare } from 'lucide-svelte';
 	import { isEditable, isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
+	import ReflectionContent from '$lib/components/ReflectionContent.svelte';
 
 	// Get data from server load
 	let { data } = $props();
@@ -29,11 +30,6 @@
 			month: 'long',
 			day: 'numeric'
 		});
-	};
-
-	const truncateText = (text, maxLength = 200) => {
-		if (text.length <= maxLength) return text;
-		return text.substring(0, maxLength) + '...';
 	};
 </script>
 
@@ -157,17 +153,13 @@
 									<!-- My Response -->
 									<div>
 										<h4 class="font-semibold text-gray-800 mb-2">Your Response</h4>
-										<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
+										<div class="bg-gray-50 rounded-xl p-4">
 											{#if expandedReflections.has(reflection.id)}
-												<div class="text-gray-700 leading-relaxed">
-													{@html reflection.myResponse}
-												</div>
+												<ReflectionContent content={reflection.myResponse} mode="compact" />
 											{:else}
-												<div class="text-gray-700 leading-relaxed">
-													{@html truncateText(reflection.myResponse)}
-												</div>
+												<ReflectionContent content={reflection.myResponse} mode="compact" maxLength={200} />
 											{/if}
-											{#if reflection.myResponse.length > 200}
+											{#if reflection.myResponse && reflection.myResponse.length > 200}
 												<button
 													onclick={() => toggleReflectionExpansion(reflection.id)}
 													class="flex items-center gap-1 mt-3 text-sm font-medium transition-colors"
@@ -214,17 +206,13 @@
 									<!-- My Response -->
 									<div>
 										<h4 class="font-semibold text-gray-800 mb-2">Your Response</h4>
-										<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
+										<div class="bg-gray-50 rounded-xl p-4">
 											{#if expandedReflections.has(reflection.id)}
-												<div class="text-gray-700 leading-relaxed">
-													{@html reflection.myResponse}
-												</div>
+												<ReflectionContent content={reflection.myResponse} mode="compact" />
 											{:else}
-												<div class="text-gray-700 leading-relaxed">
-													{@html truncateText(reflection.myResponse)}
-												</div>
+												<ReflectionContent content={reflection.myResponse} mode="compact" maxLength={200} />
 											{/if}
-											{#if reflection.myResponse.length > 200}
+											{#if reflection.myResponse && reflection.myResponse.length > 200}
 												<button
 													onclick={() => toggleReflectionExpansion(reflection.id)}
 													class="flex items-center gap-1 mt-3 text-sm font-medium transition-colors"
@@ -320,10 +308,8 @@
 							<p class="text-gray-700 font-medium mb-4">{reflection.question}</p>
 
 							<!-- Response (always full for cohort) -->
-							<div class="bg-gray-50 rounded-xl p-4 prose prose-sm max-w-none">
-								<div class="text-gray-700 leading-relaxed">
-									{@html reflection.response}
-								</div>
+							<div class="bg-gray-50 rounded-xl p-4">
+								<ReflectionContent content={reflection.response} mode="compact" />
 							</div>
 						</div>
 					{/each}

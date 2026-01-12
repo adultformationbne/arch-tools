@@ -1,5 +1,5 @@
 <script>
-	import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3 } from 'lucide-svelte';
+	import { Bold, Italic, Underline, List, ListOrdered, Heading2 } from 'lucide-svelte';
 	import { cleanWordHtml } from '$lib/utils/html-cleaner.js';
 
 	let {
@@ -16,9 +16,8 @@
 	let formatState = $state({
 		bold: false,
 		italic: false,
-		h1: false,
-		h2: false,
-		h3: false,
+		underline: false,
+		heading: false,
 		ul: false,
 		ol: false
 	});
@@ -49,9 +48,8 @@
 		formatState = {
 			bold: document.queryCommandState('bold'),
 			italic: document.queryCommandState('italic'),
-			h1: !!getParentElement('H1'),
-			h2: !!getParentElement('H2'),
-			h3: !!getParentElement('H3'),
+			underline: document.queryCommandState('underline'),
+			heading: !!getParentElement('H2'),
 			ul: !!getParentElement('UL'),
 			ol: !!getParentElement('OL')
 		};
@@ -77,17 +75,17 @@
 		updateContent();
 	};
 
-	const formatHeading = (level) => {
+	const toggleHeading = () => {
 		const selection = window.getSelection();
 		if (selection.rangeCount === 0) return;
 
-		// Check if we're already in this heading level - if so, convert to paragraph
-		const currentHeading = getParentElement(`H${level}`);
+		// Check if we're already in a heading - if so, convert to paragraph
+		const currentHeading = getParentElement('H2');
 		if (currentHeading) {
 			document.execCommand('formatBlock', false, 'P');
 		} else {
 			// Format as heading
-			document.execCommand('formatBlock', false, `H${level}`);
+			document.execCommand('formatBlock', false, 'H2');
 		}
 
 		// Apply styles directly to ensure they show up
@@ -97,9 +95,9 @@
 			paragraphs.forEach(p => applyParagraphStyles(p));
 
 			// Apply heading styles
-			const headings = editor.querySelectorAll(`h${level}`);
+			const headings = editor.querySelectorAll('h2');
 			headings.forEach(heading => {
-				applyHeadingStyles(heading, level);
+				applyHeadingStyles(heading);
 			});
 			updateFormatState();
 			updateContent();
@@ -112,7 +110,7 @@
 		element.removeAttribute('style');
 	};
 
-	const applyHeadingStyles = (element, level) => {
+	const applyHeadingStyles = (element) => {
 		// Clear any Word garbage styles - CSS handles styling
 		element.removeAttribute('style');
 	};
@@ -149,7 +147,7 @@
 		temp.querySelectorAll('*').forEach(el => el.removeAttribute('style'));
 
 		// Fix invalid nesting: headings containing block elements
-		temp.querySelectorAll('h1, h2, h3').forEach(heading => {
+		temp.querySelectorAll('h2').forEach(heading => {
 			const hasBlockChildren = heading.querySelector('p, ul, ol, li, div, blockquote, table');
 			if (hasBlockChildren) {
 				// Unwrap the heading - it's invalid
@@ -162,13 +160,57 @@
 			.replace(/<p><br><\/p>/g, '')
 			.replace(/<strong><\/strong>/g, '')
 			.replace(/<em><\/em>/g, '')
-			.replace(/<h([123])><\/h\1>/g, '')      // Empty headings
-			.replace(/<h([123])><br><\/h\1>/g, ''); // Headings with just br
+			.replace(/<h2><\/h2>/g, '')      // Empty headings
+			.replace(/<h2><br><\/h2>/g, ''); // Headings with just br
 	};
 
 	const handleKeyDown = (e) => {
 		// Handle Enter key to ensure proper paragraph creation
-		if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+		if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+			// Check if we're in a list item and it's empty - if so, exit the list
+			const listItem = getParentElement('LI');
+			if (listItem) {
+				const isEmpty = !listItem.textContent.trim() &&
+					(!listItem.innerHTML || listItem.innerHTML === '<br>' || listItem.innerHTML === '');
+
+				if (isEmpty) {
+					e.preventDefault();
+					e.stopPropagation();
+
+					// Find the parent list (UL or OL)
+					const list = listItem.closest('ul, ol');
+					if (list) {
+						// Create a new paragraph after the list
+						const p = document.createElement('p');
+						p.innerHTML = '<br>';
+
+						// Remove the empty list item
+						listItem.remove();
+
+						// If the list is now empty, remove it too
+						if (!list.querySelector('li')) {
+							list.parentNode.insertBefore(p, list);
+							list.remove();
+						} else {
+							// Insert paragraph after the list
+							list.parentNode.insertBefore(p, list.nextSibling);
+						}
+
+						// Move cursor to the new paragraph
+						const selection = window.getSelection();
+						const range = document.createRange();
+						range.setStart(p, 0);
+						range.collapse(true);
+						selection.removeAllRanges();
+						selection.addRange(range);
+
+						updateFormatState();
+						updateContent();
+					}
+					return;
+				}
+			}
+
 			// Stop propagation to prevent parent handlers from interfering
 			e.stopPropagation();
 			// Let the browser handle it naturally, but ensure it creates paragraphs
@@ -212,22 +254,14 @@
 					e.preventDefault();
 					execCommand('italic');
 					break;
-				case '1':
-					if (e.altKey) {
-						e.preventDefault();
-						formatHeading(1);
-					}
+				case 'u':
+					e.preventDefault();
+					execCommand('underline');
 					break;
-				case '2':
+				case 'h':
 					if (e.altKey) {
 						e.preventDefault();
-						formatHeading(2);
-					}
-					break;
-				case '3':
-					if (e.altKey) {
-						e.preventDefault();
-						formatHeading(3);
+						toggleHeading();
 					}
 					break;
 				case 'l':
@@ -347,10 +381,9 @@
 			paragraphs.forEach(p => applyParagraphStyles(p));
 
 			// Reapply heading styles
-			const headings = editor.querySelectorAll('h1, h2, h3');
+			const headings = editor.querySelectorAll('h2');
 			headings.forEach(heading => {
-				const level = parseInt(heading.tagName.charAt(1));
-				applyHeadingStyles(heading, level);
+				applyHeadingStyles(heading);
 			});
 
 			// Reapply list styles
@@ -367,31 +400,15 @@
 <div class="rich-text-editor rounded-lg shadow-sm border border-gray-200 bg-white">
 	<!-- Toolbar - sticky below page header -->
 	<div class="editor-toolbar flex items-center gap-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm sticky top-[70px] z-20">
-		<!-- Headings -->
+		<!-- Heading -->
 		<div class="flex border-r border-gray-300 pr-3 mr-3">
 			<button
 				type="button"
-				onclick={() => formatHeading(1)}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.h1 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Heading 1 (Alt+1)"
-			>
-				<Heading1 size="18" />
-			</button>
-			<button
-				type="button"
-				onclick={() => formatHeading(2)}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.h2 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Heading 2 (Alt+2)"
+				onclick={toggleHeading}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.heading ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Heading (Ctrl+Alt+H)"
 			>
 				<Heading2 size="18" />
-			</button>
-			<button
-				type="button"
-				onclick={() => formatHeading(3)}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.h3 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Heading 3 (Alt+3)"
-			>
-				<Heading3 size="18" />
 			</button>
 		</div>
 
@@ -412,6 +429,14 @@
 				title="Italic (Ctrl+I)"
 			>
 				<Italic size="16" />
+			</button>
+			<button
+				type="button"
+				onclick={() => execCommand('underline')}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.underline ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Underline (Ctrl+U)"
+			>
+				<Underline size="16" />
 			</button>
 		</div>
 
@@ -473,35 +498,17 @@
 	}
 
 	/* Typography */
-	.rich-text-editor :global(.editor-area h1) {
-		font-size: 1.75rem !important;
-		font-weight: 700 !important;
-		line-height: 1.3 !important;
-		margin-bottom: 0.75rem !important;
-		margin-top: 1.25rem !important;
-		color: #1f2937 !important;
-	}
-
-	.rich-text-editor :global(.editor-area h1:first-child) {
-		margin-top: 0 !important;
-	}
-
 	.rich-text-editor :global(.editor-area h2) {
-		font-size: 1.375rem !important;
+		font-size: 1.25rem !important;
 		font-weight: 600 !important;
 		line-height: 1.35 !important;
 		margin-bottom: 0.5rem !important;
 		margin-top: 1rem !important;
-		color: #374151 !important;
+		color: #1f2937 !important;
 	}
 
-	.rich-text-editor :global(.editor-area h3) {
-		font-size: 1.125rem !important;
-		font-weight: 600 !important;
-		line-height: 1.4 !important;
-		margin-bottom: 0.5rem !important;
-		margin-top: 0.75rem !important;
-		color: #374151 !important;
+	.rich-text-editor :global(.editor-area h2:first-child) {
+		margin-top: 0 !important;
 	}
 
 	.rich-text-editor :global(.editor-area p) {
@@ -541,5 +548,9 @@
 	.rich-text-editor :global(.editor-area em),
 	.rich-text-editor :global(.editor-area i) {
 		font-style: italic !important;
+	}
+
+	.rich-text-editor :global(.editor-area u) {
+		text-decoration: underline !important;
 	}
 </style>

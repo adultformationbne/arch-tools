@@ -29,6 +29,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// Check user role for access permissions
 	const userRole = enrollment.role || 'student';
+	const isAdmin = userRole === 'admin';
 	const isStaffRole = userRole === 'coordinator' || userRole === 'admin';
 
 	// Get sessions for the module
@@ -39,11 +40,11 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	// Filter sessions based on role:
-	// - Students only see sessions up to and including the current session
-	// - Coordinators and admins can see all sessions (to preview future content)
-	// - If currentSession is null/undefined, students only see session 0 (pre-start materials)
+	// - Students and coordinators only see sessions up to and including the current session
+	// - Only admins can see all sessions (to preview future content)
+	// - If currentSession is null/undefined, only session 0 (pre-start materials) is shown
 	const effectiveSession = currentSession ?? 0;
-	const sessions = isStaffRole
+	const sessions = isAdmin
 		? allSessions
 		: allSessions.filter((s) => s.session_number <= effectiveSession);
 	const sessionIds = sessions.map((s) => s.id);

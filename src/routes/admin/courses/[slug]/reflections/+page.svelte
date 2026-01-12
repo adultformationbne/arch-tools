@@ -4,6 +4,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
+	import ReflectionContent from '$lib/components/ReflectionContent.svelte';
 	import { needsReview, isComplete, isOverdue, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
@@ -392,7 +393,7 @@
 
 					<!-- Content Preview -->
 					<div class="mb-2 text-xs text-gray-700 leading-relaxed line-clamp-2">
-						{@html reflection.content.length > 200 ? reflection.content.substring(0, 200) + '...' : reflection.content}
+						<ReflectionContent content={reflection.content} mode="compact" maxLength={200} class="text-xs" />
 					</div>
 
 					<!-- Footer -->
@@ -456,8 +457,8 @@
 				<!-- Student Reflection -->
 				<div class="mb-4">
 					<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Student Response</h3>
-					<div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-800 leading-relaxed max-h-48 overflow-y-auto">
-						{@html selectedReflection.content}
+					<div class="bg-gray-50 rounded-lg p-4 text-sm max-h-48 overflow-y-auto">
+						<ReflectionContent content={selectedReflection.content} mode="compact" />
 					</div>
 					<p class="text-[10px] text-gray-400 mt-1">{getWordCount(selectedReflection.content)} words • {formatDate(selectedReflection.submittedAt)}</p>
 				</div>
@@ -600,9 +601,7 @@
 						<span class="text-[10px] text-gray-400">{getWordCount(viewingReflection.content)} words • {formatDate(viewingReflection.submittedAt)}</span>
 					</div>
 					<div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-						<div class="text-sm text-gray-800 leading-relaxed">
-							{@html viewingReflection.content}
-						</div>
+						<ReflectionContent content={viewingReflection.content} mode="full" class="text-sm" />
 					</div>
 				</div>
 
