@@ -10,6 +10,9 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	// Check if setup=true is in current URL or in the next redirect URL
 	const isSetup = url.searchParams.get('setup') === 'true' || next.includes('setup=true');
 
+	// Clear any existing session to prevent conflicts when signing in as a different user
+	await supabase.auth.signOut();
+
 	// Handle PKCE code flow (newer method)
 	if (code) {
 		const { error } = await supabase.auth.exchangeCodeForSession(code);

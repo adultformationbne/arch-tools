@@ -23,7 +23,7 @@
 	const modules = data.userModules || [];
 	const enrollmentRole = data.enrollmentRole;
 	const isCourseAdmin = data.isCourseAdmin;
-	const cohorts = data.cohorts || [];
+	let cohorts = $derived(data.cohorts || []);
 	const courseTheme = data.courseTheme || {};
 	const courseBranding = data.courseBranding || {};
 

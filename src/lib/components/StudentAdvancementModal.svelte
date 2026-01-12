@@ -1,5 +1,5 @@
 <script>
-	import { Mail, ArrowRight, Settings } from 'lucide-svelte';
+	import { Mail, ArrowRight, Settings, Home } from 'lucide-svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 
@@ -10,14 +10,29 @@
 	let sendEmail = $state(true);
 	let isProcessing = $state(false);
 
-	// Filter students who haven't reached the target session yet
-	const eligibleStudents = $derived(
+	// Filter eligible enrollments by session and status
+	const eligibleEnrollments = $derived(
 		students?.filter((s) => s.current_session < selectedSession && s.status === 'active') || []
 	);
 
+	// Separate coordinators from students - coordinators are always auto-selected
+	const eligibleCoordinators = $derived(
+		eligibleEnrollments.filter((s) => s.role === 'coordinator')
+	);
+	const eligibleStudents = $derived(
+		eligibleEnrollments.filter((s) => s.role !== 'coordinator')
+	);
+
+	// Coordinator IDs are always included
+	const coordinatorIds = $derived(eligibleCoordinators.map((c) => c.id));
+
+	// All selected = all students selected (coordinators are always included separately)
 	const allSelected = $derived(
 		eligibleStudents.length > 0 && selectedStudents.length === eligibleStudents.length
 	);
+
+	// Combined IDs for advancement (selected students + all coordinators)
+	const allSelectedIds = $derived([...selectedStudents, ...coordinatorIds]);
 
 	function toggleSelectAll() {
 		if (allSelected) {
@@ -28,7 +43,7 @@
 	}
 
 	async function advanceStudents() {
-		if (selectedStudents.length === 0) {
+		if (allSelectedIds.length === 0) {
 			toastError('Please select at least one student');
 			return;
 		}
@@ -40,13 +55,13 @@
 				{
 					action: 'advance_students',
 					cohortId: cohort.id,
-					studentIds: selectedStudents,
+					studentIds: allSelectedIds,
 					targetSession: selectedSession,
 					sendEmail
 				},
 				{
-					loadingMessage: 'Advancing students...',
-					successMessage: `Advanced ${selectedStudents.length} students to Session ${selectedSession}`
+					loadingMessage: 'Advancing participants...',
+					successMessage: `Advanced ${allSelectedIds.length} participant${allSelectedIds.length === 1 ? '' : 's'} to Session ${selectedSession}`
 				}
 			);
 
@@ -110,15 +125,38 @@
 								disabled={isProcessing || eligibleStudents.length === 0}
 							/>
 							<span class="select-all-text">
-								Select All ({eligibleStudents.length} eligible)
+								Select All Students ({eligibleStudents.length} eligible)
 							</span>
 						</label>
 					</div>
 
 					<div class="student-list">
-						{#if eligibleStudents.length === 0}
-							<p class="empty-message">No students eligible for Session {selectedSession}</p>
+						{#if eligibleEnrollments.length === 0}
+							<p class="empty-message">No participants eligible for Session {selectedSession}</p>
 						{:else}
+							<!-- Coordinators first - always selected, shown greyed out -->
+							{#each eligibleCoordinators as coordinator}
+								<div class="student-checkbox coordinator-row">
+									<input
+										type="checkbox"
+										checked={true}
+										disabled={true}
+									/>
+									<span class="student-info">
+										<span class="student-name coordinator-name">
+											{coordinator.full_name}
+											<span class="coordinator-badge">
+												<Home size={12} />
+												Coordinator
+											</span>
+										</span>
+										<span class="student-meta"
+											>Currently on Session {coordinator.current_session} · Auto-included</span
+										>
+									</span>
+								</div>
+							{/each}
+							<!-- Regular students -->
 							{#each eligibleStudents as student}
 								<label class="student-checkbox">
 									<input
@@ -163,14 +201,14 @@
 				</button>
 				<button
 					onclick={advanceStudents}
-					disabled={selectedStudents.length === 0 || isProcessing}
+					disabled={allSelectedIds.length === 0 || isProcessing}
 					class="btn-primary"
 				>
 					{#if isProcessing}
 						Processing...
 					{:else}
 						<ArrowRight size={18} />
-						Advance {selectedStudents.length} Students
+						Advance {allSelectedIds.length} Participant{allSelectedIds.length === 1 ? '' : 's'}
 					{/if}
 				</button>
 			</div>
@@ -352,6 +390,41 @@
 	.student-meta {
 		font-size: 0.875rem;
 		color: #6b7280;
+	}
+
+	/* Coordinator styling */
+	.coordinator-row {
+		background: #f9fafb;
+		opacity: 0.75;
+		cursor: default;
+	}
+
+	.coordinator-row:hover {
+		background: #f9fafb;
+	}
+
+	.coordinator-row input {
+		cursor: default;
+		accent-color: #9ca3af;
+	}
+
+	.coordinator-name {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.coordinator-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #7c3aed;
+		background: #ede9fe;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
 	}
 
 	.empty-message {

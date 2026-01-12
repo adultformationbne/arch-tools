@@ -205,6 +205,9 @@
 
 						<div class="modal-actions">
 							<button type="button" onclick={handleClose} class="btn-secondary">Cancel</button>
+							<button type="button" onclick={handleClose} class="btn-secondary">
+								Skip for Now
+							</button>
 							<button type="submit" class="btn-primary" disabled={isLoading}>
 								{isLoading ? 'Creating...' : 'Continue to Add Participants'}
 								<ChevronRight size={20} />

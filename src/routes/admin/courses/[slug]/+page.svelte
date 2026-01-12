@@ -20,8 +20,8 @@
 	let { data } = $props();
 
 	const courseSlug = data.courseSlug;
-	let modules = $state(data.modules || []);
-	let cohorts = $state(data.cohorts || []);
+	let modules = $derived(data.modules || []);
+	let cohorts = $derived(data.cohorts || []);
 
 	// Modal state
 	let showCohortWizard = $state(false);
