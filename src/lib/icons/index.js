@@ -108,6 +108,7 @@ export { default as Tag } from './Tag.svelte';
 export { default as TestTube } from './TestTube.svelte';
 export { default as Trash2 } from './Trash2.svelte';
 export { default as Type } from './Type.svelte';
+export { default as Underline } from './Underline.svelte';
 export { default as Undo } from './Undo.svelte';
 export { default as Upload } from './Upload.svelte';
 export { default as User } from './User.svelte';

@@ -1,11 +1,13 @@
 <script>
+	import { invalidateAll } from '$app/navigation';
 	import { Search, Mail } from 'lucide-svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
+	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
 
 	let { data } = $props();
 	let course = $derived(data.course);
-	let students = $state(data.users || []);
+	let students = $derived(data.users || []);
 	let hubs = $derived(data.hubs || []);
 
 	// Filter state
@@ -16,6 +18,8 @@
 	// Student selection state
 	let selectedStudents = $state(new Set());
 	let showEmailModal = $state(false);
+	let showParticipantDetail = $state(false);
+	let selectedParticipantForDetail = $state(null);
 
 	// Selection helpers
 	let allFilteredSelected = $derived(
@@ -108,12 +112,8 @@
 				throw new Error(result.message || 'Failed to update hub');
 			}
 
-			// Update local state
-			const index = students.findIndex(s => s.id === studentId);
-			if (index !== -1) {
-				students[index].hub_id = newHubId;
-				students = [...students];
-			}
+			// Refresh data
+			await invalidateAll();
 		} catch (err) {
 			console.error('Error updating hub:', err);
 			toastError(err.message || 'Failed to update hub', 'Update Failed');
@@ -129,6 +129,30 @@
 			withdrawn: 'bg-red-100 text-red-700'
 		};
 		return badges[status] || 'bg-gray-100 text-gray-700';
+	}
+
+	// Participant detail modal handlers
+	function openParticipantDetail(student) {
+		selectedParticipantForDetail = student;
+		showParticipantDetail = true;
+	}
+
+	async function handleParticipantDetailUpdate() {
+		await invalidateAll();
+	}
+
+	function handleParticipantDetailEmail(participant) {
+		showParticipantDetail = false;
+		// Transform participant to expected format for email modal
+		const emailRecipient = {
+			...participant,
+			full_name: participant.full_name || participant.user_profile?.full_name || 'Unknown',
+			email: participant.email || participant.user_profile?.email || ''
+		};
+		selectedStudents.clear();
+		selectedStudents.add(participant.id);
+		selectedStudents = new Set(selectedStudents);
+		showEmailModal = true;
 	}
 </script>
 
@@ -288,8 +312,13 @@
 									/>
 								</td>
 								<td class="px-4 py-2.5">
-									<div class="text-sm font-medium text-gray-900">{student.user_profile?.full_name || 'Unknown'}</div>
-									<div class="text-xs text-gray-500">{student.user_profile?.email || 'No email'}</div>
+									<button
+										onclick={() => openParticipantDetail(student)}
+										class="text-left hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
+									>
+										<div class="text-sm font-medium text-gray-900 hover:text-blue-600">{student.user_profile?.full_name || 'Unknown'}</div>
+										<div class="text-xs text-gray-500">{student.user_profile?.email || 'No email'}</div>
+									</button>
 								</td>
 								<td class="px-4 py-2.5">
 									{#if student.all_cohorts?.length > 0}
@@ -370,4 +399,19 @@
 	currentUserEmail={data.currentUserEmail}
 	onClose={closeEmailModal}
 	onSent={closeEmailModal}
+/>
+
+<!-- Participant Detail Modal -->
+<ParticipantDetailModal
+	show={showParticipantDetail}
+	participant={selectedParticipantForDetail}
+	courseSlug={course?.slug}
+	hubs={hubs}
+	totalSessions={8}
+	onClose={() => {
+		showParticipantDetail = false;
+		selectedParticipantForDetail = null;
+	}}
+	onUpdate={handleParticipantDetailUpdate}
+	onEmail={handleParticipantDetailEmail}
 />

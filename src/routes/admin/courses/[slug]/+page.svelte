@@ -6,6 +6,7 @@
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
+	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
 	import StudentAdvancementModal from '$lib/components/StudentAdvancementModal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
@@ -31,6 +32,8 @@
 	let showDeleteConfirm = $state(false);
 	let showEmailModal = $state(false);
 	let showHubAssignModal = $state(false);
+	let showParticipantDetail = $state(false);
+	let selectedParticipantForDetail = $state(null);
 	let emailRecipients = $state([]);
 	let initialTemplateSlug = $state('');
 	let selectedHubId = $state('');
@@ -420,6 +423,23 @@
 		if (!participant.reflectionStatus) return '';
 		return formatUserReflectionStatus(participant.reflectionStatus.status, participant.reflectionStatus.count);
 	}
+
+	// Participant detail modal handlers
+	function openParticipantDetail(participant) {
+		selectedParticipantForDetail = participant;
+		showParticipantDetail = true;
+	}
+
+	function handleParticipantDetailUpdate() {
+		loadParticipants();
+	}
+
+	function handleParticipantDetailEmail(participant) {
+		showParticipantDetail = false;
+		emailRecipients = [participant];
+		initialTemplateSlug = '';
+		showEmailModal = true;
+	}
 </script>
 
 <div class="flex h-screen" style="background-color: var(--course-accent-dark);">
@@ -579,12 +599,15 @@
 											/>
 										</td>
 										<td class="px-2 py-1.5">
-											<div class="flex items-center gap-1.5">
+											<button
+												onclick={() => openParticipantDetail(participant)}
+												class="flex items-center gap-1.5 text-left hover:bg-gray-100 rounded px-1 -mx-1 transition-colors w-full"
+											>
 												{#if participant.isBehind}
 													<AlertTriangle size={12} class="text-orange-500 flex-shrink-0" />
 												{/if}
 												<div class="min-w-0">
-													<div class="text-sm font-medium text-gray-900 truncate">{participant.full_name}</div>
+													<div class="text-sm font-medium text-gray-900 truncate hover:text-blue-600">{participant.full_name}</div>
 													{#if participant.role === 'coordinator'}
 														<div class="flex items-center gap-1 text-[10px] text-purple-600">
 															<Home size={10} />
@@ -592,7 +615,7 @@
 														</div>
 													{/if}
 												</div>
-											</div>
+											</button>
 										</td>
 										<td class="px-2 py-1.5">
 											{#if !participant.welcome_email_sent_at}
@@ -747,6 +770,21 @@
 		selectedParticipants = new Set();
 		await loadParticipants();
 	}}
+/>
+
+<ParticipantDetailModal
+	show={showParticipantDetail}
+	participant={selectedParticipantForDetail}
+	{courseSlug}
+	cohort={selectedCohort}
+	{hubs}
+	totalSessions={selectedCohort?.module?.total_sessions || 8}
+	onClose={() => {
+		showParticipantDetail = false;
+		selectedParticipantForDetail = null;
+	}}
+	onUpdate={handleParticipantDetailUpdate}
+	onEmail={handleParticipantDetailEmail}
 />
 
 <!-- Hub Assignment Modal -->

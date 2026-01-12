@@ -92,26 +92,29 @@
 		}
 	};
 
-	const navigateSession = (direction) => {
-		if (direction === 'prev' && selectedSession > 1) {
-			selectedSession--;
-		} else if (direction === 'next' && selectedSession < currentSession) {
-			selectedSession++;
-		}
-	};
-
-	const selectSession = (sessionNum) => {
-		if (sessionNum <= currentSession) {
-			selectedSession = sessionNum;
-		}
-	};
-
 	// Use live data if available, otherwise fall back to initial props
 	const displayData = $derived(liveHubData || hubData);
 	const students = $derived(displayData?.students || []);
 	const currentSession = $derived(liveHubData?.currentSession || hubData?.currentSession || 1);
 	const totalSessions = $derived(liveHubData?.totalSessions || 8);
 	const hubName = $derived(liveHubData?.hub?.name || hubData?.hubName || 'Your Hub');
+
+	// Coordinators can mark attendance up to one session ahead
+	const maxSelectableSession = $derived(Math.min(currentSession + 1, totalSessions));
+
+	const navigateSession = (direction) => {
+		if (direction === 'prev' && selectedSession > 1) {
+			selectedSession--;
+		} else if (direction === 'next' && selectedSession < maxSelectableSession) {
+			selectedSession++;
+		}
+	};
+
+	const selectSession = (sessionNum) => {
+		if (sessionNum <= maxSelectableSession) {
+			selectedSession = sessionNum;
+		}
+	};
 
 	// Stats for selected session
 	const sessionStats = $derived(() => {
@@ -224,11 +227,11 @@
 									{#each sessionNumbers as sNum}
 										<button
 											onclick={() => selectSession(sNum)}
-											disabled={sNum > currentSession}
+											disabled={sNum > maxSelectableSession}
 											class="w-9 h-9 rounded-lg text-sm font-bold transition-all"
 											style={selectedSession === sNum
 												? `background-color: var(--course-accent-dark); color: var(--course-text-on-dark);`
-												: sNum > currentSession
+												: sNum > maxSelectableSession
 													? 'background-color: #e5e7eb; color: #9ca3af;'
 													: 'background-color: white; color: var(--course-accent-dark); border: 1px solid var(--course-accent-light);'}
 										>
@@ -239,7 +242,7 @@
 									<!-- Next -->
 									<button
 										onclick={() => navigateSession('next')}
-										disabled={selectedSession >= currentSession}
+										disabled={selectedSession >= maxSelectableSession}
 										class="p-2 rounded-lg transition-colors disabled:opacity-30"
 										style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
 									>
