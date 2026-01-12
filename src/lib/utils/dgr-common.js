@@ -62,61 +62,121 @@ export function cleanGospelText(html) {
 
 	let cleaned = html;
 
-	// === Handle processed HTML (with classes from parseScripture) ===
-	// Remove scripture headings with class
-	cleaned = cleaned.replace(/<h[1-6][^>]*class="scripture-heading"[^>]*>.*?<\/h[1-6]>/gi, '');
-	// Remove verse numbers with spans
-	cleaned = cleaned.replace(/<span[^>]*class="verse-num[^"]*"[^>]*>.*?<\/span>/gi, '');
-	// Remove verse numbers with sup tags (with class)
-	cleaned = cleaned.replace(/<sup[^>]*class="verse-num[^"]*"[^>]*>.*?<\/sup>/gi, '');
-	// Remove footnotes with class
-	cleaned = cleaned.replace(/<sup[^>]*class="footnote"[^>]*>.*?<\/sup>/gi, '');
+	// === PHASE 1: Remove HTML elements that contain verse numbers ===
 
-	// === Handle raw oremus HTML (no classes) ===
-	// Remove all headings (h1-h6)
-	cleaned = cleaned.replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, '');
-	// Remove all sup tags (verse numbers)
-	cleaned = cleaned.replace(/<sup[^>]*>.*?<\/sup>/gi, '');
-	// Remove footnote anchor tags with onmouseover (oremus format)
-	cleaned = cleaned.replace(/<a[^>]*onmouseover[^>]*>.*?<\/a>/gi, '');
-	// Remove footnote markers like * or †
-	cleaned = cleaned.replace(/[*†‡§]/g, '');
-	// Remove "Gospel Reading" or similar headers that might be plain text
-	cleaned = cleaned.replace(/Gospel\s+Reading\s*/gi, '');
-	// Remove version tags like "NRSV" or "NRSVAE"
-	cleaned = cleaned.replace(/\bNRSV(AE|CE|UE)?\b/gi, '');
-	// Remove scripture references at start (e.g., "Mt 18:12-14")
-	cleaned = cleaned.replace(/^(Mt|Mk|Lk|Jn|Matthew|Mark|Luke|John)\s+[\d:,\-–\s]+/i, '');
+	// Remove HTML comments and their remnants
+	cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+	cleaned = cleaned.replace(/-->/g, '');
 
-	// === Clean up remaining HTML ===
-	// Remove remaining HTML tags but preserve content
+	// Remove all sup tags (verse numbers, footnotes)
+	cleaned = cleaned.replace(/<sup[^>]*>[\s\S]*?<\/sup>/gi, '');
+
+	// Remove span tags with verse-related classes (oremus uses various class patterns)
+	cleaned = cleaned.replace(/<span[^>]*class="[^"]*vnum[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+	cleaned = cleaned.replace(/<span[^>]*class="[^"]*verse[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+	cleaned = cleaned.replace(/<span[^>]*class="[^"]*cc[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+	cleaned = cleaned.replace(/<span[^>]*class="[^"]*vv[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+	cleaned = cleaned.replace(/<span[^>]*class="[^"]*ww[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
+
+	// Remove headings (h1-h6)
+	cleaned = cleaned.replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, '');
+
+	// Remove footnote anchors
+	cleaned = cleaned.replace(/<a[^>]*onmouseover[^>]*>[\s\S]*?<\/a>/gi, '');
+	cleaned = cleaned.replace(/<a[^>]*class="[^"]*fnote[^"]*"[^>]*>[\s\S]*?<\/a>/gi, '');
+
+	// === PHASE 2: Strip remaining HTML tags ===
 	cleaned = cleaned.replace(/<[^>]+>/g, ' ');
-	// Clean up HTML entities
+
+	// === PHASE 3: Decode HTML entities ===
+	// Curly quotes (Windows-1252 encoded)
+	cleaned = cleaned.replace(/&#145;/g, '\u2018'); // Left single quote
+	cleaned = cleaned.replace(/&#146;/g, '\u2019'); // Right single quote (apostrophe)
+	cleaned = cleaned.replace(/&#147;/g, '\u201C'); // Left double quote
+	cleaned = cleaned.replace(/&#148;/g, '\u201D'); // Right double quote
+	cleaned = cleaned.replace(/&#151;/g, '\u2014'); // Em dash
+	// Standard entities
 	cleaned = cleaned.replace(/&nbsp;/g, ' ');
 	cleaned = cleaned.replace(/&amp;/g, '&');
 	cleaned = cleaned.replace(/&lt;/g, '<');
 	cleaned = cleaned.replace(/&gt;/g, '>');
 	cleaned = cleaned.replace(/&quot;/g, '"');
-	cleaned = cleaned.replace(/&#039;/g, "'");
-	// Remove JavaScript remnants from footnotes
-	cleaned = cleaned.replace(/return\s+(nd|overlib)\(\);?/gi, '');
-	cleaned = cleaned.replace(/["']\);?\s*["']?/g, '');
-	// Remove stray angle brackets from cleaned tags
-	cleaned = cleaned.replace(/\s*>\s*/g, ' ');
+	cleaned = cleaned.replace(/&#0?39;/g, "'");
+	cleaned = cleaned.replace(/&lsquo;/g, '\u2018');
+	cleaned = cleaned.replace(/&rsquo;/g, '\u2019');
+	cleaned = cleaned.replace(/&ldquo;/g, '\u201C');
+	cleaned = cleaned.replace(/&rdquo;/g, '\u201D');
+	cleaned = cleaned.replace(/&mdash;/g, '\u2014');
+	cleaned = cleaned.replace(/&ndash;/g, '\u2013');
+	// Remove any remaining numeric entities
+	cleaned = cleaned.replace(/&#\d+;/g, '');
 
-	// === Final cleanup ===
-	// Remove inline verse numbers (e.g., "astray? 13 And" -> "astray? And")
-	cleaned = cleaned.replace(/([.?!])\s*\d+\s+/g, '$1 ');
-	// Remove leading verse numbers (e.g., "12 What do you think" -> "What do you think")
+	// === PHASE 4: Remove scripture metadata ===
+	cleaned = cleaned.replace(/Gospel\s+Reading\s*/gi, '');
+	cleaned = cleaned.replace(/\bNRSV(AE|CE|UE)?\b/gi, '');
+	cleaned = cleaned.replace(/return\s+(nd|overlib)\([^)]*\);?/gi, '');
+	cleaned = cleaned.replace(/[*†‡§¶]/g, '');
+
+	// === PHASE 5: Remove verse numbers ===
+	// Remove scripture reference at start (e.g., "Matthew 5:1-12")
+	cleaned = cleaned.replace(/^\s*(Matthew|Mark|Luke|John|Mt|Mk|Lk|Jn)\s+[\d:,\-–\s]+/i, '');
+	// Remove leading verse numbers at start of text (e.g., "29 Then he told them...")
 	cleaned = cleaned.replace(/^\s*\d+\s+/gm, '');
-	// Remove any remaining onmouseover/onmouseout attributes that leaked through
-	cleaned = cleaned.replace(/onmouse(over|out)=["'][^"']*["']/gi, '');
-	// Clean up empty paragraphs
-	cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, '');
-	// Clean up extra whitespace
+	// Remove verse numbers after sentence endings (e.g., "heaven. 30 Look at")
+	cleaned = cleaned.replace(/([.!?;:]['"]?)\s*\d+\s+/g, '$1 ');
+	// Remove verse numbers after closing quotes followed by punctuation
+	cleaned = cleaned.replace(/(["']\s*[.!?])\s*\d+\s+/g, '$1 ');
+	// Remove standalone numbers before capital letters (likely verse numbers)
+	cleaned = cleaned.replace(/\s+\d{1,3}\s+(?=[A-Z])/g, ' ');
+	// Remove numbers at the very beginning after cleanup
+	cleaned = cleaned.replace(/^\d+\s+/, '');
+
+	// === PHASE 6: Final whitespace cleanup ===
 	cleaned = cleaned.replace(/\s+/g, ' ').trim();
 
 	return cleaned;
+}
+
+/**
+ * Format gospel text for better visual display
+ * Returns the cleaned text - formatting options can be applied separately
+ * @param {string} text - Cleaned plain text
+ * @param {Object} options - Formatting options
+ * @param {boolean} options.addLineBreaks - Add line breaks after sentences (default: false)
+ * @returns {string} Formatted text
+ */
+export function formatGospelForDisplay(text, options = {}) {
+	if (!text) return '';
+
+	let formatted = text;
+
+	if (options.addLineBreaks) {
+		// Add line breaks after sentences - use sparingly
+		formatted = formatted.replace(/([.!?]["']?)\s+/g, '$1\n\n');
+		formatted = formatted.replace(/\n{3,}/g, '\n\n');
+	}
+
+	return formatted.trim();
+}
+
+/**
+ * Format gospel text as HTML for email/display
+ * @param {string} text - Cleaned plain text
+ * @param {Object} options - Formatting options
+ * @param {string} options.wrapper - Wrapper element ('p', 'div', 'span', 'none')
+ * @param {string} options.style - Inline CSS style
+ * @returns {string} HTML formatted text
+ */
+export function formatGospelAsHtml(text, options = {}) {
+	if (!text) return '';
+
+	const { wrapper = 'p', style = 'line-height: 1.7;' } = options;
+
+	if (wrapper === 'none') {
+		return text;
+	}
+
+	return `<${wrapper} style="${style}">${text}</${wrapper}>`;
 }
 
 /**
