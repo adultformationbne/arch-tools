@@ -49,13 +49,27 @@
 		draggableItems = materials.map(m => ({ ...m }));
 	});
 
+	// Track which material was expanded before drag (to restore after)
+	let expandedBeforeDrag = $state(null);
+
 	// Drag-and-drop handlers
 	const handleDndConsider = (e) => {
+		// Close expanded accordion on drag start for cleaner UX
+		if (e.detail.info.trigger === 'dragStarted' && expandedMaterialId) {
+			expandedBeforeDrag = expandedMaterialId;
+			expandedMaterialId = null;
+		}
 		draggableItems = e.detail.items;
 	};
 
 	const handleDndFinalize = async (e) => {
 		draggableItems = e.detail.items;
+
+		// Restore expanded accordion after drop
+		if (expandedBeforeDrag) {
+			expandedMaterialId = expandedBeforeDrag;
+			expandedBeforeDrag = null;
+		}
 
 		// Update order numbers
 		const reorderedMaterials = draggableItems.map((m, i) => ({
@@ -148,7 +162,7 @@
 	const getYouTubeVideoId = (url) => {
 		if (!url) return null;
 		const patterns = [
-			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/)([^&\n?#]+)/,
 			/youtube\.com\/shorts\/([^&\n?#]+)/
 		];
 		for (const pattern of patterns) {
@@ -365,12 +379,15 @@
 	</div>
 
 	<!-- Materials List (Accordion Style with Drag-and-Drop) -->
+	<!-- key block forces re-render when DnD loads -->
+	{#key dndAvailable}
 	<div
 		class="space-y-2"
 		use:dndzone={{
 			items: draggableItems,
 			flipDurationMs: DND_FLIP_DURATION,
-			dropTargetStyle: { outline: 'none', background: 'rgba(0,0,0,0.02)', borderRadius: '0.5rem' }
+			dropTargetStyle: { outline: 'none', background: 'rgba(0,0,0,0.02)', borderRadius: '0.5rem' },
+			dragDisabled: !dndAvailable
 		}}
 		onconsider={handleDndConsider}
 		onfinalize={handleDndFinalize}
@@ -396,7 +413,7 @@
 					<!-- Drag Handle (only shown when DnD is available) -->
 					{#if dndAvailable}
 					<div
-						class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-300 opacity-0 group-hover:opacity-100 hover:text-gray-500 transition-opacity"
+						class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-400 opacity-40 group-hover:opacity-100 hover:text-gray-600 transition-opacity"
 						onclick={(e) => e.stopPropagation()}
 						title="Drag to reorder"
 					>
@@ -619,6 +636,7 @@
 			</div>
 		{/if}
 	</div>
+	{/key}
 </div>
 
 <!-- Add Material Modal -->

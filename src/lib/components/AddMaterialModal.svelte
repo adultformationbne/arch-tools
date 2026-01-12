@@ -134,7 +134,7 @@
 	const getYouTubeVideoId = (urlStr) => {
 		if (!urlStr) return null;
 		const patterns = [
-			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+			/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/)([^&\n?#]+)/,
 			/youtube\.com\/shorts\/([^&\n?#]+)/
 		];
 		for (const pattern of patterns) {

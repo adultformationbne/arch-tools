@@ -202,12 +202,14 @@
 					{@const draggableItems = draggableItemsByModule[module.id] || []}
 
 					<div class="ml-4 mt-1 space-y-0.5">
-						<!-- Draggable Sessions List -->
+						<!-- Draggable Sessions List - key block forces re-render when DnD loads -->
+						{#key dndAvailable}
 						<div
 							use:dndzone={{
 								items: draggableItems,
 								flipDurationMs: DND_FLIP_DURATION,
 								dropTargetStyle: { outline: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem' },
+								dragDisabled: !dndAvailable,
 								transformDraggedElement: (element, data, index) => {
 									// Update the number badge in the dragged element to show new position
 									const badge = element?.querySelector('.session-number-badge');
@@ -276,13 +278,7 @@
 											<span class="flex-1 text-xs truncate">
 												{session?.title || (isPreStart ? 'Pre-Start' : `Session ${session.session_number}`)}
 											</span>
-											<!-- Materials count badge -->
-											{#if session.materials_count > 0}
-												<span class="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full {isSessionSelected ? 'bg-white/20 text-white/90' : 'bg-white/10 text-white/50'}" title="{session.materials_count} material{session.materials_count === 1 ? '' : 's'}">
-													<FileText size={10} />
-													{session.materials_count}
-												</span>
-											{/if}
+											<!-- Edit/Delete buttons (before materials count so count stays at far right) -->
 											{#if isSessionSelected}
 												<div class="flex items-center gap-1">
 													<div
@@ -307,11 +303,19 @@
 													</div>
 												</div>
 											{/if}
+											<!-- Materials count badge (always at far right) -->
+											{#if session.materials_count > 0}
+												<span class="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full {isSessionSelected ? 'bg-white/20 text-white/90' : 'bg-white/10 text-white/50'}" title="{session.materials_count} material{session.materials_count === 1 ? '' : 's'}">
+													<FileText size={10} />
+													{session.materials_count}
+												</span>
+											{/if}
 										{/if}
 									</button>
 								</div>
 							{/each}
 						</div>
+						{/key}
 
 						<!-- Add Session Button (inline after last session) -->
 						<button
