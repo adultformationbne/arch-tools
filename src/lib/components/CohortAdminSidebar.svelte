@@ -1,12 +1,11 @@
 <script>
-	import { ArrowUp, Mail, FileDown, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings } from 'lucide-svelte';
+	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings } from 'lucide-svelte';
 
 	let {
 		cohort = null,
 		stats = { participantCount: 0, avgAttendance: 0, pendingReflections: 0 },
 		onAdvanceSession = () => {},
 		onEmailAll = () => {},
-		onExport = () => {},
 		onAddParticipant = () => {},
 		onCohortSettings = () => {},
 		recentActivity = []
@@ -93,14 +92,6 @@
 					>
 						<Mail size={14} />
 						<span>Email Cohort</span>
-					</button>
-
-					<button
-						onclick={onExport}
-						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
-					>
-						<FileDown size={14} />
-						<span>Export Report</span>
 					</button>
 
 					<button

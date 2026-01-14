@@ -21,6 +21,24 @@
 	let showParticipantDetail = $state(false);
 	let selectedParticipantForDetail = $state(null);
 
+	// Filtered students (must be defined before allFilteredSelected)
+	let filteredStudents = $derived(
+		students.filter(student => {
+			// Search filter
+			const matchesSearch = !searchQuery ||
+				student.user_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				student.user_profile?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
+			// Hub filter
+			const matchesHub = selectedHub === 'all' || student.hub_id === selectedHub;
+
+			// Status filter
+			const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
+
+			return matchesSearch && matchesHub && matchesStatus;
+		})
+	);
+
 	// Selection helpers
 	let allFilteredSelected = $derived(
 		filteredStudents.length > 0 &&
@@ -67,24 +85,6 @@
 				full_name: s.user_profile?.full_name || 'Unknown',
 				email: s.user_profile?.email || ''
 			}))
-	);
-
-	// Filtered students
-	let filteredStudents = $derived(
-		students.filter(student => {
-			// Search filter
-			const matchesSearch = !searchQuery ||
-				student.user_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				student.user_profile?.email?.toLowerCase().includes(searchQuery.toLowerCase());
-
-			// Hub filter
-			const matchesHub = selectedHub === 'all' || student.hub_id === selectedHub;
-
-			// Status filter
-			const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
-
-			return matchesSearch && matchesHub && matchesStatus;
-		})
 	);
 
 	// Stats

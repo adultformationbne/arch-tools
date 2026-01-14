@@ -1,6 +1,6 @@
 <script>
 	import { page } from '$app/stores';
-	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer, Upload } from 'lucide-svelte';
+	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from 'lucide-svelte';
 	import MuxVideoPlayer from '$lib/components/MuxVideoPlayer.svelte';
 
 	let { data } = $props();
@@ -35,6 +35,10 @@
 
 	let selectedMaterial = $state(defaultMaterial);
 	let expandedSessions = $state(new Set([initialSession]));
+	let mobileSelectedSession = $state(initialSession);
+
+	// Get sorted session numbers for navigation
+	const sessionNumbers = Object.keys(materialsBySession).map(Number).sort((a, b) => a - b);
 
 	const toggleSession = (sessionNum) => {
 		if (expandedSessions.has(sessionNum)) {
@@ -48,6 +52,13 @@
 	const selectMaterial = (material) => {
 		selectedMaterial = material;
 	};
+
+	const selectMobileSession = (sessionNum) => {
+		mobileSelectedSession = sessionNum;
+	};
+
+	// Get materials for currently selected mobile session
+	const mobileMaterials = $derived(materialsBySession[mobileSelectedSession] || []);
 
 	// Get icon for material type
 	const getIcon = (type) => {
@@ -155,9 +166,49 @@
 	};
 </script>
 
-<div class="min-h-screen flex">
-	<!-- Left Sidebar - Document Tree -->
-	<div class="w-80 bg-white/10 backdrop-blur-sm flex flex-col border-r border-white/20 sticky top-0 h-screen">
+<div class="min-h-screen flex flex-col lg:flex-row">
+	<!-- Mobile Navigation - Session Pills + Material List -->
+	<div class="lg:hidden bg-white border-b border-gray-200">
+		<!-- Session Pills -->
+		<div class="px-4 py-3 border-b border-gray-100">
+			<div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+				{#each sessionNumbers as sessionNum}
+					<button
+						onclick={() => selectMobileSession(sessionNum)}
+						class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap {mobileSelectedSession === sessionNum ? 'text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+						style={mobileSelectedSession === sessionNum ? 'background-color: var(--course-accent-dark, #334642);' : ''}
+					>
+						{sessionNum === 0 ? 'Pre-Start' : `Session ${sessionNum}`}
+					</button>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Material List for Selected Session -->
+		<div class="px-4 py-3 max-h-48 overflow-y-auto">
+			<div class="space-y-1">
+				{#each mobileMaterials as mat}
+					{@const IconComponent = getIcon(mat.type)}
+					{@const isSelected = selectedMaterial?.id === mat.id}
+					<button
+						onclick={() => selectMaterial(mat)}
+						class="flex items-center gap-3 w-full p-3 rounded-xl text-left transition-colors {isSelected ? 'bg-gray-100 ring-2 ring-gray-300' : 'hover:bg-gray-50'}"
+					>
+						<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {isSelected ? 'var(--course-accent-dark, #334642)' : 'var(--course-accent-light, #c59a6b)'}20;">
+							<IconComponent size="16" style="color: var(--course-accent-dark, #334642);" />
+						</div>
+						<span class="text-sm font-medium text-gray-900 line-clamp-1">{mat.title}</span>
+					</button>
+				{/each}
+				{#if mobileMaterials.length === 0}
+					<p class="text-sm text-gray-500 italic py-2">No materials for this session</p>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+	<!-- Desktop Sidebar - Hidden on mobile -->
+	<div class="hidden lg:flex lg:sticky top-0 left-0 h-screen w-80 bg-white/10 backdrop-blur-sm flex-col border-r border-white/20">
 		<!-- Sidebar Header -->
 		<div class="p-6 border-b border-white/20">
 			<h3 class="text-lg font-bold text-white">Course Materials</h3>
@@ -221,10 +272,10 @@
 	<div class="flex-1 bg-white">
 		<!-- Page Header - Hidden for embed theatre mode -->
 		{#if selectedMaterial?.type !== 'embed'}
-		<div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
-			<div class="max-w-5xl mx-auto flex items-start justify-between">
+		<div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200 bg-gray-50">
+			<div class="max-w-5xl mx-auto flex items-start justify-between gap-4">
 				<div>
-					<h1 class="text-2xl font-bold text-gray-900">
+					<h1 class="text-xl sm:text-2xl font-bold text-gray-900">
 						{selectedMaterial ? selectedMaterial.title : 'Select a Material'}
 					</h1>
 					{#if selectedMaterial}
@@ -263,7 +314,7 @@
 
 		<!-- Content Display -->
 		<div class="overflow-y-auto">
-			<div class="{selectedMaterial?.type === 'embed' ? 'px-4 py-4' : 'max-w-5xl mx-auto px-8 py-8'}">
+			<div class="{selectedMaterial?.type === 'embed' ? 'px-4 py-4' : 'max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8'}">
 				{#if selectedMaterial?.type === 'video'}
 					<!-- YouTube Video Embed -->
 					{@const videoId = getYouTubeId(selectedMaterial.content)}
@@ -336,10 +387,11 @@
 					</div>
 				{:else}
 					<!-- No Content Selected -->
-					<div class="flex flex-col items-center justify-center py-32 text-gray-400">
+					<div class="flex flex-col items-center justify-center py-16 sm:py-32 text-gray-400">
 						<FileText size="64" class="mb-4" />
 						<p class="text-xl font-medium">Select a material to view</p>
-						<p class="text-sm">Choose from the tree on the left</p>
+						<p class="text-sm hidden lg:block">Choose from the tree on the left</p>
+						<p class="text-sm lg:hidden">Choose from the list above</p>
 					</div>
 				{/if}
 			</div>
@@ -348,6 +400,15 @@
 </div>
 
 <style>
+	/* Hide scrollbar but allow scrolling */
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+
 	/* Embed Theatre Mode - override hardcoded sizes */
 	.embed-theatre {
 		width: 100%;

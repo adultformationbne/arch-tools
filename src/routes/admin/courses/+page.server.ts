@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { hasModule, hasModuleLevel, requireAnyModule, requireModuleLevel } from '$lib/server/auth';
+import { generateSystemTemplatesForCourse } from '$lib/server/course-email-templates';
 
 const STATUS_OPTIONS = ['draft', 'active', 'archived'] as const;
 
@@ -314,6 +315,15 @@ export const actions: Actions = {
 				.from('user_profiles')
 				.update({ assigned_course_ids: updatedAssignments })
 				.eq('id', userProfile.id);
+		}
+
+		// Generate system email templates for the new course
+		if (newCourse) {
+			const templateResult = await generateSystemTemplatesForCourse(supabaseAdmin, newCourse.id);
+			if (!templateResult.success) {
+				console.warn('Failed to generate email templates for course:', templateResult.error);
+				// Don't fail course creation, just log the warning
+			}
 		}
 
 		return {

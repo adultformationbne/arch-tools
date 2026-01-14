@@ -82,6 +82,7 @@ export const POST: RequestHandler = async (event) => {
 				description: settings.description,
 				duration_weeks: settings.duration_weeks,
 				settings: settings.settings,
+				email_branding_config: settings.email_branding_config || null,
 				updated_at: new Date().toISOString()
 			})
 			.eq('slug', courseSlug)

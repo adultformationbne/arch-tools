@@ -192,9 +192,10 @@
 						<option value="scheduled">Scheduled</option>
 						<option value="active">Active</option>
 						<option value="completed">Completed</option>
+						<option value="archived">Archived</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
-						Draft = hidden, Scheduled = visible but not started, Active = in progress, Completed = finished.
+						Draft = hidden, Scheduled = visible but not started, Active = in progress, Completed = finished, Archived = hidden from lists.
 					</p>
 				</div>
 
@@ -259,8 +260,8 @@
 		<div>
 			<p class="text-gray-900 font-medium">Are you sure you want to delete "{cohort?.name}"?</p>
 			<p class="text-sm text-gray-600 mt-1">
-				This action cannot be undone. Note: Cohorts with enrolled participants cannot be deleted -
-				you must remove all participants first.
+				This will permanently delete the cohort and all its enrollments. This action cannot be undone.
+				Consider archiving instead if you want to keep the data.
 			</p>
 		</div>
 	</div>

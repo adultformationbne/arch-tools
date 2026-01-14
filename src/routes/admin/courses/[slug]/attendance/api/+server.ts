@@ -15,6 +15,25 @@ export const GET: RequestHandler = async (event) => {
 		return json({ nonHubStudents: [], hubStudents: [] });
 	}
 
+	// Validate cohort belongs to this course
+	const { data: cohortCheck } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select(`
+			id,
+			module:module_id!inner (
+				course:course_id!inner (
+					slug
+				)
+			)
+		`)
+		.eq('id', cohortId)
+		.eq('module.course.slug', courseSlug)
+		.single();
+
+	if (!cohortCheck) {
+		return json({ error: 'Cohort not found or does not belong to this course' }, { status: 404 });
+	}
+
 	// Get attendance grid data
 	const result = await CourseAggregates.getAttendanceGrid(cohortId);
 
@@ -65,15 +84,25 @@ export const POST: RequestHandler = async (event) => {
 		return json({ error: 'Missing required fields' }, { status: 400 });
 	}
 
-	// Get enrollment to find cohort
+	// Get enrollment and validate it belongs to this course
 	const { data: enrollment } = await supabaseAdmin
 		.from('courses_enrollments')
-		.select('cohort_id')
+		.select(`
+			cohort_id,
+			cohort:cohort_id!inner (
+				module:module_id!inner (
+					course:course_id!inner (
+						slug
+					)
+				)
+			)
+		`)
 		.eq('id', userId)
+		.eq('cohort.module.course.slug', courseSlug)
 		.single();
 
 	if (!enrollment) {
-		return json({ error: 'Enrollment not found' }, { status: 404 });
+		return json({ error: 'Enrollment not found or does not belong to this course' }, { status: 404 });
 	}
 
 	const result = await CourseMutations.markAttendance({

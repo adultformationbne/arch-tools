@@ -52,9 +52,10 @@
 		apiBaseUrl || (courseSlug ? `/api/courses/${courseSlug}/emails` : null)
 	);
 	const effectiveBranding = $derived({
-		name: branding.name || courseName || 'Email',
-		logoUrl: branding.logoUrl || courseLogoUrl || null,
-		accentDark: branding.accentDark || courseColors?.accentDark || '#334642',
+		name: courseName || branding.name || 'Email',
+		logoUrl: courseLogoUrl || branding.logoUrl || null,
+		// Course colors take priority over branding defaults
+		accentDark: courseColors?.accentDark || branding.accentDark || '#334642',
 		footerText: branding.footerText || "You're receiving this because you're enrolled in this course."
 	});
 	const effectiveContextId = $derived(contextId || courseId);

@@ -18,7 +18,6 @@
 		name: course.name || '',
 		shortName: course.short_name || '',
 		description: course.description || '',
-		durationWeeks: course.duration_weeks || 0,
 		theme: {
 			accentDark: course.settings?.theme?.accentDark || '#334642',
 			accentLight: course.settings?.theme?.accentLight || '#c59a6b',
@@ -27,6 +26,9 @@
 		branding: {
 			logoUrl: course.settings?.branding?.logoUrl || '',
 			showLogo: course.settings?.branding?.showLogo ?? true
+		},
+		emailBranding: {
+			replyToEmail: course.email_branding_config?.reply_to_email || ''
 		}
 	});
 
@@ -92,10 +94,12 @@
 						name: settings.name,
 						short_name: settings.shortName,
 						description: settings.description,
-						duration_weeks: parseInt(settings.durationWeeks),
 						settings: {
 							theme: settings.theme,
 							branding: settings.branding
+						},
+						email_branding_config: {
+							reply_to_email: settings.emailBranding.replyToEmail || null
 						}
 					}
 				})
@@ -170,19 +174,6 @@
 							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							placeholder="A brief description of the course..."
 						></textarea>
-					</div>
-
-					<div>
-						<label for="duration" class="block text-sm font-medium text-gray-700 mb-1">
-							Duration (weeks)
-						</label>
-						<input
-							id="duration"
-							type="number"
-							bind:value={settings.durationWeeks}
-							min="0"
-							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-						/>
 					</div>
 				</div>
 			</div>
@@ -322,6 +313,30 @@
 							<option value="Georgia">Georgia</option>
 							<option value="Times New Roman">Times New Roman</option>
 						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- Email Settings Section -->
+			<div class="p-6 border-b border-gray-200">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">Email Settings</h2>
+
+				<div class="space-y-4">
+					<div>
+						<label for="replyToEmail" class="block text-sm font-medium text-gray-700 mb-1">
+							Reply-To Email Address
+						</label>
+						<input
+							id="replyToEmail"
+							type="email"
+							bind:value={settings.emailBranding.replyToEmail}
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							placeholder="formation@bne.catholic.net.au"
+						/>
+						<p class="mt-1 text-sm text-gray-500">
+							When participants reply to course emails, their replies will go to this address.
+							Leave blank to use the platform default.
+						</p>
 					</div>
 				</div>
 			</div>

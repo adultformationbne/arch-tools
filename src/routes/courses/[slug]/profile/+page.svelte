@@ -122,19 +122,19 @@
 	};
 </script>
 
-<div class="px-16 py-8">
-	<div class="max-w-4xl mx-auto space-y-8">
+<div class="px-4 sm:px-8 lg:px-16 py-6 sm:py-8">
+	<div class="max-w-4xl mx-auto space-y-6 sm:space-y-8">
 
 		<!-- Page Header -->
-		<div class="mb-8">
-			<h1 class="text-4xl font-bold text-white mb-2">Profile Settings</h1>
+		<div class="mb-6 sm:mb-8">
+			<h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Profile Settings</h1>
 			<p class="text-white opacity-75">Manage your account information and preferences</p>
 		</div>
 
 		<!-- Profile Information Card -->
-		<div class="bg-white rounded-2xl p-8 shadow-sm">
-			<div class="flex items-center justify-between mb-6">
-				<h2 class="text-2xl font-bold text-gray-800">Personal Information</h2>
+		<div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+				<h2 class="text-xl sm:text-2xl font-bold text-gray-800">Personal Information</h2>
 				{#if !isEditingProfile}
 					<button
 						onclick={startEditingProfile}
@@ -168,7 +168,7 @@
 						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 					</div>
-					<div class="flex gap-4 pt-4">
+					<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
 						<button
 							onclick={saveProfile}
 							class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-colors hover:opacity-90"
@@ -211,8 +211,8 @@
 		</div>
 
 		<!-- Course Information Card -->
-		<div class="bg-white rounded-2xl p-8 shadow-sm">
-			<h2 class="text-2xl font-bold text-gray-800 mb-6">Course Information</h2>
+		<div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
+			<h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">Course Information</h2>
 			<div class="grid md:grid-cols-2 gap-6">
 				<div>
 					<p class="text-sm text-gray-600 mb-2">Current Cohort</p>
@@ -246,9 +246,9 @@
 		</div>
 
 		<!-- Security Settings Card -->
-		<div class="bg-white rounded-2xl p-8 shadow-sm">
-			<div class="flex items-center justify-between mb-6">
-				<h2 class="text-2xl font-bold text-gray-800">Security Settings</h2>
+		<div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+				<h2 class="text-xl sm:text-2xl font-bold text-gray-800">Security Settings</h2>
 				{#if !isChangingPassword}
 					<button
 						onclick={startChangingPassword}
@@ -291,7 +291,7 @@
 						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
 					/>
 					</div>
-					<div class="flex gap-4 pt-4">
+					<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
 						<button
 							onclick={savePassword}
 							class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-colors hover:opacity-90"
@@ -324,8 +324,8 @@
 		</div>
 
 		<!-- Account Actions Card -->
-		<div class="bg-white rounded-2xl p-8 shadow-sm">
-			<h2 class="text-2xl font-bold text-gray-800 mb-4">Account Actions</h2>
+		<div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
+			<h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Account Actions</h2>
 			<p class="text-gray-600 mb-6">Sign out of your account or manage your account settings.</p>
 			<a
 				href="/auth/logout"
@@ -337,8 +337,8 @@
 		</div>
 
 		<!-- Danger Zone Card -->
-		<div class="bg-white rounded-2xl p-8 shadow-sm border border-red-200">
-			<h2 class="text-2xl font-bold text-red-600 mb-4">Danger Zone</h2>
+		<div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm border border-red-200">
+			<h2 class="text-xl sm:text-2xl font-bold text-red-600 mb-4">Danger Zone</h2>
 			<p class="text-gray-600 mb-6">Once you delete your account, there is no going back. Please be certain.</p>
 
 			{#if !showDeleteConfirm}
@@ -352,7 +352,7 @@
 			{:else}
 				<div class="space-y-4">
 					<p class="text-red-600 font-medium">Are you absolutely sure? This action cannot be undone.</p>
-					<div class="flex gap-4">
+					<div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
 						<button
 							onclick={deleteAccount}
 							class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"

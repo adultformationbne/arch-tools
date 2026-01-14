@@ -40,8 +40,8 @@
 </script>
 
 <div class="flex items-stretch">
-		<!-- Session Navigation Tabs -->
-		<div class="flex flex-col rounded-l-3xl overflow-hidden">
+		<!-- Session Navigation Tabs - Hidden on mobile, uses dropdown instead -->
+		<div class="hidden lg:flex flex-col rounded-l-3xl overflow-hidden">
 			{#each Array.from({ length: totalSessions + 1 }, (_, i) => i) as sessionNum}
 				<button
 					class="w-16 flex-1 flex items-center justify-center text-xl font-bold cursor-pointer transition-colors duration-200"
@@ -58,7 +58,7 @@
 		</div>
 
 		<!-- Main Content Area -->
-		<div class="flex-1 rounded-r-3xl" style="background-color: #eae2d9;">
+		<div class="flex-1 rounded-3xl lg:rounded-l-none lg:rounded-r-3xl" style="background-color: #eae2d9;">
 			{@render children()}
 		</div>
 </div>

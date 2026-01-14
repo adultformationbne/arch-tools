@@ -184,12 +184,12 @@
 				<div class="border-t border-gray-300 mx-6"></div>
 
 				<!-- Main Content - 2 Column Layout -->
-				<div class="p-8 min-h-[400px]">
-					<div class="grid grid-cols-2 gap-6 h-full">
+				<div class="p-4 sm:p-6 lg:p-8 min-h-[400px]">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
 						<!-- Left Column: Title + Session Overview -->
 						<div class="flex flex-col">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
-							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
 							</h1>
 							<div class="flex items-center gap-2 mb-6">
@@ -370,12 +370,12 @@
 				<div class="border-t border-gray-300 mx-6"></div>
 
 				<!-- Main Content - 4 Quadrant Grid -->
-				<div class="p-8">
-					<div class="grid grid-cols-2 gap-6">
+				<div class="p-4 sm:p-6 lg:p-8">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						<!-- Top Left: Session Header -->
 						<div class="flex flex-col justify-start">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
-							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
 							</h1>
 							<div class="flex items-center gap-2">
@@ -556,12 +556,12 @@
 				<div class="border-t border-gray-300 mx-6"></div>
 
 				<!-- Main Content - 4 Quadrant Grid -->
-				<div class="p-8">
-					<div class="grid grid-cols-2 gap-6">
+				<div class="p-4 sm:p-6 lg:p-8">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						<!-- Top Left: Session Header -->
 						<div class="flex flex-col justify-start">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
-							<h1 class="text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
+							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
 							</h1>
 							<div class="flex items-center gap-2">

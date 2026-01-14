@@ -7,7 +7,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async (event) => {
 	const { data: settings, error } = await supabaseAdmin
 		.from('platform_settings')
-		.select('id, platform_name, logo_path, from_email, organization, updated_at')
+		.select('id, platform_name, logo_path, from_email, reply_to_email, organization, updated_at')
 		.single();
 
 	if (error) {
@@ -24,9 +24,9 @@ export const PUT: RequestHandler = async (event) => {
 	const { user } = await requireModule(event, 'platform.admin');
 
 	const body = await event.request.json();
-	const { platform_name, logo_path, from_email, organization } = body;
+	const { platform_name, logo_path, from_email, reply_to_email, organization } = body;
 
-	// Validate required fields
+	// Validate required fields (reply_to_email is optional)
 	if (!platform_name || !logo_path || !from_email || !organization) {
 		return json({ error: 'All fields are required' }, { status: 400 });
 	}
@@ -38,6 +38,7 @@ export const PUT: RequestHandler = async (event) => {
 			platform_name,
 			logo_path,
 			from_email,
+			reply_to_email: reply_to_email || null,
 			organization,
 			updated_at: new Date().toISOString(),
 			updated_by: user.id

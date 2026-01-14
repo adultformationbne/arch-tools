@@ -141,30 +141,30 @@
 
 <!-- Document-style Top Bar (Sticky) -->
 <div class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-	<div class="max-w-5xl mx-auto px-6 py-3">
-		<div class="flex items-center justify-between">
+	<div class="max-w-5xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
+		<div class="flex items-center justify-between gap-2">
 			<!-- Left: Back button and title -->
-			<div class="flex items-center gap-4">
+			<div class="flex items-center gap-2 sm:gap-4 min-w-0">
 				<a
 					href="/courses/{courseSlug}/reflections"
-					class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+					class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
 					title="Back to reflections"
 				>
 					<ArrowLeft size="20" class="text-gray-700" />
 				</a>
-				<div>
-					<h1 class="text-lg font-semibold text-gray-900">Reflection</h1>
-					<div class="flex items-center gap-4 text-xs text-gray-500">
+				<div class="min-w-0">
+					<h1 class="text-base sm:text-lg font-semibold text-gray-900">Reflection</h1>
+					<div class="flex items-center gap-2 sm:gap-4 text-xs text-gray-500">
 						<span>{wordCount} words</span>
 						{#if autoSaveStatus === 'saving'}
 							<span class="flex items-center gap-1 text-gray-600">
 								<div class="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-								Saving...
+								<span class="hidden sm:inline">Saving...</span>
 							</span>
 						{:else if autoSaveStatus === 'saved'}
 							<span class="flex items-center gap-1 text-gray-600">
 								<CheckCircle size="12" />
-								Saved {formatTime(lastSaved)}
+								<span class="hidden sm:inline">Saved {formatTime(lastSaved)}</span>
 							</span>
 						{/if}
 					</div>
@@ -172,11 +172,28 @@
 			</div>
 
 			<!-- Right: Actions -->
-			<div class="flex items-center gap-3">
+			<div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
 				{#if isEditable}
-					<!-- Privacy Toggle Slider -->
+					<!-- Privacy Toggle - Compact on mobile -->
+					<button
+						onclick={() => isPrivate = !isPrivate}
+						class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-colors sm:hidden"
+						class:bg-red-100={isPrivate}
+						class:text-red-700={isPrivate}
+						class:bg-green-100={!isPrivate}
+						class:text-green-700={!isPrivate}
+						title={isPrivate ? 'Private - tap to make public' : 'Public - tap to make private'}
+					>
+						{#if isPrivate}
+							<EyeOff size="16" />
+						{:else}
+							<Eye size="16" />
+						{/if}
+					</button>
+
+					<!-- Privacy Toggle Slider - Desktop only -->
 					<div
-						class="relative flex items-center rounded-full p-1 transition-colors duration-200"
+						class="relative hidden sm:flex items-center rounded-full p-1 transition-colors duration-200"
 						class:bg-red-100={isPrivate}
 						class:bg-green-100={!isPrivate}
 						title={isPrivate ? 'Private - Only you and your marker can see' : 'Public - Visible to your cohort'}
@@ -207,35 +224,42 @@
 						</button>
 					</div>
 
-					<!-- Save Draft -->
+					<!-- Save Draft - Icon only on mobile -->
 					<button
 						onclick={handleSaveDraft}
-						class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+						class="flex items-center gap-2 p-2 sm:px-4 sm:py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
 						disabled={isSaving || content.trim().length === 0}
 						title="Save draft"
 					>
 						<Save size="18" />
-						<span class="text-sm font-medium">Save Draft</span>
+						<span class="text-sm font-medium hidden sm:inline">Save Draft</span>
 					</button>
 
 					<!-- Submit/Resubmit -->
 					<button
 						onclick={handleSubmit}
-						class="flex items-center gap-2 px-5 py-2.5 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
+						class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 text-white text-sm sm:text-base font-semibold rounded-lg hover:opacity-90 transition-opacity"
 						style="background-color: var(--course-accent-dark, #334642);"
 						disabled={content.trim().length === 0 || isSaving}
 					>
-						<Send size="18" />
-						{isSaving
+						<Send size="16" class="sm:hidden" />
+						<Send size="18" class="hidden sm:block" />
+						<span class="hidden sm:inline">{isSaving
 							? 'Submitting...'
 							: existingReflection?.status === 'needs_revision'
 								? 'Resubmit'
-								: 'Submit'}
+								: 'Submit'}</span>
+						<span class="sm:hidden">{isSaving ? '...' : 'Submit'}</span>
 					</button>
 				{:else}
 					<!-- Read-only indicator -->
-					<div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
-						<span class="text-sm text-gray-600 font-semibold">
+					<div class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 rounded-lg">
+						{#if isPrivate}
+							<EyeOff size="16" class="text-gray-600" />
+						{:else}
+							<Eye size="16" class="text-gray-600" />
+						{/if}
+						<span class="text-sm text-gray-600 font-semibold hidden sm:inline">
 							{isPrivate ? 'Private' : 'Public'}
 						</span>
 					</div>
@@ -246,11 +270,11 @@
 </div>
 
 <!-- Document Content (Natural Scroll) -->
-<div class="min-h-screen bg-gray-50 pb-20">
-	<div class="max-w-5xl mx-auto px-6 py-8">
+<div class="min-h-screen bg-gray-50 pb-12 sm:pb-20">
+	<div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
 		<!-- Status Banner (if not editable) -->
 		{#if !isEditable && existingReflection}
-			<div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-lg">
+			<div class="bg-blue-50 border-l-4 border-blue-500 p-4 sm:p-6 mb-4 sm:mb-6 rounded-lg">
 				<div class="flex items-start gap-3">
 					<div class="flex-1">
 						<div class="flex items-center gap-3 mb-2">
@@ -277,7 +301,7 @@
 		{/if}
 
 		{#if normalizeStatus(existingReflection?.status) === 'needs_revision' && isEditable}
-			<div class="bg-orange-50 border-l-4 border-orange-500 p-6 mb-6 rounded-lg">
+			<div class="bg-orange-50 border-l-4 border-orange-500 p-4 sm:p-6 mb-4 sm:mb-6 rounded-lg">
 				<div class="flex items-start gap-3">
 					<div class="flex-1">
 						<h3 class="text-orange-900 font-semibold mb-2">Revision Requested</h3>
@@ -294,13 +318,9 @@
 		{/if}
 
 		<!-- Question Card -->
-		<div class="bg-white border-2 rounded-2xl p-6 mb-8 shadow-sm" style="border-color: var(--course-accent-light, #c59a6b);">
-			<div class="flex items-start gap-3">
-				<div>
-					<h2 class="text-sm font-semibold text-gray-500 mb-2">Reflection Question</h2>
-					<p class="text-gray-900 leading-relaxed text-lg font-medium">{question}</p>
-				</div>
-			</div>
+		<div class="bg-white border-2 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-8 shadow-sm" style="border-color: var(--course-accent-light, #c59a6b);">
+			<h2 class="text-xs sm:text-sm font-semibold text-gray-500 mb-2">Reflection Question</h2>
+			<p class="text-gray-900 leading-relaxed text-base sm:text-lg font-medium">{question}</p>
 		</div>
 
 		<!-- Rich Text Editor -->

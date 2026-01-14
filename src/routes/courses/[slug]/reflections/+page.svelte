@@ -34,24 +34,24 @@
 </script>
 
 <!-- Single content wrapper with consistent margins -->
-<div class="px-16 space-y-8">
-	<div class="py-8">
+<div class="px-4 sm:px-8 lg:px-16 space-y-8">
+	<div class="py-6 sm:py-8">
 		<div class="max-w-4xl mx-auto">
 
 			<!-- Page Header -->
-			<div class="mb-8">
-				<h1 class="text-4xl font-bold text-white mb-2">Reflections</h1>
+			<div class="mb-6 sm:mb-8">
+				<h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Reflections</h1>
 				<p class="text-white opacity-75">Your spiritual journey through weekly reflections</p>
 			</div>
 
 			<!-- Current Reflection Due (if applicable) -->
 			{#if currentReflectionQuestion && !currentReflectionQuestion.hasSubmitted}
-				<div class="bg-white rounded-2xl p-6 mb-8 border-l-4" style="border-color: var(--course-accent-light);">
-					<div class="flex items-start justify-between">
+				<div class="bg-white rounded-2xl p-4 sm:p-6 mb-8 border-l-4" style="border-color: var(--course-accent-light);">
+					<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 						<div class="flex-1">
-							<div class="flex items-center gap-2 mb-2">
-								<Edit3 size="20" style="color: var(--course-accent-light);" />
-								<h3 class="text-xl font-bold text-gray-800">Session {currentReflectionQuestion.sessionNumber} Reflection Due</h3>
+							<div class="flex flex-wrap items-center gap-2 mb-2">
+								<Edit3 size="20" class="flex-shrink-0" style="color: var(--course-accent-light);" />
+								<h3 class="text-lg sm:text-xl font-bold text-gray-800">Session {currentReflectionQuestion.sessionNumber} Reflection Due</h3>
 								{#if currentReflectionQuestion.isOverdue}
 									<span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
 										Overdue
@@ -78,28 +78,32 @@
 			{/if}
 
 			<!-- Tab Navigation -->
-			<div class="flex gap-1 mb-8 p-1 rounded-2xl" style="background-color: rgba(234, 226, 217, 0.1);">
+			<div class="flex gap-1 mb-6 sm:mb-8 p-1 rounded-2xl" style="background-color: rgba(234, 226, 217, 0.1);">
 				<button
 					onclick={() => activeTab = 'my-reflections'}
-					class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors"
+					class="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-colors"
 					class:bg-white={activeTab === 'my-reflections'}
 					class:text-gray-800={activeTab === 'my-reflections'}
 					class:text-white={activeTab !== 'my-reflections'}
 					class:opacity-75={activeTab !== 'my-reflections'}
 				>
-					<Calendar size="18" />
-					My Reflections
+					<Calendar size="18" class="hidden sm:block" />
+					<Calendar size="16" class="sm:hidden" />
+					<span class="hidden sm:inline">My Reflections</span>
+					<span class="sm:hidden">Mine</span>
 				</button>
 				<button
 					onclick={() => activeTab = 'my-cohort'}
-					class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors"
+					class="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-colors"
 					class:bg-white={activeTab === 'my-cohort'}
 					class:text-gray-800={activeTab === 'my-cohort'}
 					class:text-white={activeTab !== 'my-cohort'}
 					class:opacity-75={activeTab !== 'my-cohort'}
 				>
-					<Users size="18" />
-					My Cohort
+					<Users size="18" class="hidden sm:block" />
+					<Users size="16" class="sm:hidden" />
+					<span class="hidden sm:inline">My Cohort</span>
+					<span class="sm:hidden">Cohort</span>
 				</button>
 			</div>
 
@@ -108,12 +112,12 @@
 				{#if activeTab === 'my-reflections'}
 					<!-- My Reflections -->
 					{#each myReflections as reflection}
-						<div class="bg-white rounded-2xl p-6 shadow-sm">
+						<div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
 							<!-- Reflection Header -->
 							<div class="flex items-start justify-between mb-4">
 								<div class="flex-1">
-									<div class="flex items-center gap-3 mb-2">
-										<h3 class="text-xl font-bold text-gray-800">Session {reflection.sessionNumber}</h3>
+									<div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+										<h3 class="text-lg sm:text-xl font-bold text-gray-800">Session {reflection.sessionNumber}</h3>
 										{#if reflection.status !== 'not_started'}
 											<ReflectionStatusBadge status={reflection.status} />
 										{:else}
@@ -179,7 +183,7 @@
 									<!-- Feedback -->
 									{#if reflection.feedback}
 										<div>
-											<div class="flex items-center justify-between mb-2">
+											<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2">
 												<h4 class="font-semibold text-gray-800">Feedback</h4>
 												<div class="text-sm text-gray-600">
 													{reflection.markedBy} • {formatDate(reflection.markedAt)}
@@ -232,7 +236,7 @@
 									<!-- Feedback (if available) -->
 									{#if reflection.feedback}
 										<div>
-											<div class="flex items-center justify-between mb-2">
+											<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2">
 												<h4 class="font-semibold text-gray-800">Feedback</h4>
 												<div class="text-sm text-gray-600">
 													{reflection.markedBy} • {formatDate(reflection.markedAt)}
@@ -261,7 +265,7 @@
 										</div>
 									{:else if isEditable(reflection.status) || (reflection.status === 'submitted' && !reflection.markedBy)}
 										<!-- Subtle edit link for submitted reflections -->
-										<div class="pt-2 border-t border-gray-200 flex items-center justify-between">
+										<div class="pt-2 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
 											<p class="text-sm text-gray-500">
 												You can still edit until it's reviewed.
 											</p>
@@ -288,19 +292,21 @@
 				{:else}
 					<!-- My Cohort Reflections -->
 					{#each cohortReflections as reflection}
-						<div class="bg-white rounded-2xl p-6 shadow-sm">
+						<div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
 							<!-- Student Header -->
-							<div class="flex items-center gap-3 mb-4">
-								<div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: var(--course-accent-dark);">
+							<div class="flex items-start sm:items-center gap-3 mb-4">
+								<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0" style="background-color: var(--course-accent-dark);">
 									{reflection.studentInitials}
 								</div>
-								<div class="flex-1">
-									<h3 class="font-semibold text-gray-800">{reflection.studentName}</h3>
+								<div class="flex-1 min-w-0">
+									<div class="flex flex-wrap items-center gap-2">
+										<h3 class="font-semibold text-gray-800">{reflection.studentName}</h3>
+										<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+											<MessageSquare size="12" />
+											Public
+										</div>
+									</div>
 									<p class="text-sm text-gray-600">Session {reflection.sessionNumber} • {formatDate(reflection.submittedAt)}</p>
-								</div>
-								<div class="flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-									<MessageSquare size="14" />
-									Public
 								</div>
 							</div>
 

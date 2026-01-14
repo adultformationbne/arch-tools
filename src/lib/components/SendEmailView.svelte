@@ -166,6 +166,10 @@
 				params.set('hub_id', selectedHubId);
 			} else if (additionalFilter === 'coordinators') {
 				params.set('role', 'coordinator');
+				// Also filter by hub if one is selected
+				if (selectedHubId) {
+					params.set('hub_id', selectedHubId);
+				}
 			} else if (additionalFilter === 'session' && selectedSessionNumber) {
 				params.set('current_session', selectedSessionNumber);
 			} else if (additionalFilter === 'pending_reflections') {
@@ -422,7 +426,7 @@
 						>
 							<option value="">Select cohort...</option>
 							{#each cohorts as cohort}
-								<option value={cohort.id}>{cohort.name}</option>
+								<option value={cohort.id}>{cohort.name} ({cohort.enrollment_count || 0})</option>
 							{/each}
 						</select>
 						<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -435,7 +439,7 @@
 								onchange={handleAdditionalFilterChange}
 								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
 							>
-								<option value="none">All students</option>
+								<option value="none">All students ({selectedCohort?.enrollment_count || 0})</option>
 								<option value="hub">By Hub</option>
 								<option value="coordinators">Coordinators</option>
 								<option value="session">By Session</option>
@@ -444,12 +448,12 @@
 							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
 						</div>
 
-						{#if additionalFilter === 'hub'}
+						{#if additionalFilter === 'hub' || additionalFilter === 'coordinators'}
 							<div class="relative">
 								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
-									<option value="">Select hub...</option>
+									<option value="">{additionalFilter === 'coordinators' ? 'All hubs' : 'Select hub...'}</option>
 									{#each hubs as hub}
-										<option value={hub.id}>{hub.name}</option>
+										<option value={hub.id}>{hub.name} ({hub.enrollment_count || 0})</option>
 									{/each}
 								</select>
 								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -726,22 +730,22 @@
 	confirmClass="bg-green-600 hover:bg-green-700 text-white"
 >
 	<div class="flex items-start gap-3">
-		<div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-			<AlertTriangle class="w-5 h-5 text-amber-600" />
+		<div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+			<AlertTriangle class="w-5 h-5 text-amber-400" />
 		</div>
 		<div class="flex-1">
-			<h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Send</h3>
-			<p class="text-gray-600 mb-4">
-				You're about to send an email to <strong class="text-gray-900">{enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}</strong>.
+			<h3 class="text-lg font-semibold text-white mb-2">Confirm Send</h3>
+			<p class="text-white/70 mb-4">
+				You're about to send an email to <strong class="text-white">{enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}</strong>.
 			</p>
 
-			<div class="bg-gray-50 rounded-lg p-3 mb-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Subject</div>
-				<div class="text-sm text-gray-900 font-medium">{getCurrentSubject()}</div>
+			<div class="bg-white/10 rounded-lg p-3 mb-3">
+				<div class="text-xs font-medium text-white/50 uppercase tracking-wide mb-1">Subject</div>
+				<div class="text-sm text-white font-medium">{getCurrentSubject()}</div>
 			</div>
 
-			<div class="text-xs text-gray-500">
-				<span class="font-medium">Recipients:</span>
+			<div class="text-xs text-white/50">
+				<span class="font-medium text-white/70">Recipients:</span>
 				{enabledRecipients.slice(0, 3).map(r => r.full_name).join(', ')}{enabledRecipients.length > 3 ? ` and ${enabledRecipients.length - 3} more...` : ''}
 			</div>
 		</div>

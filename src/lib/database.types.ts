@@ -370,10 +370,14 @@ export type Database = {
           id: string
           imported_by: string | null
           invitation_accepted_at: string | null
+          last_login_at: string | null
+          login_count: number | null
           role: string
           status: string
           updated_at: string | null
           user_profile_id: string | null
+          welcome_email_sent_at: string | null
+          welcome_email_sent_by: string | null
         }
         Insert: {
           assigned_admin_id?: string | null
@@ -388,10 +392,14 @@ export type Database = {
           id?: string
           imported_by?: string | null
           invitation_accepted_at?: string | null
+          last_login_at?: string | null
+          login_count?: number | null
           role: string
           status?: string
           updated_at?: string | null
           user_profile_id?: string | null
+          welcome_email_sent_at?: string | null
+          welcome_email_sent_by?: string | null
         }
         Update: {
           assigned_admin_id?: string | null
@@ -406,10 +414,14 @@ export type Database = {
           id?: string
           imported_by?: string | null
           invitation_accepted_at?: string | null
+          last_login_at?: string | null
+          login_count?: number | null
           role?: string
           status?: string
           updated_at?: string | null
           user_profile_id?: string | null
+          welcome_email_sent_at?: string | null
+          welcome_email_sent_by?: string | null
         }
         Relationships: [
           {
@@ -443,6 +455,13 @@ export type Database = {
           {
             foreignKeyName: "cohort_enrollments_user_profile_id_fkey"
             columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_enrollments_welcome_email_sent_by_fkey"
+            columns: ["welcome_email_sent_by"]
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
@@ -880,6 +899,7 @@ export type Database = {
           contributor_id: string | null
           created_at: string | null
           date: string
+          digest_notified_at: string | null
           gospel_quote: string | null
           gospel_reference: string | null
           gospel_text: string | null
@@ -901,6 +921,7 @@ export type Database = {
           contributor_id?: string | null
           created_at?: string | null
           date: string
+          digest_notified_at?: string | null
           gospel_quote?: string | null
           gospel_reference?: string | null
           gospel_text?: string | null
@@ -922,6 +943,7 @@ export type Database = {
           contributor_id?: string | null
           created_at?: string | null
           date?: string
+          digest_notified_at?: string | null
           gospel_quote?: string | null
           gospel_reference?: string | null
           gospel_text?: string | null
@@ -1443,42 +1465,6 @@ export type Database = {
           },
         ]
       }
-      ordo_lectionary_mapping_temp: {
-        Row: {
-          calendar_date: string
-          first_reading: string | null
-          gospel: string | null
-          id: number
-          lectionary_id: number | null
-          lectionary_name: string | null
-          match_method: string | null
-          match_type: string | null
-          ordo_name: string | null
-        }
-        Insert: {
-          calendar_date: string
-          first_reading?: string | null
-          gospel?: string | null
-          id?: number
-          lectionary_id?: number | null
-          lectionary_name?: string | null
-          match_method?: string | null
-          match_type?: string | null
-          ordo_name?: string | null
-        }
-        Update: {
-          calendar_date?: string
-          first_reading?: string | null
-          gospel?: string | null
-          id?: number
-          lectionary_id?: number | null
-          lectionary_name?: string | null
-          match_method?: string | null
-          match_type?: string | null
-          ordo_name?: string | null
-        }
-        Relationships: []
-      }
       platform_email_log: {
         Row: {
           body: string
@@ -1579,6 +1565,7 @@ export type Database = {
           logo_path: string
           organization: string
           platform_name: string
+          reply_to_email: string | null
           updated_at: string | null
           updated_by: string | null
         }
@@ -1588,6 +1575,7 @@ export type Database = {
           logo_path?: string
           organization?: string
           platform_name?: string
+          reply_to_email?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -1597,6 +1585,7 @@ export type Database = {
           logo_path?: string
           organization?: string
           platform_name?: string
+          reply_to_email?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -1609,6 +1598,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_tasks: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          id: string
+          last_run_at: string | null
+          last_run_message: string | null
+          last_run_status: string | null
+          name: string
+          run_on_weekdays: boolean | null
+          run_on_weekends: boolean | null
+          task_type: string
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_run_at?: string | null
+          last_run_message?: string | null
+          last_run_status?: string | null
+          name: string
+          run_on_weekdays?: boolean | null
+          run_on_weekends?: boolean | null
+          task_type: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_run_at?: string | null
+          last_run_message?: string | null
+          last_run_status?: string | null
+          name?: string
+          run_on_weekdays?: boolean | null
+          run_on_weekends?: boolean | null
+          task_type?: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {

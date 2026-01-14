@@ -13,17 +13,32 @@ export const GET: RequestHandler = async (event) => {
 	const status = url.searchParams.get('status'); // e.g., 'active', 'pending', 'invited'
 
 	try {
-		// ✅ OPTIMIZATION: Use cached course data from layout
-		const cached = event.locals.courseCache?.get(courseSlug);
+		// Look up cohort IDs for this course
+		const { data: cohorts, error: cohortsError } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select(`
+				id,
+				module:module_id!inner (
+					course:course_id!inner (
+						slug
+					)
+				)
+			`)
+			.eq('module.course.slug', courseSlug);
 
-		if (!cached || !cached.cohortIds || cached.cohortIds.length === 0) {
+		if (cohortsError) {
+			console.error('Error fetching cohorts:', cohortsError);
+			throw error(500, 'Failed to fetch cohorts');
+		}
+
+		if (!cohorts || cohorts.length === 0) {
 			return json({
 				success: true,
 				data: []
 			});
 		}
 
-		const cohortIds = cached.cohortIds;
+		const cohortIds = cohorts.map(c => c.id);
 
 		// Build query for enrollments
 		let query = supabaseAdmin
