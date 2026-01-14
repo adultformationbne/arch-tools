@@ -146,21 +146,27 @@ export const CourseQueries = {
 
 	/**
 	 * Get cohorts for a course (via modules)
+	 * @param includeArchived - Include archived cohorts (default: false)
 	 */
-	async getCohorts(courseId: string) {
-		return supabaseAdmin
+	async getCohorts(courseId: string, includeArchived = false) {
+		let query = supabaseAdmin
 			.from('courses_cohorts')
 			.select(`
 				*,
-				module:module_id (
+				module:module_id!inner (
 					id,
 					name,
 					description,
 					course_id
 				)
 			`)
-			.eq('module.course_id', courseId)
-			.order('start_date', { ascending: false });
+			.eq('module.course_id', courseId);
+
+		if (!includeArchived) {
+			query = query.neq('status', 'archived');
+		}
+
+		return query.order('start_date', { ascending: false });
 	},
 
 	/**
@@ -1245,21 +1251,17 @@ export const CourseMutations = {
 	},
 
 	/**
-	 * Delete a cohort (checks for enrollments first)
+	 * Delete a cohort (cascade deletes enrollments, then deletes cohort)
 	 */
 	async deleteCohort(cohortId: string) {
-		// Check if cohort has any enrollments
-		const { data: enrollments } = await supabaseAdmin
+		// Delete all enrollments for this cohort
+		const { error: deleteEnrollmentsError } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('id')
-			.eq('cohort_id', cohortId)
-			.limit(1);
+			.delete()
+			.eq('cohort_id', cohortId);
 
-		if (enrollments && enrollments.length > 0) {
-			return {
-				data: null,
-				error: { message: 'Cannot delete cohort with enrolled students' } as any
-			};
+		if (deleteEnrollmentsError) {
+			return { data: null, error: deleteEnrollmentsError };
 		}
 
 		// Delete the cohort

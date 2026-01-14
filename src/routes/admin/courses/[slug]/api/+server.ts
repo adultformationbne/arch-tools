@@ -13,6 +13,115 @@ import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
 import type { RequestHandler } from './$types';
 
+// ================================================================
+// VALIDATION HELPERS - Ensure entities belong to the current course
+// ================================================================
+
+/**
+ * Get course ID from slug (cached per request)
+ */
+async function getCourseIdFromSlug(courseSlug: string): Promise<string | null> {
+	const { data } = await supabaseAdmin
+		.from('courses')
+		.select('id')
+		.eq('slug', courseSlug)
+		.single();
+	return data?.id || null;
+}
+
+/**
+ * Validate that a module belongs to the specified course
+ */
+async function validateModuleBelongsToCourse(moduleId: string, courseSlug: string): Promise<boolean> {
+	const { data } = await supabaseAdmin
+		.from('courses_modules')
+		.select(`
+			id,
+			course:course_id!inner (slug)
+		`)
+		.eq('id', moduleId)
+		.eq('course.slug', courseSlug)
+		.single();
+	return !!data;
+}
+
+/**
+ * Validate that a cohort belongs to the specified course (via module)
+ */
+async function validateCohortBelongsToCourse(cohortId: string, courseSlug: string): Promise<boolean> {
+	const { data } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select(`
+			id,
+			module:module_id!inner (
+				course:course_id!inner (slug)
+			)
+		`)
+		.eq('id', cohortId)
+		.eq('module.course.slug', courseSlug)
+		.single();
+	return !!data;
+}
+
+/**
+ * Validate that a hub belongs to the specified course
+ */
+async function validateHubBelongsToCourse(hubId: string, courseSlug: string): Promise<boolean> {
+	const { data } = await supabaseAdmin
+		.from('courses_hubs')
+		.select(`
+			id,
+			course:course_id!inner (slug)
+		`)
+		.eq('id', hubId)
+		.eq('course.slug', courseSlug)
+		.single();
+	return !!data;
+}
+
+/**
+ * Validate that an enrollment belongs to the specified course (via cohort via module)
+ */
+async function validateEnrollmentBelongsToCourse(enrollmentId: string, courseSlug: string): Promise<boolean> {
+	const { data } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select(`
+			id,
+			cohort:cohort_id!inner (
+				module:module_id!inner (
+					course:course_id!inner (slug)
+				)
+			)
+		`)
+		.eq('id', enrollmentId)
+		.eq('cohort.module.course.slug', courseSlug)
+		.single();
+	return !!data;
+}
+
+/**
+ * Validate that all enrollments in a list belong to the specified course
+ */
+async function validateEnrollmentsBelongToCourse(enrollmentIds: string[], courseSlug: string): Promise<boolean> {
+	if (!enrollmentIds || enrollmentIds.length === 0) return true;
+
+	const { data } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select(`
+			id,
+			cohort:cohort_id!inner (
+				module:module_id!inner (
+					course:course_id!inner (slug)
+				)
+			)
+		`)
+		.in('id', enrollmentIds)
+		.eq('cohort.module.course.slug', courseSlug);
+
+	// All enrollment IDs should be found
+	return data?.length === enrollmentIds.length;
+}
+
 /**
  * POST handler for course admin actions
  * Delegates all operations to the course data repository
@@ -32,6 +141,12 @@ export const POST: RequestHandler = async (event) => {
 			// MODULE MANAGEMENT
 			// ================================================================
 			case 'create_module': {
+				// Validate courseId matches the current course slug
+				const courseId = await getCourseIdFromSlug(courseSlug);
+				if (!courseId || courseId !== data.courseId) {
+					throw error(403, 'Cannot create module for a different course');
+				}
+
 				const result = await CourseMutations.createModule({
 					courseId: data.courseId,
 					name: data.name,
@@ -52,6 +167,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'update_module': {
+				// Validate module belongs to this course
+				if (!await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
+					throw error(403, 'Module does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateModule({
 					moduleId: data.moduleId,
 					name: data.name,
@@ -71,6 +191,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'delete_module': {
+				// Validate module belongs to this course
+				if (!await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
+					throw error(403, 'Module does not belong to this course');
+				}
+
 				const result = await CourseMutations.deleteModule(data.moduleId);
 
 				if (result.error) {
@@ -87,6 +212,12 @@ export const POST: RequestHandler = async (event) => {
 			// HUB MANAGEMENT
 			// ================================================================
 			case 'create_hub': {
+				// Validate courseId matches the current course slug
+				const courseId = await getCourseIdFromSlug(courseSlug);
+				if (!courseId || courseId !== data.courseId) {
+					throw error(403, 'Cannot create hub for a different course');
+				}
+
 				const result = await CourseMutations.createHub({
 					courseId: data.courseId,
 					name: data.name,
@@ -105,6 +236,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'update_hub': {
+				// Validate hub belongs to this course
+				if (!await validateHubBelongsToCourse(data.hubId, courseSlug)) {
+					throw error(403, 'Hub does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateHub({
 					hubId: data.hubId,
 					name: data.name,
@@ -123,6 +259,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'delete_hub': {
+				// Validate hub belongs to this course
+				if (!await validateHubBelongsToCourse(data.hubId, courseSlug)) {
+					throw error(403, 'Hub does not belong to this course');
+				}
+
 				const result = await CourseMutations.deleteHub(data.hubId);
 
 				if (result.error) {
@@ -136,6 +277,14 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'assign_hub_coordinator': {
+				// Validate enrollment and hub belong to this course
+				if (!await validateEnrollmentBelongsToCourse(data.enrollmentId, courseSlug)) {
+					throw error(403, 'Enrollment does not belong to this course');
+				}
+				if (!await validateHubBelongsToCourse(data.hubId, courseSlug)) {
+					throw error(403, 'Hub does not belong to this course');
+				}
+
 				// Assign a user as coordinator to a hub
 				// This sets their role to 'coordinator' and hub_id to the specified hub
 				const result = await CourseMutations.updateEnrollment({
@@ -158,6 +307,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'remove_hub_coordinator': {
+				// Validate enrollment belongs to this course
+				if (!await validateEnrollmentBelongsToCourse(data.enrollmentId, courseSlug)) {
+					throw error(403, 'Enrollment does not belong to this course');
+				}
+
 				// Remove coordinator from hub (set role back to student, clear hub_id)
 				const result = await CourseMutations.updateEnrollment({
 					userId: data.enrollmentId,
@@ -182,6 +336,11 @@ export const POST: RequestHandler = async (event) => {
 			// COHORT MANAGEMENT
 			// ================================================================
 			case 'create_cohort': {
+				// Validate module belongs to this course
+				if (!await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
+					throw error(403, 'Module does not belong to this course');
+				}
+
 				const result = await CourseMutations.createCohort({
 					name: data.name,
 					moduleId: data.moduleId,
@@ -201,6 +360,15 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'update_cohort': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+				// If changing module, validate new module also belongs to this course
+				if (data.moduleId && !await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
+					throw error(403, 'Target module does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateCohort({
 					cohortId: data.cohortId,
 					name: data.name,
@@ -224,6 +392,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'delete_cohort': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
 				const result = await CourseMutations.deleteCohort(data.cohortId);
 
 				if (result.error) {
@@ -237,6 +410,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'duplicate_cohort': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
 				const result = await CourseMutations.duplicateCohort(data.cohortId);
 
 				if (result.error) {
@@ -251,6 +429,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'update_cohort_status': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateCohortStatus(data.cohortId, data.status);
 
 				if (result.error) {
@@ -268,6 +451,11 @@ export const POST: RequestHandler = async (event) => {
 			// ENROLLMENT MANAGEMENT
 			// ================================================================
 			case 'upload_csv': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
 				const result = await CourseMutations.uploadCSV({
 					filename: data.filename,
 					rows: data.data,
@@ -287,6 +475,15 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'send_welcome_emails': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+				// Validate all enrollments belong to this course
+				if (!await validateEnrollmentsBelongToCourse(data.enrollmentIds, courseSlug)) {
+					throw error(403, 'Some enrollments do not belong to this course');
+				}
+
 				const result = await CourseMutations.sendWelcomeEmails({
 					enrollmentIds: data.enrollmentIds,
 					cohortId: data.cohortId,
@@ -306,6 +503,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'update_enrollment': {
+				// Validate enrollment belongs to this course
+				if (!await validateEnrollmentBelongsToCourse(data.userId, courseSlug)) {
+					throw error(403, 'Enrollment does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateEnrollment({
 					userId: data.userId,
 					updates: data.updates
@@ -323,6 +525,11 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			case 'delete_enrollment': {
+				// Validate enrollment belongs to this course
+				if (!await validateEnrollmentBelongsToCourse(data.userId, courseSlug)) {
+					throw error(403, 'Enrollment does not belong to this course');
+				}
+
 				const result = await CourseMutations.deleteEnrollment(data.userId);
 
 				if (result.error) {
@@ -338,6 +545,11 @@ export const POST: RequestHandler = async (event) => {
 			case 'bulk_delete_enrollments': {
 				if (!data.enrollmentIds || data.enrollmentIds.length === 0) {
 					throw error(400, 'No participants selected');
+				}
+
+				// Validate all enrollments belong to this course
+				if (!await validateEnrollmentsBelongToCourse(data.enrollmentIds, courseSlug)) {
+					throw error(403, 'Some enrollments do not belong to this course');
 				}
 
 				const result = await CourseMutations.bulkDeleteEnrollments(data.enrollmentIds);
@@ -373,6 +585,15 @@ export const POST: RequestHandler = async (event) => {
 
 				if (data.targetSession < 0 || data.targetSession > 8) {
 					throw error(400, 'Invalid session number');
+				}
+
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+				// Validate all student enrollments belong to this course
+				if (!await validateEnrollmentsBelongToCourse(data.studentIds, courseSlug)) {
+					throw error(403, 'Some students do not belong to this course');
 				}
 
 				const result = await CourseMutations.advanceStudents({
@@ -557,6 +778,11 @@ export const POST: RequestHandler = async (event) => {
 					throw error(400, 'Invalid session number');
 				}
 
+				// Validate enrollment belongs to this course
+				if (!await validateEnrollmentBelongsToCourse(data.enrollmentId, courseSlug)) {
+					throw error(403, 'Enrollment does not belong to this course');
+				}
+
 				const result = await CourseMutations.updateEnrollment({
 					userId: data.enrollmentId,
 					updates: {
@@ -578,6 +804,15 @@ export const POST: RequestHandler = async (event) => {
 			case 'bulk_assign_hub': {
 				if (!data.enrollmentIds || data.enrollmentIds.length === 0) {
 					throw error(400, 'No participants selected');
+				}
+
+				// Validate all enrollments belong to this course
+				if (!await validateEnrollmentsBelongToCourse(data.enrollmentIds, courseSlug)) {
+					throw error(403, 'Some enrollments do not belong to this course');
+				}
+				// Validate hub belongs to this course (if assigning to a hub)
+				if (data.hubId && !await validateHubBelongsToCourse(data.hubId, courseSlug)) {
+					throw error(403, 'Hub does not belong to this course');
 				}
 
 				// Update all selected enrollments with the hub_id
@@ -628,6 +863,11 @@ export const GET: RequestHandler = async (event) => {
 	try {
 		// Handle courses_enrollments endpoint
 		if (endpoint === 'courses_enrollments') {
+			// If cohortId provided, validate it belongs to this course
+			if (cohortId && !await validateCohortBelongsToCourse(cohortId, courseSlug)) {
+				throw error(403, 'Cohort does not belong to this course');
+			}
+
 			const result = await CourseQueries.getEnrollments(cohortId || undefined);
 
 			if (result.error) {
@@ -642,6 +882,11 @@ export const GET: RequestHandler = async (event) => {
 
 		// Handle attendance endpoint
 		if (endpoint === 'attendance' && cohortId) {
+			// Validate cohort belongs to this course
+			if (!await validateCohortBelongsToCourse(cohortId, courseSlug)) {
+				throw error(403, 'Cohort does not belong to this course');
+			}
+
 			const result = await CourseQueries.getAttendanceRecords(cohortId);
 
 			if (result.error) {
@@ -656,6 +901,11 @@ export const GET: RequestHandler = async (event) => {
 
 		// Handle reflection_responses endpoint
 		if (endpoint === 'reflection_responses' && cohortId) {
+			// Validate cohort belongs to this course
+			if (!await validateCohortBelongsToCourse(cohortId, courseSlug)) {
+				throw error(403, 'Cohort does not belong to this course');
+			}
+
 			const result = await CourseQueries.getReflectionResponsesForCohort(cohortId);
 
 			if (result.error) {
@@ -675,6 +925,11 @@ export const GET: RequestHandler = async (event) => {
 				throw error(400, 'module_id is required');
 			}
 
+			// Validate module belongs to this course
+			if (!await validateModuleBelongsToCourse(moduleId, courseSlug)) {
+				throw error(403, 'Module does not belong to this course');
+			}
+
 			const result = await CourseQueries.getSessionsWithReflectionQuestions(moduleId);
 
 			if (result.error) {
@@ -689,6 +944,11 @@ export const GET: RequestHandler = async (event) => {
 
 		// Handle recent activity endpoint
 		if (endpoint === 'recent_activity' && cohortId) {
+			// Validate cohort belongs to this course
+			if (!await validateCohortBelongsToCourse(cohortId, courseSlug)) {
+				throw error(403, 'Cohort does not belong to this course');
+			}
+
 			const result = await CourseQueries.getRecentActivity(cohortId);
 
 			if (result.error) {

@@ -132,6 +132,7 @@ export async function getEmailTemplate(supabase, templateKey, context = 'platfor
  * @param {string} options.emailType Type of email (for logging/filtering)
  * @param {string} [options.referenceId] Optional reference ID (e.g., schedule_id, course_id)
  * @param {Object} [options.metadata] Optional metadata to store with the email
+ * @param {string} [options.replyTo] Optional reply-to email (overrides platform default)
  * @param {string} [options.resendApiKey] Resend API key (from env)
  * @param {Object} [options.supabase] Supabase client (for logging)
  * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
@@ -143,6 +144,7 @@ export async function sendEmail({
 	emailType,
 	referenceId = null,
 	metadata = {},
+	replyTo = null,
 	resendApiKey,
 	supabase
 }) {
@@ -162,19 +164,30 @@ export async function sendEmail({
 	const platformSettings = await getPlatformSettings();
 
 	try {
-		// Send email via Resend
-		const { data, error } = await resend.emails.send({
+		// Determine reply-to: use provided value, or fall back to platform default
+		const effectiveReplyTo = replyTo || platformSettings.replyToEmail;
+
+		// Build email payload
+		const emailPayload = {
 			from: platformSettings.fromEmail,
 			to: [to],
 			subject,
 			html
-		});
+		};
+
+		// Only add reply_to if we have one
+		if (effectiveReplyTo) {
+			emailPayload.reply_to = effectiveReplyTo;
+		}
+
+		// Send email via Resend
+		const { data, error } = await resend.emails.send(emailPayload);
 
 		if (error) {
 			console.error('Resend error:', error);
 
 			// Log failed email to database
-			await supabase.from('platform_email_log').insert({
+			const { error: logError } = await supabase.from('platform_email_log').insert({
 				recipient_email: to,
 				email_type: emailType,
 				subject,
@@ -190,11 +203,15 @@ export async function sendEmail({
 				template_id: metadata?.template_id || null
 			});
 
+			if (logError) {
+				console.error('Failed to log email error to database:', logError);
+			}
+
 			return { success: false, error: error.message };
 		}
 
 		// Log successful email to database
-		await supabase.from('platform_email_log').insert({
+		const { error: logError } = await supabase.from('platform_email_log').insert({
 			recipient_email: to,
 			email_type: emailType,
 			subject,
@@ -210,6 +227,10 @@ export async function sendEmail({
 			enrollment_id: metadata?.enrollment_id || null,
 			template_id: metadata?.template_id || null
 		});
+
+		if (logError) {
+			console.error('Failed to log email to database:', logError);
+		}
 
 		return { success: true, emailId: data?.id };
 	} catch (err) {
@@ -248,6 +269,7 @@ export async function sendEmail({
  * @param {Object} supabase Supabase client
  * @param {Object} [options] Additional options
  * @param {Object} [options.commonMetadata] Metadata to merge into all emails
+ * @param {string} [options.replyTo] Reply-to email (overrides platform default)
  * @returns {Promise<{sent: number, failed: number, errors: Array}>}
  */
 export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase, options = {} }) {
@@ -265,6 +287,9 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 		errors: []
 	};
 
+	// Determine reply-to: use provided value, or fall back to platform default
+	const effectiveReplyTo = options.replyTo || platformSettings.replyToEmail;
+
 	// Resend batch API supports up to 100 emails per request
 	const BATCH_SIZE = 100;
 
@@ -272,12 +297,18 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 		const batch = emails.slice(i, i + BATCH_SIZE);
 
 		// Format emails for Resend batch API
-		const batchPayload = batch.map((email) => ({
-			from: platformSettings.fromEmail,
-			to: [email.to],
-			subject: email.subject,
-			html: email.html
-		}));
+		const batchPayload = batch.map((email) => {
+			const payload = {
+				from: platformSettings.fromEmail,
+				to: [email.to],
+				subject: email.subject,
+				html: email.html
+			};
+			if (effectiveReplyTo) {
+				payload.reply_to = effectiveReplyTo;
+			}
+			return payload;
+		});
 
 		try {
 			// Send batch via Resend
@@ -337,6 +368,11 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
  * @private
  */
 async function logBatchEmails(supabase, emails, emailType, status, errorMessage = null, commonMetadata = {}, results = []) {
+	if (!supabase) {
+		console.error('logBatchEmails: No supabase client provided');
+		return;
+	}
+
 	try {
 		const logs = emails.map((email, idx) => {
 			const mergedMetadata = { ...commonMetadata, ...email.metadata };
@@ -359,9 +395,12 @@ async function logBatchEmails(supabase, emails, emailType, status, errorMessage 
 			};
 		});
 
-		await supabase.from('platform_email_log').insert(logs);
+		const { error } = await supabase.from('platform_email_log').insert(logs);
+		if (error) {
+			console.error('Failed to log batch emails to database:', error);
+		}
 	} catch (logError) {
-		console.error('Failed to log batch emails:', logError);
+		console.error('Failed to log batch emails (exception):', logError);
 	}
 }
 
@@ -752,6 +791,9 @@ export async function sendCourseEmail({
 		course.settings?.theme?.accentDarkest || course.accent_darkest || '#1e2322';
 	const logoUrl = course.settings?.branding?.logoUrl || null;
 
+	// Get course-specific reply-to email (if set, overrides platform default)
+	const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+
 	// Wrap body in branded HTML
 	const html = createBrandedEmailHtml({
 		content: bodyHtml,
@@ -771,6 +813,7 @@ export async function sendCourseEmail({
 		html,
 		emailType,
 		referenceId: cohortId,
+		replyTo: courseReplyTo,
 		metadata: {
 			...metadata,
 			course_id: course.id,

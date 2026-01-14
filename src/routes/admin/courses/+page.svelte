@@ -4,7 +4,10 @@
 		Plus,
 		Trash2,
 		MoreVertical,
-		ChevronRight
+		ChevronRight,
+		Upload,
+		X,
+		Image
 	} from 'lucide-svelte';
 	import { Card } from '$lib/design-system';
 	import { Button } from '$lib/design-system';
@@ -45,9 +48,16 @@
 
 	// Loading states
 	let isSubmitting = $state(false);
+	let isUploadingLogo = $state(false);
 
 	// Manager assignment
 	let selectedManagerIds = $state([]);
+
+	// Logo state
+	let logoUrl = $state('');
+	let logoPath = $state('');
+	let logoPreview = $state('');
+	let logoFile = $state<File | null>(null);
 
 	// Reset form data
 	function resetForm() {
@@ -64,6 +74,83 @@
 			accentLight: '#c59a6b',
 			fontFamily: 'Inter'
 		};
+		isSubmitting = false;
+		logoUrl = '';
+		logoPath = '';
+		logoPreview = '';
+		logoFile = null;
+	}
+
+	// Handle logo file selection
+	function handleLogoSelect(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		// Validate file type
+		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+		if (!allowedTypes.includes(file.type)) {
+			toastError('Logo must be an image (JPEG, PNG, GIF, WebP, or SVG)');
+			return;
+		}
+
+		// Validate file size (2MB max)
+		if (file.size > 2 * 1024 * 1024) {
+			toastError('Logo must be less than 2MB');
+			return;
+		}
+
+		logoFile = file;
+		// Create preview URL
+		logoPreview = URL.createObjectURL(file);
+	}
+
+	// Upload logo to server
+	async function uploadLogo(courseSlug: string): Promise<string | null> {
+		if (!logoFile) return logoUrl || null;
+
+		isUploadingLogo = true;
+		try {
+			const uploadFormData = new FormData();
+			uploadFormData.append('logo', logoFile);
+			uploadFormData.append('courseSlug', courseSlug);
+
+			const response = await fetch('/api/admin/courses/upload-logo', {
+				method: 'POST',
+				body: uploadFormData
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.message || 'Failed to upload logo');
+			}
+
+			const result = await response.json();
+			logoUrl = result.url;
+			logoPath = result.path;
+			return result.url;
+		} catch (error) {
+			console.error('Logo upload error:', error);
+			toastError(error instanceof Error ? error.message : 'Failed to upload logo');
+			return null;
+		} finally {
+			isUploadingLogo = false;
+		}
+	}
+
+	// Remove logo
+	function removeLogo() {
+		logoUrl = '';
+		logoPath = '';
+		logoPreview = '';
+		logoFile = null;
+		// Update settings to remove logo
+		const currentSettings = JSON.parse(formData.settings || '{}');
+		if (currentSettings.branding) {
+			currentSettings.branding.logoUrl = '';
+			currentSettings.branding.showLogo = false;
+		}
+		formData.settings = JSON.stringify(currentSettings, null, 2);
 	}
 
 	// Update settings JSON when theme changes
@@ -72,6 +159,17 @@
 		// Update the settings field with theme data
 		const currentSettings = JSON.parse(formData.settings || '{}');
 		currentSettings.theme = theme;
+		formData.settings = JSON.stringify(currentSettings, null, 2);
+	}
+
+	// Update settings with branding (logo)
+	function updateBrandingSettings(newLogoUrl: string) {
+		const currentSettings = JSON.parse(formData.settings || '{}');
+		currentSettings.branding = {
+			...(currentSettings.branding || {}),
+			logoUrl: newLogoUrl,
+			showLogo: !!newLogoUrl
+		};
 		formData.settings = JSON.stringify(currentSettings, null, 2);
 	}
 
@@ -105,6 +203,16 @@
 				fontFamily: 'Inter'
 			};
 		}
+		// Extract logo from branding settings
+		if (course.settings?.branding?.logoUrl) {
+			logoUrl = course.settings.branding.logoUrl;
+			logoPreview = course.settings.branding.logoUrl;
+		} else {
+			logoUrl = '';
+			logoPreview = '';
+		}
+		logoFile = null;
+		logoPath = '';
 		// Find which managers are assigned to this course
 		selectedManagerIds = managers
 			.filter(m => m.assigned_course_ids?.includes(course.id))
@@ -121,6 +229,7 @@
 	// Handle form responses
 	$effect(() => {
 		if (form) {
+			isSubmitting = false;
 			if (form.type === 'success') {
 				toastSuccess(form.message, 'Success');
 				showCreateModal = false;
@@ -219,35 +328,25 @@
 				{#each courses as course}
 					{@const accentDark = course.settings?.theme?.accentDark || '#334642'}
 					{@const accentLight = course.settings?.theme?.accentLight || '#c59a6b'}
-					<Card padding="none" shadow="md" class="overflow-hidden transition-all hover:shadow-lg">
+					{@const logoUrl = course.settings?.branding?.logoUrl}
+					<Card padding="none" shadow="md" class="flex h-full flex-col overflow-hidden transition-all hover:shadow-lg">
 						<!-- Accent color bar at top -->
 						<div
-							class="h-2"
+							class="h-2 flex-shrink-0"
 							style="background: linear-gradient(90deg, {accentDark} 0%, {accentLight} 100%);"
 						></div>
 
 						<a
 							href="/admin/courses/{course.slug}"
-							class="block"
+							class="flex flex-1 flex-col"
 						>
-							<div class="p-6">
+							<div class="flex-1 p-6">
 								<!-- Course Header -->
 								<div class="mb-4 flex items-start justify-between">
 									<div class="flex-1">
-										<div class="flex items-center gap-2">
-											<h3 class="text-xl font-semibold" style="color: {accentDark};">
-												{course.name}
-											</h3>
-											{#if course.metadata?.created_by_role === 'manager'}
-												<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-													Manager
-												</span>
-											{:else if course.metadata?.created_by_role === 'admin'}
-												<span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-													Admin
-												</span>
-											{/if}
-										</div>
+										<h3 class="text-xl font-semibold" style="color: {accentDark};">
+									{course.name}
+								</h3>
 										<p class="mt-1 text-sm font-mono text-gray-500">/{course.slug}</p>
 									</div>
 									<div
@@ -269,7 +368,7 @@
 
 						<!-- Footer -->
 						<div
-							class="flex items-center justify-between border-t px-6 py-3"
+							class="mt-auto flex items-center justify-between border-t px-6 py-3"
 							style="background-color: {accentLight}20; border-color: {accentLight};"
 						>
 							<span class="text-sm font-medium" style="color: {accentDark};">
@@ -385,6 +484,53 @@
 				/>
 			</div>
 
+			<!-- Logo Upload -->
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+				<h3 class="mb-3 text-sm font-semibold text-gray-700">Course Logo</h3>
+				<p class="mb-3 text-xs text-gray-600">
+					Upload a logo that will appear in the course navigation. Max 2MB, JPEG/PNG/GIF/WebP/SVG.
+				</p>
+
+				{#if logoPreview}
+					<div class="flex items-center gap-4 mb-3">
+						<div class="relative">
+							<img
+								src={logoPreview}
+								alt="Logo preview"
+								class="h-16 w-auto max-w-[200px] object-contain rounded border border-gray-200 bg-white p-2"
+							/>
+							<button
+								type="button"
+								onclick={removeLogo}
+								class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 transition-colors"
+								title="Remove logo"
+							>
+								<X size={12} />
+							</button>
+						</div>
+						<span class="text-xs text-gray-500">
+							{logoFile ? logoFile.name : 'Current logo'}
+						</span>
+					</div>
+				{/if}
+
+				<label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50">
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+						onchange={handleLogoSelect}
+						class="hidden"
+					/>
+					{#if logoPreview}
+						<Upload size={16} />
+						<span>Replace logo</span>
+					{:else}
+						<Image size={16} />
+						<span>Upload logo</span>
+					{/if}
+				</label>
+			</div>
+
 			<details class="rounded-lg border border-gray-200 bg-gray-50 p-4">
 				<summary class="cursor-pointer text-sm font-medium text-gray-700">
 					Advanced Settings (JSON)
@@ -425,13 +571,20 @@
 			<Button variant="secondary" onclick={() => (showCreateModal = false)}>Cancel</Button>
 			<Button
 				variant="primary"
-				loading={isSubmitting}
-				onclick={() => {
+				loading={isSubmitting || isUploadingLogo}
+				onclick={async () => {
 					isSubmitting = true;
-					document.querySelector('form[action="?/create"]').requestSubmit();
+					// Upload logo first if there's a file
+					if (logoFile && formData.slug) {
+						const uploadedUrl = await uploadLogo(formData.slug);
+						if (uploadedUrl) {
+							updateBrandingSettings(uploadedUrl);
+						}
+					}
+					document.querySelector('form[action="?/create"]')?.requestSubmit();
 				}}
 			>
-				Create Course
+				{isUploadingLogo ? 'Uploading...' : 'Create Course'}
 			</Button>
 		</div>
 	{/snippet}
@@ -503,6 +656,53 @@
 					fontFamily={themeData.fontFamily}
 					onThemeChange={handleThemeChange}
 				/>
+			</div>
+
+			<!-- Logo Upload -->
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+				<h3 class="mb-3 text-sm font-semibold text-gray-700">Course Logo</h3>
+				<p class="mb-3 text-xs text-gray-600">
+					Upload a logo that will appear in the course navigation. Max 2MB, JPEG/PNG/GIF/WebP/SVG.
+				</p>
+
+				{#if logoPreview}
+					<div class="flex items-center gap-4 mb-3">
+						<div class="relative">
+							<img
+								src={logoPreview}
+								alt="Logo preview"
+								class="h-16 w-auto max-w-[200px] object-contain rounded border border-gray-200 bg-white p-2"
+							/>
+							<button
+								type="button"
+								onclick={removeLogo}
+								class="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 transition-colors"
+								title="Remove logo"
+							>
+								<X size={12} />
+							</button>
+						</div>
+						<span class="text-xs text-gray-500">
+							{logoFile ? logoFile.name : 'Current logo'}
+						</span>
+					</div>
+				{/if}
+
+				<label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50">
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+						onchange={handleLogoSelect}
+						class="hidden"
+					/>
+					{#if logoPreview}
+						<Upload size={16} />
+						<span>Replace logo</span>
+					{:else}
+						<Image size={16} />
+						<span>Upload logo</span>
+					{/if}
+				</label>
 			</div>
 
 			<!-- Manager Assignment -->
@@ -593,14 +793,24 @@
 				<Button variant="secondary" onclick={() => (showEditModal = false)}>Cancel</Button>
 				<Button
 					variant="primary"
-					loading={isSubmitting}
+					loading={isSubmitting || isUploadingLogo}
 					onclick={async () => {
 						isSubmitting = true;
-						document.querySelector('form[action="?/update"]').requestSubmit();
+						// Upload logo first if there's a new file
+						if (logoFile && formData.slug) {
+							const uploadedUrl = await uploadLogo(formData.slug);
+							if (uploadedUrl) {
+								updateBrandingSettings(uploadedUrl);
+							}
+						} else if (!logoPreview && logoUrl) {
+							// Logo was removed
+							updateBrandingSettings('');
+						}
+						document.querySelector('form[action="?/update"]')?.requestSubmit();
 						await handleSaveManagers();
 					}}
 				>
-					Save Changes
+					{isUploadingLogo ? 'Uploading...' : 'Save Changes'}
 				</Button>
 			</div>
 		</div>

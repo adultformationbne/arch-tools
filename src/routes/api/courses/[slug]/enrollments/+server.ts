@@ -45,7 +45,7 @@ export const GET: RequestHandler = async (event) => {
 		const hasPendingReflections = url.searchParams.get('has_pending_reflections') === 'true';
 		const limit = parseInt(url.searchParams.get('limit') || '100');
 
-		// Build query - join through cohorts to filter by course
+		// Build query - join through cohorts -> modules to filter by course
 		let query = supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
@@ -63,10 +63,12 @@ export const GET: RequestHandler = async (event) => {
 				),
 				courses_cohorts!inner (
 					id,
-					course_id
+					courses_modules!inner (
+						course_id
+					)
 				)
 			`)
-			.eq('courses_cohorts.course_id', course.id);
+			.eq('courses_cohorts.courses_modules.course_id', course.id);
 
 		// Filter by cohort if provided
 		if (cohortId) {

@@ -53,14 +53,14 @@
 
 <!-- Past Reflections Section -->
 <div>
-	<div class="flex items-center justify-between mb-8">
-		<h2 class="text-4xl font-bold text-white">Past Reflections</h2>
+	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 sm:mb-8">
+		<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Past Reflections</h2>
 		<span class="text-white/70 text-lg">
 			{reflectionsList.length} reflection{reflectionsList.length !== 1 ? 's' : ''}
 		</span>
 	</div>
 
-	<div class="grid grid-cols-3 gap-5 mb-8">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-8">
 		{#each visibleReflections as reflection}
 			<button
 				onclick={() => handleReadReflection(reflection)}

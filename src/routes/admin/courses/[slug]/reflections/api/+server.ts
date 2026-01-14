@@ -32,6 +32,34 @@ import type { RequestHandler } from './$types';
 const CLAIM_EXPIRY_MINUTES = 5;
 
 /**
+ * Validate that a reflection belongs to the specified course
+ * Returns the reflection if valid, null if not found or doesn't belong to course
+ */
+async function validateReflectionBelongsToCourse(reflectionId: string, courseSlug: string) {
+	const { data } = await supabaseAdmin
+		.from('courses_reflection_responses')
+		.select(`
+			id,
+			reviewing_by,
+			reviewing_started_at,
+			status,
+			marked_by,
+			cohort:cohort_id!inner (
+				module:module_id!inner (
+					course:course_id!inner (
+						slug
+					)
+				)
+			)
+		`)
+		.eq('id', reflectionId)
+		.eq('cohort.module.course.slug', courseSlug)
+		.single();
+
+	return data;
+}
+
+/**
  * Send reflection marked notification email
  * Only sends if student hasn't received this email type today (prevents flooding)
  */
@@ -183,15 +211,11 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Reflection ID is required');
 		}
 
-		// Check if reflection exists and get current claim status
-		const { data: reflection, error: fetchError } = await supabaseAdmin
-			.from('courses_reflection_responses')
-			.select('id, reviewing_by, reviewing_started_at, status, marked_by')
-			.eq('id', reflection_id)
-			.single();
+		// Check if reflection exists, belongs to this course, and get current claim status
+		const reflection = await validateReflectionBelongsToCourse(reflection_id, courseSlug);
 
-		if (fetchError || !reflection) {
-			throw error(404, 'Reflection not found');
+		if (!reflection) {
+			throw error(404, 'Reflection not found or does not belong to this course');
 		}
 
 		// Check if already marked
@@ -284,14 +308,14 @@ export const PUT: RequestHandler = async (event) => {
 			throw error(400, 'Valid grade (pass/fail) is required');
 		}
 
-		// Check if reflection was already marked by someone else
-		const { data: current } = await supabaseAdmin
-			.from('courses_reflection_responses')
-			.select('status, marked_by, reviewing_by')
-			.eq('id', reflection_id)
-			.single();
+		// Validate reflection belongs to this course and check if already marked
+		const current = await validateReflectionBelongsToCourse(reflection_id, courseSlug);
 
-		if (current?.status === 'passed' || current?.status === 'needs_revision') {
+		if (!current) {
+			throw error(404, 'Reflection not found or does not belong to this course');
+		}
+
+		if (current.status === 'passed' || current.status === 'needs_revision') {
 			// Already marked - check if by same user (allowing re-edit)
 			if (current.marked_by !== user.id) {
 				const { data: marker } = await supabaseAdmin
@@ -413,6 +437,13 @@ export const DELETE: RequestHandler = async (event) => {
 
 		if (!reflection_id) {
 			throw error(400, 'Reflection ID is required');
+		}
+
+		// Validate reflection belongs to this course
+		const reflection = await validateReflectionBelongsToCourse(reflection_id, courseSlug);
+
+		if (!reflection) {
+			throw error(404, 'Reflection not found or does not belong to this course');
 		}
 
 		// Only release if current user owns the claim

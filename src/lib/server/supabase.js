@@ -22,7 +22,7 @@ export const supabaseAdmin = createClient(
 export async function getPlatformSettings() {
 	const { data, error } = await supabaseAdmin
 		.from('platform_settings')
-		.select('platform_name, logo_path, from_email, organization')
+		.select('platform_name, logo_path, from_email, reply_to_email, organization')
 		.single();
 
 	if (error) {
@@ -32,6 +32,7 @@ export async function getPlatformSettings() {
 			name: defaultPlatform.name,
 			logoPath: defaultPlatform.logoPath,
 			fromEmail: defaultPlatform.fromEmail,
+			replyToEmail: defaultPlatform.replyToEmail || null,
 			organization: defaultPlatform.organization
 		};
 	}
@@ -40,6 +41,7 @@ export async function getPlatformSettings() {
 		name: data.platform_name,
 		logoPath: data.logo_path,
 		fromEmail: data.from_email,
+		replyToEmail: data.reply_to_email || null,
 		organization: data.organization
 	};
 }

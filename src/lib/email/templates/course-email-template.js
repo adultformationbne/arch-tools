@@ -137,6 +137,15 @@ export const courseEmailTemplate = `<mjml>
 
           <mj-text
             align="center"
+            color="#ffffff"
+            font-size="13px"
+            padding="0 0 12px 0"
+          >
+            Questions? Reply to this email.
+          </mj-text>
+
+          <mj-text
+            align="center"
             color="rgba(255, 255, 255, 0.7)"
             font-size="12px"
             padding="0"

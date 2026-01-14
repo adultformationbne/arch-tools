@@ -142,6 +142,66 @@ The {{courseName}} Team`,
 		],
 		trigger_event: null,
 		is_deletable: false
+	},
+	{
+		template_key: 'reflection_overdue',
+		name: 'Reflection Overdue',
+		description: 'Manually sent to students who have not submitted their reflection',
+		category: 'system',
+		subject_template: 'Reminder: Session {{sessionNumber}} Reflection',
+		body_template: `Hi {{firstName}},
+
+We noticed you haven't submitted your reflection for Session {{sessionNumber}} yet.
+
+Your reflections are an important part of your learning journey in {{courseName}}. Please take a moment to submit your response:
+
+{{reflectionLink}}
+
+If you're experiencing any difficulties, please reach out to {{supportEmail}}.
+
+Blessings,
+The {{courseName}} Team`,
+		available_variables: [
+			'firstName',
+			'sessionNumber',
+			'courseName',
+			'cohortName',
+			'reflectionLink',
+			'dashboardLink',
+			'supportEmail'
+		],
+		trigger_event: null,
+		is_deletable: false
+	},
+	{
+		template_key: 'reflection_marked',
+		name: 'Reflection Marked Notification',
+		description: 'Sent to students when their reflection has been reviewed. Limited to one email per day per student.',
+		category: 'system',
+		subject_template: 'Your Session {{sessionNumber}} reflection has been reviewed - {{courseName}}',
+		body_template: `<p>Hi {{firstName}},</p>
+
+<p>Great news! Your <strong>Session {{sessionNumber}}</strong> reflection for <strong>{{courseName}}</strong> has been reviewed.</p>
+
+<p>Log in to view your feedback and continue your learning journey.</p>
+
+{{loginButton}}
+
+<p>Keep up the great work!</p>`,
+		available_variables: [
+			'firstName',
+			'lastName',
+			'fullName',
+			'email',
+			'courseName',
+			'courseSlug',
+			'cohortName',
+			'sessionNumber',
+			'loginLink',
+			'loginButton'
+		],
+		trigger_event: null,
+		is_deletable: false
 	}
 ];
 

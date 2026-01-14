@@ -74,7 +74,7 @@ export const load: PageServerLoad = async (event) => {
 				)
 			`)
 			.eq('courses_modules.course_id', courseInfo.id)
-			.in('status', ['active', 'upcoming', 'scheduled'])
+			.neq('status', 'archived')
 			.order('start_date', { ascending: false }),
 
 		// Get hubs for recipient filtering
@@ -84,6 +84,20 @@ export const load: PageServerLoad = async (event) => {
 			.eq('course_id', courseInfo.id)
 			.order('name', { ascending: true })
 	]);
+
+	// Get cohort IDs from results to filter enrollments
+	const cohortIds = (cohortsResult.data || []).map((c) => c.id);
+
+	// Fetch enrollments for these cohorts only
+	let enrollmentsData: Array<{ cohort_id: string; hub_id: string | null }> = [];
+	if (cohortIds.length > 0) {
+		const { data } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('cohort_id, hub_id')
+			.eq('status', 'active')
+			.in('cohort_id', cohortIds);
+		enrollmentsData = data || [];
+	}
 
 	if (templatesResult.error) {
 		console.error('Error loading templates:', templatesResult.error);
@@ -106,6 +120,32 @@ export const load: PageServerLoad = async (event) => {
 	const systemTemplates = templates.filter((t) => t.category === 'system');
 	const customTemplates = templates.filter((t) => t.category === 'custom');
 
+	// Calculate enrollment counts from the enrollments data
+	const enrollments = enrollmentsData;
+	const cohortCounts = new Map<string, number>();
+	const hubCounts = new Map<string, number>();
+
+	for (const e of enrollments) {
+		if (e.cohort_id) {
+			cohortCounts.set(e.cohort_id, (cohortCounts.get(e.cohort_id) || 0) + 1);
+		}
+		if (e.hub_id) {
+			hubCounts.set(e.hub_id, (hubCounts.get(e.hub_id) || 0) + 1);
+		}
+	}
+
+	// Transform cohorts to include enrollment count
+	const cohorts = (cohortsResult.data || []).map((c) => ({
+		...c,
+		enrollment_count: cohortCounts.get(c.id) || 0
+	}));
+
+	// Transform hubs to include enrollment count
+	const hubs = (hubsResult.data || []).map((h) => ({
+		...h,
+		enrollment_count: hubCounts.get(h.id) || 0
+	}));
+
 	return {
 		course: {
 			id: courseInfo.id,
@@ -121,8 +161,8 @@ export const load: PageServerLoad = async (event) => {
 		customTemplates,
 		allTemplates: templates,
 		emailLogs: logsResult.data || [],
-		cohorts: cohortsResult.data || [],
-		hubs: hubsResult.data || [],
+		cohorts,
+		hubs,
 		currentUserEmail: user?.email || ''
 	};
 };

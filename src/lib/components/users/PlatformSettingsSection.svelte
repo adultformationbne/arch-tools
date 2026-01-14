@@ -8,6 +8,7 @@
 		platform_name: '',
 		logo_path: '',
 		from_email: '',
+		reply_to_email: '',
 		organization: ''
 	});
 	let originalSettings = $state(null);
@@ -28,6 +29,7 @@
 				platform_name: data.platform_name || '',
 				logo_path: data.logo_path || '',
 				from_email: data.from_email || '',
+				reply_to_email: data.reply_to_email || '',
 				organization: data.organization || ''
 			};
 			originalSettings = { ...settings };
@@ -64,6 +66,7 @@
 		(settings.platform_name !== originalSettings.platform_name ||
 			settings.logo_path !== originalSettings.logo_path ||
 			settings.from_email !== originalSettings.from_email ||
+			settings.reply_to_email !== originalSettings.reply_to_email ||
 			settings.organization !== originalSettings.organization)
 	);
 
@@ -150,6 +153,24 @@
 				/>
 				<p class="mt-2 text-xs text-gray-600">
 					Email address used as sender for system emails (format: "Name &lt;email@domain.com&gt;")
+				</p>
+			</div>
+
+			<!-- Reply-To Email -->
+			<div>
+				<label for="reply-to-email" class="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+					Default Reply-To Email
+				</label>
+				<input
+					id="reply-to-email"
+					type="email"
+					bind:value={settings.reply_to_email}
+					disabled={loading}
+					class="block w-full px-4 py-3 rounded border border-gray-300 focus:border-gray-900 focus:ring-0 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+					placeholder="support@example.com"
+				/>
+				<p class="mt-2 text-xs text-gray-600">
+					When recipients reply to emails, replies will go to this address. Courses can override this with their own reply-to.
 				</p>
 			</div>
 

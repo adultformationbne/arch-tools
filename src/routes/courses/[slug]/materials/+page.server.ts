@@ -40,11 +40,11 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	// Filter sessions based on role:
-	// - Students and coordinators only see sessions up to and including the current session
-	// - Only admins can see all sessions (to preview future content)
-	// - If currentSession is null/undefined, only session 0 (pre-start materials) is shown
+	// - Students only see sessions up to and including the current session
+	// - Coordinators and admins can see all sessions
+	// - If currentSession is null/undefined, students only see session 0 (pre-start materials)
 	const effectiveSession = currentSession ?? 0;
-	const sessions = isAdmin
+	const sessions = isStaffRole
 		? allSessions
 		: allSessions.filter((s) => s.session_number <= effectiveSession);
 	const sessionIds = sessions.map((s) => s.id);

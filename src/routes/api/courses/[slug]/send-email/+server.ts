@@ -56,16 +56,24 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'Course not found' }, { status: 404 });
 		}
 
-		// Get cohort if provided
+		// Get cohort if provided - validate it belongs to this course
 		let cohort = null;
 		if (cohort_id) {
-			// Cohorts are linked through modules, not directly to courses
-			// Just fetch by ID since cohort_id is already validated from the client
 			const { data: cohortData } = await supabaseAdmin
 				.from('courses_cohorts')
-				.select('id, name, start_date, end_date, current_session')
+				.select(`
+					id, name, start_date, end_date, current_session,
+					module:module_id!inner (
+						course:course_id!inner (slug)
+					)
+				`)
 				.eq('id', cohort_id)
+				.eq('module.course.slug', slug)
 				.single();
+
+			if (!cohortData) {
+				return json({ error: 'Cohort not found or does not belong to this course' }, { status: 403 });
+			}
 
 			cohort = cohortData;
 		}
@@ -83,7 +91,7 @@ export const POST: RequestHandler = async (event) => {
 		// Process recipients - fetch full enrollment data if just IDs provided
 		let enrollments = recipients;
 
-		// If recipients are just strings (enrollment IDs), fetch full data
+		// If recipients are just strings (enrollment IDs), fetch full data and validate they belong to this course
 		if (typeof recipients[0] === 'string') {
 			const { data: enrollmentData, error: enrollmentError } = await supabaseAdmin
 				.from('courses_enrollments')
@@ -97,13 +105,24 @@ export const POST: RequestHandler = async (event) => {
 					courses_hubs (
 						id,
 						name
+					),
+					cohort:cohort_id!inner (
+						module:module_id!inner (
+							course:course_id!inner (slug)
+						)
 					)
 				`
 				)
-				.in('id', recipients);
+				.in('id', recipients)
+				.eq('cohort.module.course.slug', slug);
 
 			if (enrollmentError || !enrollmentData) {
 				return json({ error: 'Failed to fetch enrollment data' }, { status: 500 });
+			}
+
+			// Verify all requested recipients were found (all belong to this course)
+			if (enrollmentData.length !== recipients.length) {
+				return json({ error: 'Some recipients do not belong to this course' }, { status: 403 });
 			}
 
 			enrollments = enrollmentData;
