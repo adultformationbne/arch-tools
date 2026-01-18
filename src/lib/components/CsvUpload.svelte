@@ -9,11 +9,11 @@
 	} = $props();
 
 	function downloadTemplate() {
-		const template = `full_name,email,role,hub
-Jane Smith,jane.smith@example.com,student,St Mary's Parish
-John Doe,john.doe@example.com,coordinator,Downtown Hub
-Mary Johnson,mary.johnson@example.com,student,St Mary's Parish
-Robert Williams,robert.w@example.com,student,Downtown Hub`;
+		const template = `first_name,last_name,email,phone,parish_community,hub,parish_role,role,notes
+Jane,Smith,jane.smith@example.com,+61 400 123 456,St Mary's Cathedral,St Mary's Parish,Catechist,student,
+John,Doe,john.doe@example.com,+61 400 789 012,Holy Spirit Parish,Downtown Hub,Parish Council Chair,coordinator,Experienced facilitator
+Mary,Johnson,mary.johnson@example.com,,Our Lady of Mercy,St Mary's Parish,Reader,student,
+Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,student,Joined late`;
 
 		const blob = new Blob([template], { type: 'text/csv' });
 		const url = URL.createObjectURL(blob);
@@ -109,10 +109,17 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 
 			// Map various header variations to standard names
 			const headerMap = {
+				'first_name': ['first_name', 'firstname', 'first name', 'given name', 'forename'],
+				'last_name': ['last_name', 'lastname', 'last name', 'surname', 'family name'],
 				'full_name': ['full_name', 'fullname', 'name', 'full name', 'student name', 'participant name'],
 				'email': ['email', 'e-mail', 'email address', 'e-mail address', 'mail'],
-				'role': ['role', 'user role', 'type', 'user type', 'account type'],
-				'hub': ['hub', 'hub name', 'location', 'group', 'parish', 'site']
+				'phone': ['phone', 'phone number', 'telephone', 'mobile', 'cell', 'contact number'],
+				'address': ['address', 'mailing address', 'postal address', 'street address'],
+				'parish_community': ['parish_community', 'parish', 'community', 'your parish', 'your parish or community', 'parish/community'],
+				'hub': ['hub', 'hub name', 'hub (name)', 'location', 'group', 'site'],
+				'parish_role': ['parish_role', 'parish role', 'role/s in parish', 'roles in parish', 'parish roles', 'ministry'],
+				'role': ['role', 'user role', 'type', 'user type', 'account type', 'participant type'],
+				'notes': ['notes', 'note', 'comments', 'comment', 'additional info', 'remarks']
 			};
 
 			// Normalize headers
@@ -129,8 +136,17 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 				return clean;
 			});
 
-			const requiredColumns = ['full_name', 'email', 'role'];
-			const missingColumns = requiredColumns.filter((col) => !header.includes(col));
+			// Required: email and role. Name can be full_name OR first_name+last_name
+			const hasEmail = header.includes('email');
+			const hasRole = header.includes('role');
+			const hasFullName = header.includes('full_name');
+			const hasFirstAndLast = header.includes('first_name') && header.includes('last_name');
+			const hasAnyName = hasFullName || hasFirstAndLast || header.includes('first_name');
+
+			const missingColumns = [];
+			if (!hasEmail) missingColumns.push('email');
+			if (!hasRole) missingColumns.push('role');
+			if (!hasAnyName) missingColumns.push('name (full_name or first_name)');
 
 			if (missingColumns.length > 0) {
 				error = `Missing required columns: ${missingColumns.join(', ')}. Found columns: ${rawHeader.join(', ')}`;
@@ -151,14 +167,19 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 					row[col] = values[index] || '';
 				});
 
+				// Build full_name from first_name + last_name if not provided
+				if (!row.full_name && (row.first_name || row.last_name)) {
+					row.full_name = [row.first_name, row.last_name].filter(Boolean).join(' ');
+				}
+
 				// Skip completely empty rows
 				if (!row.email && !row.full_name && !row.role) {
 					continue;
 				}
 
-				// Basic validation
+				// Basic validation - need email, some form of name, and role
 				if (!row.email || !row.full_name || !row.role) {
-					errors.push(`Row ${i + 1}: Missing required fields`);
+					errors.push(`Row ${i + 1}: Missing required fields (email, name, role)`);
 					continue;
 				}
 
@@ -197,6 +218,13 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 				data.push({
 					email: row.email.toLowerCase().trim(),
 					full_name: row.full_name.trim(),
+					first_name: row.first_name ? row.first_name.trim() : null,
+					last_name: row.last_name ? row.last_name.trim() : null,
+					phone: row.phone ? row.phone.trim() : null,
+					address: row.address ? row.address.trim() : null,
+					parish_community: row.parish_community ? row.parish_community.trim() : null,
+					parish_role: row.parish_role ? row.parish_role.trim() : null,
+					notes: row.notes ? row.notes.trim() : null,
 					role: normalizedRole,
 					hub: row.hub ? row.hub.trim() : null
 				});
@@ -313,7 +341,7 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 				<Upload size={48} />
 				<h3>Upload CSV File</h3>
 				<p>Drag and drop or click to browse</p>
-				<p class="format-hint">Required: full_name, email, role (optional: hub)</p>
+				<p class="format-hint">Required: first_name, last_name, email, role (optional: phone, parish, hub, notes)</p>
 			</label>
 		</div>
 
@@ -333,16 +361,16 @@ Robert Williams,robert.w@example.com,student,Downtown Hub`;
 			</h3>
 			<p class="help-text">
 				Copy data directly from Excel/Google Sheets and paste it here. First row should be headers:
-				<strong>full_name, email, role, hub</strong>
+				<strong>first_name, last_name, email, role</strong> (optional: phone, parish_community, hub, parish_role, notes)
 			</p>
 
 			<textarea
 				bind:value={pastedText}
 				placeholder="Paste from Excel/Sheets (tab-separated) or type CSV:
 
-full_name	email	role	hub
-John Smith	john@example.com	Participant	St. Mary's
-Jane Doe	jane@example.com	Hub Coordinator	Downtown Hub"
+first_name	last_name	email	phone	parish_community	hub	role
+John	Smith	john@example.com	+61 400 123 456	St Mary's Cathedral	Downtown Hub	student
+Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 				rows="10"
 			></textarea>
 

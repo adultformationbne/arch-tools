@@ -372,6 +372,7 @@ export type Database = {
           invitation_accepted_at: string | null
           last_login_at: string | null
           login_count: number | null
+          notes: string | null
           role: string
           status: string
           updated_at: string | null
@@ -394,6 +395,7 @@ export type Database = {
           invitation_accepted_at?: string | null
           last_login_at?: string | null
           login_count?: number | null
+          notes?: string | null
           role: string
           status?: string
           updated_at?: string | null
@@ -416,6 +418,7 @@ export type Database = {
           invitation_accepted_at?: string | null
           last_login_at?: string | null
           login_count?: number | null
+          notes?: string | null
           role?: string
           status?: string
           updated_at?: string | null
@@ -1471,7 +1474,7 @@ export type Database = {
           cohort_id: string | null
           course_id: string | null
           created_at: string | null
-          email_type: Database["public"]["Enums"]["email_type"]
+          email_type: string
           enrollment_id: string | null
           error_message: string | null
           id: string
@@ -1489,7 +1492,7 @@ export type Database = {
           cohort_id?: string | null
           course_id?: string | null
           created_at?: string | null
-          email_type: Database["public"]["Enums"]["email_type"]
+          email_type: string
           enrollment_id?: string | null
           error_message?: string | null
           id?: string
@@ -1507,7 +1510,7 @@ export type Database = {
           cohort_id?: string | null
           course_id?: string | null
           created_at?: string | null
-          email_type?: Database["public"]["Enums"]["email_type"]
+          email_type?: string
           enrollment_id?: string | null
           error_message?: string | null
           id?: string
@@ -1521,13 +1524,6 @@ export type Database = {
           template_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "dgr_email_queue_schedule_id_fkey"
-            columns: ["reference_id"]
-            isOneToOne: false
-            referencedRelation: "dgr_schedule"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "platform_email_log_cohort_id_fkey"
             columns: ["cohort_id"]
@@ -1652,6 +1648,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          address: string | null
           assigned_course_ids: Json | null
           avatar_url: string | null
           bio: string | null
@@ -1659,14 +1656,19 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           email: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           modules: string[]
           organization: string | null
+          parish_community: string | null
+          parish_role: string | null
           phone: string | null
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           assigned_course_ids?: Json | null
           avatar_url?: string | null
           bio?: string | null
@@ -1674,14 +1676,19 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           modules?: string[]
           organization?: string | null
+          parish_community?: string | null
+          parish_role?: string | null
           phone?: string | null
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           assigned_course_ids?: Json | null
           avatar_url?: string | null
           bio?: string | null
@@ -1689,10 +1696,14 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           modules?: string[]
           organization?: string | null
+          parish_community?: string | null
+          parish_role?: string | null
           phone?: string | null
           updated_at?: string | null
         }
@@ -1856,12 +1867,6 @@ export type Database = {
     Enums: {
       dgr_status: "pending" | "submitted" | "approved" | "published"
       email_status: "pending" | "sent" | "failed"
-      email_type:
-        | "assignment"
-        | "reminder"
-        | "approval"
-        | "published"
-        | "test_email"
       reflection_status:
         | "draft"
         | "submitted"
@@ -2006,13 +2011,6 @@ export const Constants = {
     Enums: {
       dgr_status: ["pending", "submitted", "approved", "published"],
       email_status: ["pending", "sent", "failed"],
-      email_type: [
-        "assignment",
-        "reminder",
-        "approval",
-        "published",
-        "test_email",
-      ],
       reflection_status: [
         "draft",
         "submitted",

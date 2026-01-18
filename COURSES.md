@@ -1,6 +1,6 @@
 # Courses Platform Documentation
 
-**Last Updated:** November 26, 2025
+**Last Updated:** January 14, 2026
 **Status:** Production Implementation
 
 ---
@@ -68,20 +68,38 @@ CREATE TABLE courses (
 );
 ```
 
-**Theme Structure:**
+**Settings Structure:**
 ```json
 {
   "theme": {
-    "accentDark": "#334642",    // Primary dark color for headers, text
-    "accentLight": "#c59a6b",   // Light accent for backgrounds
-    "fontFamily": "Inter"       // Font family for course pages
+    "accentDark": "#334642",
+    "accentLight": "#c59a6b",
+    "fontFamily": "Inter"
   },
   "branding": {
     "logoUrl": "/accf-logo.png",
     "showLogo": true
+  },
+  "coordinatorAccess": {
+    "sessionsAhead": "all"      // or number (e.g., 2)
+  },
+  "sessionProgression": {
+    "mode": "manual",           // "manual" | "auto_time" | "require_completion"
+    "autoAdvanceDays": 7,
+    "completionRequirements": {
+      "reflectionSubmitted": true,
+      "attendanceMarked": false
+    }
+  },
+  "features": {
+    "reflectionsEnabled": true,
+    "communityFeedEnabled": true,
+    "attendanceEnabled": true
   }
 }
 ```
+
+See **Course Settings System** section below for detailed documentation.
 
 #### `courses_modules`
 Course curriculum organized into modules.
@@ -534,6 +552,142 @@ Courses can be created/edited at `/courses` (internal admin route) with:
 - **Font selector** - Choose from Inter, Georgia, Courier New, Arial, Times New Roman
 - **Live preview** - See exactly how the theme will look
 - **Quick presets** - ACCF Classic, Ocean Blue, Autumn, Forest Green
+
+---
+
+## ⚙️ Course Settings System
+
+Courses have configurable settings that control coordinator access, session progression, and feature availability. Settings are stored in the `courses.settings` JSONB column.
+
+### Settings Location
+
+Manage course settings at `/admin/courses/[slug]/settings`:
+- Basic Information (name, description)
+- Branding (logo, theme colors)
+- **Coordinator Access** - How far ahead coordinators can see
+- **Session Progression** - How students advance through sessions
+- **Feature Toggles** - Enable/disable course features
+
+### Settings Schema
+
+```typescript
+// $lib/types/course-settings.ts
+interface CourseSettings {
+  // Theme & Branding (existing)
+  theme?: { accentDark, accentLight, fontFamily };
+  branding?: { logoUrl, showLogo };
+
+  // Coordinator Access
+  coordinatorAccess?: {
+    sessionsAhead: 'all' | number;  // default: 'all'
+  };
+
+  // Session Progression
+  sessionProgression?: {
+    mode: 'manual' | 'auto_time' | 'require_completion';
+    autoAdvanceDays?: number;       // for auto_time mode
+    completionRequirements?: {
+      reflectionSubmitted?: boolean;
+      attendanceMarked?: boolean;
+    };
+  };
+
+  // Feature Toggles
+  features?: {
+    reflectionsEnabled?: boolean;     // default: true
+    communityFeedEnabled?: boolean;   // default: true
+    attendanceEnabled?: boolean;      // default: true
+  };
+}
+```
+
+### Coordinator Access Settings
+
+Controls how many sessions ahead coordinators can see compared to students:
+
+| Setting | Behavior |
+|---------|----------|
+| `'all'` (default) | Coordinators see ALL sessions |
+| `2` | Coordinators see 2 sessions ahead of students |
+| `1` | Coordinators see 1 session ahead of students |
+
+**Implementation:** Applied in `/courses/[slug]/materials/+page.server.ts`
+
+```typescript
+import { getCourseSettings } from '$lib/types/course-settings.js';
+
+const courseSettings = getCourseSettings(course?.settings);
+const ahead = courseSettings.coordinatorAccess?.sessionsAhead ?? 'all';
+
+// Admins always see everything
+if (isAdmin) {
+  maxVisibleSession = Infinity;
+} else if (userRole === 'coordinator') {
+  maxVisibleSession = ahead === 'all' ? Infinity : effectiveSession + ahead;
+} else {
+  maxVisibleSession = effectiveSession;
+}
+```
+
+### Session Progression Settings
+
+Controls how students advance through sessions:
+
+| Mode | Description |
+|------|-------------|
+| `manual` (default) | Admins manually advance students |
+| `auto_time` | Auto-advance after X days (configurable) |
+| `require_completion` | Require reflection/attendance before advancing |
+
+**Completion Requirements (for `require_completion` mode):**
+- `reflectionSubmitted` - Student must submit reflection
+- `attendanceMarked` - Student must have attendance marked
+
+### Feature Toggles
+
+Enable or disable course features per-course:
+
+| Feature | Default | When Disabled |
+|---------|---------|---------------|
+| `reflectionsEnabled` | `true` | Hides reflection UI, redirects from `/reflections` and `/write/*` |
+| `communityFeedEnabled` | `true` | Hides public reflections feed on dashboard |
+| `attendanceEnabled` | `true` | Hides attendance tracking features |
+
+**Implementation:**
+- Dashboard (`/courses/[slug]/+page.svelte`) - Conditionally renders sections
+- SessionContent component - Hides reflection question card
+- Reflections page - Redirects to dashboard if disabled
+- Write page - Redirects to dashboard if disabled
+
+### Using Course Settings
+
+```typescript
+import { getCourseSettings, DEFAULT_COURSE_SETTINGS } from '$lib/types/course-settings.js';
+
+// In +page.server.ts
+const { data: course } = await CourseQueries.getCourse(courseSlug);
+const settings = getCourseSettings(course?.settings);
+
+// Settings are merged with defaults - always safe to access
+if (settings.features?.reflectionsEnabled === false) {
+  throw redirect(302, `/courses/${courseSlug}`);
+}
+
+// Pass to frontend
+return {
+  featureSettings: settings.features
+};
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `$lib/types/course-settings.ts` | TypeScript types and `getCourseSettings()` helper |
+| `/admin/courses/[slug]/settings/+page.svelte` | Settings admin UI |
+| `/courses/[slug]/materials/+page.server.ts` | Applies coordinator access settings |
+| `/courses/[slug]/+page.server.ts` | Passes feature settings to dashboard |
+| `/courses/[slug]/SessionContent.svelte` | Conditionally shows reflections |
 
 ---
 
@@ -1543,6 +1697,20 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 3. Click "Mark Complete" button
 4. Status changes to `'completed'`
 5. Students still have access but cohort is archived
+
+### How to configure course settings (coordinator access, features)?
+1. Go to `/admin/courses/[slug]/settings`
+2. Scroll to the relevant section:
+   - **Coordinator Access** - Set "all sessions" or specific number ahead
+   - **Session Progression** - Choose manual, auto-time, or require-completion
+   - **Feature Toggles** - Enable/disable reflections, community feed, attendance
+3. Click "Save Settings"
+4. Changes take effect immediately
+
+**Common configurations:**
+- **Limit coordinator preview:** Set "Coordinators see 2 sessions ahead"
+- **Disable reflections:** Uncheck "Enable Reflections" to hide all reflection UI
+- **Require completion:** Select "Require completion" and check "Reflection submitted"
 
 ---
 

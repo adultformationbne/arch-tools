@@ -1,4 +1,4 @@
-import { json } from '@sveltejs/kit';
+import { json, type RequestEvent } from '@sveltejs/kit';
 import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
@@ -6,7 +6,7 @@ import { Resend } from 'resend';
 
 const TASK_TYPE = 'dgr_digest';
 
-export async function GET({ request }) {
+export async function GET({ request }: RequestEvent) {
 	// Verify cron secret
 	const cronSecret = env.CRON_SECRET;
 	if (cronSecret) {
@@ -159,6 +159,7 @@ export async function GET({ request }) {
 
 	} catch (error) {
 		console.error('DGR daily digest error:', error);
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
 		// Try to update task status on error
 		try {
@@ -168,11 +169,11 @@ export async function GET({ request }) {
 				.eq('task_type', TASK_TYPE)
 				.single();
 			if (task) {
-				await updateTaskStatus(task.id, 'error', error.message);
+				await updateTaskStatus(task.id, 'error', errorMessage);
 			}
 		} catch {}
 
-		return json({ error: error.message }, { status: 500 });
+		return json({ error: errorMessage }, { status: 500 });
 	}
 }
 

@@ -1,7 +1,7 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { Check, X, AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, UserPlus, Trash2, MapPin, Send, MailCheck, MailX } from 'lucide-svelte';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck } from 'lucide-svelte';
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
@@ -13,7 +13,6 @@
 	import {
 		getUserReflectionStatus,
 		formatUserReflectionStatus,
-		getStatusBadgeClass,
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
@@ -47,7 +46,6 @@
 	let filterHub = $state('all');
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
-	let editingSession = $state(null);
 
 	// Get selected cohort from URL params
 	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
@@ -71,9 +69,11 @@
 	// Filtered participants
 	const filteredParticipants = $derived(
 		participants.filter(s => {
+			const query = searchQuery.toLowerCase();
 			const matchesSearch = !searchQuery ||
-				s.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				s.email.toLowerCase().includes(searchQuery.toLowerCase());
+				s.full_name?.toLowerCase().includes(query) ||
+				s.email?.toLowerCase().includes(query) ||
+				s.user_profile?.phone?.toLowerCase().includes(query);
 			const matchesHub = filterHub === 'all' || s.hub_id === filterHub;
 			return matchesSearch && matchesHub;
 		})
@@ -192,40 +192,6 @@
 			selectedParticipants.add(id);
 		}
 		selectedParticipants = new Set(selectedParticipants);
-	}
-
-	function startEditSession(participant) {
-		editingSession = {
-			id: participant.id,
-			value: participant.current_session
-		};
-	}
-
-	async function saveEditSession() {
-		if (!editingSession) return;
-
-		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'update_student_session',
-					enrollmentId: editingSession.id,
-					sessionNumber: editingSession.value
-				})
-			});
-
-			if (response.ok) {
-				toastSuccess('Session updated successfully');
-				editingSession = null;
-				await loadParticipants();
-			} else {
-				throw new Error('Failed to update session');
-			}
-		} catch (err) {
-			console.error('Failed to update session:', err);
-			toastError('Failed to update session');
-		}
 	}
 
 	// Sidebar actions
@@ -440,6 +406,27 @@
 		initialTemplateSlug = '';
 		showEmailModal = true;
 	}
+
+	// Status badge styling
+	function getStatusBadge(participant) {
+		if (!participant.welcome_email_sent_at) {
+			return { label: 'Not Invited', class: 'bg-gray-100 text-gray-600' };
+		}
+		if (!participant.last_login_at) {
+			return { label: 'Invited', class: 'bg-blue-100 text-blue-700' };
+		}
+		if (participant.status === 'held') {
+			return { label: 'On Hold', class: 'bg-orange-100 text-orange-700' };
+		}
+		if (participant.status === 'withdrawn') {
+			return { label: 'Withdrawn', class: 'bg-red-100 text-red-700' };
+		}
+		if (participant.status === 'completed') {
+			return { label: 'Completed', class: 'bg-purple-100 text-purple-700' };
+		}
+		return { label: 'Active', class: 'bg-green-100 text-green-700' };
+	}
+
 </script>
 
 <div class="flex h-screen" style="background-color: var(--course-accent-dark);">
@@ -568,10 +555,10 @@
 					</div>
 				{:else}
 					<div class="bg-white rounded border border-gray-200 overflow-x-auto">
-						<table class="w-full min-w-[700px]">
+						<table class="w-full min-w-[900px]">
 							<thead>
-								<tr class="bg-gray-50 border-b border-gray-200">
-									<th class="w-8 px-2 py-2">
+								<tr class="border-b border-gray-200" style="background-color: var(--course-accent-light);">
+									<th class="w-8 px-3 py-2.5">
 										<input
 											type="checkbox"
 											onchange={toggleSelectAll}
@@ -579,18 +566,25 @@
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider w-16">Session</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Hub</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider w-20">Attend.</th>
-									<th class="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider">Reflect.</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Participant</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Phone</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Hub</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Status</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Session</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Attendance</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Reflections</th>
 								</tr>
 							</thead>
-							<tbody class="divide-y divide-gray-200">
+							<tbody class="divide-y divide-gray-100">
 								{#each filteredParticipants as participant}
-									<tr class="hover:bg-gray-50">
-										<td class="px-2 py-1.5">
+									{@const totalSessions = selectedCohort.module?.total_sessions || 8}
+									{@const cohortSession = selectedCohort.current_session || 0}
+									{@const statusBadge = getStatusBadge(participant)}
+									<tr
+										onclick={() => openParticipantDetail(participant)}
+										class="hover:bg-gray-50 transition-colors cursor-pointer"
+									>
+										<td class="px-3 py-2" onclick={(e) => e.stopPropagation()}>
 											<input
 												type="checkbox"
 												checked={selectedParticipants.has(participant.id)}
@@ -598,98 +592,62 @@
 												class="rounded border-gray-300 w-3.5 h-3.5"
 											/>
 										</td>
-										<td class="px-2 py-1.5">
-											<button
-												onclick={() => openParticipantDetail(participant)}
-												class="flex items-center gap-1.5 text-left hover:bg-gray-100 rounded px-1 -mx-1 transition-colors w-full"
-											>
-												{#if participant.isBehind}
-													<AlertTriangle size={12} class="text-orange-500 flex-shrink-0" />
+										<!-- Participant: Name • email + Coordinator badge -->
+										<td class="px-3 py-2">
+											<div class="flex items-center gap-1.5">
+												<span class="text-sm font-medium text-gray-900">
+													{participant.full_name}
+												</span>
+												{#if participant.role === 'coordinator'}
+													<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700">
+														<Home size={9} />
+														Hub Coordinator
+													</span>
 												{/if}
-												<div class="min-w-0">
-													<div class="text-sm font-medium text-gray-900 truncate hover:text-blue-600">{participant.full_name}</div>
-													{#if participant.role === 'coordinator'}
-														<div class="flex items-center gap-1 text-[10px] text-purple-600">
-															<Home size={10} />
-															<span>Coordinator</span>
-														</div>
-													{/if}
-												</div>
-											</button>
+												{#if participant.isBehind}
+													<AlertTriangle size={12} class="text-orange-500" />
+												{/if}
+											</div>
+											<span class="text-xs text-gray-500">{participant.email}</span>
 										</td>
-										<td class="px-2 py-1.5">
-											{#if !participant.welcome_email_sent_at}
-												<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
-													<MailX size={10} />
-													Invite
-												</span>
-											{:else if !participant.last_login_at}
-												<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700" title="Invited {new Date(participant.welcome_email_sent_at).toLocaleDateString()}">
-													<Mail size={10} />
-													Pending
-												</span>
-											{:else if participant.status === 'held'}
-												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700">Hold</span>
-											{:else if participant.status === 'withdrawn'}
-												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">Left</span>
-											{:else}
-												<span class="text-[10px] text-gray-400">—</span>
-											{/if}
+										<!-- Phone -->
+										<td class="px-3 py-2">
+											<span class="text-xs text-gray-600">{participant.user_profile?.phone || '-'}</span>
 										</td>
-										<td class="px-2 py-1.5">
-											{#if editingSession && editingSession.id === participant.id}
-												<div class="flex items-center gap-1">
-													<input
-														type="number"
-														bind:value={editingSession.value}
-														min="0"
-														max={selectedCohort.module?.total_sessions || 8}
-														class="w-12 px-1 py-0.5 text-xs border border-gray-300 rounded"
-													/>
-													<button
-														onclick={saveEditSession}
-														class="p-0.5 text-green-600 hover:text-green-700"
-													>
-														<Check size={12} />
-													</button>
-													<button
-														onclick={() => editingSession = null}
-														class="p-0.5 text-gray-600 hover:text-gray-700"
-													>
-														<X size={12} />
-													</button>
-												</div>
-											{:else}
-												<button
-													onclick={() => startEditSession(participant)}
-													class="text-xs text-gray-900 hover:text-blue-600"
-												>
-													{participant.current_session}/{selectedCohort.module?.total_sessions || 8}
-													{#if participant.isBehind}
-														<AlertTriangle size={10} class="inline text-orange-500" />
-													{/if}
-												</button>
-											{/if}
+										<!-- Hub -->
+										<td class="px-3 py-2">
+											<span class="text-xs text-gray-600">{participant.courses_hubs?.name || '-'}</span>
 										</td>
-										<td class="px-2 py-1.5 text-xs text-gray-600 truncate max-w-[100px]">
-											{participant.courses_hubs?.name || '-'}
+										<!-- Status badge -->
+										<td class="px-3 py-2">
+											<span class="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full {statusBadge.class}">
+												{statusBadge.label}
+											</span>
 										</td>
-										<td class="px-2 py-1.5 text-xs text-gray-600">
-											{#if selectedCohort.current_session === 0}
-												<span class="text-gray-400">—</span>
-											{:else}
-												{participant.attendanceCount}/{selectedCohort.current_session}
-											{/if}
+										<!-- Session progress -->
+										<td class="px-3 py-2">
+											<span class="text-xs tabular-nums text-gray-700">
+												{participant.current_session}/{totalSessions}
+											</span>
 										</td>
-										<td class="px-2 py-1.5">
-											{#if participant.current_session === 0 || selectedCohort.current_session === 0}
-												<span class="text-gray-400">—</span>
-											{:else if participant.reflectionStatus}
-												<span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {getStatusBadgeClass(participant.reflectionStatus.status)}">
+										<!-- Attendance -->
+										<td class="px-3 py-2">
+											<span class="text-xs tabular-nums text-gray-700">
+												{#if cohortSession > 0}
+													{participant.attendanceCount}/{cohortSession}
+												{:else}
+													-
+												{/if}
+											</span>
+										</td>
+										<!-- Reflections -->
+										<td class="px-3 py-2">
+											{#if participant.reflectionStatus && participant.current_session > 0}
+												<span class="text-xs tabular-nums text-gray-700">
 													{getReflectionStatusDisplay(participant)}
 												</span>
 											{:else}
-												<span class="text-gray-400">—</span>
+												<span class="text-xs text-gray-400">-</span>
 											{/if}
 										</td>
 									</tr>

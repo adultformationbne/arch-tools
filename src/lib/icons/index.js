@@ -80,6 +80,7 @@ export { default as Palette } from './Palette.svelte';
 export { default as PenSquare } from './PenSquare.svelte';
 export { default as PenTool } from './PenTool.svelte';
 export { default as Pencil } from './Pencil.svelte';
+export { default as Phone } from './Phone.svelte';
 export { default as Pilcrow } from './Pilcrow.svelte';
 export { default as Play } from './Play.svelte';
 export { default as PlayCircle } from './PlayCircle.svelte';

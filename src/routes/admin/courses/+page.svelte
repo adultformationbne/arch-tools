@@ -330,31 +330,33 @@
 					{@const accentLight = course.settings?.theme?.accentLight || '#c59a6b'}
 					{@const logoUrl = course.settings?.branding?.logoUrl}
 					<Card padding="none" shadow="md" class="flex h-full flex-col overflow-hidden transition-all hover:shadow-lg">
-						<!-- Accent color bar at top -->
-						<div
-							class="h-2 flex-shrink-0"
-							style="background: linear-gradient(90deg, {accentDark} 0%, {accentLight} 100%);"
-						></div>
-
 						<a
 							href="/admin/courses/{course.slug}"
 							class="flex flex-1 flex-col"
 						>
+							<!-- Logo Header -->
+							<div
+								class="flex h-24 flex-shrink-0 items-center justify-center"
+								style="background-color: {accentDark};"
+							>
+								{#if logoUrl}
+									<img
+										src={logoUrl}
+										alt="{course.name} logo"
+										class="h-14 max-w-[180px] object-contain"
+									/>
+								{:else}
+									<BookOpen class="h-10 w-10" style="color: {accentLight};" />
+								{/if}
+							</div>
+
 							<div class="flex-1 p-6">
 								<!-- Course Header -->
-								<div class="mb-4 flex items-start justify-between">
-									<div class="flex-1">
-										<h3 class="text-xl font-semibold" style="color: {accentDark};">
-									{course.name}
-								</h3>
-										<p class="mt-1 text-sm font-mono text-gray-500">/{course.slug}</p>
-									</div>
-									<div
-										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
-										style="background-color: {accentLight};"
-									>
-										<ChevronRight class="h-5 w-5" style="color: {accentDark};" />
-									</div>
+								<div class="mb-2">
+									<h3 class="text-xl font-semibold" style="color: {accentDark};">
+										{course.name}
+									</h3>
+									<p class="mt-1 text-sm font-mono text-gray-500">/{course.slug}</p>
 								</div>
 
 								<!-- Course Description -->

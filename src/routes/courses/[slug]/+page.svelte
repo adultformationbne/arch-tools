@@ -9,7 +9,7 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber } = data;
+	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber, featureSettings } = data;
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
@@ -93,21 +93,26 @@
 		onSessionChange={handleSessionChange}
 		totalSessions={totalSessions}
 		maxSessionNumber={maxSessionNumber}
+		featureSettings={featureSettings}
 	/>
 
-	<!-- Past Reflections Section -->
-	<div class="pb-16">
-		<div class="max-w-7xl mx-auto">
-			<PastReflectionsSection reflections={pastReflections} onReadReflection={openReflectionModal} />
+	<!-- Past Reflections Section (only if reflections enabled) -->
+	{#if featureSettings?.reflectionsEnabled !== false}
+		<div class="pb-16">
+			<div class="max-w-7xl mx-auto">
+				<PastReflectionsSection reflections={pastReflections} onReadReflection={openReflectionModal} />
+			</div>
 		</div>
-	</div>
+	{/if}
 
-	<!-- Public Reflections Feed -->
-	<div class="pb-16">
-		<div class="max-w-7xl mx-auto">
-			<PublicReflectionsFeed reflections={publicReflections} />
+	<!-- Public Reflections Feed (only if community feed enabled) -->
+	{#if featureSettings?.communityFeedEnabled !== false}
+		<div class="pb-16">
+			<div class="max-w-7xl mx-auto">
+				<PublicReflectionsFeed reflections={publicReflections} />
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
 
 	<!-- Reflection Reading Modal (no margin needed - it's a modal) -->

@@ -1,8 +1,9 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates, groupQuestionsBySession } from '$lib/server/course-data.js';
 import { getReflectionStatus } from '$lib/utils/reflection-status.js';
 import { getUserInitials } from '$lib/utils/avatar.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -14,6 +15,12 @@ export const load: PageServerLoad = async (event) => {
 	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
+	// Check if reflections are enabled for this course
+	const courseSettings = getCourseSettings(course?.settings);
+	if (courseSettings.features?.reflectionsEnabled === false) {
+		throw redirect(302, `/courses/${courseSlug}`);
+	}
 
 	// Get all reflections page data in one optimized call
 	const result = await CourseAggregates.getReflectionsPage(user.id, courseSlug, cohortId);

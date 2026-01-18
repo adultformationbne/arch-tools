@@ -384,6 +384,16 @@ def find_lectionary_match(ordo_entry, lectionary_entries, year_letter, ordo_data
         if year_letter and lect_year and lect_year not in [year_letter, 'Season', '1', '2', 'Feast', 'Solemnity', 'Memorial', '']:
             continue
 
+        # Weekday year cycle filter for Ordinary Time feria days
+        # Odd calendar years use Year 1, even years use Year 2
+        is_feria_weekday = ordo_rank == 'feria' and season == 'Ordinary Time'
+        if is_feria_weekday and lect_year in ['1', '2'] and lect_time == 'Ordinary':
+            calendar_year = int(ordo_date[:4]) if ordo_date else None
+            if calendar_year:
+                expected_weekday_year = '1' if calendar_year % 2 == 1 else '2'
+                if lect_year != expected_weekday_year:
+                    continue
+
         # Season filter
         if season and expected_time and lect_time:
             if expected_time.upper() != lect_time.upper():

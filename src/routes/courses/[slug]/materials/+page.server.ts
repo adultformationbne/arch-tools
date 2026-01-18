@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries, groupMaterialsBySession } from '$lib/server/course-data.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -39,14 +40,34 @@ export const load: PageServerLoad = async (event) => {
 		throw error(500, 'Failed to load sessions');
 	}
 
-	// Filter sessions based on role:
+	// Get course settings for visibility rules
+	const courseSettings = getCourseSettings(course?.settings);
+	const coordinatorAccessAhead = courseSettings.coordinatorAccess?.sessionsAhead ?? 'all';
+
+	// Filter sessions based on role and settings:
 	// - Students only see sessions up to and including the current session
-	// - Coordinators and admins can see all sessions
+	// - Coordinators see ahead based on settings (all or N sessions ahead)
+	// - Admins always see all sessions
 	// - If currentSession is null/undefined, students only see session 0 (pre-start materials)
 	const effectiveSession = currentSession ?? 0;
-	const sessions = isStaffRole
-		? allSessions
-		: allSessions.filter((s) => s.session_number <= effectiveSession);
+
+	let maxVisibleSession: number;
+	if (isAdmin) {
+		// Admins always see everything
+		maxVisibleSession = Infinity;
+	} else if (userRole === 'coordinator') {
+		// Coordinators see based on settings
+		if (coordinatorAccessAhead === 'all') {
+			maxVisibleSession = Infinity;
+		} else {
+			maxVisibleSession = effectiveSession + coordinatorAccessAhead;
+		}
+	} else {
+		// Students see only up to their current session
+		maxVisibleSession = effectiveSession;
+	}
+
+	const sessions = allSessions.filter((s) => s.session_number <= maxVisibleSession);
 	const sessionIds = sessions.map((s) => s.id);
 
 	// Get materials for the filtered sessions

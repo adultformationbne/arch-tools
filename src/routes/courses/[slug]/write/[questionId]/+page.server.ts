@@ -1,7 +1,8 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries } from '$lib/server/course-data.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -14,6 +15,12 @@ export const load: PageServerLoad = async (event) => {
 	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
+	// Check if reflections are enabled for this course
+	const courseSettings = getCourseSettings(course?.settings);
+	if (courseSettings.features?.reflectionsEnabled === false) {
+		throw redirect(302, `/courses/${courseSlug}`);
+	}
 
 	// Get the reflection question with course verification
 	const { data: questionData, error: questionError } = await supabaseAdmin

@@ -359,7 +359,12 @@ export const CourseQueries = {
 	async getEnrollments(cohortId?: string) {
 		let query = supabaseAdmin
 			.from('courses_enrollments')
-			.select('*, courses_cohorts(name, start_date, current_session), courses_hubs(name)')
+			.select(`
+				*,
+				courses_cohorts(name, start_date, current_session),
+				courses_hubs(name),
+				user_profile:user_profile_id(phone, parish_community, parish_role, address)
+			`)
 			.order('created_at', { ascending: false });
 
 		if (cohortId) {
@@ -1374,6 +1379,7 @@ export const CourseMutations = {
 		userId: string;
 		updates: {
 			full_name?: string;
+			notes?: string;
 			role?: string;
 			hub_id?: string;
 			assigned_admin_id?: string;
@@ -1385,6 +1391,7 @@ export const CourseMutations = {
 
 		const allowedFields = [
 			'full_name',
+			'notes',
 			'role',
 			'hub_id',
 			'assigned_admin_id',
@@ -1702,23 +1709,50 @@ export const CourseMutations = {
 			await supabaseAdmin.from('user_profiles').upsert(profilesToCreate, { onConflict: 'id' });
 		}
 
-		// Also ensure existing profiles have courses.participant module
-		// (handles case where profile was created by auth trigger with empty modules)
-		const existingProfilesWithoutModule: string[] = [];
-		for (const [email, profile] of profilesByEmail) {
-			// Check if this email is being enrolled
-			if (csvEmails.includes(email)) {
-				existingProfilesWithoutModule.push(profile.id);
-			}
-		}
+		// Update all user profiles with CSV data (only non-empty fields)
+		// This handles both new and existing users
+		for (const row of rows) {
+			const emailLower = row.email.toLowerCase();
+			const existingAuthUser = authUsersByEmail.get(emailLower);
+			const newlyCreatedUserId = createdUsers.get(emailLower);
+			const userId = existingAuthUser?.id || newlyCreatedUserId;
 
-		if (existingProfilesWithoutModule.length > 0) {
-			// Add courses.participant to any existing profiles that don't have it
-			for (const profileId of existingProfilesWithoutModule) {
+			if (!userId) continue;
+
+			// Build update object with only non-empty CSV values
+			const profileUpdate: any = {};
+			if (row.first_name) profileUpdate.first_name = row.first_name;
+			if (row.last_name) profileUpdate.last_name = row.last_name;
+			if (row.full_name) profileUpdate.full_name = row.full_name;
+			if (row.phone) profileUpdate.phone = row.phone;
+			if (row.address) profileUpdate.address = row.address;
+			if (row.parish_community) profileUpdate.parish_community = row.parish_community;
+			if (row.parish_role) profileUpdate.parish_role = row.parish_role;
+
+			// Only update if we have fields to update
+			if (Object.keys(profileUpdate).length > 0) {
+				// Ensure courses.participant module is present
 				const { data: existingProfile } = await supabaseAdmin
 					.from('user_profiles')
 					.select('modules')
-					.eq('id', profileId)
+					.eq('id', userId)
+					.single();
+
+				const currentModules = existingProfile?.modules || [];
+				if (!currentModules.includes('courses.participant')) {
+					profileUpdate.modules = [...currentModules, 'courses.participant'];
+				}
+
+				await supabaseAdmin
+					.from('user_profiles')
+					.update(profileUpdate)
+					.eq('id', userId);
+			} else {
+				// Still ensure courses.participant module
+				const { data: existingProfile } = await supabaseAdmin
+					.from('user_profiles')
+					.select('modules')
+					.eq('id', userId)
 					.single();
 
 				const currentModules = existingProfile?.modules || [];
@@ -1726,7 +1760,7 @@ export const CourseMutations = {
 					await supabaseAdmin
 						.from('user_profiles')
 						.update({ modules: [...currentModules, 'courses.participant'] })
-						.eq('id', profileId);
+						.eq('id', userId);
 				}
 			}
 		}
@@ -1761,6 +1795,7 @@ export const CourseMutations = {
 				user_profile_id: userId,
 				email: row.email,
 				full_name: row.full_name,
+				notes: row.notes || null, // Only enrollment-specific field
 				role: row.role || 'student',
 				hub_id: hubId,
 				cohort_id: cohortId,

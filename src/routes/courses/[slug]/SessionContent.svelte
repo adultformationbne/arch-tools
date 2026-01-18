@@ -12,8 +12,12 @@
 		currentSessionData,
 		onSessionChange,
 		totalSessions,
-		maxSessionNumber
+		maxSessionNumber,
+		featureSettings = {}
 	} = $props();
+
+	// Check if reflections are enabled (default true for backwards compatibility)
+	const reflectionsEnabled = $derived(featureSettings?.reflectionsEnabled !== false);
 
 	// Question truncation length
 	const QUESTION_TRUNCATE_LENGTH = 200;
@@ -234,50 +238,52 @@
 								</div>
 							</div>
 
-						<!-- Reflection -->
-							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
-							{#if currentSessionData.reflectionQuestion}
-								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
-								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
-								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
-									{truncated}
-									{#if needsTruncation}
+						<!-- Reflection (only if reflections enabled) -->
+							{#if reflectionsEnabled}
+								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+								{#if currentSessionData.reflectionQuestion}
+									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
+									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
+									<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+									<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+										{truncated}
+										{#if needsTruncation}
+											<a
+												href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+												class="text-xs font-medium ml-1 no-underline hover:underline"
+												style="color: var(--course-accent-dark, #c59a6b);"
+											>
+												more
+											</a>
+										{/if}
+									</p>
+									<div class="flex items-center justify-between mt-auto pt-2">
+										<div class="flex items-center gap-2">
+											<div
+												class="w-2.5 h-2.5 rounded-full"
+												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+											></div>
+											<span class="text-gray-600 text-xs font-medium">
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+											</span>
+										</div>
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-xs font-medium ml-1 no-underline hover:underline"
-											style="color: var(--course-accent-dark, #c59a6b);"
+											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											more
+											<Edit3 size="14" />
+											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
 										</a>
-									{/if}
-								</p>
-								<div class="flex items-center justify-between mt-auto pt-2">
-									<div class="flex items-center gap-2">
-										<div
-											class="w-2.5 h-2.5 rounded-full"
-											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-										></div>
-										<span class="text-gray-600 text-xs font-medium">
-											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-										</span>
 									</div>
-									<a
-										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
-										style="background-color: var(--course-accent-dark, #334642);"
-									>
-										<Edit3 size="14" />
-										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
-									</a>
+								{:else}
+									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
+								{/if}
 								</div>
-							{:else}
-								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
-							</div>
 						</div>
 					</div>
 				</div>
@@ -421,50 +427,52 @@
 							</div>
 						</div>
 
-						<!-- Reflection -->
-							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
-							{#if currentSessionData.reflectionQuestion}
-								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
-								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
-								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
-									{truncated}
-									{#if needsTruncation}
+						<!-- Reflection (only if reflections enabled) -->
+							{#if reflectionsEnabled}
+								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+								{#if currentSessionData.reflectionQuestion}
+									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
+									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
+									<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+									<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+										{truncated}
+										{#if needsTruncation}
+											<a
+												href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+												class="text-xs font-medium ml-1 no-underline hover:underline"
+												style="color: var(--course-accent-dark, #c59a6b);"
+											>
+												more
+											</a>
+										{/if}
+									</p>
+									<div class="flex items-center justify-between mt-auto pt-2">
+										<div class="flex items-center gap-2">
+											<div
+												class="w-2.5 h-2.5 rounded-full"
+												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+											></div>
+											<span class="text-gray-600 text-xs font-medium">
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+											</span>
+										</div>
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-xs font-medium ml-1 no-underline hover:underline"
-											style="color: var(--course-accent-dark, #c59a6b);"
+											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											more
+											<Edit3 size="14" />
+											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
 										</a>
-									{/if}
-								</p>
-								<div class="flex items-center justify-between mt-auto pt-2">
-									<div class="flex items-center gap-2">
-										<div
-											class="w-2.5 h-2.5 rounded-full"
-											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-										></div>
-										<span class="text-gray-600 text-xs font-medium">
-											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-										</span>
 									</div>
-									<a
-										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
-										style="background-color: var(--course-accent-dark, #334642);"
-									>
-										<Edit3 size="14" />
-										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
-									</a>
+								{:else}
+									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
+								{/if}
 								</div>
-							{:else}
-								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
-						</div>
 					</div>
 				</div>
 			</div>
@@ -604,50 +612,52 @@
 							</div>
 						</div>
 
-						<!-- Reflection -->
-							<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
-							{#if currentSessionData.reflectionQuestion}
-								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
-								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
-								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
-									{truncated}
-									{#if needsTruncation}
+						<!-- Reflection (only if reflections enabled) -->
+							{#if reflectionsEnabled}
+								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+								{#if currentSessionData.reflectionQuestion}
+									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
+									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
+									<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+									<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+										{truncated}
+										{#if needsTruncation}
+											<a
+												href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+												class="text-xs font-medium ml-1 no-underline hover:underline"
+												style="color: var(--course-accent-dark, #c59a6b);"
+											>
+												more
+											</a>
+										{/if}
+									</p>
+									<div class="flex items-center justify-between mt-auto pt-2">
+										<div class="flex items-center gap-2">
+											<div
+												class="w-2.5 h-2.5 rounded-full"
+												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+											></div>
+											<span class="text-gray-600 text-xs font-medium">
+												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+											</span>
+										</div>
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="text-xs font-medium ml-1 no-underline hover:underline"
-											style="color: var(--course-accent-dark, #c59a6b);"
+											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											more
+											<Edit3 size="14" />
+											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
 										</a>
-									{/if}
-								</p>
-								<div class="flex items-center justify-between mt-auto pt-2">
-									<div class="flex items-center gap-2">
-										<div
-											class="w-2.5 h-2.5 rounded-full"
-											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-										></div>
-										<span class="text-gray-600 text-xs font-medium">
-											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-										</span>
 									</div>
-									<a
-										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
-										style="background-color: var(--course-accent-dark, #334642);"
-									>
-										<Edit3 size="14" />
-										{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
-									</a>
+								{:else}
+									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
+								{/if}
 								</div>
-							{:else}
-								<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
 							{/if}
-						</div>
 					</div>
 				</div>
 			</div>

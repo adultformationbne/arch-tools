@@ -3,11 +3,15 @@
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
+	import { getCourseSettings, DEFAULT_COURSE_SETTINGS } from '$lib/types/course-settings.js';
 
 	let { data } = $props();
 
 	const courseSlug = data.courseSlug;
 	let course = $state(data.course);
+
+	// Get current settings with defaults applied
+	const currentSettings = getCourseSettings(course.settings);
 
 	// Form state
 	let saving = $state(false);
@@ -29,8 +33,35 @@
 		},
 		emailBranding: {
 			replyToEmail: course.email_branding_config?.reply_to_email || ''
+		},
+		// New settings
+		coordinatorAccess: {
+			sessionsAhead: currentSettings.coordinatorAccess?.sessionsAhead ?? 'all'
+		},
+		sessionProgression: {
+			mode: currentSettings.sessionProgression?.mode ?? 'manual',
+			autoAdvanceDays: currentSettings.sessionProgression?.autoAdvanceDays ?? 7,
+			completionRequirements: {
+				reflectionSubmitted: currentSettings.sessionProgression?.completionRequirements?.reflectionSubmitted ?? true,
+				attendanceMarked: currentSettings.sessionProgression?.completionRequirements?.attendanceMarked ?? false
+			}
+		},
+		features: {
+			reflectionsEnabled: currentSettings.features?.reflectionsEnabled ?? true,
+			communityFeedEnabled: currentSettings.features?.communityFeedEnabled ?? true,
+			attendanceEnabled: currentSettings.features?.attendanceEnabled ?? true
 		}
 	});
+
+	// Derived state for coordinator access radio selection
+	let coordinatorAccessMode = $derived(
+		settings.coordinatorAccess.sessionsAhead === 'all' ? 'all' : 'limited'
+	);
+	let sessionsAheadCount = $state(
+		typeof currentSettings.coordinatorAccess?.sessionsAhead === 'number'
+			? currentSettings.coordinatorAccess.sessionsAhead
+			: 2
+	);
 
 	async function handleLogoUpload(event) {
 		const file = event.target.files?.[0];
@@ -81,6 +112,21 @@
 		settings.branding.logoUrl = '';
 	}
 
+	function setCoordinatorAccessMode(mode) {
+		if (mode === 'all') {
+			settings.coordinatorAccess.sessionsAhead = 'all';
+		} else {
+			settings.coordinatorAccess.sessionsAhead = sessionsAheadCount;
+		}
+	}
+
+	function updateSessionsAheadCount(value) {
+		sessionsAheadCount = value;
+		if (coordinatorAccessMode === 'limited') {
+			settings.coordinatorAccess.sessionsAhead = value;
+		}
+	}
+
 	async function saveSettings() {
 		saving = true;
 
@@ -96,7 +142,10 @@
 						description: settings.description,
 						settings: {
 							theme: settings.theme,
-							branding: settings.branding
+							branding: settings.branding,
+							coordinatorAccess: settings.coordinatorAccess,
+							sessionProgression: settings.sessionProgression,
+							features: settings.features
 						},
 						email_branding_config: {
 							reply_to_email: settings.emailBranding.replyToEmail || null
@@ -338,6 +387,191 @@
 							Leave blank to use the platform default.
 						</p>
 					</div>
+				</div>
+			</div>
+
+			<!-- Coordinator Access Section -->
+			<div class="p-6 border-b border-gray-200">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">Coordinator Access</h2>
+				<p class="text-sm text-gray-600 mb-4">
+					Control how many sessions ahead coordinators can see compared to students
+				</p>
+
+				<div class="space-y-3">
+					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={coordinatorAccessMode === 'all'} class:bg-blue-50={coordinatorAccessMode === 'all'}>
+						<input
+							type="radio"
+							name="coordinatorAccess"
+							value="all"
+							checked={coordinatorAccessMode === 'all'}
+							onchange={() => setCoordinatorAccessMode('all')}
+							class="w-4 h-4 text-blue-600"
+						/>
+						<div>
+							<span class="font-medium text-gray-900">Coordinators can see all sessions</span>
+							<p class="text-sm text-gray-500">Coordinators have full access to view all session materials</p>
+						</div>
+					</label>
+
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={coordinatorAccessMode === 'limited'} class:bg-blue-50={coordinatorAccessMode === 'limited'}>
+						<input
+							type="radio"
+							name="coordinatorAccess"
+							value="limited"
+							checked={coordinatorAccessMode === 'limited'}
+							onchange={() => setCoordinatorAccessMode('limited')}
+							class="w-4 h-4 text-blue-600 mt-1"
+						/>
+						<div class="flex-1">
+							<div class="flex items-center gap-2">
+								<span class="font-medium text-gray-900">Coordinators see</span>
+								<input
+									type="number"
+									min="1"
+									max="10"
+									value={sessionsAheadCount}
+									oninput={(e) => updateSessionsAheadCount(parseInt(e.target.value) || 1)}
+									disabled={coordinatorAccessMode !== 'limited'}
+									class="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+								/>
+								<span class="font-medium text-gray-900">sessions ahead of students</span>
+							</div>
+							<p class="text-sm text-gray-500 mt-1">Coordinators can preview upcoming session materials before students</p>
+						</div>
+					</label>
+				</div>
+			</div>
+
+			<!-- Session Progression Section -->
+			<div class="p-6 border-b border-gray-200">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">Session Progression Rules</h2>
+				<p class="text-sm text-gray-600 mb-4">
+					Define how students advance through sessions
+				</p>
+
+				<div class="space-y-3">
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={settings.sessionProgression.mode === 'manual'} class:bg-blue-50={settings.sessionProgression.mode === 'manual'}>
+						<input
+							type="radio"
+							name="progressionMode"
+							value="manual"
+							bind:group={settings.sessionProgression.mode}
+							class="w-4 h-4 text-blue-600 mt-1"
+						/>
+						<div>
+							<span class="font-medium text-gray-900">Manual advancement only</span>
+							<p class="text-sm text-gray-500">Admins must manually advance each student to the next session</p>
+						</div>
+					</label>
+
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={settings.sessionProgression.mode === 'auto_time'} class:bg-blue-50={settings.sessionProgression.mode === 'auto_time'}>
+						<input
+							type="radio"
+							name="progressionMode"
+							value="auto_time"
+							bind:group={settings.sessionProgression.mode}
+							class="w-4 h-4 text-blue-600 mt-1"
+						/>
+						<div class="flex-1">
+							<div class="flex items-center gap-2 flex-wrap">
+								<span class="font-medium text-gray-900">Auto-advance after</span>
+								<input
+									type="number"
+									min="1"
+									max="30"
+									bind:value={settings.sessionProgression.autoAdvanceDays}
+									disabled={settings.sessionProgression.mode !== 'auto_time'}
+									class="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+								/>
+								<span class="font-medium text-gray-900">days</span>
+							</div>
+							<p class="text-sm text-gray-500 mt-1">Students automatically advance after the specified number of days</p>
+						</div>
+					</label>
+
+					<div class="p-3 border rounded-lg" class:border-blue-500={settings.sessionProgression.mode === 'require_completion'} class:bg-blue-50={settings.sessionProgression.mode === 'require_completion'}>
+						<label class="flex items-start gap-3 cursor-pointer">
+							<input
+								type="radio"
+								name="progressionMode"
+								value="require_completion"
+								bind:group={settings.sessionProgression.mode}
+								class="w-4 h-4 text-blue-600 mt-1"
+							/>
+							<div class="flex-1">
+								<span class="font-medium text-gray-900">Require completion before advancing</span>
+								<p class="text-sm text-gray-500 mt-1">Students must complete specific requirements before they can advance</p>
+							</div>
+						</label>
+
+						{#if settings.sessionProgression.mode === 'require_completion'}
+							<div class="mt-3 ml-7 space-y-2 p-3 bg-white rounded border border-gray-200">
+								<p class="text-sm font-medium text-gray-700 mb-2">Requirements:</p>
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input
+										type="checkbox"
+										bind:checked={settings.sessionProgression.completionRequirements.reflectionSubmitted}
+										class="w-4 h-4 rounded border-gray-300 text-blue-600"
+									/>
+									<span class="text-sm text-gray-700">Reflection submitted</span>
+								</label>
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input
+										type="checkbox"
+										bind:checked={settings.sessionProgression.completionRequirements.attendanceMarked}
+										class="w-4 h-4 rounded border-gray-300 text-blue-600"
+									/>
+									<span class="text-sm text-gray-700">Attendance marked</span>
+								</label>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<!-- Feature Toggles Section -->
+			<div class="p-6 border-b border-gray-200">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">Feature Toggles</h2>
+				<p class="text-sm text-gray-600 mb-4">
+					Enable or disable course features
+				</p>
+
+				<div class="space-y-3">
+					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+						<input
+							type="checkbox"
+							bind:checked={settings.features.reflectionsEnabled}
+							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+						/>
+						<div>
+							<span class="font-medium text-gray-900">Enable Reflections</span>
+							<p class="text-sm text-gray-500">Allow students to submit reflections for each session</p>
+						</div>
+					</label>
+
+					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+						<input
+							type="checkbox"
+							bind:checked={settings.features.communityFeedEnabled}
+							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+						/>
+						<div>
+							<span class="font-medium text-gray-900">Enable Community Feed</span>
+							<p class="text-sm text-gray-500">Allow students to view and post in the course community feed</p>
+						</div>
+					</label>
+
+					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+						<input
+							type="checkbox"
+							bind:checked={settings.features.attendanceEnabled}
+							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+						/>
+						<div>
+							<span class="font-medium text-gray-900">Enable Attendance Tracking</span>
+							<p class="text-sm text-gray-500">Track and manage student attendance for each session</p>
+						</div>
+					</label>
 				</div>
 			</div>
 

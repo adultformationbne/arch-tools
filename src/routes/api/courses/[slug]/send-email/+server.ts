@@ -48,7 +48,7 @@ export const POST: RequestHandler = async (event) => {
 		// Get course with settings
 		const { data: course, error: courseError } = await supabaseAdmin
 			.from('courses')
-			.select('id, name, slug, settings')
+			.select('id, name, slug, settings, email_branding_config')
 			.eq('slug', slug)
 			.single();
 
@@ -221,12 +221,16 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Send all emails using batch API (up to 100 per request)
+		// Use course-specific reply-to if set
+		const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+
 		const results = await sendBulkEmails({
 			emails: emailsToSend,
 			emailType: email_type || 'custom',
 			resendApiKey: RESEND_API_KEY,
 			supabase: supabaseAdmin,
 			options: {
+				replyTo: courseReplyTo,
 				commonMetadata: {
 					sentBy: user.id,
 					sentAt: new Date().toISOString(),

@@ -8,6 +8,7 @@ import {
 } from '$lib/server/course-data.js';
 import { isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 import { getUserInitials } from '$lib/utils/avatar.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -19,6 +20,10 @@ export const load: PageServerLoad = async (event) => {
 	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
+	// Get course settings for feature toggles
+	const courseSettings = getCourseSettings(course?.settings);
+	const featureSettings = courseSettings.features;
 
 	// Get all dashboard data in one optimized call
 	const result = await CourseAggregates.getStudentDashboard(user.id, courseSlug, cohortId);
@@ -285,6 +290,7 @@ export const load: PageServerLoad = async (event) => {
 		courseSlug,
 		hubData: formattedHubData,
 		totalSessions,
-		maxSessionNumber
+		maxSessionNumber,
+		featureSettings
 	};
 };
