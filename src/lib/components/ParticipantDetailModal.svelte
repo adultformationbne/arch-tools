@@ -1,5 +1,5 @@
 <script>
-	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight } from 'lucide-svelte';
+	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 

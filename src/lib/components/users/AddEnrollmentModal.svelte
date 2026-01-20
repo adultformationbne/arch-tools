@@ -1,5 +1,5 @@
 <script>
-	import { GraduationCap } from 'lucide-svelte';
+	import { GraduationCap } from '$lib/icons';
 	import { apiPost } from '$lib/utils/api-handler.js';
 	import { toastValidationError } from '$lib/utils/toast-helpers.js';
 

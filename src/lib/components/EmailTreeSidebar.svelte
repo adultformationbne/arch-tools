@@ -1,5 +1,5 @@
 <script>
-	import { ChevronDown, ChevronRight, Mail, Settings, FileText, Plus, List, Send, Edit3 } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Mail, Settings, FileText, Plus, List, Send, Edit3 } from '$lib/icons';
 
 	let {
 		systemTemplates = [],

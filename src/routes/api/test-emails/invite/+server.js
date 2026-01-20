@@ -1,7 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { hasModule, hasModuleLevel } from '$lib/server/auth.js';
 
 /** @type {import('./$types').RequestHandler} */
@@ -34,14 +32,6 @@ export async function POST({ request, locals }) {
 		if (!email) {
 			return json({ error: 'Email is required' }, { status: 400 });
 		}
-
-		// Create admin client with service role key
-		const supabaseAdmin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false
-			}
-		});
 
 		// Send invite - Supabase will use the "Invite User" email template configured in dashboard
 		const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {

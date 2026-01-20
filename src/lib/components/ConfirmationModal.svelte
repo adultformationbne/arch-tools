@@ -1,5 +1,5 @@
 <script>
-	import { X, Loader2 } from 'lucide-svelte';
+	import { X, Loader2 } from '$lib/icons';
 
 	let {
 		show = false,

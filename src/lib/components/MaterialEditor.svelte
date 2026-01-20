@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical } from 'lucide-svelte';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical } from '$lib/icons';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';

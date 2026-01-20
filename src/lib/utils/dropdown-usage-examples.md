@@ -15,7 +15,7 @@ For Svelte 5 with runes, use a custom action to register both button and menu el
 ```svelte
 <script>
   import { createDropdown } from '$lib/utils/dropdown.js';
-  import { MoreVertical } from 'lucide-svelte';
+  import { MoreVertical } from '$lib/icons';
 
   let dropdownRefs = $state(new Map());
   let dropdownControllers = $state(new Map());
@@ -108,7 +108,7 @@ Perfect for action menus in tables where clipping is common:
 
 ```svelte
 <script>
-  import { MoreVertical } from 'lucide-svelte';
+  import { MoreVertical } from '$lib/icons';
   import { createDropdown } from '$lib/utils/dropdown.js';
 
   let items = $state([

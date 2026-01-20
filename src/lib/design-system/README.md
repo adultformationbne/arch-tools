@@ -13,7 +13,7 @@ Flexible button component with multiple variants and sizes.
 ```svelte
 <script>
 	import { Button } from '$lib/design-system';
-	import { Edit } from 'lucide-svelte';
+	import { Edit } from '$lib/icons';
 </script>
 
 <Button variant="primary" size="lg" icon={Edit} onclick={handleClick}>Edit Content</Button>

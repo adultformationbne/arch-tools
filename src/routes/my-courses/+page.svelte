@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BookOpen, ChevronRight } from 'lucide-svelte';
+	import { BookOpen, ChevronRight } from '$lib/icons';
 	import { Card } from '$lib/design-system';
 
 	let { data } = $props();

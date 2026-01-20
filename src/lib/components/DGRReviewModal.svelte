@@ -1,5 +1,5 @@
 <script>
-	import { X, Save, CheckCircle, FileText, User, Send, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { X, Save, CheckCircle, FileText, User, Send, ChevronLeft, ChevronRight } from '$lib/icons';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { formatContributorName } from '$lib/utils/dgr-helpers';

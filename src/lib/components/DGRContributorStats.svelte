@@ -1,5 +1,5 @@
 <script>
-	import { MailCheck, Eye, AlertCircle } from 'lucide-svelte';
+	import { MailCheck, Eye, AlertCircle } from '$lib/icons';
 
 	let {
 		totalCount = 0,

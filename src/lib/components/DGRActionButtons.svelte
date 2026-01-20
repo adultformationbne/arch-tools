@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Upload, Send, Settings, Loader2 } from 'lucide-svelte';
+	import { Plus, Upload, Send, Settings, Loader2 } from '$lib/icons';
 
 	let {
 		isSending = false,

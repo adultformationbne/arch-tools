@@ -1,5 +1,5 @@
 <script>
-	import { Save, Upload, X, Loader2 } from 'lucide-svelte';
+	import { Save, Upload, X, Loader2 } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';

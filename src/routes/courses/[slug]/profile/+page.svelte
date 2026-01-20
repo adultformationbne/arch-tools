@@ -1,5 +1,5 @@
 <script>
-	import { User, Mail, Lock, Shield, Trash2, Save, Edit3 } from 'lucide-svelte';
+	import { User, Mail, Lock, Shield, Trash2, Save, Edit3 } from '$lib/icons';
 	import { toastWarning, toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 

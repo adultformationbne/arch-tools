@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { HelpCircle, X, ChevronLeft, ChevronRight, BookOpen, PlayCircle } from 'lucide-svelte';
+	import { HelpCircle, X, ChevronLeft, ChevronRight, BookOpen, PlayCircle } from '$lib/icons';
 
 	let {
 		helpContent = [],

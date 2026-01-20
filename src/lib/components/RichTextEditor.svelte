@@ -21,7 +21,7 @@
 		RotateCcw,
 		AlertCircle,
 		Check
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 
 	let {
 		value = '',

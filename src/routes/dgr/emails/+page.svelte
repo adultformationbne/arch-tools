@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Mail, ChevronRight, History } from 'lucide-svelte';
+	import { Mail, ChevronRight, History } from '$lib/icons';
 	import EmailTemplateEditor from '$lib/components/EmailTemplateEditor.svelte';
 
 	let { data } = $props();

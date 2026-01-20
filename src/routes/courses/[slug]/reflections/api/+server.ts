@@ -17,7 +17,6 @@ export const POST: RequestHandler = async (event) => {
 
 	try {
 		const body = await event.request.json();
-		console.log('Request body:', body);
 
 		const { action, reflection_question_id, content, is_public, status } = body;
 
@@ -28,7 +27,6 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get question details to extract session info
-		console.log('Looking up question:', reflection_question_id);
 		const { data: questionData, error: questionError } = await supabaseAdmin
 			.from('courses_reflection_questions')
 			.select(`
@@ -43,8 +41,6 @@ export const POST: RequestHandler = async (event) => {
 			.eq('id', reflection_question_id)
 			.single();
 
-		console.log('Question data:', questionData);
-		console.log('Question error:', questionError);
 
 		if (questionError || !questionData) {
 			console.error('Question lookup error:', questionError);
@@ -53,7 +49,6 @@ export const POST: RequestHandler = async (event) => {
 
 		// Get student's courses_enrollments record (need id and cohort_id)
 		// Use the cohort cookie if available to select the correct enrollment
-		console.log('Looking up student by user_profile_id:', userId, 'cohortId:', cohortId);
 		let enrollmentQuery = supabaseAdmin
 			.from('courses_enrollments')
 			.select('id, cohort_id')
@@ -70,8 +65,6 @@ export const POST: RequestHandler = async (event) => {
 
 		const studentData = studentDataArr?.[0] || null;
 
-		console.log('Student data:', studentData);
-		console.log('Student error:', studentError);
 
 		if (studentError || !studentData) {
 			console.error('Student lookup error:', studentError);
@@ -117,7 +110,6 @@ export const POST: RequestHandler = async (event) => {
 			}
 		}
 
-		console.log('Upserting reflection response...');
 		const responseData = {
 			enrollment_id: studentData.id,
 			cohort_id: studentData.cohort_id,
@@ -129,7 +121,6 @@ export const POST: RequestHandler = async (event) => {
 			updated_at: new Date().toISOString()
 		};
 
-		console.log('Upsert payload:', responseData);
 
 		// Upsert will insert or update based on the unique constraint (enrollment_id, question_id)
 		// Note: marked_at is only set by admin when marking, not on submission
@@ -142,8 +133,6 @@ export const POST: RequestHandler = async (event) => {
 			.select()
 			.single();
 
-		console.log('Upsert result:', result);
-		console.log('Upsert error:', upsertError);
 
 		if (upsertError) {
 			console.error('Upsert error:', upsertError);
@@ -173,7 +162,6 @@ export const POST: RequestHandler = async (event) => {
 			});
 		}
 
-		console.log('Returning success response');
 		const message = finalStatus === 'draft'
 			? 'Draft saved'
 			: finalStatus === 'resubmitted'

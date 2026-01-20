@@ -1,5 +1,5 @@
 <script>
-	import { Calendar, BookOpen, Search } from 'lucide-svelte';
+	import { Calendar, BookOpen, Search } from '$lib/icons';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);

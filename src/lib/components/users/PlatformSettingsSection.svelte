@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Settings, Save } from 'lucide-svelte';
+	import { Settings, Save } from '$lib/icons';
 	import { apiGet, apiPut } from '$lib/utils/api-handler.js';
 	import { onMount } from 'svelte';
 

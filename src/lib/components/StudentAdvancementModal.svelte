@@ -1,5 +1,5 @@
 <script>
-	import { Mail, ArrowRight, Settings, Home } from 'lucide-svelte';
+	import { Mail, ArrowRight, Settings, Home } from '$lib/icons';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 

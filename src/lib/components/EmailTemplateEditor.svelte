@@ -1,5 +1,5 @@
 <script>
-	import { Save, Send, RotateCcw } from 'lucide-svelte';
+	import { Save, Send, RotateCcw } from '$lib/icons';
 	import { apiPost, apiPut, apiPatch } from '$lib/utils/api-handler.js';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import EmailBodyEditor from './EmailBodyEditor.svelte';

@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { Zap, SquareMousePointer, Braces, AlertCircle } from 'lucide-svelte';
+	import { Zap, SquareMousePointer, Braces, AlertCircle } from '$lib/icons';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
 	import FallbackTextEditor from './FallbackTextEditor.svelte';
 	import { createDropdown } from '$lib/utils/dropdown.js';

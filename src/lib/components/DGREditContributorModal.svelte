@@ -1,5 +1,5 @@
 <script>
-	import { X } from 'lucide-svelte';
+	import { X } from '$lib/icons';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { DAY_NAMES, getOrdinalSuffix } from '$lib/utils/dgr-helpers';
 

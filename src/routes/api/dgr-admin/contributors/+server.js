@@ -1,14 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function GET({ locals }) {
 	const { user } = await locals.safeGetSession();
@@ -17,7 +8,7 @@ export async function GET({ locals }) {
 	}
 
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('*')
 			.order('name', { ascending: true });
@@ -46,7 +37,7 @@ export async function POST({ request, locals }) {
 			const results = { successful: 0, failed: 0, errors: [] };
 
 			// Get existing emails to check for duplicates
-			const { data: existingContributors } = await supabase
+			const { data: existingContributors } = await supabaseAdmin
 				.from('dgr_contributors')
 				.select('email');
 
@@ -65,7 +56,7 @@ export async function POST({ request, locals }) {
 				// Generate access token
 				const access_token = crypto.randomUUID();
 
-				const { error } = await supabase.from('dgr_contributors').insert({
+				const { error } = await supabaseAdmin.from('dgr_contributors').insert({
 					name: contributor.name,
 					email: contributor.email.toLowerCase(),
 					notes: contributor.notes || null,
@@ -97,7 +88,7 @@ export async function POST({ request, locals }) {
 			contributorData.access_token = crypto.randomUUID();
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_contributors')
 			.insert(contributorData)
 			.select()
@@ -121,7 +112,7 @@ export async function PUT({ request, locals }) {
 	try {
 		const { id, ...updateData } = await request.json();
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_contributors')
 			.update(updateData)
 			.eq('id', id)
@@ -146,7 +137,7 @@ export async function DELETE({ request, locals }) {
 	try {
 		const { id } = await request.json();
 
-		const { error } = await supabase.from('dgr_contributors').delete().eq('id', id);
+		const { error } = await supabaseAdmin.from('dgr_contributors').delete().eq('id', id);
 
 		if (error) throw error;
 

@@ -1,5 +1,5 @@
 <script>
-	import { FileText, Video, Link, BookOpen, Upload } from 'lucide-svelte';
+	import { FileText, Video, Link, BookOpen, Upload } from '$lib/icons';
 
 	let {
 		sessionNumber = 1,

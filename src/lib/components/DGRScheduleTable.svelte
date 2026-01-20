@@ -1,5 +1,5 @@
 <script>
-	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen, Monitor } from 'lucide-svelte';
+	import { Send, Eye, Trash2, FileText, Copy, MoreVertical, Download, CheckCircle, PlusCircle, Mail, Check, BookOpen, Monitor } from '$lib/icons';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { createDropdown } from '$lib/utils/dropdown.js';
 	import { formatContributorName, formatReading } from '$lib/utils/dgr-helpers';

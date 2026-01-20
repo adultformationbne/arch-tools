@@ -1,6 +1,6 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
-	import { Plus, Trash2, Save, AlertCircle } from 'lucide-svelte';
+	import { Plus, Trash2, Save, AlertCircle } from '$lib/icons';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { rules = $bindable([]) } = $props();

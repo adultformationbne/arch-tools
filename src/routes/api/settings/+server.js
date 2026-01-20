@@ -1,15 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-
-// Initialize Supabase client with service role key for server-side operations
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 // GET /api/settings?key=analytics_thresholds
 export async function GET({ url, locals }) {
@@ -20,7 +10,7 @@ export async function GET({ url, locals }) {
 			return json({ error: 'Setting key is required' }, { status: 400 });
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('admin_settings')
 			.select('setting_value')
 			.eq('setting_key', settingKey)
@@ -50,7 +40,7 @@ export async function POST({ request, locals }) {
 			return json({ error: 'Key and value are required' }, { status: 400 });
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('admin_settings')
 			.upsert(
 				{

@@ -1,5 +1,5 @@
 <script>
-	import { X, ChevronRight, ChevronLeft, Check } from 'lucide-svelte';
+	import { X, ChevronRight, ChevronLeft, Check } from '$lib/icons';
 	import CsvUpload from './CsvUpload.svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 

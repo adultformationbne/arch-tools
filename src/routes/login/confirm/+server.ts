@@ -6,13 +6,6 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	const type = url.searchParams.get('type');
 	const next = url.searchParams.get('next') ?? '/';
 
-	// Log all URL parameters for debugging
-	console.log('Auth confirm params:', {
-		token_hash: token_hash ? 'present' : 'missing',
-		type,
-		all_params: Object.fromEntries(url.searchParams.entries())
-	});
-
 	// Clear any existing session to prevent conflicts when signing in as a different user
 	await supabase.auth.signOut();
 
@@ -58,8 +51,6 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 					throw redirect(303, '/courses');
 				} else if (modules.includes('dgr')) {
 					throw redirect(303, '/dgr');
-				} else if (modules.includes('editor')) {
-					throw redirect(303, '/editor');
 				} else if (modules.includes('courses.participant')) {
 					throw redirect(303, '/my-courses');
 				} else {

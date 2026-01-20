@@ -1,5 +1,5 @@
 <script>
-	import { Calendar, Upload, Download, Edit, Check, X, AlertCircle, FileText } from 'lucide-svelte';
+	import { Calendar, Upload, Download, Edit, Check, X, AlertCircle, FileText } from '$lib/icons';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 

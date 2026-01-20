@@ -1,5 +1,5 @@
 <script>
-	import { User, Home, BookOpen, MessageSquare, Menu, X } from 'lucide-svelte';
+	import { User, Home, BookOpen, MessageSquare, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 
 	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {} } = $props();

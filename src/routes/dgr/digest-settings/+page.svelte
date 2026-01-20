@@ -1,7 +1,7 @@
 <script>
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
-	import { Mail, Clock, Calendar, Check } from 'lucide-svelte';
+	import { Mail, Clock, Calendar, Check } from '$lib/icons';
 
 	let { data } = $props();
 

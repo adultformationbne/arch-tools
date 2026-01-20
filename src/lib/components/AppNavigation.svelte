@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { User, Settings, LogOut, Menu, X } from 'lucide-svelte';
+	import { User, Settings, LogOut, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
@@ -64,15 +64,6 @@
 						title="My enrolled courses"
 					>
 						My Courses
-					</a>
-				{/if}
-				{#if hasModule('editor')}
-					<a
-						href="/editor"
-						class="rounded-full px-3 py-1 text-xs font-medium transition-colors {$page.url.pathname.startsWith('/editor') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
-						title="Content editor"
-					>
-						Editor
 					</a>
 				{/if}
 				{#if hasModule('dgr')}
@@ -172,15 +163,6 @@
 					onclick={closeMobileMenu}
 				>
 					My Courses
-				</a>
-			{/if}
-			{#if hasModule('editor')}
-				<a
-					href="/editor"
-					class="block px-3 py-1.5 rounded text-xs font-medium transition-colors {$page.url.pathname.startsWith('/editor') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
-					onclick={closeMobileMenu}
-				>
-					Editor
 				</a>
 			{/if}
 			{#if hasModule('dgr')}

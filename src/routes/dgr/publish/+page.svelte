@@ -13,7 +13,6 @@
 			const saved = localStorage.getItem('dgr-form-data-dev');
 			if (saved) {
 				try {
-					console.log('Restoring form data from localStorage (dev mode)');
 					return JSON.parse(saved);
 				} catch (e) {
 					console.error('Failed to parse saved form data:', e);
@@ -123,7 +122,6 @@
 					// Clear localStorage in dev mode since we're resetting
 					if (import.meta.env.DEV && typeof window !== 'undefined') {
 						localStorage.removeItem('dgr-form-data-dev');
-						console.log('Cleared saved form data (dev mode)');
 					}
 					// Reset form to prevent double submission
 					formData = getInitialDGRFormData();

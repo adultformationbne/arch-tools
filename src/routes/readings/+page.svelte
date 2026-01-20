@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { Calendar, BookOpen, Share2, Printer, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { Calendar, BookOpen, Share2, Printer, ChevronLeft, ChevronRight } from '$lib/icons';
 
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
 	let readings = $state(null);

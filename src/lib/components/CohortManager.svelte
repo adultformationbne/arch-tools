@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Edit2, X, Mail, Trash2, Check, Home, AlertTriangle, MoreVertical, ArrowRight, Loader2 } from 'lucide-svelte';
+	import { Plus, Edit2, X, Mail, Trash2, Check, Home, AlertTriangle, MoreVertical, ArrowRight, Loader2 } from '$lib/icons';
 	import { goto } from '$app/navigation';
 	import {
 		getUserReflectionStatus,
@@ -416,8 +416,6 @@
 					</button>
 				{/if}
 				<button type="button" onclick={() => {
-					console.log('Add Participants button clicked!');
-					console.log('onAddStudents function:', onAddStudents);
 					onAddStudents();
 				}} class="btn-primary-small">
 					<Plus size={16} />

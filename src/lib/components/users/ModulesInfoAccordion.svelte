@@ -1,5 +1,5 @@
 <script>
-	import { Shield, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import { Shield, ChevronDown, ChevronUp } from '$lib/icons';
 
 	let { availableModules = [], isOpen = false, onToggle } = $props();
 

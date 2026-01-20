@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom';
-	import { X } from 'lucide-svelte';
+	import { X } from '$lib/icons';
 	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {

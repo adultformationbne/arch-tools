@@ -1,5 +1,5 @@
 <script>
-  import { FileText, Settings, Play, Edit3, Copy, Trash2, Check, Camera, Image } from 'lucide-svelte';
+  import { FileText, Settings, Play, Edit3, Copy, Trash2, Check, Camera, Image } from '$lib/icons';
 
   let {
     template,

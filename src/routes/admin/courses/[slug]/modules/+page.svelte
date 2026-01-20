@@ -1,5 +1,5 @@
 <script>
-	import { Plus, BookOpen, Calendar, Users, Edit, Trash2, MoreVertical } from 'lucide-svelte';
+	import { Plus, BookOpen, Calendar, Users, Edit, Trash2, MoreVertical } from '$lib/icons';
 	import { navigating } from '$app/stores';
 	import ModuleModal from '$lib/components/ModuleModal.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';

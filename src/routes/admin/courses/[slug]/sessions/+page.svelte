@@ -2,7 +2,7 @@
 	import { page, navigating } from '$app/stores';
 	import { goto, invalidate } from '$app/navigation';
 	import { untrack } from 'svelte';
-	import { Pencil } from 'lucide-svelte';
+	import { Pencil } from '$lib/icons';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';

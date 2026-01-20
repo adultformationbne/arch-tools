@@ -7,7 +7,7 @@
 	 * Falls back gracefully if Mux SDK fails to load.
 	 */
 	import { onMount } from 'svelte';
-	import { Loader2, CheckCircle, AlertCircle, Upload } from 'lucide-svelte';
+	import { Loader2, CheckCircle, AlertCircle, Upload } from '$lib/icons';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let muxLoaded = $state(false);

@@ -4,7 +4,7 @@
 	import ContextualHelp from '$lib/components/ContextualHelp.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import DGRDocumentEditor from '$lib/components/DGRDocumentEditor.svelte';
-	import { Calendar, Check, ChevronDown, Clock, FileText, HelpCircle, Pencil, RotateCcw, Send, X } from 'lucide-svelte';
+	import { Calendar, Check, ChevronDown, Clock, FileText, HelpCircle, Pencil, RotateCcw, Send, X } from '$lib/icons';
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 	import { formatReading, formatContributorName } from '$lib/utils/dgr-helpers';
 

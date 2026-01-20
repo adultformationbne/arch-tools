@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical, FileText } from 'lucide-svelte';
+	import { ChevronDown, ChevronRight, Circle, Edit2, Check, Trash2, GripVertical, FileText } from '$lib/icons';
 	import { getDndzone, noopDndzone } from '$lib/utils/resilient-dnd.js';
 	import { flip } from 'svelte/animate';
 

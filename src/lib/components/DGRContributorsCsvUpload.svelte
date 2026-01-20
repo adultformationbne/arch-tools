@@ -1,5 +1,6 @@
 <script>
-	import { Upload, FileText, AlertCircle, ClipboardPaste, Download, X } from 'lucide-svelte';
+	import { Upload, FileText, AlertCircle, ClipboardPaste, Download, X } from '$lib/icons';
+	import { isValidEmail } from '$lib/utils/form-validator.js';
 
 	let {
 		onUpload = (data) => {},
@@ -132,8 +133,7 @@
 				}
 
 				// Validate email format
-				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-				if (!emailRegex.test(row.email)) {
+				if (!isValidEmail(row.email)) {
 					errors.push(`Row ${i + 1}: Invalid email format (${row.email})`);
 					continue;
 				}

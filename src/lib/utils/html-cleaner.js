@@ -585,14 +585,3 @@ function mergeConsecutiveLists(container) {
 	});
 }
 
-/**
- * Alias for cleanWordHtml - more accurately named
- */
-export const cleanPastedHtml = cleanWordHtml;
-
-/**
- * Quick test function - paste HTML and see results
- */
-export function testClean(html) {
-	return cleanWordHtml(html, { debug: true });
-}

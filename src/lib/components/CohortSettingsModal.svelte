@@ -1,5 +1,5 @@
 <script>
-	import { X, Trash2, AlertTriangle } from 'lucide-svelte';
+	import { X, Trash2, AlertTriangle } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 

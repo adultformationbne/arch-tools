@@ -1,5 +1,5 @@
 <script>
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight } from '$lib/icons';
 
 	// Svelte 5 syntax with runes
 	let {

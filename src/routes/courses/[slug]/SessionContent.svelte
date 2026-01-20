@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Edit3, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-svelte';
+	import { Play, FileText, Book, Edit3, ChevronLeft, ChevronRight, ChevronDown } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 

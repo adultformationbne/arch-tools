@@ -1,5 +1,5 @@
 <script>
-	import { Users, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, X, Loader2 } from 'lucide-svelte';
+	import { Users, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, X, Loader2 } from '$lib/icons';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { getUserInitials } from '$lib/utils/avatar.js';
 

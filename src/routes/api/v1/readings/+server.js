@@ -1,11 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: { autoRefreshToken: false, persistSession: false }
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 /**
  * GET /api/v1/readings
@@ -40,7 +34,7 @@ export async function GET({ url }) {
 		}
 
 		// Fetch readings from database
-		const { data, error } = await supabase.rpc('get_readings_for_date', {
+		const { data, error } = await supabaseAdmin.rpc('get_readings_for_date', {
 			target_date: targetDate
 		});
 

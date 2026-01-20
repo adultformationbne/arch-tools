@@ -1,6 +1,6 @@
 <script>
 	import { toast } from '$lib/stores/toast.svelte.js';
-	import { Copy, ExternalLink, RefreshCw, Mail, MailCheck, Eye, AlertCircle, Loader2, Pencil, Trash2, MoreVertical } from 'lucide-svelte';
+	import { Copy, ExternalLink, RefreshCw, Mail, MailCheck, Eye, AlertCircle, Loader2, Pencil, Trash2, MoreVertical } from '$lib/icons';
 	import { getPatternDescription, formatDate, formatRelativeTime, needsFollowUp, getContributorLink, formatContributorName } from '$lib/utils/dgr-helpers';
 
 	let {

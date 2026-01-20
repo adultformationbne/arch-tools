@@ -1,5 +1,5 @@
 <script>
-	import { Calendar, Users, CheckCircle, XCircle, ChevronDown, ChevronRight, User, Building, AlertCircle } from 'lucide-svelte';
+	import { Calendar, Users, CheckCircle, XCircle, ChevronDown, ChevronRight, User, Building, AlertCircle } from '$lib/icons';
 	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	let { data } = $props();

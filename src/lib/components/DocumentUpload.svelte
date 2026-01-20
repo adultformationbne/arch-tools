@@ -1,5 +1,5 @@
 <script>
-	import { Upload, File, X, Check, AlertCircle } from 'lucide-svelte';
+	import { Upload, File, X, Check, AlertCircle } from '$lib/icons';
 	import { uploadMaterial } from '$lib/utils/storage.js';
 
 	let {

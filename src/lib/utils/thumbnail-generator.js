@@ -254,7 +254,6 @@ export async function uploadThumbnail(supabase, templateId, dataUrl) {
  */
 export async function generateAndSaveThumbnail(supabase, template) {
   try {
-    console.log('Generating thumbnail for template:', template.name);
 
     // Generate thumbnail
     const dataUrl = await generateThumbnailCanvas(template.html);
@@ -284,7 +283,6 @@ export async function generateAndSaveThumbnail(supabase, template) {
       return false;
     }
 
-    console.log('Thumbnail generated successfully:', thumbnailUrl);
     return thumbnailUrl;
   } catch (error) {
     console.error('Error in generateAndSaveThumbnail:', error);
@@ -299,11 +297,9 @@ export async function generateMissingThumbnails(supabase, templates) {
   const templatesNeedingThumbnails = templates.filter(t => !t.thumbnail_url);
 
   if (templatesNeedingThumbnails.length === 0) {
-    console.log('All templates already have thumbnails');
     return [];
   }
 
-  console.log(`Generating thumbnails for ${templatesNeedingThumbnails.length} templates`);
 
   const results = [];
   for (const template of templatesNeedingThumbnails) {

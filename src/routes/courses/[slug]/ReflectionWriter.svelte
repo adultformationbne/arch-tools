@@ -1,5 +1,5 @@
 <script>
-	import { Save, Eye, EyeOff, X, CheckCircle } from 'lucide-svelte';
+	import { Save, Eye, EyeOff, X, CheckCircle } from '$lib/icons';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
@@ -35,7 +35,6 @@
 	let autoSaveTimer;
 	const autoSave = async () => {
 		if (!questionId || content.trim().length === 0) {
-			console.log('Skipping autosave - missing questionId or content');
 			return;
 		}
 
@@ -86,19 +85,13 @@
 	};
 
 	const handleSubmit = async () => {
-		console.log('=== SUBMIT STARTED ===');
-		console.log('questionId:', questionId);
-		console.log('content length:', content.trim().length);
-		console.log('isPrivate:', isPrivate);
 
 		if (!questionId || content.trim().length === 0) {
-			console.log('VALIDATION FAILED - missing questionId or content');
 			return;
 		}
 
 		isSaving = true;
 		const apiPath = `/courses/${courseSlug}/reflections/api`;
-		console.log('Sending POST to', apiPath);
 
 		try {
 			const payload = {
@@ -107,7 +100,6 @@
 				is_public: !isPrivate,
 				status: 'submitted'
 			};
-			console.log('Payload:', payload);
 
 			const response = await fetch(apiPath, {
 				method: 'POST',
@@ -117,8 +109,6 @@
 				body: JSON.stringify(payload)
 			});
 
-			console.log('Response status:', response.status);
-			console.log('Response ok:', response.ok);
 
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -127,7 +117,6 @@
 			}
 
 			const result = await response.json();
-			console.log('Reflection submitted successfully:', result);
 
 			// Call parent callback to refresh data
 			onSave();
@@ -138,7 +127,6 @@
 			toastError('Failed to submit reflection. Please try again.', 'Submission Failed');
 		} finally {
 			isSaving = false;
-			console.log('=== SUBMIT ENDED ===');
 		}
 	};
 

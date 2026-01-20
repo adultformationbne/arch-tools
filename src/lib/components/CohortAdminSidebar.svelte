@@ -1,5 +1,5 @@
 <script>
-	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings } from 'lucide-svelte';
+	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings } from '$lib/icons';
 
 	let {
 		cohort = null,

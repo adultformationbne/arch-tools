@@ -1,19 +1,29 @@
 /**
  * Centralized Email Service
  * Handles all email sending and logging for the platform
- * Uses Resend API with automatic logging to email_log table
- *
- * Features:
- * - Template rendering with {{variable}} substitution
- * - Automatic email logging to database
- * - Bulk email sending with rate limiting
- * - Template fetching from database
- *
- * @module email-service
  */
 
 import { Resend } from 'resend';
-import { createClient } from '@supabase/supabase-js';
+
+/** Build email log entry with consistent column structure */
+function buildLogEntry({ to, emailType, subject, body, status, resendId = null, errorMessage = null, referenceId = null, metadata = {} }) {
+	return {
+		recipient_email: to,
+		email_type: emailType,
+		subject,
+		body,
+		status,
+		sent_at: status === 'sent' ? new Date().toISOString() : null,
+		error_message: errorMessage,
+		resend_id: resendId,
+		reference_id: referenceId,
+		metadata,
+		course_id: metadata?.course_id || null,
+		cohort_id: metadata?.cohort_id || null,
+		enrollment_id: metadata?.enrollment_id || null,
+		template_id: metadata?.template_id || null
+	};
+}
 import { getPlatformSettings } from '$lib/server/supabase.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 
@@ -185,78 +195,25 @@ export async function sendEmail({
 
 		if (error) {
 			console.error('Resend error:', error);
-
-			// Log failed email to database
-			const { error: logError } = await supabase.from('platform_email_log').insert({
-				recipient_email: to,
-				email_type: emailType,
-				subject,
-				body: html,
-				status: 'failed',
-				error_message: error.message || 'Unknown error',
-				reference_id: referenceId,
-				metadata,
-				// Set course-specific columns from metadata for proper filtering
-				course_id: metadata?.course_id || null,
-				cohort_id: metadata?.cohort_id || null,
-				enrollment_id: metadata?.enrollment_id || null,
-				template_id: metadata?.template_id || null
-			});
-
-			if (logError) {
-				console.error('Failed to log email error to database:', logError);
-			}
-
+			await supabase.from('platform_email_log').insert(
+				buildLogEntry({ to, emailType, subject, body: html, status: 'failed', errorMessage: error.message || 'Unknown error', referenceId, metadata })
+			);
 			return { success: false, error: error.message };
 		}
 
-		// Log successful email to database
-		const { error: logError } = await supabase.from('platform_email_log').insert({
-			recipient_email: to,
-			email_type: emailType,
-			subject,
-			body: html,
-			status: 'sent',
-			sent_at: new Date().toISOString(),
-			resend_id: data?.id,
-			reference_id: referenceId,
-			metadata,
-			// Set course-specific columns from metadata for proper filtering
-			course_id: metadata?.course_id || null,
-			cohort_id: metadata?.cohort_id || null,
-			enrollment_id: metadata?.enrollment_id || null,
-			template_id: metadata?.template_id || null
-		});
-
-		if (logError) {
-			console.error('Failed to log email to database:', logError);
-		}
-
+		await supabase.from('platform_email_log').insert(
+			buildLogEntry({ to, emailType, subject, body: html, status: 'sent', resendId: data?.id, referenceId, metadata })
+		);
 		return { success: true, emailId: data?.id };
 	} catch (err) {
 		console.error('Email service error:', err);
-
-		// Log error to database
 		try {
-			await supabase.from('platform_email_log').insert({
-				recipient_email: to,
-				email_type: emailType,
-				subject,
-				body: html,
-				status: 'failed',
-				error_message: err.message || 'Unknown error',
-				reference_id: referenceId,
-				metadata,
-				// Set course-specific columns from metadata for proper filtering
-				course_id: metadata?.course_id || null,
-				cohort_id: metadata?.cohort_id || null,
-				enrollment_id: metadata?.enrollment_id || null,
-				template_id: metadata?.template_id || null
-			});
+			await supabase.from('platform_email_log').insert(
+				buildLogEntry({ to, emailType, subject, body: html, status: 'failed', errorMessage: err.message || 'Unknown error', referenceId, metadata })
+			);
 		} catch (logError) {
 			console.error('Failed to log email error:', logError);
 		}
-
 		return { success: false, error: err.message };
 	}
 }
@@ -363,44 +320,28 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	return results;
 }
 
-/**
- * Log batch of emails to database
- * @private
- */
+/** Log batch of emails to database */
 async function logBatchEmails(supabase, emails, emailType, status, errorMessage = null, commonMetadata = {}, results = []) {
-	if (!supabase) {
-		console.error('logBatchEmails: No supabase client provided');
-		return;
-	}
+	if (!supabase) return;
 
 	try {
 		const logs = emails.map((email, idx) => {
 			const mergedMetadata = { ...commonMetadata, ...email.metadata };
-			return {
-				recipient_email: email.to,
-				email_type: emailType,
+			return buildLogEntry({
+				to: email.to,
+				emailType,
 				subject: email.subject,
 				body: email.html,
 				status,
-				sent_at: status === 'sent' ? new Date().toISOString() : null,
-				error_message: errorMessage,
-				resend_id: results[idx]?.id || null,
-				reference_id: email.referenceId || null,
-				metadata: mergedMetadata,
-				// Set course-specific columns from metadata for proper filtering
-				course_id: mergedMetadata.course_id || null,
-				cohort_id: mergedMetadata.cohort_id || null,
-				enrollment_id: mergedMetadata.enrollment_id || null,
-				template_id: mergedMetadata.template_id || null
-			};
+				resendId: results[idx]?.id || null,
+				errorMessage,
+				referenceId: email.referenceId || null,
+				metadata: mergedMetadata
+			});
 		});
-
-		const { error } = await supabase.from('platform_email_log').insert(logs);
-		if (error) {
-			console.error('Failed to log batch emails to database:', error);
-		}
+		await supabase.from('platform_email_log').insert(logs);
 	} catch (logError) {
-		console.error('Failed to log batch emails (exception):', logError);
+		console.error('Failed to log batch emails:', logError);
 	}
 }
 

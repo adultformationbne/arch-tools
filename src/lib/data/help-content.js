@@ -42,46 +42,6 @@ export const helpContent = {
 		}
 	],
 
-	// Content Editor
-	'/editor': [
-		{
-			title: 'Block-Based Editing',
-			content: `
-				<p>The editor uses an <strong>immutable block system</strong> where content is organized into blocks:</p>
-				<ul>
-					<li><strong>Block Types:</strong> paragraphs, headings (h1-h3), quotes, prayers, callouts</li>
-					<li><strong>Never Overwrites:</strong> Every edit creates a new version, preserving history</li>
-					<li><strong>Metadata:</strong> Tag blocks with categories like 'prayer page', 'activity', etc.</li>
-				</ul>
-				<p><code>Pro Tip:</code> Use the chapter sidebar to navigate large documents quickly.</p>
-			`
-		},
-		{
-			title: 'Document Organization',
-			content: `
-				<p>Organize your content effectively:</p>
-				<ul>
-					<li><strong>Chapters:</strong> Use chapter blocks to create document sections</li>
-					<li><strong>Filtering:</strong> Filter by tag, metadata, or search content</li>
-					<li><strong>Visibility:</strong> Hide blocks from export without deleting them</li>
-				</ul>
-				<p>The <strong>Document Preview</strong> shows how your content will appear in the final output.</p>
-			`
-		},
-		{
-			title: 'Version Control',
-			content: `
-				<p>Every block maintains complete version history:</p>
-				<ul>
-					<li><strong>View History:</strong> Click the history icon to see all versions</li>
-					<li><strong>Restore Versions:</strong> Roll back to any previous version</li>
-					<li><strong>Audit Trail:</strong> See who made changes and when</li>
-				</ul>
-				<p><strong>Safe Editing:</strong> Never worry about losing content - everything is preserved.</p>
-			`
-		}
-	],
-
 	// Scripture Reader
 	'/scripture': [
 		{
@@ -165,7 +125,6 @@ export function getHelpForPage(pathname) {
 export function getPageTitle(pathname) {
 	const titles = {
 		'/dgr': 'DGR Admin Dashboard',
-		'/editor': 'Content Editor',
 		'/scripture': 'Scripture Reader',
 		'/dgr-templates': 'DGR Templates',
 		'/dgr-publish': 'Quick Publish'

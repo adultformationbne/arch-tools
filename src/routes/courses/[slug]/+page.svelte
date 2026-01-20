@@ -23,7 +23,6 @@
 	let courseData = $state(initialCourseData);
 
 	const handleSessionChange = (sessionNum) => {
-		console.log(`Switched to session ${sessionNum}`);
 		currentSession = sessionNum;
 
 		// Update course data for the selected session
@@ -69,7 +68,6 @@
 
 	const navigateReflection = (currentSession, direction) => {
 		// In real app, this would navigate to adjacent reflections
-		console.log(`Navigate ${direction} from session ${currentSession}`);
 	};
 
 	// Derived values

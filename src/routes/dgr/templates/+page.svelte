@@ -4,7 +4,7 @@
   import TemplateCard from '$lib/components/TemplateCard.svelte';
   import TemplateEditor from '$lib/components/TemplateEditor.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import { FileText, Plus, Camera, Trash2 } from 'lucide-svelte';
+  import { FileText, Plus, Camera, Trash2 } from '$lib/icons';
   import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
   import { TemplateManager, groupTemplatesByKey } from '$lib/utils/template-actions.js';
   import { generateMissingThumbnails } from '$lib/utils/thumbnail-generator.js';
@@ -48,8 +48,6 @@
   // Debounced preview update
   let previewTimeout;
   $effect(() => {
-    console.log('Preview effect triggered, editingHtml length:', editingHtml?.length);
-    console.log('Current editingHtml preview:', editingHtml?.substring(0, 150));
 
     if (editingHtml) {
       // Clear previous timeout
@@ -60,10 +58,8 @@
       // Debounce the preview update by 100ms (faster for better UX)
       previewTimeout = setTimeout(() => {
         try {
-          console.log('About to render with this HTML:', editingHtml.substring(0, 200));
           const newPreview = renderTemplate(editingHtml, sampleData);
           previewHtml = newPreview;
-          console.log('Preview updated successfully, new preview length:', newPreview.length);
         } catch (error) {
           console.warn('Preview render error:', error);
           previewHtml = '<p class="text-red-500">Template rendering error: ' + error.message + '</p>';
@@ -120,7 +116,6 @@
         .eq('active', true)
         .order('position', { ascending: true });
 
-      console.log('Loaded promo tiles:', promoTilesData);
 
       if (scheduleData && !error) {
         let contributorName = 'Anonymous';
@@ -225,8 +220,6 @@
   async function handleSaveTemplate() {
     if (!selectedTemplate) return;
 
-    console.log('Saving template with HTML length:', editingHtml?.length);
-    console.log('HTML preview:', editingHtml?.substring(0, 200));
 
     isSaving = true;
     try {
@@ -247,7 +240,6 @@
         editingHtml: htmlToSave
       });
 
-      console.log('Template saved successfully:', result);
       if (htmlToSave === editingHtml) {
         toast.success({ title: 'Saved', message: `Saved as version ${result.version}`, duration: 3000 });
       } else {

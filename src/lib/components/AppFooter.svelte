@@ -1,5 +1,5 @@
 <script>
-	import { Scale } from 'lucide-svelte';
+	import { Scale } from '$lib/icons';
 
 	const currentYear = new Date().getFullYear();
 </script>

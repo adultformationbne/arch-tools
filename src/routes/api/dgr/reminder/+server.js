@@ -92,39 +92,11 @@ export async function POST({ request, locals }) {
 				// Generate submission token
 				const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
-				// Fetch readings from database
-				const { data: readings } = await supabaseAdmin.rpc('get_readings_for_date', {
-					target_date: date
-				});
+				// SSOT pattern: Don't populate readings_data for pending entries
+				// Readings will be fetched fresh from lectionary when displaying
+				// and snapshotted only on submit
 
-				const reading = readings && readings.length > 0 ? readings[0] : null;
-
-				// Build readings_data JSONB structure
-				let readingsData = null;
-				if (reading) {
-					readingsData = {
-						combined_sources: [
-							reading.first_reading,
-							reading.psalm,
-							reading.second_reading,
-							reading.gospel_reading
-						]
-							.filter(Boolean)
-							.join('; '),
-						first_reading: reading.first_reading
-							? { source: reading.first_reading, text: '', heading: '' }
-							: null,
-						psalm: reading.psalm ? { source: reading.psalm, text: '' } : null,
-						second_reading: reading.second_reading
-							? { source: reading.second_reading, text: '', heading: '' }
-							: null,
-						gospel: reading.gospel_reading
-							? { source: reading.gospel_reading, text: '', heading: '' }
-							: null
-					};
-				}
-
-				// Create new schedule entry
+				// Create new schedule entry (readings_data stays NULL for pending)
 				const { data: newEntry, error: createError } = await supabaseAdmin
 					.from('dgr_schedule')
 					.insert({
@@ -133,9 +105,7 @@ export async function POST({ request, locals }) {
 						contributor_email: contributor.email,
 						submission_token: token,
 						status: 'pending',
-						liturgical_date: reading?.liturgical_day || null,
-						gospel_reference: reading?.gospel_reading || null,
-						readings_data: readingsData,
+						// readings_data: NULL - will be fetched from lectionary on display
 						reminder_history: []
 					})
 					.select('id, date, liturgical_date, gospel_reference, readings_data, reminder_history')

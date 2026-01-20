@@ -1,5 +1,5 @@
 <script>
-	import { ChevronUp } from 'lucide-svelte';
+	import { ChevronUp } from '$lib/icons';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import DGRSchedulePatternSelector from './DGRSchedulePatternSelector.svelte';
 

@@ -1,5 +1,5 @@
 <script>
-	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, Edit3, Calendar, Users, MessageSquare } from '$lib/icons';
 	import { isEditable, isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 	import ReflectionContent from '$lib/components/ReflectionContent.svelte';

@@ -106,18 +106,3 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 		}
 	};
 }
-
-/**
- * Check if a coordinator can see a given session based on settings.
- */
-export function canCoordinatorSeeSession(
-	settings: CourseSettings,
-	sessionNumber: number,
-	studentCurrentSession: number
-): boolean {
-	const ahead = settings.coordinatorAccess?.sessionsAhead ?? 'all';
-	if (ahead === 'all') {
-		return true;
-	}
-	return sessionNumber <= studentCurrentSession + ahead;
-}

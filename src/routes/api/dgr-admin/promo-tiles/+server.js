@@ -1,14 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { json } from '@sveltejs/kit';
-
-// Initialize Supabase client
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function GET() {
 	try {
 		// Fetch all promo tiles ordered by position
-		const { data: tiles, error } = await supabase
+		const { data: tiles, error } = await supabaseAdmin
 			.from('dgr_promo_tiles')
 			.select('*')
 			.order('position');
@@ -46,7 +42,7 @@ export async function POST({ request }) {
 		}
 
 		// First, clear all existing tiles
-		const { error: clearError } = await supabase
+		const { error: clearError } = await supabaseAdmin
 			.from('dgr_promo_tiles')
 			.delete()
 			.neq('id', 0); // Delete all rows
@@ -66,7 +62,7 @@ export async function POST({ request }) {
 				active: true
 			}));
 
-			const { error: insertError } = await supabase
+			const { error: insertError } = await supabaseAdmin
 				.from('dgr_promo_tiles')
 				.insert(tilesToInsert);
 

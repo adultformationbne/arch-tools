@@ -1,5 +1,5 @@
 <script>
-	import { Clock, FileText, ChevronDown, Pencil, Eye, EyeOff } from 'lucide-svelte';
+	import { Clock, FileText, ChevronDown, Pencil, Eye, EyeOff } from '$lib/icons';
 	import { formatReading } from '$lib/utils/dgr-helpers';
 
 	let {

@@ -334,7 +334,6 @@
 		if (modules.includes('platform.admin')) return '/settings';
 		if (modules.includes('courses.admin') || modules.includes('courses.manager')) return '/courses';
 		if (modules.includes('dgr')) return '/dgr';
-		if (modules.includes('editor')) return '/editor';
 		if (modules.includes('courses.participant')) return '/my-courses';
 		return '/profile';
 	}

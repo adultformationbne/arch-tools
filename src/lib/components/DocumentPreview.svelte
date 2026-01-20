@@ -1,5 +1,5 @@
 <script>
-	import { Eye, EyeOff, Edit, ChevronUp, ChevronDown, History } from 'lucide-svelte';
+	import { Eye, EyeOff, Edit, ChevronUp, ChevronDown, History } from '$lib/icons';
 	import RichTextDisplay from './RichTextDisplay.svelte';
 
 	let {
@@ -273,7 +273,6 @@
 
 										<button
 											onclick={() => {
-												console.log('Hide/Show button clicked for block:', block.id);
 												onToggleVisibility(block.id);
 											}}
 											class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {block.isVisible
@@ -303,7 +302,6 @@
 
 										<button
 											onclick={() => {
-												console.log('Move up button clicked for block:', block.id);
 												onMove(block.id, 'up');
 											}}
 											disabled={blockIndex === 0}
@@ -316,7 +314,6 @@
 
 										<button
 											onclick={() => {
-												console.log('Move down button clicked for block:', block.id);
 												onMove(block.id, 'down');
 											}}
 											disabled={blockIndex === group.blocks.length - 1}

@@ -21,7 +21,7 @@
 		Volume2,
 		BookOpen,
 		MessageCircle
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 
 	let {
 		chapters = [],

@@ -51,7 +51,6 @@ export const POST: RequestHandler = async (event) => {
 		console.warn('Failed to parse passthrough data');
 	}
 
-	console.log(`Mux webhook received: ${type}`, { passthrough, assetId: data?.id });
 
 	switch (type) {
 		case 'video.upload.asset_created': {
@@ -76,7 +75,6 @@ export const POST: RequestHandler = async (event) => {
 				if (error) {
 					console.error('Failed to update material for asset_created:', error);
 				} else {
-					console.log(`Material ${material_id} updated to processing status`);
 				}
 			} else if (uploadId) {
 				// Fallback: find material by mux_upload_id
@@ -92,7 +90,6 @@ export const POST: RequestHandler = async (event) => {
 				if (error) {
 					console.error('Failed to update material by upload_id for asset_created:', error);
 				} else {
-					console.log(`Material with upload_id ${uploadId} updated to processing status`);
 				}
 			}
 			break;
@@ -120,7 +117,6 @@ export const POST: RequestHandler = async (event) => {
 					if (error) {
 						console.error('Failed to update material for asset.ready:', error);
 					} else {
-						console.log(`Material ${passthrough.material_id} is now ready with playback_id: ${playbackId}`);
 					}
 				} else {
 					// Try finding by asset_id first
@@ -137,7 +133,6 @@ export const POST: RequestHandler = async (event) => {
 					if (assetError) {
 						console.error('Failed to update material by asset_id:', assetError);
 					} else if (assetMatch && assetMatch.length > 0) {
-						console.log(`Material with asset_id ${assetId} is now ready`);
 					} else if (uploadId) {
 						// Fallback: find by upload_id (handles race condition where asset_created ran before material was created)
 						const { error: uploadError } = await supabaseAdmin
@@ -153,7 +148,6 @@ export const POST: RequestHandler = async (event) => {
 						if (uploadError) {
 							console.error('Failed to update material by upload_id:', uploadError);
 						} else {
-							console.log(`Material with upload_id ${uploadId} is now ready`);
 						}
 					}
 				}
@@ -179,7 +173,6 @@ export const POST: RequestHandler = async (event) => {
 				if (error) {
 					console.error('Failed to update material for asset.errored:', error);
 				} else {
-					console.log(`Material ${material_id} marked as errored`);
 				}
 			} else if (assetId) {
 				// Try by asset_id first
@@ -195,7 +188,6 @@ export const POST: RequestHandler = async (event) => {
 				if (assetError) {
 					console.error('Failed to update material by asset_id for error:', assetError);
 				} else if (assetMatch && assetMatch.length > 0) {
-					console.log(`Material with asset_id ${assetId} marked as errored`);
 				} else if (uploadId) {
 					// Fallback: find by upload_id
 					const { error: uploadError } = await supabaseAdmin
@@ -210,7 +202,6 @@ export const POST: RequestHandler = async (event) => {
 					if (uploadError) {
 						console.error('Failed to update material by upload_id for error:', uploadError);
 					} else {
-						console.log(`Material with upload_id ${uploadId} marked as errored`);
 					}
 				}
 			}
@@ -219,7 +210,6 @@ export const POST: RequestHandler = async (event) => {
 
 		default:
 			// Ignore other webhook types
-			console.log(`Unhandled Mux webhook type: ${type}`);
 	}
 
 	return json({ received: true });

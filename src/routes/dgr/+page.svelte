@@ -16,7 +16,7 @@
 	import { getInitialDGRFormData, generateDGRHTML, cleanGospelText } from '$lib/utils/dgr-utils.js';
 	import { formatContributorName } from '$lib/utils/dgr-helpers';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
-	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
+	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from '$lib/icons';
 
 	let schedule = $state([]);
 	let contributors = $state([]);

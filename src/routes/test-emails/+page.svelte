@@ -1,5 +1,5 @@
 <script>
-	import { toastSuccess, toastError, toastInfo } from '$lib/utils/toast-helpers.js';
+	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
 	let supabase = $derived(data.supabase);

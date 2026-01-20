@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { Settings, Wand2 } from 'lucide-svelte';
+  import { Settings, Wand2 } from '$lib/icons';
   import { formatHtml } from '$lib/utils/html-formatter.js';
 
   let {

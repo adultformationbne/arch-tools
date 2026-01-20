@@ -6,7 +6,7 @@
  */
 
 import type { ComponentType } from 'svelte';
-import { Clock, CheckCircle, AlertCircle, FileEdit, Send, Eye, RotateCcw } from 'lucide-svelte';
+import { Clock, CheckCircle, AlertCircle, FileEdit, Send, Eye, RotateCcw } from '$lib/icons';
 
 // =============================================================================
 // Types

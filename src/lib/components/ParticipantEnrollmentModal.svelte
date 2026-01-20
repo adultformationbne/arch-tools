@@ -1,5 +1,5 @@
 <script>
-	import { X, UserPlus, Upload, Users } from 'lucide-svelte';
+	import { X, UserPlus, Upload, Users } from '$lib/icons';
 	import CsvUpload from './CsvUpload.svelte';
 
 	let { cohort = null, show = false, courseSlug, onClose = () => {}, onComplete = () => {} } = $props();

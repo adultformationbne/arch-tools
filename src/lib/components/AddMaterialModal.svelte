@@ -4,7 +4,7 @@
 	import DocumentUpload from './DocumentUpload.svelte';
 	import MuxVideoUploader from './MuxVideoUploader.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
-	import { Video, Upload, Link, BookOpen, FileText, ArrowLeft, Loader2 } from 'lucide-svelte';
+	import { Video, Upload, Link, BookOpen, FileText, ArrowLeft, Loader2 } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
@@ -437,7 +437,6 @@
 				<MuxVideoUploader
 					{sessionId}
 					onUploadStart={({ uploadId }) => {
-						console.log('Mux upload started:', uploadId);
 					}}
 					onUploadComplete={handleMuxUploadComplete}
 					onError={(error) => {

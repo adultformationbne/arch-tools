@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon, LogOut } from 'lucide-svelte';
+	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon, LogOut } from '$lib/icons';
 	import { supabaseRequest, createFormSubmitHandler } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
 	import { toast } from '$lib/stores/toast.svelte.js';

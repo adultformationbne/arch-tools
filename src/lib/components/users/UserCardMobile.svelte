@@ -11,7 +11,7 @@
 		Save,
 		X,
 		Plus
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	let {

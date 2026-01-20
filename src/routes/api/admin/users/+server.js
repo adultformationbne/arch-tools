@@ -4,7 +4,8 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 import { sendEmail } from '$lib/utils/email-service.js';
-import { generateInvitationEmail } from '$lib/email-templates/user-invitation.js';
+import { generateInvitationEmail } from '$lib/email/templates/user-invitation.js';
+import { isValidEmail } from '$lib/utils/form-validator.js';
 
 export async function GET(event) {
 	try {
@@ -67,8 +68,7 @@ export async function POST(event) {
 		}
 
 		// Validate email format
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(email)) {
+		if (!isValidEmail(email)) {
 			throw error(400, 'Invalid email format');
 		}
 
@@ -108,7 +108,6 @@ export async function POST(event) {
 		if (existingAuthUser) {
 			// User exists in Auth but was deleted from user_profiles
 			// Re-use the existing auth user instead of creating new one
-			console.log('Re-using existing auth user:', existingAuthUser.id);
 			authData = { user: existingAuthUser };
 		} else {
 			// Generate invite link without sending email
@@ -206,7 +205,6 @@ export async function POST(event) {
 					supabase: supabaseAdmin
 				});
 
-				console.log('Welcome email sent to:', email);
 			} catch (emailError) {
 				console.error('Failed to send welcome email:', emailError);
 				// Don't fail the entire request if email fails - user is already created
@@ -255,7 +253,6 @@ export async function DELETE(event) {
 
 		// If user not found in auth, they might be a pending invite - just delete from user_profiles
 		if (deleteError && deleteError.code === 'user_not_found') {
-			console.log('User not found in auth, deleting from user_profiles only');
 
 			// Delete directly from user_profiles (will cascade to related tables)
 			const { error: profileDeleteError } = await supabaseAdmin
@@ -410,7 +407,6 @@ export async function PUT(event) {
 
 			const uniqueModules = Array.from(new Set(cleanModules));
 
-			console.log('Updating modules:', { original: modules, cleaned: uniqueModules });
 
 			// Update user modules (use cleaned modules)
 			const { error: updateError } = await supabaseAdmin

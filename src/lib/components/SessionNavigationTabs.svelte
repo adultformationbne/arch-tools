@@ -1,5 +1,5 @@
 <script>
-	import { MessageCircle } from 'lucide-svelte';
+	import { MessageCircle } from '$lib/icons';
 
 	let {
 		totalSessions = 8,

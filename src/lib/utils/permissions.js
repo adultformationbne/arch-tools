@@ -70,15 +70,6 @@ export function hasAllModuleAccess(userProfile, moduleIds) {
 }
 
 /**
- * Check if user has platform admin access
- * @param {Object} userProfile - User profile object
- * @returns {boolean} True if user can manage users and platform settings
- */
-export function canManageUsers(userProfile) {
-	return hasModuleAccess(userProfile, MODULES.PLATFORM_ADMIN);
-}
-
-/**
  * Check if user has any course management access
  * @param {Object} userProfile - User profile object
  * @returns {boolean} True if user can manage courses
@@ -118,11 +109,6 @@ export function getDefaultRedirectPath(userProfile) {
 	// DGR access → /dgr
 	if (hasModuleAccess(userProfile, MODULES.DGR)) {
 		return '/dgr';
-	}
-
-	// Editor access → /editor
-	if (hasModuleAccess(userProfile, MODULES.EDITOR)) {
-		return '/editor';
 	}
 
 	// Course participant → /my-courses

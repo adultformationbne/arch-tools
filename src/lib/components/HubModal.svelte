@@ -1,6 +1,6 @@
 <script>
 	import Modal from './Modal.svelte';
-	import { Save } from 'lucide-svelte';
+	import { Save } from '$lib/icons';
 
 	let {
 		isOpen = false,

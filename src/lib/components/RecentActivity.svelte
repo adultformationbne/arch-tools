@@ -1,5 +1,5 @@
 <script>
-	import { MessageSquare, Mail, ArrowRight, UserPlus, UserMinus } from 'lucide-svelte';
+	import { MessageSquare, Mail, ArrowRight, UserPlus, UserMinus } from '$lib/icons';
 	import { onMount } from 'svelte';
 	import { formatRelativeTime } from '$lib/utils/dgr-helpers';
 

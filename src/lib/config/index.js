@@ -13,10 +13,3 @@ import { platformConfig } from './platform.js';
  */
 export const platform = platformConfig;
 
-/**
- * Get platform configuration
- * @returns {Object} Platform configuration
- */
-export function getPlatformConfig() {
-	return platformConfig;
-}

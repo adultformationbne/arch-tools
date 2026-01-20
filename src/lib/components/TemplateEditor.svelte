@@ -1,5 +1,5 @@
 <script>
-  import { Edit3, Play, FileText } from 'lucide-svelte';
+  import { Edit3, Play, FileText } from '$lib/icons';
   import TemplatePreview from './TemplatePreview.svelte';
   import TemplateCodeEditor from './TemplateCodeEditor.svelte';
 
@@ -97,7 +97,6 @@
       {selectedTemplate}
       onFormat={(message, type = 'success') => {
         // This could trigger a toast notification if needed
-        console.log('Format result:', message, type);
       }}
     />
   </div>

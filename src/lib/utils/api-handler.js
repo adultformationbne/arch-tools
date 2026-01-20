@@ -1,15 +1,5 @@
-import {
-	toastLoading,
-	toastSuccess,
-	toastError,
-	updateToastStatus,
-	toastMultiStep,
-	toastNextStep
-} from './toast-helpers.js';
+import { toastLoading, toastError, updateToastStatus } from './toast-helpers.js';
 
-/**
- * Default configuration for API requests
- */
 const DEFAULT_CONFIG = {
 	showToast: true,
 	loadingMessage: 'Processing...',
@@ -17,13 +7,9 @@ const DEFAULT_CONFIG = {
 	successMessage: 'Operation completed successfully',
 	successTitle: 'Success!',
 	errorTitle: 'Operation Failed',
-	timeout: 30000, // 30 seconds
-	retries: 0
+	timeout: 30000
 };
 
-/**
- * Custom error class for API responses
- */
 export class ApiError extends Error {
 	constructor(message, status, response) {
 		super(message);
@@ -33,12 +19,6 @@ export class ApiError extends Error {
 	}
 }
 
-/**
- * Parse error response to extract meaningful message
- * @param {Response} response - The fetch response
- * @param {string} fallbackMessage - Fallback message if parsing fails
- * @returns {Promise<string>} The error message
- */
 async function parseErrorMessage(response, fallbackMessage = 'An error occurred') {
 	try {
 		const contentType = response.headers.get('content-type');
@@ -55,13 +35,7 @@ async function parseErrorMessage(response, fallbackMessage = 'An error occurred'
 	}
 }
 
-/**
- * Main API request handler with toast integration
- * @param {string} url - The URL to fetch
- * @param {Object} options - Fetch options (method, headers, body, etc.)
- * @param {Object} config - Toast and behavior configuration
- * @returns {Promise<any>} The response data
- */
+/** Main API request handler with toast integration */
 export async function apiRequest(url, options = {}, config = {}) {
 	const finalConfig = { ...DEFAULT_CONFIG, ...config };
 	let toastId = null;
@@ -149,23 +123,10 @@ export async function apiRequest(url, options = {}, config = {}) {
 	}
 }
 
-/**
- * Convenience method for GET requests
- * @param {string} url - The URL to fetch
- * @param {Object} config - Configuration options
- * @returns {Promise<any>} The response data
- */
 export async function apiGet(url, config = {}) {
 	return apiRequest(url, { method: 'GET' }, config);
 }
 
-/**
- * Convenience method for POST requests
- * @param {string} url - The URL to fetch
- * @param {Object} data - The data to send
- * @param {Object} config - Configuration options
- * @returns {Promise<any>} The response data
- */
 export async function apiPost(url, data, config = {}) {
 	return apiRequest(
 		url,
@@ -181,13 +142,6 @@ export async function apiPost(url, data, config = {}) {
 	);
 }
 
-/**
- * Convenience method for PUT requests
- * @param {string} url - The URL to fetch
- * @param {Object} data - The data to send
- * @param {Object} config - Configuration options
- * @returns {Promise<any>} The response data
- */
 export async function apiPut(url, data, config = {}) {
 	return apiRequest(
 		url,
@@ -203,13 +157,6 @@ export async function apiPut(url, data, config = {}) {
 	);
 }
 
-/**
- * Convenience method for PATCH requests
- * @param {string} url - The URL to fetch
- * @param {Object} data - The data to send
- * @param {Object} config - Configuration options
- * @returns {Promise<any>} The response data
- */
 export async function apiPatch(url, data, config = {}) {
 	return apiRequest(
 		url,
@@ -225,13 +172,6 @@ export async function apiPatch(url, data, config = {}) {
 	);
 }
 
-/**
- * Convenience method for DELETE requests
- * @param {string} url - The URL to fetch
- * @param {Object} data - Optional data to send in request body
- * @param {Object} config - Configuration options
- * @returns {Promise<any>} The response data
- */
 export async function apiDelete(url, data = null, config = {}) {
 	const options = { method: 'DELETE' };
 
@@ -250,67 +190,7 @@ export async function apiDelete(url, data = null, config = {}) {
 	);
 }
 
-/**
- * Create a multi-step API workflow handler
- * @param {Array} steps - Array of step configurations
- * @returns {Object} Multi-step handler with methods
- */
-export function createMultiStepHandler(steps) {
-	let toastId = null;
-	let currentStepIndex = 0;
-
-	return {
-		start() {
-			currentStepIndex = 0;
-			toastId = toastMultiStep(steps, false);
-			return toastId;
-		},
-
-		async executeStep(stepFunction) {
-			try {
-				const result = await stepFunction();
-				if (currentStepIndex < steps.length - 1) {
-					toastNextStep(toastId);
-					currentStepIndex++;
-				}
-				return result;
-			} catch (error) {
-				if (toastId) {
-					updateToastStatus(
-						toastId,
-						'error',
-						error.message || 'Step failed',
-						'Process Failed',
-						5000
-					);
-				}
-				throw error;
-			}
-		},
-
-		complete(message = null, title = null) {
-			if (toastId && currentStepIndex === steps.length - 1) {
-				const finalMessage = message || steps[steps.length - 1].message;
-				const finalTitle = title || steps[steps.length - 1].title;
-
-				updateToastStatus(
-					toastId,
-					'success',
-					finalMessage,
-					finalTitle,
-					3000
-				);
-			}
-		}
-	};
-}
-
-/**
- * Wrapper for Supabase operations with toast integration
- * @param {Function} operation - The Supabase operation function
- * @param {Object} config - Configuration for toasts
- * @returns {Promise<any>} The operation result
- */
+/** Wrapper for Supabase operations with toast integration */
 export async function supabaseRequest(operation, config = {}) {
 	const finalConfig = {
 		showToast: true,
@@ -361,13 +241,7 @@ export async function supabaseRequest(operation, config = {}) {
 	}
 }
 
-/**
- * Form submission handler with validation and toast feedback
- * @param {Function} submitFunction - The function to call for submission
- * @param {Function} validateFunction - Optional validation function
- * @param {Object} config - Configuration options
- * @returns {Function} The wrapped submit handler
- */
+/** Form submission handler with validation and toast feedback */
 export function createFormSubmitHandler(submitFunction, validateFunction = null, config = {}) {
 	const finalConfig = {
 		showToast: true,

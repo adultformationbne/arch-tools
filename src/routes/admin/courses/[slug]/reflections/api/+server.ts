@@ -90,7 +90,6 @@ async function sendReflectionMarkedEmail({
 			.single();
 
 		if (!enrollment?.email) {
-			console.log('No email found for enrollment:', enrollmentId);
 			return;
 		}
 
@@ -102,7 +101,6 @@ async function sendReflectionMarkedEmail({
 		);
 
 		if (alreadySentToday) {
-			console.log(`Skipping reflection_marked email - already sent today to ${enrollment.email}`);
 			return;
 		}
 
@@ -185,7 +183,6 @@ async function sendReflectionMarkedEmail({
 		});
 
 		if (result.success) {
-			console.log(`Sent reflection_marked email to ${enrollment.email}`);
 		} else {
 			console.error(`Failed to send reflection_marked email:`, result.error);
 		}

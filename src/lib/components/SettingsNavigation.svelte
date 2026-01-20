@@ -1,5 +1,5 @@
 <script>
-	import { Users, Settings } from 'lucide-svelte';
+	import { Users, Settings } from '$lib/icons';
 
 	let { activeSection = 'users', onNavigate } = $props();
 

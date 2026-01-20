@@ -1,19 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
+import { getReadingsForEntry, flattenReadingsData } from '$lib/server/dgr-readings.js';
 
 /**
  * POST /api/dgr/readings
  * Fetches lectionary readings for a date.
- * IMPORTANT: Only populates readings_data if it doesn't already exist (preserves user edits)
+ *
+ * NEW BEHAVIOR (liturgical calendar as SSOT):
+ * - Pending entries: always fetch fresh from lectionary (mapping fixes reflected)
+ * - Non-pending entries with readings_data: return snapshot (preserves what contributor saw)
+ *
  * Body: { date: '2025-10-14', schedule_id?: 'uuid', contributor_id?: 'uuid' }
  */
 export async function POST({ request }) {
@@ -24,12 +20,11 @@ export async function POST({ request }) {
 			return json({ error: 'Date is required' }, { status: 400 });
 		}
 
-		// If we have a schedule_id, first check if it already has readings_data
-		// If it does, return that instead of overwriting with lectionary data
+		// If we have a schedule_id, use the helper to get readings based on status
 		if (schedule_id) {
-			const { data: existingSchedule, error: fetchError } = await supabase
+			const { data: existingSchedule, error: fetchError } = await supabaseAdmin
 				.from('dgr_schedule')
-				.select('id, readings_data, gospel_reference, liturgical_date')
+				.select('id, status, readings_data, gospel_reference, liturgical_date, date')
 				.eq('id', schedule_id)
 				.single();
 
@@ -37,28 +32,23 @@ export async function POST({ request }) {
 				throw fetchError;
 			}
 
-			// If schedule already has readings_data, return it without overwriting
-			if (existingSchedule?.readings_data && Object.keys(existingSchedule.readings_data).length > 0) {
-				// Convert readings_data back to the reading format for frontend
-				const rd = existingSchedule.readings_data;
-				const reading = {
-					first_reading: rd.first_reading?.source || null,
-					psalm: rd.psalm?.source || null,
-					second_reading: rd.second_reading?.source || null,
-					gospel_reading: rd.gospel?.source || existingSchedule.gospel_reference || null,
-					liturgical_day: existingSchedule.liturgical_date || null
-				};
+			if (existingSchedule) {
+				// Use helper: pending = fresh from lectionary, non-pending = snapshot
+				const { readingsData, reading, source } = await getReadingsForEntry(existingSchedule);
 
-				return json({
-					success: true,
-					schedule: existingSchedule,
-					readings: reading
-				});
+				if (reading) {
+					return json({
+						success: true,
+						schedule: existingSchedule,
+						readings: reading,
+						source // 'snapshot' or 'lectionary' - useful for debugging
+					});
+				}
 			}
 		}
 
 		// Fetch readings from lectionary using the database function
-		const { data: readings, error: readingsError } = await supabase.rpc(
+		const { data: readings, error: readingsError } = await supabaseAdmin.rpc(
 			'get_readings_for_date',
 			{ target_date: date }
 		);
@@ -123,7 +113,7 @@ export async function POST({ request }) {
 
 		// If we have schedule_id, update existing (only if readings_data was empty - checked above)
 		if (schedule_id) {
-			const { data: updated, error: updateError } = await supabase
+			const { data: updated, error: updateError } = await supabaseAdmin
 				.from('dgr_schedule')
 				.update({
 					liturgical_date: scheduleData.liturgical_date,
@@ -145,35 +135,31 @@ export async function POST({ request }) {
 		}
 
 		// Check if schedule entry already exists for this date
-		const { data: existing } = await supabase
+		const { data: existing } = await supabaseAdmin
 			.from('dgr_schedule')
-			.select('id, contributor_id, readings_data')
+			.select('id, status, contributor_id, readings_data, liturgical_date, date')
 			.eq('date', date)
 			.maybeSingle();
 
 		if (existing) {
-			// If existing entry already has readings_data, don't overwrite
-			if (existing.readings_data && Object.keys(existing.readings_data).length > 0) {
-				const rd = existing.readings_data;
-				const existingReading = {
-					first_reading: rd.first_reading?.source || null,
-					psalm: rd.psalm?.source || null,
-					second_reading: rd.second_reading?.source || null,
-					gospel_reading: rd.gospel?.source || null,
-					liturgical_day: null
-				};
+			// Use helper: pending = fresh from lectionary, non-pending = snapshot
+			const { readingsData: existingReadings, reading: existingReading, source } = await getReadingsForEntry(existing);
 
+			// For non-pending with existing snapshot, return as-is
+			if (source === 'snapshot') {
 				return json({
 					success: true,
 					schedule: existing,
-					readings: existingReading
+					readings: existingReading,
+					source
 				});
 			}
 
-			// Update existing entry (only if readings_data was empty)
+			// For pending (or empty snapshot), update with fresh lectionary data
 			const updateData = {
 				liturgical_date: scheduleData.liturgical_date,
-				readings_data: scheduleData.readings_data,
+				// Don't populate readings_data for pending - let it stay null until submit
+				// readings_data: scheduleData.readings_data,
 				gospel_reference: scheduleData.gospel_reference,
 				updated_at: new Date().toISOString()
 			};
@@ -183,7 +169,7 @@ export async function POST({ request }) {
 				updateData.contributor_id = contributor_id;
 
 				// Get contributor email
-				const { data: contributor } = await supabase
+				const { data: contributor } = await supabaseAdmin
 					.from('dgr_contributors')
 					.select('email')
 					.eq('id', contributor_id)
@@ -194,7 +180,7 @@ export async function POST({ request }) {
 				}
 			}
 
-			const { data: updated, error: updateError } = await supabase
+			const { data: updated, error: updateError } = await supabaseAdmin
 				.from('dgr_schedule')
 				.update(updateData)
 				.eq('id', existing.id)
@@ -206,31 +192,38 @@ export async function POST({ request }) {
 			return json({
 				success: true,
 				schedule: updated,
-				readings: reading
+				readings: reading, // Fresh from lectionary
+				source: 'lectionary'
 			});
 		}
 
 		// Create new entry (only if doesn't exist)
+		// Don't populate readings_data - keep null until submit (SSOT pattern)
+		const newEntryData = {
+			date,
+			liturgical_date: reading.liturgical_day,
+			gospel_reference: reading.gospel_reading, // Backward compatibility only
+			status: 'pending'
+		};
+
 		if (contributor_id) {
-			scheduleData.contributor_id = contributor_id;
+			newEntryData.contributor_id = contributor_id;
 
 			// Get contributor email
-			const { data: contributor } = await supabase
+			const { data: contributor } = await supabaseAdmin
 				.from('dgr_contributors')
 				.select('email')
 				.eq('id', contributor_id)
 				.single();
 
 			if (contributor) {
-				scheduleData.contributor_email = contributor.email;
+				newEntryData.contributor_email = contributor.email;
 			}
-
-			scheduleData.status = 'pending';
 		}
 
-		const { data: created, error: createError } = await supabase
+		const { data: created, error: createError } = await supabaseAdmin
 			.from('dgr_schedule')
-			.insert(scheduleData)
+			.insert(newEntryData)
 			.select()
 			.single();
 
@@ -239,7 +232,8 @@ export async function POST({ request }) {
 		return json({
 			success: true,
 			schedule: created,
-			readings: reading
+			readings: reading, // Fresh from lectionary
+			source: 'lectionary'
 		});
 	} catch (error) {
 		console.error('Readings API error:', error);

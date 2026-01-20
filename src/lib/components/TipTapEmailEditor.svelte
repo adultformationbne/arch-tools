@@ -17,7 +17,7 @@
 		Plus,
 		RectangleHorizontal,
 		Minus
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 	import LinkEditorPopover from './LinkEditorPopover.svelte';
 	import ButtonEditorPopover from './ButtonEditorPopover.svelte';
 

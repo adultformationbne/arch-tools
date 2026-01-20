@@ -1,5 +1,5 @@
 <script>
-	import { Plus, MapPin, Edit, Trash2, ChevronDown, ChevronUp, Shield, UserPlus, X } from 'lucide-svelte';
+	import { Plus, MapPin, Edit, Trash2, ChevronDown, ChevronUp, Shield, UserPlus, X } from '$lib/icons';
 	import HubModal from '$lib/components/HubModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';

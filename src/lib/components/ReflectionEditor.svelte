@@ -1,5 +1,5 @@
 <script>
-	import { Plus, Trash2 } from 'lucide-svelte';
+	import { Plus, Trash2 } from '$lib/icons';
 
 	let {
 		reflectionQuestion = '',

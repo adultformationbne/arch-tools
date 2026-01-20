@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { UserPlus, Users } from 'lucide-svelte';
+	import { UserPlus, Users } from '$lib/icons';
 	import { apiPut } from '$lib/utils/api-handler.js';
 	import { invalidateAll } from '$app/navigation';
 

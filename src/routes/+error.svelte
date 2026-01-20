@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Home, ArrowLeft, Search, AlertCircle, Lock } from 'lucide-svelte';
+	import { Home, ArrowLeft, Search, AlertCircle, Lock } from '$lib/icons';
 
 	$: status = $page.status;
 	$: message = $page.error?.message || 'Something went wrong';

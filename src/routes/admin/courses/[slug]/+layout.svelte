@@ -11,10 +11,8 @@
 	$effect(() => {
 		if ($navigating) {
 			navStartTime = Date.now();
-			console.log(`[CLIENT] 🚀 Navigation started: ${$navigating.from?.url.pathname} → ${$navigating.to?.url.pathname}`);
 		} else if (navStartTime) {
 			const duration = Date.now() - navStartTime;
-			console.log(`[CLIENT] ✅ Navigation complete in ${duration}ms\n`);
 			navStartTime = null;
 		}
 	});

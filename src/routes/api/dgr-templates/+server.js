@@ -1,23 +1,14 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
 
 // GET - Retrieve active template for rendering
 export async function GET({ url }) {
   const templateKey = url.searchParams.get('key') || 'default';
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('dgr_templates')
     .select('*')
     .eq('template_key', templateKey)
@@ -36,7 +27,7 @@ export async function POST({ request }) {
   const { templateKey = 'default', data: templateData } = await request.json();
 
   // Get active template
-  const { data: template, error } = await supabase
+  const { data: template, error } = await supabaseAdmin
     .from('dgr_templates')
     .select('*')
     .eq('template_key', templateKey)

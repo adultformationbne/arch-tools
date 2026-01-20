@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { Save, Send, Eye, EyeOff, X, CheckCircle, ArrowLeft } from 'lucide-svelte';
+	import { Save, Send, Eye, EyeOff, X, CheckCircle, ArrowLeft } from '$lib/icons';
 	import SimplifiedRichTextEditor from '$lib/components/SimplifiedRichTextEditor.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { getStatusLabel, isComplete, normalizeStatus } from '$lib/utils/reflection-status';
@@ -58,8 +58,6 @@
 	// Watch for content changes (only auto-save if editable)
 	$effect(() => {
 		if (content && content.length > 0 && questionId && isEditable) {
-			console.log('💾 Content to save (cleaned):', content);
-			console.log('💾 Content length:', content.length, 'chars');
 			if (autoSaveTimer) clearTimeout(autoSaveTimer);
 			autoSaveTimer = setTimeout(autoSave, 2000);
 		}

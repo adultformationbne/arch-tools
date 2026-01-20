@@ -71,7 +71,7 @@ function parseMonthDay(dateStr: string, year: number): Date {
 export function loadYearCycleData(): Map<number, YearCycleData> {
 	if (yearDataCache) return yearDataCache;
 
-	const csvPath = join(process.cwd(), 'src/lib/data/litugical-year.csv');
+	const csvPath = join(process.cwd(), 'src/lib/data/liturgical-year.csv');
 	const csvContent = readFileSync(csvPath, 'utf-8');
 	const records = parse(csvContent, { columns: true, skip_empty_lines: true });
 

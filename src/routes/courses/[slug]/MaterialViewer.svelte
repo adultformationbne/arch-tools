@@ -1,5 +1,5 @@
 <script>
-	import { X, Download, ChevronDown, ChevronRight, FileText, Play, Mic, Book, Printer } from 'lucide-svelte';
+	import { X, Download, ChevronDown, ChevronRight, FileText, Play, Mic, Book, Printer } from '$lib/icons';
 
 	let {
 		material = null,

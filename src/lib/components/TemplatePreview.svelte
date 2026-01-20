@@ -1,5 +1,5 @@
 <script>
-  import { Eye, RefreshCw } from 'lucide-svelte';
+  import { Eye, RefreshCw } from '$lib/icons';
 
   let {
     previewHtml = '',

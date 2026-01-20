@@ -209,7 +209,6 @@ export async function fetchGospelForDate(dateInput, region = 'australia.brisbane
 // Flow: Universalis (get reference) -> Oremus (get full text)
 export async function fetchGospelTextForDate(dateInput, version = 'NRSVAE', region = 'australia.brisbane') {
 	try {
-		console.log('Fetching gospel for date:', dateInput);
 		
 		// First, get the gospel reference from Universalis
 		const gospelData = await fetchGospelForDate(dateInput, region);
@@ -218,7 +217,6 @@ export async function fetchGospelTextForDate(dateInput, version = 'NRSVAE', regi
 			throw new Error(gospelData.error || 'Failed to fetch gospel from Universalis');
 		}
 
-		console.log('Gospel reference from Universalis:', gospelData.passage);
 
 		// Then fetch the full text from our scripture API
 		const scriptureData = await fetchScripturePassage(gospelData.passage, version);

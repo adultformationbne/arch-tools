@@ -8,7 +8,7 @@
 		Upload,
 		X,
 		Image
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 	import { Card } from '$lib/design-system';
 	import { Button } from '$lib/design-system';
 	import Modal from '$lib/components/Modal.svelte';

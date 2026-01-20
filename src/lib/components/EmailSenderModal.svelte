@@ -1,5 +1,5 @@
 <script>
-	import { X, Mail, Send, Loader2, TestTube, Pencil, FileText, ChevronDown, Eye, Check, ChevronLeft, AlertTriangle } from 'lucide-svelte';
+	import { X, Mail, Send, Loader2, TestTube, Pencil, FileText, ChevronDown, Eye, Check, ChevronLeft, AlertTriangle } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { apiGet, apiPost, apiPut } from '$lib/utils/api-handler.js';
 	import EmailBodyEditor from './EmailBodyEditor.svelte';

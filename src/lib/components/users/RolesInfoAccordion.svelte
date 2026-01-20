@@ -1,5 +1,5 @@
 <script>
-	import { GraduationCap, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import { GraduationCap, ChevronDown, ChevronUp } from '$lib/icons';
 
 	let { courseRoles = [], isOpen = false, onToggle } = $props();
 

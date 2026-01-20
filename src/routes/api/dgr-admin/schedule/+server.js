@@ -1,89 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { cleanGospelText, expandGospelReference } from '$lib/utils/dgr-common.js';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
-
-/**
- * Fetch readings from database lectionary (not Universalis API)
- * Uses the same get_readings_for_date RPC function as /api/dgr/readings
- */
-async function fetchReadingsFromDatabase(dateStr) {
-	try {
-		// Fetch readings from lectionary using the database function
-		const { data: readings, error: readingsError } = await supabase.rpc(
-			'get_readings_for_date',
-			{ target_date: dateStr }
-		);
-
-		if (readingsError) {
-			console.error('Failed to fetch readings from database:', readingsError);
-			return null;
-		}
-
-		if (!readings || readings.length === 0) {
-			console.warn('No readings found in database for date:', dateStr);
-			return null;
-		}
-
-		const reading = readings[0];
-
-		// Build readings_data JSONB structure
-		const readings_data = {
-			combined_sources: [
-				reading.first_reading,
-				reading.psalm,
-				reading.second_reading,
-				reading.gospel_reading
-			]
-				.filter(Boolean)
-				.join('; '),
-			first_reading: reading.first_reading
-				? {
-						source: reading.first_reading,
-						text: '',
-						heading: ''
-					}
-				: null,
-			psalm: reading.psalm
-				? {
-						source: reading.psalm,
-						text: ''
-					}
-				: null,
-			second_reading: reading.second_reading
-				? {
-						source: reading.second_reading,
-						text: '',
-						heading: ''
-					}
-				: null,
-			gospel: reading.gospel_reading
-				? {
-						source: reading.gospel_reading,
-						text: '',
-						heading: ''
-					}
-				: null
-		};
-
-		return {
-			readings: readings_data,
-			liturgicalDate: reading.liturgical_day || '',
-			reference: reading.gospel_reading || '' // Backward compatibility
-		};
-	} catch (error) {
-		console.error('Error fetching readings from database:', error);
-		return null;
-	}
-}
+import { getReadingsForEntries, snapshotReadingsOnSubmit } from '$lib/server/dgr-readings.js';
 
 export async function GET({ url, locals }) {
 	const { user } = await locals.safeGetSession();
@@ -99,7 +17,7 @@ export async function GET({ url, locals }) {
 		const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
 		// 1. Fetch calendar metadata from ordo tables (no readings JOIN - readings come from dgr_schedule)
-		const { data: calendarData, error: calendarError } = await supabase
+		const { data: calendarData, error: calendarError } = await supabaseAdmin
 			.from('ordo_calendar')
 			.select(`
 				calendar_date,
@@ -118,7 +36,7 @@ export async function GET({ url, locals }) {
 		}
 
 		// 2. Fetch actual schedule entries (rows only exist when activity has occurred)
-		let scheduleQuery = supabase
+		let scheduleQuery = supabaseAdmin
 			.from('dgr_schedule')
 			.select(
 				`
@@ -144,7 +62,7 @@ export async function GET({ url, locals }) {
 		});
 
 		// 3. Fetch assignment rules
-		const { data: rules, error: rulesError } = await supabase
+		const { data: rules, error: rulesError } = await supabaseAdmin
 			.from('dgr_assignment_rules')
 			.select('*')
 			.eq('active', true)
@@ -198,7 +116,7 @@ export async function GET({ url, locals }) {
 		}
 
 		// 4. Fetch contributors with patterns (for virtual assignments)
-		const { data: contributors, error: contribError } = await supabase
+		const { data: contributors, error: contribError } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('id, name, email, access_token, schedule_pattern')
 			.eq('active', true);
@@ -232,20 +150,30 @@ export async function GET({ url, locals }) {
 		});
 
 		// 4. Build calendar-first response
-		// Readings now come from dgr_schedule.readings_data (single source of truth)
+		// Use helper to get readings: pending = fresh from lectionary, non-pending = snapshot
+		const scheduleEntriesArray = Array.from(scheduleMap.values());
+		const readingsMap = await getReadingsForEntries(scheduleEntriesArray);
+
 		const calendar = calendarData.map((cal) => {
 			const date = cal.calendar_date;
 			const scheduleEntry = scheduleMap.get(date) || null;
 			const patternContributor = patternMap.get(date) || null;
 
-			// Extract readings from schedule entry's readings_data (the single source of truth)
-			const readingsData = scheduleEntry?.readings_data;
-			const readings = readingsData ? {
-				first_reading: readingsData.first_reading?.source || null,
-				psalm: readingsData.psalm?.source || null,
-				second_reading: readingsData.second_reading?.source || null,
-				gospel: readingsData.gospel?.source || scheduleEntry?.gospel_reference || null
-			} : null;
+			// Get readings from helper (respects pending vs non-pending status)
+			let readings = null;
+			let readingsSource = null;
+			if (scheduleEntry) {
+				const readingsResult = readingsMap.get(scheduleEntry.id);
+				if (readingsResult?.reading) {
+					readings = {
+						first_reading: readingsResult.reading.first_reading || null,
+						psalm: readingsResult.reading.psalm || null,
+						second_reading: readingsResult.reading.second_reading || null,
+						gospel: readingsResult.reading.gospel_reading || scheduleEntry?.gospel_reference || null
+					};
+					readingsSource = readingsResult.source;
+				}
+			}
 
 			return {
 				date,
@@ -254,6 +182,7 @@ export async function GET({ url, locals }) {
 				liturgical_week: cal.liturgical_week,
 				liturgical_rank: cal.liturgical_rank,
 				readings,
+				readings_source: readingsSource, // 'snapshot' or 'lectionary' - useful for debugging
 				// Actual schedule row (null if no activity yet)
 				schedule: scheduleEntry
 					? {
@@ -403,7 +332,7 @@ export async function POST({ request, locals, url }) {
 async function assignContributor({ date, contributorId }) {
 	try {
 		// Check if entry already exists for this date
-		const { data: existing } = await supabase
+		const { data: existing } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select('id')
 			.eq('date', date)
@@ -420,7 +349,7 @@ async function assignContributor({ date, contributorId }) {
 		}
 
 		// Get contributor details
-		const { data: contributor } = await supabase
+		const { data: contributor } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('email')
 			.eq('id', contributorId)
@@ -431,28 +360,23 @@ async function assignContributor({ date, contributorId }) {
 		}
 
 		// Generate submission token
-		const { data: token } = await supabase.rpc('generate_submission_token');
+		const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
-		// Fetch readings from database lectionary
-		const readingsData = await fetchReadingsFromDatabase(date);
+		// SSOT pattern: Don't populate readings_data for pending entries
+		// Readings will be fetched fresh from lectionary when displaying
+		// and snapshotted only on submit
 
-		// Create schedule entry
+		// Create schedule entry (readings_data stays NULL for pending)
 		const scheduleEntry = {
 			date,
 			contributor_id: contributorId,
 			contributor_email: contributor.email,
 			submission_token: token,
 			status: 'pending'
+			// readings_data: NULL - will be fetched from lectionary on display
 		};
 
-		// Add readings if found
-		if (readingsData) {
-			scheduleEntry.gospel_reference = readingsData.reference;
-			scheduleEntry.liturgical_date = readingsData.liturgicalDate;
-			scheduleEntry.readings_data = readingsData.readings;
-		}
-
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.insert(scheduleEntry)
 			.select(`
@@ -473,7 +397,7 @@ async function updateAssignment({ scheduleId, contributorId }) {
 	try {
 		// Handle unassign case (empty string or null)
 		if (!contributorId) {
-			const { data, error } = await supabase
+			const { data, error } = await supabaseAdmin
 				.from('dgr_schedule')
 				.update({
 					contributor_id: null,
@@ -489,13 +413,13 @@ async function updateAssignment({ scheduleId, contributorId }) {
 		}
 
 		// Normal assignment - look up contributor email
-		const { data: contributor } = await supabase
+		const { data: contributor } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('email')
 			.eq('id', contributorId)
 			.single();
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update({
 				contributor_id: contributorId,
@@ -515,7 +439,7 @@ async function updateAssignment({ scheduleId, contributorId }) {
 
 async function approveReflection({ scheduleId }) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update({
 				status: 'approved',
@@ -550,7 +474,7 @@ async function updateStatus({ scheduleId, status }) {
 			updateData.published_at = new Date().toISOString();
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update(updateData)
 			.eq('id', scheduleId)
@@ -584,7 +508,7 @@ async function createWithStatus({ date, contributorId, status }) {
 		}
 
 		// Check if entry already exists for this date
-		const { data: existing } = await supabase
+		const { data: existing } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select('id')
 			.eq('date', date)
@@ -598,7 +522,7 @@ async function createWithStatus({ date, contributorId, status }) {
 		// Get contributor details if provided
 		let contributor = null;
 		if (contributorId) {
-			const { data: contrib } = await supabase
+			const { data: contrib } = await supabaseAdmin
 				.from('dgr_contributors')
 				.select('email')
 				.eq('id', contributorId)
@@ -607,26 +531,21 @@ async function createWithStatus({ date, contributorId, status }) {
 		}
 
 		// Generate submission token
-		const { data: token } = await supabase.rpc('generate_submission_token');
+		const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
-		// Fetch readings from database lectionary
-		const readingsData = await fetchReadingsFromDatabase(date);
+		// SSOT pattern: Don't populate readings_data for pending entries
+		// Readings will be fetched fresh from lectionary when displaying
+		// and snapshotted only on submit
 
-		// Create schedule entry
+		// Create schedule entry (readings_data stays NULL for pending)
 		const scheduleEntry = {
 			date,
 			contributor_id: contributorId || null,
 			contributor_email: contributor?.email || null,
 			submission_token: token,
 			status
+			// readings_data: NULL - will be fetched from lectionary on display
 		};
-
-		// Add readings if found
-		if (readingsData) {
-			scheduleEntry.gospel_reference = readingsData.reference;
-			scheduleEntry.liturgical_date = readingsData.liturgicalDate;
-			scheduleEntry.readings_data = readingsData.readings;
-		}
 
 		// Set timestamp based on status
 		if (status === 'approved') {
@@ -635,7 +554,7 @@ async function createWithStatus({ date, contributorId, status }) {
 			scheduleEntry.published_at = new Date().toISOString();
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.insert(scheduleEntry)
 			.select(`
@@ -696,7 +615,7 @@ async function updateReadings({ scheduleId, readings }) {
 		if (readings.gospel) sources.push(readings.gospel);
 		readingsData.combined_sources = sources.join('; ');
 
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update({
 				gospel_reference: readings.gospel || null, // Keep for backward compatibility
@@ -777,7 +696,7 @@ async function saveReflection({
 				updateData.gospel_reference = readingsParts[3] || null; // Backward compatibility
 			}
 
-			const { data, error } = await supabase
+			const { data, error } = await supabaseAdmin
 				.from('dgr_schedule')
 				.update(updateData)
 				.eq('id', scheduleId)
@@ -792,14 +711,14 @@ async function saveReflection({
 		// If contributorId exists (pattern-based entry), create new schedule entry
 		if (contributorId && date) {
 			// Get contributor details
-			const { data: contributor } = await supabase
+			const { data: contributor } = await supabaseAdmin
 				.from('dgr_contributors')
 				.select('email')
 				.eq('id', contributorId)
 				.single();
 
 			// Generate submission token
-			const { data: token } = await supabase.rpc('generate_submission_token');
+			const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
 			// Parse readings string into JSONB structure
 			const readingsParts = readings.split(';').map(r => r.trim());
@@ -841,7 +760,7 @@ async function saveReflection({
 				scheduleEntry.published_at = new Date().toISOString();
 			}
 
-			const { data, error } = await supabase
+			const { data, error } = await supabaseAdmin
 				.from('dgr_schedule')
 				.insert(scheduleEntry)
 				.select()
@@ -861,7 +780,7 @@ async function saveReflection({
 async function clearReflection({ scheduleId }) {
 	try {
 		// Clear only the reflection content, keep contributor/readings/date
-		const { data, error } = await supabase
+		const { data, error } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update({
 				reflection_title: null,
@@ -888,7 +807,7 @@ async function clearReflection({ scheduleId }) {
 async function sendToWordPress({ scheduleId, origin }) {
 	try {
 		// Get the schedule entry with all data
-		const { data: schedule, error: scheduleError } = await supabase
+		const { data: schedule, error: scheduleError } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select(`
 				*,
@@ -920,7 +839,6 @@ async function sendToWordPress({ scheduleId, origin }) {
 					if (scriptureData.success && scriptureData.content) {
 						// Use cleanGospelText to properly parse - same as dgr/publish
 						gospelFullText = cleanGospelText(scriptureData.content);
-						console.log(`📖 Fetched gospel text for ${gospelReference}: ${gospelFullText.substring(0, 100)}...`);
 					}
 				}
 			} catch (err) {
@@ -958,7 +876,7 @@ async function sendToWordPress({ scheduleId, origin }) {
 		}
 
 		// Update schedule status to published
-		const { data: updated, error: updateError } = await supabase
+		const { data: updated, error: updateError } = await supabaseAdmin
 			.from('dgr_schedule')
 			.update({
 				status: 'published',

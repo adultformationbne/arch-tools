@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { isValidEmail } from '$lib/utils/form-validator.js';
 
 /**
  * Check user status and determine authentication method
@@ -14,8 +15,7 @@ export async function POST({ request }) {
 		}
 
 		// Validate email format
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(email)) {
+		if (!isValidEmail(email)) {
 			throw error(400, 'Invalid email format');
 		}
 

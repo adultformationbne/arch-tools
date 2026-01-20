@@ -3,6 +3,7 @@ import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
+import { getReadingsForEntries } from '$lib/server/dgr-readings.js';
 
 const TASK_TYPE = 'dgr_digest';
 
@@ -68,7 +69,7 @@ export async function GET({ request }: RequestEvent) {
 		nextWeek.setDate(nextWeek.getDate() + 7);
 		const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
-		// Get all schedule entries for next 7 days (readings come from readings_data - single source of truth)
+		// Get all schedule entries for next 7 days
 		const { data: upcomingEntries } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select(`
@@ -78,6 +79,15 @@ export async function GET({ request }: RequestEvent) {
 			.gte('date', today)
 			.lte('date', nextWeekStr)
 			.order('date', { ascending: true });
+
+		// SSOT pattern: Get readings for all entries (pending = fresh from lectionary, non-pending = snapshot)
+		const readingsMap = await getReadingsForEntries(upcomingEntries || []);
+
+		// Attach correct readings to each entry
+		const upcomingWithReadings = (upcomingEntries || []).map(entry => ({
+			...entry,
+			readings_data: readingsMap.get(entry.id)?.readingsData || entry.readings_data
+		}));
 
 		// Get NEW pending items (submitted but never in a digest)
 		const { data: newPendingItems } = await supabaseAdmin
@@ -103,7 +113,7 @@ export async function GET({ request }: RequestEvent) {
 
 		// Build email content
 		const emailHtml = buildDigestEmail({
-			upcomingEntries: upcomingEntries || [],
+			upcomingEntries: upcomingWithReadings,
 			newPendingItems: newPendingItems || [],
 			existingPendingItems: existingPendingItems || [],
 			today
@@ -112,7 +122,7 @@ export async function GET({ request }: RequestEvent) {
 		// Check if there's anything to report
 		const hasNewItems = (newPendingItems?.length || 0) > 0;
 		const hasExistingPending = (existingPendingItems?.length || 0) > 0;
-		const hasUpcoming = (upcomingEntries?.length || 0) > 0;
+		const hasUpcoming = upcomingWithReadings.length > 0;
 
 		if (!hasNewItems && !hasExistingPending && !hasUpcoming) {
 			await updateTaskStatus(task.id, 'skipped', 'No items to report');

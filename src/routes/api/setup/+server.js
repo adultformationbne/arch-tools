@@ -1,14 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { json } from '@sveltejs/kit';
-
-// Initialize Supabase client
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function POST() {
 	try {
 		// Create the dgr_promo_tiles table using raw SQL
-		const { error: createTableError } = await supabase.rpc('exec_sql', {
+		const { error: createTableError } = await supabaseAdmin.rpc('exec_sql', {
 			sql: `
 				-- Create table for DGR promotional tiles
 				CREATE TABLE IF NOT EXISTS dgr_promo_tiles (
@@ -35,7 +31,7 @@ export async function POST() {
 		if (createTableError) {
 			console.error('Error creating table:', createTableError);
 			// Try alternative approach using direct SQL execution
-			const { error: sqlError } = await supabase
+			const { error: sqlError } = await supabaseAdmin
 				.from('information_schema.tables')
 				.select('table_name')
 				.eq('table_name', 'dgr_promo_tiles');

@@ -1,5 +1,5 @@
 <script>
-	import { Bold, Italic, Underline, List, ListOrdered, Heading2 } from 'lucide-svelte';
+	import { Bold, Italic, Underline, List, ListOrdered, Heading2 } from '$lib/icons';
 	import { cleanWordHtml } from '$lib/utils/html-cleaner.js';
 
 	let {
@@ -306,25 +306,14 @@
 		const textData = clipboardData.getData('text/plain');
 
 		if (htmlData) {
-			console.log('═'.repeat(60));
-			console.log('📋 RAW PASTE HTML (first 2000 chars):');
-			console.log('═'.repeat(60));
-			console.log(htmlData.substring(0, 2000));
-			console.log('═'.repeat(60));
 
 			// Use smart cleaner with debug logging
 			const cleanedHtml = cleanWordHtml(htmlData, { debug: true });
 
-			console.log('═'.repeat(60));
-			console.log('✨ CLEANED HTML:');
-			console.log('═'.repeat(60));
-			console.log(cleanedHtml);
-			console.log('═'.repeat(60));
 
 			document.execCommand('insertHTML', false, cleanedHtml);
 		} else if (textData) {
 			// Plain text - insert as paragraphs
-			console.log('📝 Plain text paste');
 			const paragraphs = textData.split('\n\n').filter(p => p.trim());
 			const html = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
 			document.execCommand('insertHTML', false, html);

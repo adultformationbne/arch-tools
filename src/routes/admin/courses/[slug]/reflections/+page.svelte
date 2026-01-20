@@ -1,5 +1,5 @@
 <script>
-	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X, Eye } from 'lucide-svelte';
+	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X, Eye } from '$lib/icons';
 	import { toastSuccess, toastError, toastWarning } from '$lib/utils/toast-helpers.js';
 	import { goto, invalidateAll } from '$app/navigation';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';

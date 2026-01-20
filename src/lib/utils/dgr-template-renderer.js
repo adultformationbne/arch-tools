@@ -123,7 +123,6 @@ function processSpecialHelpers(template, data, options = {}) {
       // Pick a random image from the provided list
       const randomIndex = Math.floor(Math.random() * headerImages.length);
       const selectedImage = headerImages[randomIndex];
-      console.log('🎲 Random header image selected:', selectedImage);
       return selectedImage;
     }
     // Fallback if no images provided

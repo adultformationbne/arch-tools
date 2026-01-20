@@ -1,13 +1,12 @@
 <script>
 import { goto } from '$app/navigation';
 import {
-	Edit,
 	Wrench,
 	GraduationCap,
 	Users,
 	BookOpen,
 	Settings
-} from 'lucide-svelte';
+} from '$lib/icons';
 
 export let data;
 $: ({ session, userModules = [], platform } = data);
@@ -16,13 +15,6 @@ $: ({ session, userModules = [], platform } = data);
 
 // Module-based route configuration
 const moduleRoutes = [
-	{
-		module: 'editor',
-		name: 'Content Editor',
-		path: '/editor',
-		description: 'Create and manage content with versioning and database storage',
-		icon: Edit
-	},
 	{
 		module: 'dgr',
 		name: 'Daily Gospel Readings',

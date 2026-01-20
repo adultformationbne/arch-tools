@@ -1,14 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-	auth: {
-		autoRefreshToken: false,
-		persistSession: false
-	}
-});
+import { supabaseAdmin } from '$lib/server/supabase.js';
+import { snapshotReadingsOnSubmit } from '$lib/server/dgr-readings.js';
 
 /**
  * GET /api/dgr/contributor/[token]
@@ -19,7 +11,7 @@ export async function GET({ params }) {
 
 	try {
 		// Validate token and get contributor
-		const { data: contributor, error: contributorError } = await supabase
+		const { data: contributor, error: contributorError } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('id, name, title, email, schedule_pattern, visit_count')
 			.eq('access_token', token)
@@ -32,7 +24,7 @@ export async function GET({ params }) {
 
 		// Track the visit - update last_visited_at and increment visit_count
 		const newVisitCount = (contributor.visit_count || 0) + 1;
-		await supabase
+		await supabaseAdmin
 			.from('dgr_contributors')
 			.update({
 				last_visited_at: new Date().toISOString(),
@@ -41,7 +33,7 @@ export async function GET({ params }) {
 			.eq('id', contributor.id);
 
 		// Get assigned dates using the database function
-		const { data: dates, error: datesError } = await supabase.rpc(
+		const { data: dates, error: datesError } = await supabaseAdmin.rpc(
 			'get_contributor_assigned_dates',
 			{
 				contributor_uuid: contributor.id,
@@ -81,7 +73,7 @@ export async function POST({ params, request }) {
 
 	try {
 		// Validate token and get contributor
-		const { data: contributor, error: contributorError } = await supabase
+		const { data: contributor, error: contributorError } = await supabaseAdmin
 			.from('dgr_contributors')
 			.select('id, email')
 			.eq('access_token', token)
@@ -100,7 +92,7 @@ export async function POST({ params, request }) {
 				return json({ error: 'Date is required for reset' }, { status: 400 });
 			}
 
-			const { data: existing } = await supabase
+			const { data: existing } = await supabaseAdmin
 				.from('dgr_schedule')
 				.select('id')
 				.eq('date', date)
@@ -108,7 +100,7 @@ export async function POST({ params, request }) {
 				.maybeSingle();
 
 			if (existing) {
-				const { data: updated, error: updateError } = await supabase
+				const { data: updated, error: updateError } = await supabaseAdmin
 					.from('dgr_schedule')
 					.update({
 						reflection_title: null,
@@ -134,7 +126,7 @@ export async function POST({ params, request }) {
 		}
 
 		// Check if schedule entry exists for this date and contributor
-		const { data: existing, error: checkError } = await supabase
+		const { data: existing, error: checkError } = await supabaseAdmin
 			.from('dgr_schedule')
 			.select('id, reflection_title, gospel_quote, reflection_content, status')
 			.eq('date', date)
@@ -159,7 +151,7 @@ export async function POST({ params, request }) {
 
 		if (existing) {
 			// Update existing entry
-			const { data: updated, error: updateError } = await supabase
+			const { data: updated, error: updateError } = await supabaseAdmin
 				.from('dgr_schedule')
 				.update(updateData)
 				.eq('id', existing.id)
@@ -168,9 +160,14 @@ export async function POST({ params, request }) {
 
 			if (updateError) throw updateError;
 			scheduleEntry = updated;
+
+			// Snapshot readings on submit (preserves what contributor saw)
+			if (action === 'submit') {
+				await snapshotReadingsOnSubmit(existing.id, date);
+			}
 		} else {
 			// Create new entry
-			const { data: created, error: createError } = await supabase
+			const { data: created, error: createError } = await supabaseAdmin
 				.from('dgr_schedule')
 				.insert({
 					date,
@@ -187,6 +184,11 @@ export async function POST({ params, request }) {
 
 			if (createError) throw createError;
 			scheduleEntry = created;
+
+			// Snapshot readings on submit (preserves what contributor saw)
+			if (action === 'submit') {
+				await snapshotReadingsOnSubmit(created.id, date);
+			}
 		}
 
 		return json({

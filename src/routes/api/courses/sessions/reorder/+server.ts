@@ -12,13 +12,10 @@ import type { RequestHandler } from './$types';
  */
 export const PATCH: RequestHandler = async (event) => {
 	const startTime = Date.now();
-	console.log('[Reorder] ====== START ======');
 
 	await requireAuth(event);
-	console.log(`[Reorder] Auth: ${Date.now() - startTime}ms`);
 
 	const { module_id, session_order } = await event.request.json();
-	console.log(`[Reorder] Module: ${module_id}, Sessions to reorder: ${session_order?.length}`);
 
 	if (!module_id || !session_order || !Array.isArray(session_order)) {
 		throw error(400, 'module_id and session_order array are required');
@@ -36,7 +33,6 @@ export const PATCH: RequestHandler = async (event) => {
 			.select('id, session_number')
 			.eq('module_id', module_id)
 			.order('session_number', { ascending: true });
-		console.log(`[Reorder] Fetch sessions: ${Date.now() - fetchStart}ms, found ${allSessions?.length}`);
 
 		if (fetchError) {
 			console.error('Error fetching sessions:', fetchError);
@@ -67,7 +63,6 @@ export const PATCH: RequestHandler = async (event) => {
 			...notReordered.map((s, index) => ({ id: s.id, session_number: session_order.length + index }))
 		];
 
-		console.log('[Reorder] Final order:', finalOrder.map(f => `${f.id.slice(0,8)}→${f.session_number}`).join(', '));
 
 		// Single SQL query approach - much faster than multiple requests
 		const sqlStart = Date.now();
@@ -89,13 +84,11 @@ export const PATCH: RequestHandler = async (event) => {
 			WHERE cs.id = no.id
 		`;
 
-		console.log(`[Reorder] Executing single SQL update for ${finalOrder.length} sessions...`);
 
 		const { error: sqlError } = await supabaseAdmin.rpc('exec_sql', { sql_query: sql });
 
 		// If RPC doesn't exist, fall back to parallel updates
 		if (sqlError?.code === '42883' || sqlError?.message?.includes('function')) {
-			console.log(`[Reorder] RPC not available (${Date.now() - sqlStart}ms), falling back to parallel updates`);
 
 			// Phase 1: Temp positions
 			const phase1Start = Date.now();
@@ -103,7 +96,6 @@ export const PATCH: RequestHandler = async (event) => {
 				supabaseAdmin.from('courses_sessions').update({ session_number: session_number + 50 }).eq('id', id)
 			);
 			const tempResults = await Promise.all(tempPromises);
-			console.log(`[Reorder] Phase 1 (temp): ${Date.now() - phase1Start}ms`);
 
 			const tempError = tempResults.find(r => r.error);
 			if (tempError?.error) throw error(500, `Reorder failed: ${tempError.error.message}`);
@@ -114,7 +106,6 @@ export const PATCH: RequestHandler = async (event) => {
 				supabaseAdmin.from('courses_sessions').update({ session_number }).eq('id', id)
 			);
 			const finalResults = await Promise.all(finalPromises);
-			console.log(`[Reorder] Phase 2 (final): ${Date.now() - phase2Start}ms`);
 
 			const finalError = finalResults.find(r => r.error);
 			if (finalError?.error) throw error(500, `Reorder failed: ${finalError.error.message}`);
@@ -122,10 +113,8 @@ export const PATCH: RequestHandler = async (event) => {
 			console.error('[Reorder] SQL error:', sqlError);
 			throw error(500, `Failed to reorder: ${sqlError.message}`);
 		} else {
-			console.log(`[Reorder] SQL update complete: ${Date.now() - sqlStart}ms`);
 		}
 
-		console.log(`[Reorder] ====== SUCCESS ====== Total: ${Date.now() - startTime}ms`);
 
 		return json({ success: true, order: finalOrder });
 	} catch (err) {

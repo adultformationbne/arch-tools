@@ -1,13 +1,9 @@
 import { WORDPRESS_URL, WORDPRESS_USERNAME, WORDPRESS_APP_PASSWORD } from '$env/static/private';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
 import { formatDGRDate, formatReflectionText } from '$lib/utils/dgr-common.js';
 import { minifyHTML } from '$lib/utils/wordpress-safe-html.js';
 import { headerImages, featuredImages } from '$lib/utils/dgr-images.js';
-
-// Initialize Supabase client
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 
 // Function to get a specific image from WordPress Media Library
@@ -71,7 +67,7 @@ export async function POST({ request }) {
 ${truncatedText}`;
 
 		// Get the active template
-		const { data: template, error: templateError } = await supabase
+		const { data: template, error: templateError } = await supabaseAdmin
 			.from('dgr_templates')
 			.select('*')
 			.eq('template_key', templateKey)
@@ -99,7 +95,7 @@ ${truncatedText}`;
 		// Fetch promo tiles for templates that support them
 		let promoTiles = [];
 		try {
-			const { data: tiles, error } = await supabase
+			const { data: tiles, error } = await supabaseAdmin
 				.from('dgr_promo_tiles')
 				.select('*')
 				.eq('active', true)
@@ -113,13 +109,7 @@ ${truncatedText}`;
 			console.warn('Could not fetch promo tiles:', err);
 		}
 
-		console.log(`📁 Using ${headerImages.length} header images from dgr-images.js`);
 
-		console.log('=== Template Rendering ===');
-		console.log('Template key:', templateKey);
-		console.log('Template name:', template.name);
-		console.log('Data keys:', Object.keys(templateData));
-		console.log('=========================');
 
 		// Render template with header images
 		let content = renderTemplate(template.html, templateData, { headerImages });
@@ -131,7 +121,6 @@ ${truncatedText}`;
 		// Minify HTML to prevent WordPress wpautop from adding unwanted <br> tags
 		// This removes all line breaks that were added by beautification
 		content = minifyHTML(content);
-		console.log('HTML minified for WordPress - removed line breaks to prevent wpautop issues');
 
 		// Get random featured image from imported array (for WordPress metadata)
 		let featuredImageId;
@@ -141,7 +130,6 @@ ${truncatedText}`;
 				// Select a random image URL
 				const randomUrl = featuredImages[Math.floor(Math.random() * featuredImages.length)];
 				selectedImageUrl = randomUrl;
-				console.log('🎲 RANDOM FEATURED IMAGE SELECTED:', randomUrl);
 
 				// Fetch media items and find exact URL match
 				// Using per_page=100 to get all images (adjust if you have more than 100)
@@ -160,10 +148,8 @@ ${truncatedText}`;
 
 					if (matchedImage) {
 						featuredImageId = matchedImage.id;
-						console.log('✅ MATCHED WordPress Media ID:', featuredImageId, 'for URL:', randomUrl);
 					} else {
 						console.warn('❌ Image not found in WordPress media library:', randomUrl);
-						console.log('Available URLs (sample):', mediaItems.slice(0, 5).map(i => i.source_url));
 					}
 				}
 			}

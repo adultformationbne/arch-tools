@@ -7,9 +7,10 @@
 	 * and sends test emails to a custom address.
 	 */
 	import { onMount } from 'svelte';
-	import { Send, Loader2, Eye, ChevronDown, User, Users, X } from 'lucide-svelte';
+	import { Send, Loader2, Eye, ChevronDown, User, Users, X } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { apiGet, apiPost } from '$lib/utils/api-handler.js';
+	import { isValidEmail } from '$lib/utils/form-validator.js';
 	import { getEmailContext } from '$lib/email/context-config';
 
 	/**
@@ -132,8 +133,7 @@
 			return;
 		}
 
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(sendToEmail.trim())) {
+		if (!isValidEmail(sendToEmail.trim())) {
 			toastError('Please enter a valid email address');
 			return;
 		}

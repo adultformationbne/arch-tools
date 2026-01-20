@@ -4,7 +4,7 @@
 	import EmailTreeSidebar from '$lib/components/EmailTreeSidebar.svelte';
 	import EmailTemplateEditor from '$lib/components/EmailTemplateEditor.svelte';
 	import SendEmailView from '$lib/components/SendEmailView.svelte';
-	import { Edit, Trash2 } from 'lucide-svelte';
+	import { Edit, Trash2 } from '$lib/icons';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { apiDelete } from '$lib/utils/api-handler.js';
 

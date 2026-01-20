@@ -5,7 +5,6 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	const startTime = Date.now();
 	const courseSlug = event.params.slug;
-	console.log(`[REFLECTIONS PAGE] Loading...`);
 
 	// Auth is already done in layout - no need to check again!
 	// Get user from locals instead of re-authenticating
@@ -15,7 +14,6 @@ export const load: PageServerLoad = async (event) => {
 		// Get layout data (modules and cohorts already loaded, auth already checked)
 		const parentStart = Date.now();
 		const layoutData = await event.parent();
-		console.log(`[REFLECTIONS PAGE] ⚡ Parent data (cached): ${Date.now() - parentStart}ms`);
 
 		const courseInfo = layoutData?.courseInfo || {};
 		const courseId = courseInfo.id;
@@ -27,7 +25,6 @@ export const load: PageServerLoad = async (event) => {
 		// Get admin reflections data using repository aggregate
 		const reflectionsStart = Date.now();
 		const result = await CourseAggregates.getAdminReflections(courseId);
-		console.log(`[REFLECTIONS PAGE] Reflections query: ${Date.now() - reflectionsStart}ms`);
 
 		if (result.error || !result.data) {
 			console.error('Error fetching reflections:', result.error);
@@ -106,7 +103,6 @@ export const load: PageServerLoad = async (event) => {
 			moduleName: c.module?.name || ''
 		}));
 
-		console.log(`[REFLECTIONS PAGE] ✅ Complete in ${Date.now() - startTime}ms (${processedReflections.length} reflections)\n`);
 
 		return {
 			reflections: processedReflections,

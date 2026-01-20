@@ -1,5 +1,5 @@
 <script>
-	import { Trash2 } from 'lucide-svelte';
+	import { Trash2 } from '$lib/icons';
 	import { apiDelete } from '$lib/utils/api-handler.js';
 
 	let { isOpen = false, userId = null, userEmail = '', onClose, onDeleted } = $props();

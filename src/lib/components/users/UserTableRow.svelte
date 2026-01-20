@@ -9,7 +9,7 @@
 		KeyRound,
 		Trash2,
 		MoreVertical
-	} from 'lucide-svelte';
+	} from '$lib/icons';
 	import { createDropdown } from '$lib/utils/dropdown.js';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 

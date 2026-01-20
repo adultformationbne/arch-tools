@@ -1,5 +1,5 @@
 <script>
-	import { ChevronRight, ArrowRight, HelpCircle, MessageSquare, Star } from 'lucide-svelte';
+	import { ChevronRight, ArrowRight, HelpCircle, MessageSquare, Star } from '$lib/icons';
 	import { isComplete, needsReview } from '$lib/utils/reflection-status';
 
 	let {

@@ -6,7 +6,6 @@
     "preview": "vite preview",
     "validate-schema": "node scripts/validate-schema.js",
     "validate-api": "node scripts/validate-api-contracts.js",
-    "validate-upsert": "node scripts/validate-upsert-constraints.js",
     "update-types": "node scripts/fetch-types.js",
     "test": "vitest run",
     "test:watch": "vitest",

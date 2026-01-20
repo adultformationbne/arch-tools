@@ -60,21 +60,6 @@ export function toastLoading(message, title = 'Loading...') {
 }
 
 /**
- * Display an info toast notification
- * @param {string} message - The message to display
- * @param {string} [title='Info'] - The title of the toast
- * @param {number} [duration=5000] - Duration in milliseconds
- * @returns {number} The toast ID for reference
- */
-export function toastInfo(message, title = 'Info', duration = DURATIONS.medium) {
-	return toast.info({
-		title,
-		message,
-		duration
-	});
-}
-
-/**
  * Update an existing toast's status and content
  * @param {number} toastId - The ID of the toast to update
  * @param {string} status - The new status type ('success', 'error', 'warning', 'info')
@@ -149,13 +134,6 @@ export function dismissToast(toastId) {
 }
 
 /**
- * Clear all toasts
- */
-export function clearToasts() {
-	toast.clear();
-}
-
-/**
  * Helper for common validation errors
  * @param {string} field - The field that failed validation
  * @param {string} requirement - The requirement that wasn't met
@@ -166,40 +144,4 @@ export function toastValidationError(field, requirement) {
 		message: `${field} ${requirement}`,
 		duration: 4000
 	});
-}
-
-/**
- * Helper for form submission workflows
- * @returns {Object} Object with methods for handling form submission states
- */
-export function createFormToastHandler() {
-	let currentToastId = null;
-
-	return {
-		start(message = 'Processing...', title = 'Submitting') {
-			currentToastId = toastLoading(message, title);
-			return currentToastId;
-		},
-
-		success(message = 'Operation completed successfully', title = 'Success!') {
-			if (currentToastId) {
-				updateToastStatus(currentToastId, 'success', message, title, DURATIONS.short);
-			} else {
-				toastSuccess(message, title);
-			}
-		},
-
-		error(error, title = 'Operation Failed') {
-			const message = error instanceof Error ? error.message : error;
-			if (currentToastId) {
-				updateToastStatus(currentToastId, 'error', message, title, DURATIONS.medium);
-			} else {
-				toastError(message, title);
-			}
-		},
-
-		reset() {
-			currentToastId = null;
-		}
-	};
 }

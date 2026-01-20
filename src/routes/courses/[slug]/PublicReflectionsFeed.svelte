@@ -1,5 +1,5 @@
 <script>
-	import { Globe, ArrowRight, X, HelpCircle, MessageSquare } from 'lucide-svelte';
+	import { Globe, ArrowRight, X, HelpCircle, MessageSquare } from '$lib/icons';
 
 	let {
 		reflections = []

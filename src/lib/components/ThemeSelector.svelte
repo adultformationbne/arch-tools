@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Palette, Type } from 'lucide-svelte';
+	import { Palette, Type } from '$lib/icons';
 
 	let {
 		accentDark = '#334642',

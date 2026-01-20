@@ -7,7 +7,7 @@
 	 * Falls back gracefully if Mux SDK fails to load.
 	 */
 	import { onMount } from 'svelte';
-	import { Loader2, AlertCircle, Video } from 'lucide-svelte';
+	import { Loader2, AlertCircle, Video } from '$lib/icons';
 
 	let {
 		playbackId = null,

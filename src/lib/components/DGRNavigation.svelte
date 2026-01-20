@@ -1,5 +1,5 @@
 <script>
-	import { Calendar, Users, BookOpen, PenTool, ChevronDown, FileEdit } from 'lucide-svelte';
+	import { Calendar, Users, BookOpen, PenTool, ChevronDown, FileEdit } from '$lib/icons';
 
 	let { activeSection = 'schedule', activeSubSection = 'schedule', contributorToken = null } = $props();
 	let navRoot = $state(null);

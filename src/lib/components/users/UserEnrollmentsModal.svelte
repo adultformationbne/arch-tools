@@ -1,5 +1,5 @@
 <script>
-	import { X, Save, Edit2, Trash2, Plus } from 'lucide-svelte';
+	import { X, Save, Edit2, Trash2, Plus } from '$lib/icons';
 	import { apiPut, apiDelete } from '$lib/utils/api-handler.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 

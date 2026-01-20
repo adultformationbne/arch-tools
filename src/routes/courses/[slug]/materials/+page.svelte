@@ -1,6 +1,6 @@
 <script>
 	import { page } from '$app/stores';
-	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from 'lucide-svelte';
+	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from '$lib/icons';
 	import MuxVideoPlayer from '$lib/components/MuxVideoPlayer.svelte';
 
 	let { data } = $props();

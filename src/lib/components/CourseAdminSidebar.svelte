@@ -15,7 +15,7 @@ import {
     ChevronDown,
     ChevronUp,
     Mail
-} from 'lucide-svelte';
+} from '$lib/icons';
 
 let {
     courseSlug,

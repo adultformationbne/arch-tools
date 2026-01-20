@@ -1,7 +1,7 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck } from 'lucide-svelte';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck } from '$lib/icons';
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
