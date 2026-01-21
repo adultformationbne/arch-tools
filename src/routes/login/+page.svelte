@@ -4,7 +4,12 @@
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
-	const { supabase, platform } = data;
+	const { supabase, platform, courseBranding } = data;
+
+	// Use course branding when available, fall back to platform
+	const displayLogo = courseBranding?.logoUrl || platform.logoPath;
+	const displayName = courseBranding?.name || platform.name;
+	const accentColor = courseBranding?.accentDark || null;
 
 	// Auth flow states
 	type AuthStep = 'email' | 'password' | 'otp';
@@ -349,20 +354,23 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4 sm:px-6 lg:px-8">
-	<div class="w-full max-w-md space-y-8">
-		<div>
-			<!-- Archdiocesan Cross Mark Logo -->
-			<div class="flex justify-center mb-6">
-				<img
-					src={platform.logoPath}
-					alt={platform.name}
-					class="w-24 h-24 object-contain"
-				/>
-			</div>
+<div
+	class="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8"
+	style:--accent-color={accentColor}
+	style:background-color={accentColor || '#fafafa'}
+>
+	<div class="flex flex-col items-center w-full max-w-md -mt-24">
+		<!-- Logo on dark background -->
+		<img
+			src={displayLogo}
+			alt={displayName}
+			class="w-56 h-56 object-contain -mb-2"
+		/>
 
+		<div class="w-full space-y-6 bg-white p-8 shadow-lg rounded-lg">
+		<div>
 			<h1 class="mb-2 text-center text-2xl font-semibold text-black">
-				{platform.name}
+				{displayName}
 			</h1>
 			<h2 class="text-center text-base text-neutral-600">
 				{#if currentStep === 'email'}
@@ -546,5 +554,17 @@
 				</div>
 			</form>
 		{/if}
+		</div>
 	</div>
 </div>
+
+<style>
+	/* Apply course accent color to primary buttons when available */
+	:global([style*="--accent-color"]) button[type="submit"] {
+		background-color: var(--accent-color, black);
+		border-color: var(--accent-color, black);
+	}
+	:global([style*="--accent-color"]) button[type="submit"]:hover {
+		filter: brightness(0.9);
+	}
+</style>
