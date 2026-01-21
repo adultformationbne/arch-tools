@@ -552,7 +552,8 @@ export const POST: RequestHandler = async (event) => {
 					throw error(403, 'Some enrollments do not belong to this course');
 				}
 
-				const result = await CourseMutations.bulkDeleteEnrollments(data.enrollmentIds);
+				const forceDelete = data.forceDelete === true;
+				const result = await CourseMutations.bulkDeleteEnrollments(data.enrollmentIds, forceDelete);
 
 				if (result.error) {
 					throw error(500, result.error.message || 'Failed to delete participants');
@@ -574,6 +575,45 @@ export const POST: RequestHandler = async (event) => {
 				return json({
 					success: true,
 					data: { deleted, skipped, skippedNames },
+					message
+				});
+			}
+
+			case 'delete_user_accounts': {
+				if (!data.enrollmentIds || data.enrollmentIds.length === 0) {
+					throw error(400, 'No participants selected');
+				}
+
+				// Validate all enrollments belong to this course
+				if (!await validateEnrollmentsBelongToCourse(data.enrollmentIds, courseSlug)) {
+					throw error(403, 'Some enrollments do not belong to this course');
+				}
+
+				const result = await CourseMutations.deleteUserAccounts(data.enrollmentIds);
+
+				if (result.error && !result.data) {
+					throw error(500, result.error.message || 'Failed to delete user accounts');
+				}
+
+				const { deleted, accountsDeleted, enrollmentsDeleted, errors } = result.data!;
+
+				let message = '';
+				if (accountsDeleted > 0 && errors.length === 0) {
+					message = `Permanently deleted ${accountsDeleted} user account(s)`;
+					if (enrollmentsDeleted > 0) {
+						message += ` and ${enrollmentsDeleted} pending enrollment(s)`;
+					}
+				} else if (accountsDeleted > 0 && errors.length > 0) {
+					message = `Deleted ${accountsDeleted} account(s), but ${errors.length} failed`;
+				} else if (enrollmentsDeleted > 0) {
+					message = `Removed ${enrollmentsDeleted} pending enrollment(s) (no accounts to delete)`;
+				} else {
+					message = 'No accounts or enrollments to delete';
+				}
+
+				return json({
+					success: true,
+					data: { deleted, accountsDeleted, enrollmentsDeleted, errors },
 					message
 				});
 			}
@@ -612,10 +652,10 @@ export const POST: RequestHandler = async (event) => {
 				let emailResults = { sent: 0, failed: 0 };
 				if (data.sendEmail) {
 					try {
-						// Get course info
+						// Get course info (include email_branding_config for reply-to)
 						const { data: course } = await supabaseAdmin
 							.from('courses')
-							.select('id, name, slug, settings')
+							.select('id, name, slug, settings, email_branding_config')
 							.eq('slug', courseSlug)
 							.single();
 
@@ -737,12 +777,16 @@ export const POST: RequestHandler = async (event) => {
 
 									// Send emails
 									if (emailsToSend.length > 0) {
+										// Get course-specific reply-to email
+										const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+
 										emailResults = await sendBulkEmails({
 											emails: emailsToSend,
 											emailType: 'session_advance',
 											resendApiKey: RESEND_API_KEY,
 											supabase: supabaseAdmin,
 											options: {
+												replyTo: courseReplyTo,
 												commonMetadata: {
 													sentBy: user.id,
 													sentAt: new Date().toISOString()

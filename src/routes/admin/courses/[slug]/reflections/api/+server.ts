@@ -117,7 +117,8 @@ async function sendReflectionMarkedEmail({
 						id,
 						name,
 						slug,
-						settings
+						settings,
+						email_branding_config
 					)
 				)
 			`)
