@@ -324,13 +324,22 @@
 												</button>
 											{/if}
 											{#if entry.status === 'approved'}
-												<button
-													onclick={() => onSendToWordPress(entry.id)}
-													class="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
-												>
-													<Send class="h-3.5 w-3.5" />
-													Publish
-												</button>
+												{@const daysUntil = getDaysUntil(entry.date)}
+												{#if daysUntil <= 3}
+													<!-- WITHIN PUBLISH WINDOW: Show prominent Publish Now button -->
+													<button
+														onclick={() => onSendToWordPress(entry.id)}
+														class="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+													>
+														<Send class="h-3.5 w-3.5" />
+														Publish Now
+													</button>
+												{:else}
+													<!-- OUTSIDE PUBLISH WINDOW: Show auto-publish badge -->
+													<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full" title="Will be auto-published by the daily cron job">
+														Auto-publishes in {daysUntil - 3}d
+													</span>
+												{/if}
 											{/if}
 										{/if}
 									</div>
@@ -410,6 +419,21 @@
 														>
 															<Monitor class="h-4 w-4" />
 															Preview Output
+														</button>
+													{/if}
+
+													<!-- Publish Now (For approved entries outside auto-publish window) -->
+													{#if entry.status === 'approved' && entry.reflection_content && getDaysUntil(entry.date) > 3}
+														<button
+															onclick={() => {
+																onSendToWordPress(entry.id);
+																const controller = dropdownControllers.get(entryKey);
+																if (controller) controller.hide();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-green-700 hover:bg-green-50"
+														>
+															<Send class="h-4 w-4" />
+															Publish Now (Early)
 														</button>
 													{/if}
 

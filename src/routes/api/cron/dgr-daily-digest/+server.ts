@@ -4,10 +4,20 @@ import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
 import { getReadingsForEntries } from '$lib/server/dgr-readings.js';
+import { publishDGRToWordPress, type PublishResult } from '$lib/server/dgr-publisher.js';
+import { expandGospelReference, cleanGospelText } from '$lib/utils/dgr-common.js';
 
 const TASK_TYPE = 'dgr_digest';
 
-export async function GET({ request }: RequestEvent) {
+interface PublishAttempt {
+	date: string;
+	title: string;
+	success: boolean;
+	link?: string;
+	error?: string;
+}
+
+export async function GET({ request, url }: RequestEvent) {
 	// Verify cron secret
 	const cronSecret = env.CRON_SECRET;
 	if (cronSecret) {
@@ -63,8 +73,19 @@ export async function GET({ request }: RequestEvent) {
 			return json({ success: true, message: 'No recipients to notify', skipped: true });
 		}
 
-		// Get date range (today + next 7 days)
+		// Calculate today's date in Brisbane timezone
 		const today = brisbaneTime.toISOString().split('T')[0];
+
+		// ==========================================
+		// STEP 1: AUTO-PUBLISH APPROVED REFLECTIONS
+		// ==========================================
+		const publishResults = await autoPublishApprovedReflections(task.config, brisbaneTime, url.origin);
+
+		// ==========================================
+		// STEP 2: BUILD AND SEND DIGEST EMAIL
+		// ==========================================
+
+		// Get date range (today + next 7 days)
 		const nextWeek = new Date(brisbaneTime);
 		nextWeek.setDate(nextWeek.getDate() + 7);
 		const nextWeekStr = nextWeek.toISOString().split('T')[0];
@@ -113,6 +134,7 @@ export async function GET({ request }: RequestEvent) {
 
 		// Build email content
 		const emailHtml = buildDigestEmail({
+			publishResults,
 			upcomingEntries: upcomingWithReadings,
 			newPendingItems: newPendingItems || [],
 			existingPendingItems: existingPendingItems || [],
@@ -120,11 +142,12 @@ export async function GET({ request }: RequestEvent) {
 		});
 
 		// Check if there's anything to report
+		const hasPublishResults = publishResults.length > 0;
 		const hasNewItems = (newPendingItems?.length || 0) > 0;
 		const hasExistingPending = (existingPendingItems?.length || 0) > 0;
 		const hasUpcoming = upcomingWithReadings.length > 0;
 
-		if (!hasNewItems && !hasExistingPending && !hasUpcoming) {
+		if (!hasPublishResults && !hasNewItems && !hasExistingPending && !hasUpcoming) {
 			await updateTaskStatus(task.id, 'skipped', 'No items to report');
 			return json({ success: true, message: 'Nothing to report', skipped: true });
 		}
@@ -134,9 +157,17 @@ export async function GET({ request }: RequestEvent) {
 		const adminEmails = recipients.map((r: any) => r.email).filter(Boolean);
 
 		const newCount = newPendingItems?.length || 0;
-		const subject = newCount > 0
-			? `DGR Digest: ${newCount} NEW reflection${newCount !== 1 ? 's' : ''} awaiting review`
-			: `DGR Digest: Daily summary`;
+		const publishedCount = publishResults.filter(r => r.success).length;
+		const failedCount = publishResults.filter(r => !r.success).length;
+
+		let subject = 'DGR Digest: Daily summary';
+		if (failedCount > 0) {
+			subject = `DGR Digest: ${failedCount} publish failure${failedCount !== 1 ? 's' : ''} - action required`;
+		} else if (publishedCount > 0) {
+			subject = `DGR Digest: ${publishedCount} auto-published`;
+		} else if (newCount > 0) {
+			subject = `DGR Digest: ${newCount} NEW reflection${newCount !== 1 ? 's' : ''} awaiting review`;
+		}
 
 		await resend.emails.send({
 			from: 'DGR System <noreply@app.archdiocesanministries.org.au>',
@@ -154,13 +185,21 @@ export async function GET({ request }: RequestEvent) {
 				.in('id', newItemIds);
 		}
 
-		await updateTaskStatus(task.id, 'success', `Sent to ${adminEmails.length} admin(s)`);
+		const statusMessage = [
+			`Sent to ${adminEmails.length} admin(s)`,
+			publishedCount > 0 ? `${publishedCount} auto-published` : null,
+			failedCount > 0 ? `${failedCount} failed` : null
+		].filter(Boolean).join(', ');
+
+		await updateTaskStatus(task.id, failedCount > 0 ? 'warning' : 'success', statusMessage);
 
 		return json({
 			success: true,
 			message: 'Digest sent',
 			recipients: adminEmails.length,
 			stats: {
+				autoPublished: publishedCount,
+				publishFailed: failedCount,
 				newPending: newPendingItems?.length || 0,
 				existingPending: existingPendingItems?.length || 0,
 				upcoming: upcomingEntries?.length || 0
@@ -187,6 +226,148 @@ export async function GET({ request }: RequestEvent) {
 	}
 }
 
+/**
+ * Auto-publish approved reflections that are within the publish window.
+ * On Fridays, publishes further ahead to cover the weekend.
+ */
+async function autoPublishApprovedReflections(
+	config: any,
+	brisbaneTime: Date,
+	origin: string
+): Promise<PublishAttempt[]> {
+	const results: PublishAttempt[] = [];
+
+	// Get config value for days ahead (default: 3)
+	const basePublishAheadDays = config?.auto_publish_days_ahead ?? 3;
+
+	// On Friday, publish further ahead to cover weekend (Sat, Sun, Mon, Tue)
+	const dayOfWeek = brisbaneTime.getDay(); // 0=Sun, 5=Fri, 6=Sat
+	const isFriday = dayOfWeek === 5;
+	const publishAheadDays = isFriday ? Math.max(basePublishAheadDays, 4) : basePublishAheadDays;
+
+	// Calculate date range: today through publishAheadDays
+	// This catches both scheduled auto-publish AND late approvals
+	const today = brisbaneTime.toISOString().split('T')[0];
+	const publishEndDate = new Date(brisbaneTime);
+	publishEndDate.setDate(publishEndDate.getDate() + publishAheadDays);
+	const publishEndStr = publishEndDate.toISOString().split('T')[0];
+
+	// Query approved entries within the publish window
+	const { data: approvedEntries, error } = await supabaseAdmin
+		.from('dgr_schedule')
+		.select(`
+			id, date, status, reflection_title, reflection_content, gospel_quote,
+			liturgical_date, gospel_reference, readings_data,
+			contributor:dgr_contributors(name, title, email)
+		`)
+		.eq('status', 'approved')
+		.gte('date', today)
+		.lte('date', publishEndStr)
+		.order('date', { ascending: true });
+
+	if (error) {
+		console.error('Failed to fetch approved entries for auto-publish:', error);
+		return results;
+	}
+
+	if (!approvedEntries || approvedEntries.length === 0) {
+		return results;
+	}
+
+	// Process each approved entry
+	for (const entry of approvedEntries) {
+		// Validate required fields
+		if (!entry.reflection_title || !entry.gospel_quote || !entry.reflection_content) {
+			results.push({
+				date: entry.date,
+				title: entry.reflection_title || '(No title)',
+				success: false,
+				error: 'Missing required fields: title, gospel quote, or content'
+			});
+			continue;
+		}
+
+		try {
+			// Get gospel reference and expand abbreviations
+			const gospelReferenceRaw = entry.readings_data?.gospel?.source || entry.gospel_reference || '';
+			const gospelReference = expandGospelReference(gospelReferenceRaw);
+
+			// Fetch gospel text if available
+			let gospelFullText = '';
+			if (gospelReference) {
+				try {
+					const scriptureResponse = await fetch(
+						`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
+					);
+					if (scriptureResponse.ok) {
+						const scriptureData = await scriptureResponse.json();
+						if (scriptureData.success && scriptureData.content) {
+							gospelFullText = cleanGospelText(scriptureData.content);
+						}
+					}
+				} catch (err) {
+					console.warn('Could not fetch gospel text for auto-publish:', err);
+				}
+			}
+
+			// Format author name
+			const contributor = entry.contributor as { name?: string; title?: string } | null;
+			const authorName = contributor?.title
+				? `${contributor.title} ${contributor.name}`
+				: (contributor?.name || 'Unknown');
+
+			// Call the publisher
+			const publishResult = await publishDGRToWordPress({
+				date: entry.date,
+				liturgicalDate: entry.liturgical_date || '',
+				readings: entry.readings_data?.combined_sources || '',
+				title: entry.reflection_title,
+				gospelQuote: entry.gospel_quote,
+				reflectionText: entry.reflection_content,
+				authorName,
+				gospelFullText,
+				gospelReference,
+				templateKey: 'default'
+			});
+
+			if (publishResult.success) {
+				// Update schedule status to published
+				await supabaseAdmin
+					.from('dgr_schedule')
+					.update({
+						status: 'published',
+						published_at: new Date().toISOString()
+					})
+					.eq('id', entry.id);
+
+				results.push({
+					date: entry.date,
+					title: entry.reflection_title,
+					success: true,
+					link: publishResult.link
+				});
+			} else {
+				results.push({
+					date: entry.date,
+					title: entry.reflection_title,
+					success: false,
+					error: publishResult.error
+				});
+			}
+		} catch (err) {
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+			results.push({
+				date: entry.date,
+				title: entry.reflection_title || '(No title)',
+				success: false,
+				error: errorMessage
+			});
+		}
+	}
+
+	return results;
+}
+
 async function updateTaskStatus(taskId: string, status: string, message: string) {
 	await supabaseAdmin
 		.from('scheduled_tasks')
@@ -200,11 +381,13 @@ async function updateTaskStatus(taskId: string, status: string, message: string)
 }
 
 function buildDigestEmail({
+	publishResults,
 	upcomingEntries,
 	newPendingItems,
 	existingPendingItems,
 	today
 }: {
+	publishResults: PublishAttempt[];
 	upcomingEntries: any[];
 	newPendingItems: any[];
 	existingPendingItems: any[];
@@ -254,11 +437,54 @@ function buildDigestEmail({
 			<h2 style="color: #009199; margin-bottom: 24px;">DGR Daily Digest</h2>
 	`;
 
+	// AUTO-PUBLISH RESULTS (show at top if any)
+	const publishSuccesses = publishResults.filter(r => r.success);
+	const publishFailures = publishResults.filter(r => !r.success);
+
+	if (publishSuccesses.length > 0) {
+		html += `
+			<div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+				<h3 style="color: #065f46; margin: 0 0 12px 0;">Auto-Published Today (${publishSuccesses.length})</h3>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const item of publishSuccesses) {
+			html += `
+				<tr>
+					<td style="padding: 8px 0; border-bottom: 1px solid #d1fae5;">
+						<strong>${formatDate(item.date)}</strong> - ${item.title}
+						${item.link ? `<br><a href="${item.link}" style="color: #059669; font-size: 12px;">View on website</a>` : ''}
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
+	if (publishFailures.length > 0) {
+		html += `
+			<div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+				<h3 style="color: #991b1b; margin: 0 0 12px 0;">Failed to Auto-Publish (${publishFailures.length})</h3>
+				<p style="color: #7f1d1d; font-size: 13px; margin-bottom: 12px;">These reflections need manual attention:</p>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const item of publishFailures) {
+			html += `
+				<tr>
+					<td style="padding: 8px 0; border-bottom: 1px solid #fecaca;">
+						<strong>${formatDate(item.date)}</strong> - ${item.title}
+						<br><span style="color: #dc2626; font-size: 12px;">${item.error}</span>
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
 	// NEW items section (highlighted)
 	if (newPendingItems.length > 0) {
 		html += `
 			<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
-				<h3 style="color: #92400e; margin: 0 0 12px 0;">🆕 NEW - Awaiting Review (${newPendingItems.length})</h3>
+				<h3 style="color: #92400e; margin: 0 0 12px 0;">NEW - Awaiting Review (${newPendingItems.length})</h3>
 				<table style="width: 100%; border-collapse: collapse;">
 		`;
 		for (const item of newPendingItems) {

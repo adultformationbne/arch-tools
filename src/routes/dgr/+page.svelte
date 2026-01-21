@@ -1420,9 +1420,9 @@
 									<button
 										onclick={bulkPublishApproved}
 										class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-										title="Publish all approved reflections to WordPress (with rate limiting)"
+										title="Manually publish all approved reflections now. Note: Approved reflections auto-publish 3 days before their date via the daily cron job."
 									>
-										Publish All Approved ({schedule.filter(e => e.status === 'approved' && e.reflection_content).length})
+										Publish All Now ({schedule.filter(e => e.status === 'approved' && e.reflection_content).length})
 									</button>
 								{/if}
 							{/if}

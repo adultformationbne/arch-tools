@@ -12,9 +12,25 @@ export function parseReadings(readingsStr) {
 	// Split by semicolon or pipe to get individual readings
 	const readings = readingsStr.split(/[;|]/).map(r => r.trim()).filter(r => r);
 
+	// Track the previous book name for continuation references (e.g., "1 Samuel 18:6-9; 19:1-7")
+	let previousBook = '';
+
 	return readings.map(reading => {
 		// Extract book abbreviation and verses
 		const match = reading.match(/^((?:\d\s*)?[A-Za-z]+)\s*([\d:,\-–—\s]+)$/);
+
+		// Check if this is just verses without a book (continuation of previous book)
+		const versesOnlyMatch = reading.match(/^([\d:,\-–—\s]+)$/);
+
+		if (versesOnlyMatch && previousBook) {
+			// This is a continuation reference like "19:1-7" that should use the previous book
+			return {
+				original: reading,
+				book: previousBook,
+				verses: versesOnlyMatch[1].trim()
+			};
+		}
+
 		if (!match) return { original: reading, book: reading, verses: '' };
 
 		let [, bookAbbr, verses] = match;
@@ -24,6 +40,9 @@ export function parseReadings(readingsStr) {
 
 		// Look up full book name
 		const fullName = bibleBooks[bookAbbr] || bookAbbr;
+
+		// Store for potential continuation references
+		previousBook = fullName;
 
 		return {
 			original: reading,

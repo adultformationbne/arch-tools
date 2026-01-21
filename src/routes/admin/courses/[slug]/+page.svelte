@@ -557,7 +557,7 @@
 					<div class="bg-white rounded border border-gray-200 overflow-x-auto">
 						<table class="w-full min-w-[900px]">
 							<thead>
-								<tr class="border-b border-gray-200" style="background-color: var(--course-accent-light);">
+								<tr class="border-b border-gray-200 bg-gray-100">
 									<th class="w-8 px-3 py-2.5">
 										<input
 											type="checkbox"
@@ -566,13 +566,13 @@
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Participant</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Phone</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Hub</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Status</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Session</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Attendance</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style="color: var(--course-accent-darkest);">Reflections</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Participant</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Phone</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Hub</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Status</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Session</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Attendance</th>
+									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Reflections</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
