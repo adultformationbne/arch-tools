@@ -11,6 +11,8 @@
 
 	let editor = $state(null);
 	let isEditing = $state(false);
+	let isInternalUpdate = false; // Flag to prevent effect from re-initing during user input
+	let domCleanupTimer = null; // Debounce timer for DOM normalization
 
 	// Track current formatting state
 	let formatState = $state({
@@ -139,6 +141,8 @@
 
 	const updateContent = () => {
 		if (!editor) return;
+		// Mark as internal update to prevent effect from re-initializing editor
+		isInternalUpdate = true;
 		// Strip any inline styles before saving - store clean semantic HTML only
 		const temp = document.createElement('div');
 		temp.innerHTML = editor.innerHTML;
@@ -286,15 +290,54 @@
 		}
 	};
 
+	// Ensure cursor is inside a paragraph when focusing (Safari fix)
+	const handleFocus = () => {
+		isEditing = true;
+
+		// Give the browser a moment to set up, then check cursor position
+		setTimeout(() => {
+			const selection = window.getSelection();
+			if (!selection.rangeCount) return;
+
+			const range = selection.getRangeAt(0);
+			let node = range.startContainer;
+
+			// Check if cursor is at root level (directly in editor, not in a child element)
+			if (node === editor || (node.nodeType === Node.TEXT_NODE && node.parentNode === editor)) {
+				// Find the first paragraph or create one
+				let firstP = editor.querySelector('p');
+				if (!firstP) {
+					firstP = document.createElement('p');
+					firstP.innerHTML = '<br>';
+					editor.appendChild(firstP);
+				}
+
+				// Place cursor inside the paragraph
+				const newRange = document.createRange();
+				if (firstP.firstChild) {
+					newRange.setStart(firstP.firstChild, 0);
+				} else {
+					newRange.setStart(firstP, 0);
+				}
+				newRange.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(newRange);
+			}
+		}, 0);
+	};
+
 	$effect(() => {
 		document.addEventListener('selectionchange', handleSelectionChange);
 		return () => document.removeEventListener('selectionchange', handleSelectionChange);
 	});
 
 	$effect(() => {
-		if (editor && content !== editor.innerHTML) {
+		// Only re-init for external content changes, not internal user input
+		if (editor && content !== editor.innerHTML && !isInternalUpdate) {
 			initEditor();
 		}
+		// Reset the flag after the effect runs
+		isInternalUpdate = false;
 	});
 
 	// Handle paste - clean up Word/formatting using smart cleaner
@@ -325,64 +368,96 @@
 		}, 0);
 	};
 
+	// Normalize DOM structure (debounced to avoid interfering with Safari input)
+	const normalizeDOM = () => {
+		if (!editor) return;
+
+		// Save cursor position before DOM manipulation
+		const selection = window.getSelection();
+		let cursorNode = null;
+		let cursorOffset = 0;
+
+		if (selection.rangeCount > 0) {
+			const range = selection.getRangeAt(0);
+			cursorNode = range.startContainer;
+			cursorOffset = range.startOffset;
+		}
+
+		// Convert any bare text nodes or divs to paragraphs
+		const textNodes = [];
+		const walker = document.createTreeWalker(
+			editor,
+			NodeFilter.SHOW_TEXT,
+			null,
+			false
+		);
+
+		let node;
+		while (node = walker.nextNode()) {
+			if (node.parentNode === editor && node.textContent.trim()) {
+				textNodes.push(node);
+			}
+		}
+
+		textNodes.forEach(textNode => {
+			const p = document.createElement('p');
+			textNode.parentNode.insertBefore(p, textNode);
+			p.appendChild(textNode);
+			applyParagraphStyles(p);
+
+			// If this was the cursor node, restore cursor inside the new paragraph
+			if (textNode === cursorNode) {
+				try {
+					const newRange = document.createRange();
+					newRange.setStart(textNode, Math.min(cursorOffset, textNode.length));
+					newRange.collapse(true);
+					selection.removeAllRanges();
+					selection.addRange(newRange);
+				} catch (e) {
+					// Cursor restoration failed, browser will handle it
+				}
+			}
+		});
+
+		// Convert any divs to paragraphs
+		const divs = editor.querySelectorAll('div');
+		divs.forEach(div => {
+			if (div.parentNode === editor) {
+				const p = document.createElement('p');
+				p.innerHTML = div.innerHTML;
+				div.parentNode.replaceChild(p, div);
+				applyParagraphStyles(p);
+			}
+		});
+
+		// Reapply paragraph styles
+		const paragraphs = editor.querySelectorAll('p');
+		paragraphs.forEach(p => applyParagraphStyles(p));
+
+		// Reapply heading styles
+		const headings = editor.querySelectorAll('h2');
+		headings.forEach(heading => {
+			applyHeadingStyles(heading);
+		});
+
+		// Reapply list styles
+		const lists = editor.querySelectorAll('ul, ol');
+		lists.forEach(list => {
+			applyListStyles(list);
+		});
+
+		updateFormatState();
+		updateContent();
+	};
+
 	// Apply formatting styles after any input
 	const handleInput = () => {
 		updateContent();
 
-		// Reapply formatting styles if they got lost
-		setTimeout(() => {
-			// Convert any bare text nodes or divs to paragraphs
-			const textNodes = [];
-			const walker = document.createTreeWalker(
-				editor,
-				NodeFilter.SHOW_TEXT,
-				null,
-				false
-			);
-
-			let node;
-			while (node = walker.nextNode()) {
-				if (node.parentNode === editor && node.textContent.trim()) {
-					textNodes.push(node);
-				}
-			}
-
-			textNodes.forEach(textNode => {
-				const p = document.createElement('p');
-				textNode.parentNode.insertBefore(p, textNode);
-				p.appendChild(textNode);
-				applyParagraphStyles(p);
-			});
-
-			// Convert any divs to paragraphs
-			const divs = editor.querySelectorAll('div');
-			divs.forEach(div => {
-				if (div.parentNode === editor) {
-					const p = document.createElement('p');
-					p.innerHTML = div.innerHTML;
-					div.parentNode.replaceChild(p, div);
-					applyParagraphStyles(p);
-				}
-			});
-
-			// Reapply paragraph styles
-			const paragraphs = editor.querySelectorAll('p');
-			paragraphs.forEach(p => applyParagraphStyles(p));
-
-			// Reapply heading styles
-			const headings = editor.querySelectorAll('h2');
-			headings.forEach(heading => {
-				applyHeadingStyles(heading);
-			});
-
-			// Reapply list styles
-			const lists = editor.querySelectorAll('ul, ol');
-			lists.forEach(list => {
-				applyListStyles(list);
-			});
-
-			updateFormatState();
-		}, 0);
+		// Debounce DOM normalization to avoid interfering with Safari's input handling
+		// This gives the browser time to handle multiple keystrokes before we manipulate DOM
+		if (domCleanupTimer) clearTimeout(domCleanupTimer);
+		domCleanupTimer = setTimeout(normalizeDOM, 300);
 	};
 </script>
 
@@ -463,8 +538,13 @@
 		onkeydown={handleKeyDown}
 		oninput={handleInput}
 		onpaste={handlePaste}
-		onfocus={() => isEditing = true}
-		onblur={() => isEditing = false}
+		onfocus={handleFocus}
+		onblur={() => {
+			isEditing = false;
+			// Normalize DOM immediately on blur (user finished editing)
+			if (domCleanupTimer) clearTimeout(domCleanupTimer);
+			normalizeDOM();
+		}}
 		data-placeholder={placeholder}
 	></div>
 </div>
@@ -476,6 +556,18 @@
 		min-height: 350px;
 		outline: none;
 		background: white;
+		/* Safari fix: avoid -apple-system font which causes crashes with text-rendering */
+		font-family: system-ui, -apple-system-body, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+		/* Safari fix: avoid optimizeLegibility which causes hangs */
+		text-rendering: auto;
+		/* Safari fix: ensure proper caret behavior */
+		-webkit-user-modify: read-write-plaintext-only;
+		caret-color: currentColor;
+	}
+
+	/* Override -webkit-user-modify for rich text (we need formatting) */
+	.editor-area {
+		-webkit-user-modify: read-write;
 	}
 
 	/* Placeholder */
