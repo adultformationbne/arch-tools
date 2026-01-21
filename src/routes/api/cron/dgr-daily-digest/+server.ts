@@ -316,11 +316,20 @@ async function autoPublishApprovedReflections(
 				? `${contributor.title} ${contributor.name}`
 				: (contributor?.name || 'Unknown');
 
+			// Build readings array from individual sources (each = one pill)
+			const readingsArray = [
+				entry.readings_data?.first_reading?.source,
+				entry.readings_data?.psalm?.source,
+				entry.readings_data?.second_reading?.source,
+				entry.readings_data?.gospel?.source
+			].filter(Boolean) as string[];
+
 			// Call the publisher
 			const publishResult = await publishDGRToWordPress({
 				date: entry.date,
 				liturgicalDate: entry.liturgical_date || '',
 				readings: entry.readings_data?.combined_sources || '',
+				readingsArray,
 				title: entry.reflection_title,
 				gospelQuote: entry.gospel_quote,
 				reflectionText: entry.reflection_content,

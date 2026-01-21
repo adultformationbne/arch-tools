@@ -846,11 +846,20 @@ async function sendToWordPress({ scheduleId, origin }) {
 			}
 		}
 
+		// Build readings array from individual sources (each = one pill)
+		const readingsArray = [
+			schedule.readings_data?.first_reading?.source,
+			schedule.readings_data?.psalm?.source,
+			schedule.readings_data?.second_reading?.source,
+			schedule.readings_data?.gospel?.source
+		].filter(Boolean);
+
 		// Prepare data for WordPress publish API
 		const publishData = {
 			date: schedule.date,
 			liturgicalDate: schedule.liturgical_date || '',
 			readings: schedule.readings_data?.combined_sources || '',
+			readingsArray,
 			title: schedule.reflection_title,
 			gospelQuote: schedule.gospel_quote,
 			reflectionText: schedule.reflection_content,

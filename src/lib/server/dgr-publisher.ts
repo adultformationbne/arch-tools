@@ -16,6 +16,7 @@ export interface PublishParams {
 	date: string;
 	liturgicalDate: string;
 	readings: string;
+	readingsArray?: string[]; // Individual readings for proper pill display
 	title: string;
 	gospelQuote: string;
 	reflectionText: string;
@@ -83,7 +84,9 @@ ${truncatedText}`;
 		date: params.date,
 		formattedDate: formattedDate,
 		liturgicalDate: params.liturgicalDate,
-		readings: params.readings,
+		// Use readingsArray for proper pill display (each reading = one pill)
+		// Falls back to readings string for legacy compatibility
+		readings: params.readingsArray || params.readings,
 		gospelQuote: params.gospelQuote,
 		reflectionText: formatReflectionText(params.reflectionText),
 		authorName: params.authorName,

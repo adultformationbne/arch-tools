@@ -80,12 +80,30 @@ function processSpecialHelpers(template, data, options = {}) {
   const { headerImages = [] } = options;
 
   // Handle readings pills helper {{readingsPills readings}}
+  // Accepts either an array of reading strings OR a readingsArray from readings_data
   processed = processed.replace(/{{readingsPills\s+(\w+)}}/g, (match, variable) => {
     const readingsValue = data[variable];
     if (!readingsValue) return '';
 
-    const readings = parseReadings(readingsValue);
-    return readings.map((reading, index) =>
+    // If it's an array, process each reading as a single pill
+    // If it's a string (legacy), fall back to parseReadings
+    let readingsArray;
+    if (Array.isArray(readingsValue)) {
+      // Each array item is one reading (e.g., "1 Samuel 18:6-9; 19:1-7")
+      readingsArray = readingsValue.map(reading => {
+        const parsed = parseReadings(reading);
+        if (parsed.length === 0) return null;
+        // Combine all parts back into one reading with the first book name
+        const book = parsed[0].book;
+        const allVerses = parsed.map(p => p.verses).join('; ');
+        return { book, verses: allVerses };
+      }).filter(Boolean);
+    } else {
+      // Legacy: string like "1 Samuel 18:6-9; Psalm 55:2-3; Mark 3:7-12"
+      readingsArray = parseReadings(readingsValue);
+    }
+
+    return readingsArray.map((reading) =>
       `<div style="background:#e6f7f7; border:1px solid #8dd3d3; color:#0d5f5f; padding:10px 16px; border-radius:24px; font-size:14px; font-weight:500; box-shadow:0 2px 4px rgba(1,157,164,0.1); transition:all 0.2s ease; display:inline-block; margin:0 5px 5px 0;"><span style="font-weight:600;">${reading.book}</span><span style="margin-left:6px; opacity:0.9;">${reading.verses}</span></div>`
     ).join('');
   });

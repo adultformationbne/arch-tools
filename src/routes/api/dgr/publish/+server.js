@@ -8,6 +8,7 @@ export async function POST({ request }) {
 			date: data.date,
 			liturgicalDate: data.liturgicalDate,
 			readings: data.readings,
+			readingsArray: data.readingsArray,
 			title: data.title,
 			gospelQuote: data.gospelQuote,
 			reflectionText: data.reflectionText,
