@@ -71,13 +71,13 @@
 		}
 	};
 
-	// Watch for content changes
-	$effect(() => {
+	// Trigger auto-save on content changes (called from oninput handler)
+	const scheduleAutoSave = () => {
 		if (content.length > 0 && questionId) {
 			if (autoSaveTimer) clearTimeout(autoSaveTimer);
 			autoSaveTimer = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
 		}
-	});
+	};
 
 	const handleClose = () => {
 		isVisible = false;
@@ -208,6 +208,7 @@
 					<textarea
 						bind:this={textareaRef}
 						bind:value={content}
+						oninput={scheduleAutoSave}
 						placeholder="Begin writing your reflection here..."
 						class="w-full border-0 resize-none focus:outline-none text-gray-800 text-lg leading-relaxed bg-white rounded-2xl p-6"
 						style="min-height: 400px;"
