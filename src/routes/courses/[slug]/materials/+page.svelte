@@ -156,12 +156,37 @@
 			printWindow.document.write(printContent);
 			printWindow.document.close();
 
-			// Wait for images to load before printing
-			printWindow.onload = () => {
-				setTimeout(() => {
-					printWindow.print();
-				}, 250);
+			// Safari doesn't reliably fire onload for document.write() content
+			// Instead, wait for images to load (if any) then trigger print
+			const triggerPrint = () => {
+				printWindow.focus(); // Required for Safari
+				printWindow.print();
 			};
+
+			// Check for images that need to load
+			const images = printWindow.document.querySelectorAll('img');
+			if (images.length > 0) {
+				let loadedCount = 0;
+				const checkAllLoaded = () => {
+					loadedCount++;
+					if (loadedCount >= images.length) {
+						setTimeout(triggerPrint, 100);
+					}
+				};
+				images.forEach(img => {
+					if (img.complete) {
+						checkAllLoaded();
+					} else {
+						img.onload = checkAllLoaded;
+						img.onerror = checkAllLoaded; // Don't block on failed images
+					}
+				});
+				// Fallback timeout in case image events don't fire
+				setTimeout(triggerPrint, 2000);
+			} else {
+				// No images, just wait for DOM to render
+				setTimeout(triggerPrint, 300);
+			}
 		}
 	};
 </script>
