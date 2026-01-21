@@ -146,6 +146,24 @@ export const load: PageServerLoad = async (event) => {
 		enrollment_count: hubCounts.get(h.id) || 0
 	}));
 
+	// Build per-cohort hub enrollment counts for filtering
+	const hubEnrollmentsByCohort = new Map<string, Map<string, number>>();
+	for (const e of enrollments) {
+		if (e.cohort_id && e.hub_id) {
+			if (!hubEnrollmentsByCohort.has(e.cohort_id)) {
+				hubEnrollmentsByCohort.set(e.cohort_id, new Map());
+			}
+			const cohortHubs = hubEnrollmentsByCohort.get(e.cohort_id)!;
+			cohortHubs.set(e.hub_id, (cohortHubs.get(e.hub_id) || 0) + 1);
+		}
+	}
+
+	// Convert to serializable format: { cohort_id: { hub_id: count } }
+	const hubCountsByCohort: Record<string, Record<string, number>> = {};
+	for (const [cohortId, hubMap] of hubEnrollmentsByCohort) {
+		hubCountsByCohort[cohortId] = Object.fromEntries(hubMap);
+	}
+
 	return {
 		course: {
 			id: courseInfo.id,
@@ -163,6 +181,7 @@ export const load: PageServerLoad = async (event) => {
 		emailLogs: logsResult.data || [],
 		cohorts,
 		hubs,
+		hubCountsByCohort,
 		currentUserEmail: user?.email || ''
 	};
 };

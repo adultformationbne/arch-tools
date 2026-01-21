@@ -13,6 +13,7 @@
 		templates = [],
 		cohorts = [],
 		hubs = [],
+		hubCountsByCohort = {},
 		initialMode = 'choose',
 		currentUserEmail = ''
 	} = $props();
@@ -62,6 +63,19 @@
 	const selectedTemplate = $derived(templates.find(t => t.id === selectedTemplateId));
 	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
 	const maxSession = $derived(selectedCohort?.current_session || 8);
+
+	// Filter hubs to only show those with enrollments in the selected cohort
+	const filteredHubs = $derived.by(() => {
+		if (!selectedCohortId) return [];
+		const cohortHubCounts = hubCountsByCohort[selectedCohortId] || {};
+		return hubs
+			.filter(hub => cohortHubCounts[hub.id] > 0)
+			.map(hub => ({
+				...hub,
+				enrollment_count: cohortHubCounts[hub.id] || 0
+			}))
+			.sort((a, b) => a.name.localeCompare(b.name));
+	});
 
 	// Enabled recipients (not excluded)
 	const enabledRecipients = $derived(recipients.filter(r => !excludedRecipientIds.has(r.id)));
@@ -440,7 +454,9 @@
 								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
 							>
 								<option value="none">All students ({selectedCohort?.enrollment_count || 0})</option>
-								<option value="hub">By Hub</option>
+								{#if filteredHubs.length > 0}
+									<option value="hub">By Hub ({filteredHubs.length})</option>
+								{/if}
 								<option value="coordinators">Coordinators</option>
 								<option value="session">By Session</option>
 								<option value="pending_reflections">Pending Reflections</option>
@@ -448,12 +464,22 @@
 							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
 						</div>
 
-						{#if additionalFilter === 'hub' || additionalFilter === 'coordinators'}
+						{#if additionalFilter === 'hub' && filteredHubs.length > 0}
 							<div class="relative">
 								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
-									<option value="">{additionalFilter === 'coordinators' ? 'All hubs' : 'Select hub...'}</option>
-									{#each hubs as hub}
-										<option value={hub.id}>{hub.name} ({hub.enrollment_count || 0})</option>
+									<option value="">Select hub...</option>
+									{#each filteredHubs as hub}
+										<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
+									{/each}
+								</select>
+								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+							</div>
+						{:else if additionalFilter === 'coordinators' && filteredHubs.length > 0}
+							<div class="relative">
+								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+									<option value="">All hubs</option>
+									{#each filteredHubs as hub}
+										<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
 									{/each}
 								</select>
 								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />

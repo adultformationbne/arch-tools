@@ -83,6 +83,7 @@
 				templates={data.allTemplates || []}
 				cohorts={data.cohorts || []}
 				hubs={data.hubs || []}
+				hubCountsByCohort={data.hubCountsByCohort || {}}
 				{initialMode}
 				currentUserEmail={data.currentUserEmail}
 			/>
