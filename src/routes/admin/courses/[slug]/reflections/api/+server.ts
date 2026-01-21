@@ -18,7 +18,7 @@ import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseMutations } from '$lib/server/course-data.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import {
-	getEmailTemplate,
+	getCourseEmailTemplate,
 	renderTemplate,
 	buildVariableContext,
 	sendCourseEmail,
@@ -130,10 +130,10 @@ async function sendReflectionMarkedEmail({
 			return;
 		}
 
-		// Get the email template
-		const template = await getEmailTemplate(supabaseAdmin, 'reflection_marked', 'course');
+		// Get the email template (filter by course ID to avoid duplicate template errors)
+		const template = await getCourseEmailTemplate(supabaseAdmin, course.id, 'reflection_marked');
 		if (!template) {
-			console.error('reflection_marked email template not found');
+			console.error('reflection_marked email template not found for course:', course.id);
 			return;
 		}
 
@@ -166,8 +166,8 @@ async function sendReflectionMarkedEmail({
 		variables.loginButton = createEmailButton('View Your Feedback', variables.loginLink, accentDark);
 
 		// Render template
-		const renderedSubject = renderTemplate(template.subject, variables);
-		const renderedBody = renderTemplate(template.body, variables);
+		const renderedSubject = renderTemplate(template.subject_template, variables);
+		const renderedBody = renderTemplate(template.body_template, variables);
 
 		// Send email with course branding
 		const result = await sendCourseEmail({
