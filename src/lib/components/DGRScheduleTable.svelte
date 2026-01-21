@@ -450,6 +450,17 @@
 															<Send class="h-4 w-4" />
 															Republish
 														</button>
+														<button
+															onclick={() => {
+																onUpdateStatus(entry, 'approved');
+																const controller = dropdownControllers.get(entryKey);
+																if (controller) controller.hide();
+															}}
+															class="flex w-full items-center gap-2 px-4 py-2 text-sm text-left text-amber-700 hover:bg-amber-50"
+														>
+															<CheckCircle class="h-4 w-4" />
+															Mark as Unpublished
+														</button>
 													{/if}
 
 													<!-- Edit Readings (Only if entry has ID) -->
