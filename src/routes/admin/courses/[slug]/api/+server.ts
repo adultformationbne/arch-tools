@@ -33,14 +33,16 @@ async function getCourseIdFromSlug(courseSlug: string): Promise<string | null> {
  * Validate that a module belongs to the specified course
  */
 async function validateModuleBelongsToCourse(moduleId: string, courseSlug: string): Promise<boolean> {
+	// Get course ID from slug first
+	const courseId = await getCourseIdFromSlug(courseSlug);
+	if (!courseId) return false;
+
+	// Then check if module belongs to that course
 	const { data } = await supabaseAdmin
 		.from('courses_modules')
-		.select(`
-			id,
-			course:course_id!inner (slug)
-		`)
+		.select('id')
 		.eq('id', moduleId)
-		.eq('course.slug', courseSlug)
+		.eq('course_id', courseId)
 		.single();
 	return !!data;
 }
