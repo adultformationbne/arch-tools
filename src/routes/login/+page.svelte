@@ -6,9 +6,7 @@
 	let { data } = $props();
 	const { supabase, platform, courseBranding } = data;
 
-	// Use course branding when available, fall back to platform
-	const displayLogo = courseBranding?.logoUrl || platform.logoPath;
-	const displayName = courseBranding?.name || platform.name;
+	// Course-specific values (only used when courseBranding is present)
 	const accentColor = courseBranding?.accentDark || null;
 
 	// Auth flow states
@@ -47,7 +45,9 @@
 				if (error) throw error;
 				if (session?.user) {
 					const next = $page.url.searchParams.get('next') ?? '/profile';
-					goto(`/login/setup-password?next=${encodeURIComponent(next)}`);
+					const courseParam = $page.url.searchParams.get('course');
+					const setupUrl = `/login/setup-password?next=${encodeURIComponent(next)}${courseParam ? `&course=${encodeURIComponent(courseParam)}` : ''}`;
+					goto(setupUrl);
 					return;
 				}
 			} catch (error) {
@@ -271,7 +271,9 @@
 				}
 
 				const next = $page.url.searchParams.get('next') ?? defaultRedirect;
-				goto(`/login/setup-password?next=${encodeURIComponent(next)}`);
+				const courseParam = $page.url.searchParams.get('course');
+				const setupUrl = `/login/setup-password?next=${encodeURIComponent(next)}${courseParam ? `&course=${encodeURIComponent(courseParam)}` : ''}`;
+				goto(setupUrl);
 			} else {
 				// Track login for course enrollments (non-blocking)
 				fetch('/api/auth/track-login', { method: 'POST' }).catch(() => {});
@@ -354,23 +356,229 @@
 	}
 </script>
 
+{#snippet loginForms()}
+	<!-- Step 1: Email Input -->
+	{#if currentStep === 'email'}
+		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleEmailSubmit(); }}>
+			<div>
+				<input
+					bind:value={email}
+					type="email"
+					required
+					autofocus
+					class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+					placeholder="Email address"
+				/>
+			</div>
+
+			{#if errorMessage}
+				<div class="text-center text-sm text-red-600">{errorMessage}</div>
+			{/if}
+			{#if infoMessage}
+				<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
+			{/if}
+
+			<div>
+				<button
+					type="submit"
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					{loading ? 'Checking...' : 'Continue'}
+				</button>
+			</div>
+		</form>
+	{/if}
+
+	<!-- Step 2a: Password Input -->
+	{#if currentStep === 'password'}
+		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }}>
+			<div class="text-center text-sm text-neutral-600 mb-4">
+				Signing in as <strong class="text-black">{email}</strong>
+			</div>
+
+			<div>
+				<input
+					bind:value={password}
+					type="password"
+					required
+					autofocus
+					class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+					placeholder="Password"
+				/>
+			</div>
+
+			{#if errorMessage}
+				<div class="text-center text-sm text-red-600">{errorMessage}</div>
+			{/if}
+			{#if infoMessage}
+				<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
+			{/if}
+
+			<div class="space-y-3">
+				<button
+					type="submit"
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					{loading ? 'Signing in...' : 'Sign in'}
+				</button>
+
+				<button
+					type="button"
+					onclick={sendOtpFallback}
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-neutral-50 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					{loading ? 'Sending code...' : 'Send me a login code instead'}
+				</button>
+			</div>
+
+			<div class="flex justify-between text-sm">
+				<button
+					type="button"
+					onclick={handleForgotPassword}
+					disabled={loading}
+					class="text-black hover:text-neutral-700 underline disabled:opacity-50"
+				>
+					Forgot password?
+				</button>
+				<button
+					type="button"
+					onclick={goBackToEmail}
+					class="text-black hover:text-neutral-700 underline"
+				>
+					← Use a different email
+				</button>
+			</div>
+		</form>
+	{/if}
+
+	<!-- Step 2b: OTP Input -->
+	{#if currentStep === 'otp'}
+		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleOtpSubmit(); }}>
+			{#if email}
+				<div class="text-center text-sm text-neutral-600 mb-4">
+					Code sent to <strong class="text-black">{email}</strong>
+				</div>
+			{:else}
+				<div class="text-center text-sm text-neutral-600 mb-4">
+					Enter your email and the verification code sent to you
+				</div>
+				<div>
+					<input
+						bind:value={email}
+						type="email"
+						required
+						autofocus
+						class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+						placeholder="Email address"
+					/>
+				</div>
+			{/if}
+
+			<div>
+				<input
+					bind:value={otp}
+					type="text"
+					inputmode="numeric"
+					pattern="[0-9]*"
+					maxlength="6"
+					required
+					autofocus
+					class="relative block w-full border-2 border-black px-4 py-4 text-black placeholder-neutral-300 text-center text-3xl tracking-[0.5em] font-mono focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+					placeholder="000000"
+					autocomplete="one-time-code"
+				/>
+			</div>
+
+			{#if errorMessage}
+				<div class="text-center text-sm text-red-600">{errorMessage}</div>
+			{/if}
+			{#if infoMessage}
+				<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
+			{/if}
+
+			<div>
+				<button
+					type="submit"
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					{loading ? 'Verifying...' : 'Verify Code'}
+				</button>
+			</div>
+
+			<div class="flex justify-between text-sm">
+				<button
+					type="button"
+					onclick={resendOtp}
+					disabled={loading}
+					class="text-black hover:text-neutral-700 underline disabled:opacity-50"
+				>
+					Resend code
+				</button>
+				<button
+					type="button"
+					onclick={goBackToEmail}
+					class="text-black hover:text-neutral-700 underline"
+				>
+					← Change email
+				</button>
+			</div>
+		</form>
+	{/if}
+{/snippet}
+
+{#if courseBranding}
+<!-- Course-branded layout -->
 <div
 	class="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8"
 	style:--accent-color={accentColor}
 	style:background-color={accentColor || '#fafafa'}
 >
 	<div class="flex flex-col items-center w-full max-w-md -mt-24">
-		<!-- Logo on dark background -->
 		<img
-			src={displayLogo}
-			alt={displayName}
+			src={courseBranding.logoUrl || platform.logoPath}
+			alt={courseBranding.name}
 			class="w-56 h-56 object-contain -mb-2"
 		/>
 
 		<div class="w-full space-y-6 bg-white p-8 shadow-lg rounded-lg">
+			<div>
+				<h1 class="mb-2 text-center text-2xl font-semibold text-black">
+					{courseBranding.name}
+				</h1>
+				<h2 class="text-center text-base text-neutral-600">
+					{#if currentStep === 'email'}
+						Sign in to your account
+					{:else if currentStep === 'password'}
+						Enter your password
+					{:else if currentStep === 'otp'}
+						Enter verification code
+					{/if}
+				</h2>
+			</div>
+
+			{@render loginForms()}
+		</div>
+	</div>
+</div>
+{:else}
+<!-- Original platform layout -->
+<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4 sm:px-6 lg:px-8">
+	<div class="w-full max-w-md space-y-8">
 		<div>
+			<div class="flex justify-center mb-6">
+				<img
+					src={platform.logoPath}
+					alt={platform.name}
+					class="w-24 h-24 object-contain"
+				/>
+			</div>
+
 			<h1 class="mb-2 text-center text-2xl font-semibold text-black">
-				{displayName}
+				{platform.name}
 			</h1>
 			<h2 class="text-center text-base text-neutral-600">
 				{#if currentStep === 'email'}
@@ -383,180 +591,10 @@
 			</h2>
 		</div>
 
-		<!-- Step 1: Email Input -->
-		{#if currentStep === 'email'}
-			<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleEmailSubmit(); }}>
-				<div>
-					<input
-						bind:value={email}
-						type="email"
-						required
-						autofocus
-						class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-						placeholder="Email address"
-					/>
-				</div>
-
-				{#if errorMessage}
-					<div class="text-center text-sm text-red-600">{errorMessage}</div>
-				{/if}
-				{#if infoMessage}
-					<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
-				{/if}
-
-				<div>
-					<button
-						type="submit"
-						disabled={loading}
-						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
-					>
-						{loading ? 'Checking...' : 'Continue'}
-					</button>
-				</div>
-			</form>
-		{/if}
-
-		<!-- Step 2a: Password Input -->
-		{#if currentStep === 'password'}
-			<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }}>
-				<div class="text-center text-sm text-neutral-600 mb-4">
-					Signing in as <strong class="text-black">{email}</strong>
-				</div>
-
-				<div>
-					<input
-						bind:value={password}
-						type="password"
-						required
-						autofocus
-						class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-						placeholder="Password"
-					/>
-				</div>
-
-				{#if errorMessage}
-					<div class="text-center text-sm text-red-600">{errorMessage}</div>
-				{/if}
-				{#if infoMessage}
-					<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
-				{/if}
-
-				<div class="space-y-3">
-					<button
-						type="submit"
-						disabled={loading}
-						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
-					>
-						{loading ? 'Signing in...' : 'Sign in'}
-					</button>
-
-					<button
-						type="button"
-						onclick={sendOtpFallback}
-						disabled={loading}
-						class="group relative flex w-full justify-center border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-neutral-50 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
-					>
-						{loading ? 'Sending code...' : 'Send me a login code instead'}
-					</button>
-				</div>
-
-				<div class="flex justify-between text-sm">
-					<button
-						type="button"
-						onclick={handleForgotPassword}
-						disabled={loading}
-						class="text-black hover:text-neutral-700 underline disabled:opacity-50"
-					>
-						Forgot password?
-					</button>
-					<button
-						type="button"
-						onclick={goBackToEmail}
-						class="text-black hover:text-neutral-700 underline"
-					>
-						← Use a different email
-					</button>
-				</div>
-			</form>
-		{/if}
-
-		<!-- Step 2b: OTP Input -->
-		{#if currentStep === 'otp'}
-			<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleOtpSubmit(); }}>
-				{#if email}
-					<div class="text-center text-sm text-neutral-600 mb-4">
-						Code sent to <strong class="text-black">{email}</strong>
-					</div>
-				{:else}
-					<div class="text-center text-sm text-neutral-600 mb-4">
-						Enter your email and the verification code sent to you
-					</div>
-					<div>
-						<input
-							bind:value={email}
-							type="email"
-							required
-							autofocus
-							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-							placeholder="Email address"
-						/>
-					</div>
-				{/if}
-
-				<div>
-					<input
-						bind:value={otp}
-						type="text"
-						inputmode="numeric"
-						pattern="[0-9]*"
-						maxlength="6"
-						required
-						autofocus
-						class="relative block w-full border-2 border-black px-4 py-4 text-black placeholder-neutral-300 text-center text-3xl tracking-[0.5em] font-mono focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-						placeholder="000000"
-						autocomplete="one-time-code"
-					/>
-				</div>
-
-				{#if errorMessage}
-					<div class="text-center text-sm text-red-600">{errorMessage}</div>
-				{/if}
-				{#if infoMessage}
-					<div class="text-center text-sm text-neutral-700">{infoMessage}</div>
-				{/if}
-
-				<div>
-					<button
-						type="submit"
-						disabled={loading}
-						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
-					>
-						{loading ? 'Verifying...' : 'Verify Code'}
-					</button>
-				</div>
-
-				<div class="flex justify-between text-sm">
-					<button
-						type="button"
-						onclick={resendOtp}
-						disabled={loading}
-						class="text-black hover:text-neutral-700 underline disabled:opacity-50"
-					>
-						Resend code
-					</button>
-					<button
-						type="button"
-						onclick={goBackToEmail}
-						class="text-black hover:text-neutral-700 underline"
-					>
-						← Change email
-					</button>
-				</div>
-			</form>
-		{/if}
-		</div>
+		{@render loginForms()}
 	</div>
 </div>
+{/if}
 
 <style>
 	/* Apply course accent color to primary buttons when available */

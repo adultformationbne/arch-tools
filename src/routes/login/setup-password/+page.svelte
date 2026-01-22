@@ -6,10 +6,7 @@
 	let { data } = $props();
 	const { supabase, user, platform, courseBranding } = data;
 
-	// Use course branding when available, fall back to platform
-	const displayLogo = courseBranding?.logoUrl || platform.logoPath;
-	const displayName = courseBranding?.name || platform.name;
-	const displayShortName = courseBranding?.name || platform.shortName;
+	// Course-specific values (only used when courseBranding is present)
 	const accentColor = courseBranding?.accentDark || null;
 
 	let password = $state('');
@@ -106,23 +103,125 @@
 	}
 </script>
 
+{#snippet passwordForm()}
+	{#if success}
+		<div class="bg-green-50 p-4 text-center border-2 border-green-200">
+			<CheckCircle class="mx-auto h-12 w-12 text-green-600" />
+			<p class="mt-2 text-sm font-medium text-green-800">
+				Password set successfully!
+			</p>
+			<p class="mt-1 text-xs text-green-600">
+				Redirecting you now...
+			</p>
+		</div>
+	{:else}
+		<form class="mt-8 space-y-6" onsubmit={handleSetPassword}>
+			<div class="space-y-4">
+				<div>
+					<label for="password" class="block text-sm font-medium text-black mb-1">
+						New Password
+					</label>
+					<input
+						bind:value={password}
+						type="password"
+						id="password"
+						required
+						minlength="6"
+						class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+						placeholder="Enter your password (min 6 characters)"
+						disabled={loading}
+					/>
+				</div>
+				<div>
+					<label for="confirm-password" class="block text-sm font-medium text-black mb-1">
+						Confirm Password
+					</label>
+					<input
+						bind:value={confirmPassword}
+						type="password"
+						id="confirm-password"
+						required
+						minlength="6"
+						class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
+						placeholder="Confirm your password"
+						disabled={loading}
+					/>
+				</div>
+			</div>
+
+			{#if errorMessage}
+				<div class="bg-red-50 p-3 text-center text-sm text-red-800 border-2 border-red-200">
+					{errorMessage}
+				</div>
+			{/if}
+
+			<div class="space-y-3">
+				<button
+					type="submit"
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+				>
+					{loading ? 'Setting password...' : 'Set Password'}
+				</button>
+
+				<div class="bg-neutral-100 border-2 border-neutral-300 p-3">
+					<p class="text-xs text-neutral-700">
+						<strong class="text-black">Important:</strong> After setting your password, you can sign in anytime using your email and this password.
+					</p>
+				</div>
+			</div>
+		</form>
+	{/if}
+{/snippet}
+
+{#if courseBranding}
+<!-- Course-branded layout -->
 <div
 	class="flex min-h-screen items-center justify-center px-4"
 	style:--accent-color={accentColor}
 	style:background-color={accentColor || '#fafafa'}
 >
 	<div class="flex flex-col items-center w-full max-w-md -mt-24">
-		<!-- Logo on dark background -->
 		<img
-			src={displayLogo}
-			alt={displayName}
+			src={courseBranding.logoUrl || platform.logoPath}
+			alt={courseBranding.name}
 			class="w-56 h-56 object-contain -mb-2"
 		/>
 
 		<div class="w-full space-y-6 bg-white p-8 shadow-lg rounded-lg">
+			<div class="text-center">
+				<h1 class="text-2xl font-semibold text-black">
+					Welcome to {courseBranding.name}
+				</h1>
+				<p class="mt-2 text-sm text-neutral-600">
+					Please create a password to secure your account
+				</p>
+				{#if user?.email}
+					<p class="mt-1 text-sm text-neutral-500">
+						{user.email}
+					</p>
+				{/if}
+			</div>
+
+			{@render passwordForm()}
+		</div>
+	</div>
+</div>
+{:else}
+<!-- Original platform layout -->
+<div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
+	<div class="w-full max-w-md space-y-8">
 		<div class="text-center">
+			<div class="flex justify-center mb-6">
+				<img
+					src={platform.logoPath}
+					alt={platform.name}
+					class="w-24 h-24 object-contain"
+				/>
+			</div>
+
 			<h1 class="text-2xl font-semibold text-black">
-				Welcome to {displayShortName}
+				Welcome to {platform.shortName}
 			</h1>
 			<p class="mt-2 text-sm text-neutral-600">
 				Please create a password to secure your account
@@ -134,77 +233,10 @@
 			{/if}
 		</div>
 
-		{#if success}
-			<div class="bg-green-50 p-4 text-center border-2 border-green-200">
-				<CheckCircle class="mx-auto h-12 w-12 text-green-600" />
-				<p class="mt-2 text-sm font-medium text-green-800">
-					Password set successfully!
-				</p>
-				<p class="mt-1 text-xs text-green-600">
-					Redirecting you now...
-				</p>
-			</div>
-		{:else}
-			<form class="mt-8 space-y-6" onsubmit={handleSetPassword}>
-				<div class="space-y-4">
-					<div>
-						<label for="password" class="block text-sm font-medium text-black mb-1">
-							New Password
-						</label>
-						<input
-							bind:value={password}
-							type="password"
-							id="password"
-							required
-							minlength="6"
-							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-							placeholder="Enter your password (min 6 characters)"
-							disabled={loading}
-						/>
-					</div>
-					<div>
-						<label for="confirm-password" class="block text-sm font-medium text-black mb-1">
-							Confirm Password
-						</label>
-						<input
-							bind:value={confirmPassword}
-							type="password"
-							id="confirm-password"
-							required
-							minlength="6"
-							class="relative block w-full border-2 border-black px-4 py-3 text-black placeholder-neutral-400 focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
-							placeholder="Confirm your password"
-							disabled={loading}
-						/>
-					</div>
-				</div>
-
-				{#if errorMessage}
-					<div class="bg-red-50 p-3 text-center text-sm text-red-800 border-2 border-red-200">
-						{errorMessage}
-					</div>
-				{/if}
-
-				<div class="space-y-3">
-					<button
-						type="submit"
-						disabled={loading}
-						class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-					>
-						{loading ? 'Setting password...' : 'Set Password'}
-					</button>
-
-					<div class="bg-neutral-100 border-2 border-neutral-300 p-3">
-						<p class="text-xs text-neutral-700">
-							<strong class="text-black">Important:</strong> After setting your password, you can sign in anytime using your email and this password.
-						</p>
-					</div>
-				</div>
-			</form>
-		{/if}
-		</div>
+		{@render passwordForm()}
 	</div>
 </div>
+{/if}
 
 <style>
 	/* Apply course accent color to primary buttons when available */
