@@ -117,6 +117,8 @@ const courseContext: EmailContextConfig = {
 		const lastName = nameParts.slice(1).join(' ') || '';
 
 		const courseSlug = (course?.slug as string) || '';
+		const emailBrandingConfig = course?.email_branding_config as Record<string, unknown> | undefined;
+		const replyToEmail = (emailBrandingConfig?.reply_to_email as string) || '';
 
 		return {
 			firstName,
@@ -138,7 +140,7 @@ const courseContext: EmailContextConfig = {
 			dashboardLink: `${origin}/courses/${courseSlug}/dashboard`,
 			materialsLink: `${origin}/courses/${courseSlug}/materials`,
 			reflectionLink: `${origin}/courses/${courseSlug}/reflections`,
-			supportEmail: 'support@archdiocesanministries.org.au'
+			supportEmail: replyToEmail
 		};
 	},
 
@@ -163,7 +165,7 @@ const courseContext: EmailContextConfig = {
 			dashboardLink: 'https://example.com/courses/sample-course/dashboard',
 			materialsLink: 'https://example.com/courses/sample-course/materials',
 			reflectionLink: 'https://example.com/courses/sample-course/reflections',
-			supportEmail: 'support@archdiocesanministries.org.au'
+			supportEmail: 'accf@archdiocesanministries.org.au'
 		}
 	},
 
@@ -284,7 +286,7 @@ const platformContext: EmailContextConfig = {
 			userName: (raw.full_name as string) || '',
 			userEmail: (raw.email as string) || '',
 			platformName: 'Archdiocesan Ministries',
-			supportEmail: 'support@archdiocesanministries.org.au'
+			supportEmail: 'accf@archdiocesanministries.org.au'
 		};
 	},
 
@@ -295,7 +297,7 @@ const platformContext: EmailContextConfig = {
 			userName: 'Sample User',
 			userEmail: 'sample@example.com',
 			platformName: 'Archdiocesan Ministries',
-			supportEmail: 'support@archdiocesanministries.org.au'
+			supportEmail: 'accf@archdiocesanministries.org.au'
 		}
 	},
 

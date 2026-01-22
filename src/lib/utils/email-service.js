@@ -601,7 +601,7 @@ export function buildVariableContext({
 		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,
 
 		// System variables
-		supportEmail: 'support@archdiocesanministries.org.au',
+		supportEmail: course?.email_branding_config?.reply_to_email || 'accf@archdiocesanministries.org.au',
 		hubName: enrollment.hub_name || 'N/A'
 	};
 

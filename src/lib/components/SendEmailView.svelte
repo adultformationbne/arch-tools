@@ -131,7 +131,7 @@
 			dashboardLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/dashboard`,
 			materialsLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/materials`,
 			reflectionLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/reflections`,
-			supportEmail: 'support@archdiocesanministries.org.au',
+			supportEmail: course?.email_branding_config?.reply_to_email || 'accf@archdiocesanministries.org.au',
 			hubName: recipient.courses_hubs?.name || ''
 		};
 
