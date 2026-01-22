@@ -176,9 +176,10 @@
 			<div class="w-full h-px bg-gray-300 my-1"></div>
 			<button
 				type="button"
-				onclick={(e) => editorComponent?.openLinkModal(e.currentTarget)}
-				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-				title="Add Link"
+				onclick={(e) => { if (hasTextSelection) editorComponent?.openLinkModal(e.currentTarget); }}
+				disabled={!hasTextSelection}
+				class="p-2 rounded transition-colors {hasTextSelection ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
+				title={hasTextSelection ? "Add Link" : "Select text to add link"}
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
 			</button>

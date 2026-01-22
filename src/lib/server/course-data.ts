@@ -1446,10 +1446,12 @@ export const CourseMutations = {
 	},
 
 	/**
-	 * Bulk delete enrollments (only those who haven't signed up yet)
+	 * Bulk delete enrollments
+	 * If forceDelete is true, deletes all enrollments regardless of signup status
+	 * If forceDelete is false, only deletes enrollments where user hasn't signed up yet
 	 * Returns counts of deleted and skipped enrollments
 	 */
-	async bulkDeleteEnrollments(enrollmentIds: string[]) {
+	async bulkDeleteEnrollments(enrollmentIds: string[], forceDelete: boolean = false) {
 		if (!enrollmentIds || enrollmentIds.length === 0) {
 			return {
 				data: { deleted: 0, skipped: 0, skippedNames: [] },
@@ -1467,11 +1469,20 @@ export const CourseMutations = {
 			return { data: null, error: fetchError };
 		}
 
-		// Separate deletable (no user_profile_id) from non-deletable
-		const deletable = enrollments?.filter((e) => !e.user_profile_id) || [];
-		const skipped = enrollments?.filter((e) => e.user_profile_id) || [];
+		let deletableIds: string[];
+		let skipped: typeof enrollments = [];
 
-		if (deletable.length === 0) {
+		if (forceDelete) {
+			// Force delete: delete all enrollments
+			deletableIds = enrollments?.map((e) => e.id) || [];
+		} else {
+			// Normal mode: only delete enrollments where user hasn't signed up
+			const deletable = enrollments?.filter((e) => !e.user_profile_id) || [];
+			skipped = enrollments?.filter((e) => e.user_profile_id) || [];
+			deletableIds = deletable.map((e) => e.id);
+		}
+
+		if (deletableIds.length === 0) {
 			return {
 				data: {
 					deleted: 0,
@@ -1482,8 +1493,7 @@ export const CourseMutations = {
 			};
 		}
 
-		// Delete the deletable enrollments
-		const deletableIds = deletable.map((e) => e.id);
+		// Delete the enrollments
 		const { error: deleteError } = await supabaseAdmin
 			.from('courses_enrollments')
 			.delete()
@@ -1495,11 +1505,142 @@ export const CourseMutations = {
 
 		return {
 			data: {
-				deleted: deletable.length,
+				deleted: deletableIds.length,
 				skipped: skipped.length,
 				skippedNames: skipped.map((e) => e.full_name)
 			},
 			error: null
+		};
+	},
+
+	/**
+	 * Permanently delete user accounts
+	 * This deletes the user_profile, auth user, and all associated data
+	 * Only works for users linked to the given enrollment IDs
+	 */
+	async deleteUserAccounts(enrollmentIds: string[]) {
+		if (!enrollmentIds || enrollmentIds.length === 0) {
+			return {
+				data: { deleted: 0, skipped: 0, skippedNames: [] },
+				error: null
+			};
+		}
+
+		// Get enrollments with their user_profile_ids
+		const { data: enrollments, error: fetchError } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id, user_profile_id, full_name')
+			.in('id', enrollmentIds);
+
+		if (fetchError) {
+			return { data: null, error: fetchError };
+		}
+
+		// Separate users with accounts from those without
+		const withAccounts = enrollments?.filter((e) => e.user_profile_id) || [];
+		const withoutAccounts = enrollments?.filter((e) => !e.user_profile_id) || [];
+
+		// Get unique user_profile_ids (a user might have multiple enrollments)
+		const userProfileIds = [...new Set(withAccounts.map((e) => e.user_profile_id))];
+
+		if (userProfileIds.length === 0) {
+			// No accounts to delete, just delete the enrollments
+			if (withoutAccounts.length > 0) {
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.delete()
+					.in('id', withoutAccounts.map((e) => e.id));
+			}
+			return {
+				data: {
+					deleted: withoutAccounts.length,
+					skipped: 0,
+					skippedNames: []
+				},
+				error: null
+			};
+		}
+
+		// Get auth user IDs from user_profiles
+		const { data: profiles } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, email')
+			.in('id', userProfileIds);
+
+		const deletedCount = { accounts: 0, enrollments: 0 };
+		const errors: string[] = [];
+
+		// Delete each user account
+		for (const profile of profiles || []) {
+			try {
+				// 1. Delete all enrollments for this user (across all cohorts)
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.delete()
+					.eq('user_profile_id', profile.id);
+
+				// 2. Delete reflection responses (they reference enrollment which is gone)
+				// The enrollments are deleted, but responses might have been orphaned
+
+				// 3. Null out references in other tables to avoid FK violations
+				await supabaseAdmin
+					.from('courses_attendance')
+					.update({ marked_by: null })
+					.eq('marked_by', profile.id);
+
+				await supabaseAdmin
+					.from('courses_reflection_responses')
+					.update({ marked_by: null, reviewing_by: null })
+					.or(`marked_by.eq.${profile.id},reviewing_by.eq.${profile.id}`);
+
+				await supabaseAdmin
+					.from('courses_enrollment_imports')
+					.update({ imported_by: null })
+					.eq('imported_by', profile.id);
+
+				// 4. Delete community feed posts by this user
+				await supabaseAdmin
+					.from('courses_community_feed')
+					.delete()
+					.eq('author_id', profile.id);
+
+				// 5. Delete the user_profile
+				await supabaseAdmin
+					.from('user_profiles')
+					.delete()
+					.eq('id', profile.id);
+
+				// 6. Delete the auth user
+				const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profile.id);
+				if (authError) {
+					console.error(`Failed to delete auth user ${profile.id}:`, authError);
+					// Continue anyway - the profile is already deleted
+				}
+
+				deletedCount.accounts++;
+			} catch (err) {
+				console.error(`Failed to delete user ${profile.id}:`, err);
+				errors.push(profile.email || profile.id);
+			}
+		}
+
+		// Also delete enrollments for users without accounts
+		if (withoutAccounts.length > 0) {
+			await supabaseAdmin
+				.from('courses_enrollments')
+				.delete()
+				.in('id', withoutAccounts.map((e) => e.id));
+			deletedCount.enrollments = withoutAccounts.length;
+		}
+
+		return {
+			data: {
+				deleted: deletedCount.accounts + deletedCount.enrollments,
+				accountsDeleted: deletedCount.accounts,
+				enrollmentsDeleted: deletedCount.enrollments,
+				errors
+			},
+			error: errors.length > 0 ? { message: `Failed to delete some users: ${errors.join(', ')}` } : null
 		};
 	},
 
@@ -1779,7 +1920,11 @@ export const CourseMutations = {
 			const userId = existingAuthUser?.id || newlyCreatedUserId;
 
 			if (!userId) {
-				// User creation must have failed
+				// User creation must have failed - track this as an error
+				const errorMsg = `${row.full_name} (${row.email}): Could not find or create user account`;
+				results.push({ email: row.email, status: 'error', message: 'Could not find or create user account' });
+				errorDetails.push(errorMsg);
+				errorCount++;
 				continue;
 			}
 

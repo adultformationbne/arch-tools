@@ -791,6 +791,17 @@ Users with the `courses.manager` module must be assigned to specific courses:
 
 **Critical:** Course managers and admins are NOT enrolled in cohorts. They manage courses via platform modules, not enrollments.
 
+### Role Terminology (CSV Import)
+
+The CSV import uses clearer column names to avoid confusion:
+
+| CSV Column | Database Field | Purpose |
+|------------|----------------|---------|
+| `cohort_role` | `courses_enrollments.role` | **Functional role** - controls access & features (`student` or `coordinator`) |
+| `ministry_role` | `user_profiles.parish_role` | **Descriptive** - person's ministry/position in their parish (free text, e.g., "Catechist", "Reader") |
+
+**Note:** The old column names (`role`, `parish_role`) are still accepted for backward compatibility.
+
 ### Auth Helpers (`$lib/server/auth.ts`)
 
 ```typescript

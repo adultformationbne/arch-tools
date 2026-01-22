@@ -11,6 +11,9 @@
 		cancelText = 'Cancel',
 		onConfirm = () => {},
 		onCancel = () => {},
+		// New: array of action objects for multi-action modals
+		// Each action: { label, description?, icon?, variant?: 'primary'|'danger'|'secondary', onClick }
+		actions = null,
 		children
 	} = $props();
 
@@ -63,18 +66,51 @@
 				<div class="modal-body">
 					{@render children()}
 				</div>
-				<div class="modal-actions">
-					<button onclick={onCancel} class="btn-secondary">
-						{cancelText}
-					</button>
-					<button onclick={onConfirm} class="btn-primary">
-						{#if confirmIcon}
-							{@const Icon = confirmIcon}
-							<Icon size={18} />
-						{/if}
-						<span>{confirmText}</span>
-					</button>
-				</div>
+
+				{#if actions && actions.length > 0}
+					<!-- Multi-action mode: render action cards -->
+					<div class="modal-actions-multi">
+						{#each actions as action}
+							{@const variant = action.variant || 'primary'}
+							<button
+								onclick={action.onClick}
+								class="action-card action-{variant}"
+							>
+								<div class="action-card-content">
+									{#if action.icon}
+										{@const Icon = action.icon}
+										<div class="action-icon">
+											<Icon size={20} />
+										</div>
+									{/if}
+									<div class="action-text">
+										<span class="action-label">{action.label}</span>
+										{#if action.description}
+											<span class="action-description">{action.description}</span>
+										{/if}
+									</div>
+								</div>
+							</button>
+						{/each}
+						<button onclick={onCancel} class="btn-cancel">
+							{cancelText}
+						</button>
+					</div>
+				{:else}
+					<!-- Default mode: confirm/cancel buttons -->
+					<div class="modal-actions">
+						<button onclick={onCancel} class="btn-secondary">
+							{cancelText}
+						</button>
+						<button onclick={onConfirm} class="btn-primary">
+							{#if confirmIcon}
+								{@const Icon = confirmIcon}
+								<Icon size={18} />
+							{/if}
+							<span>{confirmText}</span>
+						</button>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -209,6 +245,7 @@
 		font-size: 0.875rem;
 	}
 
+	/* Default two-button mode */
 	.modal-actions {
 		display: flex;
 		gap: 12px;
@@ -256,6 +293,146 @@
 		background: #d4a876;
 		transform: translateY(-1px);
 		box-shadow: 0 4px 12px rgba(197, 154, 107, 0.3);
+	}
+
+	/* Multi-action mode */
+	.modal-actions-multi {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 0 24px 24px;
+	}
+
+	.action-card {
+		width: 100%;
+		padding: 16px;
+		border-radius: 12px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-align: left;
+	}
+
+	.action-card-content {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	.action-icon {
+		padding: 8px;
+		border-radius: 8px;
+		flex-shrink: 0;
+	}
+
+	.action-text {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.action-label {
+		font-weight: 600;
+		font-size: 0.9375rem;
+		transition: color 0.2s ease;
+	}
+
+	.action-description {
+		font-size: 0.8125rem;
+		color: rgba(255, 255, 255, 0.6);
+		line-height: 1.4;
+	}
+
+	/* Action variants */
+	.action-primary {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.action-primary:hover {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.action-primary .action-icon {
+		background: rgba(197, 154, 107, 0.2);
+		color: #c59a6b;
+	}
+
+	.action-primary .action-label {
+		color: white;
+	}
+
+	.action-primary:hover .action-label {
+		color: #c59a6b;
+	}
+
+	.action-secondary {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.action-secondary:hover {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.action-secondary .action-icon {
+		background: rgba(245, 158, 11, 0.2);
+		color: #f59e0b;
+	}
+
+	.action-secondary .action-label {
+		color: white;
+	}
+
+	.action-secondary:hover .action-label {
+		color: #fbbf24;
+	}
+
+	.action-danger {
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+	}
+
+	.action-danger:hover {
+		background: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.4);
+	}
+
+	.action-danger .action-icon {
+		background: rgba(239, 68, 68, 0.2);
+		color: #ef4444;
+	}
+
+	.action-danger .action-label {
+		color: white;
+	}
+
+	.action-danger:hover .action-label {
+		color: #fca5a5;
+	}
+
+	.action-danger .action-description :global(strong) {
+		color: #ef4444;
+	}
+
+	.btn-cancel {
+		width: 100%;
+		padding: 12px 20px;
+		background: transparent;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 10px;
+		color: rgba(255, 255, 255, 0.7);
+		font-weight: 600;
+		font-size: 0.9375rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		margin-top: 4px;
+	}
+
+	.btn-cancel:hover {
+		background: rgba(255, 255, 255, 0.05);
+		color: white;
 	}
 
 	@media (max-width: 768px) {

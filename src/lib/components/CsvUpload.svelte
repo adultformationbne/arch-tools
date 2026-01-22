@@ -10,7 +10,7 @@
 	} = $props();
 
 	function downloadTemplate() {
-		const template = `first_name,last_name,email,phone,parish_community,hub,parish_role,role,notes
+		const template = `first_name,last_name,email,phone,parish_community,hub,ministry_role,cohort_role,notes
 Jane,Smith,jane.smith@example.com,+61 400 123 456,St Mary's Cathedral,St Mary's Parish,Catechist,student,
 John,Doe,john.doe@example.com,+61 400 789 012,Holy Spirit Parish,Downtown Hub,Parish Council Chair,coordinator,Experienced facilitator
 Mary,Johnson,mary.johnson@example.com,,Our Lady of Mercy,St Mary's Parish,Reader,student,
@@ -38,7 +38,11 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 		if (e.type === 'dragenter' || e.type === 'dragover') {
 			dragActive = true;
 		} else if (e.type === 'dragleave') {
-			dragActive = false;
+			// Only deactivate if actually leaving the drop zone, not just moving to a child element
+			// This fixes Windows drag-drop issues where child elements trigger dragleave
+			if (!e.currentTarget.contains(e.relatedTarget)) {
+				dragActive = false;
+			}
 		}
 	}
 
@@ -118,8 +122,12 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				'address': ['address', 'mailing address', 'postal address', 'street address'],
 				'parish_community': ['parish_community', 'parish', 'community', 'your parish', 'your parish or community', 'parish/community'],
 				'hub': ['hub', 'hub name', 'hub (name)', 'location', 'group', 'site'],
-				'parish_role': ['parish_role', 'parish role', 'role/s in parish', 'roles in parish', 'parish roles', 'ministry'],
-				'role': ['role', 'user role', 'type', 'user type', 'account type', 'participant type'],
+				// ministry_role = descriptive role in parish (e.g., "Catechist", "Reader")
+				// Maps to user_profiles.parish_role in database
+				'parish_role': ['ministry_role', 'ministry role', 'parish_role', 'parish role', 'role/s in parish', 'roles in parish', 'parish roles', 'ministry'],
+				// cohort_role = functional role in course system (student or coordinator)
+				// Maps to courses_enrollments.role in database
+				'role': ['cohort_role', 'cohort role', 'role', 'user role', 'type', 'user type', 'account type', 'participant type'],
 				'notes': ['notes', 'note', 'comments', 'comment', 'additional info', 'remarks']
 			};
 
@@ -137,7 +145,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				return clean;
 			});
 
-			// Required: email and role. Name can be full_name OR first_name+last_name
+			// Required: email and cohort_role. Name can be full_name OR first_name+last_name
 			const hasEmail = header.includes('email');
 			const hasRole = header.includes('role');
 			const hasFullName = header.includes('full_name');
@@ -146,7 +154,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 
 			const missingColumns = [];
 			if (!hasEmail) missingColumns.push('email');
-			if (!hasRole) missingColumns.push('role');
+			if (!hasRole) missingColumns.push('cohort_role');
 			if (!hasAnyName) missingColumns.push('name (full_name or first_name)');
 
 			if (missingColumns.length > 0) {
@@ -178,9 +186,9 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 					continue;
 				}
 
-				// Basic validation - need email, some form of name, and role
+				// Basic validation - need email, some form of name, and cohort_role
 				if (!row.email || !row.full_name || !row.role) {
-					errors.push(`Row ${i + 1}: Missing required fields (email, name, role)`);
+					errors.push(`Row ${i + 1}: Missing required fields (email, name, cohort_role)`);
 					continue;
 				}
 
@@ -211,7 +219,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				const normalizedRole = roleMap[roleLower] || roleLower;
 
 				if (!['student', 'coordinator'].includes(normalizedRole)) {
-					errors.push(`Row ${i + 1}: Invalid role "${row.role}". Must be "Participant" or "Hub Coordinator"`);
+					errors.push(`Row ${i + 1}: Invalid cohort_role "${row.role}". Must be "student" or "coordinator"`);
 					continue;
 				}
 
@@ -341,7 +349,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				<Upload size={48} />
 				<h3>Upload CSV File</h3>
 				<p>Drag and drop or click to browse</p>
-				<p class="format-hint">Required: first_name, last_name, email, role (optional: phone, parish, hub, notes)</p>
+				<p class="format-hint">Required: first_name, last_name, email, cohort_role (optional: phone, parish, hub, ministry_role, notes)</p>
 			</label>
 		</div>
 
@@ -361,14 +369,14 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 			</h3>
 			<p class="help-text">
 				Copy data directly from Excel/Google Sheets and paste it here. First row should be headers:
-				<strong>first_name, last_name, email, role</strong> (optional: phone, parish_community, hub, parish_role, notes)
+				<strong>first_name, last_name, email, cohort_role</strong> (optional: phone, parish_community, hub, ministry_role, notes)
 			</p>
 
 			<textarea
 				bind:value={pastedText}
 				placeholder="Paste from Excel/Sheets (tab-separated) or type CSV:
 
-first_name	last_name	email	phone	parish_community	hub	role
+first_name	last_name	email	phone	parish_community	hub	cohort_role
 John	Smith	john@example.com	+61 400 123 456	St Mary's Cathedral	Downtown Hub	student
 Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 				rows="10"
@@ -476,6 +484,11 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		border-color: var(--course-accent-dark);
 		background: var(--course-surface);
 		transform: scale(1.02);
+	}
+
+	/* Prevent child elements from intercepting drag events (fixes Windows drag-drop) */
+	.upload-area.drag-active * {
+		pointer-events: none;
 	}
 
 	.upload-area.disabled {

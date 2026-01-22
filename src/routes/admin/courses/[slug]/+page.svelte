@@ -1,7 +1,7 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus } from '$lib/icons';
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
@@ -28,7 +28,10 @@
 	let showCohortSettings = $state(false);
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
+	let advancementInitialIds = $state([]);
 	let showDeleteConfirm = $state(false);
+	let deleteLoading = $state(false);
+	let deleteLoadingMessage = $state('');
 	let showEmailModal = $state(false);
 	let showHubAssignModal = $state(false);
 	let showParticipantDetail = $state(false);
@@ -196,6 +199,8 @@
 
 	// Sidebar actions
 	function handleAdvanceSession() {
+		// Pass any selected students to the modal
+		advancementInitialIds = Array.from(selectedParticipants);
 		showAdvancementModal = true;
 	}
 
@@ -240,6 +245,8 @@
 			toastWarning('Selected participants are already at current session');
 			return;
 		}
+		// Pre-select the participants that are behind
+		advancementInitialIds = Array.from(selectedParticipants);
 		showAdvancementModal = true;
 	}
 
@@ -287,8 +294,9 @@
 		showDeleteConfirm = true;
 	}
 
-	async function confirmBulkDelete() {
-		showDeleteConfirm = false;
+	async function confirmRemoveEnrollment() {
+		deleteLoading = true;
+		deleteLoadingMessage = 'Removing enrollments...';
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
@@ -296,7 +304,8 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					action: 'bulk_delete_enrollments',
-					enrollmentIds: Array.from(selectedParticipants)
+					enrollmentIds: Array.from(selectedParticipants),
+					forceDelete: true
 				})
 			});
 
@@ -306,21 +315,47 @@
 				throw new Error(result.message || 'Failed to remove participants');
 			}
 
-			const { deleted, skipped } = result.data;
-
-			if (deleted > 0 && skipped === 0) {
-				toastSuccess(result.message);
-			} else if (deleted > 0 && skipped > 0) {
-				toastWarning(result.message);
-			} else if (skipped > 0) {
-				toastError(result.message);
-			}
-
+			toastSuccess(result.message);
 			selectedParticipants = new Set();
 			await loadParticipants();
 		} catch (err) {
 			console.error('Error removing participants:', err);
 			toastError(err.message || 'Failed to remove participants');
+		} finally {
+			deleteLoading = false;
+			showDeleteConfirm = false;
+		}
+	}
+
+	async function confirmDeleteAccounts() {
+		deleteLoading = true;
+		deleteLoadingMessage = 'Deleting accounts...';
+
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'delete_user_accounts',
+					enrollmentIds: Array.from(selectedParticipants)
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to delete accounts');
+			}
+
+			toastSuccess(result.message);
+			selectedParticipants = new Set();
+			await loadParticipants();
+		} catch (err) {
+			console.error('Error deleting accounts:', err);
+			toastError(err.message || 'Failed to delete accounts');
+		} finally {
+			deleteLoading = false;
+			showDeleteConfirm = false;
 		}
 	}
 
@@ -381,6 +416,8 @@
 
 	async function handleAdvancementComplete() {
 		showAdvancementModal = false;
+		selectedParticipants = new Set(); // Clear selection after advancement
+		advancementInitialIds = [];
 		await loadParticipants();
 		await invalidateAll();
 	}
@@ -696,6 +733,7 @@
 	{courseSlug}
 	cohort={selectedCohort}
 	students={participants}
+	initialSelectedIds={advancementInitialIds}
 	bind:show={showAdvancementModal}
 	onComplete={handleAdvancementComplete}
 />
@@ -703,13 +741,28 @@
 <ConfirmationModal
 	show={showDeleteConfirm}
 	title="Remove Participants"
-	confirmText="Remove"
-	cancelText="Cancel"
-	onConfirm={confirmBulkDelete}
+	loading={deleteLoading}
+	loadingMessage={deleteLoadingMessage}
 	onCancel={() => showDeleteConfirm = false}
+	actions={[
+		{
+			label: 'Remove from this cohort',
+			description: 'Removes the enrollment from this cohort only. Their user account remains active and they can be re-enrolled later.',
+			icon: UserMinus,
+			variant: 'secondary',
+			onClick: confirmRemoveEnrollment
+		},
+		{
+			label: 'Permanently delete account',
+			description: 'Completely removes their user account, all enrollments, and associated data. This cannot be undone.',
+			icon: Trash2,
+			variant: 'danger',
+			onClick: confirmDeleteAccounts
+		}
+	]}
 >
-	<p>Are you sure you want to remove {selectedParticipants.size} participant(s)?</p>
-	<p class="text-sm text-gray-600 mt-2">Only participants who haven't signed up yet can be removed. Active users will be skipped.</p>
+	<p>You are about to remove <strong>{selectedParticipants.size} participant(s)</strong>.</p>
+	<p class="text-sm text-white/70">Choose an action:</p>
 </ConfirmationModal>
 
 <EmailSenderModal

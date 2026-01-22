@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { Editor } from '@tiptap/core';
+	import { Editor, Extension } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Link from '@tiptap/extension-link';
@@ -37,6 +37,7 @@
 	let editorElement;
 	let showVariableMenu = $state(false);
 	let variableMenuButton;
+	let textIsSelected = $state(false); // Internal state to track if text is selected
 
 	// Popover state for link editing
 	let showLinkPopover = $state(false);
@@ -263,6 +264,47 @@
 		}
 	});
 
+	// Custom extension to handle exiting lists on Enter when list item is empty
+	const ListExitExtension = Extension.create({
+		name: 'listExit',
+
+		addKeyboardShortcuts() {
+			return {
+				Enter: ({ editor }) => {
+					// Check if we're in a list item
+					const { state } = editor;
+					const { empty } = state.selection;
+					const fromPos = state.selection.$from;
+
+					if (!empty) return false;
+
+					// Find if we're in a listItem
+					const listItemType = state.schema.nodes.listItem;
+
+					if (!listItemType) return false;
+
+					// Check if current node is a list item and is empty
+					for (let d = fromPos.depth; d > 0; d--) {
+						const node = fromPos.node(d);
+						if (node.type === listItemType) {
+							// Check if the list item is empty (only contains empty paragraph or is empty)
+							const isEmpty = node.content.size === 0 ||
+								(node.content.size === 2 && node.firstChild?.type.name === 'paragraph' && node.firstChild.content.size === 0);
+
+							if (isEmpty) {
+								// Lift out of the list
+								return editor.commands.liftListItem('listItem');
+							}
+							break;
+						}
+					}
+
+					return false;
+				}
+			};
+		}
+	});
+
 	// Custom Divider Node Extension
 	const EmailDivider = Node.create({
 		name: 'emailDivider',
@@ -323,7 +365,8 @@
 				}),
 				Variable,
 				EmailButton,
-				EmailDivider
+				EmailDivider,
+				ListExitExtension
 			],
 			content: initialContent,
 			onTransaction: () => {
@@ -332,7 +375,9 @@
 			onSelectionUpdate: ({ editor }) => {
 				// Track if there's a text selection for toolbar highlighting
 				const { from, to } = editor.state.selection;
-				hasSelection = from !== to;
+				const selected = from !== to;
+				hasSelection = selected;
+				textIsSelected = selected;
 			},
 			onUpdate: ({ editor }) => {
 				// Convert variable nodes back to {{syntax}} for storage
@@ -663,12 +708,13 @@
 
 			<div class="w-px h-6 bg-gray-300 mx-1"></div>
 
-			<!-- Link -->
+			<!-- Link (only enabled when text is selected) -->
 			<button
 				type="button"
-				onclick={(e) => toggleLink(e.currentTarget)}
-				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
-				title="Add Link"
+				onclick={(e) => { if (textIsSelected) toggleLink(e.currentTarget); }}
+				disabled={!textIsSelected}
+				class="p-2 rounded transition-colors {textIsSelected ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
+				title={textIsSelected ? "Add Link" : "Select text to add link"}
 			>
 				<Link2 size={18} />
 			</button>

@@ -1,27 +1,97 @@
 # Unified TipTap Rich Text Editor
 
-## Problem
+## Current Architecture (The Problem)
 
-Currently we have multiple editor components with different approaches:
+We have a confusing layered architecture with duplicate toolbars:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CURRENT EDITOR STACK                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  EmailBodyEditor.svelte (wrapper)                               │
+│  ├── Has its OWN sidebar toolbar ← DUPLICATE UI                 │
+│  ├── Email preview frame                                        │
+│  ├── Variable picker dropdown                                   │
+│  └── Wraps ↓                                                    │
+│                                                                 │
+│      TipTapEmailEditor.svelte (core)                            │
+│      ├── TipTap/ProseMirror engine                              │
+│      ├── Has its OWN optional toolbar (showFixedToolbar)        │
+│      ├── Custom extensions (Variable, EmailButton, Divider)     │
+│      └── Link/Button popovers                                   │
+│                                                                 │
+│  SimplifiedRichTextEditor.svelte (completely separate)          │
+│  ├── Raw contenteditable (NOT TipTap)                           │
+│  ├── Has Safari bugs (workarounds applied)                      │
+│  └── Used for reflections & course materials                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### The Issues
 
 | Component | Technology | Used For | Issues |
 |-----------|-----------|----------|--------|
-| `TipTapEmailEditor` | TipTap (ProseMirror) | Email editing | None - works well |
-| `SimplifiedRichTextEditor` | Raw contenteditable | Reflections, Course materials | Safari bugs, cursor issues |
+| `TipTapEmailEditor` | TipTap | Core editor engine | Has optional toolbar that's rarely used |
+| `EmailBodyEditor` | Wrapper | Email editing UI | **Duplicates toolbar** from TipTapEmailEditor |
+| `SimplifiedRichTextEditor` | Raw contenteditable | Reflections, Materials | Safari bugs, fragile |
 
-The raw contenteditable approach in `SimplifiedRichTextEditor` causes Safari-specific bugs where characters appear on separate lines due to DOM manipulation interfering with browser input handling.
+**Key Problem**: `EmailBodyEditor` wraps `TipTapEmailEditor` but implements its own toolbar instead of using `TipTapEmailEditor`'s built-in toolbar. This means:
+- Two sets of toolbar buttons to maintain
+- Fixes need to be applied in multiple places (e.g., link button disable state)
+- Inconsistent behavior possible between toolbars
 
 ## Solution
 
-Create a single unified TipTap-based editor with configurable presets.
+Create a single unified TipTap-based editor with:
+1. **One toolbar implementation** (not duplicated in wrapper)
+2. **Configurable presets** for different use cases
+3. **Toolbar layout options** (horizontal, vertical sidebar)
+
+### Target Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TARGET EDITOR STACK                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  UnifiedRichTextEditor.svelte                                   │
+│  ├── TipTap/ProseMirror engine                                  │
+│  ├── Single toolbar (configurable layout)                       │
+│  ├── Preset system (email, reflection, minimal)                 │
+│  ├── Optional email preview wrapper                             │
+│  └── All extensions (loaded based on preset)                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Usage
 
 ```svelte
+<!-- For reflections -->
 <UnifiedRichTextEditor
   bind:content
   preset="reflection"
   placeholder="Begin writing your reflection..."
+/>
+
+<!-- For emails with sidebar toolbar -->
+<UnifiedRichTextEditor
+  bind:content
+  preset="email"
+  toolbarLayout="sidebar"
+  {availableVariables}
+/>
+
+<!-- For emails with preview frame -->
+<UnifiedRichTextEditor
+  bind:content
+  preset="email"
+  toolbarLayout="sidebar"
+  showPreviewFrame={true}
+  brandName="Course Name"
+  {accentColor}
 />
 ```
 
@@ -39,11 +109,17 @@ Create a single unified TipTap-based editor with configurable presets.
 | Email buttons | ✅ | ❌ | ❌ |
 | Dividers | ✅ | ❌ | ❌ |
 | Variables `{{name}}` | ✅ | ❌ | ❌ |
-| Placeholder | ✅ | ✅ | ✅ |
+
+### Toolbar Layouts
+
+| Layout | Description | Used For |
+|--------|-------------|----------|
+| `horizontal` | Above editor, wraps on mobile | General use |
+| `sidebar` | Vertical left side, sticky | Email editing |
+| `minimal` | Floating on selection | Clean writing experience |
+| `none` | No toolbar (keyboard shortcuts only) | Embedded uses |
 
 ### Feature Overrides
-
-Presets can be overridden with individual feature flags:
 
 ```svelte
 <UnifiedRichTextEditor
@@ -55,18 +131,41 @@ Presets can be overridden with individual feature flags:
 
 ## Implementation Approach
 
-1. **Single component**: `UnifiedRichTextEditor.svelte`
-2. **Modular extensions**: TipTap extensions loaded conditionally based on preset
-3. **Dynamic toolbar**: Only render buttons for enabled features
-4. **Shared styling**: CSS that works across all presets
+### Phase 1: Consolidate TipTap Editors
+
+1. Move toolbar from `EmailBodyEditor` INTO `TipTapEmailEditor`
+2. Add `toolbarLayout` prop to `TipTapEmailEditor` (horizontal/sidebar/none)
+3. Remove duplicate toolbar from `EmailBodyEditor`
+4. `EmailBodyEditor` becomes a thin wrapper for preview frame only
+
+### Phase 2: Add Preset System
+
+1. Add `preset` prop to `TipTapEmailEditor`
+2. Conditionally load extensions based on preset
+3. Conditionally render toolbar buttons based on preset
+4. Rename to `UnifiedRichTextEditor`
+
+### Phase 3: Replace SimplifiedRichTextEditor
+
+1. Test `UnifiedRichTextEditor` with `preset="reflection"`
+2. Replace usages:
+   - `/courses/[slug]/write/[questionId]/+page.svelte`
+   - `MaterialEditor.svelte`
+   - `AddMaterialModal.svelte`
+3. Delete `SimplifiedRichTextEditor.svelte`
 
 ### TipTap Extensions by Preset
 
 ```javascript
 // Base extensions (all presets)
 const baseExtensions = [
-  StarterKit.configure({ heading: false, bulletList: false, orderedList: false }),
-  Placeholder.configure({ placeholder })
+  StarterKit.configure({
+    heading: false,
+    bulletList: false,
+    orderedList: false
+  }),
+  Placeholder.configure({ placeholder }),
+  ListExitExtension  // Exit lists on Enter when empty
 ];
 
 // Preset-specific extensions
@@ -89,34 +188,47 @@ const presetExtensions = {
 
 ## Migration Path
 
-1. Create `UnifiedRichTextEditor.svelte`
-2. Test with reflection preset
-3. Replace `SimplifiedRichTextEditor` usage:
-   - `/courses/[slug]/write/[questionId]/+page.svelte`
-   - `MaterialEditor.svelte`
-   - `AddMaterialModal.svelte`
-4. Optionally migrate `TipTapEmailEditor` to use the unified component
-5. Delete `SimplifiedRichTextEditor.svelte`
+| Step | Task | Effort |
+|------|------|--------|
+| 1 | Consolidate toolbars (Phase 1) | 1 hour |
+| 2 | Add preset system (Phase 2) | 1-2 hours |
+| 3 | Test email editing still works | 30 min |
+| 4 | Replace SimplifiedRichTextEditor usages | 30 min |
+| 5 | Test reflections in Safari | 30 min |
+| 6 | Delete old components | 10 min |
 
-## Estimated Effort
+**Total: ~4 hours**
 
-- Initial implementation: 1-2 hours
-- Testing across browsers: 30 min
-- Migration of existing usages: 30 min
+## Files to Modify/Delete
+
+### Modify
+- `TipTapEmailEditor.svelte` → becomes `UnifiedRichTextEditor.svelte`
+- `EmailBodyEditor.svelte` → thin wrapper, toolbar removed
+
+### Delete
+- `SimplifiedRichTextEditor.svelte`
+- `RichTextEditor.svelte` (already deleted - was dead code)
 
 ## Benefits
 
 - **No Safari bugs**: TipTap handles all browser quirks
+- **Single toolbar**: One place to fix/enhance toolbar behavior
 - **Single source of truth**: One editor component to maintain
 - **Consistent UX**: Same editing experience across the app
 - **Easier to extend**: Add features once, available to all presets
 
 ## Current Workarounds
 
-Until this is implemented, `SimplifiedRichTextEditor` has these Safari fixes applied:
+Until this refactor is done:
+
+**SimplifiedRichTextEditor** has these Safari fixes:
 - Debounced DOM normalization (300ms)
 - Focus handler to place cursor inside paragraphs
 - Internal update flag to prevent effect re-initialization
 - CSS fixes for `-apple-system` font and `text-rendering`
 
-These workarounds are functional but fragile. The TipTap migration is the proper long-term fix.
+**TipTapEmailEditor + EmailBodyEditor** both have:
+- Link button disabled when no text selected (fixed in both places)
+- List exit on empty Enter
+
+These workarounds are functional but the duplicate toolbar is technical debt.

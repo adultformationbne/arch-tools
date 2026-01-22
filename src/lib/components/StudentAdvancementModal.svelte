@@ -3,7 +3,15 @@
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 
-	let { cohort, students, show = $bindable(false), onComplete, courseSlug } = $props();
+	let {
+		cohort,
+		students,
+		show = $bindable(false),
+		onComplete,
+		courseSlug,
+		// Optional: pre-select specific student IDs when modal opens
+		initialSelectedIds = []
+	} = $props();
 
 	let selectedSession = $state((cohort?.current_session || 0) + 1);
 	let selectedStudents = $state([]);
@@ -83,11 +91,19 @@
 		}
 	}
 
-	// Reset selected session when modal opens
+	// Reset selected session when modal opens, pre-select students if provided
 	$effect(() => {
 		if (show && cohort) {
 			selectedSession = (cohort.current_session || 0) + 1;
-			selectedStudents = [];
+
+			// If initialSelectedIds provided, pre-select eligible students from that list
+			if (initialSelectedIds && initialSelectedIds.length > 0) {
+				// Filter to only include IDs that are eligible students (not coordinators)
+				const eligibleStudentIds = eligibleStudents.map(s => s.id);
+				selectedStudents = initialSelectedIds.filter(id => eligibleStudentIds.includes(id));
+			} else {
+				selectedStudents = [];
+			}
 		}
 	});
 </script>

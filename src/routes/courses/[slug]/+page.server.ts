@@ -21,9 +21,10 @@ export const load: PageServerLoad = async (event) => {
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
-	// Get course settings for feature toggles
+	// Get course settings for feature toggles and coordinator access
 	const courseSettings = getCourseSettings(course?.settings);
 	const featureSettings = courseSettings.features;
+	const coordinatorAccessAhead = courseSettings.coordinatorAccess?.sessionsAhead ?? 'all';
 
 	// Get all dashboard data in one optimized call
 	const result = await CourseAggregates.getStudentDashboard(user.id, courseSlug, cohortId);
@@ -277,10 +278,28 @@ export const load: PageServerLoad = async (event) => {
 		])
 	);
 
+	// Calculate available sessions based on role and coordinator access settings
+	// - Students: only up to their current_session
+	// - Coordinators: based on settings (all or N sessions ahead)
+	// - Admins: all sessions
+	let availableSessions: number;
+	if (userRole === 'admin') {
+		availableSessions = maxSessionNumber;
+	} else if (userRole === 'coordinator') {
+		if (coordinatorAccessAhead === 'all') {
+			availableSessions = maxSessionNumber;
+		} else {
+			availableSessions = Math.min(currentSession + coordinatorAccessAhead, maxSessionNumber);
+		}
+	} else {
+		availableSessions = currentSession;
+	}
+
 	return {
 		materials: materials.filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials),
 		materialsBySession: filteredMaterialsBySession,
 		currentSession,
+		availableSessions,
 		courseData,
 		questionsBySession,
 		sessionsByNumber,

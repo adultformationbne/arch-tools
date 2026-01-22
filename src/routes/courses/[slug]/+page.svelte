@@ -9,13 +9,15 @@
 	let { data } = $props();
 
 	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber, featureSettings } = data;
+	const { materialsBySession, currentSession: initialSession, availableSessions: serverAvailableSessions, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber, featureSettings } = data;
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
-	// Students can only access sessions up to their current_session
-	// If current_session is 0 (not started), they can't access any sessions
-	let availableSessions = $state(initialSession);
+	// Available sessions is calculated server-side based on role and coordinator access settings
+	// - Students: only up to their current_session
+	// - Coordinators: based on course settings (all or N sessions ahead)
+	// - Admins: all sessions
+	let availableSessions = $state(serverAvailableSessions);
 	let showReflectionModal = $state(false);
 	let selectedReflection = $state(null);
 
