@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Edit3, ChevronLeft, ChevronRight, ChevronDown } from '$lib/icons';
+	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 
@@ -90,6 +90,14 @@
 			truncated: text.slice(0, QUESTION_TRUNCATE_LENGTH) + '...',
 			needsTruncation: true
 		};
+	};
+
+	// Helper to get reflection button label based on status
+	const getReflectionButtonLabel = (status) => {
+		if (status === 'draft') return 'Continue';
+		if (status === 'not_started') return 'Write';
+		if (isComplete(status)) return 'View';
+		return 'Edit';
 	};
 </script>
 
@@ -275,8 +283,12 @@
 											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
 											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											<Edit3 size="14" />
-											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+											{#if isComplete(currentSessionData.reflectionStatus)}
+												<Eye size="14" />
+											{:else}
+												<Edit3 size="14" />
+											{/if}
+											{getReflectionButtonLabel(currentSessionData.reflectionStatus)}
 										</a>
 									</div>
 								{:else}
@@ -464,8 +476,12 @@
 											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
 											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											<Edit3 size="14" />
-											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+											{#if isComplete(currentSessionData.reflectionStatus)}
+												<Eye size="14" />
+											{:else}
+												<Edit3 size="14" />
+											{/if}
+											{getReflectionButtonLabel(currentSessionData.reflectionStatus)}
 										</a>
 									</div>
 								{:else}
@@ -649,8 +665,12 @@
 											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
 											style="background-color: var(--course-accent-dark, #334642);"
 										>
-											<Edit3 size="14" />
-											{currentSessionData.reflectionStatus === 'draft' ? 'Continue' : currentSessionData.reflectionStatus === 'not_started' ? 'Write' : 'Edit'}
+											{#if isComplete(currentSessionData.reflectionStatus)}
+												<Eye size="14" />
+											{:else}
+												<Edit3 size="14" />
+											{/if}
+											{getReflectionButtonLabel(currentSessionData.reflectionStatus)}
 										</a>
 									</div>
 								{:else}
