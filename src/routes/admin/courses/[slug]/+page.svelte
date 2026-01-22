@@ -1,9 +1,12 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus } from '$lib/icons';
+	import { getContext } from 'svelte';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus } from '$lib/icons';
+
+	// Get modal opener from layout context
+	const openCohortWizard = getContext('openCohortWizard');
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
-	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
@@ -24,7 +27,6 @@
 	let cohorts = $derived(data.cohorts || []);
 
 	// Modal state
-	let showCohortWizard = $state(false);
 	let showCohortSettings = $state(false);
 	let showStudentEnrollment = $state(false);
 	let showAdvancementModal = $state(false);
@@ -90,14 +92,6 @@
 					.filter(s => s && s.current_session < selectedCohort.current_session)
 			: []
 	);
-
-	// Handle action param for new cohort wizard
-	$effect(() => {
-		const actionParam = $page.url.searchParams.get('action');
-		if (actionParam === 'new-cohort') {
-			showCohortWizard = true;
-		}
-	});
 
 	// Load participants when cohort changes
 	$effect(() => {
@@ -398,16 +392,6 @@
 	}
 
 	// Modal handlers
-	async function handleWizardComplete(result) {
-		showCohortWizard = false;
-		await invalidateAll();
-
-		// Navigate to the new cohort
-		if (result?.cohortId) {
-			goto(`/admin/courses/${courseSlug}?cohort=${result.cohortId}`);
-		}
-	}
-
 	async function handleEnrollmentComplete() {
 		showStudentEnrollment = false;
 		await invalidateAll();
@@ -483,7 +467,29 @@
 
 	<!-- Main Content Area -->
 	<div class="flex-1 overflow-y-auto" style="background-color: var(--course-accent-dark);">
-		{#if !selectedCohort}
+		{#if cohorts.length === 0}
+			<!-- No cohorts exist yet -->
+			<div class="flex items-center justify-center h-full p-8">
+				<div class="text-center max-w-md">
+					<div class="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
+						<Users size={40} class="text-white/60" />
+					</div>
+					<h2 class="text-2xl font-bold text-white mb-3">Create Your First Cohort</h2>
+					<p class="text-white/70 mb-8">
+						Cohorts are groups of participants taking your course together. Create one to start enrolling participants.
+					</p>
+					<button
+						onclick={openCohortWizard}
+						class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
+						style="background-color: var(--course-accent-light); color: white;"
+					>
+						<Plus size={20} />
+						Create a Cohort
+					</button>
+				</div>
+			</div>
+		{:else if !selectedCohort}
+			<!-- Cohorts exist but none selected -->
 			<div class="flex items-center justify-center h-full">
 				<div class="text-center">
 					<h2 class="text-xl font-bold text-white mb-2">Select a Cohort</h2>
@@ -704,14 +710,6 @@
 </div>
 
 <!-- Modals -->
-<CohortCreationWizard
-	{courseSlug}
-	{modules}
-	show={showCohortWizard}
-	onClose={() => showCohortWizard = false}
-	onComplete={handleWizardComplete}
-/>
-
 <CohortSettingsModal
 	show={showCohortSettings}
 	cohort={selectedCohort}

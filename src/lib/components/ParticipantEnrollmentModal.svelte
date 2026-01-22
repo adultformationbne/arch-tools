@@ -148,13 +148,13 @@
 
 					<div class="choice-grid">
 						<button type="button" onclick={() => selectMode('single')} class="choice-card">
-							<UserPlus size={48} color="var(--course-accent-darkest)" />
+							<UserPlus size={48} color="#1f2937" />
 							<h3>Add Single Participant</h3>
 							<p>Manually enter participant information</p>
 						</button>
 
 						<button type="button" onclick={() => selectMode('bulk')} class="choice-card">
-							<Users size={48} color="var(--course-accent-darkest)" />
+							<Users size={48} color="#1f2937" />
 							<h3>Bulk Upload</h3>
 							<p>Import multiple participants via CSV</p>
 						</button>
@@ -298,14 +298,14 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		padding: 32px 32px 24px 32px;
-		border-bottom: 1px solid var(--course-surface);
+		border-bottom: 1px solid #e5e7eb;
 	}
 
 	.modal-header h2 {
 		margin: 0 0 8px 0;
 		font-weight: 700;
 		font-size: 2rem;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.cohort-name {
@@ -318,7 +318,7 @@
 		padding: 8px;
 		border: none;
 		background: transparent;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 		cursor: pointer;
 		border-radius: 8px;
 		transition: all 0.2s ease;
@@ -328,7 +328,7 @@
 	}
 
 	.close-button:hover {
-		background: var(--course-surface);
+		background: #e5e7eb;
 		color: var(--course-accent-dark);
 	}
 
@@ -362,7 +362,7 @@
 		padding: 32px 24px;
 		border: 2px solid #E5E7EB;
 		background: #F9FAFB;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 		border-radius: 12px;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -389,7 +389,7 @@
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.choice-card p {
@@ -415,7 +415,7 @@
 
 	.back-link:hover {
 		background: #F3F4F6;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.form-group {
@@ -426,7 +426,7 @@
 		display: block;
 		margin-bottom: 8px;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 		font-size: 0.875rem;
 	}
 
@@ -434,11 +434,11 @@
 	.form-group select {
 		width: 100%;
 		padding: 12px;
-		border: 2px solid #E5E7EB;
+		border: 2px solid #D1D5DB;
 		border-radius: 8px;
 		font-size: 1rem;
-		background: #F9FAFB;
-		color: var(--course-accent-darkest);
+		background: white;
+		color: #1f2937;
 		transition: all 0.2s ease;
 	}
 
@@ -457,12 +457,12 @@
 	.upload-result {
 		margin-top: 24px;
 		padding: 20px;
-		background: var(--course-surface);
+		background: #e5e7eb;
 		border-radius: 8px;
 	}
 
 	.success-text {
-		color: #28a745;
+		color: #1f2937;
 		margin-bottom: 12px;
 	}
 
@@ -512,7 +512,7 @@
 		display: flex;
 		gap: 12px;
 		padding-top: 24px;
-		border-top: 1px solid var(--course-surface);
+		border-top: 1px solid #e5e7eb;
 		margin-top: 24px;
 	}
 
@@ -534,7 +534,7 @@
 	.btn-primary {
 		flex: 1;
 		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		color: white;
 	}
 
 	.btn-primary:hover:not(:disabled) {
@@ -548,12 +548,12 @@
 	}
 
 	.btn-secondary {
-		background: transparent;
-		color: var(--course-accent-dark);
-		border: 1px solid var(--course-surface);
+		background: #f3f4f6;
+		color: #374151;
+		border: 1px solid #d1d5db;
 	}
 
 	.btn-secondary:hover {
-		background: var(--course-surface);
+		background: #e5e7eb;
 	}
 </style>

@@ -280,8 +280,8 @@ function handleMouseEnter(href) {
 
 	.logo-section {
 		flex-shrink: 0;
-		height: 48px;
-		padding: 8px;
+		height: 64px;
+		padding: 12px;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		display: flex;
 		justify-content: center;
@@ -290,8 +290,8 @@ function handleMouseEnter(href) {
 	}
 
 	.course-logo {
-		max-width: 100px;
-		max-height: 32px;
+		max-width: 140px;
+		max-height: 44px;
 		width: auto;
 		height: auto;
 		object-fit: contain;

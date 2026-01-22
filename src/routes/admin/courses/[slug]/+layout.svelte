@@ -1,7 +1,9 @@
 <script>
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page, navigating } from '$app/stores';
+	import { setContext } from 'svelte';
 	import CourseAdminSidebar from '$lib/components/CourseAdminSidebar.svelte';
+	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 
 	let { data, children } = $props();
 
@@ -18,7 +20,7 @@
 	});
 
 	const courseSlug = data.courseSlug;
-	const modules = data.userModules || [];
+	const modules = data.modules || [];
 	const enrollmentRole = data.enrollmentRole;
 	const isCourseAdmin = data.isCourseAdmin;
 	let cohorts = $derived(data.cohorts || []);
@@ -29,14 +31,30 @@
 	const accentDark = courseTheme.accentDark || '#334642';
 	const accentLight = courseTheme.accentLight || '#c59a6b';
 
+	// Cohort wizard modal state
+	let showCohortWizard = $state(false);
+
 	// Extract cohort selection from URL - works on all admin pages
 	const selectedCohortId = $derived(() => {
 		return $page.url.searchParams.get('cohort');
 	});
 
 	function handleNewCohort() {
-		// Navigate to dashboard and trigger new cohort wizard
-		goto(`/admin/courses/${courseSlug}?action=new-cohort`);
+		// Open modal directly - no navigation needed
+		showCohortWizard = true;
+	}
+
+	// Expose to child pages via context
+	setContext('openCohortWizard', handleNewCohort);
+
+	async function handleWizardComplete(result) {
+		showCohortWizard = false;
+		await invalidateAll();
+
+		// Navigate to the new cohort
+		if (result?.cohortId) {
+			goto(`/admin/courses/${courseSlug}?cohort=${result.cohortId}`);
+		}
 	}
 
 	function handleSelectCohort(cohortId) {
@@ -71,6 +89,15 @@
 	<main class="admin-content">
 		{@render children()}
 	</main>
+
+	<!-- Cohort Creation Wizard - inside layout for CSS variable access -->
+	<CohortCreationWizard
+		{courseSlug}
+		{modules}
+		show={showCohortWizard}
+		onClose={() => showCohortWizard = false}
+		onComplete={handleWizardComplete}
+	/>
 </div>
 
 <style>

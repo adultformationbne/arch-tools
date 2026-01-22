@@ -430,15 +430,15 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		justify-content: space-between;
 		gap: 16px;
 		padding: 12px 16px;
-		background: #eff6ff;
-		border: 1px solid #bfdbfe;
+		background: #f9fafb;
+		border: 1px solid #e5e7eb;
 		border-radius: 8px;
 		margin-bottom: 16px;
 	}
 
 	.template-text {
 		font-size: 0.875rem;
-		color: #1e40af;
+		color: #374151;
 	}
 
 	.template-text strong {
@@ -450,7 +450,7 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		align-items: center;
 		gap: 6px;
 		padding: 8px 14px;
-		background: #2563eb;
+		background: #374151;
 		color: white;
 		border: none;
 		border-radius: 6px;
@@ -462,27 +462,27 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	}
 
 	.btn-template:hover {
-		background: #1d4ed8;
+		background: #1f2937;
 	}
 
 	.upload-area {
-		border: 2px dashed var(--course-accent-light);
+		border: 2px dashed #d1d5db;
 		border-radius: 12px;
 		padding: 48px 24px;
 		text-align: center;
-		background: var(--course-lightest);
+		background: #f9fafb;
 		transition: all 0.2s ease;
 		cursor: pointer;
 	}
 
 	.upload-area:hover:not(.disabled) {
-		border-color: var(--course-accent-dark);
-		background: var(--course-surface);
+		border-color: #9ca3af;
+		background: #f3f4f6;
 	}
 
 	.upload-area.drag-active {
-		border-color: var(--course-accent-dark);
-		background: var(--course-surface);
+		border-color: #6b7280;
+		background: #f3f4f6;
 		transform: scale(1.02);
 	}
 
@@ -502,24 +502,24 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		align-items: center;
 		gap: 12px;
 		cursor: pointer;
-		color: var(--course-accent-dark);
+		color: #6b7280;
 	}
 
 	.upload-label h3 {
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.upload-label p {
 		margin: 0;
-		color: var(--course-accent-dark);
+		color: #6b7280;
 	}
 
 	.format-hint {
 		font-size: 0.875rem;
-		color: var(--course-accent-light) !important;
+		color: #9ca3af !important;
 		margin-top: 8px !important;
 	}
 
@@ -536,14 +536,14 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		left: 0;
 		right: 0;
 		height: 1px;
-		background: var(--course-surface);
+		background: #e5e7eb;
 	}
 
 	.divider span {
 		position: relative;
 		background: white;
 		padding: 0 16px;
-		color: var(--course-accent-dark);
+		color: #6b7280;
 		font-size: 0.875rem;
 		font-weight: 600;
 	}
@@ -555,9 +555,9 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		justify-content: center;
 		gap: 8px;
 		padding: 14px;
-		border: 2px dashed var(--course-accent-light);
+		border: 2px dashed #d1d5db;
 		background: white;
-		color: var(--course-accent-dark);
+		color: #374151;
 		font-size: 1rem;
 		font-weight: 600;
 		border-radius: 8px;
@@ -566,12 +566,12 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	}
 
 	.btn-paste:hover {
-		border-color: var(--course-accent-dark);
-		background: var(--course-surface);
+		border-color: #9ca3af;
+		background: #f9fafb;
 	}
 
 	.paste-area {
-		border: 1px solid var(--course-surface);
+		border: 1px solid #e5e7eb;
 		border-radius: 12px;
 		padding: 24px;
 		background: white;
@@ -584,24 +584,24 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		margin: 0 0 12px 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.help-text {
 		margin: 0 0 16px 0;
 		font-size: 0.875rem;
-		color: var(--course-accent-dark);
+		color: #6b7280;
 		line-height: 1.5;
 	}
 
 	.help-text strong {
-		color: var(--course-accent-light);
+		color: #374151;
 	}
 
 	textarea {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--course-surface);
+		border: 1px solid #d1d5db;
 		border-radius: 8px;
 		font-family: 'Courier New', monospace;
 		font-size: 0.875rem;
@@ -611,7 +611,7 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 
 	textarea:focus {
 		outline: none;
-		border-color: var(--course-accent-light);
+		border-color: #9ca3af;
 	}
 
 	.paste-actions {
@@ -623,8 +623,8 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		flex: 1;
 		padding: 12px 24px;
 		border: none;
-		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		background: #374151;
+		color: white;
 		font-size: 1rem;
 		font-weight: 600;
 		border-radius: 8px;
@@ -633,8 +633,7 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background: var(--course-accent-dark);
-		color: white;
+		background: #1f2937;
 	}
 
 	.btn-primary:disabled {
@@ -647,9 +646,9 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		align-items: center;
 		gap: 16px;
 		padding: 20px;
-		border: 1px solid var(--course-surface);
+		border: 1px solid #e5e7eb;
 		border-radius: 8px;
-		background: var(--course-lightest);
+		background: #f9fafb;
 	}
 
 	.file-info {
@@ -659,13 +658,13 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	.file-name {
 		margin: 0;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.file-size {
 		margin: 4px 0 0 0;
 		font-size: 0.875rem;
-		color: var(--course-accent-dark);
+		color: #6b7280;
 	}
 
 	.message {
@@ -679,22 +678,22 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	}
 
 	.message.error {
-		background: #fee;
-		color: #c00;
-		border: 1px solid #fcc;
+		background: #fef2f2;
+		color: #dc2626;
+		border: 1px solid #fecaca;
 	}
 
 	.message.processing {
-		background: #fef9e7;
-		color: #856404;
-		border: 1px solid #ffeaa7;
+		background: #f9fafb;
+		color: #374151;
+		border: 1px solid #e5e7eb;
 	}
 
 	.btn-secondary {
 		padding: 8px 16px;
-		border: 1px solid var(--course-accent-light);
-		background: transparent;
-		color: var(--course-accent-dark);
+		border: 1px solid #d1d5db;
+		background: #f3f4f6;
+		color: #374151;
 		border-radius: 6px;
 		font-weight: 600;
 		cursor: pointer;
@@ -702,14 +701,14 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 	}
 
 	.btn-secondary:hover {
-		background: var(--course-surface);
+		background: #e5e7eb;
 	}
 
 	.spinner {
 		width: 20px;
 		height: 20px;
 		border: 3px solid rgba(0, 0, 0, 0.1);
-		border-top-color: var(--course-accent-light);
+		border-top-color: #6b7280;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}

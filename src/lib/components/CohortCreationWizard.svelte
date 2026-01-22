@@ -205,11 +205,8 @@
 
 						<div class="modal-actions">
 							<button type="button" onclick={handleClose} class="btn-secondary">Cancel</button>
-							<button type="button" onclick={handleClose} class="btn-secondary">
-								Skip for Now
-							</button>
 							<button type="submit" class="btn-primary" disabled={isLoading}>
-								{isLoading ? 'Creating...' : 'Continue to Add Participants'}
+								{isLoading ? 'Creating...' : 'Continue'}
 								<ChevronRight size={20} />
 							</button>
 						</div>
@@ -336,14 +333,14 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		padding: 32px 32px 24px 32px;
-		border-bottom: 1px solid var(--course-surface);
+		border-bottom: 1px solid #e5e7eb;
 	}
 
 	.modal-header h2 {
 		margin: 0 0 12px 0;
 		font-weight: 700;
 		font-size: 2rem;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.step-indicator {
@@ -351,7 +348,7 @@
 		align-items: center;
 		gap: 8px;
 		font-size: 0.875rem;
-		color: var(--course-accent-dark);
+		color: #9ca3af;
 	}
 
 	.step-indicator span {
@@ -359,12 +356,12 @@
 	}
 
 	.step-indicator span.active {
-		color: var(--course-accent-light);
+		color: #1f2937;
 		font-weight: 600;
 	}
 
 	.step-indicator span.completed {
-		color: #28a745;
+		color: #6b7280;
 	}
 
 	.close-button {
@@ -378,7 +375,7 @@
 	}
 
 	.close-button:hover {
-		background: var(--course-surface);
+		background: #e5e7eb;
 	}
 
 	.modal-body {
@@ -395,7 +392,7 @@
 		margin: 0 0 8px 0;
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.step-intro p {
@@ -411,7 +408,7 @@
 		display: block;
 		margin-bottom: 8px;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 		font-size: 0.875rem;
 	}
 
@@ -419,16 +416,19 @@
 	.form-group select {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid var(--course-surface);
+		border: 2px solid #D1D5DB;
 		border-radius: 8px;
 		font-size: 1rem;
-		transition: border-color 0.2s ease;
+		background: white;
+		color: #1f2937;
+		transition: all 0.2s ease;
 	}
 
 	.form-group input:focus,
 	.form-group select:focus {
 		outline: none;
 		border-color: var(--course-accent-light);
+		box-shadow: 0 0 0 3px rgba(197, 154, 107, 0.1);
 	}
 
 	.help-text {
@@ -438,7 +438,7 @@
 	}
 
 	.review-section {
-		background: var(--course-surface);
+		background: #e5e7eb;
 		border-radius: 8px;
 		padding: 20px;
 		margin-bottom: 24px;
@@ -448,7 +448,7 @@
 		margin: 0 0 16px 0;
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.review-section dl {
@@ -465,7 +465,7 @@
 
 	.review-section dd {
 		margin: 0;
-		color: var(--course-accent-darkest);
+		color: #1f2937;
 	}
 
 	.participants-summary {
@@ -477,7 +477,7 @@
 	}
 
 	.success-text {
-		color: #28a745;
+		color: #1f2937;
 		margin-bottom: 12px;
 	}
 
@@ -514,7 +514,7 @@
 		display: flex;
 		gap: 12px;
 		padding-top: 24px;
-		border-top: 1px solid var(--course-surface);
+		border-top: 1px solid #e5e7eb;
 		margin-top: 32px;
 	}
 
@@ -535,7 +535,7 @@
 	.btn-primary {
 		flex: 1;
 		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		color: white;
 		justify-content: center;
 	}
 
@@ -550,13 +550,13 @@
 	}
 
 	.btn-secondary {
-		background: transparent;
-		color: var(--course-accent-dark);
-		border: 1px solid var(--course-surface);
+		background: #f3f4f6;
+		color: #374151;
+		border: 1px solid #d1d5db;
 	}
 
 	.btn-secondary:hover:not(:disabled) {
-		background: var(--course-surface);
+		background: #e5e7eb;
 	}
 
 	.btn-secondary:disabled {
