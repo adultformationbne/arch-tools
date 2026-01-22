@@ -144,7 +144,7 @@
 
 <!-- Hub Coordinator Bar -->
 {#if hubData}
-<div class="py-2">
+<div class="pt-6 pb-4">
 	<div class="max-w-7xl mx-auto">
 		<div
 			class="rounded-xl border transition-all duration-300 overflow-hidden"

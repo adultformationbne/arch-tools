@@ -101,7 +101,7 @@
 	};
 </script>
 
-<div class="pb-6">
+<div class="pt-4 pb-6">
 	<div class="max-w-7xl mx-auto">
 		{#if showTabbedSidebar}
 			<!-- Tabbed sidebar layout (for 6-12 sessions, including Pre-Start) -->
