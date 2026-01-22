@@ -1014,10 +1014,7 @@ export const CourseMutations = {
 			.insert(sessionsToCreate)
 			.select('id, session_number');
 
-		if (!sessionsError && createdSessions) {
-			// Auto-create reflection questions for each session
-			await this.ensureModuleReflectionQuestions(newModule.id);
-		}
+		// Note: Reflection questions are NOT auto-created - add them manually in course admin
 
 		return { data: newModule, error: null };
 	},
@@ -1174,9 +1171,6 @@ export const CourseMutations = {
 			return { data: null, error: cohortError };
 		}
 
-		// Create reflection questions for each week
-		await this.ensureModuleReflectionQuestions(moduleId);
-
 		return { data: newCohort, error: null };
 	},
 
@@ -1307,9 +1301,6 @@ export const CourseMutations = {
 		if (createError) {
 			return { data: null, error: createError };
 		}
-
-		// Ensure module-level reflection questions exist
-		await this.ensureModuleReflectionQuestions(originalCohort.module_id);
 
 		return { data: newCohort, error: null };
 	},
