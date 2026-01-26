@@ -3,7 +3,7 @@
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
-	let selectedYear = $state(2025);
+	let selectedYear = $state(null);
 	let availableYears = $state([]);
 	let calendarData = $state([]);
 	let loading = $state(false);
@@ -17,7 +17,13 @@
 	// Load available years on mount
 	$effect(() => {
 		loadAvailableYears();
-		loadCalendarForYear(selectedYear);
+	});
+
+	// Load calendar when selectedYear changes
+	$effect(() => {
+		if (selectedYear) {
+			loadCalendarForYear(selectedYear);
+		}
 	});
 
 	async function loadAvailableYears() {
@@ -26,6 +32,10 @@
 			const data = await response.json();
 			if (data.success) {
 				availableYears = data.years;
+				// Default to the latest year
+				if (data.years.length > 0) {
+					selectedYear = Math.max(...data.years);
+				}
 			}
 		} catch (error) {
 			console.error('Failed to load years:', error);
@@ -365,7 +375,6 @@
 		<select
 			id="year-selector"
 			bind:value={selectedYear}
-			onchange={() => loadCalendarForYear(selectedYear)}
 			class="rounded-lg border border-gray-300 px-4 py-2 font-semibold focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600"
 		>
 				{#each availableYears as year}

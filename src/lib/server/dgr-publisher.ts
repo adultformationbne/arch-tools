@@ -60,7 +60,7 @@ export async function publishDGRToWordPress(params: PublishParams): Promise<Publ
 	const truncatedText = words.length > 50 ? words.slice(0, 50).join(' ') + '...' : normalizedText;
 
 	const excerpt = `${params.title} – ${params.liturgicalDate}<br><br><br>
-<I>${params.gospelQuote}</I><br><br>
+<I>${params.gospelQuote}${params.gospelReference ? ` (${params.gospelReference})` : ''}</I><br><br>
 ${truncatedText}`;
 
 	// Get the active template

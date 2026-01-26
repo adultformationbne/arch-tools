@@ -1,6 +1,6 @@
 # Liturgical System - Complete Reference
 
-> **Last Updated:** December 2025
+> **Last Updated:** January 2026
 > **Coverage:** 2025-2030 (730 days currently mapped)
 
 This document covers the complete liturgical calendar, lectionary readings, and DGR (Daily Gospel Reflection) integration.
@@ -14,9 +14,10 @@ This document covers the complete liturgical calendar, lectionary readings, and 
 3. [Database Schema](#database-schema)
 4. [Mapping Algorithm](#mapping-algorithm)
 5. [Scripts & Workflow](#scripts--workflow)
-6. [DGR Integration](#dgr-integration)
-7. [API Reference](#api-reference)
-8. [Ordo CSV Import](#ordo-csv-import)
+6. [CLI Reference](#cli-reference)
+7. [DGR Integration](#dgr-integration)
+8. [API Reference](#api-reference)
+9. [Ordo CSV Import](#ordo-csv-import)
 
 ---
 
@@ -74,7 +75,7 @@ WHERE oc.calendar_date = '2025-12-25';
 | **Memorial** | Most saints' days | **WEEKDAY readings** |
 | **Feria** | Ordinary weekdays | Weekday cycle |
 
-**Key Rule:** Memorials use WEEKDAY readings, not saint readings. Only Feasts and Solemnities use their proper readings.
+**Key Rule:** Memorials use WEEKDAY readings, not saint readings. Only Feasts and Solemnities use their proper readings. **Exception:** Apostles and Evangelists get proper readings even as Memorials.
 
 ### Seasons
 
@@ -156,15 +157,31 @@ Located in `scripts/generate_ordo_lectionary_mapping.py`
 
 ```python
 def find_lectionary_match(ordo_entry, lectionary_entries, year_letter, ordo_data):
-    # 1. For MEMORIALS: Always use weekday readings
+    # 1. For MEMORIALS: Use weekday readings (except apostles/evangelists)
     if ordo_rank in ['memorial', 'optional memorial']:
+        if is_apostle_or_evangelist(ordo_name):
+            # Apostles get proper readings even as memorials
+            return match_by_name_or_date(ordo_name, ordo_date)
         season, week = infer_season_and_week(ordo_date, ordo_data)
         return find_weekday_lectionary_entry(weekday, season, week)
 
-    # 2. For FEASTS/SOLEMNITIES: Match by date or name
+    # 2. For FEASTS/SOLEMNITIES: Match by name aliases, then date
     # 3. For SUNDAYS: Match by name
     # 4. For FERIA: Match by name
 ```
+
+### Name Alias System
+
+Ordo names often differ from Lectionary names. The algorithm uses keyword matching:
+
+```python
+# If Ordo name contains these keywords...     → Match this Lectionary pattern
+('our lady', 'help of christians')            → 'mary help of christians'
+('nativity', 'john', 'baptist')               → 'birth of john the baptist'
+('exaltation', 'cross')                       → 'exaltation of the cross'
+```
+
+This handles Australian-specific feasts and common naming variations.
 
 ### Memorial Handling
 
@@ -267,6 +284,132 @@ FROM inferred i WHERE oc.calendar_date = i.calendar_date AND i.season IS NOT NUL
 UPDATE ordo_calendar SET liturgical_season = 'Christmas'
 WHERE calendar_date >= '2025-12-25' AND calendar_date <= '2026-01-11';
 ```
+
+---
+
+## CLI Reference
+
+The mapping script includes CLI commands for checking dates, editing source data, and managing the mapping process.
+
+### Check a Specific Date
+
+```bash
+# Check mapping for a specific date
+python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
+```
+
+Output shows: Ordo entry, matched lectionary entry, readings, and match method.
+
+### List Unmatched Dates
+
+```bash
+# Find all dates with no lectionary match
+python3 scripts/generate_ordo_lectionary_mapping.py --list-unmatched
+```
+
+### List Special Handling
+
+```bash
+# List apostles/evangelists who get proper readings (not weekday)
+python3 scripts/generate_ordo_lectionary_mapping.py --list-apostles
+
+# List name alias mappings (Ordo → Lectionary)
+python3 scripts/generate_ordo_lectionary_mapping.py --list-aliases
+```
+
+### Edit Ordo CSV
+
+Edit `data/generated/ordo_normalized.csv` entries:
+
+```bash
+# Edit liturgical name
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --name "OUR LADY HELP OF CHRISTIANS"
+
+# Edit rank
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --rank Solemnity
+
+# Edit season and week
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-26 --season "Ordinary Time" --week 8
+
+# Combine multiple edits
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-07-22 --rank Feast --name "SAINT MARY MAGDALENE"
+```
+
+**Valid ranks:** `Solemnity`, `Feast`, `Memorial`, `Optional Memorial`, `Feria`
+**Valid seasons:** `Ordinary Time`, `Lent`, `Easter`, `Advent`, `Christmas`
+
+### Edit Lectionary CSV
+
+Edit `data/source/Lectionary.csv` entries (by admin_order ID):
+
+```bash
+# Edit first reading
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --first-reading "Sir 4:11-19"
+
+# Edit psalm
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --psalm "Ps 119:165, 168, 171-172, 174-175"
+
+# Edit gospel
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --gospel "Jn 19:25-27"
+
+# Combine multiple edits
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --first-reading "Sir 4:11-19" --psalm "Ps 119" --gospel "Jn 19:25-27"
+```
+
+### Generate and Push Mappings
+
+```bash
+# Generate CSV only (dry run)
+python3 scripts/generate_ordo_lectionary_mapping.py
+
+# Generate and push to database
+python3 scripts/generate_ordo_lectionary_mapping.py --push
+```
+
+### Typical Workflow
+
+```bash
+# 1. Check a date that seems wrong
+python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
+
+# 2. If Ordo data is wrong, fix it
+python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --rank Solemnity
+
+# 3. Regenerate and verify the fix
+python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
+
+# 4. Check for any remaining unmatched dates
+python3 scripts/generate_ordo_lectionary_mapping.py --list-unmatched
+
+# 5. When satisfied, push to production
+python3 scripts/generate_ordo_lectionary_mapping.py --push
+```
+
+### Apostles & Evangelists
+
+These saints get their **proper readings** even when ranked as Memorial (exception to the memorial rule):
+
+- Barnabas
+- Matthias
+- Mark
+- Luke
+- Timothy
+- Titus
+- Mary Magdalene (elevated to Feast by Pope Francis 2016)
+
+### Name Aliases
+
+The algorithm includes name mappings for Australian feasts and common variations:
+
+| Ordo Name Pattern | Maps To |
+|-------------------|---------|
+| "our lady" + "help of christians" | Mary Help of Christians |
+| "nativity" + "john" + "baptist" | Birth of John the Baptist |
+| "beheading" + "john" + "baptist" | Beheading of John the Baptist |
+| "exaltation" + "cross" | Exaltation of the Cross |
+| "chair" + "peter" | Chair of Peter |
+| "dedication" + "lateran" | Dedication of St John Lateran |
+| "faithful departed" | All Souls |
 
 ---
 
