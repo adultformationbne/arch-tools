@@ -1,21 +1,9 @@
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
-
 const MATERIALS_BUCKET = 'materials';
 const LOGOS_BUCKET = 'course-logos';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB for logos
 
-/**
- * Upload a file to the materials bucket
- * @param {File} file - The file to upload
- * @param {string} cohortId - The cohort ID for organization
- * @param {number} sessionNumber - The session number
- * @returns {Promise<{url: string, path: string, error?: string}>}
- */
-export async function uploadMaterial(file, cohortId, sessionNumber) {
+export async function uploadMaterial(supabase, file, cohortId, sessionNumber) {
 	try {
 		// Validate file size
 		if (file.size > MAX_FILE_SIZE) {
@@ -62,12 +50,7 @@ export async function uploadMaterial(file, cohortId, sessionNumber) {
 	}
 }
 
-/**
- * Delete a file from storage
- * @param {string} filePath - The file path to delete
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-export async function deleteMaterial(filePath) {
+export async function deleteMaterial(supabase, filePath) {
 	try {
 		const { error } = await supabase.storage
 			.from(MATERIALS_BUCKET)
@@ -88,11 +71,7 @@ export async function deleteMaterial(filePath) {
 	}
 }
 
-/**
- * Create the materials bucket if it doesn't exist
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-export async function initializeMaterialsBucket() {
+export async function initializeMaterialsBucket(supabase) {
 	try {
 		// Check if bucket exists
 		const { data: buckets, error: listError } = await supabase.storage.listBuckets();
@@ -136,13 +115,7 @@ export async function initializeMaterialsBucket() {
 	}
 }
 
-/**
- * List files in a specific cohort/session folder
- * @param {string} cohortId - The cohort ID
- * @param {number} sessionNumber - The session number
- * @returns {Promise<{files: Array, error?: string}>}
- */
-export async function listMaterials(cohortId, sessionNumber) {
+export async function listMaterials(supabase, cohortId, sessionNumber) {
 	try {
 		const folderPath = `cohort-${cohortId}/week-${sessionNumber}`;
 
@@ -165,13 +138,7 @@ export async function listMaterials(cohortId, sessionNumber) {
 	}
 }
 
-/**
- * Upload a course logo to the course-logos bucket
- * @param {File} file - The image file to upload
- * @param {string} courseSlug - The course slug for organization
- * @returns {Promise<{url: string, path: string, error?: string}>}
- */
-export async function uploadCourseLogo(file, courseSlug) {
+export async function uploadCourseLogo(supabase, file, courseSlug) {
 	try {
 		// Validate file size
 		if (file.size > MAX_LOGO_SIZE) {
@@ -221,12 +188,7 @@ export async function uploadCourseLogo(file, courseSlug) {
 	}
 }
 
-/**
- * Delete a course logo from storage
- * @param {string} filePath - The file path to delete
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-export async function deleteCourseLogo(filePath) {
+export async function deleteCourseLogo(supabase, filePath) {
 	try {
 		const { error } = await supabase.storage
 			.from(LOGOS_BUCKET)

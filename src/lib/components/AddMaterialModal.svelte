@@ -9,6 +9,7 @@
 	import { normalizeUrl } from '$lib/utils/form-validator.js';
 
 	let {
+		supabase,
 		isOpen = false,
 		sessionId = null,
 		courseId = null,
@@ -30,6 +31,7 @@
 	let title = $state('');
 	let url = $state('');
 	let content = $state('');
+	let description = $state('');
 	let coordinatorOnly = $state(false);
 
 	// YouTube preview
@@ -84,6 +86,7 @@
 		title = '';
 		url = '';
 		content = '';
+		description = '';
 		coordinatorOnly = false;
 		videoPreviewId = null;
 		saving = false;
@@ -106,6 +109,7 @@
 		// Check if any form fields have content
 		if (title.trim()) return true;
 		if (url.trim()) return true;
+		if (description.trim()) return true;
 		if (content.replace(/<[^>]*>/g, '').trim()) return true; // Strip HTML tags for native content
 
 		return false;
@@ -220,6 +224,7 @@
 					type: selectedType,
 					title: title.trim(),
 					content: materialContent,
+					description: selectedType === 'link' ? description.trim() : null,
 					display_order: materialsCount + 1,
 					coordinator_only: coordinatorOnly
 				})
@@ -234,6 +239,7 @@
 					title: material.title,
 					url: selectedType === 'native' ? '' : material.content,
 					content: selectedType === 'native' ? material.content : '',
+					description: material.description || '',
 					order: material.display_order,
 					coordinatorOnly: material.coordinator_only || false
 				};
@@ -464,6 +470,20 @@
 					/>
 				</div>
 
+				<!-- Description (optional) -->
+				<div>
+					<label for="material-description" class="block text-sm font-semibold mb-2 text-gray-700">
+						Description <span class="font-normal text-gray-500">(optional)</span>
+					</label>
+					<textarea
+						id="material-description"
+						bind:value={description}
+						placeholder="Brief description of this link..."
+						rows="2"
+						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 bg-white resize-none"
+					></textarea>
+				</div>
+
 			{:else if selectedType === 'native'}
 				<!-- Rich Text Editor -->
 				<div>
@@ -497,6 +517,7 @@
 						/>
 					</div>
 					<DocumentUpload
+						{supabase}
 						onUpload={handleDocumentUpload}
 						accept=".pdf,.doc,.docx,.txt,.md,.xls,.xlsx,.ppt,.pptx"
 						multiple={true}

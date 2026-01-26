@@ -306,6 +306,9 @@
 							<!-- Generic link -->
 							<div class="text-center py-12">
 								<h3 class="text-xl font-semibold mb-4">{selectedMaterial.title}</h3>
+								{#if selectedMaterial.description}
+									<p class="text-gray-600 mb-6 max-w-md mx-auto">{selectedMaterial.description}</p>
+								{/if}
 								<a
 									href={selectedMaterial.content}
 									target="_blank"

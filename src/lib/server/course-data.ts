@@ -2112,6 +2112,7 @@ export const CourseMutations = {
 		type: 'video' | 'document' | 'link' | 'native' | 'image' | 'embed' | 'mux_video';
 		title: string;
 		content: string;
+		description?: string | null;
 		displayOrder?: number;
 		coordinatorOnly?: boolean;
 		muxUploadId?: string;
@@ -2126,6 +2127,7 @@ export const CourseMutations = {
 				type: params.type,
 				title: params.title,
 				content: params.content,
+				description: params.description || null,
 				display_order: params.displayOrder || 0,
 				coordinator_only: params.coordinatorOnly || false,
 				mux_upload_id: params.muxUploadId || null,
@@ -2146,6 +2148,7 @@ export const CourseMutations = {
 			type?: string;
 			title?: string;
 			content?: string;
+			description?: string | null;
 			displayOrder?: number;
 			coordinatorOnly?: boolean;
 			muxUploadId?: string;
@@ -2159,6 +2162,7 @@ export const CourseMutations = {
 		if (updates.type) payload.type = updates.type;
 		if (updates.title) payload.title = updates.title;
 		if (updates.content) payload.content = updates.content;
+		if (updates.description !== undefined) payload.description = updates.description;
 		if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
 		if (updates.coordinatorOnly !== undefined) payload.coordinator_only = updates.coordinatorOnly;
 		if (updates.muxUploadId !== undefined) payload.mux_upload_id = updates.muxUploadId;

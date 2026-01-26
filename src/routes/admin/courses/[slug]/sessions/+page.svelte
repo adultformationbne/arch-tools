@@ -781,6 +781,7 @@
 
 						<!-- Materials Editor -->
 						<MaterialEditor
+							supabase={data.supabase}
 							materials={currentSession.materials}
 							onMaterialsChange={handleMaterialsChange}
 							onSaveStatusChange={handleSaveStatusChange}

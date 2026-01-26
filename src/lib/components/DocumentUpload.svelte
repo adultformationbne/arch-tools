@@ -3,6 +3,7 @@
 	import { uploadMaterial } from '$lib/utils/storage.js';
 
 	let {
+		supabase,
 		onUpload = () => {},
 		accept = '.pdf,.doc,.docx,.txt,.md',
 		maxSize = 10 * 1024 * 1024, // 10MB
@@ -55,7 +56,7 @@
 				const file = fileArray[i];
 				uploadProgress = (i / fileArray.length) * 80; // Reserve 20% for completion
 
-				const uploadResult = await uploadMaterial(file, cohortId, sessionNumber);
+				const uploadResult = await uploadMaterial(supabase, file, cohortId, sessionNumber);
 
 				if (uploadResult.error) {
 					throw new Error(uploadResult.error);

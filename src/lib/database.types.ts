@@ -511,6 +511,7 @@ export type Database = {
           content: string
           coordinator_only: boolean | null
           created_at: string | null
+          description: string | null
           display_order: number | null
           id: string
           mux_asset_id: string | null
@@ -526,6 +527,7 @@ export type Database = {
           content: string
           coordinator_only?: boolean | null
           created_at?: string | null
+          description?: string | null
           display_order?: number | null
           id?: string
           mux_asset_id?: string | null
@@ -541,6 +543,7 @@ export type Database = {
           content?: string
           coordinator_only?: boolean | null
           created_at?: string | null
+          description?: string | null
           display_order?: number | null
           id?: string
           mux_asset_id?: string | null
@@ -1692,7 +1695,7 @@ export type Database = {
         Returns: string
       }
       get_user_cohorts: { Args: never; Returns: string[] }
-      get_user_modules: { Args: { user_id: string }; Returns: Json }
+      get_user_modules: { Args: { user_id: string }; Returns: string[] }
       has_module:
         | { Args: { module_name: string }; Returns: boolean }
         | { Args: { module: string; user_id: string }; Returns: boolean }
