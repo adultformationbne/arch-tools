@@ -371,6 +371,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(403, 'Target module does not belong to this course');
 				}
 
+				// Note: status is computed from session progress, not stored
 				const result = await CourseMutations.updateCohort({
 					cohortId: data.cohortId,
 					name: data.name,
@@ -378,7 +379,6 @@ export const POST: RequestHandler = async (event) => {
 					startDate: data.startDate,
 					endDate: data.endDate,
 					currentSession: data.currentSession,
-					status: data.status,
 					actorName
 				});
 
@@ -430,24 +430,7 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
-			case 'update_cohort_status': {
-				// Validate cohort belongs to this course
-				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
-					throw error(403, 'Cohort does not belong to this course');
-				}
-
-				const result = await CourseMutations.updateCohortStatus(data.cohortId, data.status);
-
-				if (result.error) {
-					throw error(500, result.error.message || 'Failed to update cohort status');
-				}
-
-				return json({
-					success: true,
-					data: result.data,
-					message: 'Cohort status updated successfully'
-				});
-			}
+			// Note: update_cohort_status removed - status is now computed from session progress
 
 			// ================================================================
 			// ENROLLMENT MANAGEMENT
@@ -699,11 +682,14 @@ export const POST: RequestHandler = async (event) => {
 
 								if (enrollments && enrollments.length > 0) {
 									const courseSettings = course.settings || {};
+									const themeSettings = courseSettings.theme || {};
+									const brandingSettings = courseSettings.branding || {};
 									const courseColors = {
-										accentDark: courseSettings.accentDark || '#334642',
-										accentLight: courseSettings.accentLight || '#eae2d9',
-										accentDarkest: courseSettings.accentDarkest || '#1e2322'
+										accentDark: themeSettings.accentDark || '#334642',
+										accentLight: themeSettings.accentLight || '#eae2d9',
+										accentDarkest: themeSettings.accentDarkest || '#1e2322'
 									};
+									const courseLogoUrl = brandingSettings.logoUrl || null;
 
 									const siteUrl = event.url.origin;
 									const emailsToSend: Array<{
@@ -757,7 +743,7 @@ export const POST: RequestHandler = async (event) => {
 										const compiledHtml = generateEmailFromMjml({
 											bodyContent: rendered.body,
 											courseName: course.name,
-											logoUrl: courseSettings.logoUrl || null,
+											logoUrl: courseLogoUrl,
 											colors: courseColors
 										});
 

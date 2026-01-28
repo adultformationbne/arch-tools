@@ -141,6 +141,31 @@ function convertToMjmlComponents(html, accentDark) {
 		'</mj-text><mj-divider border-width="2px" border-color="#eae2d9" /><mj-text>'
 	);
 
+	// Convert images to MJML images
+	// Match: <img src="..." alt="..." ...> or <img ... data-type="email-image" ...>
+	result = result.replace(
+		/<img\s+([^>]*)>/gi,
+		(match, attributes) => {
+			// Extract src attribute
+			const srcMatch = attributes.match(/src=["']([^"']+)["']/i);
+			const src = srcMatch ? srcMatch[1] : '';
+
+			// Extract alt attribute
+			const altMatch = attributes.match(/alt=["']([^"']*)["']/i);
+			const alt = altMatch ? altMatch[1] : '';
+
+			// Extract title attribute (optional)
+			const titleMatch = attributes.match(/title=["']([^"']*)["']/i);
+			const title = titleMatch ? titleMatch[1] : '';
+
+			if (!src) return ''; // Skip images without src
+
+			// Build MJML image with email-safe styling
+			// Max width 600px (email standard), centered, with padding
+			return `</mj-text><mj-image src="${src}" alt="${escapeHtml(alt)}" title="${escapeHtml(title)}" width="600px" padding="10px 0" align="center" border-radius="4px" /><mj-text>`;
+		}
+	);
+
 	return result;
 }
 

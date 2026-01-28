@@ -194,6 +194,107 @@ export function expandGospelReference(ref) {
 }
 
 /**
+ * Check if a reference looks like a gospel (Matthew, Mark, Luke, John)
+ * @param {string} ref - Reference to check
+ * @returns {boolean} True if it's a gospel reference
+ */
+function isGospelReference(ref) {
+	if (!ref) return false;
+	return /^(Mt|Mk|Lk|Jn|Matthew|Mark|Luke|John)\s+/i.test(ref);
+}
+
+/**
+ * Find gospel reference from readings_data, checking multiple places
+ * Some liturgical days store the gospel in different fields (e.g., second_reading)
+ * @param {object} readingsData - The readings_data object from dgr_schedule
+ * @param {string} gospelReferenceField - The gospel_reference field value
+ * @returns {string} The expanded gospel reference, or empty string
+ */
+export function findGospelReference(readingsData, gospelReferenceField) {
+	// 1. Check explicit gospel field first
+	if (readingsData?.gospel?.source) {
+		return expandGospelReference(readingsData.gospel.source);
+	}
+
+	// 2. Check gospel_reference field
+	if (gospelReferenceField) {
+		return expandGospelReference(gospelReferenceField);
+	}
+
+	// 3. Check if second_reading looks like a gospel (common on feast days)
+	if (readingsData?.second_reading?.source && isGospelReference(readingsData.second_reading.source)) {
+		return expandGospelReference(readingsData.second_reading.source);
+	}
+
+	// 4. Check first_reading as last resort (rare but possible)
+	if (readingsData?.first_reading?.source && isGospelReference(readingsData.first_reading.source)) {
+		return expandGospelReference(readingsData.first_reading.source);
+	}
+
+	// 5. Try to extract from combined_sources
+	if (readingsData?.combined_sources) {
+		const parts = readingsData.combined_sources.split(/[;,]/);
+		for (const part of parts) {
+			const trimmed = part.trim();
+			if (isGospelReference(trimmed)) {
+				return expandGospelReference(trimmed);
+			}
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Check if a reference is a Psalm
+ * @param {string} ref - Reference to check
+ * @returns {boolean}
+ */
+function isPsalmReference(ref) {
+	if (!ref) return false;
+	return /^(Ps|Psalm)\s+/i.test(ref);
+}
+
+/**
+ * Parse a readings string into a structured readings_data object
+ * Intelligently detects reading types rather than relying on position
+ *
+ * @param {string} readingsString - Semicolon-separated readings (e.g., "2 Sam 7:4-17; Ps 88; Mark 4:1-20")
+ * @returns {object} readings_data structure with first_reading, psalm, second_reading, gospel
+ */
+export function parseReadingsString(readingsString) {
+	if (!readingsString) return null;
+
+	const parts = readingsString.split(';').map(r => r.trim()).filter(Boolean);
+	const readingsData = {
+		combined_sources: readingsString,
+		first_reading: null,
+		psalm: null,
+		second_reading: null,
+		gospel: null
+	};
+
+	let firstReadingSet = false;
+
+	for (const part of parts) {
+		if (isPsalmReference(part)) {
+			readingsData.psalm = { source: part, text: '' };
+		} else if (isGospelReference(part)) {
+			readingsData.gospel = { source: part, text: '', heading: '' };
+		} else if (!firstReadingSet) {
+			// First non-psalm, non-gospel reading is the first reading
+			readingsData.first_reading = { source: part, text: '', heading: '' };
+			firstReadingSet = true;
+		} else {
+			// Any additional non-psalm, non-gospel reading is the second reading
+			readingsData.second_reading = { source: part, text: '', heading: '' };
+		}
+	}
+
+	return readingsData;
+}
+
+/**
  * Escape HTML for safe rendering
  * @param {string} text - Text to escape
  * @returns {string} Escaped text

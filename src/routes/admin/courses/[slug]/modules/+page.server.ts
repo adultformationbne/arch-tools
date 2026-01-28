@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { getCohortStatus } from '$lib/utils/cohort-status';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -60,13 +61,19 @@ export const load: PageServerLoad = async (event) => {
 			totalEnrollments = count || 0;
 		}
 
+		// Compute active cohorts count using session-based status
+		const activeCohorts = cohorts.filter(c => {
+			const status = getCohortStatus(c.current_session || 0, c.total_sessions || 8);
+			return status === 'active';
+		}).length;
+
 		return {
 			course: courseInfo,
 			modules: modulesWithCounts,
 			cohorts,
 			totalEnrollments,
 			moduleCount: modules.length,
-			activeCohorts: cohorts.filter(c => c.status === 'active').length
+			activeCohorts
 		};
 
 	} catch (err) {

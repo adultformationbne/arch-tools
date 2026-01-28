@@ -1,6 +1,7 @@
 <script>
-	import { X, Trash2, AlertTriangle } from '$lib/icons';
+	import { X, Trash2, AlertTriangle, CheckCircle } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { getCohortStatusFromObject } from '$lib/utils/cohort-status';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -16,10 +17,20 @@
 	let name = $state('');
 	let startDate = $state('');
 	let endDate = $state('');
-	let status = $state('scheduled');
 	let saving = $state(false);
 	let deleting = $state(false);
+	let completing = $state(false);
 	let showDeleteConfirm = $state(false);
+	let showCompleteConfirm = $state(false);
+
+	// Computed status based on session progress
+	const statusInfo = $derived(cohort ? getCohortStatusFromObject(cohort) : null);
+
+	// Check if cohort is on or past final session (can be marked complete)
+	const totalSessions = $derived(cohort?.total_sessions || cohort?.module?.total_sessions || 8);
+	const canMarkComplete = $derived(
+		cohort && statusInfo?.status === 'active' && cohort.current_session >= totalSessions
+	);
 
 	// Reset form when modal opens
 	$effect(() => {
@@ -27,7 +38,6 @@
 			name = cohort.name || '';
 			startDate = cohort.start_date || '';
 			endDate = cohort.end_date || '';
-			status = cohort.status || 'scheduled';
 		}
 	});
 
@@ -47,8 +57,7 @@
 					cohortId: cohort.id,
 					name: name.trim(),
 					startDate: startDate || null,
-					endDate: endDate || null,
-					status
+					endDate: endDate || null
 				})
 			});
 
@@ -66,6 +75,39 @@
 			toastError(err.message || 'Failed to update cohort');
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function handleMarkComplete() {
+		showCompleteConfirm = false;
+		completing = true;
+
+		try {
+			// Advance session past total to trigger 'completed' status
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'update_cohort',
+					cohortId: cohort.id,
+					currentSession: totalSessions + 1
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to mark cohort complete');
+			}
+
+			toastSuccess('Cohort marked as complete');
+			onUpdate();
+			onClose();
+		} catch (err) {
+			console.error('Error marking cohort complete:', err);
+			toastError(err.message || 'Failed to mark cohort complete');
+		} finally {
+			completing = false;
 		}
 	}
 
@@ -101,7 +143,7 @@
 	}
 
 	function handleClose() {
-		if (!saving && !deleting) {
+		if (!saving && !deleting && !completing) {
 			onClose();
 		}
 	}
@@ -178,37 +220,41 @@
 					Dates are for display only. Cohort progression is controlled by advancing sessions.
 				</p>
 
-				<!-- Status -->
-				<div>
-					<label for="cohort-status" class="block text-sm font-medium text-gray-700 mb-1">
-						Status
-					</label>
-					<select
-						id="cohort-status"
-						bind:value={status}
-						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-					>
-						<option value="draft">Draft</option>
-						<option value="scheduled">Scheduled</option>
-						<option value="active">Active</option>
-						<option value="completed">Completed</option>
-						<option value="archived">Archived</option>
-					</select>
-					<p class="mt-1 text-xs text-gray-500">
-						Draft = hidden, Scheduled = visible but not started, Active = in progress, Completed = finished, Archived = hidden from lists.
-					</p>
-				</div>
-
-				<!-- Current Session Info (read-only) -->
-				<div class="bg-gray-50 rounded-lg p-3">
-					<div class="text-sm text-gray-600">
-						<span class="font-medium">Current Session:</span>
-						{cohort.current_session} / {cohort.module?.total_sessions || 8}
+				<!-- Status & Session Info (read-only, computed from session progress) -->
+				<div class="bg-gray-50 rounded-lg p-3 space-y-2">
+					<div class="flex items-center justify-between">
+						<span class="text-sm font-medium text-gray-700">Status</span>
+						{#if statusInfo}
+							<span
+								class="px-2 py-0.5 rounded text-xs font-semibold"
+								style="background-color: {statusInfo.color}20; color: {statusInfo.color};"
+							>
+								{statusInfo.label}
+							</span>
+						{/if}
 					</div>
-					<div class="text-sm text-gray-600 mt-1">
+					<div class="text-sm text-gray-600">
+						<span class="font-medium">Session:</span>
+						{cohort.current_session} / {totalSessions}
+					</div>
+					<div class="text-sm text-gray-600">
 						<span class="font-medium">Module:</span>
 						{cohort.module?.name || 'Unknown'}
 					</div>
+					{#if canMarkComplete}
+						<button
+							onclick={() => showCompleteConfirm = true}
+							class="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+							disabled={saving || deleting || completing}
+						>
+							<CheckCircle size={16} />
+							Mark as Complete
+						</button>
+					{:else}
+						<p class="text-xs text-gray-500 pt-1 border-t border-gray-200">
+							Status updates automatically: Scheduled (session 0) → Active (in progress) → Completed (mark complete on final session)
+						</p>
+					{/if}
 				</div>
 			</div>
 
@@ -243,6 +289,28 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Mark Complete Confirmation -->
+<ConfirmationModal
+	show={showCompleteConfirm}
+	title="Mark Cohort Complete"
+	confirmText={completing ? 'Completing...' : 'Mark Complete'}
+	cancelText="Cancel"
+	onConfirm={handleMarkComplete}
+	onCancel={() => showCompleteConfirm = false}
+>
+	<div class="flex items-start gap-3">
+		<div class="p-2 bg-blue-100 rounded-full">
+			<CheckCircle size={20} class="text-blue-600" />
+		</div>
+		<div>
+			<p class="text-gray-900 font-medium">Mark "{cohort?.name}" as complete?</p>
+			<p class="text-sm text-gray-600 mt-1">
+				This will mark the cohort as completed. The cohort has finished all {totalSessions} sessions.
+			</p>
+		</div>
+	</div>
+</ConfirmationModal>
 
 <!-- Delete Confirmation -->
 <ConfirmationModal

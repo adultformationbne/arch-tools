@@ -3,6 +3,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
 import { generateSystemTemplatesForCourse } from '$lib/server/course-email-templates';
+import { getCohortStatus } from '$lib/utils/cohort-status';
 
 /**
  * GET - List all courses with module counts
@@ -18,11 +19,12 @@ export const GET: RequestHandler = async (event) => {
 			.from('courses')
 			.select(`
 				*,
-				modules:courses_modules(count),
+				modules:courses_modules(id, count),
 				cohorts:courses_cohorts(
 					id,
 					name,
-					status,
+					current_session,
+					module_id,
 					start_date,
 					end_date,
 					module:module_id(name)
@@ -35,13 +37,37 @@ export const GET: RequestHandler = async (event) => {
 			throw error(500, 'Failed to fetch courses');
 		}
 
+		// Get session counts for all modules to compute total_sessions
+		const allModuleIds = courses?.flatMap(c => c.modules?.map(m => m.id) || []) || [];
+		let sessionCountMap = new Map<string, number>();
+
+		if (allModuleIds.length > 0) {
+			const { data: sessionCounts } = await supabaseAdmin
+				.from('courses_sessions')
+				.select('module_id')
+				.in('module_id', allModuleIds);
+
+			sessionCounts?.forEach(s => {
+				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
+			});
+		}
+
 		// Transform data for easier consumption
-		const transformedCourses = courses?.map(course => ({
-			...course,
-			module_count: course.modules?.[0]?.count || 0,
-			cohort_count: course.cohorts?.length || 0,
-			active_cohorts: course.cohorts?.filter(c => c.status === 'active').length || 0
-		}));
+		const transformedCourses = courses?.map(course => {
+			// Count active cohorts using computed status
+			const activeCohorts = course.cohorts?.filter(c => {
+				const totalSessions = sessionCountMap.get(c.module_id) || 8;
+				const status = getCohortStatus(c.current_session || 0, totalSessions);
+				return status === 'active';
+			}).length || 0;
+
+			return {
+				...course,
+				module_count: course.modules?.length || 0,
+				cohort_count: course.cohorts?.length || 0,
+				active_cohorts: activeCohorts
+			};
+		});
 
 		return json({ courses: transformedCourses || [] });
 

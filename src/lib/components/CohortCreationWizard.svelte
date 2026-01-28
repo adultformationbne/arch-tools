@@ -99,32 +99,10 @@
 	}
 
 	async function finishSetup() {
-		isLoading = true;
-		try {
-			// Update cohort status to scheduled (will auto-transition to active on start date)
-			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'update_cohort_status',
-					cohortId: createdCohortId,
-					status: 'scheduled'
-				})
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to update cohort');
-			}
-
-			// Close modal and refresh
-			onComplete({ cohortId: createdCohortId });
-			handleClose();
-		} catch (error) {
-			console.error('Error finishing setup:', error);
-			toastError('Failed to finish setup. Please try again.', 'Setup Failed');
-		} finally {
-			isLoading = false;
-		}
+		// New cohorts start at session 0, which automatically means status = 'scheduled'
+		// Status is computed from session progress, not stored
+		onComplete({ cohortId: createdCohortId });
+		handleClose();
 	}
 
 	function handleClose() {

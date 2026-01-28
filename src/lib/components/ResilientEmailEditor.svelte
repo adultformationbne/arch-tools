@@ -15,6 +15,8 @@
 		showFixedToolbar = false,
 		verticalToolbar = false,
 		accentColor = '#334642',
+		context = 'course', // 'course', 'dgr', 'platform' - for image uploads
+		contextId = null, // course ID if context is 'course'
 		editor = $bindable(),
 		hasSelection = $bindable(false)
 	} = $props();
@@ -58,6 +60,8 @@
 		{showFixedToolbar}
 		{verticalToolbar}
 		{accentColor}
+		{context}
+		{contextId}
 	/>
 {:else}
 	<FallbackTextEditor

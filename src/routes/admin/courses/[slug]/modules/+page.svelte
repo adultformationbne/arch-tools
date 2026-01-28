@@ -5,6 +5,13 @@
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import { getCohortStatus } from '$lib/utils/cohort-status';
+
+	// Helper to check if cohort is active based on session progress
+	const isActiveCohort = (cohort) => {
+		const status = getCohortStatus(cohort.current_session || 0, cohort.total_sessions || 8);
+		return status === 'active';
+	};
 
 	let { data } = $props();
 	let course = $derived(data.course);
@@ -229,19 +236,22 @@
 
 					<!-- Active Cohorts List -->
 					{#if module.cohorts && module.cohorts.length > 0}
+						{@const activeCohorts = module.cohorts.filter(isActiveCohort)}
+						{#if activeCohorts.length > 0}
 						<div class="mt-4 pt-4 border-t" style="border-color: var(--course-surface);">
 							<div class="text-xs font-semibold text-gray-500 mb-2">Active Cohorts:</div>
 							<div class="space-y-1">
-								{#each module.cohorts.filter(c => c.status === 'active').slice(0, 2) as cohort}
+								{#each activeCohorts.slice(0, 2) as cohort}
 									<div class="text-sm text-gray-700">{cohort.name}</div>
 								{/each}
-								{#if module.cohorts.filter(c => c.status === 'active').length > 2}
+								{#if activeCohorts.length > 2}
 									<div class="text-xs text-gray-500">
-										+{module.cohorts.filter(c => c.status === 'active').length - 2} more
+										+{activeCohorts.length - 2} more
 									</div>
 								{/if}
 							</div>
 						</div>
+						{/if}
 					{/if}
 				</div>
 				{/each}

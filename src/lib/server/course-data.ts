@@ -526,23 +526,40 @@ export const CourseAggregates = {
 	 * Returns modules and cohorts for admin dashboard
 	 */
 	async getAdminCourseData(courseId: string) {
-		// Parallel fetch modules and cohorts
+		// Parallel fetch modules, cohorts, and session counts
 		const [modulesResult, cohortsResult] = await Promise.all([
 			CourseQueries.getModules(courseId),
 			CourseQueries.getCohorts(courseId)
 		]);
 
-		// Flatten cohorts and attach module info
+		const modules = modulesResult.data || [];
+		const moduleIds = modules.map((m) => m.id);
+
+		// Get session counts for each module to compute total_sessions
+		let sessionCountMap = new Map<string, number>();
+		if (moduleIds.length > 0) {
+			const { data: sessionCounts } = await supabaseAdmin
+				.from('courses_sessions')
+				.select('module_id')
+				.in('module_id', moduleIds);
+
+			sessionCounts?.forEach((s) => {
+				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
+			});
+		}
+
+		// Flatten cohorts and attach module info + total_sessions
 		// Provide both 'modules' and 'courses_modules' for compatibility
 		const cohorts = (cohortsResult.data || []).map((cohort) => ({
 			...cohort,
 			courses_modules: cohort.module,
-			modules: cohort.module // Alias for attendance page compatibility
+			modules: cohort.module, // Alias for attendance page compatibility
+			total_sessions: sessionCountMap.get(cohort.module_id) || 0
 		}));
 
 		return {
 			data: {
-				modules: modulesResult.data || [],
+				modules: modules,
 				cohorts: cohorts
 			},
 			error: modulesResult.error || cohortsResult.error
@@ -1176,6 +1193,7 @@ export const CourseMutations = {
 
 	/**
 	 * Update a cohort (with activity logging for session changes)
+	 * Note: status is computed from session progress, not stored
 	 */
 	async updateCohort(params: {
 		cohortId: string;
@@ -1184,10 +1202,9 @@ export const CourseMutations = {
 		startDate?: string | null;
 		endDate?: string | null;
 		currentSession?: number;
-		status?: string;
 		actorName?: string;
 	}) {
-		const { cohortId, name, moduleId, startDate, endDate, currentSession, status, actorName } =
+		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName } =
 			params;
 
 		// Get current cohort state to detect session changes
@@ -1206,7 +1223,6 @@ export const CourseMutations = {
 		if (startDate !== undefined) updateData.start_date = startDate;
 		if (endDate !== undefined) updateData.end_date = endDate;
 		if (currentSession !== undefined) updateData.current_session = currentSession;
-		if (status) updateData.status = status;
 
 		const result = await supabaseAdmin
 			.from('courses_cohorts')
@@ -1235,18 +1251,6 @@ export const CourseMutations = {
 		}
 
 		return result;
-	},
-
-	/**
-	 * Update cohort status
-	 */
-	async updateCohortStatus(cohortId: string, status: string) {
-		return supabaseAdmin
-			.from('courses_cohorts')
-			.update({ status: status })
-			.eq('id', cohortId)
-			.select()
-			.single();
 	},
 
 	/**

@@ -1,17 +1,10 @@
 <script>
+	import { getCohortStatusFromObject } from '$lib/utils/cohort-status';
+
 	let { cohort, isActive = false, onClick = () => {} } = $props();
 
-	const getStatusInfo = (status) => {
-		switch (status) {
-			case 'draft': return { color: '#6B7280', label: 'DRAFT' };
-			case 'scheduled': return { color: '#D97706', label: 'SCHEDULED' };
-			case 'active': return { color: '#059669', label: 'ACTIVE' };
-			case 'completed': return { color: '#2563EB', label: 'COMPLETED' };
-			default: return { color: '#6B7280', label: 'UNKNOWN' };
-		}
-	};
-
-	const statusInfo = $derived(getStatusInfo(cohort.status));
+	// Status is computed from session progress, not stored
+	const statusInfo = $derived(getCohortStatusFromObject(cohort));
 
 	// Format date for compact display
 	const formatDate = (dateString) => {
@@ -42,10 +35,10 @@
 	<div class="row">
 		<div class="module-name">{truncate(cohort.module, 30)}</div>
 		<div class="meta-text">
-			{#if cohort.status === 'completed'}
+			{#if statusInfo.status === 'completed'}
 				{formatDate(cohort.end_date || cohort.endDate)}
-			{:else if cohort.status === 'active'}
-				Session {cohort.current_session || cohort.currentSession || 1}/8
+			{:else if statusInfo.status === 'active'}
+				Session {cohort.current_session || cohort.currentSession || 1}/{cohort.total_sessions || cohort.totalSessions || cohort.module?.total_sessions || 8}
 			{:else}
 				{formatDate(cohort.start_date || cohort.startDate)}
 			{/if}

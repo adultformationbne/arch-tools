@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { cleanGospelText, expandGospelReference } from '$lib/utils/dgr-common.js';
+import { cleanGospelText, findGospelReference, parseReadingsString } from '$lib/utils/dgr-common.js';
 import { getReadingsForEntries, snapshotReadingsOnSubmit } from '$lib/server/dgr-readings.js';
 
 export async function GET({ url, locals }) {
@@ -673,27 +673,13 @@ async function saveReflection({
 			if (status === 'approved') updateData.approved_at = new Date().toISOString();
 			if (status === 'published') updateData.published_at = new Date().toISOString();
 
-			// Parse readings string into JSONB structure
+			// Parse readings string into JSONB structure (intelligently detects reading types)
 			if (readings) {
-				const readingsParts = readings.split(';').map(r => r.trim());
-				const readingsData = {};
-
-				if (readingsParts[0]) {
-					readingsData.first_reading = { source: readingsParts[0], text: '', heading: '' };
+				const readingsData = parseReadingsString(readings);
+				if (readingsData) {
+					updateData.readings_data = readingsData;
+					updateData.gospel_reference = readingsData.gospel?.source || null;
 				}
-				if (readingsParts[1]) {
-					readingsData.psalm = { source: readingsParts[1], text: '' };
-				}
-				if (readingsParts[2]) {
-					readingsData.second_reading = { source: readingsParts[2], text: '', heading: '' };
-				}
-				if (readingsParts[3]) {
-					readingsData.gospel = { source: readingsParts[3], text: '', heading: '' };
-				}
-
-				readingsData.combined_sources = readings;
-				updateData.readings_data = readingsData;
-				updateData.gospel_reference = readingsParts[3] || null; // Backward compatibility
 			}
 
 			const { data, error } = await supabaseAdmin
@@ -720,24 +706,8 @@ async function saveReflection({
 			// Generate submission token
 			const { data: token } = await supabaseAdmin.rpc('generate_submission_token');
 
-			// Parse readings string into JSONB structure
-			const readingsParts = readings.split(';').map(r => r.trim());
-			const readingsData = {};
-
-			if (readingsParts[0]) {
-				readingsData.first_reading = { source: readingsParts[0], text: '', heading: '' };
-			}
-			if (readingsParts[1]) {
-				readingsData.psalm = { source: readingsParts[1], text: '' };
-			}
-			if (readingsParts[2]) {
-				readingsData.second_reading = { source: readingsParts[2], text: '', heading: '' };
-			}
-			if (readingsParts[3]) {
-				readingsData.gospel = { source: readingsParts[3], text: '', heading: '' };
-			}
-
-			readingsData.combined_sources = readings;
+			// Parse readings string into JSONB structure (intelligently detects reading types)
+			const readingsData = parseReadingsString(readings);
 
 			// Create new schedule entry with reflection content
 			const scheduleEntry = {
@@ -746,7 +716,7 @@ async function saveReflection({
 				contributor_email: contributor?.email,
 				submission_token: token,
 				liturgical_date: liturgicalDate,
-				gospel_reference: readingsParts[3] || null,
+				gospel_reference: readingsData?.gospel?.source || null,
 				readings_data: readingsData,
 				reflection_title: title,
 				gospel_quote: gospelQuote,
@@ -823,9 +793,8 @@ async function sendToWordPress({ scheduleId, origin }) {
 			throw new Error('Missing required fields: title, gospel quote, and content are required');
 		}
 
-		// Get gospel reference and expand abbreviations (Mt -> Matthew)
-		const gospelReferenceRaw = schedule.readings_data?.gospel?.source || schedule.gospel_reference || '';
-		const gospelReference = expandGospelReference(gospelReferenceRaw);
+		// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
+		const gospelReference = findGospelReference(schedule.readings_data, schedule.gospel_reference);
 
 		// Fetch gospel text by reference if we have one
 		let gospelFullText = '';

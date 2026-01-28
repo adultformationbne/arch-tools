@@ -49,10 +49,9 @@ export function createDropdown(referenceElement, floatingElement, options = {}) 
 	let cleanupAutoUpdate = null;
 	let isOpen = false;
 
-	// Set up required CSS
+	// Set up required CSS (position only - let component control width via classes)
 	Object.assign(floatingElement.style, {
 		position: 'fixed',
-		width: 'max-content',
 		top: '0',
 		left: '0',
 		zIndex: '50'

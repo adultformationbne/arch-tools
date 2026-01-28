@@ -6,6 +6,7 @@
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
 	import TestEmailPanel from './TestEmailPanel.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
+	import SubjectInputWithVariables from './SubjectInputWithVariables.svelte';
 
 	let {
 		course,
@@ -630,9 +631,19 @@
 				<span class="text-sm font-semibold text-gray-700 w-16">Subject:</span>
 				{#if isEditing}
 					{#if mode === 'quick'}
-						<input type="text" bind:value={quickSubject} placeholder="Enter subject..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+						<SubjectInputWithVariables
+							bind:value={quickSubject}
+							placeholder="Enter subject..."
+							{availableVariables}
+							class="flex-1"
+						/>
 					{:else}
-						<input type="text" bind:value={editedSubject} placeholder="Enter subject..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+						<SubjectInputWithVariables
+							bind:value={editedSubject}
+							placeholder="Enter subject..."
+							{availableVariables}
+							class="flex-1"
+						/>
 					{/if}
 				{:else}
 					<span class="flex-1 text-sm text-gray-900">
@@ -654,6 +665,8 @@
 					logoUrl={course?.logo_url}
 					accentDark={courseColors.accentDark}
 					{availableVariables}
+					context="course"
+					contextId={course?.id}
 				/>
 			</div>
 		{:else}

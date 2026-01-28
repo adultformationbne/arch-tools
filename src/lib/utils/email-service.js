@@ -24,8 +24,43 @@ function buildLogEntry({ to, emailType, subject, body, status, resendId = null, 
 		template_id: metadata?.template_id || null
 	};
 }
-import { getPlatformSettings } from '$lib/server/supabase.js';
+import { getPlatformSettings, supabaseAdmin } from '$lib/server/supabase.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
+
+/**
+ * Extract email image URLs from HTML and mark them as used
+ * Only marks images from our email-images storage bucket
+ * @param {string} html Email HTML content
+ */
+async function markEmailImagesAsUsed(html) {
+	if (!html) return;
+
+	try {
+		// Match image URLs from our Supabase storage bucket
+		// Pattern: supabase.co/storage/v1/object/public/email-images/...
+		const imageUrlPattern = /https:\/\/[^"'\s]+\/storage\/v1\/object\/public\/email-images\/[^"'\s]+/g;
+		const matches = html.match(imageUrlPattern);
+
+		if (!matches || matches.length === 0) return;
+
+		// Get unique URLs
+		const uniqueUrls = [...new Set(matches)];
+
+		// Update used_at for all matching images
+		const { error } = await supabaseAdmin
+			.from('email_images')
+			.update({ used_at: new Date().toISOString() })
+			.in('public_url', uniqueUrls)
+			.is('used_at', null); // Only update if not already marked
+
+		if (error) {
+			console.error('Failed to mark email images as used:', error);
+		}
+	} catch (err) {
+		// Don't fail the email send if image tracking fails
+		console.error('Error marking email images as used:', err);
+	}
+}
 
 /**
  * Render email template by replacing {{variables}} with actual values
@@ -204,6 +239,10 @@ export async function sendEmail({
 		await supabase.from('platform_email_log').insert(
 			buildLogEntry({ to, emailType, subject, body: html, status: 'sent', resendId: data?.id, referenceId, metadata })
 		);
+
+		// Mark any email images as used (async, don't block)
+		markEmailImagesAsUsed(html);
+
 		return { success: true, emailId: data?.id };
 	} catch (err) {
 		console.error('Email service error:', err);
@@ -299,6 +338,11 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 
 				// Log all emails from this batch
 				await logBatchEmails(supabase, batch, emailType, 'sent', null, options.commonMetadata, emailResults);
+
+				// Mark any email images as used (collect all HTML from batch)
+				for (const email of batch) {
+					markEmailImagesAsUsed(email.html);
+				}
 			}
 		} catch (err) {
 			console.error('Batch send error:', err);

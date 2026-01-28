@@ -5,7 +5,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
 import { getReadingsForEntries } from '$lib/server/dgr-readings.js';
 import { publishDGRToWordPress, type PublishResult } from '$lib/server/dgr-publisher.js';
-import { expandGospelReference, cleanGospelText } from '$lib/utils/dgr-common.js';
+import { findGospelReference, cleanGospelText } from '$lib/utils/dgr-common.js';
 
 const TASK_TYPE = 'dgr_digest';
 
@@ -288,9 +288,8 @@ async function autoPublishApprovedReflections(
 		}
 
 		try {
-			// Get gospel reference and expand abbreviations
-			const gospelReferenceRaw = entry.readings_data?.gospel?.source || entry.gospel_reference || '';
-			const gospelReference = expandGospelReference(gospelReferenceRaw);
+			// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
+			const gospelReference = findGospelReference(entry.readings_data, entry.gospel_reference);
 
 			// Fetch gospel text if available
 			let gospelFullText = '';

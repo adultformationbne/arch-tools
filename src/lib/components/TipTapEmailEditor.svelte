@@ -4,6 +4,7 @@
 	import StarterKit from '@tiptap/starter-kit';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Link from '@tiptap/extension-link';
+	import TiptapImage from '@tiptap/extension-image';
 	import { Node, mergeAttributes } from '@tiptap/core';
 	import {
 		Bold,
@@ -16,10 +17,13 @@
 		Heading3,
 		Plus,
 		RectangleHorizontal,
-		Minus
+		Minus,
+		Image,
+		Loader2
 	} from '$lib/icons';
 	import LinkEditorPopover from './LinkEditorPopover.svelte';
 	import ButtonEditorPopover from './ButtonEditorPopover.svelte';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	let {
 		value = '',
@@ -30,6 +34,8 @@
 		showFixedToolbar = false,
 		verticalToolbar = false,
 		accentColor = '#334642', // Button/accent color for this context
+		context = 'course', // 'course', 'dgr', 'platform' - for image uploads
+		contextId = null, // course ID if context is 'course'
 		editor = $bindable(),
 		hasSelection = $bindable(false)
 	} = $props();
@@ -38,6 +44,10 @@
 	let showVariableMenu = $state(false);
 	let variableMenuButton;
 	let textIsSelected = $state(false); // Internal state to track if text is selected
+
+	// Image upload state
+	let imageFileInput;
+	let isUploadingImage = $state(false);
 
 	// Popover state for link editing
 	let showLinkPopover = $state(false);
@@ -363,6 +373,13 @@
 				}).configure({
 					openOnClick: false
 				}),
+				TiptapImage.configure({
+					HTMLAttributes: {
+						class: 'email-image',
+						'data-type': 'email-image'
+					},
+					allowBase64: false
+				}),
 				Variable,
 				EmailButton,
 				EmailDivider,
@@ -546,6 +563,71 @@
 		editor.chain().focus().insertContent({ type: 'emailDivider' }).run();
 	}
 
+	function triggerImageUpload() {
+		imageFileInput?.click();
+	}
+
+	async function handleImageUpload(event) {
+		const file = event.target.files?.[0];
+		if (!file || !editor) return;
+
+		// Validate file type
+		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+		if (!allowedTypes.includes(file.type)) {
+			toastError('Please select a JPEG, PNG, GIF, or WebP image');
+			return;
+		}
+
+		// Validate file size (5MB max before processing)
+		if (file.size > 5 * 1024 * 1024) {
+			toastError('Image must be less than 5MB');
+			return;
+		}
+
+		isUploadingImage = true;
+
+		try {
+			const formData = new FormData();
+			formData.append('image', file);
+			formData.append('context', context);
+			if (contextId) {
+				formData.append('context_id', contextId);
+			}
+
+			const response = await fetch('/api/emails/upload-image', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.message || 'Failed to upload image');
+			}
+
+			const result = await response.json();
+
+			// Insert the image into the editor
+			editor
+				.chain()
+				.focus()
+				.setImage({
+					src: result.url,
+					alt: file.name,
+					title: file.name
+				})
+				.run();
+		} catch (err) {
+			console.error('Image upload error:', err);
+			toastError(err.message || 'Failed to upload image');
+		} finally {
+			isUploadingImage = false;
+			// Reset file input
+			if (imageFileInput) {
+				imageFileInput.value = '';
+			}
+		}
+	}
+
 	function toggleVariableMenu() {
 		showVariableMenu = !showVariableMenu;
 	}
@@ -721,7 +803,7 @@
 
 			<div class="w-px h-6 bg-gray-300 mx-1"></div>
 
-			<!-- Button & Divider -->
+			<!-- Button, Image & Divider -->
 			<button
 				type="button"
 				onclick={(e) => insertButton(e.currentTarget)}
@@ -729,6 +811,19 @@
 				title="Insert Button"
 			>
 				<RectangleHorizontal size={18} />
+			</button>
+			<button
+				type="button"
+				onclick={triggerImageUpload}
+				disabled={isUploadingImage}
+				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700 disabled:opacity-50"
+				title="Insert Image"
+			>
+				{#if isUploadingImage}
+					<Loader2 size={18} class="animate-spin" />
+				{:else}
+					<Image size={18} />
+				{/if}
 			</button>
 			<button
 				type="button"
@@ -740,6 +835,15 @@
 			</button>
 		</div>
 	{/if}
+
+	<!-- Hidden file input for image uploads -->
+	<input
+		type="file"
+		accept="image/jpeg,image/png,image/gif,image/webp"
+		bind:this={imageFileInput}
+		onchange={handleImageUpload}
+		class="hidden"
+	/>
 
 	<!-- Editor -->
 	<div bind:this={editorElement} class="bg-white min-h-[300px] cursor-text px-8 py-6"></div>
@@ -920,6 +1024,20 @@
 		border: none;
 		border-top: 2px solid #eae2d9;
 		margin: 30px 0;
+	}
+
+	/* Email Image Styling */
+	:global(.email-image) {
+		max-width: 100%;
+		height: auto;
+		display: block;
+		margin: 20px auto;
+		border-radius: 4px;
+	}
+
+	:global(.email-image.ProseMirror-selectednode) {
+		outline: 2px solid #334642;
+		outline-offset: 2px;
 	}
 
 	:global(.ProseMirror p.is-editor-empty:first-child::before) {

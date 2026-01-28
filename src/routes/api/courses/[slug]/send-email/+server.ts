@@ -130,11 +130,14 @@ export const POST: RequestHandler = async (event) => {
 
 		// Get course branding for MJML compilation
 		const courseSettings = course.settings || {};
+		const themeSettings = courseSettings.theme || {};
+		const brandingSettings = courseSettings.branding || {};
 		const courseColors = {
-			accentDark: courseSettings.accentDark || '#334642',
-			accentLight: courseSettings.accentLight || '#eae2d9',
-			accentDarkest: courseSettings.accentDarkest || '#1e2322'
+			accentDark: themeSettings.accentDark || '#334642',
+			accentLight: themeSettings.accentLight || '#eae2d9',
+			accentDarkest: themeSettings.accentDarkest || '#1e2322'
 		};
+		const courseLogoUrl = brandingSettings.logoUrl || null;
 
 		// Build all emails with personalized content
 		const emailsToSend: Array<{
@@ -198,7 +201,7 @@ export const POST: RequestHandler = async (event) => {
 				const compiledHtml = generateEmailFromMjml({
 					bodyContent: emailBody,
 					courseName: course.name,
-					logoUrl: courseSettings.logoUrl || null,
+					logoUrl: courseLogoUrl,
 					colors: courseColors
 				});
 

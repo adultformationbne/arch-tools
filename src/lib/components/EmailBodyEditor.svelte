@@ -1,9 +1,10 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { Zap, SquareMousePointer, Braces, AlertCircle } from '$lib/icons';
+	import { Zap, SquareMousePointer, Braces, AlertCircle, Image, Loader2 } from '$lib/icons';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
 	import FallbackTextEditor from './FallbackTextEditor.svelte';
 	import { createDropdown } from '$lib/utils/dropdown.js';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	// Dynamic import for TipTap - allows graceful fallback
 	let TipTapEmailEditor = $state(null);
@@ -35,6 +36,9 @@
 		accentDark = '#334642',
 		footerText = "You're receiving this because you're enrolled in this course.",
 		availableVariables = [],
+		// Image upload context
+		context = 'course', // 'course', 'dgr', 'platform'
+		contextId = null, // course ID if context is 'course'
 		// Backwards compatibility
 		courseName = null
 	} = $props();
@@ -51,6 +55,10 @@
 	let variableButtonEl = $state(null);
 	let variableMenuEl = $state(null);
 	let dropdown = $state(null);
+
+	// Image upload
+	let imageFileInput = $state(null);
+	let isUploadingImage = $state(false);
 
 	// Initialize dropdown when elements are ready
 	$effect(() => {
@@ -95,6 +103,71 @@
 				}
 			])
 			.run();
+	}
+
+	function triggerImageUpload() {
+		imageFileInput?.click();
+	}
+
+	async function handleImageUpload(event) {
+		const file = event.target.files?.[0];
+		if (!file || !tiptapEditor) return;
+
+		// Validate file type
+		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+		if (!allowedTypes.includes(file.type)) {
+			toastError('Please select a JPEG, PNG, GIF, or WebP image');
+			return;
+		}
+
+		// Validate file size (5MB max before processing)
+		if (file.size > 5 * 1024 * 1024) {
+			toastError('Image must be less than 5MB');
+			return;
+		}
+
+		isUploadingImage = true;
+
+		try {
+			const formData = new FormData();
+			formData.append('image', file);
+			formData.append('context', context);
+			if (contextId) {
+				formData.append('context_id', contextId);
+			}
+
+			const response = await fetch('/api/emails/upload-image', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.message || 'Failed to upload image');
+			}
+
+			const result = await response.json();
+
+			// Insert the image into the editor
+			tiptapEditor
+				.chain()
+				.focus()
+				.setImage({
+					src: result.url,
+					alt: file.name,
+					title: file.name
+				})
+				.run();
+		} catch (err) {
+			console.error('Image upload error:', err);
+			toastError(err.message || 'Failed to upload image');
+		} finally {
+			isUploadingImage = false;
+			// Reset file input
+			if (imageFileInput) {
+				imageFileInput.value = '';
+			}
+		}
 	}
 </script>
 
@@ -191,6 +264,19 @@
 			>
 				<SquareMousePointer size={18} />
 			</button>
+			<button
+				type="button"
+				onclick={triggerImageUpload}
+				disabled={isUploadingImage}
+				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700 disabled:opacity-50"
+				title="Insert Image"
+			>
+				{#if isUploadingImage}
+					<Loader2 size={18} class="animate-spin" />
+				{:else}
+					<Image size={18} />
+				{/if}
+			</button>
 			<div class="w-full h-px bg-gray-300 my-1"></div>
 			<!-- Variable Picker Dropdown -->
 			<button
@@ -255,6 +341,8 @@
 					{placeholder}
 					{availableVariables}
 					accentColor={accentDark}
+					{context}
+					{contextId}
 					hideVariablePicker={true}
 					showFixedToolbar={false}
 					verticalToolbar={false}
@@ -297,6 +385,14 @@
 			{/each}
 		</div>
 	</div>
+<!-- Hidden file input for image uploads -->
+	<input
+		type="file"
+		accept="image/jpeg,image/png,image/gif,image/webp"
+		bind:this={imageFileInput}
+		onchange={handleImageUpload}
+		class="hidden"
+	/>
 </div>
 
 <style>

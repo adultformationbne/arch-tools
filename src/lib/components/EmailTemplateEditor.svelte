@@ -1,10 +1,12 @@
 <script>
-	import { Save, Send, RotateCcw } from '$lib/icons';
+	import { Save, Send, RotateCcw, ChevronDown } from '$lib/icons';
 	import { apiPost, apiPut, apiPatch } from '$lib/utils/api-handler.js';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import EmailBodyEditor from './EmailBodyEditor.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import TestEmailPanel from './TestEmailPanel.svelte';
+	import { createDropdown } from '$lib/utils/dropdown.js';
+	import { onDestroy } from 'svelte';
 
 	/**
 	 * Unified Email Template Editor
@@ -85,6 +87,50 @@
 	let showTestEmailPanel = $state(false);
 	let showRestoreConfirm = $state(false);
 	let isRestoring = $state(false);
+
+	// Subject variable picker
+	let subjectInputEl = $state(null);
+	let subjectVarButtonEl = $state(null);
+	let subjectVarMenuEl = $state(null);
+	let subjectDropdown = $state(null);
+
+	// Initialize subject dropdown when elements are ready
+	$effect(() => {
+		if (subjectVarButtonEl && subjectVarMenuEl && !subjectDropdown) {
+			subjectDropdown = createDropdown(subjectVarButtonEl, subjectVarMenuEl, {
+				placement: 'bottom-end',
+				offset: 4
+			});
+		}
+	});
+
+	onDestroy(() => {
+		if (subjectDropdown) subjectDropdown.destroy();
+	});
+
+	function insertVariableIntoSubject(variableName) {
+		if (!subjectInputEl) return;
+
+		const input = subjectInputEl;
+		const start = input.selectionStart || 0;
+		const end = input.selectionEnd || 0;
+		const text = formData.subject_template;
+		const varText = `{{${variableName}}}`;
+
+		// Insert at cursor position
+		formData.subject_template = text.substring(0, start) + varText + text.substring(end);
+		hasUnsavedChanges = true;
+
+		// Close dropdown
+		if (subjectDropdown) subjectDropdown.hide();
+
+		// Restore focus and set cursor after inserted variable
+		setTimeout(() => {
+			input.focus();
+			const newPos = start + varText.length;
+			input.setSelectionRange(newPos, newPos);
+		}, 0);
+	}
 
 	// Check if this is a system template (can be restored to default)
 	const isSystemTemplate = $derived(template?.category === 'system');
@@ -264,16 +310,46 @@
 		</div>
 	{/if}
 
-	<!-- Subject -->
+	<!-- Subject with Variable Picker -->
 	<div>
 		<label class="block text-sm font-semibold text-gray-700 mb-1.5">Subject</label>
-		<input
-			type="text"
-			bind:value={formData.subject_template}
-			onchange={() => (hasUnsavedChanges = true)}
-			placeholder="How to Access {{courseName}}"
-			class="w-full px-4 py-3 border border-gray-300 rounded-lg font-medium text-base"
-		/>
+		<div class="relative">
+			<input
+				type="text"
+				bind:this={subjectInputEl}
+				bind:value={formData.subject_template}
+				oninput={() => (hasUnsavedChanges = true)}
+				placeholder="How to Access {{courseName}}"
+				class="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg font-medium text-base"
+			/>
+			<!-- Variable Insert Button -->
+			<button
+				type="button"
+				bind:this={subjectVarButtonEl}
+				onclick={() => subjectDropdown?.toggle()}
+				class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+			>
+				<span class="font-mono">{'{}'}</span>
+				<ChevronDown size={12} />
+			</button>
+
+			<!-- Variable Dropdown Menu (NO hidden class - controlled by dropdown.js) -->
+			<div
+				bind:this={subjectVarMenuEl}
+				style="display: none;"
+				class="w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-h-64 overflow-y-auto"
+			>
+				{#each availableVariables() as variable}
+					<button
+						type="button"
+						onclick={() => insertVariableIntoSubject(variable.name)}
+						class="w-full text-left px-3 py-1.5 hover:bg-gray-100 text-xs"
+					>
+						<span class="font-medium text-gray-900 font-mono">{variable.name}</span>
+					</button>
+				{/each}
+			</div>
+		</div>
 	</div>
 
 	<!-- Email Body Editor (shared component) -->
@@ -288,6 +364,8 @@
 			accentDark={effectiveBranding.accentDark}
 			footerText={effectiveBranding.footerText}
 			availableVariables={availableVariables()}
+			{context}
+			contextId={effectiveContextId}
 		/>
 	</div>
 
