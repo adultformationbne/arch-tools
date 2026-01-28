@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown } from '$lib/icons';
+	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 
@@ -195,108 +195,114 @@
 				<!-- Separator Line -->
 				<div class="border-t border-gray-300 mx-6"></div>
 
-				<!-- Main Content - 2 Column Layout -->
-				<div class="p-4 sm:p-6 lg:p-8 min-h-[400px]">
-					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-						<!-- Left Column: Title + Session Overview -->
-						<div class="flex flex-col">
+				<!-- Main Content - 4 Quadrant Grid -->
+				<div class="p-6 sm:p-8 lg:p-10 min-h-[400px]">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 h-full">
+						<!-- Top Left: Title -->
+						<div class="flex flex-col order-1 lg:order-none">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
 							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
 							</h1>
-							<div class="flex items-center gap-2 mb-6">
+							<div class="flex items-center gap-2">
 								<h2 class="text-base font-semibold" style="color: var(--course-accent-light, #c59a6b);">{currentSession === 0 ? 'Pre-Start' : `Session ${currentSession}`}</h2>
 								<div class="h-1 w-10 rounded" style="background-color: var(--course-accent-light, #c59a6b);"></div>
 							</div>
+						</div>
 
+						<!-- Top Right: Materials (order-3 on mobile to appear after overview) -->
+						<div class="order-3 lg:order-none">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{currentSession === 0 ? 'Welcome Materials' : 'Materials'}</h3>
+							<div class="flex flex-wrap gap-2">
+								{#if materials.length === 0}
+									<div class="w-full flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+										<BookOpen size={28} class="text-gray-400 mb-2" />
+										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
+									</div>
+								{/if}
+								{#each materials as material, index}
+									{@const IconComponent = getIcon(material.type)}
+									<a
+										href="/courses/{courseSlug}/materials?material={material.id}"
+										class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer no-underline text-sm font-medium"
+										class:hover:opacity-90={true}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
+									>
+										<IconComponent size="14" class={index === 0 ? "text-white" : "text-gray-600"} />
+										<span class:text-white={index === 0} class:text-gray-700={index !== 0}>
+											{material.title}
+										</span>
+										{#if material.coordinatorOnly}
+											<span class="text-xs px-1.5 py-0.5 rounded-full {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600'}">
+												HC
+											</span>
+										{/if}
+									</a>
+								{/each}
+							</div>
+						</div>
+
+						<!-- Bottom Left: Session Overview (order-2 on mobile to appear after title) -->
+						<div class="flex flex-col order-2 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
 							<p class="text-sm text-gray-700 leading-relaxed">
 								{currentSessionData.sessionOverview}
 							</p>
 						</div>
 
-						<!-- Right Column: Materials + Reflection -->
-						<div class="flex flex-col gap-6">
-							<!-- Materials -->
-							<div>
-								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{currentSession === 0 ? 'Welcome Materials' : 'Materials'}</h3>
-								<div class="flex flex-wrap gap-2">
-									{#if materials.length === 0 && currentSession === 0}
-										<p class="text-gray-500 text-sm italic">No materials available yet.</p>
-									{/if}
-									{#each materials as material, index}
-										{@const IconComponent = getIcon(material.type)}
-										<a
-											href="/courses/{courseSlug}/materials?material={material.id}"
-											class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer no-underline text-sm font-medium"
-											class:hover:opacity-90={true}
-											style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
-										>
-											<IconComponent size="14" class={index === 0 ? "text-white" : "text-gray-600"} />
-											<span class:text-white={index === 0} class:text-gray-700={index !== 0}>
-												{material.title}
-											</span>
-											{#if material.coordinatorOnly}
-												<span class="text-xs px-1.5 py-0.5 rounded-full {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600'}">
-													HC
-												</span>
-											{/if}
-										</a>
-									{/each}
-								</div>
-							</div>
-
-						<!-- Reflection (only if reflections enabled) -->
-							{#if reflectionsEnabled}
-								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
-								{#if currentSessionData.reflectionQuestion}
-									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
-									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
-									<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
-									<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
-										{truncated}
-										{#if needsTruncation}
-											<a
-												href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-												class="text-xs font-medium ml-1 no-underline hover:underline"
-												style="color: var(--course-accent-dark, #c59a6b);"
-											>
-												more
-											</a>
-										{/if}
-									</p>
-									<div class="flex items-center justify-between mt-auto pt-2">
-										<div class="flex items-center gap-2">
-											<div
-												class="w-2.5 h-2.5 rounded-full"
-												class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
-												class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
-												class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
-												class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
-											></div>
-											<span class="text-gray-600 text-xs font-medium">
-												{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
-											</span>
-										</div>
+						<!-- Bottom Right: Reflection (order-4 on mobile to appear last) -->
+						{#if reflectionsEnabled}
+							<div class="flex flex-col justify-start order-4 lg:order-none" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+							{#if currentSessionData.reflectionQuestion}
+								{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
+								{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
+								<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Reflection</h3>
+								<p class="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+									{truncated}
+									{#if needsTruncation}
 										<a
 											href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
-											class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
-											style="background-color: var(--course-accent-dark, #334642);"
+											class="text-xs font-medium ml-1 no-underline hover:underline"
+											style="color: var(--course-accent-dark, #c59a6b);"
 										>
-											{#if isComplete(currentSessionData.reflectionStatus)}
-												<Eye size="14" />
-											{:else}
-												<Edit3 size="14" />
-											{/if}
-											{getReflectionButtonLabel(currentSessionData.reflectionStatus)}
+											more
 										</a>
+									{/if}
+								</p>
+								<div class="flex items-center justify-between mt-auto pt-2">
+									<div class="flex items-center gap-2">
+										<div
+											class="w-2.5 h-2.5 rounded-full"
+											class:bg-orange-400={currentSessionData.reflectionStatus === 'not_started'}
+											class:bg-green-500={isComplete(currentSessionData.reflectionStatus)}
+											class:bg-amber-500={currentSessionData.reflectionStatus === 'needs_revision'}
+											class:bg-blue-400={!isComplete(currentSessionData.reflectionStatus) && currentSessionData.reflectionStatus !== 'not_started' && currentSessionData.reflectionStatus !== 'needs_revision'}
+										></div>
+										<span class="text-gray-600 text-xs font-medium">
+											{currentSessionData.reflectionStatus === 'not_started' ? 'Not started' : getStatusLabel(currentSessionData.reflectionStatus)}
+										</span>
 									</div>
-								{:else}
-									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
-								{/if}
+									<a
+										href="/courses/{courseSlug}/write/{currentSessionData.reflectionQuestion?.id}"
+										class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+										style="background-color: var(--course-accent-dark, #334642);"
+									>
+										{#if isComplete(currentSessionData.reflectionStatus)}
+											<Eye size="14" />
+										{:else}
+											<Edit3 size="14" />
+										{/if}
+										{getReflectionButtonLabel(currentSessionData.reflectionStatus)}
+									</a>
+								</div>
+							{:else}
+								<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+									<PenTool size={28} class="text-gray-400 mb-2" />
+									<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
 								</div>
 							{/if}
-						</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</SessionNavigationTabs>
@@ -388,10 +394,10 @@
 				<div class="border-t border-gray-300 mx-6"></div>
 
 				<!-- Main Content - 4 Quadrant Grid -->
-				<div class="p-4 sm:p-6 lg:p-8">
-					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<div class="p-6 sm:p-8 lg:p-10">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
 						<!-- Top Left: Session Header -->
-						<div class="flex flex-col justify-start">
+						<div class="flex flex-col justify-start order-1 lg:order-none">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
 							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
@@ -402,20 +408,15 @@
 							</div>
 						</div>
 
-						<!-- Top Right: Session Overview -->
-						<div class="flex flex-col">
-							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
-							<p class="text-sm text-gray-700 leading-relaxed">
-								{currentSessionData.sessionOverview}
-							</p>
-						</div>
-
-						<!-- Bottom Left: Materials -->
-						<div class="flex flex-col">
+						<!-- Top Right: Materials (order-3 on mobile) -->
+						<div class="flex flex-col order-3 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Welcome Materials</h3>
 							<div class="space-y-2">
 								{#if materials.length === 0}
-									<p class="text-gray-500 text-sm italic">No materials available yet.</p>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+										<BookOpen size={28} class="text-gray-400 mb-2" />
+										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
+									</div>
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
@@ -439,9 +440,17 @@
 							</div>
 						</div>
 
-						<!-- Reflection (only if reflections enabled) -->
+						<!-- Bottom Left: Session Overview (order-2 on mobile) -->
+						<div class="flex flex-col order-2 lg:order-none">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
+							<p class="text-sm text-gray-700 leading-relaxed">
+								{currentSessionData.sessionOverview}
+							</p>
+						</div>
+
+						<!-- Bottom Right: Reflection (order-4 on mobile) -->
 							{#if reflectionsEnabled}
-								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+								<div class="flex flex-col justify-start order-4 lg:order-none" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
 								{#if currentSessionData.reflectionQuestion}
 									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
 									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
@@ -485,7 +494,10 @@
 										</a>
 									</div>
 								{:else}
-									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+										<PenTool size={28} class="text-gray-400 mb-2" />
+										<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
+									</div>
 								{/if}
 								</div>
 							{/if}
@@ -580,10 +592,10 @@
 				<div class="border-t border-gray-300 mx-6"></div>
 
 				<!-- Main Content - 4 Quadrant Grid -->
-				<div class="p-4 sm:p-6 lg:p-8">
-					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<div class="p-6 sm:p-8 lg:p-10">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
 						<!-- Top Left: Session Header -->
-						<div class="flex flex-col justify-start">
+						<div class="flex flex-col justify-start order-1 lg:order-none">
 							<p class="text-xs font-medium text-gray-500 mb-1">{courseData.title}</p>
 							<h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2" style="color: var(--course-accent-dark, #334642);">
 								{currentSessionData.sessionTitle}
@@ -594,18 +606,16 @@
 							</div>
 						</div>
 
-						<!-- Top Right: Session Overview -->
-						<div class="flex flex-col">
-							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
-							<p class="text-sm text-gray-700 leading-relaxed">
-								{currentSessionData.sessionOverview}
-							</p>
-						</div>
-
-						<!-- Bottom Left: Materials -->
-						<div class="flex flex-col">
+						<!-- Top Right: Materials (order-3 on mobile) -->
+						<div class="flex flex-col order-3 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Materials</h3>
 							<div class="space-y-2">
+								{#if materials.length === 0}
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+										<BookOpen size={28} class="text-gray-400 mb-2" />
+										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
+									</div>
+								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
 									<a
@@ -628,9 +638,17 @@
 							</div>
 						</div>
 
-						<!-- Reflection (only if reflections enabled) -->
+						<!-- Bottom Left: Session Overview (order-2 on mobile) -->
+						<div class="flex flex-col order-2 lg:order-none">
+							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Session Overview</h3>
+							<p class="text-sm text-gray-700 leading-relaxed">
+								{currentSessionData.sessionOverview}
+							</p>
+						</div>
+
+						<!-- Bottom Right: Reflection (order-4 on mobile) -->
 							{#if reflectionsEnabled}
-								<div class="flex flex-col justify-start" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
+								<div class="flex flex-col justify-start order-4 lg:order-none" class:bg-white={currentSessionData.reflectionQuestion} class:rounded-xl={currentSessionData.reflectionQuestion} class:p-5={currentSessionData.reflectionQuestion} class:shadow-sm={currentSessionData.reflectionQuestion}>
 								{#if currentSessionData.reflectionQuestion}
 									{@const questionText = currentSessionData.reflectionQuestion?.text || currentSessionData.reflectionQuestion}
 									{@const { truncated, needsTruncation } = truncateQuestion(questionText)}
@@ -674,7 +692,10 @@
 										</a>
 									</div>
 								{:else}
-									<p class="text-xs text-gray-400 italic p-5">No reflection question for this session</p>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
+										<PenTool size={28} class="text-gray-400 mb-2" />
+										<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
+									</div>
 								{/if}
 								</div>
 							{/if}

@@ -1,15 +1,49 @@
 <script>
+	import { onMount } from 'svelte';
 	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
 	import SessionContent from './SessionContent.svelte';
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
 	import ReflectionModal from './ReflectionModal.svelte';
+	import CourseIntroVideoModal from '$lib/components/CourseIntroVideoModal.svelte';
 	import { isComplete, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
 
 	// Extract data from server load
 	const { materialsBySession, currentSession: initialSession, availableSessions: serverAvailableSessions, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber, featureSettings } = data;
+
+	// Intro video modal state
+	let showIntroVideo = $state(false);
+
+	// Hardcoded intro video URL for now (will be per-course later)
+	// TODO: Move to course settings
+	// Set to empty string or null to disable intro video
+	const INTRO_VIDEO_URL = '';
+
+	// Check if we have a valid video URL (not empty, not placeholder)
+	const hasValidVideoUrl = INTRO_VIDEO_URL &&
+		!INTRO_VIDEO_URL.includes('placeholder') &&
+		INTRO_VIDEO_URL.includes('loom.com');
+
+	// Track page view and show intro video on first visit
+	onMount(async () => {
+		try {
+			const response = await fetch(`/api/courses/${courseSlug}/track-view`, {
+				method: 'POST'
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				// Show intro video on first visit (only if we have a valid video URL)
+				if (result.isFirstView && hasValidVideoUrl) {
+					showIntroVideo = true;
+				}
+			}
+		} catch (err) {
+			console.error('Failed to track page view:', err);
+		}
+	});
 
 	// Svelte 5 state with runes
 	let currentSession = $state(initialSession);
@@ -121,4 +155,12 @@
 		reflection={selectedReflection}
 		onClose={closeReflectionModal}
 		onNavigate={navigateReflection}
+	/>
+
+	<!-- Intro Video Modal (shows on first visit) -->
+	<CourseIntroVideoModal
+		show={showIntroVideo}
+		videoUrl={INTRO_VIDEO_URL}
+		courseTitle={courseData.title}
+		onClose={() => showIntroVideo = false}
 	/>

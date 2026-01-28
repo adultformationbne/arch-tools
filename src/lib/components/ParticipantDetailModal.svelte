@@ -56,6 +56,8 @@
 				welcome_email_sent_at: participant.welcome_email_sent_at,
 				last_login_at: participant.last_login_at,
 				login_count: participant.login_count || 0,
+				last_viewed_at: participant.last_viewed_at,
+				view_count: participant.view_count || 0,
 				attendanceCount: participant.attendanceCount,
 				reflectionStatus: participant.reflectionStatus,
 				isBehind: participant.isBehind,
@@ -83,6 +85,8 @@
 			welcome_email_sent_at: participant.welcome_email_sent_at,
 			last_login_at: participant.last_login_at,
 			login_count: participant.login_count || 0,
+			last_viewed_at: participant.last_viewed_at,
+			view_count: participant.view_count || 0,
 			attendanceCount: participant.attendanceCount,
 			reflectionStatus: participant.reflectionStatus,
 			isBehind: participant.isBehind,
@@ -332,7 +336,7 @@
 					</div>
 				{/if}
 
-				<div class="grid grid-cols-3 gap-3 mb-6">
+				<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Welcome Email</p>
 						<p class="text-sm font-medium text-gray-900">
@@ -345,13 +349,24 @@
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
-						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Last Login</p>
+						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Logins</p>
 						<p class="text-sm font-medium text-gray-900">
-							{normalizedParticipant()?.last_login_at ? formatDate(normalizedParticipant()?.last_login_at) : 'Never'}
+							{normalizedParticipant()?.login_count || 0}
 						</p>
-						{#if normalizedParticipant()?.login_count > 0}
+						{#if normalizedParticipant()?.last_login_at}
 							<p class="text-[10px] text-gray-400 mt-0.5">
-								{normalizedParticipant()?.login_count} logins
+								Last: {formatDate(normalizedParticipant()?.last_login_at)}
+							</p>
+						{/if}
+					</div>
+					<div class="p-3 rounded-lg bg-gray-50 text-center">
+						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Page Views</p>
+						<p class="text-sm font-medium text-gray-900">
+							{normalizedParticipant()?.view_count || 0}
+						</p>
+						{#if normalizedParticipant()?.last_viewed_at}
+							<p class="text-[10px] text-gray-400 mt-0.5">
+								Last: {formatDate(normalizedParticipant()?.last_viewed_at)}
 							</p>
 						{/if}
 					</div>

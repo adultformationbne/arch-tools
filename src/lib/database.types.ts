@@ -371,12 +371,14 @@ export type Database = {
           imported_by: string | null
           invitation_accepted_at: string | null
           last_login_at: string | null
+          last_viewed_at: string | null
           login_count: number | null
           notes: string | null
           role: string
           status: string
           updated_at: string | null
           user_profile_id: string | null
+          view_count: number | null
           welcome_email_sent_at: string | null
           welcome_email_sent_by: string | null
         }
@@ -394,12 +396,14 @@ export type Database = {
           imported_by?: string | null
           invitation_accepted_at?: string | null
           last_login_at?: string | null
+          last_viewed_at?: string | null
           login_count?: number | null
           notes?: string | null
           role: string
           status?: string
           updated_at?: string | null
           user_profile_id?: string | null
+          view_count?: number | null
           welcome_email_sent_at?: string | null
           welcome_email_sent_by?: string | null
         }
@@ -417,12 +421,14 @@ export type Database = {
           imported_by?: string | null
           invitation_accepted_at?: string | null
           last_login_at?: string | null
+          last_viewed_at?: string | null
           login_count?: number | null
           notes?: string | null
           role?: string
           status?: string
           updated_at?: string | null
           user_profile_id?: string | null
+          view_count?: number | null
           welcome_email_sent_at?: string | null
           welcome_email_sent_by?: string | null
         }
@@ -1022,6 +1028,62 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      email_images: {
+        Row: {
+          context: string
+          context_id: string | null
+          created_at: string | null
+          file_size: number | null
+          height: number | null
+          id: string
+          mime_type: string | null
+          original_filename: string | null
+          public_url: string
+          storage_path: string
+          uploaded_by: string | null
+          used_at: string | null
+          width: number | null
+        }
+        Insert: {
+          context: string
+          context_id?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          public_url: string
+          storage_path: string
+          uploaded_by?: string | null
+          used_at?: string | null
+          width?: number | null
+        }
+        Update: {
+          context?: string
+          context_id?: string | null
+          created_at?: string | null
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          public_url?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          used_at?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_images_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_templates: {
         Row: {
