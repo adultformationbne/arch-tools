@@ -159,6 +159,17 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 			});
 		}
 
+		// Get reply-to email for course context
+		let replyTo: string | null = null;
+		if (context === 'course' && context_id) {
+			const { data: course } = await supabaseAdmin
+				.from('courses')
+				.select('email_branding_config')
+				.eq('slug', context_id)
+				.single();
+			replyTo = course?.email_branding_config?.reply_to_email || null;
+		}
+
 		// Send test email
 		const result = await sendEmail({
 			to,
@@ -167,6 +178,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 			resendApiKey: RESEND_API_KEY,
 			supabase: supabaseAdmin,
 			emailType: `${context}_test_email`,
+			replyTo,
 			metadata: {
 				sent_by: user.email,
 				context,

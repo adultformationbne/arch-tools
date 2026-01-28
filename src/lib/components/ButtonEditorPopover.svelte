@@ -161,7 +161,7 @@
 				<div>
 					<p class="popover-label mb-2">Quick Insert:</p>
 					<div class="variable-pills">
-						{#each availableVariables.slice(0, 4) as variable}
+						{#each availableVariables as variable}
 							<button
 								type="button"
 								onclick={() => insertVariable(variable.name)}

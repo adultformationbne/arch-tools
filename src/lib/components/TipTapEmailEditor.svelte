@@ -694,6 +694,20 @@
 			return acc;
 		}, {});
 	});
+
+	// Filter variables for button popover - prioritize link-related variables
+	const buttonVariables = $derived.by(() => {
+		const linkVars = availableVariables.filter(v =>
+			v.name.toLowerCase().includes('link') ||
+			v.name.toLowerCase().includes('url')
+		);
+		// Return link variables first, then others (up to 6 total for buttons)
+		const otherVars = availableVariables.filter(v =>
+			!v.name.toLowerCase().includes('link') &&
+			!v.name.toLowerCase().includes('url')
+		);
+		return [...linkVars, ...otherVars].slice(0, 6);
+	});
 </script>
 
 <!-- Popovers -->
@@ -711,7 +725,7 @@
 	buttonText={currentButtonText}
 	buttonUrl={currentButtonUrl}
 	anchorElement={buttonAnchorElement}
-	availableVariables={availableVariables}
+	availableVariables={buttonVariables}
 	onSave={saveButton}
 	onCancel={() => (showButtonPopover = false)}
 	onRemove={editingButtonPos !== null ? removeButton : null}

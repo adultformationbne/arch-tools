@@ -286,6 +286,11 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	// Determine reply-to: use provided value, or fall back to platform default
 	const effectiveReplyTo = options.replyTo || platformSettings.replyToEmail;
 
+	// Debug logging for reply-to
+	console.log('[sendBulkEmails] options.replyTo:', options.replyTo);
+	console.log('[sendBulkEmails] platformSettings.replyToEmail:', platformSettings.replyToEmail);
+	console.log('[sendBulkEmails] effectiveReplyTo:', effectiveReplyTo);
+
 	// Resend batch API supports up to 100 emails per request
 	const BATCH_SIZE = 100;
 
@@ -301,7 +306,8 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 				html: email.html
 			};
 			if (effectiveReplyTo) {
-				payload.reply_to = effectiveReplyTo;
+				// Resend expects reply_to as string or array - use array format for consistency
+				payload.reply_to = [effectiveReplyTo];
 			}
 			return payload;
 		});
