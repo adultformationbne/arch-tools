@@ -10,7 +10,12 @@
 
 	let isEditing = $state(false);
 	let textareaValue = $state('');
-	let previousSessionNumber = $state(sessionNumber);
+	let previousSessionNumber = $state(0);
+
+	// Sync previousSessionNumber with prop
+	$effect(() => {
+		previousSessionNumber = sessionNumber;
+	});
 
 	const hasQuestion = $derived(reflectionQuestion?.trim().length > 0);
 

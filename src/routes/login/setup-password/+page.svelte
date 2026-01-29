@@ -4,10 +4,13 @@
 	import { KeyRound, CheckCircle } from '$lib/icons';
 
 	let { data } = $props();
-	const { supabase, user, platform, courseBranding } = data;
+	const supabase = $derived(data.supabase);
+	const user = $derived(data.user);
+	const platform = $derived(data.platform);
+	const courseBranding = $derived(data.courseBranding);
 
 	// Course-specific values (only used when courseBranding is present)
-	const accentColor = courseBranding?.accentDark || null;
+	const accentColor = $derived(courseBranding?.accentDark || null);
 
 	let password = $state('');
 	let confirmPassword = $state('');

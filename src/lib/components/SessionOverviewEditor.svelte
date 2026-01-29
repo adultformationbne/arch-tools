@@ -7,9 +7,17 @@
 	} = $props();
 
 	// Local state to avoid two-way binding issues with props
-	let textareaValue = $state(sessionOverview);
-	let previousSessionNumber = $state(sessionNumber);
+	let textareaValue = $state('');
+	let previousSessionNumber = $state(0);
 	let textareaEl = $state(null);
+
+	// Initialize from props
+	$effect(() => {
+		if (previousSessionNumber === 0) {
+			textareaValue = sessionOverview;
+			previousSessionNumber = sessionNumber;
+		}
+	});
 
 	// Auto-resize textarea to fit content
 	const autoResize = () => {
@@ -44,9 +52,9 @@
 	});
 
 	// Custom placeholder based on session type
-	const displayPlaceholder = sessionNumber === 0
+	const displayPlaceholder = $derived(sessionNumber === 0
 		? 'Welcome your students and set expectations. What should they do before the first session? Any pre-reading, introductions, or logistics to share?'
-		: 'What will students learn in this session? Key topics, goals, or themes to prepare them for the materials and discussion ahead...';
+		: 'What will students learn in this session? Key topics, goals, or themes to prepare them for the materials and discussion ahead...');
 </script>
 
 <div class="bg-white rounded-2xl p-6 shadow-sm">

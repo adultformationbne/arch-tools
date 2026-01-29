@@ -7,11 +7,11 @@
 		onReadReflection = () => {}
 	} = $props();
 
-	// Use real reflections data
-	const reflectionsList = reflections || [];
+	// Use real reflections data (derived for reactivity)
+	const reflectionsList = $derived(reflections || []);
 
-	let visibleReflections = $state(reflectionsList.slice(0, 6)); // Show first 6
 	let showAll = $state(false);
+	const visibleReflections = $derived(showAll ? reflectionsList : reflectionsList.slice(0, 6));
 
 	// Strip HTML tags for plain text display (add space to preserve word boundaries)
 	const stripHtml = (html) => {
@@ -31,7 +31,7 @@
 
 	const toggleShowAll = () => {
 		showAll = !showAll;
-		visibleReflections = showAll ? reflectionsList : reflectionsList.slice(0, 6);
+		// visibleReflections updates automatically via $derived
 	};
 
 	const handleReadReflection = (reflection) => {

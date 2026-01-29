@@ -5,18 +5,34 @@
 
 	// Get data from server
 	let { data } = $props();
-	const { profileData } = data;
+	const profileData = $derived(data.profileData);
 
 	// User profile state
 	let userProfile = $state({
-		name: profileData.name,
-		email: profileData.email,
-		cohort: `${profileData.moduleName} - ${profileData.cohortName}`,
-		hub: profileData.hubName,
-		hubLocation: profileData.hubLocation,
-		joinDate: profileData.joinDate,
-		currentSession: profileData.currentSession,
-		role: profileData.role
+		name: '',
+		email: '',
+		cohort: '',
+		hub: '',
+		hubLocation: '',
+		joinDate: '',
+		currentSession: 0,
+		role: ''
+	});
+
+	// Sync profile state from server data
+	$effect(() => {
+		if (profileData) {
+			userProfile = {
+				name: profileData.name,
+				email: profileData.email,
+				cohort: `${profileData.moduleName} - ${profileData.cohortName}`,
+				hub: profileData.hubName,
+				hubLocation: profileData.hubLocation,
+				joinDate: profileData.joinDate,
+				currentSession: profileData.currentSession,
+				role: profileData.role
+			};
+		}
 	});
 
 	// Form states

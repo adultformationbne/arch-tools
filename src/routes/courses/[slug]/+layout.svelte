@@ -4,12 +4,12 @@
 	// This layout applies course-specific theming from the database settings
 	let { data, children } = $props();
 
-	// Extract theme settings from the parent layout
-	const theme = data.courseTheme || {};
-	const branding = data.courseBranding || {};
-	const courseSlug = data.courseSlug || '';
-	const userName = data.userName || 'User';
-	const userRole = data.userRole || 'student';
+	// Extract theme settings from the parent layout (use $derived for reactivity)
+	const theme = $derived(data.courseTheme || {});
+	const branding = $derived(data.courseBranding || {});
+	const courseSlug = $derived(data.courseSlug || '');
+	const userName = $derived(data.userName || 'User');
+	const userRole = $derived(data.userRole || 'student');
 
 	// Build CSS custom property string for inline styles
 	function buildThemeStyles(themeSettings) {

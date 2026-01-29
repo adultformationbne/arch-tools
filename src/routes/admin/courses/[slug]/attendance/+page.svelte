@@ -4,7 +4,7 @@
 
 	let { data } = $props();
 
-	const courseSlug = data.courseSlug;
+	const courseSlug = $derived(data.courseSlug);
 	let selectedCohortId = $state(data.cohorts[0]?.id || null);
 	let expandedSession = $state(null);
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded

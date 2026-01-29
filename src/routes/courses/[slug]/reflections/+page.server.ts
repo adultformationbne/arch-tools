@@ -31,6 +31,11 @@ export const load: PageServerLoad = async (event) => {
 
 	const { enrollment, sessions, questions, responses, publicReflections } = result.data;
 
+	// Clear stale cohort cookie if it didn't match the actual enrollment
+	if (course && cohortId && enrollment.cohort_id !== cohortId) {
+		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
+	}
+
 	// Group questions by session number
 	const questionsBySession = groupQuestionsBySession(questions);
 

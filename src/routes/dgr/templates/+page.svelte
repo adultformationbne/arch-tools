@@ -11,7 +11,7 @@
   import { formatHtml } from '$lib/utils/html-formatter.js';
 
   let { data } = $props();
-  const { supabase } = data;
+  const supabase = $derived(data.supabase);
 
   // Initialize template manager
   const templateManager = new TemplateManager(supabase);

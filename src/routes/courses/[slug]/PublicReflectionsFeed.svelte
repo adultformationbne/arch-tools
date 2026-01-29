@@ -5,8 +5,8 @@
 		reflections = []
 	} = $props();
 
-	// Use real reflections data
-	const publicReflections = reflections || [];
+	// Use real reflections data (derived for reactivity)
+	const publicReflections = $derived(reflections || []);
 
 	// Modal state
 	let showModal = $state(false);
@@ -124,8 +124,10 @@
 		<div
 			class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			tabindex="-1"
 		>
 			<!-- Modal Header -->
 			<div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-100">

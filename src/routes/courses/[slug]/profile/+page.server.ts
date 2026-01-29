@@ -15,6 +15,11 @@ export const load: PageServerLoad = async (event) => {
 	// Get user's enrollment details with cohort and hub information using repository
 	const { data: enrollment } = await CourseQueries.getEnrollment(user.id, courseSlug, cohortId);
 
+	// Clear stale cohort cookie if it didn't match the actual enrollment
+	if (course && cohortId && enrollment?.cohort_id !== cohortId) {
+		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
+	}
+
 	const profileData = {
 		name: enrollment?.user_profile?.full_name || enrollment?.full_name || user.email,
 		email: enrollment?.user_profile?.email || enrollment?.email || user.email,

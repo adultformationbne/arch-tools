@@ -4,10 +4,12 @@
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
-	const { supabase, platform, courseBranding } = data;
+	const supabase = $derived(data.supabase);
+	const platform = $derived(data.platform);
+	const courseBranding = $derived(data.courseBranding);
 
 	// Course-specific values (only used when courseBranding is present)
-	const accentColor = courseBranding?.accentDark || null;
+	const accentColor = $derived(courseBranding?.accentDark || null);
 
 	// Auth flow states
 	type AuthStep = 'email' | 'password' | 'otp';

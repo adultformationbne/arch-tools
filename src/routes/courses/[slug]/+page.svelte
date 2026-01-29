@@ -10,8 +10,16 @@
 
 	let { data } = $props();
 
-	// Extract data from server load
-	const { materialsBySession, currentSession: initialSession, availableSessions: serverAvailableSessions, courseData: initialCourseData, pastReflections, publicReflections, sessionsByNumber, courseSlug, hubData, totalSessions, maxSessionNumber, featureSettings } = data;
+	// Extract data from server load using $derived for reactivity
+	const materialsBySession = $derived(data.materialsBySession);
+	const pastReflections = $derived(data.pastReflections);
+	const publicReflections = $derived(data.publicReflections);
+	const sessionsByNumber = $derived(data.sessionsByNumber);
+	const courseSlug = $derived(data.courseSlug);
+	const hubData = $derived(data.hubData);
+	const totalSessions = $derived(data.totalSessions);
+	const maxSessionNumber = $derived(data.maxSessionNumber);
+	const featureSettings = $derived(data.featureSettings);
 
 	// Intro video modal state
 	let showIntroVideo = $state(false);
@@ -46,17 +54,24 @@
 	});
 
 	// Svelte 5 state with runes
-	let currentSession = $state(initialSession);
+	let currentSession = $state(1);
 	// Available sessions is calculated server-side based on role and coordinator access settings
 	// - Students: only up to their current_session
 	// - Coordinators: based on course settings (all or N sessions ahead)
 	// - Admins: all sessions
-	let availableSessions = $state(serverAvailableSessions);
+	let availableSessions = $state([]);
 	let showReflectionModal = $state(false);
 	let selectedReflection = $state(null);
 
 	// Real data from database
-	let courseData = $state(initialCourseData);
+	let courseData = $state(null);
+
+	// Initialize state from server data
+	$effect(() => {
+		if (data.currentSession !== undefined) currentSession = data.currentSession;
+		if (data.availableSessions) availableSessions = data.availableSessions;
+		if (data.courseData) courseData = data.courseData;
+	});
 
 	const handleSessionChange = (sessionNum) => {
 		currentSession = sessionNum;

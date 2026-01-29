@@ -5,8 +5,14 @@
 
 	let { data } = $props();
 
-	// Extract data from server load
-	const { materialsBySession, currentSession, materials, courseName, courseTheme, courseBranding, courseInfo } = data;
+	// Extract data from server load using $derived for reactivity
+	const materialsBySession = $derived(data.materialsBySession);
+	const currentSession = $derived(data.currentSession);
+	const materials = $derived(data.materials);
+	const courseName = $derived(data.courseName);
+	const courseTheme = $derived(data.courseTheme);
+	const courseBranding = $derived(data.courseBranding);
+	const courseInfo = $derived(data.courseInfo);
 
 	// Check for material ID in URL params
 	const urlMaterialId = $page.url.searchParams.get('material');

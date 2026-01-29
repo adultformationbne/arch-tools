@@ -13,7 +13,13 @@
 		initialSelectedIds = []
 	} = $props();
 
-	let selectedSession = $state((cohort?.current_session || 0) + 1);
+	// Initialize from cohort prop
+	let selectedSession = $state(1);
+
+	// Sync when cohort changes
+	$effect(() => {
+		selectedSession = (cohort?.current_session || 0) + 1;
+	});
 	let selectedStudents = $state([]);
 	let sendEmail = $state(true);
 	let isProcessing = $state(false);

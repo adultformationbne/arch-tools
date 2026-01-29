@@ -19,13 +19,13 @@
 		}
 	});
 
-	const courseSlug = data.courseSlug;
-	const modules = data.modules || [];
-	const enrollmentRole = data.enrollmentRole;
-	const isCourseAdmin = data.isCourseAdmin;
-	let cohorts = $derived(data.cohorts || []);
-	const courseTheme = data.courseTheme || {};
-	const courseBranding = data.courseBranding || {};
+	const courseSlug = $derived(data.courseSlug);
+	const modules = $derived(data.modules || []);
+	const enrollmentRole = $derived(data.enrollmentRole);
+	const isCourseAdmin = $derived(data.isCourseAdmin);
+	const cohorts = $derived(data.cohorts || []);
+	const courseTheme = $derived(data.courseTheme || {});
+	const courseBranding = $derived(data.courseBranding || {});
 
 	// Default theme colors
 	const accentDark = courseTheme.accentDark || '#334642';

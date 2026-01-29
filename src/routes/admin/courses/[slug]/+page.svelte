@@ -22,7 +22,7 @@
 
 	let { data } = $props();
 
-	const courseSlug = data.courseSlug;
+	const courseSlug = $derived(data.courseSlug);
 	let modules = $derived(data.modules || []);
 	let cohorts = $derived(data.cohorts || []);
 

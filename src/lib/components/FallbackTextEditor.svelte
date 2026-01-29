@@ -10,7 +10,14 @@
 	} = $props();
 
 	let editorElement = $state(null);
-	let internalValue = $state(value);
+	let internalValue = $state('');
+
+	// Initialize from prop
+	$effect(() => {
+		if (!internalValue && value) {
+			internalValue = value;
+		}
+	});
 
 	// Sync external value changes
 	$effect(() => {

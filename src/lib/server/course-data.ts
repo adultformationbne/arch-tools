@@ -46,7 +46,7 @@ export const CourseQueries = {
 	 * Otherwise, if user has multiple enrollments (different cohorts), returns the most recent one
 	 */
 	async getEnrollment(userId: string, courseSlug: string, cohortId?: string) {
-		let query = supabaseAdmin
+		const baseQuery = () => supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
 				*,
@@ -67,12 +67,24 @@ export const CourseQueries = {
 			.eq('cohort.module.course.slug', courseSlug)
 			.in('status', ['active', 'invited', 'accepted']);
 
-		// If specific cohort requested, filter by it
+		// If specific cohort requested, try that first
 		if (cohortId) {
-			query = query.eq('cohort_id', cohortId);
+			const { data, error } = await baseQuery()
+				.eq('cohort_id', cohortId)
+				.order('created_at', { ascending: false })
+				.limit(1);
+
+			// If found with specific cohort, return it
+			if (data && data.length > 0) {
+				return { data: data[0], error: null };
+			}
+
+			// Cohort cookie was stale - fall through to query without cohort filter
+			console.log('[getEnrollment] Stale cohort cookie, retrying without cohort filter');
 		}
 
-		const { data, error } = await query
+		// Query without cohort filter (or retry after stale cookie)
+		const { data, error } = await baseQuery()
 			.order('created_at', { ascending: false })
 			.limit(1);
 

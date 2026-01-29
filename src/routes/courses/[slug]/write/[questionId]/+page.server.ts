@@ -61,6 +61,11 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404, 'Enrollment not found');
 	}
 
+	// Clear stale cohort cookie if it didn't match the actual enrollment
+	if (course && cohortId && enrollment.cohort_id !== cohortId) {
+		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
+	}
+
 	// Check for existing reflection
 	const { data: existingReflection } = await supabaseAdmin
 		.from('courses_reflection_responses')

@@ -6,9 +6,15 @@
 	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	let { data } = $props();
-	let course = $derived(data.course);
-	let hubs = $state(data.hubs || []);
-	let availableUsers = $state(data.availableUsers || []);
+	const course = $derived(data.course);
+	let hubs = $state([]);
+	let availableUsers = $state([]);
+
+	// Sync state from server data
+	$effect(() => {
+		hubs = data.hubs || [];
+		availableUsers = data.availableUsers || [];
+	});
 
 	// Modal state
 	let showHubModal = $state(false);

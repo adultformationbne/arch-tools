@@ -25,8 +25,8 @@
 </script>
 
 <span class="inline-flex items-center rounded-full font-medium {sizeClasses} {badgeClasses} {className}">
-	{#if showIcon}
-		<svelte:component this={Icon} size={iconSize} />
+	{#if showIcon && Icon}
+		<Icon size={iconSize} />
 	{/if}
 	{label}
 </span>

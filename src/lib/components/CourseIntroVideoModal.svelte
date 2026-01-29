@@ -45,17 +45,19 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if show}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
 		onclick={onClose}
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="intro-video-title"
 	>
 		<div
 			class="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
-			role="document"
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="intro-video-title"
+			tabindex="-1"
 		>
 			<!-- Header -->
 			<div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">

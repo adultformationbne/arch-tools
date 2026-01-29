@@ -7,11 +7,16 @@
 
 	let { data } = $props();
 
-	const courseSlug = data.courseSlug;
-	let course = $state(data.course);
+	const courseSlug = $derived(data.courseSlug);
+	let course = $state(null);
+
+	// Sync course data
+	$effect(() => {
+		course = data.course;
+	});
 
 	// Get current settings with defaults applied
-	const currentSettings = getCourseSettings(course.settings);
+	const currentSettings = $derived(getCourseSettings(course?.settings));
 
 	// Form state
 	let saving = $state(false);

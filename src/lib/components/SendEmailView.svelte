@@ -19,8 +19,13 @@
 		currentUserEmail = ''
 	} = $props();
 
-	// Main state
-	let mode = $state(initialMode); // 'choose' | 'quick' | 'template'
+	// Main state (initialized from prop, then managed locally)
+	let mode = $state('choose'); // 'choose' | 'quick' | 'template'
+
+	// Sync mode when initialMode changes
+	$effect(() => {
+		mode = initialMode;
+	});
 
 	// Template mode state
 	let selectedTemplateId = $state('');

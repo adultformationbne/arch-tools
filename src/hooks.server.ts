@@ -67,6 +67,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 		} = await event.locals.supabase.auth.getUser();
 
 		if (error || !user) {
+			// If refresh token is invalid/not found, clear stale auth cookies
+			if (error?.code === 'refresh_token_not_found' || error?.code === 'invalid_refresh_token') {
+				console.log('[auth] Clearing stale session cookies due to invalid refresh token');
+				// Clear all Supabase auth cookies
+				const cookies = event.cookies.getAll();
+				for (const cookie of cookies) {
+					if (cookie.name.startsWith('sb-')) {
+						event.cookies.delete(cookie.name, { path: '/' });
+					}
+				}
+			}
 			cachedSession = { session: null, user: null };
 			return cachedSession;
 		}

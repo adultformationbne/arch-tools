@@ -71,9 +71,9 @@ export const GET: RequestHandler = async (event) => {
 		}
 
 		if (type === 'reflections') {
-			const userProfileId = url.searchParams.get('user_profile_id');
-			if (!userProfileId) {
-				throw error(400, 'user_profile_id is required for reflections');
+			const enrollmentId = url.searchParams.get('enrollment_id');
+			if (!enrollmentId) {
+				throw error(400, 'enrollment_id is required for reflections');
 			}
 
 			// Get reflection responses with session info
@@ -82,19 +82,18 @@ export const GET: RequestHandler = async (event) => {
 				.select(`
 					id,
 					status,
-					word_count,
-					submitted_at,
+					response_text,
 					created_at,
 					updated_at,
-					graded_by,
-					graded_at,
+					marked_by,
+					marked_at,
 					question:question_id (
 						session:session_id (
 							session_number
 						)
 					)
 				`)
-				.eq('user_id', userProfileId)
+				.eq('enrollment_id', enrollmentId)
 				.eq('cohort_id', cohortId)
 				.order('created_at', { ascending: true });
 
@@ -102,31 +101,31 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			// Get names for graded_by users
-			const gradedByIds = [...new Set((data || []).map(r => r.graded_by).filter(Boolean))];
-			let gradedByNames: Record<string, string> = {};
+			// Get names for marked_by users
+			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter(Boolean))];
+			let markedByNames: Record<string, string> = {};
 
-			if (gradedByIds.length > 0) {
+			if (markedByIds.length > 0) {
 				const { data: profiles } = await supabaseAdmin
 					.from('user_profiles')
 					.select('id, full_name')
-					.in('id', gradedByIds);
+					.in('id', markedByIds);
 
 				if (profiles) {
-					gradedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name]));
+					markedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name]));
 				}
 			}
 
-			// Flatten and enrich the data
+			// Flatten and enrich the data - compute word count from response_text
 			const enrichedData = (data || []).map(record => ({
 				id: record.id,
 				status: record.status,
-				word_count: record.word_count,
-				submitted_at: record.submitted_at,
+				word_count: record.response_text ? record.response_text.trim().split(/\s+/).filter(Boolean).length : 0,
+				submitted_at: record.created_at,
 				created_at: record.created_at,
 				updated_at: record.updated_at,
-				graded_at: record.graded_at,
-				graded_by_name: record.graded_by ? gradedByNames[record.graded_by] || 'Unknown' : null,
+				graded_at: record.marked_at,
+				graded_by_name: record.marked_by ? markedByNames[record.marked_by] || 'Unknown' : null,
 				session_number: record.question?.session?.session_number || null
 			}));
 

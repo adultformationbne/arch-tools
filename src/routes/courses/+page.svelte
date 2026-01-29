@@ -3,8 +3,8 @@
 	import { Card } from '$lib/design-system';
 
 	let { data } = $props();
-	const courseData = data.courseData || [];
-	const noEnrollments = data.noEnrollments || false;
+	const courseData = $derived(data.courseData || []);
+	const noEnrollments = $derived(data.noEnrollments || false);
 
 	function getRoleBadge(role: string) {
 		if (role === 'coordinator') {

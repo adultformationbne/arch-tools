@@ -60,8 +60,8 @@
 		...restProps
 	} = $props();
 
-	// Generate unique ID if not provided
-	const fieldId = id || `field-${Math.random().toString(36).substr(2, 9)}`;
+	// Generate unique ID if not provided (use $derived for prop-dependent values)
+	const fieldId = $derived(id || `field-${Math.random().toString(36).substr(2, 9)}`);
 
 	// Validation state
 	let error = $state('');

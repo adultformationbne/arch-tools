@@ -305,16 +305,19 @@
 </script>
 
 {#if show}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
 		onclick={handleClose}
 		onkeydown={(e) => e.key === 'Escape' && handleClose()}
-		role="dialog"
-		aria-modal="true"
 	>
 		<div
 			class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: {courseColors.accentLight};">

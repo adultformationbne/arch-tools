@@ -9,7 +9,7 @@
 
 	let { data } = $props();
 
-	const courseSlug = data.courseSlug;
+	const courseSlug = $derived(data.courseSlug);
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
 	let searchQuery = $state('');
@@ -25,8 +25,8 @@
 	let pendingOverrideReflection = $state(null);
 
 	// Real reflection data from server
-	let reflections = $state(data.reflections || []);
-	let cohorts = $state(data.cohorts || []);
+	let reflections = $state([]);
+	let cohorts = $state([]);
 
 	// Sync data when it changes (after invalidateAll)
 	$effect(() => {

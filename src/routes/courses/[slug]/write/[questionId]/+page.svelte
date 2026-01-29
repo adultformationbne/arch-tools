@@ -7,11 +7,15 @@
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 
 	let { data } = $props();
-	const { question, courseSlug, questionId, existingReflection, isEditable } = data;
+	const question = $derived(data.question);
+	const courseSlug = $derived(data.courseSlug);
+	const questionId = $derived(data.questionId);
+	const existingReflection = $derived(data.existingReflection);
+	const isEditable = $derived(data.isEditable);
 
-	// Writing state
-	let content = $state(existingReflection?.response_text || '');
-	let isPrivate = $state(!(existingReflection?.is_public ?? false));
+	// Writing state (initialized from data directly)
+	let content = $state(data.existingReflection?.response_text || '');
+	let isPrivate = $state(!(data.existingReflection?.is_public ?? false));
 	let autoSaveStatus = $state('saved');
 	let lastSaved = $state(new Date());
 	let isSaving = $state(false);

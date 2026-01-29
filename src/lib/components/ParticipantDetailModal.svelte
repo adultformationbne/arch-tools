@@ -302,7 +302,7 @@
 		<div
 			class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-xl flex flex-col"
 			onclick={(e) => e.stopPropagation()}
-			role="document"
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="px-6 py-4 border-b border-gray-200 flex items-start justify-between" style="background-color: var(--course-surface, #f5f5f5);">

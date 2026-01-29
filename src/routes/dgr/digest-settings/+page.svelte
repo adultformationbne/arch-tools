@@ -5,15 +5,23 @@
 
 	let { data } = $props();
 
-	let task = $state(data.task);
-	let dgrAdmins = $state(data.dgrAdmins);
-	let selectedRecipientIds = $state(
-		(data.currentRecipients || []).map(r => r.id)
-	);
+	let task = $state(null);
+	let dgrAdmins = $state([]);
+	let selectedRecipientIds = $state([]);
 	let saving = $state(false);
-	let runOnWeekdays = $state(task?.run_on_weekdays ?? true);
-	let runOnWeekends = $state(task?.run_on_weekends ?? false);
-	let enabled = $state(task?.enabled ?? true);
+	let runOnWeekdays = $state(true);
+	let runOnWeekends = $state(false);
+	let enabled = $state(true);
+
+	// Sync state from server data
+	$effect(() => {
+		task = data.task;
+		dgrAdmins = data.dgrAdmins;
+		selectedRecipientIds = (data.currentRecipients || []).map(r => r.id);
+		runOnWeekdays = task?.run_on_weekdays ?? true;
+		runOnWeekends = task?.run_on_weekends ?? false;
+		enabled = task?.enabled ?? true;
+	});
 
 	async function saveSettings() {
 		saving = true;

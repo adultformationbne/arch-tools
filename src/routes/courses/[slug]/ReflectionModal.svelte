@@ -45,8 +45,10 @@
 		<div
 			class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			tabindex="-1"
 		>
 			<!-- Modal Header -->
 			<div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">

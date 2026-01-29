@@ -9,8 +9,8 @@
 	import { formatReading, formatContributorName } from '$lib/utils/dgr-helpers';
 
 	const { data } = $props();
-	const token = data.token;
-	const isAuthenticated = data.isAuthenticated;
+	const token = $derived(data.token);
+	const isAuthenticated = $derived(data.isAuthenticated);
 
 	let contributor = $state(null);
 	let dates = $state([]);

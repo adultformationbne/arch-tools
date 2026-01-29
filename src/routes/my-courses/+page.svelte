@@ -3,8 +3,8 @@
 	import { Card } from '$lib/design-system';
 
 	let { data } = $props();
-	const courses = data.courses || [];
-	const noEnrollments = data.noEnrollments || false;
+	const courses = $derived(data.courses || []);
+	const noEnrollments = $derived(data.noEnrollments || false);
 </script>
 
 <svelte:head>

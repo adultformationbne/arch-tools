@@ -15,8 +15,8 @@
 		availableVariables = []
 	} = $props();
 
-	let text = $state(buttonText);
-	let url = $state(buttonUrl);
+	let text = $state('');
+	let url = $state('');
 	let popoverElement = $state(null);
 	let textInput = $state(null);
 	let arrowElement = $state(null);

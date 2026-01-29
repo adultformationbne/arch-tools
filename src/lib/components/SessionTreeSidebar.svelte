@@ -29,7 +29,14 @@
 		onSessionReorder = () => {}
 	} = $props();
 
-	let expandedModules = $state(new Set([selectedModuleId]));
+	let expandedModules = $state(new Set());
+
+	// Sync expanded modules when selection changes
+	$effect(() => {
+		if (selectedModuleId && !expandedModules.has(selectedModuleId)) {
+			expandedModules = new Set([...expandedModules, selectedModuleId]);
+		}
+	});
 	let editingSessionId = $state(null);
 	let editingTitle = $state('');
 	let savingTitle = $state(false);  // Track if we're saving

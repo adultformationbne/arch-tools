@@ -14,7 +14,7 @@
 	};
 
 	let { data } = $props();
-	let course = $derived(data.course);
+	const course = $derived(data.course);
 	let modules = $state(data.modules || []);
 
 	// Sync modules when data changes (e.g., after navigation or modal save)

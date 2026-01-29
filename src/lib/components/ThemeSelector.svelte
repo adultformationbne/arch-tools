@@ -17,10 +17,17 @@
 		{ value: 'Times New Roman', label: 'Times New Roman', style: 'font-serif' }
 	];
 
-	// Local state
-	let selectedAccentDark = $state(accentDark);
-	let selectedAccentLight = $state(accentLight);
-	let selectedFont = $state(fontFamily);
+	// Local state (initialized from props)
+	let selectedAccentDark = $state('#334642');
+	let selectedAccentLight = $state('#c59a6b');
+	let selectedFont = $state('Inter');
+
+	// Sync state when props change
+	$effect(() => {
+		selectedAccentDark = accentDark;
+		selectedAccentLight = accentLight;
+		selectedFont = fontFamily;
+	});
 
 	// Update parent when theme changes
 	$effect(() => {

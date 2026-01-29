@@ -7,8 +7,11 @@
 	// Get data from server load
 	let { data } = $props();
 
-	// Extract data from server load
-	const { myReflections, cohortReflections, currentReflectionQuestion, courseSlug } = data;
+	// Extract data from server load using $derived for reactivity
+	const myReflections = $derived(data.myReflections);
+	const cohortReflections = $derived(data.cohortReflections);
+	const currentReflectionQuestion = $derived(data.currentReflectionQuestion);
+	const courseSlug = $derived(data.courseSlug);
 
 	// Page state
 	let activeTab = $state('my-reflections'); // 'my-reflections' | 'my-cohort'

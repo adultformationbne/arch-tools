@@ -104,14 +104,14 @@
 		}
 	};
 
-	// Material types for editing (without embed)
-	const materialTypes = [
+	// Material types for editing (without embed) - derived from props
+	const materialTypes = $derived([
 		{ value: 'video', label: 'YouTube Video', icon: Video },
 		{ value: 'mux_video', label: 'Video Upload', icon: Upload },
 		{ value: 'link', label: 'Link', icon: Link },
 		...(allowNativeContent ? [{ value: 'native', label: 'Document', icon: BookOpen }] : []),
 		...(allowDocumentUpload ? [{ value: 'upload', label: 'Upload File', icon: Upload }] : [])
-	];
+	]);
 
 	// Detect file type from URL and return appropriate icon
 	const getFileTypeIcon = (url) => {

@@ -13,7 +13,7 @@
 		onRemove = null
 	} = $props();
 
-	let editUrl = $state(url);
+	let editUrl = $state('');
 	let popoverElement = $state(null);
 	let urlInput = $state(null);
 	let arrowElement = $state(null);

@@ -71,12 +71,24 @@
 			.replace(/\s+/g, '_');
 	}
 
-	// Form state
+	// Form state (initialized from template prop)
 	let formData = $state({
-		name: template?.name || '',
-		subject_template: template?.subject_template || '',
-		body_template: template?.body_template || '',
-		available_variables: template?.available_variables || []
+		name: '',
+		subject_template: '',
+		body_template: '',
+		available_variables: []
+	});
+
+	// Sync form data when template changes
+	$effect(() => {
+		if (template) {
+			formData = {
+				name: template.name || '',
+				subject_template: template.subject_template || '',
+				body_template: template.body_template || '',
+				available_variables: template.available_variables || []
+			};
+		}
 	});
 
 	// Auto-generate template_key from name for new templates

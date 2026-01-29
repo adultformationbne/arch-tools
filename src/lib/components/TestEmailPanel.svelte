@@ -46,7 +46,14 @@
 	let recipients = $state([]);
 	let loading = $state(true);
 	let selectedRecipientId = $state('sample'); // 'sample' or recipient ID
-	let sendToEmail = $state(currentUserEmail);
+	let sendToEmail = $state('');
+
+	// Sync sendToEmail when prop changes
+	$effect(() => {
+		if (currentUserEmail && !sendToEmail) {
+			sendToEmail = currentUserEmail;
+		}
+	});
 	let sending = $state(false);
 
 	// MJML preview state
@@ -171,17 +178,21 @@
 </script>
 
 <!-- Modal Backdrop -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
 	onclick={handleBackdropClick}
-	role="dialog"
-	aria-modal="true"
-	aria-labelledby="test-email-title"
+	onkeydown={(e) => e.key === 'Escape' && onClose()}
 >
 	<!-- Modal Content -->
 	<div
 		class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
 		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="test-email-title"
+		tabindex="-1"
 	>
 		<!-- Header -->
 		<div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
