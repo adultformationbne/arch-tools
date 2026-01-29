@@ -15,7 +15,7 @@ export const load: PageServerLoad = async (event) => {
 			throw error(404, 'Course not found');
 		}
 
-		const course = { id: courseInfo.id, name: courseInfo.name };
+		const course = { id: courseInfo.id, name: courseInfo.name, slug: courseInfo.slug };
 
 		// Get hubs for THIS COURSE only
 		const { data: hubs, error: hubsError } = await supabaseAdmin
