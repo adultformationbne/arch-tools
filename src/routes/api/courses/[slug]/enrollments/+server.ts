@@ -10,7 +10,7 @@ import { supabaseAdmin } from '$lib/server/supabase';
  *
  * Query params:
  * - cohort_id (optional): Filter by cohort. If not provided, returns enrollments from all cohorts.
- * - status: Filter by enrollment status (default: 'active')
+ * - status: Filter by enrollment status. Use 'all' for active+pending (default), or specific status
  * - role: Filter by role ('student' | 'coordinator')
  * - hub_id: Filter by hub assignment
  * - current_session: Filter by student's current session number
@@ -38,7 +38,7 @@ export const GET: RequestHandler = async (event) => {
 		// Parse query params
 		const url = new URL(event.request.url);
 		const cohortId = url.searchParams.get('cohort_id');
-		const status = url.searchParams.get('status') || 'active';
+		const status = url.searchParams.get('status') || 'all'; // 'all' = active + pending
 		const role = url.searchParams.get('role');
 		const hubId = url.searchParams.get('hub_id');
 		const currentSession = url.searchParams.get('current_session');
@@ -76,7 +76,10 @@ export const GET: RequestHandler = async (event) => {
 		}
 
 		// Apply filters
-		if (status) {
+		if (status === 'all') {
+			// Include both active and pending (exclude rejected, removed, etc.)
+			query = query.in('status', ['active', 'pending', 'invited', 'accepted']);
+		} else if (status) {
 			query = query.eq('status', status);
 		}
 

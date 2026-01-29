@@ -180,7 +180,8 @@
 		try {
 			const params = new URLSearchParams();
 			params.set('cohort_id', selectedCohortId);
-			params.set('status', 'active');
+			// Default to 'all' (active + pending), but allow specific filters
+			params.set('status', 'all');
 
 			if (additionalFilter === 'hub' && selectedHubId) {
 				params.set('hub_id', selectedHubId);
@@ -194,6 +195,9 @@
 				params.set('current_session', selectedSessionNumber);
 			} else if (additionalFilter === 'pending_reflections') {
 				params.set('has_pending_reflections', 'true');
+			} else if (additionalFilter === 'not_signed_up') {
+				// Filter to only pending/invited users who haven't signed up yet
+				params.set('status', 'pending');
 			}
 
 			const result = await apiGet(`/api/courses/${courseSlug}/enrollments?${params.toString()}`, {
@@ -459,13 +463,14 @@
 								onchange={handleAdditionalFilterChange}
 								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
 							>
-								<option value="none">All students ({selectedCohort?.enrollment_count || 0})</option>
+								<option value="none">All participants</option>
 								{#if filteredHubs.length > 0}
 									<option value="hub">By Hub ({filteredHubs.length})</option>
 								{/if}
 								<option value="coordinators">Coordinators</option>
 								<option value="session">By Session</option>
 								<option value="pending_reflections">Pending Reflections</option>
+								<option value="not_signed_up">Haven't signed up</option>
 							</select>
 							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
 						</div>
