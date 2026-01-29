@@ -163,6 +163,21 @@ export const load: PageServerLoad = async (event) => {
 		// Week 0 (Pre-start)
 		const sessionInfo = sessionsByNumber[0];
 		const sessionMaterials = materialsBySession[0] || [];
+		const reflectionQuestion = questionsBySession[0] || null;
+
+		// Get reflection status for session 0 (same logic as other sessions)
+		let reflectionStatus = null;
+		if (reflectionQuestion) {
+			const existingResponse = responses.find(
+				(r) => r.question?.session?.session_number === 0
+			);
+
+			if (!existingResponse) {
+				reflectionStatus = 'not_started';
+			} else {
+				reflectionStatus = existingResponse.status || 'submitted';
+			}
+		}
 
 		currentSessionData = {
 			sessionNumber: 0,
@@ -171,8 +186,8 @@ export const load: PageServerLoad = async (event) => {
 				sessionInfo?.description ||
 				`This course begins on ${new Date(enrollment.cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Review the materials below to prepare for Session 1.`,
 			materials: filterMaterials(sessionMaterials),
-			reflectionQuestion: null,
-			reflectionStatus: null,
+			reflectionQuestion,
+			reflectionStatus,
 			isUpcoming: true
 		};
 	} else {

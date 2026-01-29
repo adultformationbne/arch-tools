@@ -2340,11 +2340,10 @@ export const CourseMutations = {
 		const now = new Date().toISOString();
 		const questionsToInsert = sessions
 			.filter((session) => !existingSessionIds.has(session.id))
-			.filter((session) => session.session_number !== 0) // Skip Pre-Start (session 0)
 			.map((session) => ({
 				session_id: session.id,
 				question_text:
-					defaultQuestions[session.session_number - 1] ||
+					defaultQuestions[Math.max(0, session.session_number - 1)] ||
 					defaultQuestions[defaultQuestions.length - 1],
 				created_at: now,
 				updated_at: now
