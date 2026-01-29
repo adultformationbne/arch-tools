@@ -5,7 +5,6 @@
 
   let {
     html = $bindable(''),
-    selectedTemplate = null,
     onFormat = null
   } = $props();
 

@@ -121,12 +121,13 @@
 		// In real app, this would navigate to adjacent reflections
 	};
 
-	// Derived values
-	const currentSessionData = $derived(courseData.currentSessionData);
-	const materials = $derived(currentSessionData.materials);
+	// Derived values (with null safety)
+	const currentSessionData = $derived(courseData?.currentSessionData ?? null);
+	const materials = $derived(currentSessionData?.materials ?? []);
 </script>
 
 <!-- Single content wrapper with consistent margins -->
+{#if courseData && currentSessionData}
 <div class="px-4 sm:px-8 lg:px-16" class:pt-6={!hubData}>
 	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
 	<HubCoordinatorBar {hubData} {courseSlug} />
@@ -163,19 +164,22 @@
 		</div>
 	{/if}
 </div>
+{/if}
 
-	<!-- Reflection Reading Modal (no margin needed - it's a modal) -->
-	<ReflectionModal
-		bind:isVisible={showReflectionModal}
-		reflection={selectedReflection}
-		onClose={closeReflectionModal}
-		onNavigate={navigateReflection}
-	/>
+<!-- Reflection Reading Modal (no margin needed - it's a modal) -->
+<ReflectionModal
+	bind:isVisible={showReflectionModal}
+	reflection={selectedReflection}
+	onClose={closeReflectionModal}
+	onNavigate={navigateReflection}
+/>
 
-	<!-- Intro Video Modal (shows on first visit) -->
-	<CourseIntroVideoModal
-		show={showIntroVideo}
-		videoUrl={INTRO_VIDEO_URL}
-		courseTitle={courseData.title}
-		onClose={() => showIntroVideo = false}
-	/>
+<!-- Intro Video Modal (shows on first visit) -->
+{#if courseData}
+<CourseIntroVideoModal
+	show={showIntroVideo}
+	videoUrl={INTRO_VIDEO_URL}
+	courseTitle={courseData.title}
+	onClose={() => showIntroVideo = false}
+/>
+{/if}

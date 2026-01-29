@@ -19,10 +19,10 @@
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data, form } = $props();
-	const courses = data.courses || [];
-	const managers = data.managers || [];
-	const userRole = data.userRole;
-	const userProfile = data.userProfile;
+	const courses = $derived(data.courses || []);
+	const managers = $derived(data.managers || []);
+	const userRole = $derived(data.userRole);
+	const userProfile = $derived(data.userProfile);
 
 	// Modal states
 	let showCreateModal = $state(false);

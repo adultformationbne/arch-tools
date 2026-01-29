@@ -20,8 +20,8 @@
 	} = $props();
 
 	// Step state: 'select' or 'form'
-	let step = $state('select');
-	let selectedType = $state(null);
+	let step = $state(/** @type {'select' | 'form'} */ ('select'));
+	let selectedType = $state(/** @type {string | null} */ (null));
 	let saving = $state(false);
 
 	// Unsaved changes confirmation

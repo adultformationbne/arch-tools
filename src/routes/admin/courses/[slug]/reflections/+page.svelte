@@ -437,8 +437,16 @@
 
 <!-- Marking Modal -->
 {#if showMarkingModal && selectedReflection}
-	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+	<div
+		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+		role="presentation"
+	>
+		<div
+			class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+		>
 			<div class="p-5">
 				<!-- Modal Header -->
 				<div class="flex items-start justify-between mb-4">
@@ -550,16 +558,17 @@
 {#if showViewModal && viewingReflection}
 	<div
 		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+		role="presentation"
 		onclick={closeViewModal}
-		role="button"
-		tabindex="0"
 		onkeydown={(e) => e.key === 'Escape' && closeViewModal()}
 	>
 		<div
 			class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Modal Header -->
 			<div class="flex items-start justify-between p-4 border-b border-gray-200 bg-gray-50">

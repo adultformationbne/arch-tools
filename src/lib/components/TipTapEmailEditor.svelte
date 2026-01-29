@@ -63,7 +63,7 @@
 	let buttonAnchorElement = $state(null);
 
 	// Track the last value we set to avoid unnecessary updates
-	let lastSetValue = '';
+	let lastSetValue = $state('');
 
 	// Process value to convert {{variable}} syntax to Variable nodes
 	function processValueForEditor(rawValue) {

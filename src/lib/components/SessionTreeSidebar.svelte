@@ -29,7 +29,7 @@
 		onSessionReorder = () => {}
 	} = $props();
 
-	let expandedModules = $state(new Set());
+	let expandedModules = $state(/** @type {Set<string>} */ (new Set()));
 
 	// Sync expanded modules when selection changes
 	$effect(() => {

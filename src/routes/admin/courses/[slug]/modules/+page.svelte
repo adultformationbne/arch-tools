@@ -15,11 +15,12 @@
 
 	let { data } = $props();
 	const course = $derived(data.course);
-	let modules = $state(data.modules || []);
+	const dataModules = $derived(data.modules || []);
+	let modules = $state([]);
 
 	// Sync modules when data changes (e.g., after navigation or modal save)
 	$effect(() => {
-		modules = data.modules || [];
+		modules = dataModules;
 	});
 
 	// Show loading state during navigation

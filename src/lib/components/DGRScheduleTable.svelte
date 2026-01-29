@@ -24,8 +24,8 @@
 	} = $props();
 
 	let hoveredReminderId = $state(null);
-	let dropdownRefs = $state(new Map());
-	let dropdownControllers = $state(new Map());
+	let dropdownRefs = new Map();
+	let dropdownControllers = new Map();
 
 	// Svelte action to register dropdown elements
 	function dropdownAction(node, params) {

@@ -43,12 +43,12 @@
 	const contextConfig = $derived(getEmailContext(context));
 
 	// State
-	let recipients = $state([]);
+	let recipients = $state(/** @type {any[]} */ ([]));
 	let loading = $state(true);
 	let selectedRecipientId = $state('sample'); // 'sample' or recipient ID
 	let sendToEmail = $state('');
 
-	// Sync sendToEmail when prop changes
+	// Sync sendToEmail when prop changes (including initial value)
 	$effect(() => {
 		if (currentUserEmail && !sendToEmail) {
 			sendToEmail = currentUserEmail;

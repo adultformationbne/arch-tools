@@ -40,10 +40,16 @@
 	let isChangingPassword = $state(false);
 	let showDeleteConfirm = $state(false);
 
-	// Form data
+	// Form data - synced from userProfile via $effect
 	let profileForm = $state({
-		name: userProfile.name,
-		email: userProfile.email
+		name: '',
+		email: ''
+	});
+
+	// Sync form data when userProfile updates
+	$effect(() => {
+		profileForm.name = userProfile.name;
+		profileForm.email = userProfile.email;
 	});
 
 	let passwordForm = $state({

@@ -35,7 +35,7 @@
 		xl: 'px-8 py-4 text-lg rounded-xl gap-3'
 	};
 
-	const classes = twMerge(baseClasses, variants[variant], sizes[size], customClass);
+	let classes = $derived(twMerge(baseClasses, variants[variant], sizes[size], customClass));
 </script>
 
 <button {disabled} class={classes} {onclick} {...props}>
@@ -57,12 +57,14 @@
 			/>
 		</svg>
 	{:else if icon && iconPosition === 'left'}
-		<svelte:component this={icon} class="h-4 w-4" />
+		{@const IconComponent = icon}
+		<IconComponent class="h-4 w-4" />
 	{/if}
 
 	{@render children?.()}
 
 	{#if icon && iconPosition === 'right'}
-		<svelte:component this={icon} class="h-4 w-4" />
+		{@const IconComponent = icon}
+		<IconComponent class="h-4 w-4" />
 	{/if}
 </button>

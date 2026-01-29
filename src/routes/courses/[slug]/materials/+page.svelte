@@ -15,36 +15,48 @@
 	const courseInfo = $derived(data.courseInfo);
 
 	// Check for material ID in URL params
-	const urlMaterialId = $page.url.searchParams.get('material');
+	const urlMaterialId = $derived($page.url.searchParams.get('material'));
 
-	// Find the material from URL param, or default to first material from current session
-	const findMaterialById = (id) => {
-		if (!id) return null;
-		return materials.find(m => m.id === id) || null;
-	};
+	// Find the material from URL param using $derived
+	const urlMaterial = $derived.by(() => {
+		if (!urlMaterialId) return null;
+		return materials.find(m => m.id === urlMaterialId) || null;
+	});
 
-	const urlMaterial = findMaterialById(urlMaterialId);
-	const defaultMaterial = urlMaterial || materialsBySession[currentSession]?.[0] || null;
+	// Find default material using $derived
+	const defaultMaterial = $derived(urlMaterial || materialsBySession[currentSession]?.[0] || null);
 
-	// Find which session the URL material belongs to
-	const findSessionForMaterial = (materialId) => {
+	// Find which session the URL material belongs to using $derived
+	const initialSession = $derived.by(() => {
+		if (!urlMaterial) return currentSession;
 		for (const [sessionNum, sessionMaterials] of Object.entries(materialsBySession)) {
-			if (sessionMaterials.some(m => m.id === materialId)) {
+			if (sessionMaterials.some(m => m.id === urlMaterial.id)) {
 				return parseInt(sessionNum);
 			}
 		}
 		return currentSession;
-	};
+	});
 
-	// Initialize with URL material's session expanded, or current session
-	const initialSession = urlMaterial ? findSessionForMaterial(urlMaterial.id) : currentSession;
+	let selectedMaterial = $state(null);
+	let expandedSessions = $state(new Set());
+	let mobileSelectedSession = $state(0);
 
-	let selectedMaterial = $state(defaultMaterial);
-	let expandedSessions = $state(new Set([initialSession]));
-	let mobileSelectedSession = $state(initialSession);
+	// Sync state from derived values when they change
+	$effect(() => {
+		if (defaultMaterial !== null && selectedMaterial === null) {
+			selectedMaterial = defaultMaterial;
+		}
+	});
 
-	// Get sorted session numbers for navigation
-	const sessionNumbers = Object.keys(materialsBySession).map(Number).sort((a, b) => a - b);
+	$effect(() => {
+		if (initialSession !== undefined) {
+			expandedSessions = new Set([initialSession]);
+			mobileSelectedSession = initialSession;
+		}
+	});
+
+	// Get sorted session numbers for navigation using $derived
+	const sessionNumbers = $derived(Object.keys(materialsBySession).map(Number).sort((a, b) => a - b));
 
 	const toggleSession = (sessionNum) => {
 		if (expandedSessions.has(sessionNum)) {

@@ -265,7 +265,10 @@
 				<div
 					class="grid grid-cols-12 gap-4 px-4 py-4 items-center border-b hover:bg-gray-50 cursor-pointer"
 					style="border-color: var(--course-surface);"
+					role="button"
+					tabindex="0"
 					onclick={() => toggleHubExpanded(hub.id)}
+					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleHubExpanded(hub.id)}
 				>
 					<!-- Hub Name & Location -->
 					<div class="col-span-5 flex items-center gap-3">
@@ -312,7 +315,12 @@
 					</div>
 
 					<!-- Actions -->
-					<div class="col-span-2 flex justify-end gap-1" onclick={(e) => e.stopPropagation()}>
+					<div
+						class="col-span-2 flex justify-end gap-1"
+						role="group"
+						onclick={(e) => e.stopPropagation()}
+						onkeydown={(e) => e.stopPropagation()}
+					>
 						<button
 							onclick={() => handleEditHub(hub)}
 							class="p-2 hover:bg-gray-200 rounded transition-colors"

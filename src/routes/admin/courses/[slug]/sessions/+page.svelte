@@ -23,7 +23,7 @@
 	// Course theme colors
 	const courseTheme = $derived(data.courseTheme || {});
 	const accentDark = $derived(courseTheme.accentDark || '#334642');
-	const accentLight = courseTheme.accentLight || '#c59a6b';
+	const accentLight = $derived(courseTheme.accentLight || '#c59a6b');
 
 	// Get module from URL (derived from URL params)
 	const selectedModuleId = $derived($page.url.searchParams.get('module'));

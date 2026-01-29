@@ -27,17 +27,15 @@
 	const courseTheme = $derived(data.courseTheme || {});
 	const courseBranding = $derived(data.courseBranding || {});
 
-	// Default theme colors
-	const accentDark = courseTheme.accentDark || '#334642';
-	const accentLight = courseTheme.accentLight || '#c59a6b';
+	// Default theme colors - use $derived to properly react to courseTheme changes
+	const accentDark = $derived(courseTheme.accentDark || '#334642');
+	const accentLight = $derived(courseTheme.accentLight || '#c59a6b');
 
 	// Cohort wizard modal state
 	let showCohortWizard = $state(false);
 
 	// Extract cohort selection from URL - works on all admin pages
-	const selectedCohortId = $derived(() => {
-		return $page.url.searchParams.get('cohort');
-	});
+	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
 
 	function handleNewCohort() {
 		// Open modal directly - no navigation needed
@@ -80,7 +78,7 @@
 		{isCourseAdmin}
 		{cohorts}
 		{courseBranding}
-		selectedCohortId={selectedCohortId()}
+		selectedCohortId={selectedCohortId}
 		onNewCohort={handleNewCohort}
 		onSelectCohort={handleSelectCohort}
 		onSettingsClick={handleSettingsClick}

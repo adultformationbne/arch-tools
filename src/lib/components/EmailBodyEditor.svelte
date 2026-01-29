@@ -47,17 +47,17 @@
 	const displayName = $derived(courseName || brandName);
 
 	// Editor references (exposed for parent components)
-	let editorComponent = $state(null);
-	let tiptapEditor = $state(null);
+	let editorComponent = $state(/** @type {any} */ (null));
+	let tiptapEditor = $state(/** @type {any} */ (null));
 	let hasTextSelection = $state(false);
 
 	// Variable picker dropdown
-	let variableButtonEl = $state(null);
-	let variableMenuEl = $state(null);
-	let dropdown = $state(null);
+	let variableButtonEl = $state(/** @type {HTMLElement | null} */ (null));
+	let variableMenuEl = $state(/** @type {HTMLElement | null} */ (null));
+	let dropdown = $state(/** @type {any} */ (null));
 
 	// Image upload
-	let imageFileInput = $state(null);
+	let imageFileInput = $state(/** @type {HTMLInputElement | null} */ (null));
 	let isUploadingImage = $state(false);
 
 	// Initialize dropdown when elements are ready

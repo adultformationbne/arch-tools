@@ -22,7 +22,7 @@
 	// Main state (initialized from prop, then managed locally)
 	let mode = $state('choose'); // 'choose' | 'quick' | 'template'
 
-	// Sync mode when initialMode changes
+	// Sync mode when initialMode changes (including initial value)
 	$effect(() => {
 		mode = initialMode;
 	});
@@ -48,7 +48,7 @@
 
 	// Recipients panel state
 	let showRecipientsPanel = $state(false);
-	let excludedRecipientIds = $state(new Set());
+	let excludedRecipientIds = $state(/** @type {Set<string>} */ (new Set()));
 
 	// Preview state - now stores the recipient ID
 	let previewRecipientId = $state(null);

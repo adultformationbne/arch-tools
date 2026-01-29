@@ -11,10 +11,13 @@
   import { formatHtml } from '$lib/utils/html-formatter.js';
 
   let { data } = $props();
-  const supabase = $derived(data.supabase);
 
-  // Initialize template manager
-  const templateManager = new TemplateManager(supabase);
+  // Template manager initialized lazily to capture current supabase client
+  let templateManager = $state(null);
+
+  $effect(() => {
+    templateManager = new TemplateManager(data.supabase);
+  });
 
   // State
   let templates = $state([]);
@@ -94,6 +97,7 @@
 
   // Load latest DGR data for preview
   async function loadLatestDGRData() {
+    const supabase = data.supabase;
     try {
       // Fetch latest DGR data
       const { data: scheduleData, error } = await supabase
@@ -330,7 +334,7 @@
 
   async function handleGenerateAllThumbnails() {
     try {
-      const results = await generateMissingThumbnails(supabase, templates);
+      const results = await generateMissingThumbnails(data.supabase, templates);
       const successCount = results.filter(r => r.success).length;
       if (successCount === results.length) {
         toast.success({ title: 'Complete', message: `Generated ${successCount} thumbnails`, duration: 3000 });
@@ -347,9 +351,11 @@
     showVersions[templateKey] = !showVersions[templateKey];
   }
 
-  // Initialize
+  // Initialize - wait for templateManager to be ready
   $effect(() => {
-    loadTemplates();
+    if (templateManager) {
+      loadTemplates();
+    }
   });
 
   // Computed values

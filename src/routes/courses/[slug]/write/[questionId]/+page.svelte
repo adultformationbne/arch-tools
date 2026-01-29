@@ -13,12 +13,22 @@
 	const existingReflection = $derived(data.existingReflection);
 	const isEditable = $derived(data.isEditable);
 
-	// Writing state (initialized from data directly)
-	let content = $state(data.existingReflection?.response_text || '');
-	let isPrivate = $state(!(data.existingReflection?.is_public ?? false));
+	// Writing state - synced from data via $effect
+	let content = $state('');
+	let isPrivate = $state(false);
 	let autoSaveStatus = $state('saved');
 	let lastSaved = $state(new Date());
 	let isSaving = $state(false);
+	let hasInitialized = $state(false);
+
+	// Sync content and privacy from server data when it loads
+	$effect(() => {
+		if (existingReflection && !hasInitialized) {
+			content = existingReflection.response_text || '';
+			isPrivate = !(existingReflection.is_public ?? false);
+			hasInitialized = true;
+		}
+	});
 
 	// Word count calculation
 	const getWordCount = (html) => {

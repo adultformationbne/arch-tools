@@ -7,65 +7,97 @@
 
 	let { data } = $props();
 
+	// Derived values from data
 	const courseSlug = $derived(data.courseSlug);
-	let course = $state(null);
-
-	// Sync course data
-	$effect(() => {
-		course = data.course;
-	});
-
-	// Get current settings with defaults applied
-	const currentSettings = $derived(getCourseSettings(course?.settings));
+	const course = $derived(data.course);
 
 	// Form state
 	let saving = $state(false);
 	let uploadingLogo = $state(false);
 
-	// Settings state
+	// Settings state - initialized with empty defaults, synced via $effect
 	let settings = $state({
-		name: course.name || '',
-		shortName: course.short_name || '',
-		description: course.description || '',
+		name: '',
+		shortName: '',
+		description: '',
 		theme: {
-			accentDark: course.settings?.theme?.accentDark || '#334642',
-			accentLight: course.settings?.theme?.accentLight || '#c59a6b',
-			fontFamily: course.settings?.theme?.fontFamily || 'Inter'
+			accentDark: '#334642',
+			accentLight: '#c59a6b',
+			fontFamily: 'Inter'
 		},
 		branding: {
-			logoUrl: course.settings?.branding?.logoUrl || '',
-			showLogo: course.settings?.branding?.showLogo ?? true
+			logoUrl: '',
+			showLogo: true
 		},
 		emailBranding: {
-			replyToEmail: course.email_branding_config?.reply_to_email || ''
+			replyToEmail: ''
 		},
-		// New settings
 		coordinatorAccess: {
-			sessionsAhead: currentSettings.coordinatorAccess?.sessionsAhead ?? 'all'
+			sessionsAhead: 'all'
 		},
 		sessionProgression: {
-			mode: currentSettings.sessionProgression?.mode ?? 'manual',
-			autoAdvanceDays: currentSettings.sessionProgression?.autoAdvanceDays ?? 7,
+			mode: 'manual',
+			autoAdvanceDays: 7,
 			completionRequirements: {
-				reflectionSubmitted: currentSettings.sessionProgression?.completionRequirements?.reflectionSubmitted ?? true,
-				attendanceMarked: currentSettings.sessionProgression?.completionRequirements?.attendanceMarked ?? false
+				reflectionSubmitted: true,
+				attendanceMarked: false
 			}
 		},
 		features: {
-			reflectionsEnabled: currentSettings.features?.reflectionsEnabled ?? true,
-			communityFeedEnabled: currentSettings.features?.communityFeedEnabled ?? true,
-			attendanceEnabled: currentSettings.features?.attendanceEnabled ?? true
+			reflectionsEnabled: true,
+			communityFeedEnabled: true,
+			attendanceEnabled: true
+		}
+	});
+
+	// State for coordinator access limited mode
+	let sessionsAheadCount = $state(2);
+
+	// Sync form state when course data changes
+	$effect(() => {
+		if (course) {
+			// Basic info from course object
+			settings.name = course.name || '';
+			settings.shortName = course.short_name || '';
+			settings.description = course.description || '';
+
+			// Theme settings
+			settings.theme.accentDark = course.settings?.theme?.accentDark || '#334642';
+			settings.theme.accentLight = course.settings?.theme?.accentLight || '#c59a6b';
+			settings.theme.fontFamily = course.settings?.theme?.fontFamily || 'Inter';
+
+			// Branding settings
+			settings.branding.logoUrl = course.settings?.branding?.logoUrl || '';
+			settings.branding.showLogo = course.settings?.branding?.showLogo ?? true;
+
+			// Email branding
+			settings.emailBranding.replyToEmail = course.email_branding_config?.reply_to_email || '';
+
+			// Use getCourseSettings to get defaults for advanced settings
+			const parsedSettings = getCourseSettings(course.settings);
+
+			// Coordinator access
+			settings.coordinatorAccess.sessionsAhead = parsedSettings.coordinatorAccess?.sessionsAhead ?? 'all';
+			sessionsAheadCount = typeof parsedSettings.coordinatorAccess?.sessionsAhead === 'number'
+				? parsedSettings.coordinatorAccess.sessionsAhead
+				: 2;
+
+			// Session progression
+			settings.sessionProgression.mode = parsedSettings.sessionProgression?.mode ?? 'manual';
+			settings.sessionProgression.autoAdvanceDays = parsedSettings.sessionProgression?.autoAdvanceDays ?? 7;
+			settings.sessionProgression.completionRequirements.reflectionSubmitted = parsedSettings.sessionProgression?.completionRequirements?.reflectionSubmitted ?? true;
+			settings.sessionProgression.completionRequirements.attendanceMarked = parsedSettings.sessionProgression?.completionRequirements?.attendanceMarked ?? false;
+
+			// Feature toggles
+			settings.features.reflectionsEnabled = parsedSettings.features?.reflectionsEnabled ?? true;
+			settings.features.communityFeedEnabled = parsedSettings.features?.communityFeedEnabled ?? true;
+			settings.features.attendanceEnabled = parsedSettings.features?.attendanceEnabled ?? true;
 		}
 	});
 
 	// Derived state for coordinator access radio selection
 	let coordinatorAccessMode = $derived(
 		settings.coordinatorAccess.sessionsAhead === 'all' ? 'all' : 'limited'
-	);
-	let sessionsAheadCount = $state(
-		typeof currentSettings.coordinatorAccess?.sessionsAhead === 'number'
-			? currentSettings.coordinatorAccess.sessionsAhead
-			: 2
 	);
 
 	async function handleLogoUpload(event) {
@@ -238,9 +270,9 @@
 
 				<div class="space-y-4">
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<span class="block text-sm font-medium text-gray-700 mb-2">
 							Course Logo
-						</label>
+						</span>
 
 						{#if settings.branding.logoUrl}
 							<div class="flex items-start gap-4">

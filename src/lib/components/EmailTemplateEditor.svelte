@@ -76,19 +76,16 @@
 		name: '',
 		subject_template: '',
 		body_template: '',
-		available_variables: []
+		available_variables: /** @type {string[]} */ ([])
 	});
 
-	// Sync form data when template changes
+	// Sync form data when template changes (combines both effects)
 	$effect(() => {
-		if (template) {
-			formData = {
-				name: template.name || '',
-				subject_template: template.subject_template || '',
-				body_template: template.body_template || '',
-				available_variables: template.available_variables || []
-			};
-		}
+		formData.name = template?.name || '';
+		formData.subject_template = template?.subject_template || '';
+		formData.body_template = template?.body_template || '';
+		formData.available_variables = template?.available_variables || [];
+		hasUnsavedChanges = false;
 	});
 
 	// Auto-generate template_key from name for new templates
@@ -147,15 +144,6 @@
 	// Check if this is a system template (can be restored to default)
 	const isSystemTemplate = $derived(template?.category === 'system');
 
-	// Sync form data when template prop changes
-	$effect(() => {
-		formData.name = template?.name || '';
-		formData.subject_template = template?.subject_template || '';
-		formData.body_template = template?.body_template || '';
-		formData.available_variables = template?.available_variables || [];
-		hasUnsavedChanges = false;
-	});
-
 	// Default variables for each context type
 	const DEFAULT_COURSE_VARIABLES = [
 		{ name: 'firstName', description: 'Student first name' },
@@ -196,7 +184,7 @@
 	];
 
 	// Use provided variables or defaults based on context
-	const availableVariables = $derived(() => {
+	const availableVariables = $derived.by(() => {
 		if (variables.length > 0) return variables;
 		switch (context) {
 			case 'dgr':

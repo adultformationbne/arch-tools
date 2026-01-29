@@ -288,7 +288,7 @@
 
 
 	// Track which materials are being polled
-	let pollingMaterials = $state(new Set());
+	let pollingMaterials = $state(/** @type {Set<string>} */ (new Set()));
 
 	// Auto-poll for processing videos
 	$effect(() => {

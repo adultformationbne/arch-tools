@@ -38,7 +38,7 @@
 	let showReflections = $state(true);
 
 	// Normalize participant data from different sources
-	const normalizedParticipant = $derived(() => {
+	const normalizedParticipant = $derived.by(() => {
 		if (!participant) return null;
 
 		// Handle cohort dashboard format (flat structure)
@@ -100,7 +100,7 @@
 	// Reset form when participant changes
 	$effect(() => {
 		if (participant && show) {
-			const np = normalizedParticipant();
+			const np = normalizedParticipant;
 			if (np) {
 				formData = {
 					full_name: np.full_name,
@@ -152,7 +152,7 @@
 
 	// Track changes
 	function checkChanges() {
-		const np = normalizedParticipant();
+		const np = normalizedParticipant;
 		if (!np) return;
 
 		hasChanges =
@@ -165,7 +165,7 @@
 	}
 
 	async function handleSave() {
-		const np = normalizedParticipant();
+		const np = normalizedParticipant;
 		if (!np) return;
 
 		isLoading = true;
@@ -239,7 +239,7 @@
 	}
 
 	function handleEmailClick() {
-		const np = normalizedParticipant();
+		const np = normalizedParticipant;
 		if (np) {
 			onEmail(np);
 		}
@@ -312,9 +312,9 @@
 					</div>
 					<div>
 						<h2 class="text-lg font-bold" style="color: var(--course-accent-darkest, #333);">
-							{normalizedParticipant()?.full_name || 'Participant'}
+							{normalizedParticipant?.full_name || 'Participant'}
 						</h2>
-						<p class="text-sm text-gray-500">{normalizedParticipant()?.email}</p>
+						<p class="text-sm text-gray-500">{normalizedParticipant?.email}</p>
 					</div>
 				</div>
 				<button
@@ -329,7 +329,7 @@
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto p-6">
 				<!-- Quick Stats -->
-				{#if normalizedParticipant()?.isBehind}
+				{#if normalizedParticipant?.isBehind}
 					<div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2 text-orange-700">
 						<AlertTriangle size={16} />
 						<span class="text-sm">This participant is behind the cohort session</span>
@@ -340,41 +340,41 @@
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Welcome Email</p>
 						<p class="text-sm font-medium text-gray-900">
-							{normalizedParticipant()?.welcome_email_sent_at ? 'Sent' : 'Not sent'}
+							{normalizedParticipant?.welcome_email_sent_at ? 'Sent' : 'Not sent'}
 						</p>
-						{#if normalizedParticipant()?.welcome_email_sent_at}
+						{#if normalizedParticipant?.welcome_email_sent_at}
 							<p class="text-[10px] text-gray-400 mt-0.5">
-								{formatDate(normalizedParticipant()?.welcome_email_sent_at)}
+								{formatDate(normalizedParticipant?.welcome_email_sent_at)}
 							</p>
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Logins</p>
 						<p class="text-sm font-medium text-gray-900">
-							{normalizedParticipant()?.login_count || 0}
+							{normalizedParticipant?.login_count || 0}
 						</p>
-						{#if normalizedParticipant()?.last_login_at}
+						{#if normalizedParticipant?.last_login_at}
 							<p class="text-[10px] text-gray-400 mt-0.5">
-								Last: {formatDate(normalizedParticipant()?.last_login_at)}
+								Last: {formatDate(normalizedParticipant?.last_login_at)}
 							</p>
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Page Views</p>
 						<p class="text-sm font-medium text-gray-900">
-							{normalizedParticipant()?.view_count || 0}
+							{normalizedParticipant?.view_count || 0}
 						</p>
-						{#if normalizedParticipant()?.last_viewed_at}
+						{#if normalizedParticipant?.last_viewed_at}
 							<p class="text-[10px] text-gray-400 mt-0.5">
-								Last: {formatDate(normalizedParticipant()?.last_viewed_at)}
+								Last: {formatDate(normalizedParticipant?.last_viewed_at)}
 							</p>
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Attendance</p>
 						<p class="text-sm font-medium text-gray-900">
-							{#if normalizedParticipant()?.attendanceCount !== undefined && cohort?.current_session > 0}
-								{normalizedParticipant()?.attendanceCount}/{cohort.current_session}
+							{#if normalizedParticipant?.attendanceCount !== undefined && cohort?.current_session > 0}
+								{normalizedParticipant?.attendanceCount}/{cohort.current_session}
 							{:else}
 								-
 							{/if}
@@ -472,32 +472,32 @@
 				</div>
 
 				<!-- Contact & Parish Information (read-only from user_profile) -->
-				{#if normalizedParticipant()?.phone || normalizedParticipant()?.parish_community || normalizedParticipant()?.parish_role || normalizedParticipant()?.address}
+				{#if normalizedParticipant?.phone || normalizedParticipant?.parish_community || normalizedParticipant?.parish_role || normalizedParticipant?.address}
 					<div class="mt-6 pt-4 border-t border-gray-200">
 						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Contact & Parish Info</h3>
 						<div class="grid grid-cols-2 gap-4">
-							{#if normalizedParticipant()?.phone}
+							{#if normalizedParticipant?.phone}
 								<div>
 									<p class="text-xs text-gray-500 mb-1">Phone</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant()?.phone}</p>
+									<p class="text-sm text-gray-900">{normalizedParticipant?.phone}</p>
 								</div>
 							{/if}
-							{#if normalizedParticipant()?.parish_community}
+							{#if normalizedParticipant?.parish_community}
 								<div>
 									<p class="text-xs text-gray-500 mb-1">Parish / Community</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant()?.parish_community}</p>
+									<p class="text-sm text-gray-900">{normalizedParticipant?.parish_community}</p>
 								</div>
 							{/if}
-							{#if normalizedParticipant()?.parish_role}
+							{#if normalizedParticipant?.parish_role}
 								<div>
 									<p class="text-xs text-gray-500 mb-1">Parish Role</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant()?.parish_role}</p>
+									<p class="text-sm text-gray-900">{normalizedParticipant?.parish_role}</p>
 								</div>
 							{/if}
-							{#if normalizedParticipant()?.address}
+							{#if normalizedParticipant?.address}
 								<div class="col-span-2">
 									<p class="text-xs text-gray-500 mb-1">Address (for certificates)</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant()?.address}</p>
+									<p class="text-sm text-gray-900">{normalizedParticipant?.address}</p>
 								</div>
 							{/if}
 						</div>
@@ -505,36 +505,36 @@
 				{/if}
 
 				<!-- Notes (enrollment-specific) -->
-				{#if normalizedParticipant()?.notes}
+				{#if normalizedParticipant?.notes}
 					<div class="mt-6 pt-4 border-t border-gray-200">
 						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Admin Notes</h3>
 						<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-							<p class="text-sm text-gray-900 whitespace-pre-wrap">{normalizedParticipant()?.notes}</p>
+							<p class="text-sm text-gray-900 whitespace-pre-wrap">{normalizedParticipant?.notes}</p>
 						</div>
 					</div>
 				{/if}
 
 				<!-- Progress Stats -->
-				{#if normalizedParticipant()?.progress}
+				{#if normalizedParticipant?.progress}
 					<div class="mt-6 pt-4 border-t border-gray-200">
 						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Progress</h3>
 						<div class="grid grid-cols-3 gap-3">
 							<div class="p-3 rounded-lg bg-gray-50 text-center">
 								<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Session</p>
 								<p class="text-lg font-bold text-gray-900">
-									{normalizedParticipant()?.current_session || 0}/{totalSessions}
+									{normalizedParticipant?.current_session || 0}/{totalSessions}
 								</p>
 							</div>
 							<div class="p-3 rounded-lg bg-gray-50 text-center">
 								<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Attendance</p>
 								<p class="text-lg font-bold text-gray-900">
-									{normalizedParticipant()?.progress?.attendance?.attended || 0}/{normalizedParticipant()?.progress?.attendance?.total || 0}
+									{normalizedParticipant?.progress?.attendance?.attended || 0}/{normalizedParticipant?.progress?.attendance?.total || 0}
 								</p>
 							</div>
 							<div class="p-3 rounded-lg bg-gray-50 text-center">
 								<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Reflections</p>
 								<p class="text-lg font-bold text-gray-900">
-									{normalizedParticipant()?.progress?.reflections?.passed || 0}/{normalizedParticipant()?.current_session || 0}
+									{normalizedParticipant?.progress?.reflections?.passed || 0}/{normalizedParticipant?.current_session || 0}
 								</p>
 							</div>
 						</div>
@@ -661,11 +661,11 @@
 				{/if}
 
 				<!-- Cohort Info (for participants page with multiple cohorts) -->
-				{#if normalizedParticipant()?.all_cohorts?.length > 0}
+				{#if normalizedParticipant?.all_cohorts?.length > 0}
 					<div class="mt-6 pt-4 border-t border-gray-200">
 						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Cohort Enrollments</h3>
 						<div class="space-y-2">
-							{#each normalizedParticipant()?.all_cohorts as cohortItem}
+							{#each normalizedParticipant?.all_cohorts as cohortItem}
 								<div class="p-3 bg-gray-50 rounded-lg">
 									<p class="text-sm font-medium text-gray-900">{cohortItem.name}</p>
 									{#if cohortItem.module}

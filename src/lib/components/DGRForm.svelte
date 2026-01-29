@@ -15,6 +15,7 @@
 		onPasteFromWord = () => {}
 	} = $props();
 
+	/** @param {string} dateStr */
 	function formatDateDisplay(dateStr) {
 		if (!dateStr) return '';
 		return formatDGRDate(dateStr + 'T00:00:00');
@@ -26,17 +27,18 @@
 	<div class="space-y-4">
 		<div class="flex gap-2">
 			<button
+				type="button"
 				onclick={onPasteFromWord}
 				class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
 			>
-				📋 Paste from Word
+				Paste from Word
 			</button>
 		</div>
 
 		<div class="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
 			<label class="flex items-center cursor-pointer">
-				<input 
-					type="checkbox" 
+				<input
+					type="checkbox"
 					bind:checked={useNewDesign}
 					class="mr-2 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
 				/>
@@ -53,8 +55,9 @@
 			<h3 class="text-sm font-semibold text-gray-800">Details</h3>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Date</label>
+				<label for="dgr-date" class="mb-1 block text-xs font-medium text-gray-700">Date</label>
 				<input
+					id="dgr-date"
 					type="date"
 					bind:value={formData.date}
 					required
@@ -66,8 +69,9 @@
 			</div>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Liturgical Date</label>
+				<label for="dgr-liturgical-date" class="mb-1 block text-xs font-medium text-gray-700">Liturgical Date</label>
 				<input
+					id="dgr-liturgical-date"
 					type="text"
 					bind:value={formData.liturgicalDate}
 					placeholder="e.g., Memorial St Augustine"
@@ -77,10 +81,11 @@
 			</div>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Readings</label>
+				<label for="dgr-readings" class="mb-1 block text-xs font-medium text-gray-700">Readings</label>
 				<textarea
+					id="dgr-readings"
 					bind:value={formData.readings}
-					placeholder="e.g., 1 Thess 3:7-13; Ps 89:3-4, 12-14, 17; Mt 24:42–51"
+					placeholder="e.g., 1 Thess 3:7-13; Ps 89:3-4, 12-14, 17; Mt 24:42-51"
 					required
 					rows="2"
 					class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -88,8 +93,9 @@
 			</div>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Title</label>
+				<label for="dgr-title" class="mb-1 block text-xs font-medium text-gray-700">Title</label>
 				<input
+					id="dgr-title"
 					type="text"
 					bind:value={formData.title}
 					placeholder="e.g., Faithful and Wise Servant"
@@ -99,8 +105,9 @@
 			</div>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Author</label>
+				<label for="dgr-author" class="mb-1 block text-xs font-medium text-gray-700">Author</label>
 				<input
+					id="dgr-author"
 					type="text"
 					bind:value={formData.authorName}
 					placeholder="e.g., Sr. Theresa Maria Dao, SPC"
@@ -136,8 +143,9 @@
 			{/if}
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Gospel Quote</label>
+				<label for="dgr-gospel-quote" class="mb-1 block text-xs font-medium text-gray-700">Gospel Quote</label>
 				<textarea
+					id="dgr-gospel-quote"
 					bind:value={formData.gospelQuote}
 					placeholder="Enter the specific gospel quote chosen by the author..."
 					rows="3"
@@ -152,8 +160,9 @@
 			<h3 class="text-sm font-semibold text-gray-800">Reflection</h3>
 
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-700">Reflection Text</label>
+				<label for="dgr-reflection" class="mb-1 block text-xs font-medium text-gray-700">Reflection Text</label>
 				<textarea
+					id="dgr-reflection"
 					bind:value={formData.reflectionText}
 					placeholder="Enter the reflection text (separate paragraphs with blank lines)..."
 					rows="8"
@@ -183,7 +192,7 @@
 					</svg>
 					<span class="font-medium">Published!</span>
 					<a href={result.link} target="_blank" class="ml-2 underline hover:no-underline">
-						View →
+						View
 					</a>
 				</div>
 			{:else}

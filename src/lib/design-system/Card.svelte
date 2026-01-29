@@ -37,16 +37,16 @@
 		xl: 'rounded-2xl'
 	};
 
-	const borderClass = border ? 'border border-gray-200' : '';
+	let borderClass = $derived(border ? 'border border-gray-200' : '');
 
-	const classes = twMerge(
+	let classes = $derived(twMerge(
 		baseClasses,
 		paddings[padding],
 		shadows[shadow],
 		roundeds[rounded],
 		borderClass,
 		customClass
-	);
+	));
 </script>
 
 <div class={classes} {...props}>

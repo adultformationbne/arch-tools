@@ -275,9 +275,10 @@ async function handlePasswordChange(event?: Event) {
 					{#each profile.modules as module}
 						{@const config = moduleConfig[module]}
 						{#if config}
+							{@const IconComponent = config.icon}
 							<div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
 								<div class="flex-shrink-0 w-10 h-10 rounded-lg {colorClasses[config.color]} flex items-center justify-center">
-									<svelte:component this={config.icon} class="h-5 w-5" />
+									<IconComponent class="h-5 w-5" />
 								</div>
 								<div class="flex-1 min-w-0">
 									<div class="text-sm font-medium text-gray-900">
