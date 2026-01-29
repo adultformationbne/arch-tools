@@ -27,16 +27,119 @@
 	// Track if user is in forgot password flow
 	let isForgotPasswordFlow = $state(false);
 
+	// Track if auto-send has been attempted (prevent duplicate sends)
+	let autoSendAttempted = $state(false);
+
+	// Track if we're in auto-send flow (for better UX messaging)
+	let isAutoSendFlow = $state(false);
+
+	// Helper: Validate email format
+	function isValidEmail(email: string): boolean {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	}
+
+	// Helper: Clear sensitive params from URL without page reload
+	function clearSensitiveParams() {
+		const url = new URL(window.location.href);
+		url.searchParams.delete('email');
+		url.searchParams.delete('send');
+		window.history.replaceState({}, '', url.toString());
+	}
+
+	// Helper: Generate unique key for session storage (prevents re-sends on refresh)
+	function getAutoSendKey(email: string): string {
+		return `login_auto_send_${email}_${Date.now().toString().slice(0, -4)}`; // 10-second buckets
+	}
+
 	// Check for URL parameters on mount
 	onMount(async () => {
+		// 1. First check if user is already authenticated
+		try {
+			const { data: { session } } = await supabase.auth.getSession();
+			if (session?.user) {
+				// Already logged in - redirect to appropriate destination
+				const next = $page.url.searchParams.get('next');
+				const courseParam = $page.url.searchParams.get('course');
+
+				if (next) {
+					goto(next);
+				} else if (courseParam) {
+					goto(`/courses/${courseParam}`);
+				} else {
+					// Determine redirect based on user profile
+					const { data: profile } = await supabase
+						.from('user_profiles')
+						.select('modules')
+						.eq('id', session.user.id)
+						.single();
+
+					const modules = profile?.modules || [];
+					goto(determineRedirect(modules));
+				}
+				return;
+			}
+		} catch (e) {
+			// Not authenticated, continue with login flow
+		}
+
+		// 2. Handle URL parameters
 		const urlMode = $page.url.searchParams.get('mode');
+		const urlEmail = $page.url.searchParams.get('email');
+		const autoSend = $page.url.searchParams.get('send') === 'true';
 
 		if (urlMode === 'otp') {
 			currentStep = 'otp';
 			infoMessage = 'Please enter the 6-digit code sent to your email';
 		}
 
-		// Handle legacy hash-based auth (backwards compatibility)
+		// 3. Pre-fill and optionally auto-send
+		if (urlEmail) {
+			const decodedEmail = decodeURIComponent(urlEmail).trim().toLowerCase();
+
+			// Validate email format
+			if (!isValidEmail(decodedEmail)) {
+				errorMessage = 'Invalid email format in link. Please enter your email manually.';
+				clearSensitiveParams();
+				return;
+			}
+
+			email = decodedEmail;
+
+			// Auto-send OTP if send=true param is present
+			if (autoSend && currentStep === 'email' && !autoSendAttempted) {
+				// Check sessionStorage to prevent re-sends on page refresh/back button
+				const autoSendKey = `login_auto_send_${decodedEmail}`;
+				const lastAutoSend = sessionStorage.getItem(autoSendKey);
+				const now = Date.now();
+
+				// Only auto-send if we haven't sent in the last 30 seconds
+				if (!lastAutoSend || (now - parseInt(lastAutoSend)) > 30000) {
+					isAutoSendFlow = true;
+					autoSendAttempted = true;
+					sessionStorage.setItem(autoSendKey, now.toString());
+
+					// Clear sensitive params from URL (email visible in browser history)
+					clearSensitiveParams();
+
+					// Small delay to ensure UI is ready, then auto-submit
+					infoMessage = 'Checking your account...';
+					loading = true;
+
+					setTimeout(async () => {
+						await handleAutoSend(decodedEmail);
+					}, 200);
+				} else {
+					// Recent auto-send detected - just show the form with email pre-filled
+					clearSensitiveParams();
+					infoMessage = 'A verification code was recently sent to your email.';
+				}
+			} else {
+				// Just pre-fill, don't auto-send
+				clearSensitiveParams();
+			}
+		}
+
+		// 4. Handle legacy hash-based auth (backwards compatibility)
 		const hash = window.location.hash;
 		if (hash && hash.includes('access_token') && hash.includes('type=invite')) {
 			loading = true;
@@ -58,6 +161,70 @@
 			}
 		}
 	});
+
+	// Dedicated auto-send handler with better error handling
+	async function handleAutoSend(emailAddress: string) {
+		try {
+			// Check if email exists and get auth path
+			const response = await fetch('/api/auth/check-email', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: emailAddress })
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.exists) {
+				// Email not found - show helpful error
+				errorMessage = result.message || 'No account found with this email. Please contact your administrator.';
+				loading = false;
+				isAutoSendFlow = false;
+				return;
+			}
+
+			if (result.nextStep === 'password') {
+				// User has a password - don't auto-send OTP, let them enter password
+				currentStep = 'password';
+				isPendingUser = false;
+				infoMessage = 'Welcome back! Enter your password to continue.';
+				loading = false;
+				isAutoSendFlow = false;
+				return;
+			}
+
+			if (result.nextStep === 'otp') {
+				// Pending user - send OTP automatically
+				isPendingUser = true;
+
+				const { error: otpError } = await supabase.auth.signInWithOtp({
+					email: emailAddress,
+					options: { shouldCreateUser: false }
+				});
+
+				if (otpError) {
+					// Check for rate limiting
+					if (otpError.message?.includes('rate') || otpError.status === 429) {
+						errorMessage = 'Too many attempts. Please wait a moment before trying again.';
+					} else {
+						errorMessage = 'Failed to send verification code. Please try again.';
+					}
+					loading = false;
+					isAutoSendFlow = false;
+					return;
+				}
+
+				currentStep = 'otp';
+				infoMessage = 'A 6-digit verification code has been sent to your email.';
+				loading = false;
+				// Keep isAutoSendFlow true so we can show appropriate messaging
+			}
+		} catch (error) {
+			console.error('Auto-send error:', error);
+			errorMessage = 'Something went wrong. Please try again.';
+			loading = false;
+			isAutoSendFlow = false;
+		}
+	}
 
 	// Step 1: Check email and determine next step
 	async function handleEmailSubmit() {
@@ -357,8 +524,34 @@
 </script>
 
 {#snippet loginForms()}
-	<!-- Step 1: Email Input -->
-	{#if currentStep === 'email'}
+	<!-- Auto-send loading state - show when checking account from email link -->
+	{#if currentStep === 'email' && isAutoSendFlow && loading}
+		<div class="mt-8 space-y-6 text-center">
+			<div class="flex justify-center">
+				<svg class="animate-spin h-8 w-8 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+				</svg>
+			</div>
+			<div class="text-sm text-neutral-600">
+				<p class="font-medium text-black">{email}</p>
+				<p class="mt-1">Preparing your login...</p>
+			</div>
+			{#if errorMessage}
+				<div class="text-center text-sm text-red-600">{errorMessage}</div>
+			{/if}
+			<div class="pt-4">
+				<button
+					type="button"
+					onclick={() => { isAutoSendFlow = false; loading = false; }}
+					class="text-xs text-neutral-500 hover:text-neutral-700 underline"
+				>
+					Taking too long? Enter email manually
+				</button>
+			</div>
+		</div>
+	<!-- Step 1: Email Input (normal flow) -->
+	{:else if currentStep === 'email'}
 		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleEmailSubmit(); }}>
 			<div>
 				<input
@@ -550,7 +743,9 @@
 					{courseBranding.name}
 				</h1>
 				<h2 class="text-center text-base text-neutral-600">
-					{#if currentStep === 'email'}
+					{#if currentStep === 'email' && isAutoSendFlow && loading}
+						Welcome back
+					{:else if currentStep === 'email'}
 						Sign in to your account
 					{:else if currentStep === 'password'}
 						Enter your password
@@ -581,7 +776,9 @@
 				{platform.name}
 			</h1>
 			<h2 class="text-center text-base text-neutral-600">
-				{#if currentStep === 'email'}
+				{#if currentStep === 'email' && isAutoSendFlow && loading}
+					Welcome back
+				{:else if currentStep === 'email'}
 					Sign in to your account
 				{:else if currentStep === 'password'}
 					Enter your password

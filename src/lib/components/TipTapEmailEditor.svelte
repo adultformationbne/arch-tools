@@ -411,6 +411,23 @@
 					varElement.replaceWith(textNode);
 				});
 
+				// Also clean variable pills from button attributes (data-href, href)
+				// This handles cases where variable pill HTML was accidentally saved in URLs
+				const buttons = doc.querySelectorAll('[data-type="email-button"]');
+				buttons.forEach((btn) => {
+					const dataHref = btn.getAttribute('data-href') || '';
+					const link = btn.querySelector('a');
+
+					// Check if href contains variable pill HTML and extract the variable name
+					const pillMatch = dataHref.match(/<span[^>]*data-id="([^"]+)"[^>]*>/);
+					if (pillMatch) {
+						const varName = pillMatch[1];
+						const cleanHref = `{{${varName}}}`;
+						btn.setAttribute('data-href', cleanHref);
+						if (link) link.setAttribute('href', cleanHref);
+					}
+				});
+
 				html = doc.body.innerHTML;
 				onchange(html);
 			},

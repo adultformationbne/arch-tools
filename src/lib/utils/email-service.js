@@ -645,7 +645,10 @@ export function buildVariableContext({
 		currentSession: cohort?.current_session || '',
 
 		// Link variables
-		loginLink: course?.slug ? `${siteUrl}/login?course=${course.slug}` : `${siteUrl}/login`,
+		// loginLink: Smart login link - pre-fills email, auto-sends OTP for new users, shows password for existing
+		loginLink: course?.slug
+			? `${siteUrl}/login?course=${course.slug}&email=${encodeURIComponent(enrollment.email || '')}&send=true`
+			: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email || '')}&send=true`,
 		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}`,
 		materialsLink: `${siteUrl}/courses/${course?.slug || ''}/materials`,
 		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,

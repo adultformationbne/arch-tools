@@ -277,6 +277,49 @@ Enter 6-digit code → Verify
 Enter new password → Confirm → Set Password
 ```
 
+### Email Link Login (Frictionless Onboarding)
+
+Welcome emails can include smart login links that streamline the onboarding experience:
+
+**URL Parameters:**
+- `?email=user@example.com` - Pre-fills email field
+- `?send=true` - Auto-checks account and sends OTP if needed
+- `?course=accf` - Applies course-specific branding
+
+**Email Variable:**
+- `{{loginLink}}` - Smart login link: `/login?course=slug&email=user@example.com&send=true`
+
+The `{{loginLink}}` variable automatically:
+- Pre-fills the user's email
+- Shows password field if they have a password
+- Auto-sends OTP if they're a new user (no password yet)
+
+**User Flow with `{{loginLink}}`:**
+```
+1. User clicks "Access Your Dashboard" in welcome email
+2. Login page loads with course branding, email pre-filled
+3. System checks account:
+   - Has password? → Shows password field
+   - New user? → Auto-sends OTP, shows code field
+4. User enters password OR 6-digit code
+5. New users set up password (first time only)
+6. Redirected to course dashboard
+```
+
+**Edge Cases Handled:**
+- Already logged in → Redirects to dashboard immediately
+- User has password → Shows password field (no auto-OTP)
+- Invalid email format → Shows error, clears URL params
+- Recent auto-send (30s) → Shows form with message, prevents spam
+- Rate limited → Shows "too many requests" error
+- Email not in system → Shows "contact administrator" error
+
+**Security:**
+- Email cleared from URL after reading (browser history protection)
+- Rate limiting: 10 requests/min per IP on check-email endpoint
+- OTP still required - no bypass of email verification
+- Session storage prevents duplicate sends on refresh/back button
+
 ---
 
 ## Admin Experience

@@ -1398,7 +1398,7 @@ Templates support `{{variable}}` syntax. Available variables:
 - `{{currentSession}}` - Cohort's current session
 
 **Link Variables:**
-- `{{loginLink}}` - Course login page
+- `{{loginLink}}` - Smart login link (pre-fills email, auto-sends OTP for new users)
 - `{{dashboardLink}}` - Student dashboard
 - `{{materialsLink}}` - Materials page
 - `{{reflectionLink}}` - Reflections page

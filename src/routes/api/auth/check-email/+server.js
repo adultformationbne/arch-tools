@@ -3,10 +3,64 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { isValidEmail } from '$lib/utils/form-validator.js';
 
 /**
+ * Simple in-memory rate limiter
+ * Limits requests per IP to prevent abuse of the check-email endpoint
+ * Note: Resets on server restart, use Redis for production at scale
+ */
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute per IP
+
+function checkRateLimit(ip) {
+	const now = Date.now();
+	const windowStart = now - RATE_LIMIT_WINDOW_MS;
+
+	// Get or create entry for this IP
+	let entry = rateLimitMap.get(ip);
+	if (!entry) {
+		entry = { requests: [], blocked: false };
+		rateLimitMap.set(ip, entry);
+	}
+
+	// Clean up old requests outside the window
+	entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
+
+	// Check if rate limited
+	if (entry.requests.length >= RATE_LIMIT_MAX_REQUESTS) {
+		return false; // Rate limited
+	}
+
+	// Add this request
+	entry.requests.push(now);
+	return true; // Allowed
+}
+
+// Clean up old entries periodically (every 5 minutes)
+setInterval(() => {
+	const now = Date.now();
+	const windowStart = now - RATE_LIMIT_WINDOW_MS;
+	for (const [ip, entry] of rateLimitMap.entries()) {
+		entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
+		if (entry.requests.length === 0) {
+			rateLimitMap.delete(ip);
+		}
+	}
+}, 5 * 60 * 1000);
+
+/**
  * Check user status and determine authentication method
  * Returns what the next step should be for this email
  */
-export async function POST({ request }) {
+export async function POST({ request, getClientAddress }) {
+	// Rate limiting check
+	const clientIp = getClientAddress();
+	if (!checkRateLimit(clientIp)) {
+		return json({
+			exists: false,
+			nextStep: 'error',
+			message: 'Too many requests. Please wait a moment before trying again.'
+		}, { status: 429 });
+	}
 	try {
 		const { email } = await request.json();
 

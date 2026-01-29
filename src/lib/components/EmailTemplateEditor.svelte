@@ -159,7 +159,7 @@
 		{ name: 'sessionNumber', description: 'Session number', dynamic: true },
 		{ name: 'sessionTitle', description: 'Session title', dynamic: true },
 		{ name: 'currentSession', description: 'Current cohort session', dynamic: true },
-		{ name: 'loginLink', description: 'Course login page' },
+		{ name: 'loginLink', description: 'Smart login link (auto-sends code)' },
 		{ name: 'dashboardLink', description: 'Course dashboard' },
 		{ name: 'materialsLink', description: 'Course materials page' },
 		{ name: 'reflectionLink', description: 'Reflections page' },
