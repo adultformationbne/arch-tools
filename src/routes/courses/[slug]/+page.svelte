@@ -27,7 +27,7 @@
 	// Hardcoded intro video URL for now (will be per-course later)
 	// TODO: Move to course settings
 	// Set to empty string or null to disable intro video
-	const INTRO_VIDEO_URL = '';
+	const INTRO_VIDEO_URL = 'https://www.loom.com/share/25b3dcaf37c84fb0afacfddf2b209e1a';
 
 	// Check if we have a valid video URL (not empty, not placeholder)
 	const hasValidVideoUrl = INTRO_VIDEO_URL &&

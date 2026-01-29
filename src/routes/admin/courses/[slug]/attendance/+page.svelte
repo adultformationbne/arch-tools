@@ -5,7 +5,15 @@
 	let { data } = $props();
 
 	const courseSlug = $derived(data.courseSlug);
-	let selectedCohortId = $state(data.cohorts[0]?.id || null);
+	const initialCohortId = $derived(data.cohorts[0]?.id || null);
+	let selectedCohortId = $state(null);
+
+	// Initialize selectedCohortId from derived initial value
+	$effect(() => {
+		if (selectedCohortId === null && initialCohortId) {
+			selectedCohortId = initialCohortId;
+		}
+	});
 	let expandedSession = $state(null);
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
 	let attendanceData = $state({});
@@ -468,6 +476,7 @@
 			aria-modal="true"
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="p-6 border-b border-gray-200">
 				<h3 class="text-xl font-bold text-gray-800">Override Coordinator Marking</h3>

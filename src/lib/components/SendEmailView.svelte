@@ -825,14 +825,6 @@
 		background-color: color-mix(in srgb, var(--course-accent-light) 15%, white);
 	}
 
-	.test-send-btn {
-		background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);
-		color: var(--course-accent-darkest);
-	}
-	.test-send-btn:hover:not(:disabled) {
-		background-color: color-mix(in srgb, var(--course-accent-light) 50%, white);
-	}
-
 	.send-btn {
 		background-color: var(--course-accent-light);
 		color: var(--course-accent-darkest);

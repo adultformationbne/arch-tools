@@ -416,6 +416,10 @@
 					<div
 						class="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-400 opacity-40 group-hover:opacity-100 hover:text-gray-600 transition-opacity"
 						onclick={(e) => e.stopPropagation()}
+						onkeydown={(e) => e.stopPropagation()}
+						role="button"
+						tabindex="0"
+						aria-label="Drag to reorder {material.title}"
 						title="Drag to reorder"
 					>
 						<GripVertical size="16" />
@@ -456,7 +460,8 @@
 					</div>
 
 					<!-- Actions -->
-					<div class="flex items-center gap-1" onclick={(e) => e.stopPropagation()}>
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div class="flex items-center gap-1" onkeydown={(e) => e.stopPropagation()}>
 						<button
 							onclick={() => startEditMaterial(material)}
 							class="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"
@@ -512,10 +517,10 @@
 
 								{#if editingMaterial.type === 'native'}
 									<div>
-										<label
+										<span
 											id={getFieldId('edit-material-content-label', material.id)}
 											class="block text-sm font-semibold text-gray-700 mb-1"
-										>Content</label>
+										>Content</span>
 										<SimplifiedRichTextEditor
 											editorId={getFieldId('edit-material-content', material.id)}
 											labelledBy={getFieldId('edit-material-content-label', material.id)}

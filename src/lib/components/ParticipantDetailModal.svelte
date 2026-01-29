@@ -295,14 +295,16 @@
 		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
 		onclick={handleClose}
 		onkeydown={(e) => e.key === 'Escape' && handleClose()}
-		role="dialog"
-		aria-modal="true"
+		role="presentation"
 		tabindex="-1"
 	>
 		<div
 			class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-xl flex flex-col"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
 		>
 			<!-- Header -->
 			<div class="px-6 py-4 border-b border-gray-200 flex items-start justify-between" style="background-color: var(--course-surface, #f5f5f5);">

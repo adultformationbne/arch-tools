@@ -4,6 +4,7 @@
 	import { formatDGRDate } from '$lib/utils/dgr-common.js';
 
 	// Props
+	/** @type {{ formData: any, publishing?: boolean, result?: any, useNewDesign?: boolean, fetchingGospel?: boolean, gospelFullText?: string, gospelReference?: string, onPasteFromWord?: () => void }} */
 	let {
 		formData = $bindable(),
 		publishing = $bindable(false),

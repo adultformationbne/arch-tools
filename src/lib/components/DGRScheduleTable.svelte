@@ -511,6 +511,7 @@
 	<div
 		class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3 text-sm max-w-xs"
 		style="left: {readingsPopover.x}px; top: {readingsPopover.y}px;"
+		role="tooltip"
 		onmouseenter={() => readingsPopover.show = true}
 		onmouseleave={hideReadings}
 	>

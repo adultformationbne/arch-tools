@@ -256,7 +256,7 @@
 										<!-- Session Number - shows POSITION in list (reactive during drag) -->
 										{#if isPreStart}
 											<div class="session-number-badge w-5 h-5 flex items-center justify-center flex-shrink-0">
-												<Circle size={12} class="{isSessionSelected ? '' : 'text-white/30'}" style={isSessionSelected ? 'fill: var(--course-accent-light); color: var(--course-accent-light)' : ''} />
+												<Circle size={12} class={isSessionSelected ? '' : 'text-white/30'} style={isSessionSelected ? 'fill: var(--course-accent-light); color: var(--course-accent-light)' : ''} />
 											</div>
 										{:else}
 											<div class="session-number-badge w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-full text-xs transition-all duration-150 {isSessionSelected ? 'font-bold' : 'bg-white/10 text-white/50'}"

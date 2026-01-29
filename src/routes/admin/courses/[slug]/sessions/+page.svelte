@@ -676,6 +676,7 @@
 				<div class="flex-1">
 					<!-- Editable Session Title -->
 					<div class="flex items-center gap-2 group"
+						role="group"
 						onmouseenter={() => titleHovered = true}
 						onmouseleave={() => titleHovered = false}>
 						{#if editingTitle}

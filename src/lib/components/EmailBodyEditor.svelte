@@ -331,8 +331,8 @@
 					Loading editor...
 				</div>
 			{:else if TipTapEmailEditor && !editorLoadError}
-				<svelte:component
-					this={TipTapEmailEditor}
+				{@const DynamicTipTapEditor = TipTapEmailEditor}
+				<DynamicTipTapEditor
 					bind:this={editorComponent}
 					bind:editor={tiptapEditor}
 					bind:hasSelection={hasTextSelection}

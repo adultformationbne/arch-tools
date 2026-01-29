@@ -841,15 +841,24 @@
 
 <!-- Mobile Date Picker Modal -->
 {#if showDatePicker}
-	<div class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 md:hidden" onmousedown={(e) => e.target === e.currentTarget && (showDatePicker = false)}>
+	<div
+		class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 md:hidden"
+		onmousedown={(e) => e.target === e.currentTarget && (showDatePicker = false)}
+		onkeydown={(e) => e.key === 'Escape' && (showDatePicker = false)}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="date-picker-title"
+		tabindex="-1"
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="max-h-[80vh] w-full overflow-hidden rounded-b-2xl bg-white"
-			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
 				<div>
-					<h2 class="text-lg font-semibold text-gray-900">Select Date</h2>
+					<h2 id="date-picker-title" class="text-lg font-semibold text-gray-900">Select Date</h2>
 					<p class="text-sm text-gray-500">{pendingCount} remaining</p>
 				</div>
 				<button onclick={() => showDatePicker = false} class="rounded-full p-2 hover:bg-gray-100">
@@ -994,13 +1003,22 @@
 
 <!-- Edit Readings Modal -->
 {#if showEditReadings}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onmousedown={(e) => e.target === e.currentTarget && (showEditReadings = false)}>
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+		onmousedown={(e) => e.target === e.currentTarget && (showEditReadings = false)}
+		onkeydown={(e) => e.key === 'Escape' && (showEditReadings = false)}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="edit-readings-title"
+		tabindex="-1"
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="mx-4 w-full max-w-md rounded-xl bg-white shadow-2xl"
-			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-				<h3 class="text-lg font-semibold text-gray-900">Edit Readings</h3>
+				<h3 id="edit-readings-title" class="text-lg font-semibold text-gray-900">Edit Readings</h3>
 				<button onclick={() => showEditReadings = false} class="rounded-lg p-1 hover:bg-gray-100">
 					<X class="h-5 w-5 text-gray-500" />
 				</button>

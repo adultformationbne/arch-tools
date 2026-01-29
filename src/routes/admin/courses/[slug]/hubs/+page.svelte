@@ -315,10 +315,9 @@
 					</div>
 
 					<!-- Actions -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div
 						class="col-span-2 flex justify-end gap-1"
-						role="group"
-						onclick={(e) => e.stopPropagation()}
 						onkeydown={(e) => e.stopPropagation()}
 					>
 						<button

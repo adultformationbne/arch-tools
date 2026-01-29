@@ -487,9 +487,9 @@
 			{:else if selectedType === 'native'}
 				<!-- Rich Text Editor -->
 				<div>
-					<label id="material-content-label" class="block text-sm font-semibold mb-2 text-gray-700">
+					<span id="material-content-label" class="block text-sm font-semibold mb-2 text-gray-700">
 						Content *
-					</label>
+					</span>
 					<SimplifiedRichTextEditor
 						editorId="material-content"
 						labelledBy="material-content-label"
@@ -501,9 +501,9 @@
 			{:else if selectedType === 'upload'}
 				<!-- Document Upload -->
 				<div>
-					<label class="block text-sm font-semibold mb-2 text-gray-700">
+					<span class="block text-sm font-semibold mb-2 text-gray-700">
 						Upload File
-					</label>
+					</span>
 					<div class="mb-3">
 						<label for="upload-title" class="block text-xs text-gray-500 mb-1">
 							Title (optional - defaults to filename)

@@ -5,7 +5,7 @@
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Link from '@tiptap/extension-link';
 	import TiptapImage from '@tiptap/extension-image';
-	import { Node, mergeAttributes } from '@tiptap/core';
+	import { Node } from '@tiptap/core';
 	import {
 		Bold,
 		Italic,
@@ -1081,21 +1081,5 @@
 
 	:global(.ProseMirror:focus) {
 		outline: none;
-	}
-
-	/* Variable dropdown positioning */
-	.variable-dropdown {
-		animation: slideDown 0.15s ease-out;
-	}
-
-	@keyframes slideDown {
-		from {
-			opacity: 0;
-			transform: translateY(-8px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
 	}
 </style>

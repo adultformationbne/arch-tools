@@ -299,10 +299,11 @@
 		<div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
 			<div class="flex items-center gap-4">
 				<div class="flex-1">
-					<label class="block text-xs font-medium text-gray-600 mb-1">
+					<label for="test-email-address" class="block text-xs font-medium text-gray-600 mb-1">
 						Send test to:
 					</label>
 					<input
+						id="test-email-address"
 						type="email"
 						bind:value={sendToEmail}
 						placeholder="your@email.com"

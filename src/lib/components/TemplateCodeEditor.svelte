@@ -8,7 +8,7 @@
     onFormat = null
   } = $props();
 
-  let editor;
+  let editor = $state(null);
   let isFormatting = $state(false);
 
   // Dynamic import - if CodeMirror breaks, fallback to textarea
@@ -73,8 +73,8 @@
 
   <div class="flex-1 min-h-0">
     {#if CodeMirrorEditor}
-      <svelte:component
-        this={CodeMirrorEditor}
+      {@const DynamicCodeMirrorEditor = CodeMirrorEditor}
+      <DynamicCodeMirrorEditor
         bind:this={editor}
         bind:value={html}
         theme="dark"

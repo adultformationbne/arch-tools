@@ -45,10 +45,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if show}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
 		onclick={onClose}
+		role="presentation"
 	>
 		<div
 			class="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl"

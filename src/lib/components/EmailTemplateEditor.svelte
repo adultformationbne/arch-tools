@@ -299,8 +299,9 @@
 	<!-- Template name (only for new templates) -->
 	{#if !template}
 		<div>
-			<label class="block text-sm font-semibold text-gray-700 mb-1.5">Template Name</label>
+			<label for="template-name" class="block text-sm font-semibold text-gray-700 mb-1.5">Template Name</label>
 			<input
+				id="template-name"
 				type="text"
 				bind:value={formData.name}
 				oninput={() => (hasUnsavedChanges = true)}
@@ -312,9 +313,10 @@
 
 	<!-- Subject with Variable Picker -->
 	<div>
-		<label class="block text-sm font-semibold text-gray-700 mb-1.5">Subject</label>
+		<label for="template-subject" class="block text-sm font-semibold text-gray-700 mb-1.5">Subject</label>
 		<div class="relative">
 			<input
+				id="template-subject"
 				type="text"
 				bind:this={subjectInputEl}
 				bind:value={formData.subject_template}
@@ -354,7 +356,7 @@
 
 	<!-- Email Body Editor (shared component) -->
 	<div>
-		<label class="block text-sm font-semibold text-gray-700 mb-3">Email Body</label>
+		<span class="block text-sm font-semibold text-gray-700 mb-3">Email Body</span>
 		<EmailBodyEditor
 			value={formData.body_template}
 			onchange={handleBodyChange}
