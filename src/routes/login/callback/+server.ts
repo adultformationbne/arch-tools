@@ -10,8 +10,11 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	// Check if setup=true is in current URL or in the next redirect URL
 	const isSetup = url.searchParams.get('setup') === 'true' || next.includes('setup=true');
 
-	// Clear any existing session to prevent conflicts when signing in as a different user
-	await supabase.auth.signOut();
+	// NOTE: We intentionally do NOT call signOut() here anymore.
+	// Calling signOut() revokes the refresh token on the server. If the subsequent
+	// auth flow fails (expired code, etc.), users are left with a revoked token
+	// and get "refresh_token_not_found" errors. The new session from exchangeCodeForSession()
+	// or verifyOtp() will replace the existing session if successful.
 
 	// Handle PKCE code flow (newer method)
 	if (code) {

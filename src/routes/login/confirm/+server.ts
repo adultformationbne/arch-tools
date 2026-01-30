@@ -6,8 +6,11 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	const type = url.searchParams.get('type');
 	const next = url.searchParams.get('next') ?? '/';
 
-	// Clear any existing session to prevent conflicts when signing in as a different user
-	await supabase.auth.signOut();
+	// NOTE: We intentionally do NOT call signOut() here anymore.
+	// Calling signOut() revokes the refresh token on the server. If the subsequent
+	// auth flow fails (expired token, etc.), users are left with a revoked token
+	// and get "refresh_token_not_found" errors. The new session from verifyOtp()
+	// will replace the existing session if successful.
 
 	if (token_hash && type) {
 		// Verify the OTP and establish session

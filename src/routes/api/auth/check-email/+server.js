@@ -74,11 +74,36 @@ export async function POST({ request, getClientAddress }) {
 		}
 
 		// Check if user exists in auth system
-		const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
-		const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+		// First, try to find the user ID from user_profiles (linked to auth.users)
+		const { data: profile, error: profileError } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, email')
+			.eq('email', email.toLowerCase())
+			.maybeSingle();
 
-		if (!existingUser) {
+		let fullUser = null;
+
+		if (profile?.id) {
+			// Found profile, get full auth user details
+			const { data: { user }, error: authError } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+			if (authError) {
+				console.error('[check-email] Error getting user by ID:', authError);
+			}
+			fullUser = user;
+		}
+
+		// Fallback: try listUsers if profile lookup failed
+		if (!fullUser) {
+			const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+			if (listError) {
+				console.error('[check-email] listUsers error:', listError);
+			}
+			fullUser = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+		}
+
+		if (!fullUser) {
 			// User doesn't exist in auth system
+			console.log('[check-email] User not found:', email);
 			return json({
 				exists: false,
 				nextStep: 'error',
@@ -87,13 +112,7 @@ export async function POST({ request, getClientAddress }) {
 			});
 		}
 
-		// Get full user details to check if they have signed in before
-		const { data: { user: fullUser }, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(existingUser.id);
-
-		if (getUserError || !fullUser) {
-			console.error('Error fetching user details:', getUserError);
-			throw error(500, 'Failed to verify user status');
-		}
+		// fullUser is already populated from the lookups above
 
 		/**
 		 * Determine if user has a password set

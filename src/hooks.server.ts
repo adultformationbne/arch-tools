@@ -61,35 +61,52 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return cachedSession;
 		}
 
-		const {
-			data: { user },
-			error
-		} = await event.locals.supabase.auth.getUser();
-
-		if (error || !user) {
-			// If refresh token is invalid/not found, clear stale auth cookies
-			if (error?.code === 'refresh_token_not_found' || error?.code === 'invalid_refresh_token') {
-				console.log('[auth] Clearing stale session cookies due to invalid refresh token');
-				// Clear all Supabase auth cookies
-				const cookies = event.cookies.getAll();
-				for (const cookie of cookies) {
-					if (cookie.name.startsWith('sb-')) {
-						event.cookies.delete(cookie.name, { path: '/' });
-					}
+		// Helper to clear all Supabase auth cookies
+		const clearAuthCookies = () => {
+			console.log('[auth] Clearing stale session cookies');
+			const cookies = event.cookies.getAll();
+			for (const cookie of cookies) {
+				if (cookie.name.startsWith('sb-')) {
+					event.cookies.delete(cookie.name, { path: '/' });
 				}
 			}
+		};
+
+		try {
+			const {
+				data: { user },
+				error
+			} = await event.locals.supabase.auth.getUser();
+
+			if (error || !user) {
+				// If refresh token is invalid/not found, clear stale auth cookies
+				if (error?.code === 'refresh_token_not_found' || error?.code === 'invalid_refresh_token') {
+					clearAuthCookies();
+				}
+				cachedSession = { session: null, user: null };
+				return cachedSession;
+			}
+
+			// Create a minimal session object with authenticated user
+			// Instead of using the potentially insecure getSession()
+			cachedSession = {
+				session: { user },
+				user
+			};
+
+			return cachedSession;
+		} catch (err: unknown) {
+			// Handle thrown errors (e.g., from auto-refresh attempts)
+			const authError = err as { code?: string; message?: string };
+			if (authError?.code === 'refresh_token_not_found' ||
+			    authError?.code === 'invalid_refresh_token' ||
+			    authError?.message?.includes('Refresh Token Not Found')) {
+				clearAuthCookies();
+			}
+			console.error('[auth] Error getting user:', authError?.message || err);
 			cachedSession = { session: null, user: null };
 			return cachedSession;
 		}
-
-		// Create a minimal session object with authenticated user
-		// Instead of using the potentially insecure getSession()
-		cachedSession = {
-			session: { user },
-			user
-		};
-
-		return cachedSession;
 	};
 
 	return resolve(event, {
