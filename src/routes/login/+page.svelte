@@ -20,6 +20,7 @@
 	let otp = $state('');
 
 	let loading = $state(false);
+	let sendingCode = $state(false); // Separate state for OTP sending
 	let errorMessage = $state('');
 	let infoMessage = $state('');
 
@@ -341,7 +342,7 @@
 
 	// Send OTP code for password fallback
 	async function sendOtpFallback() {
-		loading = true;
+		sendingCode = true;
 		errorMessage = '';
 
 		try {
@@ -352,7 +353,7 @@
 
 			if (otpError) {
 				errorMessage = 'Failed to send verification code. Please try again.';
-				loading = false;
+				sendingCode = false;
 				return;
 			}
 
@@ -364,13 +365,13 @@
 		} catch (error) {
 			errorMessage = error.message || 'Failed to send code';
 		} finally {
-			loading = false;
+			sendingCode = false;
 		}
 	}
 
 	// Forgot password flow - send OTP to reset password
 	async function handleForgotPassword() {
-		loading = true;
+		sendingCode = true;
 		errorMessage = '';
 
 		try {
@@ -381,7 +382,7 @@
 
 			if (otpError) {
 				errorMessage = 'Failed to send verification code. Please try again.';
-				loading = false;
+				sendingCode = false;
 				return;
 			}
 
@@ -392,7 +393,7 @@
 		} catch (error) {
 			errorMessage = error.message || 'Failed to send code';
 		} finally {
-			loading = false;
+			sendingCode = false;
 		}
 	}
 
@@ -622,10 +623,10 @@
 				<button
 					type="button"
 					onclick={sendOtpFallback}
-					disabled={loading}
+					disabled={loading || sendingCode}
 					class="group relative flex w-full justify-center border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-neutral-50 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
 				>
-					{loading ? 'Sending code...' : 'Send me a login code instead'}
+					{sendingCode ? 'Sending code...' : 'Send me a login code instead'}
 				</button>
 			</div>
 
@@ -633,10 +634,10 @@
 				<button
 					type="button"
 					onclick={handleForgotPassword}
-					disabled={loading}
+					disabled={loading || sendingCode}
 					class="text-black hover:text-neutral-700 underline disabled:opacity-50"
 				>
-					Forgot password?
+					{sendingCode ? 'Sending...' : 'Forgot password?'}
 				</button>
 				<button
 					type="button"

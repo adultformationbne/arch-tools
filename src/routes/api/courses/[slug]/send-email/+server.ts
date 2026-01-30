@@ -269,7 +269,8 @@ export const POST: RequestHandler = async (event) => {
 			sent: results.sent,
 			failed: results.failed,
 			total: enrollments.length,
-			errors: results.errors
+			errors: results.errors,
+			quotaWarning: results.quotaWarning || null
 		});
 	} catch (error) {
 		console.error('POST /api/courses/[slug]/send-email error:', error);

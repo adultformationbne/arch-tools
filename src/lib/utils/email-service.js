@@ -259,6 +259,7 @@ export async function sendEmail({
 
 /**
  * Send bulk emails using Resend Batch API (up to 100 emails per request)
+ * Automatically detects and handles Resend quota/rate limit errors.
  * @param {Array<{to: string, subject: string, html: string, metadata?: Object}>} emails Array of email objects
  * @param {string} emailType Type of email for logging
  * @param {string} resendApiKey Resend API key
@@ -266,7 +267,7 @@ export async function sendEmail({
  * @param {Object} [options] Additional options
  * @param {Object} [options.commonMetadata] Metadata to merge into all emails
  * @param {string} [options.replyTo] Reply-to email (overrides platform default)
- * @returns {Promise<{sent: number, failed: number, errors: Array}>}
+ * @returns {Promise<{sent: number, failed: number, errors: Array, quotaWarning?: string}>}
  */
 export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase, options = {} }) {
 	if (!resendApiKey) {
@@ -280,8 +281,13 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	const results = {
 		sent: 0,
 		failed: 0,
-		errors: []
+		errors: [],
+		quotaWarning: null
 	};
+
+	// Note: No pre-flight quota check - we rely on Resend's error responses
+	// to detect quota limits. This allows the limits to be managed by Resend
+	// based on whatever plan is active.
 
 	// Determine reply-to: use provided value, or fall back to platform default
 	const effectiveReplyTo = options.replyTo || platformSettings.replyToEmail;
@@ -317,15 +323,42 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 			const { data, error } = await resend.batch.send(batchPayload);
 
 			if (error) {
+				const parsedError = parseResendError(error);
 				console.error('Resend batch error:', error);
+
 				// All emails in batch failed
 				results.failed += batch.length;
+
+				// Add detailed error info
+				const errorType = parsedError.isQuotaExceeded
+					? 'QUOTA_EXCEEDED'
+					: parsedError.isRateLimit
+						? 'RATE_LIMIT'
+						: 'SEND_ERROR';
+
 				for (const email of batch) {
-					results.errors.push({ to: email.to, error: error.message });
+					results.errors.push({ to: email.to, error: parsedError.message, type: errorType });
+				}
+
+				// Set quota warning if it's a quota issue
+				if (parsedError.isQuotaExceeded && !results.quotaWarning) {
+					results.quotaWarning = `Resend daily limit exceeded. Upgrade your plan at resend.com/pricing or wait until tomorrow.`;
 				}
 
 				// Log all as failed
-				await logBatchEmails(supabase, batch, emailType, 'failed', error.message, options.commonMetadata);
+				await logBatchEmails(supabase, batch, emailType, 'failed', parsedError.message, options.commonMetadata);
+
+				// If quota exceeded, don't bother trying remaining batches
+				if (parsedError.isQuotaExceeded) {
+					const remainingEmails = emails.slice(i + BATCH_SIZE);
+					if (remainingEmails.length > 0) {
+						results.failed += remainingEmails.length;
+						for (const email of remainingEmails) {
+							results.errors.push({ to: email.to, error: 'Skipped due to quota limit', type: 'QUOTA_EXCEEDED' });
+						}
+					}
+					break; // Exit the batch loop
+				}
 			} else {
 				// Process batch results - data.data is array of {id} for each email
 				const emailResults = data?.data || [];
@@ -351,14 +384,39 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 				}
 			}
 		} catch (err) {
+			const parsedError = parseResendError(err);
 			console.error('Batch send error:', err);
+
 			results.failed += batch.length;
+
+			const errorType = parsedError.isQuotaExceeded
+				? 'QUOTA_EXCEEDED'
+				: parsedError.isRateLimit
+					? 'RATE_LIMIT'
+					: 'SEND_ERROR';
+
 			for (const email of batch) {
-				results.errors.push({ to: email.to, error: err.message });
+				results.errors.push({ to: email.to, error: parsedError.message, type: errorType });
+			}
+
+			if (parsedError.isQuotaExceeded && !results.quotaWarning) {
+				results.quotaWarning = `Resend daily limit exceeded. Upgrade your plan at resend.com/pricing or wait until tomorrow.`;
 			}
 
 			// Log all as failed
-			await logBatchEmails(supabase, batch, emailType, 'failed', err.message, options.commonMetadata);
+			await logBatchEmails(supabase, batch, emailType, 'failed', parsedError.message, options.commonMetadata);
+
+			// If quota exceeded, skip remaining batches
+			if (parsedError.isQuotaExceeded) {
+				const remainingEmails = emails.slice(i + BATCH_SIZE);
+				if (remainingEmails.length > 0) {
+					results.failed += remainingEmails.length;
+					for (const email of remainingEmails) {
+						results.errors.push({ to: email.to, error: 'Skipped due to quota limit', type: 'QUOTA_EXCEEDED' });
+					}
+				}
+				break;
+			}
 		}
 
 		// Small delay between batches (not between individual emails)
@@ -393,6 +451,55 @@ async function logBatchEmails(supabase, emails, emailType, status, errorMessage 
 	} catch (logError) {
 		console.error('Failed to log batch emails:', logError);
 	}
+}
+
+// =====================================================
+// EMAIL USAGE TRACKING (Informational)
+// =====================================================
+
+/**
+ * Get the count of emails sent today (for reporting/monitoring)
+ * @param {Object} supabase Supabase client
+ * @returns {Promise<number>} Number of emails sent today
+ */
+export async function getDailyEmailCount(supabase) {
+	const today = new Date();
+	today.setUTCHours(0, 0, 0, 0);
+
+	const { count, error } = await supabase
+		.from('platform_email_log')
+		.select('id', { count: 'exact', head: true })
+		.eq('status', 'sent')
+		.gte('sent_at', today.toISOString());
+
+	if (error) {
+		console.error('Error checking daily email count:', error);
+		return 0;
+	}
+
+	return count || 0;
+}
+
+/**
+ * Check if Resend error is a rate limit or quota error
+ * @param {Object} error Error object from Resend
+ * @returns {{isRateLimit: boolean, isQuotaExceeded: boolean, message: string}}
+ */
+function parseResendError(error) {
+	const message = error?.message || error?.toString() || 'Unknown error';
+	const statusCode = error?.statusCode || error?.status;
+
+	// Rate limit: 429 Too Many Requests
+	const isRateLimit = statusCode === 429 || message.toLowerCase().includes('rate limit');
+
+	// Quota exceeded: usually 429 or specific message about daily/monthly limit
+	const isQuotaExceeded =
+		message.toLowerCase().includes('daily') ||
+		message.toLowerCase().includes('quota') ||
+		message.toLowerCase().includes('limit exceeded') ||
+		message.toLowerCase().includes('sending limit');
+
+	return { isRateLimit, isQuotaExceeded, message };
 }
 
 /**

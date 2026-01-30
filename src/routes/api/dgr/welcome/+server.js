@@ -153,6 +153,7 @@ export async function POST({ request, locals }) {
 
 			results.sent = batchResults.sent;
 			results.failed = batchResults.failed;
+			results.quotaWarning = batchResults.quotaWarning || null;
 
 			// Update contributors that were successfully sent
 			const successfulEmails = emailsToSend.filter(
@@ -196,7 +197,8 @@ export async function POST({ request, locals }) {
 		return json({
 			success: true,
 			message: `Sent ${results.sent} welcome email(s)`,
-			results
+			results,
+			quotaWarning: results.quotaWarning || null
 		});
 	} catch (error) {
 		console.error('DGR welcome email error:', error);

@@ -2,7 +2,7 @@
 
 > **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, changelogs) have been removed.
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2026-01-30
 **Status:** ✅ Production Ready
 **System Type:** Invite-Only with Email + OTP
 
@@ -134,6 +134,23 @@ User enters OTP → Redirect to dashboard
 - In-memory per-IP rate limiting: 5 req/min
 - **Note:** This is per-node and resets on restart
 - For production at scale, consider Redis/Postgres-based limiting
+
+### 6. Session Management
+
+**Server-side session handling** (`hooks.server.ts`):
+- Uses `getUser()` (not `getSession()`) for secure server-side auth
+- Caches session per-request to avoid duplicate auth calls
+- Automatically clears stale cookies on `refresh_token_not_found` errors
+
+**Auth callback handlers** (`/login/callback`, `/login/confirm`):
+- Do NOT call `signOut()` before verifying new tokens
+- New sessions from `exchangeCodeForSession()` or `verifyOtp()` replace existing sessions
+- Failed auth flows preserve existing sessions (don't revoke valid tokens)
+
+**Logout handlers** (`/auth/logout`, `/login/logout`):
+- Try-catch around `signOut()` to handle already-invalid sessions
+- Manually clear all `sb-*` cookies as fallback
+- Always redirect to `/login` regardless of errors
 
 ---
 
@@ -431,18 +448,65 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 ## Implementation Files
 
-### Frontend
-- `/src/routes/login/+page.svelte` - Main login UI
-- `/src/routes/login/setup-password/+page.svelte` - Password creation
+### Core Auth Infrastructure
+- `/src/hooks.server.ts` - Server hooks with `safeGetSession()` and cookie management
+- `/src/lib/server/auth.ts` - Unified auth library (requireAuth, requireModule, etc.)
 
-### Backend - Platform Users
-- `/src/lib/server/auth.ts` - Unified auth library
-- `/src/routes/api/auth/check-email/+server.js` - Email check endpoint
+### Login Flow
+- `/src/routes/login/+page.svelte` - Main login UI (email → password/OTP)
+- `/src/routes/login/+page.server.ts` - Server-side session check, course branding
+- `/src/routes/login/setup-password/+page.svelte` - Password creation for new users
+- `/src/routes/login/callback/+server.ts` - PKCE code exchange, token hash verification
+- `/src/routes/login/confirm/+server.ts` - OTP token verification
+- `/src/routes/login/error/+page.svelte` - Auth error display
+
+### Logout
+- `/src/routes/auth/logout/+server.ts` - API logout endpoint
+- `/src/routes/login/logout/+page.server.ts` - Page-based logout
+
+### API Endpoints
+- `/src/routes/api/auth/check-email/+server.js` - Email lookup, determines auth flow
 - `/src/routes/api/admin/users/+server.js` - Platform user creation
 
-### Backend - Course Enrollments
+### Course Enrollments
 - `/src/routes/admin/courses/[slug]/api/+server.ts` - Bulk CSV import (upload_csv action)
-- Creates auth accounts exactly like platform user creation
+
+---
+
+## Troubleshooting
+
+### "Refresh Token Not Found" Errors
+**Symptom:** Users get logged out and can't log back in.
+
+**Cause:** Stale refresh tokens in browser cookies that no longer exist on Supabase server.
+
+**Solution:**
+1. User visits `/login/logout` to force-clear all auth cookies
+2. User can then log in fresh at `/login`
+3. If persistent, manually clear cookies in browser DevTools → Application → Cookies → delete all `sb-*` cookies
+
+**Prevention:** The system now:
+- Catches these errors in `hooks.server.ts` and auto-clears cookies
+- Logout handlers clear cookies even if `signOut()` fails
+- Callback handlers don't prematurely revoke tokens
+
+### "No Account Found" on Login
+**Symptom:** User enters valid email but gets "No account found" error.
+
+**Cause:** User lookup failed (rare edge case with `listUsers()` API).
+
+**Solution:** The `check-email` endpoint now:
+1. First looks up user via `user_profiles` table (fast, reliable)
+2. Gets auth details via `getUserById` (direct lookup)
+3. Falls back to `listUsers()` only if needed
+
+### Session Not Persisting
+**Symptom:** User logs in but gets logged out on next page load.
+
+**Check:**
+1. Cookies being set? (DevTools → Application → Cookies)
+2. `sb-*` cookies should exist after login
+3. Check server logs for auth errors
 
 ---
 
@@ -470,6 +534,16 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 ---
 
 ## Migration History
+
+### v3 - Session Management Fixes (2026-01-30)
+1. ✅ Fixed `refresh_token_not_found` errors blocking all logins
+2. ✅ Removed premature `signOut()` calls in `/login/callback` and `/login/confirm`
+3. ✅ Added try-catch error handling in `hooks.server.ts` for auth errors
+4. ✅ Made logout handlers robust (handle already-invalid sessions)
+5. ✅ Improved `check-email` to use direct user lookup via `user_profiles` → `getUserById`
+6. ✅ Added automatic cookie clearing on stale session detection
+
+**Root cause:** Callback handlers called `signOut()` before token verification. If verification failed (expired link), the user's existing session was revoked, causing `refresh_token_not_found` on all subsequent requests.
 
 ### v2 - Unified Authentication (2025-11-17)
 1. ✅ Unified course enrollments with platform user auth

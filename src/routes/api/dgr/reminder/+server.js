@@ -406,6 +406,7 @@ async function handleBulkReminders(reminders, user) {
 
 		results.sent = batchResults.sent;
 		results.failed = batchResults.failed;
+		results.quotaWarning = batchResults.quotaWarning || null;
 
 		// Update schedule entries for successful sends
 		const successfulEmails = emailsToSend.filter(
@@ -463,6 +464,7 @@ async function handleBulkReminders(reminders, user) {
 	return json({
 		success: true,
 		message: `Sent ${results.sent} reminder(s)`,
-		results
+		results,
+		quotaWarning: results.quotaWarning || null
 	});
 }

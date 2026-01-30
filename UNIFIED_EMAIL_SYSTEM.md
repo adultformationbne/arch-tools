@@ -123,6 +123,46 @@ await sendEmail({
 });
 ```
 
+#### `sendBulkEmails(options)`
+Sends multiple emails using Resend's Batch API with quota safety checks.
+
+```javascript
+const results = await sendBulkEmails({
+  emails: [
+    { to: 'user1@example.com', subject: 'Hello', html: '<p>Hi</p>' },
+    { to: 'user2@example.com', subject: 'Hello', html: '<p>Hi</p>' }
+  ],
+  emailType: 'notification',
+  resendApiKey: RESEND_API_KEY,
+  supabase: supabaseAdmin,
+  options: {
+    replyTo: 'support@example.com',
+    commonMetadata: { campaign: 'welcome' }
+  }
+});
+
+// Returns:
+// {
+//   sent: 2,
+//   failed: 0,
+//   errors: [],
+//   quotaWarning: null  // set if Resend returns quota error
+// }
+```
+
+**Error types in `errors` array:**
+- `QUOTA_EXCEEDED` - Hit Resend's daily/monthly limit (detected from Resend response)
+- `RATE_LIMIT` - Sending too fast (2 req/sec)
+- `SEND_ERROR` - Other failures
+
+#### `getDailyEmailCount(supabase)`
+Returns the number of emails sent today (for monitoring/reporting).
+
+```javascript
+const count = await getDailyEmailCount(supabase);
+// Returns: 47
+```
+
 #### `sendBrandedEmail(options)`
 Sends email with branded header/footer wrapper.
 
@@ -379,6 +419,62 @@ This generates VML for Outlook + standard HTML/CSS for other clients.
 
 ---
 
+## Resend Limits & Quota Safety
+
+### Free Tier Limits (as of Jan 2026)
+
+| Limit | Value |
+|-------|-------|
+| Daily | 100 emails/day |
+| Monthly | 3,000 emails/month |
+| Rate | 2 requests/second |
+| Domains | 1 domain |
+
+### Quota Safety System
+
+The `sendBulkEmails` function uses **reactive quota detection** - it relies on Resend's error responses rather than tracking limits locally. This means:
+
+1. **Plan-agnostic**: Works with any Resend plan (free: 100/day, Pro: 50k/month, etc.)
+2. **No config needed**: Change your plan on resend.com - no code changes here
+3. **Early abort**: If Resend returns a quota error mid-batch, stops trying remaining emails
+4. **Clear errors**: Returns `QUOTA_EXCEEDED` error type so frontend can show appropriate message
+
+### Handling Quota Warnings in Frontend
+
+All bulk email API endpoints return `quotaWarning` when applicable:
+
+```javascript
+const response = await apiPost('/api/courses/my-course/send-email', data);
+
+if (response.quotaWarning) {
+  toastWarning(response.quotaWarning);
+}
+
+if (response.sent > 0) {
+  toastSuccess(`Sent ${response.sent} emails`);
+}
+```
+
+### Error Types
+
+Errors in the `errors` array include a `type` field:
+
+| Type | Description |
+|------|-------------|
+| `QUOTA_EXCEEDED` | Hit Resend's daily (100) or monthly (3,000) limit |
+| `RATE_LIMIT` | Sending faster than 2 requests/second |
+| `SEND_ERROR` | Other failures (invalid email, network, etc.) |
+
+### Changing Your Resend Plan
+
+If you need more than 100 emails/day:
+- **Pro**: $20/month for 50,000 emails
+- **Scale**: $90/month for 100,000 emails
+
+**To upgrade or downgrade:** Change your plan at [resend.com/settings/billing](https://resend.com/settings/billing). No code changes needed here - the system detects limits from Resend's error responses, so it automatically works with whatever plan you're on.
+
+---
+
 ## Migration Notes
 
 The system was unified from three separate tables:
@@ -429,7 +525,19 @@ All existing data was migrated. The old tables no longer exist.
 
 ---
 
-## Recent Updates (Dec 2025)
+## Recent Updates (Jan 2026)
+
+### Resend Quota Safety ✅
+- **Reactive detection**: `sendBulkEmails` detects Resend quota/rate limit errors automatically
+- **Error types**: Errors include `type` field (`QUOTA_EXCEEDED`, `RATE_LIMIT`, `SEND_ERROR`)
+- **Early abort**: Stops trying remaining batches if quota exceeded mid-send
+- **Warning propagation**: All bulk email endpoints return `quotaWarning` field
+- **Plan-agnostic**: Change your plan on resend.com anytime - no code changes needed here
+- **Usage tracking**: `getDailyEmailCount()` available for monitoring
+
+---
+
+## Updates (Dec 2025)
 
 ### Unified Test Email System ✅
 - **TestEmailPanel component**: Unified modal for all contexts (courses, DGR, platform)
@@ -492,6 +600,7 @@ Two ways to add buttons:
 - [x] Native MJML preview in test panel
 - [x] Confirmation before bulk sending
 - [x] DGR email logs
+- [x] Resend quota safety checks (pre-flight check, warnings, early abort)
 
 ### Still TODO
 
@@ -505,3 +614,4 @@ Two ways to add buttons:
 - [ ] Consolidate SendEmailView + EmailSenderModal (~1400 lines of duplication)
 - [ ] Group variables by category in picker
 - [ ] Search/filter for templates with many variables
+- [ ] Admin dashboard showing daily/monthly email usage
