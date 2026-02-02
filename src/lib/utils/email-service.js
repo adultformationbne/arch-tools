@@ -220,9 +220,9 @@ export async function sendEmail({
 			html
 		};
 
-		// Only add reply_to if we have one
+		// Only add replyTo if we have one (Resend SDK uses camelCase)
 		if (effectiveReplyTo) {
-			emailPayload.reply_to = effectiveReplyTo;
+			emailPayload.replyTo = effectiveReplyTo;
 		}
 
 		// Send email via Resend
@@ -312,8 +312,8 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 				html: email.html
 			};
 			if (effectiveReplyTo) {
-				// Resend expects reply_to as string or array - use array format for consistency
-				payload.reply_to = [effectiveReplyTo];
+				// Resend SDK uses camelCase replyTo
+				payload.replyTo = effectiveReplyTo;
 			}
 			return payload;
 		});
