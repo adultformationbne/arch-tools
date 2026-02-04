@@ -45,9 +45,29 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_otp_tracker: {
+        Row: {
+          email: string
+          expires_at: string
+          sent_at: string
+        }
+        Insert: {
+          email: string
+          expires_at?: string
+          sent_at?: string
+        }
+        Update: {
+          email?: string
+          expires_at?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
+          default_currency: string | null
+          default_price_cents: number | null
           description: string | null
           duration_weeks: number | null
           email_branding_config: Json | null
@@ -63,6 +83,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          default_currency?: string | null
+          default_price_cents?: number | null
           description?: string | null
           duration_weeks?: number | null
           email_branding_config?: Json | null
@@ -78,6 +100,8 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          default_currency?: string | null
+          default_price_cents?: number | null
           description?: string | null
           duration_weeks?: number | null
           email_branding_config?: Json | null
@@ -198,38 +222,65 @@ export type Database = {
       courses_cohorts: {
         Row: {
           created_at: string
+          currency: string | null
           current_session: number
           email_preferences: Json | null
           end_date: string
+          enrollment_closes_at: string | null
+          enrollment_opens_at: string | null
+          enrollment_type: string | null
           id: string
+          is_free: boolean | null
+          max_enrollments: number | null
           module_id: string
           name: string
+          price_cents: number | null
           start_date: string
           status: string | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          currency?: string | null
           current_session?: number
           email_preferences?: Json | null
           end_date: string
+          enrollment_closes_at?: string | null
+          enrollment_opens_at?: string | null
+          enrollment_type?: string | null
           id?: string
+          is_free?: boolean | null
+          max_enrollments?: number | null
           module_id: string
           name: string
+          price_cents?: number | null
           start_date: string
           status?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          currency?: string | null
           current_session?: number
           email_preferences?: Json | null
           end_date?: string
+          enrollment_closes_at?: string | null
+          enrollment_opens_at?: string | null
+          enrollment_type?: string | null
           id?: string
+          is_free?: boolean | null
+          max_enrollments?: number | null
           module_id?: string
           name?: string
+          price_cents?: number | null
           start_date?: string
           status?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -315,6 +366,82 @@ export type Database = {
           },
         ]
       }
+      courses_discount_codes: {
+        Row: {
+          code: string
+          cohort_id: string | null
+          course_id: string
+          created_at: string | null
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          stripe_coupon_id: string | null
+          stripe_promotion_code_id: string | null
+          updated_at: string | null
+          uses_count: number | null
+        }
+        Insert: {
+          code: string
+          cohort_id?: string | null
+          course_id: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
+        }
+        Update: {
+          code?: string
+          cohort_id?: string | null
+          course_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_discount_codes_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_discount_codes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_discount_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses_enrollment_imports: {
         Row: {
           created_at: string | null
@@ -356,6 +483,76 @@ export type Database = {
           },
         ]
       }
+      courses_enrollment_links: {
+        Row: {
+          code: string
+          cohort_id: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          hub_id: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          name: string | null
+          price_cents: number | null
+          updated_at: string | null
+          uses_count: number | null
+        }
+        Insert: {
+          code: string
+          cohort_id: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          hub_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          name?: string | null
+          price_cents?: number | null
+          updated_at?: string | null
+          uses_count?: number | null
+        }
+        Update: {
+          code?: string
+          cohort_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          hub_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          name?: string | null
+          price_cents?: number | null
+          updated_at?: string | null
+          uses_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_enrollment_links_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_enrollment_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_enrollment_links_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "courses_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses_enrollments: {
         Row: {
           assigned_admin_id: string | null
@@ -364,6 +561,7 @@ export type Database = {
           current_session: number | null
           email: string
           enrolled_at: string | null
+          enrollment_link_id: string | null
           error_message: string | null
           full_name: string
           hub_id: string | null
@@ -374,8 +572,11 @@ export type Database = {
           last_viewed_at: string | null
           login_count: number | null
           notes: string | null
+          payment_id: string | null
+          payment_status: string | null
           role: string
           status: string
+          stripe_customer_id: string | null
           updated_at: string | null
           user_profile_id: string | null
           view_count: number | null
@@ -389,6 +590,7 @@ export type Database = {
           current_session?: number | null
           email: string
           enrolled_at?: string | null
+          enrollment_link_id?: string | null
           error_message?: string | null
           full_name: string
           hub_id?: string | null
@@ -399,8 +601,11 @@ export type Database = {
           last_viewed_at?: string | null
           login_count?: number | null
           notes?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
           role: string
           status?: string
+          stripe_customer_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
           view_count?: number | null
@@ -414,6 +619,7 @@ export type Database = {
           current_session?: number | null
           email?: string
           enrolled_at?: string | null
+          enrollment_link_id?: string | null
           error_message?: string | null
           full_name?: string
           hub_id?: string | null
@@ -424,8 +630,11 @@ export type Database = {
           last_viewed_at?: string | null
           login_count?: number | null
           notes?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
           role?: string
           status?: string
+          stripe_customer_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
           view_count?: number | null
@@ -469,6 +678,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "courses_enrollments_enrollment_link_id_fkey"
+            columns: ["enrollment_link_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollment_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_enrollments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "courses_payments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "courses_enrollments_welcome_email_sent_by_fkey"
             columns: ["welcome_email_sent_by"]
             isOneToOne: false
@@ -481,25 +704,31 @@ export type Database = {
         Row: {
           course_id: string
           created_at: string
+          currency: string | null
           id: string
           location: string | null
           name: string
+          price_cents: number | null
           updated_at: string
         }
         Insert: {
           course_id: string
           created_at?: string
+          currency?: string | null
           id?: string
           location?: string | null
           name: string
+          price_cents?: number | null
           updated_at?: string
         }
         Update: {
           course_id?: string
           created_at?: string
+          currency?: string | null
           id?: string
           location?: string | null
           name?: string
+          price_cents?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -599,6 +828,101 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_payments: {
+        Row: {
+          amount_cents: number
+          cohort_id: string
+          created_at: string | null
+          currency: string
+          discount_amount_cents: number | null
+          discount_code: string | null
+          email: string
+          enrollment_id: string | null
+          enrollment_link_id: string | null
+          failure_reason: string | null
+          full_name: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string | null
+          user_profile_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          cohort_id: string
+          created_at?: string | null
+          currency?: string
+          discount_amount_cents?: number | null
+          discount_code?: string | null
+          email: string
+          enrollment_id?: string | null
+          enrollment_link_id?: string | null
+          failure_reason?: string | null
+          full_name?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          cohort_id?: string
+          created_at?: string | null
+          currency?: string
+          discount_amount_cents?: number | null
+          discount_code?: string | null
+          email?: string
+          enrollment_id?: string | null
+          enrollment_link_id?: string | null
+          failure_reason?: string | null
+          full_name?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_payments_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payments_enrollment_link_id_fkey"
+            columns: ["enrollment_link_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollment_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payments_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -824,6 +1148,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          is_guest: boolean | null
           last_visited_at: string | null
           name: string
           notes: string | null
@@ -841,6 +1166,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          is_guest?: boolean | null
           last_visited_at?: string | null
           name: string
           notes?: string | null
@@ -858,6 +1184,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          is_guest?: boolean | null
           last_visited_at?: string | null
           name?: string
           notes?: string | null
@@ -1388,6 +1715,33 @@ export type Database = {
           },
         ]
       }
+      parishes: {
+        Row: {
+          created_at: string | null
+          diocese: string | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          diocese?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          diocese?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       platform_email_log: {
         Row: {
           body: string
@@ -1566,6 +1920,30 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_events: {
+        Row: {
+          event_type: string
+          id: string
+          payload: Json | null
+          processed_at: string | null
+          stripe_event_id: string
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string | null
+          stripe_event_id: string
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string | null
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           address: string | null
@@ -1580,11 +1958,17 @@ export type Database = {
           full_name: string | null
           id: string
           last_name: string | null
+          mailing_address: string | null
           modules: string[]
           organization: string | null
           parish_community: string | null
+          parish_id: string | null
+          parish_other: string | null
           parish_role: string | null
           phone: string | null
+          profile_completed_at: string | null
+          referral_source: string | null
+          stripe_customer_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1600,11 +1984,17 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_name?: string | null
+          mailing_address?: string | null
           modules?: string[]
           organization?: string | null
           parish_community?: string | null
+          parish_id?: string | null
+          parish_other?: string | null
           parish_role?: string | null
           phone?: string | null
+          profile_completed_at?: string | null
+          referral_source?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1620,14 +2010,28 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_name?: string | null
+          mailing_address?: string | null
           modules?: string[]
           organization?: string | null
           parish_community?: string | null
+          parish_id?: string | null
+          parish_other?: string | null
           parish_role?: string | null
           phone?: string | null
+          profile_completed_at?: string | null
+          referral_source?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_parish_id_fkey"
+            columns: ["parish_id"]
+            isOneToOne: false
+            referencedRelation: "parishes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
