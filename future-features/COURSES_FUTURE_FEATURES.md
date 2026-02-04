@@ -1,7 +1,79 @@
 # Courses Platform - Future Features Plan
 
 **Created:** January 14, 2026
-**Status:** Planning
+**Last Updated:** February 4, 2026
+**Status:** Phase 1 Complete (Payment/Enrollment MVP)
+
+---
+
+## Implementation Status
+
+### ✅ COMPLETED (February 2026)
+
+**Core Payment & Enrollment Infrastructure:**
+- Stripe integration with lazy initialization (`src/lib/server/stripe.ts`)
+- Mock payment mode for local development (`STRIPE_MOCK_MODE=true`)
+- Public enrollment page at `/enroll/[code]`
+- Password setup on success page
+- Automatic welcome email after enrollment
+
+**Admin Features:**
+- Enrollment links management (`/admin/courses/[slug]/enrollment-links`)
+- Discount codes with Stripe sync (`/admin/courses/[slug]/discounts`)
+- Cohort pricing settings (free/paid toggle, price, currency, enrollment type)
+
+**Database Tables Created:**
+- `parishes` - Parish dropdown data (58 Sydney parishes seeded)
+- `courses_enrollment_links` - Unique enrollment URLs with limits/expiry
+- `courses_payments` - Payment tracking
+- `courses_discount_codes` - Discount code management
+- `courses_stripe_events` - Webhook idempotency
+
+**Enrollment Flows Supported:**
+- Free + Open enrollment → Instant access, set password
+- Free + Approval required → Pending approval message
+- Paid enrollment → Mock checkout (dev) or Stripe Checkout (prod)
+- Payment cancelled → User notified, can retry
+
+### 🚧 STRETCH GOALS (Future)
+
+**UI/UX Improvements:**
+- [ ] Better enrollment page design (current is functional, could be polished)
+- [ ] Mobile-responsive enrollment form styles
+- [ ] Enrollment page loading states and animations
+- [ ] Custom branding preview in enrollment form
+- [ ] Progress indicator during checkout flow
+
+**Profile & Onboarding:**
+- [ ] Profile completion modal on first course access
+- [ ] Collect address, role, and additional fields post-enrollment
+- [ ] Progressive profile building across enrollments
+
+**Payment Features:**
+- [ ] Installment/payment plans
+- [ ] Partial refund support
+- [ ] Bulk/team enrollment discounts
+- [ ] Early bird pricing (time-based)
+- [ ] Scholarship codes (100% off with tracking)
+
+**Admin Improvements:**
+- [ ] Dedicated "Approve" button for pending enrollments
+- [ ] Bulk approval of pending enrollments
+- [ ] Payment dashboard with analytics
+- [ ] Refund management UI
+- [ ] Enrollment conversion funnel metrics
+
+**Communication:**
+- [ ] Customizable welcome email templates per cohort
+- [ ] Payment receipt email
+- [ ] Enrollment reminder for abandoned checkouts
+- [ ] Waitlist with auto-enrollment when spots open
+
+**Technical:**
+- [ ] Stripe webhook signature verification in production
+- [ ] Rate limiting on enrollment endpoints
+- [ ] Enrollment link QR code generation
+- [ ] Export enrollments to CSV
 
 ---
 
@@ -802,6 +874,8 @@ Admin:
 
 ### Phase 1: Delivery Modes & Async Progression
 
+**Status:** 🔜 Not Started
+
 **Goal:** Support self-paced courses without payment
 
 1. Add `delivery_mode` to courses table
@@ -812,44 +886,47 @@ Admin:
 
 **Estimate:** Medium complexity
 
-### Phase 2: Self-Service Enrollment (Free)
+### Phase 2: Self-Service Enrollment (Free) ✅ COMPLETE
+
+**Status:** ✅ Complete (February 2026)
 
 **Goal:** Public enrollment links for free cohorts
 
-1. Add enrollment link fields to cohorts
-2. Create `/enroll/[slug]` public page
-3. Add enrollment link management to admin UI
-4. Handle account creation for new users
-5. Auto-enroll on form submission
+1. ✅ Add enrollment link fields to cohorts
+2. ✅ Create `/enroll/[code]` public page
+3. ✅ Add enrollment link management to admin UI
+4. ✅ Handle account creation for new users
+5. ✅ Auto-enroll on form submission
+6. ✅ Handle approval-required enrollment type
 
-**Estimate:** Medium complexity
+### Phase 3: Stripe Integration ✅ COMPLETE (MVP)
 
-### Phase 3: Stripe Integration
+**Status:** ✅ Complete (February 2026) - MVP with mock mode for testing
 
 **Goal:** Paid enrollment with Stripe
 
-1. Set up Stripe account connection
-2. Add pricing fields to cohorts
-3. Create Stripe products/prices on cohort creation
-4. Implement Checkout flow
-5. Set up webhook handler
-6. Create payments table and logging
-7. Add payment management admin UI
+1. ✅ Set up Stripe client with lazy initialization
+2. ✅ Add pricing fields to cohorts (via cohort creation wizard)
+3. ✅ Implement Checkout flow (mock + real)
+4. ✅ Set up webhook handler
+5. ✅ Create payments table and logging
+6. ✅ Discount codes with Stripe coupon sync
+7. 🔜 Payment management admin UI (future)
 
-**Estimate:** High complexity (Stripe integration)
+**Note:** Mock mode (`STRIPE_MOCK_MODE=true`) available for development/testing without Stripe credentials.
 
 ### Phase 4: Advanced Features
 
+**Status:** 🔜 Partially Complete
+
 **Goal:** Polish and additional features
 
-1. Enrollment waitlists
-2. Discount codes / promo codes
-3. Payment plans / installments
-4. Enrollment caps with auto-close
-5. Email notifications (payment received, enrollment confirmed)
-6. Analytics dashboard
-
-**Estimate:** Medium-high complexity
+1. 🔜 Enrollment waitlists
+2. ✅ Discount codes / promo codes
+3. 🔜 Payment plans / installments (stretch goal)
+4. ✅ Enrollment caps with auto-close (max_uses on links)
+5. ✅ Email notifications (welcome email on enrollment)
+6. 🔜 Analytics dashboard
 
 ---
 
