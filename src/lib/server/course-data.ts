@@ -2274,6 +2274,175 @@ export const CourseMutations = {
 		};
 	},
 
+	/**
+	 * Send welcome email to a self-enrolled user
+	 * This is called after the user completes their password setup
+	 */
+	async sendSelfEnrollmentWelcome(params: {
+		enrollmentId: string;
+		courseSlug: string;
+		siteUrl: string;
+	}) {
+		const { enrollmentId, courseSlug, siteUrl } = params;
+
+		try {
+			// Get enrollment with full context
+			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					id, email, full_name, user_profile_id,
+					cohort:cohort_id!inner (
+						name, start_date,
+						module:module_id!inner (
+							name,
+							course:course_id!inner (
+								id, name, slug, settings, email_branding_config
+							)
+						)
+					)
+				`)
+				.eq('id', enrollmentId)
+				.single();
+
+			if (enrollmentError || !enrollment) {
+				console.error('Failed to fetch enrollment for welcome email:', enrollmentError);
+				return { success: false, error: 'Enrollment not found' };
+			}
+
+			const cohort = enrollment.cohort as any;
+			const module = cohort?.module as any;
+			const course = module?.course as any;
+
+			if (!course) {
+				return { success: false, error: 'Course not found' };
+			}
+
+			// Import email utilities
+			const {
+				getCourseEmailTemplate,
+				buildVariableContext,
+				renderTemplateForRecipient,
+				sendSingleEmail,
+				createEmailButton
+			} = await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			// Get welcome template
+			const template = await getCourseEmailTemplate(supabaseAdmin, course.id, 'welcome_enrolled');
+
+			if (!template) {
+				console.warn('Welcome email template not found for course', course.id);
+				return { success: false, error: 'Template not found' };
+			}
+
+			// Get course branding
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+
+			// Parse full name
+			const nameParts = enrollment.full_name?.split(' ') || [''];
+			const firstName = nameParts[0] || 'Student';
+			const lastName = nameParts.slice(1).join(' ') || '';
+
+			// Format start date
+			const startDate = cohort?.start_date
+				? new Date(cohort.start_date).toLocaleDateString('en-AU', {
+						day: 'numeric',
+						month: 'long',
+						year: 'numeric'
+					})
+				: 'TBD';
+
+			// Build variable context
+			const variables = buildVariableContext({
+				enrollment: {
+					full_name: enrollment.full_name,
+					email: enrollment.email
+				},
+				course: {
+					name: course.name,
+					slug: course.slug
+				},
+				cohort: {
+					name: cohort?.name || 'Your Cohort',
+					start_date: startDate
+				},
+				siteUrl
+			});
+
+			// Add custom variables
+			variables.firstName = firstName;
+			variables.lastName = lastName;
+			variables.fullName = enrollment.full_name;
+			variables.startDate = startDate;
+			variables.supportEmail = course.email_branding_config?.reply_to_email || 'contact@archdiocesanministries.org.au';
+
+			// Add login button
+			variables.loginButton = createEmailButton(
+				'Go to My Course',
+				variables.dashboardLink,
+				courseColors.accentDark
+			);
+
+			// Render template
+			const rendered = renderTemplateForRecipient({
+				subjectTemplate: template.subject_template,
+				bodyTemplate: template.body_template,
+				variables
+			});
+
+			// Compile with MJML
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent: rendered.body,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors
+			});
+
+			// Send email
+			const result = await sendSingleEmail({
+				to: enrollment.email,
+				subject: rendered.subject,
+				html: compiledHtml,
+				emailType: 'self_enrollment_welcome',
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin,
+				options: {
+					replyTo: course.email_branding_config?.reply_to_email,
+					metadata: {
+						context: 'course',
+						course_id: course.id,
+						enrollment_id: enrollmentId,
+						template_id: template.id
+					}
+				}
+			});
+
+			if (result.success) {
+				// Update enrollment to mark welcome email sent
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.update({
+						welcome_email_sent_at: new Date().toISOString()
+					})
+					.eq('id', enrollmentId);
+			}
+
+			return { success: result.success, error: result.success ? null : 'Failed to send email' };
+		} catch (err) {
+			console.error('Error sending self-enrollment welcome email:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
 	// ========================================================================
 	// MATERIALS MANAGEMENT
 	// ========================================================================

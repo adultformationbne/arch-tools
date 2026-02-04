@@ -2,6 +2,8 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { getCheckoutSession } from '$lib/server/stripe';
+import { CourseMutations } from '$lib/server/course-data';
+import { PUBLIC_SITE_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const { code } = params;
@@ -290,6 +292,30 @@ export const actions: Actions = {
 				.single();
 
 			const courseSlug = cohort?.module?.course?.slug || '';
+
+			// Determine the enrollment ID for the welcome email
+			let welcomeEmailEnrollmentId = enrollmentId;
+			if (!welcomeEmailEnrollmentId) {
+				// For paid enrollment, we need to find the enrollment we just created
+				const { data: newEnrollment } = await supabaseAdmin
+					.from('courses_enrollments')
+					.select('id')
+					.eq('user_profile_id', userId)
+					.eq('cohort_id', cohortId)
+					.single();
+				welcomeEmailEnrollmentId = newEnrollment?.id;
+			}
+
+			// Send welcome email (async, don't block redirect)
+			if (welcomeEmailEnrollmentId && courseSlug) {
+				CourseMutations.sendSelfEnrollmentWelcome({
+					enrollmentId: welcomeEmailEnrollmentId,
+					courseSlug,
+					siteUrl: PUBLIC_SITE_URL || url.origin
+				}).catch((err) => {
+					console.error('Failed to send welcome email:', err);
+				});
+			}
 
 			// Return success with redirect URL
 			return {
