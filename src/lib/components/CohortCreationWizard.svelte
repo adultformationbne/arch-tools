@@ -19,7 +19,12 @@
 	let cohortData = $state({
 		name: '',
 		moduleId: '',
-		startDate: ''
+		startDate: '',
+		// Pricing fields
+		isFree: true,
+		priceCents: null,
+		currency: 'AUD',
+		enrollmentType: 'admin_only'
 	});
 
 	// Step 2: Participants
@@ -46,7 +51,12 @@
 					name: cohortData.name,
 					moduleId: cohortData.moduleId,
 					startDate: cohortData.startDate,
-					endDate: endDate
+					endDate: endDate,
+					// Pricing fields
+					isFree: cohortData.isFree,
+					priceCents: cohortData.isFree ? null : cohortData.priceCents,
+					currency: cohortData.currency,
+					enrollmentType: cohortData.enrollmentType
 				})
 			});
 
@@ -107,12 +117,34 @@
 
 	function handleClose() {
 		currentStep = 1;
-		cohortData = { name: '', moduleId: '', startDate: '' };
+		cohortData = {
+			name: '',
+			moduleId: '',
+			startDate: '',
+			isFree: true,
+			priceCents: null,
+			currency: 'AUD',
+			enrollmentType: 'admin_only'
+		};
 		uploadedUsers = [];
 		uploadResult = null;
 		createdCohortId = null;
 		error = '';
 		onClose();
+	}
+
+	function formatPrice(cents, currency) {
+		const amount = cents / 100;
+		return new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount);
+	}
+
+	function getEnrollmentTypeLabel(type) {
+		const labels = {
+			admin_only: 'Admin Only',
+			open: 'Open Enrollment',
+			approval_required: 'Approval Required'
+		};
+		return labels[type] || type;
 	}
 
 	function skipParticipants() {
@@ -181,6 +213,81 @@
 							<p class="help-text">End date will be automatically calculated (8 weeks from start)</p>
 						</div>
 
+						<!-- Pricing Section -->
+						<div class="pricing-section">
+							<h4>Pricing & Enrollment</h4>
+
+							<div class="form-group">
+								<label class="toggle-label">
+									<span>Course Type</span>
+									<div class="toggle-options">
+										<button
+											type="button"
+											class="toggle-btn"
+											class:active={cohortData.isFree}
+											onclick={() => { cohortData.isFree = true; cohortData.priceCents = null; }}
+										>
+											Free
+										</button>
+										<button
+											type="button"
+											class="toggle-btn"
+											class:active={!cohortData.isFree}
+											onclick={() => cohortData.isFree = false}
+										>
+											Paid
+										</button>
+									</div>
+								</label>
+							</div>
+
+							{#if !cohortData.isFree}
+								<div class="form-row">
+									<div class="form-group flex-1">
+										<label for="cohort-price">Price*</label>
+										<div class="price-input">
+											<span class="currency-symbol">$</span>
+											<input
+												id="cohort-price"
+												type="number"
+												min="0"
+												step="0.01"
+												placeholder="0.00"
+												value={cohortData.priceCents ? cohortData.priceCents / 100 : ''}
+												oninput={(e) => cohortData.priceCents = Math.round(parseFloat(e.target.value || '0') * 100)}
+												required={!cohortData.isFree}
+											/>
+										</div>
+									</div>
+									<div class="form-group">
+										<label for="cohort-currency">Currency</label>
+										<select id="cohort-currency" bind:value={cohortData.currency}>
+											<option value="AUD">AUD</option>
+											<option value="USD">USD</option>
+										</select>
+									</div>
+								</div>
+							{/if}
+
+							<div class="form-group">
+								<label for="cohort-enrollment-type">Enrollment Type</label>
+								<select id="cohort-enrollment-type" bind:value={cohortData.enrollmentType}>
+									<option value="admin_only">Admin Only - Participants added manually</option>
+									<option value="open">Open - Anyone can enroll via link</option>
+									<option value="approval_required">Approval Required - Requests need admin approval</option>
+								</select>
+								<p class="help-text">
+									{#if cohortData.enrollmentType === 'admin_only'}
+										Only admins can add participants (current default behavior)
+									{:else if cohortData.enrollmentType === 'open'}
+										Participants can self-enroll via enrollment links
+									{:else}
+										Participants can request enrollment, admin must approve
+									{/if}
+								</p>
+							</div>
+						</div>
+
 						<div class="modal-actions">
 							<button type="button" onclick={handleClose} class="btn-secondary">Cancel</button>
 							<button type="submit" class="btn-primary" disabled={isLoading}>
@@ -235,6 +342,22 @@
 							<dd>{new Date(cohortData.startDate).toLocaleDateString()}</dd>
 							<dt>End Date:</dt>
 							<dd>{new Date(calculateEndDate(cohortData.startDate)).toLocaleDateString()}</dd>
+						</dl>
+					</div>
+
+					<div class="review-section">
+						<h4>Pricing & Enrollment</h4>
+						<dl>
+							<dt>Price:</dt>
+							<dd>
+								{#if cohortData.isFree}
+									<span class="badge badge-green">Free</span>
+								{:else}
+									{formatPrice(cohortData.priceCents, cohortData.currency)}
+								{/if}
+							</dd>
+							<dt>Enrollment:</dt>
+							<dd>{getEnrollmentTypeLabel(cohortData.enrollmentType)}</dd>
 						</dl>
 					</div>
 
@@ -540,5 +663,105 @@
 	.btn-secondary:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	/* Pricing Section Styles */
+	.pricing-section {
+		margin-top: 32px;
+		padding-top: 24px;
+		border-top: 1px solid #e5e7eb;
+	}
+
+	.pricing-section h4 {
+		margin: 0 0 20px 0;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #1f2937;
+	}
+
+	.toggle-label {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.toggle-label span {
+		font-weight: 600;
+		color: #1f2937;
+		font-size: 0.875rem;
+	}
+
+	.toggle-options {
+		display: flex;
+		gap: 0;
+		border: 2px solid #d1d5db;
+		border-radius: 8px;
+		overflow: hidden;
+		width: fit-content;
+	}
+
+	.toggle-btn {
+		padding: 10px 24px;
+		border: none;
+		background: white;
+		color: #6b7280;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.toggle-btn:first-child {
+		border-right: 1px solid #d1d5db;
+	}
+
+	.toggle-btn.active {
+		background: var(--course-accent-dark, #334642);
+		color: white;
+	}
+
+	.toggle-btn:hover:not(.active) {
+		background: #f3f4f6;
+	}
+
+	.form-row {
+		display: flex;
+		gap: 16px;
+		align-items: flex-start;
+	}
+
+	.flex-1 {
+		flex: 1;
+	}
+
+	.price-input {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
+	.currency-symbol {
+		position: absolute;
+		left: 12px;
+		color: #6b7280;
+		font-weight: 500;
+	}
+
+	.price-input input {
+		padding-left: 28px;
+	}
+
+	.badge {
+		display: inline-flex;
+		padding: 4px 12px;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.badge-green {
+		background: #dcfce7;
+		color: #166534;
 	}
 </style>

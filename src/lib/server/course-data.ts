@@ -1170,8 +1170,13 @@ export const CourseMutations = {
 		moduleId: string;
 		startDate: string;
 		endDate?: string;
+		// Pricing fields
+		isFree?: boolean;
+		priceCents?: number | null;
+		currency?: string;
+		enrollmentType?: 'admin_only' | 'open' | 'approval_required';
 	}) {
-		const { name, moduleId, startDate, endDate } = params;
+		const { name, moduleId, startDate, endDate, isFree, priceCents, currency, enrollmentType } = params;
 
 		// Calculate end date if not provided (assume 8 weeks)
 		const calculatedEndDate =
@@ -1190,6 +1195,11 @@ export const CourseMutations = {
 				end_date: calculatedEndDate,
 				current_session: 0,
 				status: 'draft',
+				// Pricing fields
+				is_free: isFree ?? false,
+				price_cents: isFree ? null : (priceCents ?? null),
+				currency: currency ?? 'AUD',
+				enrollment_type: enrollmentType ?? 'admin_only',
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			})
@@ -1215,8 +1225,13 @@ export const CourseMutations = {
 		endDate?: string | null;
 		currentSession?: number;
 		actorName?: string;
+		// Pricing fields
+		isFree?: boolean;
+		priceCents?: number | null;
+		currency?: string;
+		enrollmentType?: 'admin_only' | 'open' | 'approval_required';
 	}) {
-		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName } =
+		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName, isFree, priceCents, currency, enrollmentType } =
 			params;
 
 		// Get current cohort state to detect session changes
@@ -1235,6 +1250,14 @@ export const CourseMutations = {
 		if (startDate !== undefined) updateData.start_date = startDate;
 		if (endDate !== undefined) updateData.end_date = endDate;
 		if (currentSession !== undefined) updateData.current_session = currentSession;
+		// Pricing fields
+		if (isFree !== undefined) {
+			updateData.is_free = isFree;
+			if (isFree) updateData.price_cents = null; // Clear price if free
+		}
+		if (priceCents !== undefined) updateData.price_cents = priceCents;
+		if (currency !== undefined) updateData.currency = currency;
+		if (enrollmentType !== undefined) updateData.enrollment_type = enrollmentType;
 
 		const result = await supabaseAdmin
 			.from('courses_cohorts')

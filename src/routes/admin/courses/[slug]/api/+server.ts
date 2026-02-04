@@ -347,7 +347,12 @@ export const POST: RequestHandler = async (event) => {
 					name: data.name,
 					moduleId: data.moduleId,
 					startDate: data.startDate,
-					endDate: data.endDate
+					endDate: data.endDate,
+					// Pricing fields
+					isFree: data.isFree,
+					priceCents: data.priceCents,
+					currency: data.currency,
+					enrollmentType: data.enrollmentType
 				});
 
 				if (result.error) {
@@ -379,7 +384,12 @@ export const POST: RequestHandler = async (event) => {
 					startDate: data.startDate,
 					endDate: data.endDate,
 					currentSession: data.currentSession,
-					actorName
+					actorName,
+					// Pricing fields
+					isFree: data.isFree,
+					priceCents: data.priceCents,
+					currency: data.currency,
+					enrollmentType: data.enrollmentType
 				});
 
 				if (result.error) {
