@@ -38,13 +38,15 @@
 	let deletingContributor = $state(null);
 	let isDeleting = $state(false);
 
-	// Derived stats
+	// Derived stats (exclude guests from email/visit stats)
+	let regularContributors = $derived(contributors.filter(c => !c.is_guest));
+	let guestCount = $derived(contributors.filter(c => c.is_guest).length);
 	let unwelcomedCount = $derived(
-		contributors.filter(c => c.active && c.access_token && !c.welcome_email_sent_at).length
+		regularContributors.filter(c => c.active && c.access_token && !c.welcome_email_sent_at).length
 	);
-	let welcomedCount = $derived(contributors.filter(c => c.welcome_email_sent_at).length);
-	let visitedCount = $derived(contributors.filter(c => c.last_visited_at).length);
-	let needsFollowUpCount = $derived(contributors.filter(c => needsFollowUp(c)).length);
+	let welcomedCount = $derived(regularContributors.filter(c => c.welcome_email_sent_at).length);
+	let visitedCount = $derived(regularContributors.filter(c => c.last_visited_at).length);
+	let needsFollowUpCount = $derived(regularContributors.filter(c => needsFollowUp(c)).length);
 	let isSending = $derived(sendingWelcomeIds.size > 0);
 
 	// Menu handlers
@@ -180,7 +182,7 @@
 
 	function handleBulkWelcomeClick() {
 		selectedForWelcome = contributors
-			.filter(c => c.active && c.access_token && !c.welcome_email_sent_at)
+			.filter(c => !c.is_guest && c.active && c.access_token && !c.welcome_email_sent_at)
 			.map(c => c.id);
 
 		if (selectedForWelcome.length === 0) {
@@ -250,6 +252,7 @@
 		{welcomedCount}
 		{visitedCount}
 		{needsFollowUpCount}
+		{guestCount}
 	/>
 
 	<DGRAddContributorForm

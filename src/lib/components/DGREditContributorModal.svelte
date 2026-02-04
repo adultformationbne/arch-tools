@@ -19,7 +19,8 @@
 		notes: '',
 		schedule_pattern: null,
 		pattern_value: null,
-		active: true
+		active: true,
+		is_guest: false
 	});
 
 	// Sync form when contributor changes
@@ -33,34 +34,43 @@
 				notes: contributor.notes || '',
 				schedule_pattern: pattern?.type || null,
 				pattern_value: pattern?.value ?? (pattern?.values?.[0] ?? null),
-				active: contributor.active ?? true
+				active: contributor.active ?? true,
+				is_guest: contributor.is_guest ?? false
 			};
 		}
 	});
 
 	async function handleSave() {
-		if (!contributor || !editForm.name.trim() || !editForm.email.trim()) {
-			toast.error({ title: 'Required Fields', message: 'Name and email are required', duration: 3000 });
+		if (!contributor || !editForm.name.trim()) {
+			toast.error({ title: 'Required Fields', message: 'Name is required', duration: 3000 });
+			return;
+		}
+
+		// Regular contributors require email
+		if (!editForm.is_guest && !editForm.email.trim()) {
+			toast.error({ title: 'Required Fields', message: 'Email is required for regular contributors', duration: 3000 });
 			return;
 		}
 
 		isSaving = true;
 		try {
-			// Build schedule_pattern JSON
+			// Build schedule_pattern JSON (not for guests)
 			let schedule_pattern = null;
-			if (editForm.schedule_pattern === 'day_of_month' && editForm.pattern_value !== null) {
-				schedule_pattern = { type: 'day_of_month', value: parseInt(editForm.pattern_value) };
-			} else if (editForm.schedule_pattern === 'day_of_week' && editForm.pattern_value !== null) {
-				schedule_pattern = { type: 'day_of_week', value: parseInt(editForm.pattern_value) };
+			if (!editForm.is_guest) {
+				if (editForm.schedule_pattern === 'day_of_month' && editForm.pattern_value !== null) {
+					schedule_pattern = { type: 'day_of_month', value: parseInt(editForm.pattern_value) };
+				} else if (editForm.schedule_pattern === 'day_of_week' && editForm.pattern_value !== null) {
+					schedule_pattern = { type: 'day_of_week', value: parseInt(editForm.pattern_value) };
+				}
 			}
 
 			await onSave(contributor.id, {
 				name: editForm.name.trim(),
-				email: editForm.email.trim().toLowerCase(),
+				email: editForm.is_guest ? null : editForm.email.trim().toLowerCase(),
 				title: editForm.title.trim() || null,
 				notes: editForm.notes.trim() || null,
 				schedule_pattern,
-				active: editForm.active
+				active: editForm.is_guest ? false : editForm.active
 			});
 
 			toast.success({ title: 'Saved', message: 'Contributor updated successfully', duration: 2000 });
@@ -99,6 +109,12 @@
 			</div>
 
 			<div class="space-y-4 p-6">
+				{#if editForm.is_guest}
+					<div class="rounded-md bg-purple-50 p-3">
+						<p class="text-sm text-purple-700">Guest contributor (attribution only, no portal access)</p>
+					</div>
+				{/if}
+
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 					<div class="md:col-span-2">
 						<label for="edit-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
@@ -125,53 +141,55 @@
 					</div>
 				</div>
 
-				<div>
-					<label for="edit-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-					<input
-						id="edit-email"
-						type="email"
-						bind:value={editForm.email}
-						class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-					/>
-				</div>
-
-				<div>
-					<label for="edit-pattern" class="mb-1 block text-sm font-medium text-gray-700">Schedule Pattern</label>
-					<div class="grid grid-cols-2 gap-4">
-						<select
-							id="edit-pattern"
-							bind:value={editForm.schedule_pattern}
-							onchange={() => { editForm.pattern_value = null; }}
-							class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-						>
-							<option value={null}>Manual assignment only</option>
-							<option value="day_of_month">Day of Month</option>
-							<option value="day_of_week">Day of Week</option>
-						</select>
-
-						{#if editForm.schedule_pattern === 'day_of_month'}
-							<select
-								bind:value={editForm.pattern_value}
-								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-							>
-								<option value={null}>Select day...</option>
-								{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
-									<option value={day}>{day}{getOrdinalSuffix(day)}</option>
-								{/each}
-							</select>
-						{:else if editForm.schedule_pattern === 'day_of_week'}
-							<select
-								bind:value={editForm.pattern_value}
-								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-							>
-								<option value={null}>Select day...</option>
-								{#each DAY_NAMES as day, index}
-									<option value={index}>{day}</option>
-								{/each}
-							</select>
-						{/if}
+				{#if !editForm.is_guest}
+					<div>
+						<label for="edit-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+						<input
+							id="edit-email"
+							type="email"
+							bind:value={editForm.email}
+							class="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						/>
 					</div>
-				</div>
+
+					<div>
+						<label for="edit-pattern" class="mb-1 block text-sm font-medium text-gray-700">Schedule Pattern</label>
+						<div class="grid grid-cols-2 gap-4">
+							<select
+								id="edit-pattern"
+								bind:value={editForm.schedule_pattern}
+								onchange={() => { editForm.pattern_value = null; }}
+								class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+							>
+								<option value={null}>Manual assignment only</option>
+								<option value="day_of_month">Day of Month</option>
+								<option value="day_of_week">Day of Week</option>
+							</select>
+
+							{#if editForm.schedule_pattern === 'day_of_month'}
+								<select
+									bind:value={editForm.pattern_value}
+									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								>
+									<option value={null}>Select day...</option>
+									{#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+										<option value={day}>{day}{getOrdinalSuffix(day)}</option>
+									{/each}
+								</select>
+							{:else if editForm.schedule_pattern === 'day_of_week'}
+								<select
+									bind:value={editForm.pattern_value}
+									class="rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+								>
+									<option value={null}>Select day...</option>
+									{#each DAY_NAMES as day, index}
+										<option value={index}>{day}</option>
+									{/each}
+								</select>
+							{/if}
+						</div>
+					</div>
+				{/if}
 
 				<div>
 					<label for="edit-notes" class="mb-1 block text-sm font-medium text-gray-700">Notes</label>
@@ -183,15 +201,17 @@
 					></textarea>
 				</div>
 
-				<div class="flex items-center gap-2">
-					<input
-						id="edit-active"
-						type="checkbox"
-						bind:checked={editForm.active}
-						class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-					/>
-					<label for="edit-active" class="text-sm text-gray-700">Active</label>
-				</div>
+				{#if !editForm.is_guest}
+					<div class="flex items-center gap-2">
+						<input
+							id="edit-active"
+							type="checkbox"
+							bind:checked={editForm.active}
+							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+						/>
+						<label for="edit-active" class="text-sm text-gray-700">Active</label>
+					</div>
+				{/if}
 			</div>
 
 			<div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">

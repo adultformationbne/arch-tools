@@ -196,28 +196,29 @@
 			}
 
 			if (result.nextStep === 'otp') {
-				// Pending user - send OTP automatically
+				// Pending user - send OTP automatically (with deduplication)
 				isPendingUser = true;
 
-				const { error: otpError } = await supabase.auth.signInWithOtp({
-					email: emailAddress,
-					options: { shouldCreateUser: false }
+				const otpResponse = await fetch('/api/auth/send-otp', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email: emailAddress })
 				});
 
-				if (otpError) {
-					// Check for rate limiting
-					if (otpError.message?.includes('rate') || otpError.status === 429) {
-						errorMessage = 'Too many attempts. Please wait a moment before trying again.';
-					} else {
-						errorMessage = 'Failed to send verification code. Please try again.';
-					}
+				const otpResult = await otpResponse.json();
+
+				if (!otpResponse.ok || !otpResult.success) {
+					errorMessage = otpResult.error || 'Failed to send verification code. Please try again.';
 					loading = false;
 					isAutoSendFlow = false;
 					return;
 				}
 
 				currentStep = 'otp';
-				infoMessage = 'A 6-digit verification code has been sent to your email.';
+				// Show different message if code was already sent vs new code
+				infoMessage = otpResult.alreadySent
+					? 'A verification code was already sent to your email. Please check your inbox.'
+					: 'A 6-digit verification code has been sent to your email.';
 				loading = false;
 				// Keep isAutoSendFlow true so we can show appropriate messaging
 			}
@@ -260,21 +261,27 @@
 				isPendingUser = false;
 				infoMessage = result.message;
 			} else if (result.nextStep === 'otp') {
-				// Pending user (no password set yet) - send OTP
+				// Pending user (no password set yet) - send OTP (with deduplication)
 				isPendingUser = true;
-				const { error: otpError } = await supabase.auth.signInWithOtp({
-					email,
-					options: { shouldCreateUser: false }
+
+				const otpResponse = await fetch('/api/auth/send-otp', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email })
 				});
 
-				if (otpError) {
-					errorMessage = 'Failed to send verification code. Please try again.';
+				const otpResult = await otpResponse.json();
+
+				if (!otpResponse.ok || !otpResult.success) {
+					errorMessage = otpResult.error || 'Failed to send verification code. Please try again.';
 					loading = false;
 					return;
 				}
 
 				currentStep = 'otp';
-				infoMessage = 'A 6-digit code has been sent to your email';
+				infoMessage = otpResult.alreadySent
+					? 'A code was already sent to your email. Check your inbox.'
+					: 'A 6-digit code has been sent to your email';
 			} else {
 				// User doesn't exist
 				errorMessage = result.message || 'No account found. Please contact your administrator.';
@@ -346,13 +353,16 @@
 		errorMessage = '';
 
 		try {
-			const { error: otpError } = await supabase.auth.signInWithOtp({
-				email,
-				options: { shouldCreateUser: false }
+			const otpResponse = await fetch('/api/auth/send-otp', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email })
 			});
 
-			if (otpError) {
-				errorMessage = 'Failed to send verification code. Please try again.';
+			const otpResult = await otpResponse.json();
+
+			if (!otpResponse.ok || !otpResult.success) {
+				errorMessage = otpResult.error || 'Failed to send verification code. Please try again.';
 				sendingCode = false;
 				return;
 			}
@@ -360,7 +370,9 @@
 			currentStep = 'otp';
 			isPendingUser = false; // Existing user using OTP fallback
 			isForgotPasswordFlow = false;
-			infoMessage = 'A 6-digit code has been sent to your email';
+			infoMessage = otpResult.alreadySent
+				? 'A code was already sent to your email. Check your inbox.'
+				: 'A 6-digit code has been sent to your email';
 			password = ''; // Clear password field
 		} catch (error) {
 			errorMessage = error.message || 'Failed to send code';
@@ -375,20 +387,25 @@
 		errorMessage = '';
 
 		try {
-			const { error: otpError } = await supabase.auth.signInWithOtp({
-				email,
-				options: { shouldCreateUser: false }
+			const otpResponse = await fetch('/api/auth/send-otp', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email })
 			});
 
-			if (otpError) {
-				errorMessage = 'Failed to send verification code. Please try again.';
+			const otpResult = await otpResponse.json();
+
+			if (!otpResponse.ok || !otpResult.success) {
+				errorMessage = otpResult.error || 'Failed to send verification code. Please try again.';
 				sendingCode = false;
 				return;
 			}
 
 			currentStep = 'otp';
 			isForgotPasswordFlow = true;
-			infoMessage = 'A 6-digit code has been sent to your email to reset your password';
+			infoMessage = otpResult.alreadySent
+				? 'A code was already sent to your email. Check your inbox to reset your password.'
+				: 'A 6-digit code has been sent to your email to reset your password';
 			password = ''; // Clear password field
 		} catch (error) {
 			errorMessage = error.message || 'Failed to send code';
@@ -492,12 +509,18 @@
 		errorMessage = '';
 
 		try {
-			const { error } = await supabase.auth.signInWithOtp({
-				email,
-				options: { shouldCreateUser: false }
+			// Force a new code since user explicitly requested resend
+			const otpResponse = await fetch('/api/auth/send-otp', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email, force: true })
 			});
 
-			if (error) throw error;
+			const otpResult = await otpResponse.json();
+
+			if (!otpResponse.ok || !otpResult.success) {
+				throw new Error(otpResult.error || 'Failed to resend code');
+			}
 
 			infoMessage = 'A new code has been sent to your email';
 		} catch (error) {

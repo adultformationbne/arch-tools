@@ -32,13 +32,17 @@
 	}
 </script>
 
-<tr class="{!contributor.active ? 'bg-gray-50 opacity-60' : ''} {followUp ? 'bg-amber-50/50' : ''}">
+<tr class="{!contributor.active && !contributor.is_guest ? 'bg-gray-50 opacity-60' : ''} {followUp ? 'bg-amber-50/50' : ''} {contributor.is_guest ? 'bg-purple-50/30' : ''}">
 	<td class="px-4 py-3 whitespace-nowrap">
 		<div class="flex items-center gap-2">
 			<div class="text-sm font-medium text-gray-900">
 				{formatContributorName(contributor)}
 			</div>
-			{#if !contributor.active}
+			{#if contributor.is_guest}
+				<span class="inline-flex rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+					Guest
+				</span>
+			{:else if !contributor.active}
 				<span class="inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
 					Inactive
 				</span>
@@ -52,7 +56,7 @@
 		</div>
 	</td>
 	<td class="px-4 py-3 whitespace-nowrap">
-		<div class="text-sm text-gray-500">{contributor.email}</div>
+		<div class="text-sm text-gray-500">{contributor.is_guest ? '—' : contributor.email}</div>
 	</td>
 	<td class="px-4 py-3">
 		<div class="text-xs text-gray-600">
@@ -60,7 +64,9 @@
 		</div>
 	</td>
 	<td class="px-4 py-3 whitespace-nowrap">
-		{#if isSendingThis}
+		{#if contributor.is_guest}
+			<span class="text-xs text-gray-400">N/A</span>
+		{:else if isSendingThis}
 			<div class="flex items-center gap-1.5 text-purple-600">
 				<Loader2 class="h-4 w-4 animate-spin" />
 				<span class="text-xs">Sending...</span>
@@ -93,7 +99,9 @@
 		{/if}
 	</td>
 	<td class="px-4 py-3 whitespace-nowrap">
-		{#if contributor.last_visited_at}
+		{#if contributor.is_guest}
+			<span class="text-xs text-gray-400">N/A</span>
+		{:else if contributor.last_visited_at}
 			<div class="flex items-center gap-1.5 text-blue-600" title={`Last visit: ${formatDate(contributor.last_visited_at)}`}>
 				<Eye class="h-4 w-4" />
 				<div>

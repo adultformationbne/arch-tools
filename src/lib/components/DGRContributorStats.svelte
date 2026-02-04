@@ -1,11 +1,12 @@
 <script>
-	import { MailCheck, Eye, AlertCircle } from '$lib/icons';
+	import { MailCheck, Eye, AlertCircle, User } from '$lib/icons';
 
 	let {
 		totalCount = 0,
 		welcomedCount = 0,
 		visitedCount = 0,
-		needsFollowUpCount = 0
+		needsFollowUpCount = 0,
+		guestCount = 0
 	} = $props();
 </script>
 
@@ -15,10 +16,17 @@
 			<span class="font-medium text-gray-700">{totalCount}</span>
 			<span class="text-gray-500">total</span>
 		</div>
-		<div class="flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1">
-			<MailCheck class="h-3.5 w-3.5 text-purple-600" />
-			<span class="font-medium text-purple-700">{welcomedCount}</span>
-			<span class="text-purple-600">welcomed</span>
+		{#if guestCount > 0}
+			<div class="flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1">
+				<User class="h-3.5 w-3.5 text-purple-600" />
+				<span class="font-medium text-purple-700">{guestCount}</span>
+				<span class="text-purple-600">guest{guestCount !== 1 ? 's' : ''}</span>
+			</div>
+		{/if}
+		<div class="flex items-center gap-2 rounded-full bg-green-100 px-3 py-1">
+			<MailCheck class="h-3.5 w-3.5 text-green-600" />
+			<span class="font-medium text-green-700">{welcomedCount}</span>
+			<span class="text-green-600">welcomed</span>
 		</div>
 		<div class="flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1">
 			<Eye class="h-3.5 w-3.5 text-blue-600" />

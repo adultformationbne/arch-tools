@@ -83,9 +83,17 @@ export async function POST({ request, locals }) {
 		// Single contributor creation (original behavior)
 		const contributorData = body;
 
-		// Generate access token if not provided
-		if (!contributorData.access_token) {
-			contributorData.access_token = crypto.randomUUID();
+		// Guest contributors don't get access tokens or emails
+		if (contributorData.is_guest) {
+			contributorData.access_token = null;
+			contributorData.email = null;
+			contributorData.schedule_pattern = null;
+			contributorData.active = false; // Guests are inactive (won't appear in scheduling)
+		} else {
+			// Generate access token if not provided for regular contributors
+			if (!contributorData.access_token) {
+				contributorData.access_token = crypto.randomUUID();
+			}
 		}
 
 		const { data, error } = await supabaseAdmin

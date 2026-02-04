@@ -2,7 +2,7 @@
 
 > **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, changelogs) have been removed.
 
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-02-04
 **Status:** ✅ Production Ready
 **System Type:** Invite-Only with Email + OTP
 
@@ -112,12 +112,15 @@ User enters OTP → Redirect to dashboard
 
 ### 2. Email Verification
 - OTP sent to email proves ownership
-- 6-digit code, 60-minute expiration (configurable to 10-30 min for higher security)
+- 6-digit code, 1-hour expiration (Supabase default)
+- **OTP Deduplication (prevents code invalidation):**
+  - Tracked in `auth_otp_tracker` table (email + sent_at + expires_at)
+  - If valid OTP exists → returns "already sent" without generating new code
+  - Solves: Users clicking email link multiple times invalidating their own code
 - **OTP Send Rate Limiting:**
   - Application-level: 5 requests/min per IP (in-memory)
+  - Force resend cooldown: 30 seconds minimum between explicit resends
   - Supabase-level: Built-in verification rate limiting
-  - Current implementation accepts multiple OTP sends per legitimate email check
-  - **Future consideration:** Add per-email send limit (e.g., 3 sends per 15 min) to prevent mis-click spam
 
 ### 3. Password Detection
 - Uses `encrypted_password` field to determine if password exists
@@ -176,6 +179,13 @@ User enters OTP → Redirect to dashboard
 - `role` (TEXT) - 'student', 'admin', 'coordinator'
 - `status` (TEXT) - 'pending', 'active', 'completed', 'withdrawn'
 
+### `auth_otp_tracker`
+- `email` (TEXT, PRIMARY KEY) - User email
+- `sent_at` (TIMESTAMPTZ) - When OTP was sent
+- `expires_at` (TIMESTAMPTZ) - When OTP expires (1 hour after sent_at)
+
+**Purpose:** Prevents OTP code invalidation from multiple link clicks. Only service role can access (RLS enabled, no policies).
+
 **Note:** All users (pending and active) are stored in the same tables. Status is implicit:
 - Pending user: `encrypted_password` is NULL
 - Active user: `encrypted_password` exists
@@ -222,6 +232,50 @@ User enters OTP → Redirect to dashboard
   "message": "No account found. Please contact your administrator."
 }
 ```
+
+### `POST /api/auth/send-otp`
+**Purpose:** Send OTP with deduplication (prevents code invalidation from multiple clicks)
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "force": false  // optional - set true for explicit "Resend code" requests
+}
+```
+
+**Response (new code sent):**
+```json
+{
+  "success": true,
+  "alreadySent": false,
+  "message": "A 6-digit verification code has been sent to your email."
+}
+```
+
+**Response (valid code already exists):**
+```json
+{
+  "success": true,
+  "alreadySent": true,
+  "message": "A verification code was already sent to your email. Please check your inbox."
+}
+```
+
+**Response (force resend blocked - cooldown):**
+```json
+{
+  "success": true,
+  "alreadySent": true,
+  "message": "A verification code was recently sent. Please wait before requesting a new one."
+}
+```
+
+**Security:**
+- Rate limited: 5 requests/min per IP
+- Force resend cooldown: 30 seconds
+- Only tracks successful sends (can't pollute with fake emails)
+- Uses `shouldCreateUser: false` - won't create accounts for non-existent emails
 
 ### `POST /api/admin/users`
 **Purpose:** Create platform user
@@ -327,9 +381,15 @@ The `{{loginLink}}` variable automatically:
 - Already logged in → Redirects to dashboard immediately
 - User has password → Shows password field (no auto-OTP)
 - Invalid email format → Shows error, clears URL params
-- Recent auto-send (30s) → Shows form with message, prevents spam
-- Rate limited → Shows "too many requests" error
+- **Multiple link clicks (OTP deduplication):**
+  - Server tracks OTP sends in `auth_otp_tracker` table
+  - If valid OTP exists (within 1 hour) → "Code already sent" message, no new code
+  - Previous code remains valid - user can enter it
+  - Explicit "Resend code" button uses `force: true` (30s cooldown)
+- Recent auto-send (30s client-side) → Shows form with message, prevents refresh spam
+- Rate limited (5 req/min) → Shows "too many requests" error
 - Email not in system → Shows "contact administrator" error
+- Supabase rate limited → Shows appropriate error
 
 **Security:**
 - Email cleared from URL after reading (browser history protection)
@@ -387,12 +447,13 @@ The `{{loginLink}}` variable automatically:
 **Attack surface:** 5 req/min per IP makes brute force impractical for casual attackers, but distributed attacks could bypass this.
 
 ### 3. OTP Security
-**Reality:** 6-digit codes = ~1M combinations, 60-minute window
+**Reality:** 6-digit codes = ~1M combinations, 1-hour window
 
 **Why it's acceptable:**
 - Supabase has built-in rate limiting on OTP verification
 - Requires email access (2FA: something you know + something you have)
-- Short expiration window (60 min)
+- OTP deduplication prevents code churn from multiple link clicks
+- 1-hour window balances UX with security (can reduce if needed)
 
 ### 4. No Automatic Emails
 **Reality:** System doesn't send invitation emails automatically.
@@ -433,8 +494,9 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 1. **Authentication → Providers → Email**
    - ✅ Enable "Email OTP" (not Magic Link)
-   - ✅ Set OTP expiry to 3600 seconds (60 minutes)
+   - ✅ Set OTP expiry to 3600 seconds (1 hour)
    - ✅ Disable "Confirm Email" (we handle via OTP)
+   - **Note:** OTP expiry must match `OTP_VALIDITY_SECONDS` in `/api/auth/send-otp`
 
 2. **Authentication → Email Templates**
    - Update "Magic Link" template (used for OTP)
@@ -466,6 +528,7 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 ### API Endpoints
 - `/src/routes/api/auth/check-email/+server.js` - Email lookup, determines auth flow
+- `/src/routes/api/auth/send-otp/+server.ts` - OTP sending with deduplication
 - `/src/routes/api/admin/users/+server.js` - Platform user creation
 
 ### Course Enrollments
@@ -514,10 +577,10 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 ### Security
 - [ ] Redis-based rate limiting for horizontal scaling
-- [ ] Per-email OTP send rate limit (3 sends per 15 min)
+- [x] ~~Per-email OTP send rate limit~~ → Implemented via OTP deduplication (v4)
 - [ ] Add CAPTCHA on login after N failed attempts
 - [ ] IP blocklist for known bad actors
-- [ ] Reduce OTP expiry from 60 min to 10-30 min (stricter security)
+- [ ] Periodic cleanup of `auth_otp_tracker` table (old entries)
 
 ### UX
 - [ ] Optional "You've been invited" email on user creation
@@ -534,6 +597,18 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 ---
 
 ## Migration History
+
+### v4 - OTP Deduplication (2026-02-04)
+1. ✅ Added `auth_otp_tracker` table to track OTP sends (email, sent_at, expires_at)
+2. ✅ Created `/api/auth/send-otp` endpoint with deduplication logic
+3. ✅ Updated login page to use new endpoint instead of direct `signInWithOtp` calls
+4. ✅ Added rate limiting: 5 requests/min per IP
+5. ✅ Added force resend cooldown: 30 seconds minimum between explicit resends
+6. ✅ OTP validity window: 1 hour (matches Supabase config)
+
+**Root cause solved:** Users clicking email login links multiple times would generate new OTP codes each time, invalidating their previous code. When they entered the first code they received, it was already expired/invalid.
+
+**Solution:** Track OTP sends server-side. If a valid OTP exists (within 1 hour), return "already sent" without generating a new code. The previous code remains valid.
 
 ### v3 - Session Management Fixes (2026-01-30)
 1. ✅ Fixed `refresh_token_not_found` errors blocking all logins
