@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
@@ -450,9 +450,9 @@
 
 </script>
 
-<div class="flex h-screen" style="background-color: var(--course-accent-dark);">
-	<!-- Left Sidebar - Compact width -->
-	<div class="w-48 border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
+<div class="flex flex-col lg:flex-row min-h-screen lg:h-screen" style="background-color: var(--course-accent-dark);">
+	<!-- Left Sidebar - Hidden on mobile -->
+	<div class="hidden lg:block w-48 border-r flex-shrink-0 h-screen sticky top-0" style="border-color: rgba(255,255,255,0.1);">
 		<CohortAdminSidebar
 			cohort={selectedCohort}
 			{stats}
@@ -467,6 +467,53 @@
 
 	<!-- Main Content Area -->
 	<div class="flex-1 overflow-y-auto" style="background-color: var(--course-accent-dark);">
+		<!-- Mobile Cohort Header - Shows on mobile when cohort is selected -->
+		{#if selectedCohort}
+			<div class="lg:hidden px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.1);">
+				<div class="flex items-center justify-between mb-2">
+					<div class="min-w-0">
+						<h2 class="text-sm font-bold text-white truncate">{selectedCohort.name}</h2>
+						<p class="text-xs text-white/60">Session {selectedCohort.current_session}/{selectedCohort.module?.total_sessions || 8} • {stats.participantCount} participants</p>
+					</div>
+				</div>
+				<!-- Mobile Quick Actions -->
+				<div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+					<button
+						onclick={handleAddParticipant}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+						style="background-color: var(--course-accent-light); color: white;"
+					>
+						<UserPlus size={14} />
+						Add
+					</button>
+					<button
+						onclick={handleAdvanceSession}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
+						style="background-color: rgba(255,255,255,0.1);"
+					>
+						<ArrowRight size={14} />
+						Advance
+					</button>
+					<button
+						onclick={handleEmailAll}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
+						style="background-color: rgba(255,255,255,0.1);"
+					>
+						<Mail size={14} />
+						Email All
+					</button>
+					<button
+						onclick={handleCohortSettings}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
+						style="background-color: rgba(255,255,255,0.1);"
+					>
+						<Settings size={14} />
+						Settings
+					</button>
+				</div>
+			</div>
+		{/if}
+
 		{#if cohorts.length === 0}
 			<!-- No cohorts exist yet -->
 			<div class="flex items-center justify-center h-full p-8">
@@ -490,30 +537,50 @@
 			</div>
 		{:else if !selectedCohort}
 			<!-- Cohorts exist but none selected -->
-			<div class="flex items-center justify-center h-full">
-				<div class="text-center">
+			<div class="flex items-center justify-center min-h-[60vh] lg:h-full p-4">
+				<div class="text-center max-w-md">
 					<h2 class="text-xl font-bold text-white mb-2">Select a Cohort</h2>
-					<p class="text-sm text-white/70">Choose a cohort from the sidebar to view details and manage participants.</p>
+					<p class="text-sm text-white/70 mb-6">Choose a cohort to view details and manage participants.</p>
+
+					<!-- Mobile: Show cohort list -->
+					<div class="lg:hidden space-y-2">
+						{#each cohorts as cohort}
+							<button
+								onclick={() => goto(`/admin/courses/${courseSlug}?cohort=${cohort.id}`)}
+								class="w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors"
+								style="background-color: rgba(255,255,255,0.1);"
+							>
+								<div>
+									<span class="text-white font-medium text-sm block">{cohort.name}</span>
+									<span class="text-white/60 text-xs">Session {cohort.current_session}/{cohort.module?.total_sessions || 8}</span>
+								</div>
+								<ArrowRight size={16} class="text-white/50" />
+							</button>
+						{/each}
+					</div>
+
+					<!-- Desktop: Just show message -->
+					<p class="hidden lg:block text-xs text-white/50">Use the sidebar to select a cohort</p>
 				</div>
 			</div>
 		{:else}
-			<div class="p-4 lg:p-6">
-				<!-- Page Header + Search inline -->
-				<div class="flex items-center justify-between gap-4 mb-3">
-					<h1 class="text-xl font-bold text-white">Participants</h1>
-					<div class="flex items-center gap-2 flex-1 max-w-md">
+			<div class="p-3 sm:p-4 lg:p-6">
+				<!-- Page Header + Search - stacks on mobile -->
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+					<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block">Participants</h1>
+					<div class="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-md">
 						<div class="flex-1 relative">
 							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
 							<input
 								type="text"
 								bind:value={searchQuery}
-								placeholder="Search..."
-								class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+								placeholder="Search participants..."
+								class="w-full pl-8 pr-3 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 							/>
 						</div>
 						<select
 							bind:value={filterHub}
-							class="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 						>
 							<option value="all">All Hubs</option>
 							{#each hubs as hub}
@@ -525,28 +592,36 @@
 
 				<!-- Compact Bulk Action Bar (shows when participants selected) -->
 				{#if selectedParticipants.size > 0}
-					<div class="rounded px-3 py-2 mb-3 flex items-center justify-between flex-wrap gap-2" style="background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
-						<div class="flex items-center gap-2 flex-wrap">
+					<div class="rounded-lg px-3 py-2 mb-3" style="background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+						<div class="flex items-center justify-between mb-2 sm:mb-0">
 							<span class="text-xs font-medium text-white">
 								{selectedParticipants.size} selected
 							</span>
 							<button
+								onclick={() => selectedParticipants = new Set()}
+								class="text-xs text-white/70 hover:bg-white/10 px-2 py-1 rounded transition-colors sm:hidden"
+							>
+								Clear
+							</button>
+						</div>
+						<div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
+							<button
 								onclick={handleSendWelcome}
-								class="px-2 py-1 rounded text-xs font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+								class="px-2 py-1.5 rounded text-xs font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<Send size={12} />
 								Welcome
 							</button>
 							<button
 								onclick={handleResendWelcome}
-								class="px-2 py-1 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+								class="px-2 py-1.5 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<MailCheck size={12} />
 								Resend
 							</button>
 							<button
 								onclick={handleEmailSelected}
-								class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<Mail size={12} />
 								Email
@@ -554,7 +629,7 @@
 							{#if participantsBehind.length > 0}
 								<button
 									onclick={handleAdvanceSelected}
-									class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+									class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 								>
 									<ArrowRight size={12} />
 									Advance ({participantsBehind.length})
@@ -562,25 +637,26 @@
 							{/if}
 							<button
 								onclick={handleAssignHub}
-								class="px-2 py-1 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<MapPin size={12} />
 								Hub
 							</button>
 							<button
 								onclick={handleRemoveSelected}
-								class="px-2 py-1 rounded text-xs font-medium text-red-400 hover:bg-white/10 flex items-center gap-1.5 transition-colors"
+								class="px-2 py-1 rounded text-xs font-medium text-red-400 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<Trash2 size={12} />
 								Remove
 							</button>
+							<!-- Desktop clear button -->
+							<button
+								onclick={() => selectedParticipants = new Set()}
+								class="hidden sm:flex text-xs text-white/70 hover:bg-white/10 px-2 py-1 rounded transition-colors whitespace-nowrap"
+							>
+								Clear
+							</button>
 						</div>
-						<button
-							onclick={() => selectedParticipants = new Set()}
-							class="text-xs text-white/70 hover:bg-white/10 px-2 py-1 rounded transition-colors"
-						>
-							Clear
-						</button>
 					</div>
 				{/if}
 
@@ -597,11 +673,11 @@
 						</p>
 					</div>
 				{:else}
-					<div class="bg-white rounded border border-gray-200 overflow-x-auto">
-						<table class="w-full min-w-[900px]">
+					<div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+						<table class="w-full min-w-[540px] sm:min-w-[700px] lg:min-w-[900px]">
 							<thead>
 								<tr class="border-b border-gray-200 bg-gray-100">
-									<th class="w-8 px-3 py-2.5">
+									<th class="w-8 px-2 sm:px-3 py-2.5">
 										<input
 											type="checkbox"
 											onchange={toggleSelectAll}
@@ -609,13 +685,13 @@
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Participant</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Phone</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Hub</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Status</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Session</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Attendance</th>
-									<th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Reflections</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Participant</th>
+									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Phone</th>
+									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Hub</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Status</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Sess.</th>
+									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Attend.</th>
+									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Reflect.</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
@@ -627,7 +703,7 @@
 										onclick={() => openParticipantDetail(participant)}
 										class="hover:bg-gray-50 transition-colors cursor-pointer"
 									>
-										<td class="px-3 py-2" onclick={(e) => e.stopPropagation()}>
+										<td class="px-2 sm:px-3 py-2" onclick={(e) => e.stopPropagation()}>
 											<input
 												type="checkbox"
 												checked={selectedParticipants.has(participant.id)}
@@ -636,45 +712,45 @@
 											/>
 										</td>
 										<!-- Participant: Name • email + Coordinator badge -->
-										<td class="px-3 py-2">
-											<div class="flex items-center gap-1.5">
-												<span class="text-sm font-medium text-gray-900">
+										<td class="px-2 sm:px-3 py-2">
+											<div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+												<span class="text-xs sm:text-sm font-medium text-gray-900">
 													{participant.full_name}
 												</span>
 												{#if participant.role === 'coordinator'}
-													<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700">
+													<span class="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700">
 														<Home size={9} />
 														Hub Coordinator
 													</span>
 												{/if}
 												{#if participant.isBehind}
-													<AlertTriangle size={12} class="text-orange-500" />
+													<AlertTriangle size={12} class="text-orange-500 flex-shrink-0" />
 												{/if}
 											</div>
-											<span class="text-xs text-gray-500">{participant.email}</span>
+											<span class="text-[11px] sm:text-xs text-gray-500 block truncate max-w-[150px] sm:max-w-none">{participant.email}</span>
 										</td>
-										<!-- Phone -->
-										<td class="px-3 py-2">
+										<!-- Phone - hidden on mobile -->
+										<td class="hidden sm:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.user_profile?.phone || '-'}</span>
 										</td>
-										<!-- Hub -->
-										<td class="px-3 py-2">
+										<!-- Hub - hidden on mobile/tablet -->
+										<td class="hidden md:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.courses_hubs?.name || '-'}</span>
 										</td>
 										<!-- Status badge -->
-										<td class="px-3 py-2">
-											<span class="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full {statusBadge.class}">
+										<td class="px-2 sm:px-3 py-2">
+											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full {statusBadge.class}">
 												{statusBadge.label}
 											</span>
 										</td>
 										<!-- Session progress -->
-										<td class="px-3 py-2">
+										<td class="px-2 sm:px-3 py-2">
 											<span class="text-xs tabular-nums text-gray-700">
 												{participant.current_session}/{totalSessions}
 											</span>
 										</td>
-										<!-- Attendance -->
-										<td class="px-3 py-2">
+										<!-- Attendance - hidden on mobile -->
+										<td class="hidden sm:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs tabular-nums text-gray-700">
 												{#if cohortSession > 0}
 													{participant.attendanceCount}/{cohortSession}
@@ -683,8 +759,8 @@
 												{/if}
 											</span>
 										</td>
-										<!-- Reflections -->
-										<td class="px-3 py-2">
+										<!-- Reflections - hidden on mobile/tablet -->
+										<td class="hidden lg:table-cell px-2 sm:px-3 py-2">
 											{#if participant.reflectionStatus && participant.current_session > 0}
 												<span class="text-xs tabular-nums text-gray-700">
 													{getReflectionStatusDisplay(participant)}

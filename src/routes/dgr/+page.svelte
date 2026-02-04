@@ -514,12 +514,33 @@
 
 			if (data.error) throw new Error(data.error);
 
-			toast.updateToast(loadingId, {
-				title: 'Published to WordPress!',
-				message: 'Reflection has been published successfully',
-				type: 'success',
-				duration: 4000
-			});
+			// Check for warnings (e.g., gospel text couldn't be fetched)
+			if (data.warnings && data.warnings.length > 0) {
+				toast.updateToast(loadingId, {
+					title: 'Published with warnings',
+					message: 'Reflection published, but some content may be missing',
+					type: 'warning',
+					duration: 6000
+				});
+
+				// Show detailed warning after a short delay
+				setTimeout(() => {
+					data.warnings.forEach(warning => {
+						toast.warning({
+							title: warning.message,
+							message: warning.details || '',
+							duration: 10000
+						});
+					});
+				}, 500);
+			} else {
+				toast.updateToast(loadingId, {
+					title: 'Published to WordPress!',
+					message: 'Reflection has been published successfully',
+					type: 'success',
+					duration: 4000
+				});
+			}
 
 			await loadSchedule();
 		} catch (error) {

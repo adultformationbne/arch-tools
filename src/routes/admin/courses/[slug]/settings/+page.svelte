@@ -208,19 +208,19 @@
 	}
 </script>
 
-<div class="min-h-screen p-8" style="background-color: var(--course-accent-dark);">
+<div class="min-h-screen p-3 sm:p-4 lg:p-6" style="background-color: var(--course-accent-dark);">
 	<div class="max-w-4xl mx-auto">
 		<!-- Header -->
-		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-white mb-2">Course Settings</h1>
-			<p class="text-white/70">Manage course information, branding, and theme</p>
+		<div class="mb-4 sm:mb-6 lg:mb-8">
+			<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Course Settings</h1>
+			<p class="text-sm sm:text-base text-white/70">Manage course information, branding, and theme</p>
 		</div>
 
 		<!-- Settings Form -->
-		<div class="bg-white rounded-lg shadow-lg">
+		<div class="bg-white rounded-lg shadow-lg pb-20 sm:pb-0">
 			<!-- Basic Information Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Basic Information</h2>
 
 				<div class="space-y-4">
 					<div>
@@ -265,8 +265,8 @@
 			</div>
 
 			<!-- Branding Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Branding</h2>
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Branding</h2>
 
 				<div class="space-y-4">
 					<div>
@@ -275,26 +275,26 @@
 						</span>
 
 						{#if settings.branding.logoUrl}
-							<div class="flex items-start gap-4">
+							<div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
 								<div class="relative">
 									<img
 										src={settings.branding.logoUrl}
 										alt="Course logo"
-										class="h-24 w-auto border border-gray-200 rounded-lg"
+										class="h-20 sm:h-24 w-auto border border-gray-200 rounded-lg"
 									/>
 									<button
 										onclick={removeLogo}
-										class="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+										class="absolute -top-2 -right-2 p-1.5 sm:p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
 										title="Remove logo"
 									>
 										<X size={14} />
 									</button>
 								</div>
-								<div class="flex-1">
+								<div class="flex-1 w-full sm:w-auto">
 									<p class="text-sm text-gray-600 mb-2">
 										Current logo uploaded
 									</p>
-									<label class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg cursor-pointer transition-colors">
+									<label class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg cursor-pointer transition-colors">
 										<Upload size={16} />
 										<span class="text-sm font-medium">Replace Logo</span>
 										<input
@@ -308,13 +308,13 @@
 								</div>
 							</div>
 						{:else}
-							<label class="flex items-center justify-center gap-2 px-6 py-4 bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+							<label class="flex flex-col sm:flex-row items-center justify-center gap-2 px-4 sm:px-6 py-6 sm:py-4 bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
 								{#if uploadingLogo}
 									<Loader2 size={20} class="animate-spin" />
 									<span class="text-sm font-medium text-gray-600">Uploading...</span>
 								{:else}
 									<Upload size={20} />
-									<span class="text-sm font-medium text-gray-600">Upload Logo (PNG, JPG - Max 2MB)</span>
+									<span class="text-sm font-medium text-gray-600 text-center">Upload Logo (PNG, JPG - Max 2MB)</span>
 									<input
 										type="file"
 										accept="image/*"
@@ -341,25 +341,25 @@
 			</div>
 
 			<!-- Theme Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Theme</h2>
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Theme</h2>
 
 				<div class="space-y-4">
 					<div>
 						<label for="accentDark" class="block text-sm font-medium text-gray-700 mb-1">
 							Accent Dark Color
 						</label>
-						<div class="flex gap-2">
+						<div class="flex flex-col sm:flex-row gap-2">
 							<input
 								id="accentDark"
 								type="color"
 								bind:value={settings.theme.accentDark}
-								class="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+								class="h-12 sm:h-10 w-full sm:w-20 border border-gray-300 rounded cursor-pointer"
 							/>
 							<input
 								type="text"
 								bind:value={settings.theme.accentDark}
-								class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+								class="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
 								placeholder="#334642"
 							/>
 						</div>
@@ -369,17 +369,17 @@
 						<label for="accentLight" class="block text-sm font-medium text-gray-700 mb-1">
 							Accent Light Color
 						</label>
-						<div class="flex gap-2">
+						<div class="flex flex-col sm:flex-row gap-2">
 							<input
 								id="accentLight"
 								type="color"
 								bind:value={settings.theme.accentLight}
-								class="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+								class="h-12 sm:h-10 w-full sm:w-20 border border-gray-300 rounded cursor-pointer"
 							/>
 							<input
 								type="text"
 								bind:value={settings.theme.accentLight}
-								class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+								class="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
 								placeholder="#c59a6b"
 							/>
 						</div>
@@ -404,8 +404,8 @@
 			</div>
 
 			<!-- Email Settings Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Email Settings</h2>
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Email Settings</h2>
 
 				<div class="space-y-4">
 					<div>
@@ -428,25 +428,25 @@
 			</div>
 
 			<!-- Coordinator Access Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Coordinator Access</h2>
-				<p class="text-sm text-gray-600 mb-4">
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Coordinator Access</h2>
+				<p class="text-sm text-gray-600 mb-3 sm:mb-4">
 					Control how many sessions ahead coordinators can see compared to students
 				</p>
 
 				<div class="space-y-3">
-					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={coordinatorAccessMode === 'all'} class:bg-blue-50={coordinatorAccessMode === 'all'}>
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" class:border-blue-500={coordinatorAccessMode === 'all'} class:bg-blue-50={coordinatorAccessMode === 'all'}>
 						<input
 							type="radio"
 							name="coordinatorAccess"
 							value="all"
 							checked={coordinatorAccessMode === 'all'}
 							onchange={() => setCoordinatorAccessMode('all')}
-							class="w-4 h-4 text-blue-600"
+							class="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span class="font-medium text-gray-900">Coordinators can see all sessions</span>
-							<p class="text-sm text-gray-500">Coordinators have full access to view all session materials</p>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Coordinators can see all sessions</span>
+							<p class="text-xs sm:text-sm text-gray-500">Coordinators have full access to view all session materials</p>
 						</div>
 					</label>
 
@@ -457,32 +457,34 @@
 							value="limited"
 							checked={coordinatorAccessMode === 'limited'}
 							onchange={() => setCoordinatorAccessMode('limited')}
-							class="w-4 h-4 text-blue-600 mt-1"
+							class="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
-						<div class="flex-1">
-							<div class="flex items-center gap-2">
-								<span class="font-medium text-gray-900">Coordinators see</span>
-								<input
-									type="number"
-									min="1"
-									max="10"
-									value={sessionsAheadCount}
-									oninput={(e) => updateSessionsAheadCount(parseInt(e.target.value) || 1)}
-									disabled={coordinatorAccessMode !== 'limited'}
-									class="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
-								/>
-								<span class="font-medium text-gray-900">sessions ahead of students</span>
+						<div class="flex-1 min-w-0">
+							<div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+								<span class="font-medium text-gray-900 text-sm sm:text-base">Coordinators see</span>
+								<div class="flex items-center gap-2">
+									<input
+										type="number"
+										min="1"
+										max="10"
+										value={sessionsAheadCount}
+										oninput={(e) => updateSessionsAheadCount(parseInt(e.target.value) || 1)}
+										disabled={coordinatorAccessMode !== 'limited'}
+										class="w-16 px-2 py-1.5 sm:py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+									/>
+									<span class="font-medium text-gray-900 text-sm sm:text-base">sessions ahead</span>
+								</div>
 							</div>
-							<p class="text-sm text-gray-500 mt-1">Coordinators can preview upcoming session materials before students</p>
+							<p class="text-xs sm:text-sm text-gray-500 mt-1">Coordinators can preview upcoming session materials before students</p>
 						</div>
 					</label>
 				</div>
 			</div>
 
 			<!-- Session Progression Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Session Progression Rules</h2>
-				<p class="text-sm text-gray-600 mb-4">
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Session Progression Rules</h2>
+				<p class="text-sm text-gray-600 mb-3 sm:mb-4">
 					Define how students advance through sessions
 				</p>
 
@@ -493,11 +495,11 @@
 							name="progressionMode"
 							value="manual"
 							bind:group={settings.sessionProgression.mode}
-							class="w-4 h-4 text-blue-600 mt-1"
+							class="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span class="font-medium text-gray-900">Manual advancement only</span>
-							<p class="text-sm text-gray-500">Admins must manually advance each student to the next session</p>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Manual advancement only</span>
+							<p class="text-xs sm:text-sm text-gray-500">Admins must manually advance each student to the next session</p>
 						</div>
 					</label>
 
@@ -507,22 +509,24 @@
 							name="progressionMode"
 							value="auto_time"
 							bind:group={settings.sessionProgression.mode}
-							class="w-4 h-4 text-blue-600 mt-1"
+							class="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
-						<div class="flex-1">
-							<div class="flex items-center gap-2 flex-wrap">
-								<span class="font-medium text-gray-900">Auto-advance after</span>
-								<input
-									type="number"
-									min="1"
-									max="30"
-									bind:value={settings.sessionProgression.autoAdvanceDays}
-									disabled={settings.sessionProgression.mode !== 'auto_time'}
-									class="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
-								/>
-								<span class="font-medium text-gray-900">days</span>
+						<div class="flex-1 min-w-0">
+							<div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 flex-wrap">
+								<span class="font-medium text-gray-900 text-sm sm:text-base">Auto-advance after</span>
+								<div class="flex items-center gap-2">
+									<input
+										type="number"
+										min="1"
+										max="30"
+										bind:value={settings.sessionProgression.autoAdvanceDays}
+										disabled={settings.sessionProgression.mode !== 'auto_time'}
+										class="w-16 px-2 py-1.5 sm:py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+									/>
+									<span class="font-medium text-gray-900 text-sm sm:text-base">days</span>
+								</div>
 							</div>
-							<p class="text-sm text-gray-500 mt-1">Students automatically advance after the specified number of days</p>
+							<p class="text-xs sm:text-sm text-gray-500 mt-1">Students automatically advance after the specified number of days</p>
 						</div>
 					</label>
 
@@ -533,30 +537,30 @@
 								name="progressionMode"
 								value="require_completion"
 								bind:group={settings.sessionProgression.mode}
-								class="w-4 h-4 text-blue-600 mt-1"
+								class="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0"
 							/>
 							<div class="flex-1">
-								<span class="font-medium text-gray-900">Require completion before advancing</span>
-								<p class="text-sm text-gray-500 mt-1">Students must complete specific requirements before they can advance</p>
+								<span class="font-medium text-gray-900 text-sm sm:text-base">Require completion before advancing</span>
+								<p class="text-xs sm:text-sm text-gray-500 mt-1">Students must complete specific requirements before they can advance</p>
 							</div>
 						</label>
 
 						{#if settings.sessionProgression.mode === 'require_completion'}
-							<div class="mt-3 ml-7 space-y-2 p-3 bg-white rounded border border-gray-200">
+							<div class="mt-3 ml-0 sm:ml-7 space-y-2 p-3 bg-white rounded border border-gray-200">
 								<p class="text-sm font-medium text-gray-700 mb-2">Requirements:</p>
-								<label class="flex items-center gap-2 cursor-pointer">
+								<label class="flex items-center gap-2 cursor-pointer py-1">
 									<input
 										type="checkbox"
 										bind:checked={settings.sessionProgression.completionRequirements.reflectionSubmitted}
-										class="w-4 h-4 rounded border-gray-300 text-blue-600"
+										class="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 text-blue-600"
 									/>
 									<span class="text-sm text-gray-700">Reflection submitted</span>
 								</label>
-								<label class="flex items-center gap-2 cursor-pointer">
+								<label class="flex items-center gap-2 cursor-pointer py-1">
 									<input
 										type="checkbox"
 										bind:checked={settings.sessionProgression.completionRequirements.attendanceMarked}
-										class="w-4 h-4 rounded border-gray-300 text-blue-600"
+										class="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 text-blue-600"
 									/>
 									<span class="text-sm text-gray-700">Attendance marked</span>
 								</label>
@@ -567,67 +571,86 @@
 			</div>
 
 			<!-- Feature Toggles Section -->
-			<div class="p-6 border-b border-gray-200">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Feature Toggles</h2>
-				<p class="text-sm text-gray-600 mb-4">
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Feature Toggles</h2>
+				<p class="text-sm text-gray-600 mb-3 sm:mb-4">
 					Enable or disable course features
 				</p>
 
 				<div class="space-y-3">
-					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
 						<input
 							type="checkbox"
 							bind:checked={settings.features.reflectionsEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span class="font-medium text-gray-900">Enable Reflections</span>
-							<p class="text-sm text-gray-500">Allow students to submit reflections for each session</p>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Reflections</span>
+							<p class="text-xs sm:text-sm text-gray-500">Allow students to submit reflections for each session</p>
 						</div>
 					</label>
 
-					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
 						<input
 							type="checkbox"
 							bind:checked={settings.features.communityFeedEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span class="font-medium text-gray-900">Enable Community Feed</span>
-							<p class="text-sm text-gray-500">Allow students to view and post in the course community feed</p>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Community Feed</span>
+							<p class="text-xs sm:text-sm text-gray-500">Allow students to view and post in the course community feed</p>
 						</div>
 					</label>
 
-					<label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
 						<input
 							type="checkbox"
 							bind:checked={settings.features.attendanceEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600"
+							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span class="font-medium text-gray-900">Enable Attendance Tracking</span>
-							<p class="text-sm text-gray-500">Track and manage student attendance for each session</p>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Attendance Tracking</span>
+							<p class="text-xs sm:text-sm text-gray-500">Track and manage student attendance for each session</p>
 						</div>
 					</label>
 				</div>
 			</div>
 
-			<!-- Actions -->
-			<div class="p-6 flex justify-end gap-3">
-				<button
-					onclick={saveSettings}
-					disabled={saving}
-					class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
-				>
-					{#if saving}
-						<Loader2 size={18} class="animate-spin" />
-						<span>Saving...</span>
-					{:else}
-						<Save size={18} />
-						<span>Save Settings</span>
-					{/if}
-				</button>
+			<!-- Actions - Desktop only (hidden on mobile, shown as sticky bar) -->
+			<div class="hidden sm:block p-4 sm:p-5 lg:p-6">
+				<div class="flex justify-end gap-3">
+					<button
+						onclick={saveSettings}
+						disabled={saving}
+						class="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
+					>
+						{#if saving}
+							<Loader2 size={18} class="animate-spin" />
+							<span>Saving...</span>
+						{:else}
+							<Save size={18} />
+							<span>Save Settings</span>
+						{/if}
+					</button>
+				</div>
 			</div>
 		</div>
+	</div>
+
+	<!-- Sticky Save Button for Mobile -->
+	<div class="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-lg z-50">
+		<button
+			onclick={saveSettings}
+			disabled={saving}
+			class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
+		>
+			{#if saving}
+				<Loader2 size={18} class="animate-spin" />
+				<span>Saving...</span>
+			{:else}
+				<Save size={18} />
+				<span>Save Settings</span>
+			{/if}
+		</button>
 	</div>
 </div>

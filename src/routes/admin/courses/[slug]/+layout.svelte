@@ -3,6 +3,7 @@
 	import { page, navigating } from '$app/stores';
 	import { setContext } from 'svelte';
 	import CourseAdminSidebar from '$lib/components/CourseAdminSidebar.svelte';
+	import CourseAdminMobileNav from '$lib/components/CourseAdminMobileNav.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 
 	let { data, children } = $props();
@@ -71,7 +72,8 @@
 	class="admin-layout"
 	style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};"
 >
-	<CourseAdminSidebar
+	<!-- Mobile Navigation - visible on mobile only -->
+	<CourseAdminMobileNav
 		{courseSlug}
 		{modules}
 		{enrollmentRole}
@@ -83,6 +85,22 @@
 		onSelectCohort={handleSelectCohort}
 		onSettingsClick={handleSettingsClick}
 	/>
+
+	<!-- Desktop Sidebar - hidden on mobile -->
+	<div class="hidden lg:block">
+		<CourseAdminSidebar
+			{courseSlug}
+			{modules}
+			{enrollmentRole}
+			{isCourseAdmin}
+			{cohorts}
+			{courseBranding}
+			selectedCohortId={selectedCohortId}
+			onNewCohort={handleNewCohort}
+			onSelectCohort={handleSelectCohort}
+			onSettingsClick={handleSettingsClick}
+		/>
+	</div>
 
 	<main class="admin-content">
 		{@render children()}
@@ -101,12 +119,21 @@
 <style>
 	.admin-layout {
 		display: flex;
+		flex-direction: column;
 		min-height: 100vh;
 		background-color: var(--course-accent-dark);
+	}
+
+	/* Desktop: horizontal layout with sidebar */
+	@media (min-width: 1024px) {
+		.admin-layout {
+			flex-direction: row;
+		}
 	}
 
 	.admin-content {
 		flex: 1;
 		overflow-x: hidden;
+		min-height: 0;
 	}
 </style>

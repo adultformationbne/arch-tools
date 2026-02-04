@@ -2,7 +2,7 @@
 	import { page, navigating } from '$app/stores';
 	import { goto, invalidate } from '$app/navigation';
 	import { untrack } from 'svelte';
-	import { Pencil } from '$lib/icons';
+	import { Pencil, Menu, X } from '$lib/icons';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
@@ -13,6 +13,9 @@
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
+
+	// Mobile sidebar state
+	let sidebarOpen = $state(false);
 
 	// Show loading state during navigation
 	let isLoading = $derived($navigating !== null);
@@ -652,15 +655,40 @@
 
 <!-- Sessions Page with Tree Sidebar -->
 <div class="flex min-h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};">
+	<!-- Mobile sidebar overlay -->
+	{#if sidebarOpen}
+		<div
+			class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+			onclick={() => sidebarOpen = false}
+			onkeydown={(e) => e.key === 'Escape' && (sidebarOpen = false)}
+			role="button"
+			tabindex="0"
+			aria-label="Close sidebar"
+		></div>
+	{/if}
+
 	<!-- Session Tree Sidebar -->
-	<div class="w-72 flex-shrink-0 border-r" style="border-color: rgba(255,255,255,0.1);">
+	<div
+		class="fixed inset-y-0 left-0 z-50 w-72 flex-shrink-0 border-r transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto"
+		class:translate-x-0={sidebarOpen}
+		class:-translate-x-full={!sidebarOpen}
+		style="border-color: rgba(255,255,255,0.1); background-color: var(--course-accent-dark);"
+	>
+		<!-- Mobile close button -->
+		<button
+			class="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 lg:hidden"
+			onclick={() => sidebarOpen = false}
+			aria-label="Close sidebar"
+		>
+			<X size={20} class="text-white" />
+		</button>
 		<SessionTreeSidebar
 			modules={availableModules}
 			sessions={sessionsWithUpdatedTitles}
 			selectedModuleId={selectedModuleId}
 			selectedSession={selectedSession}
-			onModuleChange={handleModuleChange}
-			onSessionChange={handleSessionChange}
+			onModuleChange={(moduleId) => { handleModuleChange(moduleId); sidebarOpen = false; }}
+			onSessionChange={(session) => { handleSessionChange(session); sidebarOpen = false; }}
 			onSessionTitleChange={handleSessionTitleChangeFromSidebar}
 			onAddSession={addSession}
 			onSessionDelete={handleSessionDelete}
@@ -669,11 +697,20 @@
 	</div>
 
 	<!-- Content Area -->
-	<div class="flex-1 overflow-y-auto">
+	<div class="flex-1 overflow-y-auto w-full lg:w-auto">
 		<!-- Top Header with Save Status -->
-		<div class="sticky top-0 z-10 backdrop-blur-md border-b px-8 py-4" style="background-color: color-mix(in srgb, var(--course-accent-dark) 95%, transparent); border-color: rgba(255,255,255,0.1);">
-			<div class="flex items-center justify-between">
-				<div class="flex-1">
+		<div class="sticky top-0 z-10 backdrop-blur-md border-b px-3 py-3 sm:px-6 sm:py-4 lg:px-8" style="background-color: color-mix(in srgb, var(--course-accent-dark) 95%, transparent); border-color: rgba(255,255,255,0.1);">
+			<div class="flex items-center justify-between gap-3">
+				<!-- Mobile menu button -->
+				<button
+					class="p-2 rounded-lg bg-white/10 hover:bg-white/20 lg:hidden flex-shrink-0"
+					onclick={() => sidebarOpen = true}
+					aria-label="Open sidebar"
+				>
+					<Menu size={20} class="text-white" />
+				</button>
+
+				<div class="flex-1 min-w-0">
 					<!-- Editable Session Title -->
 					<div class="flex items-center gap-2 group"
 						role="group"
@@ -692,12 +729,12 @@
 										editingTitle = false;
 									}
 								}}
-								class="text-2xl font-bold text-white bg-white/10 border border-white/20 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-white/40"
+								class="text-lg sm:text-xl lg:text-2xl font-bold text-white bg-white/10 border border-white/20 rounded px-2 py-1 sm:px-3 focus:outline-none focus:ring-2 focus:ring-white/40 w-full max-w-md"
 								style="background-color: rgba(255,255,255,0.1);"
 								autofocus
 							/>
 						{:else}
-							<h1 class="text-2xl font-bold text-white">
+							<h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
 								{#if currentSession.title}
 									{currentSession.title}
 								{:else}
@@ -706,18 +743,18 @@
 							</h1>
 							<button
 								onclick={() => editingTitle = true}
-								class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded"
+								class="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded flex-shrink-0"
 								title="Edit session title"
-								style="opacity: {titleHovered ? '1' : '0'}">
+								style="opacity: {titleHovered ? '1' : undefined}">
 								<Pencil size={16} class="text-white/70" />
 							</button>
 						{/if}
 					</div>
-					<p class="text-sm text-white/60 mt-0.5">{selectedModule.name}</p>
+					<p class="text-xs sm:text-sm text-white/60 mt-0.5 truncate">{selectedModule?.name}</p>
 				</div>
 
 				<!-- Save Status -->
-				<div class="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 text-white text-sm border border-white/20">
+				<div class="bg-white/10 backdrop-blur-sm rounded-full px-2 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 text-white text-xs sm:text-sm border border-white/20 flex-shrink-0">
 					{#if saving}
 						<div class="animate-spin w-3 h-3 border border-white/40 border-t-white rounded-full"></div>
 						<span class="text-white/90">{saveMessage || 'Saving...'}</span>
@@ -737,42 +774,42 @@
 		</div>
 
 		<!-- Session Content -->
-		<div class="p-8">
+		<div class="p-3 sm:p-4 lg:p-6">
 			{#if !dataInitialized}
 				<!-- Skeleton Loading State -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-pulse">
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 animate-pulse">
 					<!-- Left: Materials and Session Overview Skeletons -->
-					<div class="lg:col-span-2 space-y-6">
+					<div class="lg:col-span-2 space-y-4 sm:space-y-6">
 						<!-- Session Overview Skeleton -->
-						<div class="bg-white/5 rounded-lg p-6">
-							<div class="h-6 bg-white/10 rounded w-1/3 mb-4"></div>
-							<div class="h-32 bg-white/10 rounded"></div>
+						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+							<div class="h-5 sm:h-6 bg-white/10 rounded w-1/3 mb-4"></div>
+							<div class="h-24 sm:h-32 bg-white/10 rounded"></div>
 						</div>
 
 						<!-- Materials Skeleton -->
-						<div class="bg-white/5 rounded-lg p-6">
-							<div class="h-6 bg-white/10 rounded w-1/4 mb-4"></div>
+						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+							<div class="h-5 sm:h-6 bg-white/10 rounded w-1/4 mb-4"></div>
 							<div class="space-y-3">
-								<div class="h-16 bg-white/10 rounded"></div>
-								<div class="h-16 bg-white/10 rounded"></div>
-								<div class="h-16 bg-white/10 rounded"></div>
+								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
+								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
+								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
 							</div>
 						</div>
 					</div>
 
 					<!-- Right: Reflection Skeleton -->
 					<div>
-						<div class="bg-white/5 rounded-lg p-6">
-							<div class="h-6 bg-white/10 rounded w-2/3 mb-4"></div>
-							<div class="h-24 bg-white/10 rounded"></div>
+						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+							<div class="h-5 sm:h-6 bg-white/10 rounded w-2/3 mb-4"></div>
+							<div class="h-20 sm:h-24 bg-white/10 rounded"></div>
 						</div>
 					</div>
 				</div>
 			{:else}
 				<!-- Actual Content with smooth transition -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 transition-opacity duration-200" style="animation: fadeIn 0.2s ease-in;">
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 transition-opacity duration-200" style="animation: fadeIn 0.2s ease-in;">
 					<!-- Left: Materials and Session Overview -->
-					<div class="lg:col-span-2 space-y-6">
+					<div class="lg:col-span-2 space-y-4 sm:space-y-6">
 						<!-- Session Overview -->
 						<SessionOverviewEditor
 							sessionOverview={currentSession.description}
@@ -796,7 +833,7 @@
 					</div>
 
 					<!-- Right: Reflection & Preview -->
-					<div>
+					<div class="space-y-4 sm:space-y-6">
 						<ReflectionEditor
 							reflectionQuestion={currentSession.reflection}
 							onReflectionChange={handleReflectionChange}
@@ -804,13 +841,11 @@
 						/>
 
 						<!-- Student Preview -->
-						<div class="mt-6">
-							<StudentPreview
-								sessionNumber={selectedSession}
-								sessionOverview={currentSession.description}
-								materials={currentSession.materials}
-							/>
-						</div>
+						<StudentPreview
+							sessionNumber={selectedSession}
+							sessionOverview={currentSession.description}
+							materials={currentSession.materials}
+						/>
 					</div>
 				</div>
 			{/if}

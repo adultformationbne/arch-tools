@@ -493,18 +493,42 @@ export const POST: RequestHandler = async (event) => {
 					throw error(403, 'Enrollment does not belong to this course');
 				}
 
-				const result = await CourseMutations.updateEnrollment({
-					userId: data.userId,
-					updates: data.updates
-				});
+				// Handle email update separately (requires auth sync)
+				if (data.updates?.email) {
+					const emailResult = await CourseMutations.updateEnrollmentEmail({
+						enrollmentId: data.userId,
+						newEmail: data.updates.email
+					});
 
-				if (result.error) {
-					throw error(400, result.error.message || 'Failed to update user');
+					if (emailResult.error) {
+						throw error(400, emailResult.error.message || 'Failed to update email');
+					}
+
+					// Remove email from updates so it doesn't get processed again
+					delete data.updates.email;
+				}
+
+				// Process remaining updates (if any)
+				const { email, ...otherUpdates } = data.updates || {};
+				if (Object.keys(otherUpdates).length > 0) {
+					const result = await CourseMutations.updateEnrollment({
+						userId: data.userId,
+						updates: otherUpdates
+					});
+
+					if (result.error) {
+						throw error(400, result.error.message || 'Failed to update user');
+					}
+
+					return json({
+						success: true,
+						data: result.data,
+						message: 'User updated successfully'
+					});
 				}
 
 				return json({
 					success: true,
-					data: result.data,
 					message: 'User updated successfully'
 				});
 			}

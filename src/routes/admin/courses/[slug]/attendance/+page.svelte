@@ -159,22 +159,22 @@
 	};
 </script>
 
-<div class="px-16">
-	<div class="py-12">
+<div class="p-3 sm:p-4 lg:p-6">
+	<div class="py-6 sm:py-8 lg:py-12">
 		<div class="max-w-7xl mx-auto">
 			<!-- Header with Cohort Selector -->
-			<div class="mb-8 flex items-start justify-between gap-8">
+			<div class="mb-6 sm:mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-8">
 				<div>
-					<h1 class="text-5xl font-bold text-white mb-2">Attendance Management</h1>
-					<p class="text-xl text-white/70">Track student attendance by session</p>
+					<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Attendance</h1>
+					<p class="text-base sm:text-lg lg:text-xl text-white/70">Track student attendance by session</p>
 				</div>
 
-				<div class="bg-white rounded-2xl p-4 shadow-sm min-w-[400px]">
+				<div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm w-full lg:w-auto lg:min-w-[400px]">
 					<label for="cohort-select" class="block text-sm font-semibold text-gray-700 mb-2">Select Cohort</label>
 					<select
 						id="cohort-select"
 						bind:value={selectedCohortId}
-						class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+						class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm sm:text-base"
 						style="outline-color: var(--course-accent-light);"
 					>
 						<option value={null}>Choose a cohort...</option>
@@ -188,51 +188,53 @@
 			</div>
 
 			{#if isLoading}
-				<div class="bg-white rounded-2xl p-12 shadow-sm text-center">
-					<div class="animate-spin mx-auto w-12 h-12 border-4 border-gray-300 border-t-accf-accent rounded-full mb-4"></div>
-					<p class="text-gray-600">Loading attendance data...</p>
+				<div class="bg-white rounded-xl sm:rounded-2xl p-8 sm:p-12 shadow-sm text-center">
+					<div class="animate-spin mx-auto w-10 h-10 sm:w-12 sm:h-12 border-4 border-gray-300 border-t-accf-accent rounded-full mb-4"></div>
+					<p class="text-gray-600 text-sm sm:text-base">Loading attendance data...</p>
 				</div>
 			{:else if selectedCohortId && attendanceData}
 				<!-- Session Grid -->
-				<div class="space-y-3">
+				<div class="space-y-2 sm:space-y-3">
 					{#each Array(8) as _, sessionIndex}
 						{@const sessionNum = sessionIndex + 1}
 						{@const stats = getSessionStats(sessionNum)}
 						{@const isExpanded = expandedSession === sessionNum}
 
-						<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+						<div class="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
 							<!-- Session Header -->
 							<button
 								onclick={() => toggleSession(sessionNum)}
-								class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+								class="w-full px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
 							>
-								<div class="flex items-center gap-4">
-									<div class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white" style="background-color: var(--course-accent-dark);">
+								<div class="flex items-center gap-2 sm:gap-4">
+									<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-bold text-white text-sm sm:text-base" style="background-color: var(--course-accent-dark);">
 										{sessionNum}
 									</div>
 									<div class="text-left">
-										<h3 class="font-bold text-lg text-gray-800">Session {sessionNum}</h3>
-										<p class="text-sm text-gray-600">
-											{stats.marked} of {stats.total} students marked
+										<h3 class="font-bold text-base sm:text-lg text-gray-800">Session {sessionNum}</h3>
+										<p class="text-xs sm:text-sm text-gray-600">
+											{stats.marked} of {stats.total} marked
 										</p>
 									</div>
 								</div>
 
-								<div class="flex items-center gap-4">
+								<div class="flex items-center gap-2 sm:gap-4">
 									{#if stats.marked < stats.total}
-										<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-											{stats.total - stats.marked} pending
+										<span class="px-2 sm:px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs sm:text-sm font-medium">
+											<span class="hidden sm:inline">{stats.total - stats.marked} pending</span>
+											<span class="sm:hidden">{stats.total - stats.marked}</span>
 										</span>
 									{:else if stats.total > 0}
-										<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-							✓ Complete
+										<span class="px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs sm:text-sm font-medium">
+											<span class="hidden sm:inline">Complete</span>
+											<span class="sm:hidden">Done</span>
 										</span>
 									{/if}
 
 									{#if isExpanded}
-										<ChevronDown size="20" class="text-gray-400" />
+										<ChevronDown size="20" class="text-gray-400 w-5 h-5 sm:w-6 sm:h-6" />
 									{:else}
-										<ChevronRight size="20" class="text-gray-400" />
+										<ChevronRight size="20" class="text-gray-400 w-5 h-5 sm:w-6 sm:h-6" />
 									{/if}
 								</div>
 							</button>
@@ -242,36 +244,36 @@
 								<div class="border-t border-gray-200">
 									<!-- Non-Hub Students Section -->
 									{#if attendanceData.nonHubStudents && attendanceData.nonHubStudents.length > 0}
-										<div class="p-6 border-b border-gray-200">
-											<h4 class="font-bold text-md text-gray-700 mb-4 flex items-center gap-2">
-												<User size="18" />
+										<div class="p-3 sm:p-6 border-b border-gray-200">
+											<h4 class="font-bold text-sm sm:text-md text-gray-700 mb-3 sm:mb-4 flex items-center gap-2">
+												<User size="18" class="w-4 h-4 sm:w-5 sm:h-5" />
 												Non-Hub Students ({attendanceData.nonHubStudents.length})
 											</h4>
-											<div class="space-y-3">
+											<div class="space-y-2 sm:space-y-3">
 												{#each attendanceData.nonHubStudents as student}
 													{@const status = getAttendanceStatus(student, sessionNum)}
 
-													<div class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
-														<div class="flex items-center gap-3">
-															<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-sm" style="background-color: var(--course-accent-dark);">
+													<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-gray-50 rounded-lg">
+														<div class="flex items-center gap-2 sm:gap-3">
+															<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-white text-xs sm:text-sm flex-shrink-0" style="background-color: var(--course-accent-dark);">
 																{getUserInitials(student.full_name)}
 															</div>
-															<div>
-																<div class="font-semibold text-gray-800">{student.full_name}</div>
-																<div class="text-sm text-gray-600">{student.email}</div>
+															<div class="min-w-0">
+																<div class="font-semibold text-sm sm:text-base text-gray-800 truncate">{student.full_name}</div>
+																<div class="text-xs sm:text-sm text-gray-600 truncate">{student.email}</div>
 															</div>
 														</div>
 
-														<div class="flex items-center gap-3">
+														<div class="flex items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
 															{#if status !== undefined}
-																<span class="text-sm font-medium" class:text-green-600={status} class:text-red-600={!status}>
-																	{status ? '✓ Present' : '✗ Absent'}
+																<span class="text-xs sm:text-sm font-medium hidden sm:inline" class:text-green-600={status} class:text-red-600={!status}>
+																	{status ? 'Present' : 'Absent'}
 																</span>
 															{/if}
 
 															<button
 																onclick={() => markAttendance(student.id, sessionNum, true)}
-																class="px-4 py-2 rounded-lg font-medium transition-colors"
+																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
 																class:bg-green-600={status === true}
 																class:text-white={status === true}
 																class:bg-gray-200={status !== true}
@@ -283,7 +285,7 @@
 															</button>
 															<button
 																onclick={() => markAttendance(student.id, sessionNum, false)}
-																class="px-4 py-2 rounded-lg font-medium transition-colors"
+																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
 																class:bg-red-600={status === false}
 																class:text-white={status === false}
 																class:bg-gray-200={status !== false}
@@ -302,11 +304,11 @@
 
 									<!-- Hub Students Section (Read-only with override) -->
 									{#if attendanceData.hubStudents && attendanceData.hubStudents.length > 0}
-										<div class="p-6">
-											<h4 class="font-bold text-md text-gray-700 mb-4 flex items-center gap-2">
-												<Building size="18" />
-												Hub Students ({attendanceData.hubStudents.length})
-												<span class="text-sm font-normal text-gray-500 ml-2">Marked by coordinators</span>
+										<div class="p-3 sm:p-6">
+											<h4 class="font-bold text-sm sm:text-md text-gray-700 mb-3 sm:mb-4 flex flex-wrap items-center gap-2">
+												<Building size="18" class="w-4 h-4 sm:w-5 sm:h-5" />
+												<span>Hub Students ({attendanceData.hubStudents.length})</span>
+												<span class="text-xs sm:text-sm font-normal text-gray-500">Marked by coordinators</span>
 											</h4>
 
 											{#each Object.entries(attendanceData.hubStudents.reduce((acc, student) => {
@@ -324,62 +326,62 @@
 													return acc;
 												}, { present: 0, absent: 0, notMarked: 0 })}
 
-												<div class="mb-4 last:mb-0">
+												<div class="mb-3 sm:mb-4 last:mb-0">
 													<!-- Hub Header (Clickable) -->
 													<button
 														onclick={() => toggleHub(hubName)}
-														class="w-full flex items-center justify-between py-3 px-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+														class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
 													>
-														<div class="flex items-center gap-3">
-															<Building size="18" class="text-gray-600" />
+														<div class="flex items-center gap-2 sm:gap-3">
+															<Building size="18" class="text-gray-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
 															<div class="text-left">
-																<h5 class="font-semibold text-gray-800">{hubName}</h5>
+																<h5 class="font-semibold text-sm sm:text-base text-gray-800">{hubName}</h5>
 																<p class="text-xs text-gray-600">{students.length} students</p>
 															</div>
 														</div>
 
-														<div class="flex items-center gap-3">
+														<div class="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 ml-6 sm:ml-0">
 															<!-- Quick stats -->
-															<div class="flex items-center gap-2 text-xs">
+															<div class="flex items-center gap-1 sm:gap-2 text-xs flex-wrap">
 																{#if hubStats.present > 0}
-																	<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-																		{hubStats.present} present
+																	<span class="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-green-100 text-green-700 rounded-full font-medium">
+																		{hubStats.present} <span class="hidden sm:inline">present</span>
 																	</span>
 																{/if}
 																{#if hubStats.absent > 0}
-																	<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">
-																		{hubStats.absent} absent
+																	<span class="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-100 text-red-700 rounded-full font-medium">
+																		{hubStats.absent} <span class="hidden sm:inline">absent</span>
 																	</span>
 																{/if}
 																{#if hubStats.notMarked > 0}
-																	<span class="px-2 py-1 bg-gray-200 text-gray-700 rounded-full font-medium">
-																		{hubStats.notMarked} unmarked
+																	<span class="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-200 text-gray-700 rounded-full font-medium">
+																		{hubStats.notMarked} <span class="hidden sm:inline">unmarked</span>
 																	</span>
 																{/if}
 															</div>
 
 															{#if isHubExpanded}
-																<ChevronDown size="20" class="text-gray-500" />
+																<ChevronDown size="20" class="text-gray-500 w-5 h-5 flex-shrink-0" />
 															{:else}
-																<ChevronRight size="20" class="text-gray-500" />
+																<ChevronRight size="20" class="text-gray-500 w-5 h-5 flex-shrink-0" />
 															{/if}
 														</div>
 													</button>
 
 													<!-- Hub Students (Expandable) -->
 													{#if isHubExpanded}
-														<div class="mt-2 space-y-2 ml-4">
+														<div class="mt-2 space-y-2 ml-2 sm:ml-4">
 															{#each students as student}
 																{@const status = getAttendanceStatus(student, sessionNum)}
 																{@const record = student.attendance?.find(a => a.session_number === sessionNum)}
 
-																<div class="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-blue-100">
-																	<div class="flex items-center gap-3">
-																		<div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white text-sm" style="background-color: var(--course-accent-dark);">
+																<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-white rounded-lg border border-blue-100">
+																	<div class="flex items-center gap-2 sm:gap-3">
+																		<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-white text-xs sm:text-sm flex-shrink-0" style="background-color: var(--course-accent-dark);">
 																			{getUserInitials(student.full_name)}
 																		</div>
-																		<div>
-																			<div class="font-semibold text-gray-800">{student.full_name}</div>
+																		<div class="min-w-0">
+																			<div class="font-semibold text-sm sm:text-base text-gray-800 truncate">{student.full_name}</div>
 																			<div class="text-xs text-gray-600">
 																				{#if record}
 																					Marked by coordinator
@@ -390,13 +392,13 @@
 																		</div>
 																	</div>
 
-																	<div class="flex items-center gap-3">
+																	<div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
 																		{#if status !== undefined}
-																			<span class="px-3 py-1 rounded-full text-sm font-medium" class:bg-green-100={status} class:text-green-700={status} class:bg-red-100={!status} class:text-red-700={!status}>
-																				{status ? '✓ Present' : '✗ Absent'}
+																			<span class="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium" class:bg-green-100={status} class:text-green-700={status} class:bg-red-100={!status} class:text-red-700={!status}>
+																				{status ? 'Present' : 'Absent'}
 																			</span>
 																		{:else}
-																			<span class="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-sm font-medium">
+																			<span class="px-2 sm:px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs sm:text-sm font-medium">
 																				Not marked
 																			</span>
 																		{/if}
@@ -411,20 +413,20 @@
 																						studentName: student.full_name
 																					};
 																				}}
-																				class="px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
 																			>
 																				Override
 																			</button>
 																		{:else}
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, true)}
-																				class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
 																			>
 																				Mark Present
 																			</button>
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, false)}
-																				class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
 																			>
 																				Mark Absent
 																			</button>
@@ -441,9 +443,9 @@
 
 									<!-- Empty State -->
 									{#if (!attendanceData.nonHubStudents || attendanceData.nonHubStudents.length === 0) && (!attendanceData.hubStudents || attendanceData.hubStudents.length === 0)}
-										<div class="p-12 text-center">
-											<Users size="48" class="mx-auto mb-4 text-gray-400" />
-											<p class="text-gray-600">No students enrolled in this cohort</p>
+										<div class="p-8 sm:p-12 text-center">
+											<Users size="48" class="mx-auto mb-4 text-gray-400 w-10 h-10 sm:w-12 sm:h-12" />
+											<p class="text-gray-600 text-sm sm:text-base">No students enrolled in this cohort</p>
 										</div>
 									{/if}
 								</div>
@@ -453,10 +455,10 @@
 				</div>
 			{:else}
 				<!-- Empty State -->
-				<div class="bg-white rounded-2xl p-12 shadow-sm text-center">
-					<Calendar size="64" class="mx-auto mb-4 text-gray-400" />
-					<h3 class="text-xl font-bold text-gray-600 mb-2">Select a cohort to begin</h3>
-					<p class="text-gray-500">Choose a cohort from the dropdown above to view and mark attendance</p>
+				<div class="bg-white rounded-xl sm:rounded-2xl p-8 sm:p-12 shadow-sm text-center">
+					<Calendar size="64" class="mx-auto mb-4 text-gray-400 w-12 h-12 sm:w-16 sm:h-16" />
+					<h3 class="text-lg sm:text-xl font-bold text-gray-600 mb-2">Select a cohort to begin</h3>
+					<p class="text-gray-500 text-sm sm:text-base">Choose a cohort from the dropdown above to view and mark attendance</p>
 				</div>
 			{/if}
 		</div>
@@ -466,60 +468,60 @@
 <!-- Override Confirmation Modal -->
 {#if overrideState.show}
 	<div
-		class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+		class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
 		role="presentation"
 		onmousedown={(e) => e.target === e.currentTarget && cancelOverride()}
 	>
 		<div
-			class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4"
+			class="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-lg w-full"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
-			<div class="p-6 border-b border-gray-200">
-				<h3 class="text-xl font-bold text-gray-800">Override Coordinator Marking</h3>
-				<p class="text-sm text-gray-600 mt-1">
+			<div class="p-4 sm:p-6 border-b border-gray-200">
+				<h3 class="text-lg sm:text-xl font-bold text-gray-800">Override Coordinator Marking</h3>
+				<p class="text-xs sm:text-sm text-gray-600 mt-1">
 					You are about to override the attendance marking for <strong>{overrideState.studentName}</strong> in Session {overrideState.sessionNumber}.
 				</p>
 			</div>
 
-			<div class="p-6">
-				<div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-					<div class="flex items-start gap-3">
-						<AlertCircle size="20" class="text-amber-600 mt-0.5" />
-						<div class="text-sm text-amber-800">
+			<div class="p-4 sm:p-6">
+				<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+					<div class="flex items-start gap-2 sm:gap-3">
+						<AlertCircle size="20" class="text-amber-600 mt-0.5 w-5 h-5 flex-shrink-0" />
+						<div class="text-xs sm:text-sm text-amber-800">
 							<p class="font-semibold mb-1">This will override the coordinator's marking</p>
 							<p>This action should only be used to correct errors or handle special circumstances.</p>
 						</div>
 					</div>
 				</div>
 
-				<p class="text-gray-700 font-medium mb-4">Mark this student as:</p>
+				<p class="text-gray-700 font-medium mb-3 sm:mb-4 text-sm sm:text-base">Mark this student as:</p>
 
-				<div class="flex gap-3">
+				<div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
 					<button
 						onclick={() => handleOverrideConfirm(true)}
-						class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+						class="flex-1 px-4 sm:px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
 					>
-						<CheckCircle size="20" />
+						<CheckCircle size="20" class="w-5 h-5" />
 						Present
 					</button>
 					<button
 						onclick={() => handleOverrideConfirm(false)}
-						class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+						class="flex-1 px-4 sm:px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
 					>
-						<XCircle size="20" />
+						<XCircle size="20" class="w-5 h-5" />
 						Absent
 					</button>
 				</div>
 			</div>
 
-			<div class="p-6 pt-0">
+			<div class="p-4 sm:p-6 pt-0">
 				<button
 					onclick={cancelOverride}
-					class="w-full px-6 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors"
+					class="w-full px-4 sm:px-6 py-2.5 sm:py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors text-sm sm:text-base"
 				>
 					Cancel
 				</button>

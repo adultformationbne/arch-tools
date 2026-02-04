@@ -107,20 +107,20 @@
 	}
 </script>
 
-<div class="px-16 py-8">
+<div class="p-3 sm:p-4 lg:p-6">
 	<!-- Header -->
-	<div class="flex items-center justify-between mb-8">
+	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
 		<div>
-			<h1 class="text-3xl font-bold text-white">
+			<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
 				{course?.name || 'Course'} Modules
 			</h1>
-			<p class="text-white/80 mt-2">
+			<p class="text-white/80 mt-1 sm:mt-2 text-sm sm:text-base">
 				Manage course modules, sessions, and curriculum structure
 			</p>
 		</div>
 		<button
 			onclick={handleCreateModule}
-			class="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors"
+			class="flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold transition-colors"
 			style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 		>
 			<Plus size={20} />
@@ -130,15 +130,15 @@
 
 	<!-- Modules Grid -->
 	{#if modules.length === 0}
-		<div class="text-center py-16">
-			<BookOpen size={48} class="mx-auto mb-4" style="color: var(--course-accent-light);" />
-			<h3 class="text-xl font-semibold mb-2 text-white">
+		<div class="text-center py-10 sm:py-16 px-4">
+			<BookOpen size={40} class="mx-auto mb-3 sm:mb-4 sm:w-12 sm:h-12" style="color: var(--course-accent-light);" />
+			<h3 class="text-lg sm:text-xl font-semibold mb-2 text-white">
 				No modules yet
 			</h3>
-			<p class="text-white/80 mb-6">Create your first module to organise course content</p>
+			<p class="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">Create your first module to organise course content</p>
 			<button
 				onclick={handleCreateModule}
-				class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold"
+				class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold"
 				style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 			>
 				<Plus size={20} />
@@ -146,32 +146,32 @@
 			</button>
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200" class:opacity-60={isLoading && modules.length > 0} class:pointer-events-none={isLoading && modules.length > 0}>
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 transition-opacity duration-200" class:opacity-60={isLoading && modules.length > 0} class:pointer-events-none={isLoading && modules.length > 0}>
 			{#if isLoading && modules.length === 0}
 				<!-- Show skeleton loaders during initial load -->
 				<SkeletonLoader type="card" count={3} height="200px" />
 			{:else}
 				{#each modules as module}
 				<div
-					class="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow"
+					class="bg-white border rounded-lg p-4 sm:p-5 lg:p-6 hover:shadow-lg transition-shadow"
 					style="border-color: var(--course-surface);"
 				>
 					<!-- Module Header -->
-					<div class="flex items-start justify-between mb-4">
-						<div class="flex-1">
-							<div class="text-sm font-semibold mb-1" style="color: var(--course-accent-light);">
+					<div class="flex items-start justify-between mb-3 sm:mb-4">
+						<div class="flex-1 min-w-0 pr-2">
+							<div class="text-xs sm:text-sm font-semibold mb-1" style="color: var(--course-accent-light);">
 								Module {module.order_number}
 							</div>
-							<h3 class="text-xl font-bold" style="color: var(--course-accent-dark);">
+							<h3 class="text-lg sm:text-xl font-bold truncate" style="color: var(--course-accent-dark);">
 								{module.name}
 							</h3>
 						</div>
 
 						<!-- Dropdown Menu -->
-						<div class="relative">
+						<div class="relative flex-shrink-0">
 							<button
 								onclick={() => toggleDropdown(module.id)}
-								class="p-2 hover:bg-gray-100 rounded transition-colors"
+								class="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded transition-colors"
 								title="Module options"
 							>
 								<MoreVertical size={18} style="color: var(--course-accent-dark);" />
@@ -181,14 +181,14 @@
 								<div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
 									<button
 										onclick={() => handleEditModule(module)}
-										class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+										class="w-full text-left px-4 py-3 sm:py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
 									>
 										<Edit size={16} />
 										Edit Module
 									</button>
 									<a
 										href="/admin/courses/{course?.slug}/sessions?module={module.id}"
-										class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 block"
+										class="w-full text-left px-4 py-3 sm:py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 block"
 										onclick={() => openDropdown = null}
 									>
 										<BookOpen size={16} />
@@ -196,7 +196,7 @@
 									</a>
 									<button
 										onclick={() => confirmDeleteModule(module)}
-										class="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-gray-100"
+										class="w-full text-left px-4 py-3 sm:py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-gray-100"
 									>
 										<Trash2 size={16} />
 										Delete Module
@@ -208,18 +208,18 @@
 
 					<!-- Description -->
 					{#if module.description}
-						<p class="text-sm text-gray-600 mb-4 line-clamp-2">
+						<p class="text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
 							{module.description}
 						</p>
 					{/if}
 
 					<!-- Stats -->
-					<div class="grid grid-cols-2 gap-4 pt-4 border-t" style="border-color: var(--course-surface);">
+					<div class="grid grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t" style="border-color: var(--course-surface);">
 						<div class="text-center">
 							<div class="flex items-center justify-center mb-1">
 								<BookOpen size={16} style="color: var(--course-accent-light);" />
 							</div>
-							<div class="text-2xl font-bold" style="color: var(--course-accent-dark);">
+							<div class="text-xl sm:text-2xl font-bold" style="color: var(--course-accent-dark);">
 								{module.sessionCount || 0}
 							</div>
 							<div class="text-xs text-gray-500">Sessions</div>
@@ -228,7 +228,7 @@
 							<div class="flex items-center justify-center mb-1">
 								<Calendar size={16} style="color: var(--course-accent-light);" />
 							</div>
-							<div class="text-2xl font-bold" style="color: var(--course-accent-dark);">
+							<div class="text-xl sm:text-2xl font-bold" style="color: var(--course-accent-dark);">
 								{module.cohorts?.length || 0}
 							</div>
 							<div class="text-xs text-gray-500">Cohorts</div>
@@ -239,11 +239,11 @@
 					{#if module.cohorts && module.cohorts.length > 0}
 						{@const activeCohorts = module.cohorts.filter(isActiveCohort)}
 						{#if activeCohorts.length > 0}
-						<div class="mt-4 pt-4 border-t" style="border-color: var(--course-surface);">
+						<div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t" style="border-color: var(--course-surface);">
 							<div class="text-xs font-semibold text-gray-500 mb-2">Active Cohorts:</div>
 							<div class="space-y-1">
 								{#each activeCohorts.slice(0, 2) as cohort}
-									<div class="text-sm text-gray-700">{cohort.name}</div>
+									<div class="text-sm text-gray-700 truncate">{cohort.name}</div>
 								{/each}
 								{#if activeCohorts.length > 2}
 									<div class="text-xs text-gray-500">

@@ -62,9 +62,9 @@
 	}
 </script>
 
-<div class="flex h-screen" style="background-color: var(--course-accent-dark);">
-	<!-- Left Sidebar -->
-	<div class="w-64 border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
+<div class="flex flex-col lg:flex-row min-h-screen" style="background-color: var(--course-accent-dark);">
+	<!-- Left Sidebar - collapsible on mobile -->
+	<div class="w-full lg:w-64 border-b lg:border-b-0 lg:border-r flex-shrink-0" style="border-color: rgba(255,255,255,0.1);">
 		<EmailTreeSidebar
 			systemTemplates={data.systemTemplates || []}
 			customTemplates={data.customTemplates || []}
@@ -74,7 +74,7 @@
 	</div>
 
 	<!-- Main Content Area -->
-	<div class="flex-1 overflow-y-auto">
+	<div class="flex-1 overflow-y-auto min-w-0">
 		{#if selectedView === 'send'}
 			<!-- Send Email View -->
 			<SendEmailView
@@ -90,47 +90,95 @@
 
 		{:else if selectedView === 'logs'}
 			<!-- Email Logs View -->
-			<div class="p-8">
-				<h1 class="text-3xl font-bold text-white mb-2">Email Logs</h1>
-				<p class="text-white/70 mb-8">View history of all sent emails for this course</p>
+			<div class="p-3 sm:p-4 lg:p-6">
+				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Email Logs</h1>
+				<p class="text-white/70 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base">View history of all sent emails for this course</p>
 
 				<div class="bg-white rounded-lg overflow-hidden">
 					{#if (data.emailLogs || []).length === 0}
-						<div class="p-12 text-center">
+						<div class="p-6 sm:p-8 lg:p-12 text-center">
 							<p class="text-gray-500">No emails sent yet</p>
 							<p class="text-sm text-gray-400 mt-2">Emails sent to students will appear here</p>
 						</div>
 					{:else}
-						<div class="overflow-x-auto">
+						<!-- Mobile card view -->
+						<div class="block sm:hidden divide-y divide-gray-200">
+							{#each data.emailLogs || [] as log}
+								<div class="p-4 space-y-3">
+									<div class="flex items-start justify-between gap-2">
+										<div class="flex-1 min-w-0">
+											<p class="text-sm font-medium text-gray-900 truncate">{log.subject}</p>
+											<p class="text-xs text-gray-500 mt-1 truncate">{log.recipient_email}</p>
+										</div>
+										<div class="flex-shrink-0">
+											{#if log.status === 'sent'}
+												<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+													Sent
+												</span>
+											{:else if log.status === 'failed'}
+												<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+													Failed
+												</span>
+											{:else if log.status === 'pending'}
+												<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+													Pending
+												</span>
+											{:else}
+												<span class="text-gray-400 italic text-xs">{log.status || 'Unknown'}</span>
+											{/if}
+										</div>
+									</div>
+									<div class="flex items-center justify-between text-xs text-gray-500">
+										<span>
+											{new Date(log.sent_at).toLocaleString('en-US', {
+												month: 'short',
+												day: 'numeric',
+												year: 'numeric',
+												hour: 'numeric',
+												minute: '2-digit'
+											})}
+										</span>
+										{#if log.email_templates?.name}
+											<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+												{log.email_templates.name}
+											</span>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						</div>
+
+						<!-- Desktop table view -->
+						<div class="hidden sm:block overflow-x-auto">
 							<table class="w-full">
 								<thead>
 									<tr class="border-b border-gray-200">
 										<th
-											class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
+											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
 											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 										>
 											Date & Time
 										</th>
 										<th
-											class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
+											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
 											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 										>
 											Recipient
 										</th>
 										<th
-											class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
+											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell"
 											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 										>
 											Subject
 										</th>
 										<th
-											class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
+											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
 											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 										>
 											Template
 										</th>
 										<th
-											class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider"
+											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
 											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 										>
 											Status
@@ -140,7 +188,7 @@
 								<tbody class="divide-y divide-gray-200">
 									{#each data.emailLogs || [] as log}
 										<tr class="hover:bg-gray-50 transition-colors">
-											<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+											<td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
 												{new Date(log.sent_at).toLocaleString('en-US', {
 													month: 'short',
 													day: 'numeric',
@@ -149,15 +197,17 @@
 													minute: '2-digit'
 												})}
 											</td>
-											<td class="px-6 py-4 text-sm text-gray-900">
-												{log.recipient_email}
+											<td class="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900">
+												<div class="max-w-[150px] sm:max-w-[200px] truncate">
+													{log.recipient_email}
+												</div>
 											</td>
-											<td class="px-6 py-4 text-sm text-gray-900">
-												<div class="max-w-md truncate" title={log.subject}>
+											<td class="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 hidden md:table-cell">
+												<div class="max-w-[200px] lg:max-w-md truncate" title={log.subject}>
 													{log.subject}
 												</div>
 											</td>
-											<td class="px-6 py-4 whitespace-nowrap text-sm">
+											<td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm hidden lg:table-cell">
 												{#if log.email_templates?.name}
 													<span
 														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -168,7 +218,7 @@
 													<span class="text-gray-400 italic">No template</span>
 												{/if}
 											</td>
-											<td class="px-6 py-4 whitespace-nowrap text-sm">
+											<td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
 												{#if log.status === 'sent'}
 													<span
 														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
@@ -199,8 +249,8 @@
 						</div>
 
 						<!-- Pagination info -->
-						<div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-							<p class="text-sm text-gray-600">
+						<div class="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
+							<p class="text-xs sm:text-sm text-gray-600">
 								Showing {(data.emailLogs || []).length} most recent email{(data.emailLogs || []).length === 1 ? '' : 's'}
 							</p>
 						</div>
@@ -210,11 +260,11 @@
 
 		{:else if selectedView === 'new'}
 			<!-- Create New Template View -->
-			<div class="p-8">
-				<h1 class="text-3xl font-bold text-white mb-2">Create Template</h1>
-				<p class="text-white/70 mb-8">Create a new custom email template</p>
+			<div class="p-3 sm:p-4 lg:p-6">
+				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Create Template</h1>
+				<p class="text-white/70 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base">Create a new custom email template</p>
 
-				<div class="bg-white rounded-lg p-8">
+				<div class="bg-white rounded-lg p-3 sm:p-4 lg:p-6">
 					<EmailTemplateEditor
 						context="course"
 						courseId={data.course.id}
@@ -236,14 +286,14 @@
 
 		{:else if selectedTemplate}
 			<!-- Template Editor (Immediate Edit) -->
-			<div class="p-8">
-				<div class="flex items-center justify-between mb-6">
-					<div>
-						<div class="flex items-center gap-2 mb-2">
-							<h1 class="text-3xl font-bold text-white">{selectedTemplate.name}</h1>
+			<div class="p-3 sm:p-4 lg:p-6">
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+					<div class="min-w-0 flex-1">
+						<div class="flex flex-wrap items-center gap-2 mb-2">
+							<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">{selectedTemplate.name}</h1>
 							{#if selectedTemplate.category === 'system'}
 								<span
-									class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+									class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium flex-shrink-0"
 									style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
 								>
 									System
@@ -251,24 +301,24 @@
 							{/if}
 						</div>
 						{#if selectedTemplate.description}
-							<p class="text-white/70">{selectedTemplate.description}</p>
+							<p class="text-white/70 text-sm sm:text-base">{selectedTemplate.description}</p>
 						{/if}
 					</div>
-					<div class="flex gap-2">
+					<div class="flex gap-2 flex-shrink-0">
 						{#if selectedTemplate.category === 'custom'}
 							<button
 								onclick={() => handleDeleteClick(selectedTemplate)}
-								class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border border-red-300 text-red-600 bg-white hover:bg-red-50"
+								class="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-lg font-medium transition-colors border border-red-300 text-red-600 bg-white hover:bg-red-50 w-full sm:w-auto"
 							>
 								<Trash2 size={16} />
-								Delete
+								<span>Delete</span>
 							</button>
 						{/if}
 					</div>
 				</div>
 
 				<!-- Simplified Editor (always in edit mode) -->
-				<div class="bg-white rounded-lg p-8">
+				<div class="bg-white rounded-lg p-3 sm:p-4 lg:p-6">
 					<EmailTemplateEditor
 						template={selectedTemplate}
 						context="course"
@@ -291,8 +341,8 @@
 
 		{:else}
 			<!-- Fallback -->
-			<div class="p-8">
-				<div class="bg-white rounded-lg p-12 text-center">
+			<div class="p-3 sm:p-4 lg:p-6">
+				<div class="bg-white rounded-lg p-6 sm:p-8 lg:p-12 text-center">
 					<p class="text-gray-500">Template not found</p>
 				</div>
 			</div>

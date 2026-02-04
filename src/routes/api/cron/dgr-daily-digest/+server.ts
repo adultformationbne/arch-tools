@@ -15,6 +15,7 @@ interface PublishAttempt {
 	success: boolean;
 	link?: string;
 	error?: string;
+	warning?: string;
 }
 
 export async function GET({ request, url }: RequestEvent) {
@@ -157,12 +158,15 @@ export async function GET({ request, url }: RequestEvent) {
 		const adminEmails = recipients.map((r: any) => r.email).filter(Boolean);
 
 		const newCount = newPendingItems?.length || 0;
-		const publishedCount = publishResults.filter(r => r.success).length;
+		const publishedCount = publishResults.filter(r => r.success && !r.warning).length;
+		const warningCount = publishResults.filter(r => r.success && r.warning).length;
 		const failedCount = publishResults.filter(r => !r.success).length;
 
 		let subject = 'DGR Digest: Daily summary';
 		if (failedCount > 0) {
 			subject = `DGR Digest: ${failedCount} publish failure${failedCount !== 1 ? 's' : ''} - action required`;
+		} else if (warningCount > 0) {
+			subject = `DGR Digest: ${warningCount} published with warnings - gospel text missing`;
 		} else if (publishedCount > 0) {
 			subject = `DGR Digest: ${publishedCount} auto-published`;
 		} else if (newCount > 0) {
@@ -188,10 +192,12 @@ export async function GET({ request, url }: RequestEvent) {
 		const statusMessage = [
 			`Sent to ${adminEmails.length} admin(s)`,
 			publishedCount > 0 ? `${publishedCount} auto-published` : null,
+			warningCount > 0 ? `${warningCount} with warnings` : null,
 			failedCount > 0 ? `${failedCount} failed` : null
 		].filter(Boolean).join(', ');
 
-		await updateTaskStatus(task.id, failedCount > 0 ? 'warning' : 'success', statusMessage);
+		const taskStatus = failedCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'success';
+		await updateTaskStatus(task.id, taskStatus, statusMessage);
 
 		return json({
 			success: true,
@@ -199,6 +205,7 @@ export async function GET({ request, url }: RequestEvent) {
 			recipients: adminEmails.length,
 			stats: {
 				autoPublished: publishedCount,
+				publishedWithWarnings: warningCount,
 				publishFailed: failedCount,
 				newPending: newPendingItems?.length || 0,
 				existingPending: existingPendingItems?.length || 0,
@@ -291,8 +298,10 @@ async function autoPublishApprovedReflections(
 			// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
 			const gospelReference = findGospelReference(entry.readings_data, entry.gospel_reference);
 
-			// Fetch gospel text if available
+			// Track if gospel text fetch fails
 			let gospelFullText = '';
+			let gospelWarning: string | undefined;
+
 			if (gospelReference) {
 				try {
 					const scriptureResponse = await fetch(
@@ -302,11 +311,22 @@ async function autoPublishApprovedReflections(
 						const scriptureData = await scriptureResponse.json();
 						if (scriptureData.success && scriptureData.content) {
 							gospelFullText = cleanGospelText(scriptureData.content);
+							if (!gospelFullText || gospelFullText.trim().length === 0) {
+								gospelWarning = `Gospel text empty after parsing (${gospelReference})`;
+							}
+						} else {
+							gospelWarning = `Scripture API returned no content for ${gospelReference}`;
 						}
+					} else {
+						gospelWarning = `Scripture API error ${scriptureResponse.status} for ${gospelReference}`;
 					}
 				} catch (err) {
+					const errMsg = err instanceof Error ? err.message : 'Unknown error';
+					gospelWarning = `Failed to fetch gospel text: ${errMsg}`;
 					console.warn('Could not fetch gospel text for auto-publish:', err);
 				}
+			} else {
+				gospelWarning = 'No gospel reference found in readings data';
 			}
 
 			// Format author name
@@ -352,7 +372,8 @@ async function autoPublishApprovedReflections(
 					date: entry.date,
 					title: entry.reflection_title,
 					success: true,
-					link: publishResult.link
+					link: publishResult.link,
+					warning: gospelWarning
 				});
 			} else {
 				results.push({
@@ -446,7 +467,8 @@ function buildDigestEmail({
 	`;
 
 	// AUTO-PUBLISH RESULTS (show at top if any)
-	const publishSuccesses = publishResults.filter(r => r.success);
+	const publishSuccesses = publishResults.filter(r => r.success && !r.warning);
+	const publishWarnings = publishResults.filter(r => r.success && r.warning);
 	const publishFailures = publishResults.filter(r => !r.success);
 
 	if (publishSuccesses.length > 0) {
@@ -461,6 +483,27 @@ function buildDigestEmail({
 					<td style="padding: 8px 0; border-bottom: 1px solid #d1fae5;">
 						<strong>${formatDate(item.date)}</strong> - ${item.title}
 						${item.link ? `<br><a href="${item.link}" style="color: #059669; font-size: 12px;">View on website</a>` : ''}
+					</td>
+				</tr>
+			`;
+		}
+		html += `</table></div>`;
+	}
+
+	if (publishWarnings.length > 0) {
+		html += `
+			<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+				<h3 style="color: #92400e; margin: 0 0 12px 0;">Published with Warnings (${publishWarnings.length})</h3>
+				<p style="color: #78350f; font-size: 13px; margin-bottom: 12px;">These reflections were published but are missing gospel text:</p>
+				<table style="width: 100%; border-collapse: collapse;">
+		`;
+		for (const item of publishWarnings) {
+			html += `
+				<tr>
+					<td style="padding: 8px 0; border-bottom: 1px solid #fde68a;">
+						<strong>${formatDate(item.date)}</strong> - ${item.title}
+						${item.link ? `<br><a href="${item.link}" style="color: #d97706; font-size: 12px;">View on website</a>` : ''}
+						<br><span style="color: #b45309; font-size: 11px;">${item.warning}</span>
 					</td>
 				</tr>
 			`;

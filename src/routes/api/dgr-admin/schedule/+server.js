@@ -796,8 +796,12 @@ async function sendToWordPress({ scheduleId, origin }) {
 		// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
 		const gospelReference = findGospelReference(schedule.readings_data, schedule.gospel_reference);
 
+		// Track warnings to return to UI
+		const warnings = [];
+
 		// Fetch gospel text by reference if we have one
 		let gospelFullText = '';
+		let gospelFetchError = null;
 		if (gospelReference) {
 			try {
 				const scriptureResponse = await fetch(
@@ -808,11 +812,30 @@ async function sendToWordPress({ scheduleId, origin }) {
 					if (scriptureData.success && scriptureData.content) {
 						// Use cleanGospelText to properly parse - same as dgr/publish
 						gospelFullText = cleanGospelText(scriptureData.content);
+						if (!gospelFullText || gospelFullText.trim().length === 0) {
+							gospelFetchError = 'Scripture API returned empty content';
+						}
+					} else {
+						gospelFetchError = scriptureData.error || 'Scripture API returned no content';
 					}
+				} else {
+					gospelFetchError = `Scripture API returned ${scriptureResponse.status}`;
 				}
 			} catch (err) {
+				gospelFetchError = err.message;
 				console.warn('Could not fetch gospel text:', err.message);
 			}
+		} else {
+			gospelFetchError = 'No gospel reference found in readings data';
+		}
+
+		// Add warning if gospel text couldn't be fetched
+		if (gospelFetchError) {
+			warnings.push({
+				type: 'gospel_text_missing',
+				message: `Gospel text could not be fetched: ${gospelFetchError}`,
+				details: `The reflection will be published without the full gospel reading. Reference: ${gospelReference || 'none'}`
+			});
 		}
 
 		// Build readings array from individual sources (each = one pill)
@@ -869,7 +892,8 @@ async function sendToWordPress({ scheduleId, origin }) {
 		return json({
 			success: true,
 			schedule: updated,
-			wordpress: publishResult
+			wordpress: publishResult,
+			warnings: warnings.length > 0 ? warnings : undefined
 		});
 	} catch (error) {
 		throw error;
