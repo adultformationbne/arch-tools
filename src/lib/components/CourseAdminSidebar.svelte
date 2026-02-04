@@ -15,7 +15,8 @@ import {
     ChevronDown,
     ChevronUp,
     Mail,
-    Link
+    Link,
+    Tag
 } from '$lib/icons';
 
 let {
@@ -125,6 +126,13 @@ const navItems = $derived([
         href: `/admin/courses/${courseSlug}/enrollment-links`,
         icon: Link,
         description: 'Public sign-up links',
+        visible: canManageCourse
+    },
+    {
+        label: 'Discounts',
+        href: `/admin/courses/${courseSlug}/discounts`,
+        icon: Tag,
+        description: 'Discount codes',
         visible: canManageCourse
     },
     {
