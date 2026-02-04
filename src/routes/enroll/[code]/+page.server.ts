@@ -3,8 +3,9 @@ import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const { code } = params;
+	const paymentCancelled = url.searchParams.get('cancelled') === 'true';
 
 	// Fetch enrollment link with related data
 	const { data: link, error: linkError } = await supabaseAdmin
@@ -195,6 +196,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		pricing,
 		parishes: parishes || [],
 		referralSources,
-		existingUser
+		existingUser,
+		paymentCancelled
 	};
 };

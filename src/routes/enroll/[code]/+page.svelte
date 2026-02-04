@@ -20,6 +20,14 @@
 
 	let isSubmitting = $state(false);
 	let parishSearch = $state('');
+	let showPendingApproval = $state(false);
+
+	// Show warning if payment was cancelled
+	$effect(() => {
+		if (data.paymentCancelled) {
+			toastError('Payment was cancelled. Please try again when ready.');
+		}
+	});
 
 	// Filter parishes based on search
 	let filteredParishes = $derived(() => {
@@ -91,6 +99,10 @@
 			if (result.checkoutUrl) {
 				// Redirect to Stripe Checkout
 				window.location.href = result.checkoutUrl;
+			} else if (result.pendingApproval) {
+				// Show pending approval message
+				showPendingApproval = true;
+				isSubmitting = false;
 			} else if (result.successUrl) {
 				// Free enrollment - go to success page
 				goto(result.successUrl);
@@ -256,11 +268,33 @@
 				</div>
 			</div>
 
-			<!-- Right side - Form -->
+			<!-- Right side - Form or Pending Approval -->
 			<div class="p-8 lg:p-12">
-				<h2 class="mb-6 text-2xl font-bold text-gray-900">Register for this course</h2>
+				{#if showPendingApproval}
+					<!-- Pending Approval Message -->
+					<div class="flex flex-col items-center justify-center py-8 text-center">
+						<div class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+							<svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+							</svg>
+						</div>
+						<h2 class="mb-3 text-2xl font-bold text-gray-900">Request Submitted</h2>
+						<p class="mb-6 max-w-sm text-gray-600">
+							Your enrollment request has been submitted and is awaiting approval. We'll notify you at <strong>{email}</strong> once your request is reviewed.
+						</p>
+						<div class="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
+							<p class="font-medium">What happens next?</p>
+							<ul class="mt-2 list-inside list-disc text-left">
+								<li>A course administrator will review your request</li>
+								<li>You'll receive an email once approved</li>
+								<li>Then you can set up your password and access the course</li>
+							</ul>
+						</div>
+					</div>
+				{:else}
+					<h2 class="mb-6 text-2xl font-bold text-gray-900">Register for this course</h2>
 
-				<form onsubmit={handleSubmit} class="space-y-5">
+					<form onsubmit={handleSubmit} class="space-y-5">
 					<!-- Name fields -->
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
@@ -464,6 +498,7 @@
 						</p>
 					{/if}
 				</form>
+				{/if}
 			</div>
 		</div>
 	</div>
