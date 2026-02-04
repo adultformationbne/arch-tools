@@ -275,6 +275,7 @@
 	});
 
 	// Custom extension to handle exiting lists on Enter when list item is empty
+	// Also handles Backspace at start of empty list item
 	const ListExitExtension = Extension.create({
 		name: 'listExit',
 
@@ -284,25 +285,67 @@
 					// Check if we're in a list item
 					const { state } = editor;
 					const { empty } = state.selection;
-					const fromPos = state.selection.$from;
+					const selFrom = state.selection.$from;
 
 					if (!empty) return false;
 
 					// Find if we're in a listItem
 					const listItemType = state.schema.nodes.listItem;
-
 					if (!listItemType) return false;
 
 					// Check if current node is a list item and is empty
-					for (let d = fromPos.depth; d > 0; d--) {
-						const node = fromPos.node(d);
+					for (let d = selFrom.depth; d > 0; d--) {
+						const node = selFrom.node(d);
 						if (node.type === listItemType) {
-							// Check if the list item is empty (only contains empty paragraph or is empty)
-							const isEmpty = node.content.size === 0 ||
-								(node.content.size === 2 && node.firstChild?.type.name === 'paragraph' && node.firstChild.content.size === 0);
+							// More robust empty check:
+							// - List item has no content OR
+							// - List item has only one child that is an empty paragraph
+							// - Also check if the text content is empty (handles various edge cases)
+							const textContent = node.textContent;
+							const isEffectivelyEmpty = textContent.trim().length === 0;
 
-							if (isEmpty) {
-								// Lift out of the list
+							if (isEffectivelyEmpty) {
+								// Check if we're in a nested list - if so, lift one level
+								const parentList = selFrom.node(d - 1);
+								const grandparent = d > 1 ? selFrom.node(d - 2) : null;
+
+								if (grandparent && grandparent.type === listItemType) {
+									// We're in a nested list, just lift one level
+									return editor.commands.liftListItem('listItem');
+								}
+
+								// We're at top level of list, exit completely
+								return editor.commands.liftListItem('listItem');
+							}
+							break;
+						}
+					}
+
+					return false;
+				},
+				Backspace: ({ editor }) => {
+					// Also handle Backspace at start of empty list item
+					const { state } = editor;
+					const { empty } = state.selection;
+					const selFrom = state.selection.$from;
+
+					if (!empty) return false;
+
+					// Only handle if cursor is at start of the block
+					const isAtStart = selFrom.parentOffset === 0;
+					if (!isAtStart) return false;
+
+					// Find if we're in a listItem
+					const listItemType = state.schema.nodes.listItem;
+					if (!listItemType) return false;
+
+					for (let d = selFrom.depth; d > 0; d--) {
+						const node = selFrom.node(d);
+						if (node.type === listItemType) {
+							const textContent = node.textContent;
+							const isEffectivelyEmpty = textContent.trim().length === 0;
+
+							if (isEffectivelyEmpty) {
 								return editor.commands.liftListItem('listItem');
 							}
 							break;
@@ -455,11 +498,47 @@
 	}
 
 	function toggleBulletList() {
-		editor.chain().focus().toggleBulletList().run();
+		if (!editor) return;
+
+		// Get current selection state before any focus changes
+		const { from, to } = editor.state.selection;
+		const hasSelection = from !== to;
+
+		if (hasSelection) {
+			// If text is selected, we need to ensure the selection is maintained
+			// and wrap the selected blocks in a list
+			editor
+				.chain()
+				.focus()
+				.setTextSelection({ from, to })
+				.toggleBulletList()
+				.run();
+		} else {
+			// No selection, just toggle the current block
+			editor.chain().focus().toggleBulletList().run();
+		}
 	}
 
 	function toggleOrderedList() {
-		editor.chain().focus().toggleOrderedList().run();
+		if (!editor) return;
+
+		// Get current selection state before any focus changes
+		const { from, to } = editor.state.selection;
+		const hasSelection = from !== to;
+
+		if (hasSelection) {
+			// If text is selected, we need to ensure the selection is maintained
+			// and wrap the selected blocks in a list
+			editor
+				.chain()
+				.focus()
+				.setTextSelection({ from, to })
+				.toggleOrderedList()
+				.run();
+		} else {
+			// No selection, just toggle the current block
+			editor.chain().focus().toggleOrderedList().run();
+		}
 	}
 
 	function setHeading(level) {
@@ -756,6 +835,7 @@
 			<!-- Text formatting -->
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={toggleBold}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Bold"
@@ -764,6 +844,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={toggleItalic}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Italic"
@@ -776,6 +857,7 @@
 			<!-- Headings -->
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => setHeading(1)}
 				class="px-3 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-sm font-semibold"
 				title="Heading 1"
@@ -784,6 +866,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => setHeading(2)}
 				class="px-3 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-sm font-semibold"
 				title="Heading 2"
@@ -792,6 +875,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => setHeading(3)}
 				class="px-3 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-sm font-semibold"
 				title="Heading 3"
@@ -804,6 +888,7 @@
 			<!-- Lists -->
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={toggleBulletList}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Bullet List"
@@ -812,6 +897,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={toggleOrderedList}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Numbered List"
@@ -824,6 +910,7 @@
 			<!-- Link (only enabled when text is selected) -->
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={(e) => { if (textIsSelected) toggleLink(e.currentTarget); }}
 				disabled={!textIsSelected}
 				class="p-2 rounded transition-colors {textIsSelected ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
@@ -837,6 +924,7 @@
 			<!-- Button, Image & Divider -->
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={(e) => insertButton(e.currentTarget)}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Insert Button"
@@ -845,6 +933,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={triggerImageUpload}
 				disabled={isUploadingImage}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -858,6 +947,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={insertDivider}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Insert Divider"

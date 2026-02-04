@@ -182,6 +182,7 @@
 		>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleBold().run()}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Bold"
@@ -190,6 +191,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleItalic().run()}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Italic"
@@ -199,6 +201,7 @@
 			<div class="w-full h-px bg-gray-300 my-1"></div>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().setParagraph().run()}
 				class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
 				title="Paragraph"
@@ -207,6 +210,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 1 }).run()}
 				class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
 				title="Heading 1"
@@ -215,6 +219,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 2 }).run()}
 				class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
 				title="Heading 2"
@@ -223,6 +228,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleHeading({ level: 3 }).run()}
 				class="px-2 py-2 hover:bg-gray-200 rounded transition-colors text-gray-700 text-xs font-semibold"
 				title="Heading 3"
@@ -232,6 +238,7 @@
 			<div class="w-full h-px bg-gray-300 my-1"></div>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleBulletList().run()}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Bullet List"
@@ -240,6 +247,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => tiptapEditor?.chain().focus().toggleOrderedList().run()}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Numbered List"
@@ -249,6 +257,7 @@
 			<div class="w-full h-px bg-gray-300 my-1"></div>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={(e) => { if (hasTextSelection) editorComponent?.openLinkModal(e.currentTarget); }}
 				disabled={!hasTextSelection}
 				class="p-2 rounded transition-colors {hasTextSelection ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
@@ -258,6 +267,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={(e) => editorComponent?.openButtonModal(e.currentTarget)}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Insert Button"
@@ -266,6 +276,7 @@
 			</button>
 			<button
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={triggerImageUpload}
 				disabled={isUploadingImage}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -282,6 +293,7 @@
 			<button
 				bind:this={variableButtonEl}
 				type="button"
+				onmousedown={(e) => e.preventDefault()}
 				onclick={() => dropdown?.toggle()}
 				class="p-2 hover:bg-gray-200 rounded transition-colors text-gray-700"
 				title="Insert Variable"
