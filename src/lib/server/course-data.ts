@@ -1364,6 +1364,15 @@ export const CourseMutations = {
 			};
 		}
 
+		// Fetch cohort's current_session so new enrollees start at the right session
+		const { data: cohort } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('current_session')
+			.eq('id', cohortId)
+			.single();
+
+		const cohortCurrentSession = cohort?.current_session || 1;
+
 		// Create enrollment
 		return supabaseAdmin
 			.from('courses_enrollments')
@@ -1373,7 +1382,8 @@ export const CourseMutations = {
 				role: role,
 				email: userProfile.email,
 				full_name: userProfile.full_name,
-				status: 'active'
+				status: 'active',
+				current_session: cohortCurrentSession
 			})
 			.select()
 			.single();
@@ -1429,6 +1439,128 @@ export const CourseMutations = {
 			.eq('id', userId)
 			.select()
 			.single();
+	},
+
+	/**
+	 * Update enrollment email with full auth sync
+	 * This safely updates email across:
+	 * - auth.users (Supabase Auth - the login email)
+	 * - user_profiles (application profile)
+	 * - courses_enrollments (all enrollments for this user)
+	 */
+	async updateEnrollmentEmail(params: {
+		enrollmentId: string;
+		newEmail: string;
+	}): Promise<QueryResult<{ updated: boolean; message: string }>> {
+		const { enrollmentId, newEmail } = params;
+		const email = newEmail.trim().toLowerCase();
+
+		// Validate email format
+		const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!EMAIL_REGEX.test(email)) {
+			return {
+				data: null,
+				error: { message: 'Invalid email format' } as any
+			};
+		}
+
+		// 1. Get the enrollment to find user_profile_id and current email
+		const { data: enrollment, error: fetchError } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id, email, user_profile_id, full_name')
+			.eq('id', enrollmentId)
+			.single();
+
+		if (fetchError || !enrollment) {
+			return {
+				data: null,
+				error: { message: 'Enrollment not found' } as any
+			};
+		}
+
+		// Check if email is actually changing
+		if (enrollment.email.toLowerCase() === email) {
+			return {
+				data: { updated: false, message: 'Email unchanged' },
+				error: null
+			};
+		}
+
+		// 2. Check if user has signed up (has user_profile_id)
+		if (enrollment.user_profile_id) {
+			// User has signed up - need to update auth.users and user_profiles too
+
+			// Check if new email already exists in auth system
+			const { data: { users: allAuthUsers } } = await supabaseAdmin.auth.admin.listUsers();
+			const existingUser = allAuthUsers?.find(
+				u => u.email?.toLowerCase() === email && u.id !== enrollment.user_profile_id
+			);
+
+			if (existingUser) {
+				return {
+					data: null,
+					error: { message: 'This email is already in use by another account' } as any
+				};
+			}
+
+			// Update auth.users email first (most critical)
+			const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+				enrollment.user_profile_id,
+				{ email: email }
+			);
+
+			if (authError) {
+				console.error('Failed to update auth email:', authError);
+				return {
+					data: null,
+					error: { message: `Failed to update login email: ${authError.message}` } as any
+				};
+			}
+
+			// Update user_profiles.email
+			const { error: profileError } = await supabaseAdmin
+				.from('user_profiles')
+				.update({ email: email, updated_at: new Date().toISOString() })
+				.eq('id', enrollment.user_profile_id);
+
+			if (profileError) {
+				console.error('Failed to update profile email:', profileError);
+				// Note: Auth email already updated, but we continue
+			}
+
+			// Update ALL enrollments for this user (keeps data consistent)
+			const { error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.update({ email: email, updated_at: new Date().toISOString() })
+				.eq('user_profile_id', enrollment.user_profile_id);
+
+			if (enrollmentError) {
+				console.error('Failed to update enrollment emails:', enrollmentError);
+			}
+
+			return {
+				data: { updated: true, message: 'Email updated for login and all enrollments' },
+				error: null
+			};
+		} else {
+			// User hasn't signed up yet - just update the enrollment record
+			const { error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.update({ email: email, updated_at: new Date().toISOString() })
+				.eq('id', enrollmentId);
+
+			if (enrollmentError) {
+				return {
+					data: null,
+					error: { message: 'Failed to update enrollment email' } as any
+				};
+			}
+
+			return {
+				data: { updated: true, message: 'Enrollment email updated (user has not signed up yet)' },
+				error: null
+			};
+		}
 	},
 
 	/**
@@ -1706,14 +1838,15 @@ export const CourseMutations = {
 			};
 		}
 
-		// Get course_id from cohort for hub creation
+		// Get course_id and current_session from cohort for hub creation and enrollment
 		const { data: cohort } = await supabaseAdmin
 			.from('courses_cohorts')
-			.select('module_id, courses_modules!inner(course_id)')
+			.select('module_id, current_session, courses_modules!inner(course_id)')
 			.eq('id', cohortId)
 			.single();
 
 		const courseId = cohort?.courses_modules?.course_id;
+		const cohortCurrentSession = cohort?.current_session || 1;
 		if (!courseId) {
 			return {
 				data: null,
@@ -1953,6 +2086,8 @@ export const CourseMutations = {
 				cohort_id: cohortId,
 				imported_by: importedBy,
 				status: isExistingUser ? 'active' : 'pending',
+				// Start new enrollees at the cohort's current session
+				current_session: cohortCurrentSession,
 				// For existing users, they've already "signed up" - set login tracking
 				last_login_at: isExistingUser ? now : null,
 				login_count: isExistingUser ? 1 : 0

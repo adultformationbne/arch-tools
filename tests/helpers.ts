@@ -207,7 +207,18 @@ export const testHelpers = {
 	/**
 	 * Create a test enrollment
 	 */
-	async createEnrollment(userId: string, cohortId: string, data?: Partial<{ role: 'student' | 'coordinator'; status: string }>) {
+	async createEnrollment(userId: string, cohortId: string, data?: Partial<{ role: 'student' | 'coordinator'; status: string; current_session: number }>) {
+		// Fetch cohort's current_session if not explicitly provided
+		let currentSession = data?.current_session;
+		if (currentSession === undefined) {
+			const { data: cohort } = await supabaseAdmin
+				.from('courses_cohorts')
+				.select('current_session')
+				.eq('id', cohortId)
+				.single();
+			currentSession = cohort?.current_session || 1;
+		}
+
 		const { data: enrollment, error } = await supabaseAdmin
 			.from('courses_enrollments')
 			.insert({
@@ -216,7 +227,8 @@ export const testHelpers = {
 				role: data?.role || 'student',
 				email: 'test@example.com',
 				full_name: 'Test User',
-				status: data?.status || 'active'
+				status: data?.status || 'active',
+				current_session: currentSession
 			})
 			.select()
 			.single();
