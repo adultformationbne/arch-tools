@@ -103,8 +103,8 @@
 	}
 
 	// Course branding
-	const courseBranding = data.course.settings?.branding || {};
-	const accentColor = courseBranding.accentColor || '#1e40af';
+	let courseBranding = $derived(data.course.settings?.branding || {});
+	let accentColor = $derived(courseBranding.accentColor || '#1e40af');
 </script>
 
 <svelte:head>

@@ -47,6 +47,7 @@
     "prettier": "^3.6.2",
     "resend": "^6.1.1",
     "sharp": "^0.34.5",
+    "stripe": "^20.3.0",
     "svelte-dnd-action": "^0.9.67",
     "tailwind-merge": "^3.3.1"
   },

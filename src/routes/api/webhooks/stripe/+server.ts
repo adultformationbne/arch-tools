@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { constructWebhookEvent, getCheckoutSession } from '$lib/server/stripe';
 import { supabaseAdmin } from '$lib/server/supabase';
 import type Stripe from 'stripe';
@@ -16,7 +16,10 @@ export const POST: RequestHandler = async ({ request }) => {
 	// Verify webhook signature
 	let event: Stripe.Event;
 	try {
-		event = constructWebhookEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+		if (!env.STRIPE_WEBHOOK_SECRET) {
+			throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+		}
+		event = constructWebhookEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
 	} catch (error) {
 		console.error('Stripe webhook signature verification failed:', error);
 		return json({ error: 'Invalid signature' }, { status: 401 });

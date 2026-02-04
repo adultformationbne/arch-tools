@@ -1,10 +1,20 @@
 import Stripe from 'stripe';
-import { STRIPE_SECRET_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
-// Server-side Stripe client
-export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-	apiVersion: '2024-12-18.acacia'
-});
+// Server-side Stripe client (lazy initialization)
+let _stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+	if (!_stripe) {
+		if (!env.STRIPE_SECRET_KEY) {
+			throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+		}
+		_stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+			apiVersion: '2024-12-18.acacia'
+		});
+	}
+	return _stripe;
+}
 
 /**
  * Create a Stripe customer with metadata
@@ -14,7 +24,7 @@ export async function createStripeCustomer(params: {
 	name?: string;
 	metadata?: Record<string, string>;
 }) {
-	return stripe.customers.create({
+	return getStripe().customers.create({
 		email: params.email,
 		name: params.name,
 		metadata: params.metadata
@@ -75,14 +85,14 @@ export async function createCheckoutSession(params: {
 		sessionParams.allow_promotion_codes = true;
 	}
 
-	return stripe.checkout.sessions.create(sessionParams);
+	return getStripe().checkout.sessions.create(sessionParams);
 }
 
 /**
  * Retrieve a Checkout Session by ID
  */
 export async function getCheckoutSession(sessionId: string) {
-	return stripe.checkout.sessions.retrieve(sessionId, {
+	return getStripe().checkout.sessions.retrieve(sessionId, {
 		expand: ['customer', 'payment_intent', 'total_details.breakdown']
 	});
 }
@@ -91,7 +101,7 @@ export async function getCheckoutSession(sessionId: string) {
  * Create a Stripe Customer Portal session
  */
 export async function createPortalSession(customerId: string, returnUrl: string) {
-	return stripe.billingPortal.sessions.create({
+	return getStripe().billingPortal.sessions.create({
 		customer: customerId,
 		return_url: returnUrl
 	});
@@ -106,7 +116,7 @@ export async function createStripeCoupon(params: {
 	currency?: string;
 	name: string;
 }) {
-	return stripe.coupons.create({
+	return getStripe().coupons.create({
 		percent_off: params.discountType === 'percentage' ? params.discountValue : undefined,
 		amount_off: params.discountType === 'fixed' ? params.discountValue : undefined,
 		currency: params.discountType === 'fixed' ? params.currency?.toLowerCase() : undefined,
@@ -124,7 +134,7 @@ export async function createStripePromotionCode(params: {
 	maxRedemptions?: number;
 	expiresAt?: Date;
 }) {
-	return stripe.promotionCodes.create({
+	return getStripe().promotionCodes.create({
 		coupon: params.couponId,
 		code: params.code.toUpperCase(),
 		max_redemptions: params.maxRedemptions,
@@ -136,7 +146,7 @@ export async function createStripePromotionCode(params: {
  * Deactivate a promotion code
  */
 export async function deactivatePromotionCode(promotionCodeId: string) {
-	return stripe.promotionCodes.update(promotionCodeId, {
+	return getStripe().promotionCodes.update(promotionCodeId, {
 		active: false
 	});
 }
@@ -149,5 +159,5 @@ export function constructWebhookEvent(
 	signature: string,
 	webhookSecret: string
 ): Stripe.Event {
-	return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+	return getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
 }

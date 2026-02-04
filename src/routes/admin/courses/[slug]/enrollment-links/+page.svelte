@@ -11,8 +11,8 @@
 		Link,
 		ExternalLink,
 		Trash2,
-		ToggleLeft,
-		ToggleRight,
+		Check,
+		X,
 		MapPin,
 		Calendar,
 		Users
@@ -287,13 +287,15 @@
 						<div class="flex items-center gap-2">
 							<button
 								onclick={() => toggleLinkActive(link.id, link.is_active)}
-								class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+								class="rounded p-2 hover:bg-gray-100"
+								class:text-green-600={link.is_active}
+								class:text-gray-400={!link.is_active}
 								title={link.is_active ? 'Deactivate' : 'Activate'}
 							>
 								{#if link.is_active}
-									<ToggleRight class="h-5 w-5 text-green-600" />
+									<Check class="h-5 w-5" />
 								{:else}
-									<ToggleLeft class="h-5 w-5" />
+									<X class="h-5 w-5" />
 								{/if}
 							</button>
 							<button
