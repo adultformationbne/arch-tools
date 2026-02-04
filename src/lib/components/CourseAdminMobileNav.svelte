@@ -16,7 +16,8 @@ import {
 	ChevronUp,
 	Mail,
 	Menu,
-	X
+	X,
+	Link
 } from '$lib/icons';
 
 let {
@@ -118,6 +119,13 @@ const navItems = $derived([
 		href: withCohort(`/admin/courses/${courseSlug}/participants`),
 		icon: Users,
 		description: 'All course participants',
+		visible: canManageCourse
+	},
+	{
+		label: 'Enrollment Links',
+		href: `/admin/courses/${courseSlug}/enrollment-links`,
+		icon: Link,
+		description: 'Public sign-up links',
 		visible: canManageCourse
 	},
 	{
