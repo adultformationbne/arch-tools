@@ -131,126 +131,135 @@
 	<title>Discount Codes | {data.courseInfo.name}</title>
 </svelte:head>
 
-<div class="space-y-6 p-6">
-	<!-- Header -->
-	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Discount Codes</h1>
-			<p class="mt-1 text-sm text-gray-500">
-				Create promotional codes for course enrollments
-			</p>
-		</div>
-		<button
-			onclick={() => (showCreateModal = true)}
-			class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-		>
-			<Plus class="h-4 w-4" />
-			Create Code
-		</button>
-	</div>
-
-	<!-- Codes list -->
-	{#if data.discountCodes.length === 0}
-		<div class="rounded-lg border border-dashed border-gray-300 p-12 text-center">
-			<Tag class="mx-auto h-12 w-12 text-gray-400" />
-			<h3 class="mt-4 text-lg font-medium text-gray-900">No discount codes</h3>
-			<p class="mt-2 text-sm text-gray-500">
-				Create codes to offer discounts on course enrollments.
-			</p>
+<div class="min-h-screen p-3 sm:p-4 lg:p-6" style="background-color: var(--course-accent-dark);">
+	<div class="max-w-4xl mx-auto">
+		<!-- Header -->
+		<div class="mb-4 sm:mb-6 lg:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Discount Codes</h1>
+				<p class="text-sm sm:text-base text-white/70">
+					Create promotional codes for course enrollments
+				</p>
+			</div>
 			<button
 				onclick={() => (showCreateModal = true)}
-				class="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+				class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white hover:opacity-90 min-h-[44px]"
+				style="background-color: var(--course-accent-light);"
 			>
 				<Plus class="h-4 w-4" />
 				Create Code
 			</button>
 		</div>
-	{:else}
-		<div class="space-y-4">
-			{#each data.discountCodes as discountCode}
-				<div
-					class="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-					class:border-gray-200={discountCode.is_active}
-					class:border-red-200={!discountCode.is_active}
-					class:bg-red-50={!discountCode.is_active}
-				>
-					<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-						<!-- Code info -->
-						<div class="min-w-0 flex-1">
-							<div class="flex items-center gap-3">
-								<code
-									class="rounded bg-gray-100 px-3 py-1 text-lg font-bold tracking-wider text-gray-900"
-								>
-									{discountCode.code}
-								</code>
-								<span
-									class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium"
-									class:bg-green-100={discountCode.discount_type === 'percentage'}
-									class:text-green-700={discountCode.discount_type === 'percentage'}
-									class:bg-blue-100={discountCode.discount_type === 'fixed'}
-									class:text-blue-700={discountCode.discount_type === 'fixed'}
-								>
-									{formatDiscount(discountCode.discount_type, discountCode.discount_value)}
-								</span>
-								{#if !discountCode.is_active}
-									<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-										Inactive
-									</span>
-								{/if}
-							</div>
 
-							<!-- Stats -->
-							<div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-								<span class="flex items-center gap-1">
-									<Tag class="h-4 w-4" />
-									{getCohortName(discountCode)}
-								</span>
-								<span class="flex items-center gap-1">
-									<Users class="h-4 w-4" />
-									{discountCode.uses_count}{discountCode.max_uses
-										? ` / ${discountCode.max_uses}`
-										: ''} uses
-								</span>
-								{#if discountCode.expires_at}
-									<span class="flex items-center gap-1">
-										<Calendar class="h-4 w-4" />
-										Expires: {formatDate(discountCode.expires_at)}
-									</span>
-								{/if}
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex items-center gap-2">
-							<button
-								onclick={() => toggleCodeActive(discountCode.id, discountCode.is_active)}
-								class="rounded p-2 hover:bg-gray-100"
-								class:text-green-600={discountCode.is_active}
-								class:text-gray-400={!discountCode.is_active}
-								title={discountCode.is_active ? 'Deactivate' : 'Activate'}
-							>
-								{#if discountCode.is_active}
-									<Check class="h-5 w-5" />
-								{:else}
-									<X class="h-5 w-5" />
-								{/if}
-							</button>
-							<button
-								onclick={() => {
-									codeToDelete = discountCode.id;
-									showDeleteConfirm = true;
-								}}
-								class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-								title="Delete"
-							>
-								<Trash2 class="h-5 w-5" />
-							</button>
-						</div>
+		<!-- Content Card -->
+		<div class="bg-white rounded-lg shadow-lg">
+			<div class="p-4 sm:p-5 lg:p-6">
+				{#if data.discountCodes.length === 0}
+					<div class="rounded-lg border border-dashed border-gray-300 p-8 sm:p-12 text-center">
+						<Tag class="mx-auto h-12 w-12 text-gray-400" />
+						<h3 class="mt-4 text-lg font-medium text-gray-900">No discount codes</h3>
+						<p class="mt-2 text-sm text-gray-500">
+							Create codes to offer discounts on course enrollments.
+						</p>
+						<button
+							onclick={() => (showCreateModal = true)}
+							class="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white hover:opacity-90 min-h-[44px]"
+							style="background-color: var(--course-accent-light);"
+						>
+							<Plus class="h-4 w-4" />
+							Create Code
+						</button>
 					</div>
-				</div>
-			{/each}
+				{:else}
+					<div class="space-y-4">
+						{#each data.discountCodes as discountCode}
+							<div
+								class="rounded-lg border p-4 transition-shadow hover:shadow-md"
+								class:border-gray-200={discountCode.is_active}
+								class:bg-white={discountCode.is_active}
+								class:border-red-200={!discountCode.is_active}
+								class:bg-red-50={!discountCode.is_active}
+							>
+								<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+									<!-- Code info -->
+									<div class="min-w-0 flex-1">
+										<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+											<code
+												class="rounded bg-gray-100 px-3 py-1 text-base sm:text-lg font-bold tracking-wider text-gray-900"
+											>
+												{discountCode.code}
+											</code>
+											<span
+												class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium"
+												class:bg-green-100={discountCode.discount_type === 'percentage'}
+												class:text-green-700={discountCode.discount_type === 'percentage'}
+												class:bg-blue-100={discountCode.discount_type === 'fixed'}
+												class:text-blue-700={discountCode.discount_type === 'fixed'}
+											>
+												{formatDiscount(discountCode.discount_type, discountCode.discount_value)}
+											</span>
+											{#if !discountCode.is_active}
+												<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+													Inactive
+												</span>
+											{/if}
+										</div>
+
+										<!-- Stats -->
+										<div class="mt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-500">
+											<span class="flex items-center gap-1">
+												<Tag class="h-4 w-4" />
+												{getCohortName(discountCode)}
+											</span>
+											<span class="flex items-center gap-1">
+												<Users class="h-4 w-4" />
+												{discountCode.uses_count}{discountCode.max_uses
+													? ` / ${discountCode.max_uses}`
+													: ''} uses
+											</span>
+											{#if discountCode.expires_at}
+												<span class="flex items-center gap-1">
+													<Calendar class="h-4 w-4" />
+													Expires: {formatDate(discountCode.expires_at)}
+												</span>
+											{/if}
+										</div>
+									</div>
+
+									<!-- Actions -->
+									<div class="flex items-center gap-2">
+										<button
+											onclick={() => toggleCodeActive(discountCode.id, discountCode.is_active)}
+											class="rounded p-2 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+											class:text-green-600={discountCode.is_active}
+											class:text-gray-400={!discountCode.is_active}
+											title={discountCode.is_active ? 'Deactivate' : 'Activate'}
+										>
+											{#if discountCode.is_active}
+												<Check class="h-5 w-5" />
+											{:else}
+												<X class="h-5 w-5" />
+											{/if}
+										</button>
+										<button
+											onclick={() => {
+												codeToDelete = discountCode.id;
+												showDeleteConfirm = true;
+											}}
+											class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+											title="Delete"
+										>
+											<Trash2 class="h-5 w-5" />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
-	{/if}
+	</div>
 </div>
 
 <!-- Create Modal -->
@@ -403,7 +412,8 @@
 					<button
 						type="submit"
 						disabled={isCreating}
-						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+						class="rounded-lg px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+						style="background-color: var(--course-accent-light);"
 					>
 						{isCreating ? 'Creating...' : 'Create Code'}
 					</button>

@@ -303,27 +303,42 @@ async function autoPublishApprovedReflections(
 			let gospelWarning: string | undefined;
 
 			if (gospelReference) {
-				try {
-					const scriptureResponse = await fetch(
-						`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
-					);
-					if (scriptureResponse.ok) {
-						const scriptureData = await scriptureResponse.json();
-						if (scriptureData.success && scriptureData.content) {
-							gospelFullText = cleanGospelText(scriptureData.content);
-							if (!gospelFullText || gospelFullText.trim().length === 0) {
-								gospelWarning = `Gospel text empty after parsing (${gospelReference})`;
+				// Retry logic: try up to 3 times with delay between attempts
+				const maxRetries = 3;
+				const retryDelayMs = 1000;
+
+				for (let attempt = 1; attempt <= maxRetries; attempt++) {
+					try {
+						const scriptureResponse = await fetch(
+							`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
+						);
+						if (scriptureResponse.ok) {
+							const scriptureData = await scriptureResponse.json();
+							if (scriptureData.success && scriptureData.content) {
+								gospelFullText = cleanGospelText(scriptureData.content);
+								if (!gospelFullText || gospelFullText.trim().length === 0) {
+									gospelWarning = `Gospel text empty after parsing (${gospelReference})`;
+								} else {
+									// Success - clear any warning and break out of retry loop
+									gospelWarning = undefined;
+								}
+								break; // Success, exit retry loop
+							} else {
+								gospelWarning = `Scripture API returned no content for ${gospelReference}`;
 							}
 						} else {
-							gospelWarning = `Scripture API returned no content for ${gospelReference}`;
+							gospelWarning = `Scripture API error ${scriptureResponse.status} for ${gospelReference} (attempt ${attempt}/${maxRetries})`;
 						}
-					} else {
-						gospelWarning = `Scripture API error ${scriptureResponse.status} for ${gospelReference}`;
+					} catch (err) {
+						const errMsg = err instanceof Error ? err.message : 'Unknown error';
+						gospelWarning = `Failed to fetch gospel text: ${errMsg} (attempt ${attempt}/${maxRetries})`;
+						console.warn(`Could not fetch gospel text for auto-publish (attempt ${attempt}):`, err);
 					}
-				} catch (err) {
-					const errMsg = err instanceof Error ? err.message : 'Unknown error';
-					gospelWarning = `Failed to fetch gospel text: ${errMsg}`;
-					console.warn('Could not fetch gospel text for auto-publish:', err);
+
+					// If not the last attempt and we didn't succeed, wait before retrying
+					if (attempt < maxRetries && gospelWarning) {
+						await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+					}
 				}
 			} else {
 				gospelWarning = 'No gospel reference found in readings data';

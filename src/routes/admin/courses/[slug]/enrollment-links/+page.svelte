@@ -150,170 +150,185 @@
 	<title>Enrollment Links | {data.courseInfo.name}</title>
 </svelte:head>
 
-<div class="space-y-6 p-6">
-	<!-- Header -->
-	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Enrollment Links</h1>
-			<p class="mt-1 text-sm text-gray-500">
-				Create and manage public sign-up links for your courses
-			</p>
-		</div>
-		<button
-			onclick={() => (showCreateModal = true)}
-			class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-		>
-			<Plus class="h-4 w-4" />
-			Create Link
-		</button>
-	</div>
-
-	<!-- Filters -->
-	{#if data.cohorts.length > 1}
-		<div class="flex items-center gap-4">
-			<label class="text-sm font-medium text-gray-700">Filter by cohort:</label>
-			<select
-				bind:value={filterCohortId}
-				class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-			>
-				<option value="">All cohorts</option>
-				{#each data.cohorts as cohort}
-					<option value={cohort.id}>{cohort.module.name} - {cohort.name}</option>
-				{/each}
-			</select>
-		</div>
-	{/if}
-
-	<!-- Links list -->
-	{#if filteredLinks.length === 0}
-		<div class="rounded-lg border border-dashed border-gray-300 p-12 text-center">
-			<Link class="mx-auto h-12 w-12 text-gray-400" />
-			<h3 class="mt-4 text-lg font-medium text-gray-900">No enrollment links</h3>
-			<p class="mt-2 text-sm text-gray-500">
-				Create a link to allow people to self-enroll in your courses.
-			</p>
+<div class="min-h-screen p-3 sm:p-4 lg:p-6" style="background-color: var(--course-accent-dark);">
+	<div class="max-w-4xl mx-auto">
+		<!-- Header -->
+		<div class="mb-4 sm:mb-6 lg:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Enrollment Links</h1>
+				<p class="text-sm sm:text-base text-white/70">
+					Create and manage public sign-up links for your courses
+				</p>
+			</div>
 			<button
 				onclick={() => (showCreateModal = true)}
-				class="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+				class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white min-h-[44px]"
+				style="background-color: var(--course-accent-light);"
 			>
 				<Plus class="h-4 w-4" />
 				Create Link
 			</button>
 		</div>
-	{:else}
-		<div class="space-y-4">
-			{#each filteredLinks as link}
-				{@const cohort = data.cohorts.find((c) => c.id === link.cohort_id)}
-				<div
-					class="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-					class:border-gray-200={link.is_active}
-					class:border-red-200={!link.is_active}
-					class:bg-red-50={!link.is_active}
-				>
-					<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-						<!-- Link info -->
-						<div class="min-w-0 flex-1">
-							<div class="flex items-center gap-2">
-								<h3 class="font-medium text-gray-900">
-									{link.name || getCohortName(link.cohort_id)}
-								</h3>
-								{#if link.hub}
-									<span
-										class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700"
-									>
-										<MapPin class="h-3 w-3" />
-										{link.hub.name}
-									</span>
-								{/if}
-								{#if !link.is_active}
-									<span
-										class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
-									>
-										Inactive
-									</span>
-								{/if}
-							</div>
 
-							<!-- URL -->
-							<div class="mt-2 flex items-center gap-2">
-								<code class="rounded bg-gray-100 px-2 py-1 text-sm text-gray-700">
-									{getEnrollmentUrl(link.code)}
-								</code>
-								<button
-									onclick={() => copyToClipboard(getEnrollmentUrl(link.code))}
-									class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-									title="Copy link"
-								>
-									<Copy class="h-4 w-4" />
-								</button>
-								<a
-									href={getEnrollmentUrl(link.code)}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-									title="Open link"
-								>
-									<ExternalLink class="h-4 w-4" />
-								</a>
-							</div>
-
-							<!-- Stats -->
-							<div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-								<span class="flex items-center gap-1">
-									<Users class="h-4 w-4" />
-									{link.uses_count}{link.max_uses ? ` / ${link.max_uses}` : ''} uses
-								</span>
-								{#if link.expires_at}
-									<span class="flex items-center gap-1">
-										<Calendar class="h-4 w-4" />
-										Expires: {formatDate(link.expires_at)}
-									</span>
-								{/if}
-								{#if link.price_cents !== null}
-									<span class="font-medium text-green-600">
-										{formatPrice(link.price_cents, cohort?.currency || 'AUD')}
-									</span>
-								{:else if cohort?.is_free}
-									<span class="font-medium text-green-600">Free</span>
-								{:else if cohort?.price_cents}
-									<span class="text-gray-600">
-										{formatPrice(cohort.price_cents, cohort.currency || 'AUD')}
-									</span>
-								{/if}
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex items-center gap-2">
-							<button
-								onclick={() => toggleLinkActive(link.id, link.is_active)}
-								class="rounded p-2 hover:bg-gray-100"
-								class:text-green-600={link.is_active}
-								class:text-gray-400={!link.is_active}
-								title={link.is_active ? 'Deactivate' : 'Activate'}
-							>
-								{#if link.is_active}
-									<Check class="h-5 w-5" />
-								{:else}
-									<X class="h-5 w-5" />
-								{/if}
-							</button>
-							<button
-								onclick={() => {
-									linkToDelete = link.id;
-									showDeleteConfirm = true;
-								}}
-								class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-								title="Delete"
-							>
-								<Trash2 class="h-5 w-5" />
-							</button>
-						</div>
+		<!-- Content Card -->
+		<div class="bg-white rounded-lg shadow-lg">
+			<!-- Filters -->
+			{#if data.cohorts.length > 1}
+				<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+					<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+						<label for="filterCohort" class="text-sm font-medium text-gray-700">Filter by cohort:</label>
+						<select
+							id="filterCohort"
+							bind:value={filterCohortId}
+							class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+						>
+							<option value="">All cohorts</option>
+							{#each data.cohorts as cohort}
+								<option value={cohort.id}>{cohort.module.name} - {cohort.name}</option>
+							{/each}
+						</select>
 					</div>
 				</div>
-			{/each}
+			{/if}
+
+			<!-- Links list -->
+			<div class="p-4 sm:p-5 lg:p-6">
+				{#if filteredLinks.length === 0}
+					<div class="rounded-lg border border-dashed border-gray-300 p-8 sm:p-12 text-center">
+						<Link class="mx-auto h-12 w-12 text-gray-400" />
+						<h3 class="mt-4 text-lg font-medium text-gray-900">No enrollment links</h3>
+						<p class="mt-2 text-sm text-gray-500">
+							Create a link to allow people to self-enroll in your courses.
+						</p>
+						<button
+							onclick={() => (showCreateModal = true)}
+							class="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white min-h-[44px] hover:opacity-90"
+							style="background-color: var(--course-accent-light);"
+						>
+							<Plus class="h-4 w-4" />
+							Create Link
+						</button>
+					</div>
+				{:else}
+					<div class="space-y-4">
+						{#each filteredLinks as link}
+							{@const cohort = data.cohorts.find((c) => c.id === link.cohort_id)}
+							<div
+								class="rounded-lg border p-4 transition-shadow hover:shadow-md"
+								class:border-gray-200={link.is_active}
+								class:bg-white={link.is_active}
+								class:border-red-200={!link.is_active}
+								class:bg-red-50={!link.is_active}
+							>
+								<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+									<!-- Link info -->
+									<div class="min-w-0 flex-1">
+										<div class="flex flex-wrap items-center gap-2">
+											<h3 class="font-medium text-gray-900">
+												{link.name || getCohortName(link.cohort_id)}
+											</h3>
+											{#if link.hub}
+												<span
+													class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700"
+												>
+													<MapPin class="h-3 w-3" />
+													{link.hub.name}
+												</span>
+											{/if}
+											{#if !link.is_active}
+												<span
+													class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+												>
+													Inactive
+												</span>
+											{/if}
+										</div>
+
+										<!-- URL -->
+										<div class="mt-2 flex flex-wrap items-center gap-2">
+											<code class="rounded bg-gray-100 px-2 py-1 text-xs sm:text-sm text-gray-700 break-all">
+												{getEnrollmentUrl(link.code)}
+											</code>
+											<div class="flex items-center gap-1">
+												<button
+													onclick={() => copyToClipboard(getEnrollmentUrl(link.code))}
+													class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+													title="Copy link"
+												>
+													<Copy class="h-4 w-4" />
+												</button>
+												<a
+													href={getEnrollmentUrl(link.code)}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+													title="Open link"
+												>
+													<ExternalLink class="h-4 w-4" />
+												</a>
+											</div>
+										</div>
+
+										<!-- Stats -->
+										<div class="mt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-500">
+											<span class="flex items-center gap-1">
+												<Users class="h-4 w-4" />
+												{link.uses_count}{link.max_uses ? ` / ${link.max_uses}` : ''} uses
+											</span>
+											{#if link.expires_at}
+												<span class="flex items-center gap-1">
+													<Calendar class="h-4 w-4" />
+													Expires: {formatDate(link.expires_at)}
+												</span>
+											{/if}
+											{#if link.price_cents !== null}
+												<span class="font-medium text-green-600">
+													{formatPrice(link.price_cents, cohort?.currency || 'AUD')}
+												</span>
+											{:else if cohort?.is_free}
+												<span class="font-medium text-green-600">Free</span>
+											{:else if cohort?.price_cents}
+												<span class="text-gray-600">
+													{formatPrice(cohort.price_cents, cohort.currency || 'AUD')}
+												</span>
+											{/if}
+										</div>
+									</div>
+
+									<!-- Actions -->
+									<div class="flex items-center gap-2">
+										<button
+											onclick={() => toggleLinkActive(link.id, link.is_active)}
+											class="rounded p-2 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+											class:text-green-600={link.is_active}
+											class:text-gray-400={!link.is_active}
+											title={link.is_active ? 'Deactivate' : 'Activate'}
+										>
+											{#if link.is_active}
+												<Check class="h-5 w-5" />
+											{:else}
+												<X class="h-5 w-5" />
+											{/if}
+										</button>
+										<button
+											onclick={() => {
+												linkToDelete = link.id;
+												showDeleteConfirm = true;
+											}}
+											class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+											title="Delete"
+										>
+											<Trash2 class="h-5 w-5" />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
-	{/if}
+	</div>
 </div>
 
 <!-- Create Modal -->
@@ -456,7 +471,8 @@
 					<button
 						type="submit"
 						disabled={isCreating || !selectedCohortId}
-						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+						class="rounded-lg px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+						style="background-color: var(--course-accent-light);"
 					>
 						{isCreating ? 'Creating...' : 'Create Link'}
 					</button>

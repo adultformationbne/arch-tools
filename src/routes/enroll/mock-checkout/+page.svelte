@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Lock, AlertTriangle } from '$lib/icons';
+	import EnrollmentProgressStepper from '$lib/components/EnrollmentProgressStepper.svelte';
+	import FullPageLoadingOverlay from '$lib/components/FullPageLoadingOverlay.svelte';
 
 	let { data } = $props();
 
@@ -8,6 +10,7 @@
 	let cardNumber = $state('4242 4242 4242 4242');
 	let expiry = $state('12/28');
 	let cvc = $state('123');
+	let showLoadingOverlay = $state(false);
 
 	function formatPrice(cents: number, currency: string): string {
 		return new Intl.NumberFormat('en-AU', {
@@ -22,6 +25,9 @@
 		// Simulate payment processing delay
 		await new Promise((resolve) => setTimeout(resolve, 1500));
 
+		// Show loading overlay during redirect
+		showLoadingOverlay = true;
+
 		// Redirect to success URL
 		goto(data.successUrl.replace('{CHECKOUT_SESSION_ID}', data.sessionId));
 	}
@@ -35,8 +41,20 @@
 	<title>Mock Checkout - Test Payment</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-100 py-12">
+<!-- Full page loading overlay -->
+<FullPageLoadingOverlay
+	show={showLoadingOverlay}
+	message="Payment successful!"
+	subMessage="Redirecting to complete your registration..."
+/>
+
+<div class="min-h-screen bg-gray-100 py-8 sm:py-12">
 	<div class="mx-auto max-w-lg px-4">
+		<!-- Progress stepper -->
+		<div class="mb-6">
+			<EnrollmentProgressStepper flow="paid" currentStep={2} />
+		</div>
+
 		<!-- Mock mode warning -->
 		<div class="mb-6 flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
 			<AlertTriangle class="h-5 w-5 shrink-0 text-yellow-600" />

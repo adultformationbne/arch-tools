@@ -1143,10 +1143,10 @@ export type Database = {
       }
       dgr_contributors: {
         Row: {
-          access_token: string
+          access_token: string | null
           active: boolean | null
           created_at: string | null
-          email: string
+          email: string | null
           id: string
           is_guest: boolean | null
           last_visited_at: string | null
@@ -1161,10 +1161,10 @@ export type Database = {
           welcome_email_sent_by: string | null
         }
         Insert: {
-          access_token: string
+          access_token?: string | null
           active?: boolean | null
           created_at?: string | null
-          email: string
+          email?: string | null
           id?: string
           is_guest?: boolean | null
           last_visited_at?: string | null
@@ -1179,10 +1179,10 @@ export type Database = {
           welcome_email_sent_by?: string | null
         }
         Update: {
-          access_token?: string
+          access_token?: string | null
           active?: boolean | null
           created_at?: string | null
-          email?: string
+          email?: string | null
           id?: string
           is_guest?: boolean | null
           last_visited_at?: string | null
@@ -2172,6 +2172,10 @@ export type Database = {
       has_module_prefix: {
         Args: { module_prefix: string; user_id: string }
         Returns: boolean
+      }
+      increment_enrollment_link_uses: {
+        Args: { link_id: string }
+        Returns: undefined
       }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }

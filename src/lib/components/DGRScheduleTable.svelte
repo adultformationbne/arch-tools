@@ -211,7 +211,7 @@
 									<select
 										value={entry.contributor_id || ''}
 										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
-										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										class="max-w-[200px] truncate rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
@@ -225,7 +225,7 @@
 									<select
 										value={entry.contributor_id || ''}
 										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
-										class="rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										class="max-w-[200px] truncate rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}
@@ -239,7 +239,7 @@
 									<select
 										value=""
 										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
-										class="rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										class="max-w-[200px] truncate rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
 										{#each contributors as contributor}

@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { Loader2, CheckCircle, Eye, EyeOff } from '$lib/icons';
+	import EnrollmentProgressStepper from '$lib/components/EnrollmentProgressStepper.svelte';
+	import FullPageLoadingOverlay from '$lib/components/FullPageLoadingOverlay.svelte';
 
 	let { data, form } = $props();
 
@@ -11,6 +13,25 @@
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 	let isSubmitting = $state(false);
+	let showLoadingOverlay = $state(false);
+
+	// Determine flow type and current step for progress stepper
+	// Success page is the last step (Password setup)
+	let flowType = $derived(() => {
+		if (data.type === 'paid') return 'paid';
+		// For free enrollments, we're at the final step
+		return 'free_auto';
+	});
+
+	// Current step is the last one (2 for free_auto, 3 for paid)
+	let currentStep = $derived(() => {
+		return data.type === 'paid' ? 3 : 2;
+	});
+
+	// Total steps for display
+	let totalSteps = $derived(() => {
+		return data.type === 'paid' ? 3 : 2;
+	});
 
 	// Password validation
 	let passwordErrors = $derived(() => {
@@ -30,12 +51,14 @@
 	$effect(() => {
 		if (form?.success && form?.redirectUrl) {
 			toastSuccess('Account created! Redirecting to your course...');
+			showLoadingOverlay = true;
 			setTimeout(() => {
 				goto(form.redirectUrl);
 			}, 1500);
 		} else if (form?.error) {
 			toastError(form.error);
 			isSubmitting = false;
+			showLoadingOverlay = false;
 		}
 	});
 </script>
@@ -44,9 +67,21 @@
 	<title>Complete Your Registration | {data.course.name}</title>
 </svelte:head>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-	<div class="w-full max-w-md">
-		<div class="rounded-2xl bg-white p-8 shadow-xl">
+<!-- Full page loading overlay -->
+<FullPageLoadingOverlay
+	show={showLoadingOverlay}
+	message="Setting up your account..."
+	subMessage="Redirecting to your course dashboard"
+/>
+
+<div class="flex min-h-screen flex-col bg-gray-50 px-4 py-8 sm:py-12">
+	<!-- Progress stepper -->
+	<div class="mx-auto w-full max-w-md mb-6">
+		<EnrollmentProgressStepper flow={flowType()} currentStep={currentStep()} />
+	</div>
+
+	<div class="mx-auto w-full max-w-md flex-1 flex flex-col items-stretch sm:items-center sm:justify-center">
+		<div class="w-full rounded-2xl bg-white p-8 shadow-xl">
 			<!-- Success indicator -->
 			<div class="mb-6 text-center">
 				<div
