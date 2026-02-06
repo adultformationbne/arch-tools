@@ -131,7 +131,7 @@
 		try {
 			const [attendanceRes, reflectionsRes] = await Promise.all([
 				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=attendance&enrollment_id=${np.id}&cohort_id=${cohortId}`),
-				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&user_profile_id=${np.user_profile_id}&cohort_id=${cohortId}`)
+				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`)
 			]);
 
 			if (attendanceRes.ok) {
