@@ -34,51 +34,56 @@ function isValidCourseSlug(slug: string | null): boolean {
 	return /^[a-zA-Z0-9_-]+$/.test(slug);
 }
 
+/**
+ * Determine redirect path based on user modules
+ */
+function getRedirectForModules(modules: string[]): string {
+	if (modules.includes('users')) return '/users';
+	if (modules.includes('editor')) return '/editor';
+	if (modules.includes('dgr')) return '/dgr';
+	if (modules.includes('courses.admin') || modules.includes('courses.manager')) return '/admin/courses';
+	if (modules.includes('courses.participant')) return '/my-courses';
+	return '/profile';
+}
+
 export const load: PageServerLoad = async ({ url, locals }) => {
-	// Check if user is already authenticated - redirect them away from login
+	// Check if user is already authenticated
+	let authenticatedUser: { email: string; name: string | null; redirectTo: string } | null = null;
+
 	try {
 		const session = await locals.safeGetSession?.();
 		if (session?.user) {
 			const next = url.searchParams.get('next');
 			const courseParam = url.searchParams.get('course');
 
-			// Validate and use next param if safe
+			// Fetch user profile for name and modules
+			const { data: profile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('name, modules')
+				.eq('id', session.user.id)
+				.single();
+
+			// Determine where they would go
+			let redirectTo: string;
+
 			if (next && isValidRedirect(next)) {
-				throw redirect(302, next);
+				redirectTo = next;
 			} else if (courseParam && isValidCourseSlug(courseParam)) {
-				throw redirect(302, `/courses/${courseParam}`);
+				redirectTo = `/courses/${courseParam}`;
 			} else {
-				// Check user's modules to determine redirect
-				const { data: profile } = await supabaseAdmin
-					.from('user_profiles')
-					.select('modules')
-					.eq('id', session.user.id)
-					.single();
-
 				const modules = profile?.modules || [];
-
-				// Determine redirect based on modules (same logic as client-side)
-				if (modules.includes('users')) {
-					throw redirect(302, '/users');
-				} else if (modules.includes('editor')) {
-					throw redirect(302, '/editor');
-				} else if (modules.includes('dgr')) {
-					throw redirect(302, '/dgr');
-				} else if (modules.includes('courses.admin') || modules.includes('courses.manager')) {
-					throw redirect(302, '/admin/courses');
-				} else if (modules.includes('courses.participant')) {
-					throw redirect(302, '/my-courses');
-				} else {
-					throw redirect(302, '/profile');
-				}
+				redirectTo = getRedirectForModules(modules);
 			}
+
+			// Return authenticated user info instead of redirecting
+			authenticatedUser = {
+				email: session.user.email || 'Unknown',
+				name: profile?.name || null,
+				redirectTo
+			};
 		}
 	} catch (e) {
-		// Re-throw redirects
-		if (e && typeof e === 'object' && 'status' in e && (e.status === 302 || e.status === 303)) {
-			throw e;
-		}
-		// Log other errors but continue to render login page
+		// Log errors but continue to render login page
 		console.error('Error checking session:', e);
 	}
 	// Check for explicit course parameter first (from email links)
@@ -90,7 +95,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const courseSlug = explicitCourse || (next ? extractCourseSlugFromPath(next) : null);
 
 	if (!courseSlug) {
-		return { courseBranding: null };
+		return { courseBranding: null, authenticatedUser };
 	}
 
 	// Fetch course branding data
@@ -102,7 +107,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	if (error || !course) {
 		// Course not found or error - fall back to platform branding
-		return { courseBranding: null };
+		return { courseBranding: null, authenticatedUser };
 	}
 
 	// Extract branding from course settings
@@ -119,6 +124,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			showLogo: settings?.branding?.showLogo ?? true,
 			accentDark: settings?.theme?.accentDark || null,
 			accentLight: settings?.theme?.accentLight || null
-		}
+		},
+		authenticatedUser
 	};
 };

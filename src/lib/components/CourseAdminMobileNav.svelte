@@ -31,7 +31,8 @@ let {
 	modules = [],
 	enrollmentRole = null,
 	isCourseAdmin = false,
-	courseBranding = {}
+	courseBranding = {},
+	courseFeatures = {}
 } = $props();
 
 // Mobile menu state
@@ -127,14 +128,14 @@ const navItems = $derived([
 		href: `/admin/courses/${courseSlug}/enrollment-links`,
 		icon: Link,
 		description: 'Public sign-up links',
-		visible: canManageCourse
+		visible: canManageCourse && courseFeatures.paymentsEnabled
 	},
 	{
 		label: 'Discounts',
 		href: `/admin/courses/${courseSlug}/discounts`,
 		icon: Tag,
 		description: 'Discount codes',
-		visible: canManageCourse
+		visible: canManageCourse && courseFeatures.paymentsEnabled
 	},
 	{
 		label: 'Hubs',

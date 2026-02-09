@@ -15,6 +15,7 @@ import type { LayoutServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 
 export const load: LayoutServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
@@ -39,10 +40,11 @@ export const load: LayoutServerLoad = async (event) => {
 		throw error(500, 'Failed to load admin course data');
 	}
 
-	// Extract theme and branding settings
-	const settings = course.settings || {};
+	// Extract theme, branding, and feature settings
+	const settings = getCourseSettings(course.settings);
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
+	const courseFeatures = settings.features || {};
 
 	return {
 		courseSlug,
@@ -62,6 +64,7 @@ export const load: LayoutServerLoad = async (event) => {
 			accent_darkest: courseTheme?.accentDarkest || course.accent_darkest || '#1e2322'
 		},
 		courseTheme,
-		courseBranding
+		courseBranding,
+		courseFeatures
 	};
 };

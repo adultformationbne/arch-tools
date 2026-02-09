@@ -7,13 +7,14 @@
 	const supabase = $derived(data.supabase);
 	const platform = $derived(data.platform);
 	const courseBranding = $derived(data.courseBranding);
+	const authenticatedUser = $derived(data.authenticatedUser);
 
 	// Course-specific values (only used when courseBranding is present)
 	const accentColor = $derived(courseBranding?.accentDark || null);
 
 	// Auth flow states
-	type AuthStep = 'email' | 'password' | 'otp';
-	let currentStep = $state<AuthStep>('email');
+	type AuthStep = 'authenticated' | 'email' | 'password' | 'otp';
+	let currentStep = $state<AuthStep>(data.authenticatedUser ? 'authenticated' : 'email');
 
 	let email = $state('');
 	let password = $state('');
@@ -56,33 +57,9 @@
 
 	// Check for URL parameters on mount
 	onMount(async () => {
-		// 1. First check if user is already authenticated
-		try {
-			const { data: { session } } = await supabase.auth.getSession();
-			if (session?.user) {
-				// Already logged in - redirect to appropriate destination
-				const next = $page.url.searchParams.get('next');
-				const courseParam = $page.url.searchParams.get('course');
-
-				if (next) {
-					goto(next);
-				} else if (courseParam) {
-					goto(`/courses/${courseParam}`);
-				} else {
-					// Determine redirect based on user profile
-					const { data: profile } = await supabase
-						.from('user_profiles')
-						.select('modules')
-						.eq('id', session.user.id)
-						.single();
-
-					const modules = profile?.modules || [];
-					goto(determineRedirect(modules));
-				}
-				return;
-			}
-		} catch (e) {
-			// Not authenticated, continue with login flow
+		// 1. If already authenticated, stay on authenticated step (handled by server)
+		if (authenticatedUser) {
+			return;
 		}
 
 		// 2. Handle URL parameters
@@ -547,11 +524,78 @@
 		isPendingUser = false;
 		isForgotPasswordFlow = false;
 	}
+
+	// Continue as the already-authenticated user
+	function handleContinueAsUser() {
+		if (authenticatedUser?.redirectTo) {
+			goto(authenticatedUser.redirectTo);
+		} else {
+			goto('/profile');
+		}
+	}
+
+	// Sign out and use a different account
+	async function handleUseDifferentAccount() {
+		loading = true;
+		errorMessage = '';
+
+		try {
+			await supabase.auth.signOut();
+			currentStep = 'email';
+			email = '';
+			password = '';
+			otp = '';
+			infoMessage = 'You have been signed out. Please sign in with a different account.';
+		} catch (error) {
+			errorMessage = 'Failed to sign out. Please try again.';
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 {#snippet loginForms()}
+	<!-- Already authenticated - show choice to continue or use different account -->
+	{#if currentStep === 'authenticated' && authenticatedUser}
+		<div class="mt-8 space-y-6">
+			<div class="text-center">
+				<div class="mb-4">
+					<div class="mx-auto w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center">
+						<svg class="w-8 h-8 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+						</svg>
+					</div>
+				</div>
+				<p class="text-sm text-neutral-600">You're already signed in as</p>
+				<p class="mt-1 font-semibold text-black">{authenticatedUser.email}</p>
+			</div>
+
+			{#if errorMessage}
+				<div class="text-center text-sm text-red-600">{errorMessage}</div>
+			{/if}
+
+			<div class="space-y-3">
+				<button
+					type="button"
+					onclick={handleContinueAsUser}
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					Continue as {authenticatedUser.name || authenticatedUser.email.split('@')[0]}
+				</button>
+
+				<button
+					type="button"
+					onclick={handleUseDifferentAccount}
+					disabled={loading}
+					class="group relative flex w-full justify-center border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-neutral-50 focus:ring-2 focus:ring-black/20 focus:ring-offset-2 focus:outline-none disabled:opacity-50 transition-colors"
+				>
+					{loading ? 'Signing out...' : 'Use a different account'}
+				</button>
+			</div>
+		</div>
 	<!-- Auto-send loading state - show when checking account from email link -->
-	{#if currentStep === 'email' && isAutoSendFlow && loading}
+	{:else if currentStep === 'email' && isAutoSendFlow && loading}
 		<div class="mt-8 space-y-6 text-center">
 			<div class="flex justify-center">
 				<svg class="animate-spin h-8 w-8 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -769,7 +813,9 @@
 					{courseBranding.name}
 				</h1>
 				<h2 class="text-center text-base text-neutral-600">
-					{#if currentStep === 'email' && isAutoSendFlow && loading}
+					{#if currentStep === 'authenticated'}
+						Welcome back
+					{:else if currentStep === 'email' && isAutoSendFlow && loading}
 						Welcome back
 					{:else if currentStep === 'email'}
 						Sign in to your account
@@ -802,7 +848,9 @@
 				{platform.name}
 			</h1>
 			<h2 class="text-center text-base text-neutral-600">
-				{#if currentStep === 'email' && isAutoSendFlow && loading}
+				{#if currentStep === 'authenticated'}
+					Welcome back
+				{:else if currentStep === 'email' && isAutoSendFlow && loading}
 					Welcome back
 				{:else if currentStep === 'email'}
 					Sign in to your account

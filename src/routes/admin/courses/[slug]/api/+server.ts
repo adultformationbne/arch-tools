@@ -455,11 +455,22 @@ export const POST: RequestHandler = async (event) => {
 					filename: data.filename,
 					rows: data.data,
 					cohortId: data.cohortId,
-					importedBy: user.id
+					importedBy: user.id,
+					resolvedConflicts: data.resolvedConflicts
 				});
 
 				if (result.error) {
 					throw error(500, result.error.message || 'Failed to upload CSV');
+				}
+
+				// Check if conflicts need resolution
+				if (result.data?.requiresConflictResolution) {
+					return json({
+						success: true,
+						requiresConflictResolution: true,
+						conflicts: result.data.conflicts,
+						total: result.data.total
+					});
 				}
 
 				return json({

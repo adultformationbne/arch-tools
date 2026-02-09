@@ -27,6 +27,7 @@
 	const cohorts = $derived(data.cohorts || []);
 	const courseTheme = $derived(data.courseTheme || {});
 	const courseBranding = $derived(data.courseBranding || {});
+	const courseFeatures = $derived(data.courseFeatures || {});
 
 	// Default theme colors - use $derived to properly react to courseTheme changes
 	const accentDark = $derived(courseTheme.accentDark || '#334642');
@@ -80,6 +81,7 @@
 		{isCourseAdmin}
 		{cohorts}
 		{courseBranding}
+		{courseFeatures}
 		selectedCohortId={selectedCohortId}
 		onNewCohort={handleNewCohort}
 		onSelectCohort={handleSelectCohort}
@@ -95,6 +97,7 @@
 			{isCourseAdmin}
 			{cohorts}
 			{courseBranding}
+			{courseFeatures}
 			selectedCohortId={selectedCohortId}
 			onNewCohort={handleNewCohort}
 			onSelectCohort={handleSelectCohort}

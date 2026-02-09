@@ -46,7 +46,8 @@
 		features: {
 			reflectionsEnabled: true,
 			communityFeedEnabled: true,
-			attendanceEnabled: true
+			attendanceEnabled: true,
+			paymentsEnabled: false
 		}
 	});
 
@@ -92,6 +93,7 @@
 			settings.features.reflectionsEnabled = parsedSettings.features?.reflectionsEnabled ?? true;
 			settings.features.communityFeedEnabled = parsedSettings.features?.communityFeedEnabled ?? true;
 			settings.features.attendanceEnabled = parsedSettings.features?.attendanceEnabled ?? true;
+			settings.features.paymentsEnabled = parsedSettings.features?.paymentsEnabled ?? false;
 		}
 	});
 
@@ -611,6 +613,18 @@
 						<div>
 							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Attendance Tracking</span>
 							<p class="text-xs sm:text-sm text-gray-500">Track and manage student attendance for each session</p>
+						</div>
+					</label>
+
+					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+						<input
+							type="checkbox"
+							bind:checked={settings.features.paymentsEnabled}
+							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
+						/>
+						<div>
+							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Payments & Enrollment Links</span>
+							<p class="text-xs sm:text-sm text-gray-500">Enable Stripe payments, enrollment links, and discount codes</p>
 						</div>
 					</label>
 				</div>

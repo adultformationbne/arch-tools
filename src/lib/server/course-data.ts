@@ -1851,8 +1851,13 @@ export const CourseMutations = {
 		rows: any[];
 		cohortId: string;
 		importedBy: string;
+		resolvedConflicts?: Array<{
+			email: string;
+			action: 'skip' | 'update_name' | 'use_new_email';
+			newEmail?: string;
+		}>;
 	}) {
-		const { filename, rows, cohortId, importedBy } = params;
+		const { filename, rows, cohortId, importedBy, resolvedConflicts = [] } = params;
 
 		if (!rows || rows.length === 0) {
 			return {
@@ -1898,12 +1903,15 @@ export const CourseMutations = {
 		// 1. Get all emails from CSV
 		const csvEmails = rows.map(r => r.email.toLowerCase());
 
-		// 2. Batch check existing enrollments in this cohort
+		// 2. Batch check existing enrollments in this cohort (include full_name for conflict detection)
 		const { data: existingEnrollments } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('email')
+			.select('id, email, full_name')
 			.eq('cohort_id', cohortId)
 			.in('email', csvEmails);
+		const existingEnrollmentsByEmail = new Map(
+			(existingEnrollments || []).map(e => [e.email.toLowerCase(), e])
+		);
 		const existingEnrollmentEmails = new Set((existingEnrollments || []).map(e => e.email.toLowerCase()));
 
 		// 3. Fetch ALL auth users once (not per row!)
@@ -1937,6 +1945,97 @@ export const CourseMutations = {
 			(newHubs || []).forEach(h => hubsByName.set(h.name.toLowerCase(), h.id));
 		}
 
+		// ========== CONFLICT DETECTION ==========
+		// Check for name mismatches: same email but different name in CSV vs existing enrollment
+		const resolvedConflictMap = new Map(
+			resolvedConflicts.map(c => [c.email.toLowerCase(), c])
+		);
+		const conflicts: Array<{
+			email: string;
+			csvName: string;
+			existingName: string;
+			existingEnrollmentId: string;
+		}> = [];
+
+		for (const row of rows) {
+			const emailLower = row.email.toLowerCase();
+			const existingEnrollment = existingEnrollmentsByEmail.get(emailLower);
+
+			if (existingEnrollment) {
+				// Normalize names for comparison (trim, lowercase, collapse whitespace)
+				const normalizeName = (name: string) =>
+					name?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+
+				const csvNameNorm = normalizeName(row.full_name);
+				const existingNameNorm = normalizeName(existingEnrollment.full_name);
+
+				// If names are different and no resolution provided, it's a conflict
+				if (csvNameNorm !== existingNameNorm && !resolvedConflictMap.has(emailLower)) {
+					conflicts.push({
+						email: row.email,
+						csvName: row.full_name,
+						existingName: existingEnrollment.full_name,
+						existingEnrollmentId: existingEnrollment.id
+					});
+				}
+			}
+		}
+
+		// If there are unresolved conflicts, return them for resolution
+		if (conflicts.length > 0) {
+			// Delete the import record since we're not proceeding
+			await supabaseAdmin
+				.from('courses_enrollment_imports')
+				.delete()
+				.eq('id', importRecord.id);
+
+			return {
+				data: {
+					requiresConflictResolution: true,
+					conflicts,
+					total: rows.length
+				},
+				error: null
+			};
+		}
+
+		// ========== APPLY CONFLICT RESOLUTIONS ==========
+		// Process any resolved conflicts before normal import
+		const rowsToProcess = [];
+		for (const row of rows) {
+			const emailLower = row.email.toLowerCase();
+			const resolution = resolvedConflictMap.get(emailLower);
+
+			if (resolution) {
+				if (resolution.action === 'skip') {
+					// Don't include this row in processing
+					continue;
+				} else if (resolution.action === 'update_name') {
+					// Update the existing enrollment's name
+					const existingEnrollment = existingEnrollmentsByEmail.get(emailLower);
+					if (existingEnrollment) {
+						await supabaseAdmin
+							.from('courses_enrollments')
+							.update({ full_name: row.full_name })
+							.eq('id', existingEnrollment.id);
+					}
+					// Don't add to rowsToProcess - enrollment already exists
+					continue;
+				} else if (resolution.action === 'use_new_email' && resolution.newEmail) {
+					// Use the new email for this row
+					row.email = resolution.newEmail;
+				}
+			}
+
+			rowsToProcess.push(row);
+		}
+
+		// Replace rows with filtered/modified rows
+		const processRows = rowsToProcess.length > 0 ? rowsToProcess : rows.filter(row => {
+			const emailLower = row.email.toLowerCase();
+			return !resolvedConflictMap.has(emailLower);
+		});
+
 		// ========== PROCESS ROWS ==========
 		let successCount = 0;
 		let errorCount = 0;
@@ -1945,10 +2044,10 @@ export const CourseMutations = {
 		const newUsersToCreate: any[] = [];
 
 		// First pass: identify which users need auth accounts created
-		for (const row of rows) {
+		for (const row of processRows) {
 			const emailLower = row.email.toLowerCase();
 
-			// Skip if already enrolled
+			// Skip if already enrolled (check with potentially new email from conflict resolution)
 			if (existingEnrollmentEmails.has(emailLower)) {
 				const errorMsg = `${row.full_name} (${row.email}): Already in this cohort`;
 				results.push({ email: row.email, status: 'skipped', message: 'Already in this cohort' });
@@ -2003,7 +2102,7 @@ export const CourseMutations = {
 				profilesToCreate.push({
 					id: userId,
 					email: email,
-					full_name: rows.find(r => r.email.toLowerCase() === email)?.full_name || null,
+					full_name: processRows.find(r => r.email.toLowerCase() === email)?.full_name || null,
 					modules: ['courses.participant']
 				});
 			}
@@ -2015,7 +2114,7 @@ export const CourseMutations = {
 
 		// Update all user profiles with CSV data (only non-empty fields)
 		// This handles both new and existing users
-		for (const row of rows) {
+		for (const row of processRows) {
 			const emailLower = row.email.toLowerCase();
 			const existingAuthUser = authUsersByEmail.get(emailLower);
 			const newlyCreatedUserId = createdUsers.get(emailLower);
@@ -2071,7 +2170,7 @@ export const CourseMutations = {
 
 		// Build enrollments to insert
 		const enrollmentsToInsert: any[] = [];
-		for (const row of rows) {
+		for (const row of processRows) {
 			const emailLower = row.email.toLowerCase();
 
 			// Skip already processed errors
@@ -2641,59 +2740,6 @@ export const CourseMutations = {
 	// HELPER FUNCTIONS
 	// ========================================================================
 
-	/**
-	 * Ensure module has reflection questions for all sessions
-	 * (Internal helper function)
-	 */
-	async ensureModuleReflectionQuestions(moduleId: string) {
-		// Default reflection prompts mapped by session index
-		const defaultQuestions = [
-			'What is the reason you look to God for answers over cultural sources and making prayer central to your life?',
-			'How do you see God working in your daily life through small moments and ordinary experiences?',
-			"Reflect on a time when you experienced God's mercy in your life.",
-			"How has your understanding of the Trinity deepened through this week's materials?",
-			'What does it mean to you to be part of the Body of Christ?',
-			"How has your understanding of the Eucharist deepened through this week's materials?",
-			'Describe a moment when you felt particularly close to God in prayer.',
-			'How will you continue to grow in your faith after completing this module?'
-		];
-
-		const { data: sessions } = await supabaseAdmin
-			.from('courses_sessions')
-			.select('id, session_number')
-			.eq('module_id', moduleId)
-			.order('session_number', { ascending: true });
-
-		if (!sessions || sessions.length === 0) {
-			return;
-		}
-
-		const sessionIds = sessions.map((session) => session.id);
-
-		const { data: existingQuestions } = await supabaseAdmin
-			.from('courses_reflection_questions')
-			.select('session_id')
-			.in('session_id', sessionIds);
-
-		const existingSessionIds = new Set((existingQuestions || []).map((q) => q.session_id));
-		const now = new Date().toISOString();
-		const questionsToInsert = sessions
-			.filter((session) => !existingSessionIds.has(session.id))
-			.map((session) => ({
-				session_id: session.id,
-				question_text:
-					defaultQuestions[Math.max(0, session.session_number - 1)] ||
-					defaultQuestions[defaultQuestions.length - 1],
-				created_at: now,
-				updated_at: now
-			}));
-
-		if (questionsToInsert.length === 0) {
-			return;
-		}
-
-		await supabaseAdmin.from('courses_reflection_questions').insert(questionsToInsert);
-	}
 };
 
 // ============================================================================
