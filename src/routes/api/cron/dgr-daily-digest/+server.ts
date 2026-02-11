@@ -80,7 +80,7 @@ export async function GET({ request, url }: RequestEvent) {
 		// ==========================================
 		// STEP 1: AUTO-PUBLISH APPROVED REFLECTIONS
 		// ==========================================
-		const publishResults = await autoPublishApprovedReflections(task.config, brisbaneTime, url.origin);
+		const publishResults = await autoPublishApprovedReflections(task.config, brisbaneTime);
 
 		// ==========================================
 		// STEP 2: BUILD AND SEND DIGEST EMAIL
@@ -239,8 +239,7 @@ export async function GET({ request, url }: RequestEvent) {
  */
 async function autoPublishApprovedReflections(
 	config: any,
-	brisbaneTime: Date,
-	origin: string
+	brisbaneTime: Date
 ): Promise<PublishAttempt[]> {
 	const results: PublishAttempt[] = [];
 
@@ -303,31 +302,40 @@ async function autoPublishApprovedReflections(
 			let gospelWarning: string | undefined;
 
 			if (gospelReference) {
-				// Retry logic: try up to 3 times with delay between attempts
+				// Fetch directly from Oremus (avoids serverless function-to-function hop on Vercel)
 				const maxRetries = 3;
 				const retryDelayMs = 1000;
+				const encodedPassage = encodeURIComponent(gospelReference);
+				const oremusUrl = `https://bible.oremus.org/?version=NRSVAE&passage=${encodedPassage}&vnum=yes&fnote=no&show_ref=no&headings=no`;
 
 				for (let attempt = 1; attempt <= maxRetries; attempt++) {
 					try {
-						const scriptureResponse = await fetch(
-							`${origin}/api/scripture?passage=${encodeURIComponent(gospelReference)}&version=NRSVAE`
-						);
-						if (scriptureResponse.ok) {
-							const scriptureData = await scriptureResponse.json();
-							if (scriptureData.success && scriptureData.content) {
-								gospelFullText = cleanGospelText(scriptureData.content);
+						const response = await fetch(oremusUrl, {
+							headers: {
+								'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+								'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+								'Accept-Language': 'en-AU,en;q=0.9',
+								'Accept-Encoding': 'gzip, deflate, br',
+								'Connection': 'keep-alive',
+								'Upgrade-Insecure-Requests': '1'
+							}
+						});
+						if (response.ok) {
+							const html = await response.text();
+							const scriptureContent = extractScriptureContent(html);
+							if (scriptureContent) {
+								gospelFullText = cleanGospelText(scriptureContent);
 								if (!gospelFullText || gospelFullText.trim().length === 0) {
 									gospelWarning = `Gospel text empty after parsing (${gospelReference})`;
 								} else {
-									// Success - clear any warning and break out of retry loop
 									gospelWarning = undefined;
 								}
-								break; // Success, exit retry loop
+								break;
 							} else {
-								gospelWarning = `Scripture API returned no content for ${gospelReference}`;
+								gospelWarning = `Oremus returned no extractable content for ${gospelReference}`;
 							}
 						} else {
-							gospelWarning = `Scripture API error ${scriptureResponse.status} for ${gospelReference} (attempt ${attempt}/${maxRetries})`;
+							gospelWarning = `Oremus error ${response.status} for ${gospelReference} (attempt ${attempt}/${maxRetries})`;
 						}
 					} catch (err) {
 						const errMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -335,7 +343,6 @@ async function autoPublishApprovedReflections(
 						console.warn(`Could not fetch gospel text for auto-publish (attempt ${attempt}):`, err);
 					}
 
-					// If not the last attempt and we didn't succeed, wait before retrying
 					if (attempt < maxRetries && gospelWarning) {
 						await new Promise(resolve => setTimeout(resolve, retryDelayMs));
 					}
@@ -627,4 +634,47 @@ function buildDigestEmail({
 	`;
 
 	return html;
+}
+
+/**
+ * Extract scripture content from Oremus HTML response.
+ * Mirrors the parsing logic in /api/scripture/+server.js
+ */
+function extractScriptureContent(html: string): string | null {
+	// Method 1: blockquote
+	if (html.includes('<blockquote>')) {
+		const start = html.indexOf('<blockquote>');
+		const end = html.indexOf('</blockquote>') + 13;
+		if (start !== -1 && end > 13) return html.substring(start, end);
+	}
+	// Method 2: div.bibletext
+	else if (html.includes('class="bibletext"')) {
+		const start = html.indexOf('<div class="bibletext"');
+		const end = html.indexOf('</div>', start) + 6;
+		if (start !== -1 && end > 6) return html.substring(start, end);
+	}
+	// Method 3: div.passage
+	else if (html.includes('<div class="passage">')) {
+		const start = html.indexOf('<div class="passage">');
+		const end = html.indexOf('</div>', start) + 6;
+		if (start !== -1 && end > 6) return html.substring(start, end);
+	}
+	// Method 4: verse number pattern
+	else {
+		const versePattern = /<sup class="verse">/i;
+		if (versePattern.test(html)) {
+			const lines = html.split('\n');
+			const contentLines: string[] = [];
+			let found = false;
+			for (const line of lines) {
+				if (versePattern.test(line) || found) {
+					contentLines.push(line);
+					found = true;
+				}
+				if (line.includes('</body>') || line.includes('<div class="nav">')) break;
+			}
+			if (contentLines.length > 0) return contentLines.join('\n');
+		}
+	}
+	return null;
 }
