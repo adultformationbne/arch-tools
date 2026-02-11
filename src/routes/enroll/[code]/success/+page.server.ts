@@ -9,7 +9,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const { code } = params;
 	const sessionId = url.searchParams.get('session_id');
 	const enrollmentId = url.searchParams.get('enrollment_id');
-	const pendingDataEncoded = url.searchParams.get('data');
 
 	// Get enrollment link info for branding
 	const { data: link } = await supabaseAdmin
@@ -49,21 +48,26 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			throw redirect(302, `/enroll/${code}?error=payment_incomplete`);
 		}
 
-		// Parse pending enrollment data
-		let pendingData = null;
-		if (pendingDataEncoded) {
-			try {
-				pendingData = JSON.parse(Buffer.from(pendingDataEncoded, 'base64url').toString());
-			} catch {
-				console.error('Failed to parse pending data');
-			}
+		// Get payment record with pending data from DB (not from URL)
+		const { data: payment } = await supabaseAdmin
+			.from('courses_payments')
+			.select('id, pending_data, email, full_name, enrollment_id')
+			.eq('stripe_checkout_session_id', sessionId)
+			.single();
+
+		if (!payment) {
+			throw error(404, 'Payment record not found. Please contact support.');
 		}
+
+		const pendingData = payment.pending_data || {};
 
 		return {
 			type: 'paid',
 			sessionId,
+			paymentId: payment.id,
+			enrollmentId: payment.enrollment_id, // may already exist from webhook
 			pendingData,
-			email: session.customer_email || pendingData?.email,
+			email: pendingData.email || payment.email,
 			course: {
 				name: course.name,
 				slug: course.slug
@@ -117,7 +121,6 @@ export const actions: Actions = {
 		const confirmPassword = formData.get('confirmPassword') as string;
 		const sessionId = url.searchParams.get('session_id');
 		const enrollmentId = url.searchParams.get('enrollment_id');
-		const pendingDataEncoded = url.searchParams.get('data');
 
 		// Validate passwords
 		if (!password || password.length < 8) {
@@ -137,6 +140,7 @@ export const actions: Actions = {
 		let parishId: string | null = null;
 		let parishOther: string | null = null;
 		let referralSource: string | null = null;
+		let webhookCreatedEnrollmentId: string | null = null;
 
 		// Get enrollment link
 		const { data: link } = await supabaseAdmin
@@ -152,27 +156,27 @@ export const actions: Actions = {
 		cohortId = link.cohort_id;
 
 		if (sessionId) {
-			// Paid enrollment - get data from Stripe and pending data
-			const session = await getCheckoutSession(sessionId);
-			email = session.customer_email || '';
+			// Paid enrollment - get data from payment record (not URL)
+			const { data: payment } = await supabaseAdmin
+				.from('courses_payments')
+				.select('id, pending_data, email, full_name, enrollment_id, cohort_id, enrollment_link_id')
+				.eq('stripe_checkout_session_id', sessionId)
+				.single();
 
-			if (pendingDataEncoded) {
-				try {
-					const pendingData = JSON.parse(Buffer.from(pendingDataEncoded, 'base64url').toString());
-					fullName = pendingData.fullName;
-					phone = pendingData.phone;
-					parishId = pendingData.parishId;
-					parishOther = pendingData.parishOther;
-					referralSource = pendingData.referralSource;
-					hubId = pendingData.hubId;
-					paymentId = pendingData.paymentId;
-				} catch {
-					return { error: 'Invalid enrollment data' };
-				}
-			} else {
-				fullName = session.metadata?.user_name || email.split('@')[0];
-				hubId = session.metadata?.hub_id || null;
+			if (!payment) {
+				return { error: 'Payment not found. Please contact support.' };
 			}
+
+			const pd = payment.pending_data || {};
+			email = pd.email || payment.email;
+			fullName = pd.fullName || payment.full_name || email.split('@')[0];
+			phone = pd.phone || null;
+			parishId = pd.parishId || null;
+			parishOther = pd.parishOther || null;
+			referralSource = pd.referralSource || null;
+			hubId = pd.hubId || null;
+			paymentId = payment.id;
+			webhookCreatedEnrollmentId = payment.enrollment_id || null;
 		} else if (enrollmentId) {
 			// Free enrollment - get data from enrollment record
 			const { data: enrollment } = await supabaseAdmin
@@ -246,9 +250,9 @@ export const actions: Actions = {
 				});
 			}
 
-			// Update or create enrollment
+			// Handle enrollment creation/linking
 			if (enrollmentId) {
-				// Update free enrollment
+				// Free enrollment - update existing enrollment with user profile
 				await supabaseAdmin
 					.from('courses_enrollments')
 					.update({
@@ -256,30 +260,54 @@ export const actions: Actions = {
 						status: 'active'
 					})
 					.eq('id', enrollmentId);
-			} else {
-				// Create paid enrollment
-				const { data: enrollment } = await supabaseAdmin
+			} else if (webhookCreatedEnrollmentId) {
+				// Paid enrollment where webhook already created the enrollment
+				// Just link the user profile
+				await supabaseAdmin
 					.from('courses_enrollments')
-					.insert({
-						cohort_id: cohortId,
-						user_profile_id: userId,
-						hub_id: hubId,
-						enrollment_link_id: link.id,
-						full_name: fullName,
-						email,
-						role: 'student',
-						status: 'active',
-						payment_status: 'paid',
-						payment_id: paymentId
+					.update({
+						user_profile_id: userId
 					})
-					.select('id')
-					.single();
+					.eq('id', webhookCreatedEnrollmentId);
+			} else {
+				// Paid enrollment where webhook hasn't created enrollment yet
+				// Use safe_create_enrollment for atomic capacity check
+				const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+					'safe_create_enrollment',
+					{
+						p_cohort_id: cohortId,
+						p_user_profile_id: userId,
+						p_hub_id: hubId,
+						p_enrollment_link_id: link.id,
+						p_full_name: fullName,
+						p_email: email,
+						p_role: 'student',
+						p_status: 'active',
+						p_payment_status: 'paid',
+						p_payment_id: paymentId
+					}
+				);
 
-				// Update payment record with enrollment ID
-				if (paymentId && enrollment) {
+				if (rpcError) {
+					console.error('safe_create_enrollment failed:', rpcError);
+					return { error: 'Failed to complete enrollment. Please contact support.' };
+				}
+
+				if (result?.error === 'already_enrolled') {
+					// Enrollment was created between our check and now (race with webhook)
+					// Link the user profile to the existing enrollment
+					await supabaseAdmin
+						.from('courses_enrollments')
+						.update({ user_profile_id: userId })
+						.eq('id', result.enrollment_id);
+				}
+
+				// Link enrollment to payment
+				const newEnrollmentId = result?.enrollment_id;
+				if (paymentId && newEnrollmentId) {
 					await supabaseAdmin
 						.from('courses_payments')
-						.update({ enrollment_id: enrollment.id })
+						.update({ enrollment_id: newEnrollmentId })
 						.eq('id', paymentId);
 				}
 			}
@@ -293,10 +321,9 @@ export const actions: Actions = {
 
 			const courseSlug = cohort?.module?.course?.slug || '';
 
-			// Determine the enrollment ID for the welcome email
-			let welcomeEmailEnrollmentId = enrollmentId;
+			// Find enrollment ID for welcome email
+			let welcomeEmailEnrollmentId = enrollmentId || webhookCreatedEnrollmentId;
 			if (!welcomeEmailEnrollmentId) {
-				// For paid enrollment, we need to find the enrollment we just created
 				const { data: newEnrollment } = await supabaseAdmin
 					.from('courses_enrollments')
 					.select('id')

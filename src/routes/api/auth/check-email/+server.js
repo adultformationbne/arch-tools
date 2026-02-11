@@ -92,13 +92,21 @@ export async function POST({ request, getClientAddress }) {
 			fullUser = user;
 		}
 
-		// Fallback: try listUsers if profile lookup failed
+		// Fallback: check if email exists directly in auth.users via SQL
+		// (avoids listUsers() which is expensive and can fail with GoTrue scan errors)
 		if (!fullUser) {
-			const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-			if (listError) {
-				console.error('[check-email] listUsers error:', listError);
+			const { data: authRecord } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id')
+				.ilike('email', email.toLowerCase())
+				.maybeSingle();
+
+			if (authRecord?.id) {
+				const { data: { user }, error: authError } = await supabaseAdmin.auth.admin.getUserById(authRecord.id);
+				if (!authError) {
+					fullUser = user;
+				}
 			}
-			fullUser = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 		}
 
 		if (!fullUser) {

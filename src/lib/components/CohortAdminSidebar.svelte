@@ -1,11 +1,12 @@
 <script>
-	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings } from '$lib/icons';
+	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings, Download } from '$lib/icons';
 
 	let {
 		cohort = null,
 		stats = { participantCount: 0, avgAttendance: 0, pendingReflections: 0 },
 		onAdvanceSession = () => {},
 		onEmailAll = () => {},
+		onExport = () => {},
 		onAddParticipant = () => {},
 		onCohortSettings = () => {},
 		recentActivity = []
@@ -108,6 +109,14 @@
 					>
 						<Settings size={14} />
 						<span>Cohort Settings</span>
+					</button>
+
+					<button
+						onclick={onExport}
+						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
+					>
+						<Download size={14} />
+						<span>Export CSV</span>
 					</button>
 				</div>
 			</div>

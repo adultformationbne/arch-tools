@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
@@ -49,6 +49,9 @@
 	let selectedParticipants = $state(new Set());
 	let searchQuery = $state('');
 	let filterHub = $state('all');
+	let filterStatus = $state('all');
+	let filterSession = $state('all');
+	let filterReflections = $state('all');
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
 
@@ -79,8 +82,18 @@
 				s.full_name?.toLowerCase().includes(query) ||
 				s.email?.toLowerCase().includes(query) ||
 				s.user_profile?.phone?.toLowerCase().includes(query);
-			const matchesHub = filterHub === 'all' || s.hub_id === filterHub;
-			return matchesSearch && matchesHub;
+			const matchesHub = filterHub === 'all' || (filterHub === 'none' ? !s.hub_id : s.hub_id === filterHub);
+			const matchesStatus = filterStatus === 'all' || getStatusKey(s) === filterStatus;
+			const matchesSession = filterSession === 'all' || (() => {
+				const cohortSession = selectedCohort?.current_session || 0;
+				if (filterSession === 'behind') return s.current_session < cohortSession;
+				if (filterSession === 'on_track') return s.current_session === cohortSession;
+				if (filterSession === 'ahead') return s.current_session > cohortSession;
+				return true;
+			})();
+			const matchesReflections = filterReflections === 'all' ||
+				s.reflectionStatus?.status === filterReflections;
+			return matchesSearch && matchesHub && matchesStatus && matchesSession && matchesReflections;
 		})
 	);
 
@@ -96,6 +109,11 @@
 	// Load participants when cohort changes
 	$effect(() => {
 		if (selectedCohortId) {
+			filterHub = 'all';
+			filterStatus = 'all';
+			filterSession = 'all';
+			filterReflections = 'all';
+			searchQuery = '';
 			loadParticipants();
 			loadHubs();
 		} else {
@@ -175,10 +193,10 @@
 	}
 
 	function toggleSelectAll() {
-		if (selectedParticipants.size === participants.length) {
+		if (selectedParticipants.size === filteredParticipants.length) {
 			selectedParticipants = new Set();
 		} else {
-			selectedParticipants = new Set(participants.map(s => s.id));
+			selectedParticipants = new Set(filteredParticipants.map(s => s.id));
 		}
 	}
 
@@ -205,7 +223,62 @@
 	}
 
 	function handleExport() {
-		toastWarning('Export feature coming soon');
+		if (!selectedCohort) return;
+
+		const totalSessions = selectedCohort.module?.total_sessions || 8;
+		const cohortSession = selectedCohort.current_session || 0;
+
+		const headers = [
+			'Name', 'Email', 'Phone', 'Parish/Community', 'Parish Role', 'Address',
+			'Hub', 'Role', 'Status', 'Session', 'Attendance', 'Reflections',
+			'Payment Status', 'Last Login', 'Enrolled Date'
+		];
+
+		const rows = filteredParticipants.map(p => {
+			const statusBadge = getStatusBadge(p);
+			const reflectionDisplay = p.reflectionStatus && p.current_session > 0
+				? getReflectionStatusDisplay(p)
+				: '';
+			const attendance = cohortSession > 0
+				? `${p.attendanceCount || 0}/${cohortSession}`
+				: '';
+
+			return [
+				p.full_name || '',
+				p.email || '',
+				p.user_profile?.phone || '',
+				p.user_profile?.parish_community || '',
+				p.user_profile?.parish_role || '',
+				p.user_profile?.address || '',
+				p.courses_hubs?.name || '',
+				p.role || '',
+				statusBadge.label,
+				`${p.current_session}/${totalSessions}`,
+				attendance,
+				reflectionDisplay,
+				p.payment_status || '',
+				p.last_login_at ? new Date(p.last_login_at).toLocaleDateString() : '',
+				p.created_at ? new Date(p.created_at).toLocaleDateString() : ''
+			];
+		});
+
+		const csvContent = [
+			headers.join(','),
+			...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+		].join('\n');
+
+		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		const sanitizedName = selectedCohort.name.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-');
+		link.setAttribute('href', url);
+		link.setAttribute('download', `${sanitizedName}-${new Date().toISOString().split('T')[0]}.csv`);
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+
+		toastSuccess(`Exported ${filteredParticipants.length} participants`);
 	}
 
 	function handleAddParticipant() {
@@ -448,6 +521,13 @@
 		return { label: 'Active', class: 'bg-green-100 text-green-700' };
 	}
 
+	function getStatusKey(participant) {
+		if (!participant.welcome_email_sent_at) return 'not_invited';
+		if (!participant.last_login_at) return 'invited';
+		if (participant.status === 'pending') return 'pending';
+		return 'active';
+	}
+
 </script>
 
 <div class="flex flex-col lg:flex-row min-h-screen lg:h-screen" style="background-color: var(--course-accent-dark);">
@@ -501,6 +581,14 @@
 					>
 						<Mail size={14} />
 						Email All
+					</button>
+					<button
+						onclick={handleExport}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
+						style="background-color: rgba(255,255,255,0.1);"
+					>
+						<Download size={14} />
+						Export
 					</button>
 					<button
 						onclick={handleCohortSettings}
@@ -565,11 +653,11 @@
 			</div>
 		{:else}
 			<div class="p-3 sm:p-4 lg:p-6">
-				<!-- Page Header + Search - stacks on mobile -->
-				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-					<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block">Participants</h1>
-					<div class="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-md">
-						<div class="flex-1 relative">
+				<!-- Page Header + Search + Filters -->
+				<div class="flex flex-col gap-2 mb-3">
+					<div class="flex items-center justify-between">
+						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block">Participants</h1>
+						<div class="relative w-full lg:w-64">
 							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
 							<input
 								type="text"
@@ -578,14 +666,45 @@
 								class="w-full pl-8 pr-3 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 							/>
 						</div>
+					</div>
+					<div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
 						<select
 							bind:value={filterHub}
 							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
 						>
 							<option value="all">All Hubs</option>
+							<option value="none">No Hub</option>
 							{#each hubs as hub}
 								<option value={hub.id}>{hub.name}</option>
 							{/each}
+						</select>
+						<select
+							bind:value={filterStatus}
+							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+						>
+							<option value="all">All Statuses</option>
+							<option value="not_invited">Not Invited</option>
+							<option value="invited">Invited</option>
+							<option value="pending">Pending</option>
+							<option value="active">Active</option>
+						</select>
+						<select
+							bind:value={filterSession}
+							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+						>
+							<option value="all">All Sessions</option>
+							<option value="behind">Behind</option>
+							<option value="on_track">On Track</option>
+							<option value="ahead">Ahead</option>
+						</select>
+						<select
+							bind:value={filterReflections}
+							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+						>
+							<option value="all">All Reflections</option>
+							<option value="complete">Complete</option>
+							<option value="on_track">On Track</option>
+							<option value="behind">Behind</option>
 						</select>
 					</div>
 				</div>
@@ -681,7 +800,7 @@
 										<input
 											type="checkbox"
 											onchange={toggleSelectAll}
-											checked={selectedParticipants.size > 0 && selectedParticipants.size === participants.length}
+											checked={selectedParticipants.size > 0 && selectedParticipants.size === filteredParticipants.length}
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>

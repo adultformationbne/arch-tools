@@ -25,7 +25,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Invalid signature' }, { status: 401 });
 	}
 
-	// Check for duplicate event (idempotency)
+	// Check for duplicate event (idempotency) - record BEFORE processing
 	const { data: existingEvent } = await supabaseAdmin
 		.from('stripe_events')
 		.select('id')
@@ -37,12 +37,18 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ received: true, duplicate: true });
 	}
 
-	// Record the event before processing
-	await supabaseAdmin.from('stripe_events').insert({
+	// Record the event before processing to prevent duplicate handling on retries
+	const { error: insertError } = await supabaseAdmin.from('stripe_events').insert({
 		stripe_event_id: event.id,
 		event_type: event.type,
 		payload: event.data.object as Record<string, unknown>
 	});
+
+	if (insertError) {
+		// If we can't record the event, another process may have grabbed it
+		console.log(`Event already being processed: ${event.id}`);
+		return json({ received: true, duplicate: true });
+	}
 
 	// Process event based on type
 	try {
@@ -60,14 +66,15 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	} catch (error) {
 		console.error(`Error processing Stripe event ${event.type}:`, error);
-		// Still return 200 to prevent retries - we've logged the error
+		// Still return 200 to prevent retries - we've recorded the event
 	}
 
 	return json({ received: true });
 };
 
 /**
- * Handle successful checkout - create enrollment if not already done
+ * Handle successful checkout - atomically complete payment and create enrollment.
+ * Uses the complete_checkout_and_enroll DB function for transactional safety.
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 	const metadata = session.metadata;
@@ -80,20 +87,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 	const fullSession = await getCheckoutSession(session.id);
 	const customerId =
 		typeof fullSession.customer === 'string' ? fullSession.customer : fullSession.customer?.id;
+	const paymentIntentId =
+		typeof fullSession.payment_intent === 'string'
+			? fullSession.payment_intent
+			: fullSession.payment_intent?.id;
 
-	// Check if payment record already exists and is completed
-	const { data: existingPayment } = await supabaseAdmin
-		.from('courses_payments')
-		.select('id, status, enrollment_id')
-		.eq('stripe_checkout_session_id', session.id)
-		.single();
-
-	if (existingPayment?.status === 'completed') {
-		console.log(`Payment already completed for session: ${session.id}`);
-		return;
-	}
-
-	// Get discount info if applied
+	// Extract discount info
 	let discountCode: string | null = null;
 	let discountAmountCents: number | null = null;
 
@@ -101,81 +100,62 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 		const discount = fullSession.total_details.breakdown.discounts[0];
 		if (discount) {
 			discountAmountCents = discount.amount;
-			// Try to get the promo code name
 			if (session.discounts && session.discounts.length > 0) {
 				const discountId = session.discounts[0];
 				if (typeof discountId === 'string') {
-					// It's a promotion code ID - would need to fetch it
 					discountCode = discountId;
 				}
 			}
 		}
 	}
 
-	if (existingPayment) {
-		// Update existing payment record
-		await supabaseAdmin
-			.from('courses_payments')
-			.update({
-				status: 'completed',
-				stripe_customer_id: customerId,
-				stripe_payment_intent_id:
-					typeof fullSession.payment_intent === 'string'
-						? fullSession.payment_intent
-						: fullSession.payment_intent?.id,
-				discount_code: discountCode,
-				discount_amount_cents: discountAmountCents,
-				paid_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', existingPayment.id);
-
-		// Update enrollment if it exists
-		if (existingPayment.enrollment_id) {
-			await supabaseAdmin
-				.from('courses_enrollments')
-				.update({
-					payment_status: 'paid',
-					stripe_customer_id: customerId
-				})
-				.eq('id', existingPayment.enrollment_id);
+	// Use atomic DB function to complete payment + create enrollment
+	const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+		'complete_checkout_and_enroll',
+		{
+			p_stripe_session_id: session.id,
+			p_stripe_payment_intent_id: paymentIntentId || null,
+			p_stripe_customer_id: customerId || null,
+			p_discount_code: discountCode,
+			p_discount_amount_cents: discountAmountCents
 		}
-	} else {
-		// Create payment record (this is a backup - normally created on checkout start)
-		const { data: payment } = await supabaseAdmin
-			.from('courses_payments')
-			.insert({
-				cohort_id: metadata.cohort_id,
-				enrollment_link_id: metadata.enrollment_link_id || null,
-				amount_cents: fullSession.amount_total || 0,
-				currency: fullSession.currency?.toUpperCase() || 'AUD',
-				status: 'completed',
-				stripe_checkout_session_id: session.id,
-				stripe_payment_intent_id:
-					typeof fullSession.payment_intent === 'string'
-						? fullSession.payment_intent
-						: fullSession.payment_intent?.id,
-				stripe_customer_id: customerId,
-				email: metadata.user_email,
-				full_name: metadata.user_name || null,
-				discount_code: discountCode,
-				discount_amount_cents: discountAmountCents,
-				paid_at: new Date().toISOString()
-			})
-			.select('id')
-			.single();
+	);
 
-		console.log(`Created payment record from webhook: ${payment?.id}`);
+	if (rpcError) {
+		console.error('complete_checkout_and_enroll failed:', rpcError);
+		return;
 	}
 
-	// Increment enrollment link uses count
-	if (metadata.enrollment_link_id) {
-		await supabaseAdmin.rpc('increment_enrollment_link_uses', {
-			link_id: metadata.enrollment_link_id
+	if (result?.error === 'payment_not_found') {
+		// Payment record not yet created by enrollment API - create it as backup
+		console.warn(`Payment record not found for session ${session.id}, creating from webhook`);
+		await supabaseAdmin.from('courses_payments').insert({
+			cohort_id: metadata.cohort_id,
+			enrollment_link_id: metadata.enrollment_link_id || null,
+			amount_cents: fullSession.amount_total || 0,
+			currency: fullSession.currency?.toUpperCase() || 'AUD',
+			status: 'completed',
+			stripe_checkout_session_id: session.id,
+			stripe_payment_intent_id: paymentIntentId,
+			stripe_customer_id: customerId,
+			email: metadata.user_email,
+			full_name: metadata.user_name || null,
+			discount_code: discountCode,
+			discount_amount_cents: discountAmountCents,
+			paid_at: new Date().toISOString()
 		});
+		return;
 	}
 
-	console.log(`Checkout completed for session: ${session.id}`);
+	if (result?.already_completed) {
+		console.log(`Payment already completed for session: ${session.id}`);
+		return;
+	}
+
+	console.log(
+		`Checkout completed for session: ${session.id}`,
+		result?.created_enrollment ? '(enrollment created)' : '(enrollment existed or deferred)'
+	);
 }
 
 /**
@@ -197,7 +177,6 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 			})
 			.eq('id', payment.id);
 
-		// TODO: Send reminder email to complete enrollment
 		console.log(`Checkout expired for session: ${session.id}`);
 	}
 }

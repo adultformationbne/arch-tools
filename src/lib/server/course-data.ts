@@ -1513,13 +1513,15 @@ export const CourseMutations = {
 		if (enrollment.user_profile_id) {
 			// User has signed up - need to update auth.users and user_profiles too
 
-			// Check if new email already exists in auth system
-			const { data: { users: allAuthUsers } } = await supabaseAdmin.auth.admin.listUsers();
-			const existingUser = allAuthUsers?.find(
-				u => u.email?.toLowerCase() === email && u.id !== enrollment.user_profile_id
-			);
+			// Check if new email already exists (check user_profiles instead of listUsers to avoid GoTrue scan issues)
+			const { data: existingProfile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id')
+				.eq('email', email)
+				.neq('id', enrollment.user_profile_id)
+				.maybeSingle();
 
-			if (existingUser) {
+			if (existingProfile) {
 				return {
 					data: null,
 					error: { message: 'This email is already in use by another account' } as any

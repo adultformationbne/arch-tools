@@ -1,9 +1,18 @@
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
+import { dev } from '$app/environment';
 
 // Check if we're in mock mode (for development/testing)
+// Hard-guarded: mock mode is ONLY allowed in dev builds
 export function isStripeMockMode(): boolean {
-	return env.STRIPE_MOCK_MODE === 'true';
+	if (env.STRIPE_MOCK_MODE === 'true') {
+		if (!dev) {
+			console.error('CRITICAL: STRIPE_MOCK_MODE=true in production build! Ignoring mock mode.');
+			return false;
+		}
+		return true;
+	}
+	return false;
 }
 
 // Server-side Stripe client (lazy initialization)

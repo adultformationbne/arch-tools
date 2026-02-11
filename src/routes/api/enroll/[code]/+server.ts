@@ -3,10 +3,21 @@ import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { createCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
+import { checkRateLimit } from '$lib/server/rate-limit';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 
-export const POST: RequestHandler = async ({ params, request, locals }) => {
+function isValidEmail(email: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 255;
+}
+
+export const POST: RequestHandler = async ({ params, request, getClientAddress }) => {
 	const { code } = params;
+
+	// Rate limiting: 10 enrollments per IP per 15 minutes
+	const clientIp = getClientAddress();
+	if (!checkRateLimit(`enroll:ip:${clientIp}`, 10, 15 * 60_000)) {
+		throw error(429, 'Too many enrollment attempts. Please try again later.');
+	}
 
 	// Parse request body
 	const body = await request.json();
@@ -22,8 +33,27 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		throw error(400, 'Parish is required');
 	}
 
-	const fullName = `${firstName.trim()} ${surname.trim()}`;
 	const normalizedEmail = email.trim().toLowerCase();
+
+	// Validate email format
+	if (!isValidEmail(normalizedEmail)) {
+		throw error(400, 'Invalid email address');
+	}
+
+	// Rate limiting: 3 enrollments per email per hour
+	if (!checkRateLimit(`enroll:email:${normalizedEmail}`, 3, 60 * 60_000)) {
+		throw error(429, 'Too many enrollment attempts for this email. Please try again later.');
+	}
+
+	// Validate field lengths
+	if (firstName.trim().length > 100 || surname.trim().length > 100) {
+		throw error(400, 'Name is too long');
+	}
+	if (phone.trim().length > 30) {
+		throw error(400, 'Phone number is too long');
+	}
+
+	const fullName = `${firstName.trim()} ${surname.trim()}`;
 
 	// Fetch enrollment link with related data
 	const { data: link, error: linkError } = await supabaseAdmin
@@ -53,6 +83,8 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 				is_free,
 				enrollment_type,
 				max_enrollments,
+				enrollment_opens_at,
+				enrollment_closes_at,
 				module:courses_modules(
 					id,
 					name,
@@ -87,30 +119,12 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		throw error(404, 'Course information not found');
 	}
 
-	// Check if email already enrolled in this cohort
-	const { data: existingEnrollment } = await supabaseAdmin
-		.from('courses_enrollments')
-		.select('id, status')
-		.eq('email', normalizedEmail)
-		.eq('cohort_id', cohort.id)
-		.neq('status', 'withdrawn')
-		.single();
-
-	if (existingEnrollment) {
-		throw error(400, 'This email is already enrolled in this cohort');
+	// Check enrollment window (also checked in page load, but must enforce server-side)
+	if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
+		throw error(400, 'Enrollment has not opened yet');
 	}
-
-	// Check max enrollments
-	if (cohort.max_enrollments) {
-		const { count } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select('id', { count: 'exact', head: true })
-			.eq('cohort_id', cohort.id)
-			.neq('status', 'withdrawn');
-
-		if (count && count >= cohort.max_enrollments) {
-			throw error(400, 'This cohort is full');
-		}
+	if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
+		throw error(400, 'Enrollment for this cohort has closed');
 	}
 
 	// Calculate effective price
@@ -199,27 +213,34 @@ async function handleFreeEnrollment(params: {
 	const isApprovalRequired = cohort.enrollment_type === 'approval_required';
 	const enrollmentStatus = isApprovalRequired ? 'pending' : 'invited';
 
-	// Create enrollment record
-	const { data: enrollment, error: enrollmentError } = await supabaseAdmin
-		.from('courses_enrollments')
-		.insert({
-			cohort_id: cohort.id,
-			user_profile_id: existingUser?.id || null,
-			hub_id: link.hub_id || null,
-			enrollment_link_id: link.id,
-			full_name: fullName,
-			email,
-			role: 'student',
-			status: enrollmentStatus,
-			payment_status: 'not_required'
-		})
-		.select('id')
-		.single();
+	// Use atomic safe_create_enrollment to prevent race conditions on capacity
+	const { data: result, error: rpcError } = await supabaseAdmin.rpc('safe_create_enrollment', {
+		p_cohort_id: cohort.id,
+		p_user_profile_id: existingUser?.id || null,
+		p_hub_id: link.hub_id || null,
+		p_enrollment_link_id: link.id,
+		p_full_name: fullName,
+		p_email: email,
+		p_role: 'student',
+		p_status: enrollmentStatus,
+		p_payment_status: 'not_required',
+		p_payment_id: null
+	});
 
-	if (enrollmentError) {
-		console.error('Failed to create enrollment:', enrollmentError);
+	if (rpcError) {
+		console.error('safe_create_enrollment failed:', rpcError);
 		throw error(500, 'Failed to create enrollment');
 	}
+
+	if (result?.error === 'already_enrolled') {
+		throw error(400, 'This email is already enrolled in this cohort');
+	}
+
+	if (result?.error === 'cohort_full') {
+		throw error(400, 'This cohort is full');
+	}
+
+	const enrollmentId = result?.enrollment_id;
 
 	// Update user profile with additional info if they exist
 	if (existingUser) {
@@ -234,11 +255,7 @@ async function handleFreeEnrollment(params: {
 			.eq('id', existingUser.id);
 	}
 
-	// Increment link uses
-	await supabaseAdmin.rpc('increment_enrollment_link_uses', { link_id: link.id });
-
 	if (isApprovalRequired) {
-		// Return success but indicate pending approval
 		return json({
 			success: true,
 			pendingApproval: true,
@@ -249,7 +266,7 @@ async function handleFreeEnrollment(params: {
 	// For instant enrollment, redirect to success page for password setup
 	return json({
 		success: true,
-		successUrl: `/enroll/${link.code}/success?enrollment_id=${enrollment.id}`
+		successUrl: `/enroll/${link.code}/success?enrollment_id=${enrollmentId}`
 	});
 }
 
@@ -282,6 +299,19 @@ async function handlePaidEnrollment(params: {
 		existingUser
 	} = params;
 
+	// Pre-check: email not already enrolled (non-atomic but fast fail)
+	const { data: existingEnrollment } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select('id')
+		.eq('email', email)
+		.eq('cohort_id', cohort.id)
+		.neq('status', 'withdrawn')
+		.single();
+
+	if (existingEnrollment) {
+		throw error(400, 'This email is already enrolled in this cohort');
+	}
+
 	// Create or get Stripe customer
 	let stripeCustomerId = existingUser?.stripe_customer_id;
 
@@ -305,7 +335,18 @@ async function handlePaidEnrollment(params: {
 		}
 	}
 
-	// Create payment record
+	// Store pending enrollment data in payment record (NOT in URL)
+	const pendingData = {
+		fullName,
+		email,
+		phone,
+		parishId,
+		parishOther,
+		referralSource: referralSource === 'other' ? referralOther : referralSource,
+		hubId: link.hub_id
+	};
+
+	// Create payment record with pending data
 	const { data: payment, error: paymentError } = await supabaseAdmin
 		.from('courses_payments')
 		.insert({
@@ -317,7 +358,8 @@ async function handlePaidEnrollment(params: {
 			status: 'pending',
 			stripe_customer_id: stripeCustomerId,
 			email,
-			full_name: fullName
+			full_name: fullName,
+			pending_data: pendingData
 		})
 		.select('id')
 		.single();
@@ -327,30 +369,13 @@ async function handlePaidEnrollment(params: {
 		throw error(500, 'Failed to initialize payment');
 	}
 
-	// Store enrollment data in a temporary record for after payment
-	// We'll create the actual enrollment after payment succeeds
-	const pendingData = {
-		fullName,
-		email,
-		phone,
-		parishId,
-		parishOther,
-		referralSource: referralSource === 'other' ? referralOther : referralSource,
-		hubId: link.hub_id,
-		paymentId: payment.id
-	};
-
-	// Store pending data (we'll use the payment record's metadata or a separate approach)
-	// For now, encode in the success URL
-	const pendingDataEncoded = Buffer.from(JSON.stringify(pendingData)).toString('base64url');
-
-	// Create Stripe Checkout session
+	// Create Stripe Checkout session - success URL only includes session_id (no sensitive data)
 	const session = await createCheckoutSession({
 		priceInCents: pricing.amount,
 		currency: pricing.currency,
 		customerEmail: email,
 		customerId: stripeCustomerId,
-		successUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}/success?session_id={CHECKOUT_SESSION_ID}&data=${pendingDataEncoded}`,
+		successUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}/success?session_id={CHECKOUT_SESSION_ID}`,
 		cancelUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}?cancelled=true`,
 		metadata: {
 			cohort_id: cohort.id,
