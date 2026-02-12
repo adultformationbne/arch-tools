@@ -1,40 +1,77 @@
 import { error } from '@sveltejs/kit';
-import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const startTime = Date.now();
 	const courseSlug = event.params.slug;
 
 	// Auth is already done in layout - no need to check again!
-	// Get user from locals instead of re-authenticating
 	const { user } = await event.locals.safeGetSession();
 
 	try {
-		// Get layout data (modules and cohorts already loaded, auth already checked)
-		const parentStart = Date.now();
+		// Get layout data (modules, cohorts, hubs already loaded and cached)
 		const layoutData = await event.parent();
 
 		const courseInfo = layoutData?.courseInfo || {};
 		const courseId = courseInfo.id;
+		const cohorts = layoutData?.cohorts || [];
 
 		if (!courseId) {
 			throw error(404, 'Course not found');
 		}
 
-		// Get admin reflections data using repository aggregate
-		const reflectionsStart = Date.now();
-		const result = await CourseAggregates.getAdminReflections(courseId);
+		const cohortIds = cohorts.map(c => c.id);
 
-		if (result.error || !result.data) {
-			console.error('Error fetching reflections:', result.error);
+		if (cohortIds.length === 0) {
+			return {
+				reflections: [],
+				cohorts: [],
+				currentUserId: user.id,
+				courseSlug
+			};
+		}
+
+		// Query reflections directly using cohort IDs from layout (avoids re-fetching cohorts)
+		const { data: allReflections, error: reflectionsError } = await supabaseAdmin
+			.from('courses_reflection_responses')
+			.select(
+				`
+				*,
+				question:question_id (
+					id,
+					question_text,
+					session:session_id (
+						id,
+						session_number,
+						title
+					)
+				),
+				enrollment:enrollment_id (
+					id,
+					user_profile:user_profile_id (
+						id,
+						full_name,
+						email
+					)
+				),
+				marked_by_profile:marked_by (
+					full_name
+				),
+				reviewing_by_profile:reviewing_by (
+					full_name
+				)
+			`
+			)
+			.in('cohort_id', cohortIds)
+			.order('created_at', { ascending: false });
+
+		if (reflectionsError) {
+			console.error('Error fetching reflections:', reflectionsError);
 			throw error(500, 'Failed to load reflections');
 		}
 
-		const { cohorts, reflections } = result.data;
-
 		// Process reflections for display
-		const processedReflections = reflections.map(r => {
+		const processedReflections = (allReflections || []).map(r => {
 			// Calculate display status for UI filtering
 			const dbStatus = r.status || 'submitted';
 			let displayStatus = 'pending';
@@ -42,10 +79,7 @@ export const load: PageServerLoad = async (event) => {
 			if (dbStatus === 'passed') {
 				displayStatus = 'marked';
 			} else if (dbStatus === 'submitted' || dbStatus === 'needs_revision' || dbStatus === 'resubmitted') {
-				// Check if overdue (submitted more than 7 days ago without marking)
-				const submittedDate = new Date(r.created_at);
-				const daysSinceSubmission = (Date.now() - submittedDate.getTime()) / (1000 * 60 * 60 * 24);
-				displayStatus = daysSinceSubmission > 7 ? 'overdue' : 'pending';
+				displayStatus = 'pending';
 			}
 
 			// Map status to grade for UI compatibility
@@ -96,13 +130,12 @@ export const load: PageServerLoad = async (event) => {
 			};
 		});
 
-		// Get cohort options for filter
+		// Get cohort options for filter (use layout data)
 		const cohortOptions = cohorts.map(c => ({
 			id: c.id,
 			name: c.name,
 			moduleName: c.module?.name || ''
 		}));
-
 
 		return {
 			reflections: processedReflections,

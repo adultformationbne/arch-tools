@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth';
+import { invalidateCourseCache } from '$lib/server/course-cache';
 import { supabaseAdmin } from '$lib/server/supabase';
 import type { RequestHandler } from './$types';
 
@@ -94,6 +95,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ success: false, error: 'Failed to update settings' }, { status: 500 });
 		}
 
+		invalidateCourseCache(courseSlug);
 		return json({ success: true, data });
 	} catch (error) {
 		console.error('Settings update error:', error);

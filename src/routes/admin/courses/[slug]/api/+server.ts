@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { CourseMutations, CourseQueries } from '$lib/server/course-data';
+import { invalidateCourseCache } from '$lib/server/course-cache';
 import { supabaseAdmin } from '$lib/server/supabase';
 import {
 	buildVariableContext,
@@ -161,6 +162,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to create module');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					data: result.data,
@@ -185,6 +187,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to update module');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					data: result.data,
@@ -204,6 +207,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(400, result.error.message || 'Failed to delete module');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					message: 'Module deleted successfully'
@@ -359,6 +363,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to create cohort');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					data: result.data,
@@ -396,6 +401,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to update cohort');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					data: result.data,
@@ -415,6 +421,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(400, result.error.message || 'Failed to delete cohort');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					message: 'Cohort deleted successfully'
@@ -433,6 +440,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to duplicate cohort');
 				}
 
+				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
 					data: result.data,

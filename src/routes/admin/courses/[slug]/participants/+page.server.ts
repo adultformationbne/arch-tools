@@ -3,16 +3,16 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
-	// Layout protects all nested admin routes
+	// Auth already done in layout - no need to check again
 	const { user } = await event.locals.safeGetSession();
 
 	try {
-		// Get layout data (course, modules, cohorts already loaded)
+		// Get layout data (course, modules, cohorts, hubs already loaded)
 		const layoutData = await event.parent();
 		const courseInfo = layoutData?.courseInfo || {};
 		const cohorts = layoutData?.cohorts || [];
 		const modules = layoutData?.modules || [];
+		const hubs = layoutData?.hubs || [];
 
 		const cohortIds = cohorts?.map(c => c.id) || [];
 
@@ -27,53 +27,72 @@ export const load: PageServerLoad = async (event) => {
 			};
 		}
 
-		// Get all enrollments for this course's cohorts with full profile data
-		const { data: enrollments, error: enrollmentsError } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select(`
-				*,
-				user_profile:user_profile_id (
-					id,
-					email,
-					full_name,
-					first_name,
-					last_name,
-					phone,
-					parish_community,
-					parish_role,
-					address
-				),
-				cohort:cohort_id (
-					id,
-					name,
-					current_session,
-					module:module_id (
+		// Run ALL queries in parallel - including reflections using cohort IDs
+		const [enrollmentsResult, attendanceResult, sessionsResult, reflectionsResult] = await Promise.all([
+			// Enrollments with full profile data
+			supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					*,
+					user_profile:user_profile_id (
+						id,
+						email,
+						full_name,
+						first_name,
+						last_name,
+						phone,
+						parish_community,
+						parish_role,
+						address
+					),
+					cohort:cohort_id (
+						id,
+						name,
+						current_session,
+						module:module_id (
+							id,
+							name
+						)
+					),
+					hub:hub_id (
 						id,
 						name
 					)
-				),
-				hub:hub_id (
-					id,
-					name
-				)
-			`)
-			.in('cohort_id', cohortIds)
-			.order('created_at', { ascending: false });
+				`)
+				.in('cohort_id', cohortIds)
+				.order('created_at', { ascending: false }),
 
-		if (enrollmentsError) {
-			console.error('Error fetching enrollments:', enrollmentsError);
+			// Attendance records for all cohorts
+			supabaseAdmin
+				.from('courses_attendance')
+				.select('enrollment_id, session_number, present')
+				.in('cohort_id', cohortIds),
+
+			// Session count from first module
+			modules.length > 0
+				? supabaseAdmin
+					.from('courses_sessions')
+					.select('id', { count: 'exact', head: true })
+					.eq('module_id', modules[0].id)
+					.gt('session_number', 0)
+				: Promise.resolve({ count: null }),
+
+			// Reflection responses - query by cohort IDs so it can run in parallel
+			supabaseAdmin
+				.from('courses_reflection_responses')
+				.select('enrollment_id, status')
+				.in('cohort_id', cohortIds)
+		]);
+
+		const enrollments = enrollmentsResult.data;
+		if (enrollmentsResult.error) {
+			console.error('Error fetching enrollments:', enrollmentsResult.error);
 			throw error(500, 'Failed to load users');
 		}
 
-		// Get attendance records for all cohorts
-		const { data: attendanceRecords } = await supabaseAdmin
-			.from('courses_attendance')
-			.select('enrollment_id, session_number, present')
-			.in('cohort_id', cohortIds);
-
 		// Build attendance map: enrollment_id -> { attended: number, total: number }
 		const attendanceMap = new Map();
-		for (const record of attendanceRecords || []) {
+		for (const record of attendanceResult.data || []) {
 			if (!attendanceMap.has(record.enrollment_id)) {
 				attendanceMap.set(record.enrollment_id, { attended: 0, total: 0 });
 			}
@@ -82,16 +101,9 @@ export const load: PageServerLoad = async (event) => {
 			if (record.present) stats.attended++;
 		}
 
-		// Get reflection responses for all enrollments
-		const enrollmentIds = (enrollments || []).map(e => e.id);
-		const { data: reflectionResponses } = await supabaseAdmin
-			.from('courses_reflection_responses')
-			.select('enrollment_id, status')
-			.in('enrollment_id', enrollmentIds);
-
 		// Build reflection map: enrollment_id -> { submitted: number, passed: number }
 		const reflectionMap = new Map();
-		for (const response of reflectionResponses || []) {
+		for (const response of reflectionsResult.data || []) {
 			if (!reflectionMap.has(response.enrollment_id)) {
 				reflectionMap.set(response.enrollment_id, { submitted: 0, passed: 0 });
 			}
@@ -100,16 +112,7 @@ export const load: PageServerLoad = async (event) => {
 			if (response.status === 'passed') stats.passed++;
 		}
 
-		// Get total sessions from first module (for progress calculation)
-		let totalSessions = 8;
-		if (modules.length > 0) {
-			const { data: sessions } = await supabaseAdmin
-				.from('courses_sessions')
-				.select('id')
-				.eq('module_id', modules[0].id)
-				.gt('session_number', 0); // Exclude session 0 (pre-start)
-			totalSessions = sessions?.length || 8;
-		}
+		const totalSessions = sessionsResult.count || 8;
 
 		// Deduplicate by email and attach progress data
 		const userMap = new Map();
@@ -145,21 +148,10 @@ export const load: PageServerLoad = async (event) => {
 
 		const deduplicatedUsers = Array.from(userMap.values());
 
-		// Get hubs for THIS COURSE only
-		const { data: hubs, error: hubsError } = await supabaseAdmin
-			.from('courses_hubs')
-			.select('*')
-			.eq('course_id', courseInfo.id)
-			.order('name');
-
-		if (hubsError) {
-			console.error('Error fetching hubs:', hubsError);
-		}
-
 		return {
 			course: courseInfo,
 			users: deduplicatedUsers,
-			hubs: hubs || [],
+			hubs,
 			cohorts,
 			totalSessions,
 			currentUserEmail: user?.email || ''

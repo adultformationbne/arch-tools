@@ -4,8 +4,9 @@ import { supabaseAdmin } from '$lib/server/supabase';
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 	const courseId = parentData.courseInfo.id;
+	const layoutCohorts = parentData.cohorts || [];
 
-	// Get all discount codes for this course
+	// Get discount codes (only page-specific query needed)
 	const { data: discountCodes } = await supabaseAdmin
 		.from('courses_discount_codes')
 		.select(
@@ -32,25 +33,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 		.eq('course_id', courseId)
 		.order('created_at', { ascending: false });
 
-	// Get cohorts for the dropdown
-	const { data: cohorts } = await supabaseAdmin
-		.from('courses_cohorts')
-		.select(
-			`
-			id,
-			name,
-			module:courses_modules!inner(
-				id,
-				name,
-				course_id
-			)
-		`
-		)
-		.eq('module.course_id', courseId)
-		.order('start_date', { ascending: false });
-
 	return {
 		discountCodes: discountCodes || [],
-		cohorts: cohorts || []
+		cohorts: layoutCohorts
 	};
 };

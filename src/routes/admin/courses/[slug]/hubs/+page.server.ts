@@ -3,47 +3,99 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	// ✅ OPTIMIZATION: Auth already done in layout - no need to check again!
+	// Auth already done in layout
 
 	try {
-		// Get layout data (course, modules, cohorts already loaded)
+		// Get layout data (course, modules, cohorts, hubs already loaded and cached)
 		const layoutData = await event.parent();
 		const courseInfo = layoutData?.courseInfo;
 		const cohorts = layoutData?.cohorts || [];
+		const layoutHubs = layoutData?.hubs || [];
 
 		if (!courseInfo) {
 			throw error(404, 'Course not found');
 		}
 
 		const course = { id: courseInfo.id, name: courseInfo.name, slug: courseInfo.slug };
-
-		// Get hubs for THIS COURSE only
-		const { data: hubs, error: hubsError } = await supabaseAdmin
-			.from('courses_hubs')
-			.select('id, name, location, course_id, created_at, updated_at')
-			.eq('course_id', course.id)
-			.order('name');
-
-		if (hubsError) {
-			console.error('Error fetching hubs:', hubsError);
-			throw error(500, 'Failed to load hubs');
-		}
-
-		// ✅ OPTIMIZATION: Use cached cohort IDs from layout
-		const hubIds = hubs?.map((h) => h.id) || [];
+		const hubIds = layoutHubs.map((h) => h.id);
 		const cohortIds = cohorts.map((c) => c.id);
 
-		// Fetch coordinators for each hub
+		// Fetch coordinators and all enrollments in parallel
 		let hubCoordinators: Record<string, any[]> = {};
+		let availableUsers: any[] = [];
 
 		if (hubIds.length > 0 && cohortIds.length > 0) {
-			const { data: coordinators } = await supabaseAdmin
+			const [coordinatorsResult, allEnrollmentsResult] = await Promise.all([
+				// Coordinators for each hub
+				supabaseAdmin
+					.from('courses_enrollments')
+					.select(`
+						id,
+						hub_id,
+						full_name,
+						email,
+						user_profile:user_profile_id (
+							id,
+							full_name,
+							email
+						)
+					`)
+					.in('cohort_id', cohortIds)
+					.in('hub_id', hubIds)
+					.eq('role', 'coordinator')
+					.order('full_name'),
+
+				// All enrollments for assignment dropdown
+				supabaseAdmin
+					.from('courses_enrollments')
+					.select(`
+						id,
+						full_name,
+						email,
+						role,
+						hub_id,
+						user_profile:user_profile_id (
+							id,
+							full_name,
+							email
+						)
+					`)
+					.in('cohort_id', cohortIds)
+					.in('status', ['active', 'accepted', 'invited'])
+					.order('full_name')
+			]);
+
+			// Group coordinators by hub
+			coordinatorsResult.data?.forEach((e) => {
+				if (!e.hub_id) return;
+				if (!hubCoordinators[e.hub_id]) {
+					hubCoordinators[e.hub_id] = [];
+				}
+				hubCoordinators[e.hub_id].push({
+					id: e.id,
+					full_name: e.user_profile?.full_name || e.full_name,
+					email: e.user_profile?.email || e.email
+				});
+			});
+
+			// Format enrollments for assignment dropdown
+			availableUsers = (allEnrollmentsResult.data || []).map(e => ({
+				id: e.id,
+				full_name: e.user_profile?.full_name || e.full_name,
+				email: e.user_profile?.email || e.email,
+				role: e.role,
+				hub_id: e.hub_id
+			}));
+		} else if (cohortIds.length > 0) {
+			// No hubs yet but we still need enrollments for assignment
+			const { data: allEnrollments } = await supabaseAdmin
 				.from('courses_enrollments')
 				.select(`
 					id,
-					hub_id,
 					full_name,
 					email,
+					role,
+					hub_id,
 					user_profile:user_profile_id (
 						id,
 						full_name,
@@ -51,64 +103,28 @@ export const load: PageServerLoad = async (event) => {
 					)
 				`)
 				.in('cohort_id', cohortIds)
-				.in('hub_id', hubIds)
-				.eq('role', 'coordinator')
+				.in('status', ['active', 'accepted', 'invited'])
 				.order('full_name');
 
-			// Group by hub
-			coordinators?.forEach((e) => {
-				if (!e.hub_id) return;
-
-				if (!hubCoordinators[e.hub_id]) {
-					hubCoordinators[e.hub_id] = [];
-				}
-
-				hubCoordinators[e.hub_id].push({
-					id: e.id,
-					full_name: e.user_profile?.full_name || e.full_name,
-					email: e.user_profile?.email || e.email
-				});
-			});
+			availableUsers = (allEnrollments || []).map(e => ({
+				id: e.id,
+				full_name: e.user_profile?.full_name || e.full_name,
+				email: e.user_profile?.email || e.email,
+				role: e.role,
+				hub_id: e.hub_id
+			}));
 		}
 
-		// Add coordinators to hubs
-		const hubsWithMembers = hubs?.map((hub) => ({
+		// Add coordinators to layout hubs
+		const hubsWithMembers = layoutHubs.map((hub) => ({
 			...hub,
 			coordinators: hubCoordinators[hub.id] || []
-		}));
-
-		// Get all enrollments for this course (to allow assigning as coordinators)
-		const { data: allEnrollments } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select(`
-				id,
-				full_name,
-				email,
-				role,
-				hub_id,
-				user_profile:user_profile_id (
-					id,
-					full_name,
-					email
-				)
-			`)
-			.in('cohort_id', cohortIds)
-			.in('status', ['active', 'accepted', 'invited'])
-			.order('full_name');
-
-		// Format enrollments for assignment dropdown
-		const availableUsers = (allEnrollments || []).map(e => ({
-			id: e.id,
-			full_name: e.user_profile?.full_name || e.full_name,
-			email: e.user_profile?.email || e.email,
-			role: e.role,
-			hub_id: e.hub_id
 		}));
 
 		return {
 			course,
 			courseId: course.id,
-			hubs: hubsWithMembers || [],
+			hubs: hubsWithMembers,
 			availableUsers
 		};
 	} catch (err) {

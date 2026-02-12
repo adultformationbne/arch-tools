@@ -1,24 +1,12 @@
-import { requireCourseAdmin } from '$lib/server/auth';
-import { supabaseAdmin } from '$lib/server/supabase';
+import type { PageServerLoad } from './$types';
 
-export async function load(event) {
-	const courseSlug = event.params.slug;
-	await requireCourseAdmin(event, courseSlug);
-
-	// Fetch course details
-	const { data: course, error } = await supabaseAdmin
-		.from('courses')
-		.select('*')
-		.eq('slug', courseSlug)
-		.single();
-
-	if (error || !course) {
-		console.error('Failed to fetch course:', error);
-		throw new Error('Course not found');
-	}
+export const load: PageServerLoad = async (event) => {
+	// Auth already done in layout - no need to check again
+	// Full course record is available from layout (cached)
+	const layoutData = await event.parent();
 
 	return {
-		courseSlug,
-		course
+		courseSlug: event.params.slug,
+		course: layoutData.course
 	};
-}
+};

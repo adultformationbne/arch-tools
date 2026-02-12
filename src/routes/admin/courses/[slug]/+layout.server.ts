@@ -1,14 +1,11 @@
 /**
  * Admin Course Layout - Server Load Function
  *
- * Loads base course and module/cohort data for all admin pages.
- * Uses CourseAggregates.getAdminCourseData() for optimized parallel queries.
+ * Loads base course, module, cohort, and hub data for all admin pages.
+ * Uses in-memory TTL cache (30s) to avoid re-running DB queries
+ * on every client-side navigation. Auth is always verified.
  *
- * Data structure is consumed by:
- * - Admin dashboard (+page.svelte)
- * - Sessions editor (sessions/+page.svelte)
- * - Attendance (attendance/+page.svelte)
- * - Reflections (reflections/+page.svelte)
+ * Child pages access this data via event.parent() to avoid redundant queries.
  */
 
 import type { LayoutServerLoad } from './$types';
@@ -16,28 +13,57 @@ import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
+import { getCachedCourseData, setCachedCourseData } from '$lib/server/course-cache.js';
 
 export const load: LayoutServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
-	// Require admin access (via courses.admin module OR courses.manager + enrolled as admin)
+	// Always verify auth on every request
 	const { user, enrollment } = await requireCourseAdmin(event, courseSlug, {
 		mode: 'redirect',
 		redirectTo: '/courses'
 	});
 
-	// Get course by slug
-	const { data: course, error: courseError } = await CourseQueries.getCourse(courseSlug);
+	// Check cache for course data
+	const cached = getCachedCourseData(courseSlug);
 
-	if (courseError || !course) {
-		throw redirect(303, '/courses');
-	}
+	let course: any;
+	let modules: any[];
+	let cohorts: any[];
+	let hubs: any[];
 
-	// Load admin course data (modules + cohorts) in parallel
-	const result = await CourseAggregates.getAdminCourseData(course.id);
+	if (cached) {
+		// Cache hit - skip DB queries
+		course = cached.course;
+		modules = cached.modules;
+		cohorts = cached.cohorts;
+		hubs = cached.hubs;
+	} else {
+		// Cache miss - run full queries
+		const { data: courseData, error: courseError } = await CourseQueries.getCourse(courseSlug);
 
-	if (result.error || !result.data) {
-		throw error(500, 'Failed to load admin course data');
+		if (courseError || !courseData) {
+			throw redirect(303, '/courses');
+		}
+
+		course = courseData;
+
+		// Fetch modules, cohorts, and hubs in parallel
+		const [adminDataResult, hubsResult] = await Promise.all([
+			CourseAggregates.getAdminCourseData(course.id),
+			CourseQueries.getHubs(course.id)
+		]);
+
+		if (adminDataResult.error || !adminDataResult.data) {
+			throw error(500, 'Failed to load admin course data');
+		}
+
+		modules = adminDataResult.data.modules;
+		cohorts = adminDataResult.data.cohorts;
+		hubs = hubsResult.data || [];
+
+		// Store in cache for subsequent navigations
+		setCachedCourseData(courseSlug, { course, modules, cohorts, hubs });
 	}
 
 	// Extract theme, branding, and feature settings
@@ -50,8 +76,10 @@ export const load: LayoutServerLoad = async (event) => {
 		courseSlug,
 		enrollmentRole: enrollment?.role,
 		isCourseAdmin: true,
-		modules: result.data.modules,
-		cohorts: result.data.cohorts,
+		modules,
+		cohorts,
+		hubs,
+		course,
 		courseInfo: {
 			id: course.id,
 			slug: courseSlug,

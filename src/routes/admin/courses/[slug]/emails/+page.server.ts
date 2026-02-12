@@ -5,15 +5,18 @@ import { supabaseAdmin } from '$lib/server/supabase';
 /**
  * Email Management Page
  *
- * Loads email templates, cohorts, hubs for course admin panel.
+ * Loads email templates, logs, and enrollment counts.
+ * Cohorts and hubs come from parent layout (cached).
  * Auth is handled in parent layout (+layout.server.ts).
  */
 export const load: PageServerLoad = async (event) => {
 	const { slug } = event.params;
 
-	// Get layout data (course info already loaded, auth already checked)
+	// Get layout data (course info, cohorts, hubs already loaded and cached)
 	const layoutData = await event.parent();
 	const courseInfo = layoutData?.courseInfo || {};
+	const layoutCohorts = layoutData?.cohorts || [];
+	const layoutHubs = layoutData?.hubs || [];
 
 	// Get current user email for test email default
 	const { user } = await event.locals.safeGetSession();
@@ -22,8 +25,11 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404, 'Course not found');
 	}
 
-	// Run all queries in parallel for performance
-	const [templatesResult, logsResult, cohortsResult, hubsResult] = await Promise.all([
+	// Get cohort IDs from layout data (already loaded, no query needed)
+	const cohortIds = layoutCohorts.map((c) => c.id);
+
+	// Run all page-specific queries in parallel (templates, logs, enrollments)
+	const [templatesResult, logsResult, enrollmentsResult] = await Promise.all([
 		// Get all email templates for this course
 		supabaseAdmin
 			.from('email_templates')
@@ -59,45 +65,15 @@ export const load: PageServerLoad = async (event) => {
 			.order('sent_at', { ascending: false })
 			.limit(100),
 
-		// Get cohorts for recipient filtering
-		supabaseAdmin
-			.from('courses_cohorts')
-			.select(`
-				id,
-				name,
-				current_session,
-				status,
-				courses_modules!inner (
-					id,
-					name,
-					course_id
-				)
-			`)
-			.eq('courses_modules.course_id', courseInfo.id)
-			.neq('status', 'archived')
-			.order('start_date', { ascending: false }),
-
-		// Get hubs for recipient filtering
-		supabaseAdmin
-			.from('courses_hubs')
-			.select('id, name')
-			.eq('course_id', courseInfo.id)
-			.order('name', { ascending: true })
+		// Fetch enrollments for cohort/hub counts (uses cohort IDs from layout)
+		cohortIds.length > 0
+			? supabaseAdmin
+				.from('courses_enrollments')
+				.select('cohort_id, hub_id')
+				.eq('status', 'active')
+				.in('cohort_id', cohortIds)
+			: Promise.resolve({ data: [] })
 	]);
-
-	// Get cohort IDs from results to filter enrollments
-	const cohortIds = (cohortsResult.data || []).map((c) => c.id);
-
-	// Fetch enrollments for these cohorts only
-	let enrollmentsData: Array<{ cohort_id: string; hub_id: string | null }> = [];
-	if (cohortIds.length > 0) {
-		const { data } = await supabaseAdmin
-			.from('courses_enrollments')
-			.select('cohort_id, hub_id')
-			.eq('status', 'active')
-			.in('cohort_id', cohortIds);
-		enrollmentsData = data || [];
-	}
 
 	if (templatesResult.error) {
 		console.error('Error loading templates:', templatesResult.error);
@@ -108,20 +84,12 @@ export const load: PageServerLoad = async (event) => {
 		console.error('Error loading email logs:', logsResult.error);
 	}
 
-	if (cohortsResult.error) {
-		console.error('Error loading cohorts:', cohortsResult.error);
-	}
-
-	if (hubsResult.error) {
-		console.error('Error loading hubs:', hubsResult.error);
-	}
-
 	const templates = templatesResult.data || [];
 	const systemTemplates = templates.filter((t) => t.category === 'system');
 	const customTemplates = templates.filter((t) => t.category === 'custom');
 
 	// Calculate enrollment counts from the enrollments data
-	const enrollments = enrollmentsData;
+	const enrollments = enrollmentsResult.data || [];
 	const cohortCounts = new Map<string, number>();
 	const hubCounts = new Map<string, number>();
 
@@ -134,14 +102,14 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 
-	// Transform cohorts to include enrollment count
-	const cohorts = (cohortsResult.data || []).map((c) => ({
+	// Transform layout cohorts to include enrollment count
+	const cohorts = layoutCohorts.map((c) => ({
 		...c,
 		enrollment_count: cohortCounts.get(c.id) || 0
 	}));
 
-	// Transform hubs to include enrollment count
-	const hubs = (hubsResult.data || []).map((h) => ({
+	// Transform layout hubs to include enrollment count
+	const hubs = layoutHubs.map((h) => ({
 		...h,
 		enrollment_count: hubCounts.get(h.id) || 0
 	}));
