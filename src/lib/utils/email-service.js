@@ -4,6 +4,7 @@
  */
 
 import { Resend } from 'resend';
+import { buildCourseVariablesFromEnrollment } from '$lib/email/context-config';
 
 /** Build email log entry with consistent column structure */
 function buildLogEntry({ to, emailType, subject, body, status, resendId = null, errorMessage = null, referenceId = null, metadata = {} }) {
@@ -291,11 +292,6 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 
 	// Determine reply-to: use provided value, or fall back to platform default
 	const effectiveReplyTo = options.replyTo || platformSettings.replyToEmail;
-
-	// Debug logging for reply-to
-	console.log('[sendBulkEmails] options.replyTo:', options.replyTo);
-	console.log('[sendBulkEmails] platformSettings.replyToEmail:', platformSettings.replyToEmail);
-	console.log('[sendBulkEmails] effectiveReplyTo:', effectiveReplyTo);
 
 	// Resend batch API supports up to 100 emails per request
 	const BATCH_SIZE = 100;
@@ -713,57 +709,30 @@ export function buildVariableContext({
 	session = null,
 	siteUrl
 }) {
-	// Parse name into first/last
-	const fullName = enrollment.full_name || '';
-	const nameParts = fullName.split(' ');
-	const firstName = nameParts[0] || '';
-	const lastName = nameParts.slice(1).join(' ') || '';
-
-	// Build base variables
-	const variables = {
-		// Student variables
-		firstName,
-		lastName,
-		fullName,
-		email: enrollment.email || '',
-
-		// Course variables
-		courseName: course?.name || '',
-		courseSlug: course?.slug || '',
-		cohortName: cohort?.name || '',
-		startDate: cohort?.start_date
-			? new Date(cohort.start_date).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric'
-				})
-			: '',
-		endDate: cohort?.end_date
-			? new Date(cohort.end_date).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric'
-				})
-			: '',
-
-		// Session variables
-		sessionNumber: session?.session_number || cohort?.current_session || '',
-		sessionTitle: session?.title || '',
-		currentSession: cohort?.current_session || '',
-
-		// Link variables
-		// loginLink: Smart login link - pre-fills email, auto-sends OTP for new users, shows password for existing
-		loginLink: course?.slug
-			? `${siteUrl}/login?course=${course.slug}&email=${encodeURIComponent(enrollment.email || '')}&send=true`
-			: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email || '')}&send=true`,
-		dashboardLink: `${siteUrl}/courses/${course?.slug || ''}`,
-		materialsLink: `${siteUrl}/courses/${course?.slug || ''}/materials`,
-		reflectionLink: `${siteUrl}/courses/${course?.slug || ''}/reflections`,
-
-		// System variables
-		supportEmail: course?.email_branding_config?.reply_to_email || 'accf@archdiocesanministries.org.au',
-		hubName: enrollment.hub_name || 'N/A'
+	// Build enrollment-like object for shared function
+	const enrollmentLike = {
+		full_name: enrollment.full_name,
+		email: enrollment.email,
+		current_session: enrollment.current_session,
+		courses_hubs: { name: enrollment.hub_name || '' },
+		...(cohort ? { courses_cohorts: cohort } : {})
 	};
+
+	const variables = buildCourseVariablesFromEnrollment(enrollmentLike, course, null, siteUrl);
+
+	// Override loginLink with smart login (includes email pre-fill for auto-OTP)
+	variables.loginLink = course?.slug
+		? `${siteUrl}/login?course=${course.slug}&email=${encodeURIComponent(enrollment.email || '')}&send=true`
+		: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email || '')}&send=true`;
+
+	// Session-specific overrides
+	if (session) {
+		variables.sessionNumber = String(session.session_number || variables.sessionNumber);
+		variables.sessionTitle = session.title || variables.sessionTitle;
+	}
+
+	// Hub name fallback for sent emails
+	if (!variables.hubName) variables.hubName = 'N/A';
 
 	return variables;
 }

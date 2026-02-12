@@ -147,7 +147,8 @@ async function sendReflectionMarkedEmail({
 			},
 			course: {
 				name: course.name,
-				slug: course.slug
+				slug: course.slug,
+				email_branding_config: course.email_branding_config
 			},
 			cohort: {
 				name: cohort.name,

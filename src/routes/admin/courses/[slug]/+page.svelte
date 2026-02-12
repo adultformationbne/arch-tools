@@ -97,6 +97,14 @@
 		})
 	);
 
+	// Any selected participant already received a welcome email?
+	const anySelectedWelcomed = $derived(
+		Array.from(selectedParticipants).some(id => {
+			const p = participants.find(s => s.id === id);
+			return p?.welcome_email_sent_at;
+		})
+	);
+
 	// Participants who can be advanced
 	const participantsBehind = $derived(
 		selectedCohort?.current_session > 0
@@ -503,7 +511,7 @@
 
 	// Status badge styling
 	function getStatusBadge(participant) {
-		if (!participant.welcome_email_sent_at) {
+		if (!participant.welcome_email_sent_at && !participant.last_login_at) {
 			return { label: 'Not Invited', class: 'bg-gray-100 text-gray-600' };
 		}
 		if (!participant.last_login_at) {
@@ -522,7 +530,7 @@
 	}
 
 	function getStatusKey(participant) {
-		if (!participant.welcome_email_sent_at) return 'not_invited';
+		if (!participant.welcome_email_sent_at && !participant.last_login_at) return 'not_invited';
 		if (!participant.last_login_at) return 'invited';
 		if (participant.status === 'pending') return 'pending';
 		return 'active';
@@ -731,6 +739,7 @@
 								<Send size={12} />
 								Welcome
 							</button>
+							{#if anySelectedWelcomed}
 							<button
 								onclick={handleResendWelcome}
 								class="px-2 py-1.5 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -738,6 +747,7 @@
 								<MailCheck size={12} />
 								Resend
 							</button>
+							{/if}
 							<button
 								onclick={handleEmailSelected}
 								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"

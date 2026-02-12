@@ -160,7 +160,8 @@ export const POST: RequestHandler = async (event) => {
 					},
 					course: {
 						name: course.name,
-						slug: course.slug
+						slug: course.slug,
+						email_branding_config: course.email_branding_config
 					},
 					cohort: cohort
 						? {
@@ -226,8 +227,6 @@ export const POST: RequestHandler = async (event) => {
 		// Send all emails using batch API (up to 100 per request)
 		// Use course-specific reply-to if set
 		const courseReplyTo = course.email_branding_config?.reply_to_email || null;
-		console.log('[send-email] course.email_branding_config:', course.email_branding_config);
-		console.log('[send-email] courseReplyTo:', courseReplyTo);
 
 		const results = await sendBulkEmails({
 			emails: emailsToSend,

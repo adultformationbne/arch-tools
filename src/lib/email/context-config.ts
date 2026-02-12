@@ -66,7 +66,86 @@ export interface EmailContextConfig {
 // COURSE CONTEXT
 // =====================================================
 
-const COURSE_VARIABLES: EmailVariable[] = [
+/**
+ * Build course email variables from a raw enrollment object.
+ * Works with both raw API enrollment data and normalized EmailRecipient.raw.
+ * Handles multiple data shapes: nested cohort (courses_cohorts/cohort) or separate cohort lookup.
+ */
+export function buildCourseVariablesFromEnrollment(
+	enrollment: Record<string, unknown>,
+	courseData: Record<string, unknown> | undefined,
+	cohortsList: Array<Record<string, unknown>> | undefined,
+	origin: string
+): Record<string, string> {
+	// Get cohort data - handles nested (courses_cohorts, cohort) or lookup by cohort_id
+	const cohortData =
+		(enrollment.courses_cohorts as Record<string, unknown>) ||
+		(enrollment.cohort as Record<string, unknown>) ||
+		cohortsList?.find((c) => c.id === enrollment.cohort_id) ||
+		{};
+
+	const fullName = (enrollment.full_name as string) || '';
+	const nameParts = fullName.split(' ');
+	const firstName = nameParts[0] || '';
+	const lastName = nameParts.slice(1).join(' ') || '';
+
+	const slug = (courseData?.slug as string) || '';
+	const emailBrandingConfig = courseData?.email_branding_config as
+		| Record<string, unknown>
+		| undefined;
+	const replyToEmail =
+		(emailBrandingConfig?.reply_to_email as string) || 'accf@archdiocesanministries.org.au';
+
+	const dateOptions: Intl.DateTimeFormatOptions = {
+		weekday: 'long',
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric'
+	};
+
+	function safeFormatDate(raw: unknown): string {
+		if (!raw) return '';
+		try {
+			const d = new Date(raw as string);
+			return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-AU', dateOptions);
+		} catch {
+			return '';
+		}
+	}
+
+	const startDate = safeFormatDate(cohortData.start_date);
+	const endDate = safeFormatDate(cohortData.end_date);
+
+	const hubName =
+		((enrollment.courses_hubs as Record<string, unknown>)?.name as string) ||
+		((enrollment.hub as Record<string, unknown>)?.name as string) ||
+		'';
+
+	return {
+		firstName,
+		lastName,
+		fullName,
+		email: (enrollment.email as string) || '',
+		hubName,
+		courseName: (courseData?.name as string) || '',
+		courseSlug: slug,
+		cohortName: (cohortData.name as string) || '',
+		startDate,
+		endDate,
+		sessionNumber: String(
+			(enrollment.current_session as number) || (cohortData.current_session as number) || ''
+		),
+		sessionTitle: '',
+		currentSession: String((cohortData.current_session as number) || ''),
+		loginLink: `${origin}/courses/${slug}`,
+		dashboardLink: `${origin}/courses/${slug}`,
+		materialsLink: `${origin}/courses/${slug}/materials`,
+		reflectionLink: `${origin}/courses/${slug}/reflections`,
+		supportEmail: replyToEmail
+	};
+}
+
+export const COURSE_VARIABLES: EmailVariable[] = [
 	{ name: 'firstName', description: 'Student first name' },
 	{ name: 'lastName', description: 'Student last name' },
 	{ name: 'fullName', description: 'Student full name' },
@@ -104,44 +183,9 @@ const courseContext: EmailContextConfig = {
 	},
 
 	buildVariables: (recipient, contextData, origin) => {
-		const raw = recipient.raw;
 		const course = contextData.course as Record<string, unknown> | undefined;
 		const cohorts = contextData.cohorts as Array<Record<string, unknown>> | undefined;
-
-		// Find cohort for this enrollment
-		const cohort = cohorts?.find((c) => c.id === raw.cohort_id);
-
-		const fullName = (raw.full_name as string) || '';
-		const nameParts = fullName.split(' ');
-		const firstName = nameParts[0] || '';
-		const lastName = nameParts.slice(1).join(' ') || '';
-
-		const courseSlug = (course?.slug as string) || '';
-		const emailBrandingConfig = course?.email_branding_config as Record<string, unknown> | undefined;
-		const replyToEmail = (emailBrandingConfig?.reply_to_email as string) || '';
-
-		return {
-			firstName,
-			lastName,
-			fullName,
-			email: (raw.email as string) || '',
-			hubName: ((raw.courses_hubs as Record<string, unknown>)?.name as string) || '',
-			courseName: (course?.name as string) || '',
-			courseSlug,
-			cohortName: (cohort?.name as string) || '',
-			startDate: cohort?.start_date
-				? new Date(cohort.start_date as string).toLocaleDateString()
-				: '',
-			endDate: cohort?.end_date ? new Date(cohort.end_date as string).toLocaleDateString() : '',
-			sessionNumber: String((raw.current_session as number) || (cohort?.current_session as number) || ''),
-			sessionTitle: '', // Would need session lookup
-			currentSession: String((cohort?.current_session as number) || ''),
-			loginLink: `${origin}/courses/${courseSlug}`,
-			dashboardLink: `${origin}/courses/${courseSlug}/dashboard`,
-			materialsLink: `${origin}/courses/${courseSlug}/materials`,
-			reflectionLink: `${origin}/courses/${courseSlug}/reflections`,
-			supportEmail: replyToEmail
-		};
+		return buildCourseVariablesFromEnrollment(recipient.raw, course, cohorts, origin);
 	},
 
 	sampleRecipient: {
@@ -162,7 +206,7 @@ const courseContext: EmailContextConfig = {
 			sessionTitle: 'Introduction',
 			currentSession: '1',
 			loginLink: 'https://example.com/courses/sample-course',
-			dashboardLink: 'https://example.com/courses/sample-course/dashboard',
+			dashboardLink: 'https://example.com/courses/sample-course',
 			materialsLink: 'https://example.com/courses/sample-course/materials',
 			reflectionLink: 'https://example.com/courses/sample-course/reflections',
 			supportEmail: 'accf@archdiocesanministries.org.au'
@@ -176,7 +220,7 @@ const courseContext: EmailContextConfig = {
 // DGR CONTEXT
 // =====================================================
 
-const DGR_VARIABLES: EmailVariable[] = [
+export const DGR_VARIABLES: EmailVariable[] = [
 	{ name: 'contributor_name', description: 'Contributor full name' },
 	{ name: 'contributor_first_name', description: 'Contributor first name (with title if applicable, e.g. "Fr Michael")' },
 	{ name: 'contributor_title', description: 'Contributor title (Fr, Sr, Br, Deacon)' },
@@ -258,7 +302,7 @@ const dgrContext: EmailContextConfig = {
 // PLATFORM CONTEXT (future)
 // =====================================================
 
-const PLATFORM_VARIABLES: EmailVariable[] = [
+export const PLATFORM_VARIABLES: EmailVariable[] = [
 	{ name: 'userName', description: 'User full name' },
 	{ name: 'userEmail', description: 'User email address' },
 	{ name: 'platformName', description: 'Platform name' },

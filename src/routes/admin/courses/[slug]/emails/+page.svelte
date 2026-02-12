@@ -4,7 +4,7 @@
 	import EmailTreeSidebar from '$lib/components/EmailTreeSidebar.svelte';
 	import EmailTemplateEditor from '$lib/components/EmailTemplateEditor.svelte';
 	import SendEmailView from '$lib/components/SendEmailView.svelte';
-	import { Edit, Trash2 } from '$lib/icons';
+	import { Copy, Trash2 } from '$lib/icons';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { apiDelete } from '$lib/utils/api-handler.js';
 
@@ -24,6 +24,26 @@
 		);
 	});
 
+	// Duplicate: read "from" param to pre-fill new template from existing
+	const duplicateFromId = $derived($page.url.searchParams.get('from'));
+	const duplicateSource = $derived.by(() => {
+		if (selectedView !== 'new' || !duplicateFromId) return null;
+		const allTemplates = [...(data.systemTemplates || []), ...(data.customTemplates || [])];
+		const source = allTemplates.find((t) => t.id === duplicateFromId);
+		if (!source) return null;
+
+		// Compute a unique copy name to avoid template_key collisions
+		const existingNames = new Set(allTemplates.map((t) => t.name));
+		let copyName = `${source.name} (Copy)`;
+		let counter = 2;
+		while (existingNames.has(copyName)) {
+			copyName = `${source.name} (Copy ${counter})`;
+			counter++;
+		}
+
+		return { ...source, _copyName: copyName };
+	});
+
 	let showDeleteConfirm = $state(false);
 	let templateToDelete = $state(null);
 
@@ -33,9 +53,24 @@
 		goto(url.toString());
 	}
 
-	async function handleSaveTemplate() {
-		// Reload the page to get fresh data
-		goto($page.url.toString(), { invalidateAll: true });
+	async function handleSaveTemplate(result) {
+		if (selectedView === 'new' && result?.template?.id) {
+			// After creating a new template, navigate to it (clean up 'from' param)
+			const url = new URL($page.url);
+			url.searchParams.set('view', result.template.id);
+			url.searchParams.delete('from');
+			goto(url.toString(), { invalidateAll: true });
+		} else {
+			// After editing, reload to refresh sidebar data
+			goto($page.url.toString(), { invalidateAll: true });
+		}
+	}
+
+	function handleDuplicate(template) {
+		const url = new URL($page.url);
+		url.searchParams.set('view', 'new');
+		url.searchParams.set('from', template.id);
+		goto(url.toString());
 	}
 
 	function handleDeleteClick(template) {
@@ -54,8 +89,10 @@
 			showDeleteConfirm = false;
 			templateToDelete = null;
 
-			// Go back to logs view
-			handleViewChange('logs');
+			// Go back to send view and refresh sidebar data
+			const url = new URL($page.url);
+			url.searchParams.set('view', 'send');
+			goto(url.toString(), { invalidateAll: true });
 		} catch (error) {
 			console.error('Error deleting template:', error);
 		}
@@ -70,6 +107,7 @@
 			customTemplates={data.customTemplates || []}
 			{selectedView}
 			onViewChange={handleViewChange}
+			onDuplicate={handleDuplicate}
 		/>
 	</div>
 
@@ -261,12 +299,17 @@
 		{:else if selectedView === 'new'}
 			<!-- Create New Template View -->
 			<div class="p-3 sm:p-4 lg:p-6">
-				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Create Template</h1>
-				<p class="text-white/70 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base">Create a new custom email template</p>
+				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
+					{duplicateSource ? 'Duplicate Template' : 'Create Template'}
+				</h1>
+				<p class="text-white/70 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base">
+					{duplicateSource ? `Creating a copy of "${duplicateSource.name}"` : 'Create a new custom email template'}
+				</p>
 
 				<div class="bg-white rounded-lg p-3 sm:p-4 lg:p-6">
 					<EmailTemplateEditor
 						context="course"
+						duplicateFrom={duplicateSource}
 						courseId={data.course.id}
 						courseSlug={data.courseSlug}
 						courseName={data.course.name}
@@ -305,6 +348,13 @@
 						{/if}
 					</div>
 					<div class="flex gap-2 flex-shrink-0">
+						<button
+							onclick={() => handleDuplicate(selectedTemplate)}
+							class="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-lg font-medium transition-colors border border-white/30 text-white bg-white/10 hover:bg-white/20 w-full sm:w-auto"
+						>
+							<Copy size={16} />
+							<span>Duplicate</span>
+						</button>
 						{#if selectedTemplate.category === 'custom'}
 							<button
 								onclick={() => handleDeleteClick(selectedTemplate)}

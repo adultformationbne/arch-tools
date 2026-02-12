@@ -7,6 +7,7 @@
 	import TestEmailPanel from './TestEmailPanel.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import SubjectInputWithVariables from './SubjectInputWithVariables.svelte';
+	import { COURSE_VARIABLES, buildCourseVariablesFromEnrollment, substituteVariables as substituteVars } from '$lib/email/context-config';
 
 	let {
 		course,
@@ -16,16 +17,54 @@
 		hubs = [],
 		hubCountsByCohort = {},
 		initialMode = 'choose',
-		currentUserEmail = ''
+		currentUserEmail = '',
+		// New props for embedded/modal usage
+		preselectedRecipients = null,
+		initialTemplateSlug = '',
+		cohortId = null,
+		variant = 'page',
+		onSent = null,
+		onClose = null
 	} = $props();
 
-	// Main state (initialized from prop, then managed locally)
-	let mode = $state('choose'); // 'choose' | 'quick' | 'template'
+	const isEmbedded = $derived(variant === 'embedded');
 
-	// Sync mode when initialMode changes (including initial value)
+	// Internal templates state (starts from prop, can be loaded via API)
+	let allTemplates = $state([]);
+	let loadingTemplates = $state(false);
+
+	// Sync templates from prop
 	$effect(() => {
-		mode = initialMode;
+		if (templates.length > 0) {
+			allTemplates = templates;
+		}
 	});
+
+	// Auto-load templates if not provided (guarded against double-fire)
+	$effect(() => {
+		if (allTemplates.length === 0 && courseSlug && !loadingTemplates) {
+			loadTemplatesFromApi();
+		}
+	});
+
+	async function loadTemplatesFromApi() {
+		loadingTemplates = true;
+		try {
+			const result = await apiGet(`/api/courses/${courseSlug}/emails`, { showToast: false });
+			if (result?.templates) {
+				allTemplates = [...(result.templates.system || []), ...(result.templates.custom || [])];
+			}
+		} catch (err) {
+			console.error('Failed to load templates:', err);
+			toastError('Failed to load email templates');
+		} finally {
+			loadingTemplates = false;
+		}
+	}
+
+	// Main state (initialized from prop, then managed locally)
+	// When initialTemplateSlug is provided, start in 'template' mode to avoid flashing the choose cards
+	let mode = $state(initialTemplateSlug ? 'template' : initialMode);
 
 	// Template mode state
 	let selectedTemplateId = $state('');
@@ -37,7 +76,7 @@
 	let quickSubject = $state('');
 	let quickBody = $state('');
 
-	// Recipient filter state
+	// Recipient filter state (only used in page mode)
 	let selectedCohortId = $state('');
 	let additionalFilter = $state('none');
 	let selectedHubId = $state('');
@@ -58,6 +97,27 @@
 	let showTestEmailPanel = $state(false);
 	let showSendConfirm = $state(false);
 
+	// Sync preselected recipients when provided
+	$effect(() => {
+		if (preselectedRecipients) {
+			recipients = preselectedRecipients;
+			hasLoadedRecipients = true;
+			excludedRecipientIds = new Set();
+			previewRecipientId = preselectedRecipients[0]?.id || null;
+		}
+	});
+
+	// Auto-select template by slug when templates are loaded
+	$effect(() => {
+		if (initialTemplateSlug && allTemplates.length > 0 && !selectedTemplateId) {
+			const t = allTemplates.find(t => t.template_key === initialTemplateSlug);
+			if (t) {
+				selectedTemplateId = t.id;
+				mode = 'template';
+			}
+		}
+	});
+
 	// Course colors
 	const courseColors = $derived({
 		accentDark: course?.accent_dark || '#334642',
@@ -66,7 +126,7 @@
 	});
 
 	// Get selected template
-	const selectedTemplate = $derived(templates.find(t => t.id === selectedTemplateId));
+	const selectedTemplate = $derived(allTemplates.find(t => t.id === selectedTemplateId));
 	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
 	const maxSession = $derived(selectedCohort?.current_session || 8);
 
@@ -93,59 +153,14 @@
 			: enabledRecipients[0] || recipients[0]
 	);
 
-	// Available variables
-	const availableVariables = [
-		{ name: 'firstName', description: 'Student first name' },
-		{ name: 'lastName', description: 'Student last name' },
-		{ name: 'fullName', description: 'Student full name' },
-		{ name: 'email', description: 'Student email address' },
-		{ name: 'hubName', description: 'Student hub assignment' },
-		{ name: 'courseName', description: 'Course name' },
-		{ name: 'courseSlug', description: 'Course URL identifier' },
-		{ name: 'cohortName', description: 'Cohort name' },
-		{ name: 'startDate', description: 'Cohort start date' },
-		{ name: 'endDate', description: 'Cohort end date' },
-		{ name: 'sessionNumber', description: 'Session number', dynamic: true },
-		{ name: 'sessionTitle', description: 'Session title', dynamic: true },
-		{ name: 'currentSession', description: 'Current cohort session', dynamic: true },
-		{ name: 'loginLink', description: 'Course login page' },
-		{ name: 'dashboardLink', description: 'Course dashboard' },
-		{ name: 'materialsLink', description: 'Course materials page' },
-		{ name: 'reflectionLink', description: 'Reflections page' },
-		{ name: 'supportEmail', description: 'Support contact email' }
-	];
+	// Available variables (from SSOT in context-config)
+	const availableVariables = COURSE_VARIABLES;
 
 	function substituteVariables(template, recipient) {
-		if (!template) return template;
-		if (!recipient) return template;
-
-		const cohort = cohorts.find(c => c.id === recipient.cohort_id);
-
-		const variables = {
-			firstName: recipient.full_name?.split(' ')[0] || '',
-			lastName: recipient.full_name?.split(' ').slice(1).join(' ') || '',
-			fullName: recipient.full_name || '',
-			email: recipient.email || '',
-			courseName: course?.name || '',
-			courseSlug: courseSlug || '',
-			cohortName: cohort?.name || '',
-			sessionNumber: recipient.current_session || cohort?.current_session || 0,
-			currentSession: cohort?.current_session || 0,
-			startDate: cohort?.start_date ? new Date(cohort.start_date).toLocaleDateString() : '',
-			endDate: cohort?.end_date ? new Date(cohort.end_date).toLocaleDateString() : '',
-			loginLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}`,
-			dashboardLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/dashboard`,
-			materialsLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/materials`,
-			reflectionLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/courses/${courseSlug}/reflections`,
-			supportEmail: course?.email_branding_config?.reply_to_email || 'accf@archdiocesanministries.org.au',
-			hubName: recipient.courses_hubs?.name || ''
-		};
-
-		let result = template;
-		for (const [key, value] of Object.entries(variables)) {
-			result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-		}
-		return result;
+		if (!template || !recipient) return template;
+		const origin = typeof window !== 'undefined' ? window.location.origin : '';
+		const variables = buildCourseVariablesFromEnrollment(recipient, course, cohorts, origin);
+		return substituteVars(template, variables);
 	}
 
 	// Get current subject/body (for display/send)
@@ -161,11 +176,11 @@
 		return selectedTemplate?.body_template || '';
 	}
 
-	// Load recipients when filters change
+	// Load recipients when filters change (page mode only)
 	$effect(() => {
-		if (selectedCohortId) {
+		if (!preselectedRecipients && selectedCohortId) {
 			loadRecipients();
-		} else {
+		} else if (!preselectedRecipients && !selectedCohortId) {
 			recipients = [];
 			hasLoadedRecipients = false;
 			excludedRecipientIds = new Set();
@@ -275,8 +290,8 @@
 			quickSubject = '';
 			quickBody = '';
 			isEditing = false;
-			if (templates.length > 0 && !selectedTemplateId) {
-				selectedTemplateId = templates[0].id;
+			if (allTemplates.length > 0 && !selectedTemplateId) {
+				selectedTemplateId = allTemplates[0].id;
 			}
 		}
 	}
@@ -309,8 +324,12 @@
 				body_template: editedBody
 			}, { successMessage: 'Template saved' });
 
-			selectedTemplate.subject_template = editedSubject;
-			selectedTemplate.body_template = editedBody;
+			// Update local template
+			const idx = allTemplates.findIndex(t => t.id === selectedTemplate.id);
+			if (idx >= 0) {
+				allTemplates[idx] = { ...allTemplates[idx], subject_template: editedSubject, body_template: editedBody };
+				allTemplates = [...allTemplates];
+			}
 			isEditing = false;
 		} catch (err) {
 			// Error handled by apiPut
@@ -347,7 +366,7 @@
 
 			const payload = {
 				recipients: enabledRecipients.map(r => r.id),
-				cohort_id: enabledRecipients[0]?.cohort_id
+				cohort_id: cohortId || enabledRecipients[0]?.cohort_id
 			};
 
 			if (mode === 'quick' || isEditing) {
@@ -363,13 +382,19 @@
 
 			if (result.success || result.sent > 0) {
 				toastSuccess(`Sent ${result.sent} email${result.sent !== 1 ? 's' : ''}${result.failed > 0 ? ` (${result.failed} failed)` : ''}`);
-				if (mode === 'quick') {
-					quickSubject = '';
-					quickBody = '';
+
+				if (onSent) {
+					onSent();
+				} else {
+					// Default reset for page mode
+					if (mode === 'quick') {
+						quickSubject = '';
+						quickBody = '';
+					}
+					recipients = [];
+					selectedCohortId = '';
+					excludedRecipientIds = new Set();
 				}
-				recipients = [];
-				selectedCohortId = '';
-				excludedRecipientIds = new Set();
 			} else {
 				toastError(`Failed to send: ${result.errors?.[0]?.error || 'Unknown error'}`);
 			}
@@ -389,16 +414,16 @@
 	}
 </script>
 
-<div class="p-6 max-w-4xl mx-auto">
+<div class="{isEmbedded ? 'p-4' : 'p-6'} max-w-4xl mx-auto">
 	{#if mode === 'choose'}
 		<!-- Mode Selection -->
-		<h1 class="text-2xl font-bold text-white mb-2">Send Email</h1>
-		<p class="text-white/70 mb-6">Choose how you'd like to compose your email</p>
+		<h1 class="text-2xl font-bold {isEmbedded ? 'text-gray-900' : 'text-white'} mb-2">Send Email</h1>
+		<p class="{isEmbedded ? 'text-gray-500' : 'text-white/70'} mb-6">Choose how you'd like to compose your email</p>
 
 		<div class="grid grid-cols-2 gap-4 max-w-xl">
 			<button
 				onclick={() => handleModeSelect('quick')}
-				class="bg-white rounded-xl p-5 text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+				class="{isEmbedded ? 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:border-gray-200' : 'bg-white hover:shadow-lg hover:scale-[1.02]'} rounded-xl p-5 text-left transition-all"
 			>
 				<div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);">
 					<Pencil size={20} style="color: var(--course-accent-dark);" />
@@ -409,7 +434,7 @@
 
 			<button
 				onclick={() => handleModeSelect('template')}
-				class="bg-white rounded-xl p-5 text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+				class="{isEmbedded ? 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:border-gray-200' : 'bg-white hover:shadow-lg hover:scale-[1.02]'} rounded-xl p-5 text-left transition-all"
 			>
 				<div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background-color: color-mix(in srgb, var(--course-accent-light) 30%, white);">
 					<FileText size={20} style="color: var(--course-accent-dark);" />
@@ -419,217 +444,313 @@
 			</button>
 		</div>
 
+		<!-- Preselected Recipients Preview (embedded mode) -->
+		{#if isEmbedded && recipients.length === 0 && preselectedRecipients}
+			<div class="mt-6 p-4 border border-amber-200 bg-amber-50 rounded-lg flex items-center gap-3">
+				<AlertTriangle size={18} class="text-amber-500 flex-shrink-0" />
+				<p class="text-sm text-amber-800">No recipients selected. Go back and select participants to email.</p>
+			</div>
+		{:else if isEmbedded && recipients.length > 0}
+			<div class="mt-6">
+				<h3 class="text-sm font-semibold text-gray-700 mb-2">Recipients ({recipients.length})</h3>
+				<div class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+					{#each recipients as recipient (recipient.id)}
+						{@const isExcluded = excludedRecipientIds.has(recipient.id)}
+						<div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0 {isExcluded ? 'opacity-50' : ''}">
+							<button
+								onclick={() => toggleRecipient(recipient.id)}
+								class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors"
+								style="border-color: {isExcluded ? '#d1d5db' : courseColors.accentDark}; background-color: {isExcluded ? 'white' : courseColors.accentDark};"
+							>
+								{#if !isExcluded}
+									<Check size={12} class="text-white" />
+								{/if}
+							</button>
+							<div class="flex-1 min-w-0">
+								<div class="text-sm font-medium text-gray-900 truncate {isExcluded ? 'line-through' : ''}">{recipient.full_name}</div>
+								<div class="text-xs text-gray-500 truncate">{recipient.email}</div>
+							</div>
+							{#if recipient.courses_hubs?.name}
+								<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">{recipient.courses_hubs.name}</span>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 	{:else}
 		<!-- Header -->
 		<div class="flex items-center gap-3 mb-4">
 			<button
 				onclick={handleBack}
-				class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+				class="p-1.5 rounded-lg transition-colors {isEmbedded ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-white/10 text-white/70 hover:text-white'}"
 			>
 				<ChevronLeft size={20} />
 			</button>
-			<h1 class="text-xl font-bold text-white">
+			<h1 class="text-xl font-bold {isEmbedded ? 'text-gray-900' : 'text-white'}">
 				{mode === 'quick' ? 'Quick Email' : 'Send with Template'}
 			</h1>
 		</div>
 
-		<!-- Recipients Filter Bar -->
-		<div class="bg-white rounded-xl mb-4 overflow-hidden">
-			<div class="p-4">
-				<div class="flex items-center gap-4 flex-wrap">
-					<div class="flex items-center gap-2">
-						<Users size={16} class="text-gray-500" />
-						<span class="text-sm font-semibold text-gray-700">To:</span>
-					</div>
+		<!-- Recipients Filter Bar (page mode only - loads via API) -->
+		{#if !preselectedRecipients}
+			<div class="bg-white rounded-xl mb-4 overflow-hidden">
+				<div class="p-4">
+					<div class="flex items-center gap-4 flex-wrap">
+						<div class="flex items-center gap-2">
+							<Users size={16} class="text-gray-500" />
+							<span class="text-sm font-semibold text-gray-700">To:</span>
+						</div>
 
-					<div class="relative">
-						<select
-							value={selectedCohortId}
-							onchange={handleCohortChange}
-							class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm min-w-[180px]"
-						>
-							<option value="">Select cohort...</option>
-							{#each cohorts as cohort}
-								<option value={cohort.id}>{cohort.name} ({cohort.enrollment_count || 0})</option>
-							{/each}
-						</select>
-						<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-					</div>
-
-					{#if selectedCohortId}
 						<div class="relative">
 							<select
-								value={additionalFilter}
-								onchange={handleAdditionalFilterChange}
-								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
+								value={selectedCohortId}
+								onchange={handleCohortChange}
+								class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm min-w-[180px]"
 							>
-								<option value="none">All participants</option>
-								{#if filteredHubs.length > 0}
-									<option value="hub">By Hub ({filteredHubs.length})</option>
-								{/if}
-								<option value="coordinators">Coordinators</option>
-								<option value="session">By Session</option>
-								<option value="pending_reflections">Pending Reflections</option>
-								<option value="not_signed_up">Haven't signed up</option>
+								<option value="">Select cohort...</option>
+								{#each cohorts as cohort}
+									<option value={cohort.id}>{cohort.name} ({cohort.enrollment_count || 0})</option>
+								{/each}
 							</select>
 							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
 						</div>
 
-						{#if additionalFilter === 'hub' && filteredHubs.length > 0}
+						{#if selectedCohortId}
 							<div class="relative">
-								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
-									<option value="">Select hub...</option>
-									{#each filteredHubs as hub}
-										<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
-									{/each}
+								<select
+									value={additionalFilter}
+									onchange={handleAdditionalFilterChange}
+									class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
+								>
+									<option value="none">All participants</option>
+									{#if filteredHubs.length > 0}
+										<option value="hub">By Hub ({filteredHubs.length})</option>
+									{/if}
+									<option value="coordinators">Coordinators</option>
+									<option value="session">By Session</option>
+									<option value="pending_reflections">Pending Reflections</option>
+									<option value="not_signed_up">Haven't signed up</option>
 								</select>
 								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
 							</div>
-						{:else if additionalFilter === 'coordinators' && filteredHubs.length > 0}
-							<div class="relative">
-								<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
-									<option value="">All hubs</option>
-									{#each filteredHubs as hub}
-										<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
-									{/each}
-								</select>
-								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-							</div>
-						{:else if additionalFilter === 'session'}
-							<div class="relative">
-								<select bind:value={selectedSessionNumber} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
-									<option value="">Session...</option>
-									{#each Array(maxSession) as _, i}
-										<option value={i + 1}>Session {i + 1}</option>
-									{/each}
-								</select>
-								<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-							</div>
-						{/if}
-					{/if}
 
-					<div class="ml-auto flex items-center gap-2">
-						{#if loadingRecipients}
-							<Loader2 size={14} class="animate-spin text-gray-400" />
-						{:else if hasLoadedRecipients && recipients.length > 0}
-							<button
-								onclick={() => showRecipientsPanel = !showRecipientsPanel}
-								class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100"
-								style="color: var(--course-accent-dark);"
-							>
-								<span class="tabular-nums">
-									{enabledRecipients.length}/{recipients.length}
-								</span>
-								<span>recipient{enabledRecipients.length !== 1 ? 's' : ''}</span>
-								<ChevronDown size={14} class="transition-transform {showRecipientsPanel ? 'rotate-180' : ''}" />
-							</button>
-						{:else if hasLoadedRecipients}
-							<span class="text-sm text-gray-500">No recipients match filters</span>
+							{#if additionalFilter === 'hub' && filteredHubs.length > 0}
+								<div class="relative">
+									<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+										<option value="">Select hub...</option>
+										{#each filteredHubs as hub}
+											<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
+										{/each}
+									</select>
+									<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+								</div>
+							{:else if additionalFilter === 'coordinators' && filteredHubs.length > 0}
+								<div class="relative">
+									<select bind:value={selectedHubId} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+										<option value="">All hubs</option>
+										{#each filteredHubs as hub}
+											<option value={hub.id}>{hub.name} ({hub.enrollment_count})</option>
+										{/each}
+									</select>
+									<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+								</div>
+							{:else if additionalFilter === 'session'}
+								<div class="relative">
+									<select bind:value={selectedSessionNumber} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
+										<option value="">Session...</option>
+										{#each Array(maxSession) as _, i}
+											<option value={i + 1}>Session {i + 1}</option>
+										{/each}
+									</select>
+									<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+								</div>
+							{/if}
 						{/if}
-					</div>
-				</div>
-			</div>
 
-			<!-- Expandable Recipients Panel -->
-			{#if showRecipientsPanel && recipients.length > 0}
-				<div class="border-t border-gray-200 bg-gray-50">
-					<!-- Panel Header -->
-					<div class="px-4 py-2 flex items-center justify-between border-b border-gray-200 bg-gray-100">
-						<div class="flex items-center gap-3">
-							<span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Recipients</span>
-							{#if excludedRecipientIds.size > 0}
-								<span class="text-xs text-orange-600 font-medium">
-									({excludedRecipientIds.size} excluded)
-								</span>
+						<div class="ml-auto flex items-center gap-2">
+							{#if loadingRecipients}
+								<Loader2 size={14} class="animate-spin text-gray-400" />
+							{:else if hasLoadedRecipients && recipients.length > 0}
+								<button
+									onclick={() => showRecipientsPanel = !showRecipientsPanel}
+									class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100"
+									style="color: var(--course-accent-dark);"
+								>
+									<span class="tabular-nums">
+										{enabledRecipients.length}/{recipients.length}
+									</span>
+									<span>recipient{enabledRecipients.length !== 1 ? 's' : ''}</span>
+									<ChevronDown size={14} class="transition-transform {showRecipientsPanel ? 'rotate-180' : ''}" />
+								</button>
+							{:else if hasLoadedRecipients}
+								<span class="text-sm text-gray-500">No recipients match filters</span>
 							{/if}
 						</div>
-						<div class="flex items-center gap-2">
-							<button
-								onclick={selectAllRecipients}
-								disabled={excludedRecipientIds.size === 0}
-								class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
-							>
-								Select All
-							</button>
-							<button
-								onclick={deselectAllRecipients}
-								disabled={excludedRecipientIds.size === recipients.length}
-								class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
-							>
-								Deselect All
-							</button>
+					</div>
+				</div>
+
+				<!-- Expandable Recipients Panel (page mode) -->
+				{#if showRecipientsPanel && recipients.length > 0}
+					<div class="border-t border-gray-200 bg-gray-50">
+						<!-- Panel Header -->
+						<div class="px-4 py-2 flex items-center justify-between border-b border-gray-200 bg-gray-100">
+							<div class="flex items-center gap-3">
+								<span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Recipients</span>
+								{#if excludedRecipientIds.size > 0}
+									<span class="text-xs text-orange-600 font-medium">
+										({excludedRecipientIds.size} excluded)
+									</span>
+								{/if}
+							</div>
+							<div class="flex items-center gap-2">
+								<button
+									onclick={selectAllRecipients}
+									disabled={excludedRecipientIds.size === 0}
+									class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
+								>
+									Select All
+								</button>
+								<button
+									onclick={deselectAllRecipients}
+									disabled={excludedRecipientIds.size === recipients.length}
+									class="text-xs px-2 py-1 rounded font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
+								>
+									Deselect All
+								</button>
+							</div>
+						</div>
+
+						<!-- Recipients List -->
+						<div class="max-h-48 overflow-y-auto">
+							{#each recipients as recipient (recipient.id)}
+								{@const isExcluded = excludedRecipientIds.has(recipient.id)}
+								{@const isPreview = previewRecipientId === recipient.id}
+								<div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 {isExcluded ? 'opacity-50' : ''}">
+									<!-- Checkbox -->
+									<button
+										onclick={() => toggleRecipient(recipient.id)}
+										class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors {isExcluded ? 'border-gray-300 bg-white' : 'border-green-500 bg-green-500'}"
+									>
+										{#if !isExcluded}
+											<Check size={12} class="text-white" />
+										{/if}
+									</button>
+
+									<!-- Name & Email -->
+									<div class="flex-1 min-w-0">
+										<div class="text-sm font-medium text-gray-900 truncate {isExcluded ? 'line-through' : ''}">
+											{recipient.full_name}
+										</div>
+										<div class="text-xs text-gray-500 truncate">{recipient.email}</div>
+									</div>
+
+									<!-- Hub -->
+									{#if recipient.courses_hubs?.name}
+										<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">
+											{recipient.courses_hubs.name}
+										</span>
+									{/if}
+
+									<!-- Preview Eye Icon -->
+									<button
+										onclick={() => setPreviewRecipient(recipient.id)}
+										disabled={isExcluded}
+										class="flex-shrink-0 p-1.5 rounded-lg transition-colors {isPreview ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'} disabled:opacity-30 disabled:hover:bg-transparent"
+										title={isPreview ? 'Previewing as this recipient' : 'Preview as this recipient'}
+									>
+										<Eye size={14} />
+									</button>
+								</div>
+							{/each}
 						</div>
 					</div>
+				{/if}
+			</div>
+		{/if}
 
-					<!-- Recipients List -->
-					<div class="max-h-48 overflow-y-auto">
+		<!-- Preselected Recipients Panel (embedded mode) -->
+		{#if preselectedRecipients}
+			<div class="bg-white rounded-xl mb-4 overflow-hidden">
+				<details class="group">
+					<summary class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50 transition-colors">
+						<div class="flex items-center gap-2">
+							<Users size={16} class="text-gray-500" />
+							<span class="text-sm font-medium text-gray-700">
+								Recipients: {enabledRecipients.length}/{recipients.length}
+								{#if excludedRecipientIds.size > 0}
+									<span class="text-orange-600">({excludedRecipientIds.size} excluded)</span>
+								{/if}
+							</span>
+						</div>
+						<ChevronDown size={16} class="text-gray-400 transition-transform group-open:rotate-180" />
+					</summary>
+					<div class="max-h-40 overflow-y-auto border-t border-gray-200">
 						{#each recipients as recipient (recipient.id)}
 							{@const isExcluded = excludedRecipientIds.has(recipient.id)}
 							{@const isPreview = previewRecipientId === recipient.id}
-							<div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 {isExcluded ? 'opacity-50' : ''}">
-								<!-- Checkbox -->
+							<div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0 {isExcluded ? 'opacity-50' : ''}">
 								<button
 									onclick={() => toggleRecipient(recipient.id)}
-									class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors {isExcluded ? 'border-gray-300 bg-white' : 'border-green-500 bg-green-500'}"
+									class="flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors"
+									style="border-color: {isExcluded ? '#d1d5db' : courseColors.accentDark}; background-color: {isExcluded ? 'white' : courseColors.accentDark};"
 								>
 									{#if !isExcluded}
 										<Check size={12} class="text-white" />
 									{/if}
 								</button>
-
-								<!-- Name & Email -->
 								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium text-gray-900 truncate {isExcluded ? 'line-through' : ''}">
-										{recipient.full_name}
-									</div>
-									<div class="text-xs text-gray-500 truncate">{recipient.email}</div>
+									<span class="text-sm text-gray-900 {isExcluded ? 'line-through' : ''}">{recipient.full_name}</span>
 								</div>
-
-								<!-- Hub -->
-								{#if recipient.courses_hubs?.name}
-									<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 flex-shrink-0">
-										{recipient.courses_hubs.name}
-									</span>
-								{/if}
-
-								<!-- Preview Eye Icon -->
 								<button
 									onclick={() => setPreviewRecipient(recipient.id)}
 									disabled={isExcluded}
-									class="flex-shrink-0 p-1.5 rounded-lg transition-colors {isPreview ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'} disabled:opacity-30 disabled:hover:bg-transparent"
-									title={isPreview ? 'Previewing as this recipient' : 'Preview as this recipient'}
+									class="p-1 rounded transition-colors disabled:opacity-30"
+									class:bg-blue-100={isPreview}
+									class:text-blue-600={isPreview}
+									class:text-gray-400={!isPreview}
+									class:hover:bg-gray-200={!isPreview && !isExcluded}
+									title="Preview as this recipient"
 								>
 									<Eye size={14} />
 								</button>
 							</div>
 						{/each}
 					</div>
-				</div>
-			{/if}
-		</div>
+				</details>
+			</div>
+		{/if}
 
 		<!-- Template Selector (only in template mode, not editing) -->
 		{#if mode === 'template' && !isEditing}
 			<div class="bg-white rounded-xl p-4 mb-4">
 				<div class="flex items-center gap-3">
 					<span class="text-sm font-semibold text-gray-700">Template:</span>
-					<div class="relative flex-1 max-w-xs">
-						<select
-							bind:value={selectedTemplateId}
-							class="email-select w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
-						>
-							<option value="">Select a template...</option>
-							{#each templates as template}
-								<option value={template.id}>{template.name}{template.category === 'system' ? ' (System)' : ''}</option>
-							{/each}
-						</select>
-						<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-					</div>
-					{#if selectedTemplate}
-						<button onclick={startEditing} class="edit-btn px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 border">
-							<Pencil size={14} />
-							Edit
-						</button>
+					{#if loadingTemplates}
+						<div class="flex items-center gap-2 text-sm text-gray-500">
+							<Loader2 size={14} class="animate-spin" />
+							Loading templates...
+						</div>
+					{:else}
+						<div class="relative flex-1 max-w-xs">
+							<select
+								bind:value={selectedTemplateId}
+								class="email-select w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm"
+							>
+								<option value="">Select a template...</option>
+								{#each allTemplates as template}
+									<option value={template.id}>{template.name}{template.category === 'system' ? ' (System)' : ''}</option>
+								{/each}
+							</select>
+							<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+						</div>
+						{#if selectedTemplate}
+							<button onclick={startEditing} class="edit-btn px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 border">
+								<Pencil size={14} />
+								Edit
+							</button>
+						{/if}
 					{/if}
 				</div>
 			</div>
@@ -729,20 +850,31 @@
 					{/if}
 				</div>
 
-				<!-- Right: Send Button -->
-				<button
-					onclick={handleSend}
-					disabled={sending || enabledRecipients.length === 0 || !getCurrentSubject() || !getCurrentBody()}
-					class="send-btn px-5 py-2.5 text-sm font-semibold rounded-lg flex items-center gap-2 disabled:opacity-50"
-				>
-					{#if sending}
-						<Loader2 size={16} class="animate-spin" />
-						Sending...
-					{:else}
-						<Send size={16} />
-						Send to {enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}
+				<!-- Right: Send Button (with optional Cancel for embedded) -->
+				<div class="flex items-center gap-3">
+					{#if isEmbedded && onClose}
+						<button
+							onclick={onClose}
+							disabled={sending}
+							class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+						>
+							Cancel
+						</button>
 					{/if}
-				</button>
+					<button
+						onclick={handleSend}
+						disabled={sending || enabledRecipients.length === 0 || !getCurrentSubject() || !getCurrentBody()}
+						class="send-btn px-5 py-2.5 text-sm font-semibold rounded-lg flex items-center gap-2 disabled:opacity-50"
+					>
+						{#if sending}
+							<Loader2 size={16} class="animate-spin" />
+							Sending...
+						{:else}
+							<Send size={16} />
+							Send to {enabledRecipients.length} recipient{enabledRecipients.length !== 1 ? 's' : ''}
+						{/if}
+					</button>
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -802,6 +934,25 @@
 </ConfirmationModal>
 
 <style>
+	/* Style email buttons in preview to match how they'll look when sent */
+	:global(.prose [data-type="email-button"]) {
+		display: block;
+		text-align: center;
+		margin: 1.5rem 0;
+	}
+
+	:global(.prose [data-type="email-button"] a),
+	:global(.prose .email-button) {
+		display: inline-block;
+		padding: 12px 32px;
+		background-color: var(--course-accent-dark, #334642);
+		color: white !important;
+		text-decoration: none;
+		border-radius: 6px;
+		font-size: 16px;
+		font-weight: 600;
+	}
+
 	.email-select:focus {
 		--tw-ring-color: var(--course-accent-light);
 		border-color: var(--course-accent-light);

@@ -43,7 +43,7 @@
 	let editorElement;
 	let showVariableMenu = $state(false);
 	let variableMenuButton;
-	let textIsSelected = $state(false); // Internal state to track if text is selected
+	// hasSelection removed — using hasSelection (bindable prop) as single source of truth
 
 	// Image upload state
 	let imageFileInput;
@@ -89,10 +89,45 @@
 			content = htmlParts.join('');
 		}
 
-		// Replace {{variable}} syntax with proper variable span tags
-		content = content.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
-			return `<span data-type="variable" data-id="${varName}" data-label="${varName}" class="variable-pill">${varName}</span>`;
-		});
+		// Replace {{variable}} syntax with variable pill spans — but ONLY in text nodes,
+		// not inside HTML attributes (e.g. button data-href="{{dashboardLink}}")
+		if (typeof DOMParser !== 'undefined') {
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(content, 'text/html');
+
+			const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+			const textNodes = [];
+			while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+			for (const textNode of textNodes) {
+				if (/\{\{\w+\}\}/.test(textNode.textContent)) {
+					const frag = doc.createDocumentFragment();
+					const parts = textNode.textContent.split(/(\{\{\w+\}\})/g);
+					for (const part of parts) {
+						const varMatch = part.match(/^\{\{(\w+)\}\}$/);
+						if (varMatch) {
+							const span = doc.createElement('span');
+							span.setAttribute('data-type', 'variable');
+							span.setAttribute('data-id', varMatch[1]);
+							span.setAttribute('data-label', varMatch[1]);
+							span.className = 'variable-pill';
+							span.textContent = varMatch[1];
+							frag.appendChild(span);
+						} else {
+							frag.appendChild(doc.createTextNode(part));
+						}
+					}
+					textNode.replaceWith(frag);
+				}
+			}
+
+			content = doc.body.innerHTML;
+		} else {
+			// SSR fallback: simple regex (no DOM available)
+			content = content.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+				return `<span data-type="variable" data-id="${varName}" data-label="${varName}" class="variable-pill">${varName}</span>`;
+			});
+		}
 
 		return content;
 	}
@@ -244,7 +279,7 @@
 				linkButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>Link</span>';
 
 				// Edit button click handler
-				editButton.addEventListener('click', (e) => {
+				const editHandler = (e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					currentButtonText = node.attrs.text;
@@ -252,14 +287,16 @@
 					editingButtonPos = editor.view.posAtDOM(wrapper, 0);
 					buttonAnchorElement = button;
 					showButtonPopover = true;
-				});
+				};
+				editButton.addEventListener('click', editHandler);
 
 				// Link button click handler
-				linkButton.addEventListener('click', (e) => {
+				const linkHandler = (e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					window.open(node.attrs.href, '_blank');
-				});
+				};
+				linkButton.addEventListener('click', linkHandler);
 
 				actionButtons.appendChild(editButton);
 				actionButtons.appendChild(linkButton);
@@ -268,7 +305,11 @@
 				buttonContainer.appendChild(actionButtons);
 				wrapper.appendChild(buttonContainer);
 				return {
-					dom: wrapper
+					dom: wrapper,
+					destroy() {
+						editButton.removeEventListener('click', editHandler);
+						linkButton.removeEventListener('click', linkHandler);
+					}
 				};
 			};
 		}
@@ -435,9 +476,7 @@
 			onSelectionUpdate: ({ editor }) => {
 				// Track if there's a text selection for toolbar highlighting
 				const { from, to } = editor.state.selection;
-				const selected = from !== to;
-				hasSelection = selected;
-				textIsSelected = selected;
+				hasSelection = from !== to;
 			},
 			onUpdate: ({ editor }) => {
 				// Convert variable nodes back to {{syntax}} for storage
@@ -461,11 +500,9 @@
 					const dataHref = btn.getAttribute('data-href') || '';
 					const link = btn.querySelector('a');
 
-					// Check if href contains variable pill HTML and extract the variable name
-					const pillMatch = dataHref.match(/<span[^>]*data-id="([^"]+)"[^>]*>/);
-					if (pillMatch) {
-						const varName = pillMatch[1];
-						const cleanHref = `{{${varName}}}`;
+					// Check if href contains variable pill HTML (full span with closing tag)
+					if (dataHref.includes('<span') && dataHref.includes('data-id=')) {
+						const cleanHref = dataHref.replace(/<span[^>]*data-id="([^"]+)"[^>]*>[\s\S]*?<\/span>/g, '{{$1}}');
 						btn.setAttribute('data-href', cleanHref);
 						if (link) link.setAttribute('href', cleanHref);
 					}
@@ -911,10 +948,10 @@
 			<button
 				type="button"
 				onmousedown={(e) => e.preventDefault()}
-				onclick={(e) => { if (textIsSelected) toggleLink(e.currentTarget); }}
-				disabled={!textIsSelected}
-				class="p-2 rounded transition-colors {textIsSelected ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
-				title={textIsSelected ? "Add Link" : "Select text to add link"}
+				onclick={(e) => { if (hasSelection) toggleLink(e.currentTarget); }}
+				disabled={!hasSelection}
+				class="p-2 rounded transition-colors {hasSelection ? 'hover:bg-gray-200 text-gray-700' : 'text-gray-300 cursor-not-allowed opacity-50'}"
+				title={hasSelection ? "Add Link" : "Select text to add link"}
 			>
 				<Link2 size={18} />
 			</button>

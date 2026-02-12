@@ -2448,21 +2448,7 @@ export const CourseMutations = {
 			};
 			const courseLogoUrl = brandingSettings.logoUrl || null;
 
-			// Parse full name
-			const nameParts = enrollment.full_name?.split(' ') || [''];
-			const firstName = nameParts[0] || 'Student';
-			const lastName = nameParts.slice(1).join(' ') || '';
-
-			// Format start date
-			const startDate = cohort?.start_date
-				? new Date(cohort.start_date).toLocaleDateString('en-AU', {
-						day: 'numeric',
-						month: 'long',
-						year: 'numeric'
-					})
-				: 'TBD';
-
-			// Build variable context
+			// Build variable context (shared function handles name parsing, date formatting, supportEmail)
 			const variables = buildVariableContext({
 				enrollment: {
 					full_name: enrollment.full_name,
@@ -2470,21 +2456,17 @@ export const CourseMutations = {
 				},
 				course: {
 					name: course.name,
-					slug: course.slug
+					slug: course.slug,
+					email_branding_config: course.email_branding_config
 				},
-				cohort: {
-					name: cohort?.name || 'Your Cohort',
-					start_date: startDate
-				},
+				cohort: cohort ? {
+					name: cohort.name,
+					start_date: cohort.start_date,
+					end_date: cohort.end_date,
+					current_session: cohort.current_session
+				} : null,
 				siteUrl
 			});
-
-			// Add custom variables
-			variables.firstName = firstName;
-			variables.lastName = lastName;
-			variables.fullName = enrollment.full_name;
-			variables.startDate = startDate;
-			variables.supportEmail = course.email_branding_config?.reply_to_email || 'contact@archdiocesanministries.org.au';
 
 			// Add login button
 			variables.loginButton = createEmailButton(

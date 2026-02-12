@@ -130,7 +130,9 @@ function convertToMjmlComponents(html, accentDark) {
 	result = result.replace(
 		/<div[^>]*data-type="email-button"[^>]*data-text="([^"]*)"[^>]*data-href="([^"]*)"[^>]*>[\s\S]*?<\/div>/g,
 		(match, text, href) => {
-			return `</mj-text><mj-button href="${href}" background-color="${accentDark}" color="#ffffff" border-radius="6px" font-size="16px" font-weight="600" padding="12px 32px">${text}</mj-button><mj-text>`;
+			const buttonText = text || 'Click Here';
+			const buttonHref = href || '#';
+			return `</mj-text><mj-button href="${buttonHref}" background-color="${accentDark}" color="#ffffff" border-radius="6px" font-size="16px" font-weight="600" padding="12px 32px">${buttonText}</mj-button><mj-text>`;
 		}
 	);
 

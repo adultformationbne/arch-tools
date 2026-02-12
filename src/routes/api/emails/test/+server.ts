@@ -22,7 +22,7 @@ import { sendEmail, renderTemplate } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
-import type { EmailContext } from '$lib/email/context-config';
+import { buildCourseVariablesFromEnrollment, type EmailContext } from '$lib/email/context-config';
 
 // Sample data for each context (matches context-config.ts)
 const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
@@ -41,10 +41,10 @@ const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
 		sessionTitle: 'Introduction',
 		currentSession: '1',
 		loginLink: 'https://example.com/courses/sample-course',
-		dashboardLink: 'https://example.com/courses/sample-course/dashboard',
+		dashboardLink: 'https://example.com/courses/sample-course',
 		materialsLink: 'https://example.com/courses/sample-course/materials',
 		reflectionLink: 'https://example.com/courses/sample-course/reflections',
-		supportEmail: 'support@archdiocesanministries.org.au'
+		supportEmail: 'accf@archdiocesanministries.org.au'
 	},
 	dgr: {
 		contributor_name: 'Jane Doe',
@@ -63,7 +63,7 @@ const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
 		userName: 'Sample User',
 		userEmail: 'sample@example.com',
 		platformName: 'Archdiocesan Ministries',
-		supportEmail: 'support@archdiocesanministries.org.au'
+		supportEmail: 'accf@archdiocesanministries.org.au'
 	}
 };
 
@@ -120,7 +120,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 			// Update URLs with actual origin for sample data
 			if (context === 'course' && context_id) {
 				variables.loginLink = `${origin}/courses/${context_id}`;
-				variables.dashboardLink = `${origin}/courses/${context_id}/dashboard`;
+				variables.dashboardLink = `${origin}/courses/${context_id}`;
 				variables.materialsLink = `${origin}/courses/${context_id}/materials`;
 				variables.reflectionLink = `${origin}/courses/${context_id}/reflections`;
 			} else if (context === 'dgr') {
@@ -245,7 +245,7 @@ async function fetchCourseRecipientVariables(
 				end_date,
 				courses_modules!inner (
 					course_id,
-					courses!inner ( id, name, slug )
+					courses!inner ( id, name, slug, email_branding_config )
 				)
 			)
 		`)
@@ -257,47 +257,14 @@ async function fetchCourseRecipientVariables(
 		return SAMPLE_DATA.course;
 	}
 
-	const cohort = enrollment.courses_cohorts;
-	const course = cohort?.courses_modules?.courses;
-	const slug = course?.slug || courseSlug || '';
-
-	const fullName = enrollment.full_name || '';
-	const nameParts = fullName.split(' ');
-	const firstName = nameParts[0] || '';
-	const lastName = nameParts.slice(1).join(' ') || '';
-
-	return {
-		firstName,
-		lastName,
-		fullName,
-		email: enrollment.email || '',
-		hubName: enrollment.courses_hubs?.name || '',
-		courseName: course?.name || '',
-		courseSlug: slug,
-		cohortName: cohort?.name || '',
-		startDate: cohort?.start_date
-			? new Date(cohort.start_date).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric'
-				})
-			: '',
-		endDate: cohort?.end_date
-			? new Date(cohort.end_date).toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric'
-				})
-			: '',
-		sessionNumber: String(enrollment.current_session || cohort?.current_session || ''),
-		sessionTitle: '', // Would need session lookup
-		currentSession: String(cohort?.current_session || ''),
-		loginLink: `${origin}/courses/${slug}`,
-		dashboardLink: `${origin}/courses/${slug}/dashboard`,
-		materialsLink: `${origin}/courses/${slug}/materials`,
-		reflectionLink: `${origin}/courses/${slug}/reflections`,
-		supportEmail: 'support@archdiocesanministries.org.au'
-	};
+	const course = enrollment.courses_cohorts?.courses_modules?.courses;
+	// Use shared variable builder (handles name parsing, dates, links, supportEmail)
+	return buildCourseVariablesFromEnrollment(
+		enrollment,
+		{ ...course, slug: course?.slug || courseSlug || '' },
+		null,
+		origin
+	);
 }
 
 /**
@@ -359,7 +326,7 @@ async function fetchPlatformRecipientVariables(userId: string): Promise<Record<s
 		userName: profile.full_name || '',
 		userEmail: profile.email || '',
 		platformName: 'Archdiocesan Ministries',
-		supportEmail: 'support@archdiocesanministries.org.au'
+		supportEmail: 'accf@archdiocesanministries.org.au'
 	};
 }
 

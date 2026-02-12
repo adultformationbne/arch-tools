@@ -7,6 +7,7 @@
 	import TestEmailPanel from './TestEmailPanel.svelte';
 	import { createDropdown } from '$lib/utils/dropdown.js';
 	import { onDestroy } from 'svelte';
+	import { COURSE_VARIABLES, DGR_VARIABLES, PLATFORM_VARIABLES } from '$lib/email/context-config';
 
 	/**
 	 * Unified Email Template Editor
@@ -21,6 +22,7 @@
 	 */
 	let {
 		template = null,
+		duplicateFrom = null,
 		// Context configuration
 		context = 'course',
 		contextId = null,
@@ -79,13 +81,27 @@
 		available_variables: /** @type {string[]} */ ([])
 	});
 
-	// Sync form data when template changes (combines both effects)
+	// Sync form data when template changes (or pre-fill from duplicate source)
 	$effect(() => {
-		formData.name = template?.name || '';
-		formData.subject_template = template?.subject_template || '';
-		formData.body_template = template?.body_template || '';
-		formData.available_variables = template?.available_variables || [];
-		hasUnsavedChanges = false;
+		if (template) {
+			formData.name = template.name || '';
+			formData.subject_template = template.subject_template || '';
+			formData.body_template = template.body_template || '';
+			formData.available_variables = template.available_variables || [];
+			hasUnsavedChanges = false;
+		} else if (duplicateFrom) {
+			formData.name = duplicateFrom._copyName || `${duplicateFrom.name} (Copy)`;
+			formData.subject_template = duplicateFrom.subject_template || '';
+			formData.body_template = duplicateFrom.body_template || '';
+			formData.available_variables = duplicateFrom.available_variables || [];
+			hasUnsavedChanges = true;
+		} else {
+			formData.name = '';
+			formData.subject_template = '';
+			formData.body_template = '';
+			formData.available_variables = [];
+			hasUnsavedChanges = false;
+		}
 	});
 
 	// Auto-generate template_key from name for new templates
@@ -144,55 +160,16 @@
 	// Check if this is a system template (can be restored to default)
 	const isSystemTemplate = $derived(template?.category === 'system');
 
-	// Default variables for each context type
-	const DEFAULT_COURSE_VARIABLES = [
-		{ name: 'firstName', description: 'Student first name' },
-		{ name: 'lastName', description: 'Student last name' },
-		{ name: 'fullName', description: 'Student full name' },
-		{ name: 'email', description: 'Student email address' },
-		{ name: 'hubName', description: 'Student hub assignment' },
-		{ name: 'courseName', description: 'Course name' },
-		{ name: 'courseSlug', description: 'Course URL identifier' },
-		{ name: 'cohortName', description: 'Cohort name' },
-		{ name: 'startDate', description: 'Cohort start date' },
-		{ name: 'endDate', description: 'Cohort end date' },
-		{ name: 'sessionNumber', description: 'Session number', dynamic: true },
-		{ name: 'sessionTitle', description: 'Session title', dynamic: true },
-		{ name: 'currentSession', description: 'Current cohort session', dynamic: true },
-		{ name: 'loginLink', description: 'Smart login link (auto-sends code)' },
-		{ name: 'dashboardLink', description: 'Course dashboard' },
-		{ name: 'materialsLink', description: 'Course materials page' },
-		{ name: 'reflectionLink', description: 'Reflections page' },
-		{ name: 'supportEmail', description: 'Support contact email' }
-	];
-
-	const DEFAULT_DGR_VARIABLES = [
-		{ name: 'contributor_name', description: 'Contributor full name' },
-		{ name: 'contributor_first_name', description: 'Contributor first name' },
-		{ name: 'contributor_email', description: 'Contributor email address' },
-		{ name: 'write_url', description: 'Writing portal URL' },
-		{ name: 'write_url_button', description: 'Writing portal button HTML' },
-		{ name: 'due_date', description: 'Submission due date' },
-		{ name: 'due_date_text', description: 'Due date as text (e.g., "tomorrow")' }
-	];
-
-	const DEFAULT_PLATFORM_VARIABLES = [
-		{ name: 'userName', description: 'User full name' },
-		{ name: 'userEmail', description: 'User email address' },
-		{ name: 'platformName', description: 'Platform name' },
-		{ name: 'supportEmail', description: 'Support contact email' }
-	];
-
-	// Use provided variables or defaults based on context
+	// Use provided variables or defaults from context-config SSOT
 	const availableVariables = $derived.by(() => {
 		if (variables.length > 0) return variables;
 		switch (context) {
 			case 'dgr':
-				return DEFAULT_DGR_VARIABLES;
+				return DGR_VARIABLES;
 			case 'platform':
-				return DEFAULT_PLATFORM_VARIABLES;
+				return PLATFORM_VARIABLES;
 			default:
-				return DEFAULT_COURSE_VARIABLES;
+				return COURSE_VARIABLES;
 		}
 	});
 
@@ -235,20 +212,21 @@
 				available_variables: usedVariables
 			};
 
+			let result;
 			if (template) {
-				await apiPut(
+				result = await apiPut(
 					effectiveApiBaseUrl,
 					{ template_id: template.id, ...payload },
 					{ successMessage: 'Template saved' }
 				);
 			} else {
-				await apiPost(effectiveApiBaseUrl, payload, {
+				result = await apiPost(effectiveApiBaseUrl, payload, {
 					successMessage: 'Template created'
 				});
 			}
 
 			hasUnsavedChanges = false;
-			onSave();
+			onSave(result);
 		} catch (error) {
 			console.error('Error saving template:', error);
 		} finally {
@@ -341,7 +319,7 @@
 				style="display: none;"
 				class="w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-h-64 overflow-y-auto"
 			>
-				{#each availableVariables() as variable}
+				{#each availableVariables as variable}
 					<button
 						type="button"
 						onclick={() => insertVariableIntoSubject(variable.name)}
@@ -365,7 +343,7 @@
 			logoUrl={effectiveBranding.logoUrl}
 			accentDark={effectiveBranding.accentDark}
 			footerText={effectiveBranding.footerText}
-			availableVariables={availableVariables()}
+			availableVariables={availableVariables}
 			{context}
 			contextId={effectiveContextId}
 		/>

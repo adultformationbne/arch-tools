@@ -1,15 +1,16 @@
 <script>
-	import { ChevronDown, ChevronRight, Mail, Settings, FileText, Plus, List, Send, Edit3 } from '$lib/icons';
+	import { ChevronDown, ChevronRight, Mail, Settings, FileText, Plus, List, Send, Edit3, Copy } from '$lib/icons';
 
 	let {
 		systemTemplates = [],
 		customTemplates = [],
 		selectedView = 'send', // 'send', 'logs', or template id
-		onViewChange = () => {}
+		onViewChange = () => {},
+		onDuplicate = () => {}
 	} = $props();
 
 	// Use object instead of Set for proper Svelte 5 reactivity
-	let expandedSections = $state({ system: true, custom: false });
+	let expandedSections = $state({ system: true, custom: true });
 
 	const toggleSection = (sectionId) => {
 		expandedSections[sectionId] = !expandedSections[sectionId];
@@ -77,16 +78,25 @@
 				<div class="ml-6 mt-1 space-y-0.5">
 					<p class="text-xs text-white/40 px-3 py-1 italic">Click to edit</p>
 					{#each systemTemplates as template}
-						<button
-							onclick={() => handleViewChange(template.id)}
-							class="template-item w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
+						<div class="template-item flex items-center rounded-md transition-colors {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
 							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
-							title="Click to edit this template"
 						>
-							<Settings size={12} class="flex-shrink-0" />
-							<span class="truncate flex-1">{template.name}</span>
-							<Edit3 size={12} class="edit-icon flex-shrink-0 opacity-0 transition-opacity" />
-						</button>
+							<button
+								onclick={() => handleViewChange(template.id)}
+								class="flex items-center gap-2 px-3 py-1.5 text-left text-sm flex-1 min-w-0"
+								title="Click to edit this template"
+							>
+								<Settings size={12} class="flex-shrink-0" />
+								<span class="truncate">{template.name}</span>
+							</button>
+							<button
+								onclick={(e) => { e.stopPropagation(); onDuplicate(template); }}
+								class="copy-icon flex-shrink-0 p-1 mr-1 rounded opacity-0 transition-opacity hover:bg-white/10"
+								title="Duplicate as custom template"
+							>
+								<Copy size={12} />
+							</button>
+						</div>
 					{/each}
 				</div>
 			{/if}
@@ -116,16 +126,25 @@
 						<p class="text-xs text-white/40 px-3 py-1 italic">Click to edit</p>
 					{/if}
 					{#each customTemplates as template}
-						<button
-							onclick={() => handleViewChange(template.id)}
-							class="template-item w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-colors text-sm {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
+						<div class="template-item flex items-center rounded-md transition-colors {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
 							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
-							title="Click to edit this template"
 						>
-							<FileText size={12} class="flex-shrink-0" />
-							<span class="truncate flex-1">{template.name}</span>
-							<Edit3 size={12} class="edit-icon flex-shrink-0 opacity-0 transition-opacity" />
-						</button>
+							<button
+								onclick={() => handleViewChange(template.id)}
+								class="flex items-center gap-2 px-3 py-1.5 text-left text-sm flex-1 min-w-0"
+								title="Click to edit this template"
+							>
+								<FileText size={12} class="flex-shrink-0" />
+								<span class="truncate">{template.name}</span>
+							</button>
+							<button
+								onclick={(e) => { e.stopPropagation(); onDuplicate(template); }}
+								class="copy-icon flex-shrink-0 p-1 mr-1 rounded opacity-0 transition-opacity hover:bg-white/10"
+								title="Duplicate template"
+							>
+								<Copy size={12} />
+							</button>
+						</div>
 					{/each}
 
 					<!-- Add Template Button -->
@@ -143,8 +162,8 @@
 </div>
 
 <style>
-	/* Show edit icon on hover */
-	.template-item:hover :global(.edit-icon) {
+	/* Show copy icon on hover */
+	.template-item:hover :global(.copy-icon) {
 		opacity: 0.6;
 	}
 
