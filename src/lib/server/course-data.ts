@@ -227,6 +227,16 @@ export const CourseQueries = {
 	},
 
 	/**
+	 * Get count of responses for a specific reflection question
+	 */
+	async getResponseCountForQuestion(questionId: string) {
+		return supabaseAdmin
+			.from('courses_reflection_responses')
+			.select('*', { count: 'exact', head: true })
+			.eq('question_id', questionId);
+	},
+
+	/**
 	 * Get reflection questions for specific sessions
 	 */
 	async getReflectionQuestions(sessionIds: string[]) {
@@ -583,24 +593,19 @@ export const CourseAggregates = {
 	 * Used by admin sessions editor
 	 */
 	async getSessionData(moduleId: string) {
-		const [sessionsResult, materialsResult, questionsResult] = await Promise.all([
-			CourseQueries.getSessions(moduleId),
-			CourseQueries.getMaterials([moduleId]), // Will need session IDs
-			CourseQueries.getReflectionQuestions([moduleId]) // Will need session IDs
-		]);
-
-		// Note: This needs session IDs first, so we need a two-step process
+		// Step 1: Fetch sessions to get their IDs
+		const sessionsResult = await CourseQueries.getSessions(moduleId);
 		const sessions = sessionsResult.data || [];
 		const sessionIds = sessions.map((s) => s.id);
 
 		if (sessionIds.length === 0) {
 			return {
 				data: { sessions: [], materials: [], questions: [] },
-				error: null
+				error: sessionsResult.error
 			};
 		}
 
-		// Now fetch materials and questions with actual session IDs
+		// Step 2: Fetch materials and questions in parallel using actual session IDs
 		const [materials, questions] = await Promise.all([
 			CourseQueries.getMaterials(sessionIds),
 			CourseQueries.getReflectionQuestions(sessionIds)
@@ -682,51 +687,57 @@ export const CourseAggregates = {
 			? cohorts.filter((c) => cohortIds.includes(c.id))
 			: cohorts;
 
-		// Get all reflection responses for these cohorts
-		const reflectionsPromises = targetCohorts.map((cohort) =>
-			supabaseAdmin
-				.from('courses_reflection_responses')
-				.select(
-					`
-					*,
-					question:question_id (
-						id,
-						question_text,
-						session:session_id (
-							id,
-							session_number,
-							title
-						)
-					),
-					enrollment:enrollment_id (
-						id,
-						user_profile:user_profile_id (
-							id,
-							full_name,
-							email
-						)
-					),
-					marked_by_profile:marked_by (
-						full_name
-					),
-					reviewing_by_profile:reviewing_by (
-						full_name
-					)
+		const targetCohortIds = targetCohorts.map((c) => c.id);
+
+		if (targetCohortIds.length === 0) {
+			return {
+				data: { cohorts: targetCohorts, reflections: [] },
+				error: null
+			};
+		}
+
+		// Get all reflection responses in a single batched query
+		const { data: allReflections, error: reflectionsError } = await supabaseAdmin
+			.from('courses_reflection_responses')
+			.select(
 				`
+				*,
+				question:question_id (
+					id,
+					question_text,
+					session:session_id (
+						id,
+						session_number,
+						title
+					)
+				),
+				enrollment:enrollment_id (
+					id,
+					user_profile:user_profile_id (
+						id,
+						full_name,
+						email
+					)
+				),
+				marked_by_profile:marked_by (
+					full_name
+				),
+				reviewing_by_profile:reviewing_by (
+					full_name
 				)
-				.eq('cohort_id', cohort.id)
-				.order('created_at', { ascending: false })
-		);
+			`
+			)
+			.in('cohort_id', targetCohortIds)
+			.order('created_at', { ascending: false });
 
-		const reflectionsResults = await Promise.all(reflectionsPromises);
-
-		// Combine all reflections
-		const allReflections = reflectionsResults.flatMap((result) => result.data || []);
+		if (reflectionsError) {
+			return { data: null, error: reflectionsError };
+		}
 
 		return {
 			data: {
 				cohorts: targetCohorts,
-				reflections: allReflections
+				reflections: allReflections || []
 			},
 			error: null
 		};
@@ -1916,9 +1927,22 @@ export const CourseMutations = {
 		);
 		const existingEnrollmentEmails = new Set((existingEnrollments || []).map(e => e.email.toLowerCase()));
 
-		// 3. Fetch ALL auth users once (not per row!)
-		const { data: { users: allAuthUsers } } = await supabaseAdmin.auth.admin.listUsers();
-		const authUsersByEmail = new Map((allAuthUsers || []).map(u => [u.email?.toLowerCase(), u]));
+		// 3. Fetch ALL auth users with pagination (default page size is 50)
+		const authUsersByEmail = new Map<string, { id: string; email?: string }>();
+		let page = 1;
+		const perPage = 1000;
+		while (true) {
+			const { data: { users: pageUsers } } = await supabaseAdmin.auth.admin.listUsers({
+				page,
+				perPage
+			});
+			if (!pageUsers || pageUsers.length === 0) break;
+			for (const u of pageUsers) {
+				if (u.email) authUsersByEmail.set(u.email.toLowerCase(), u);
+			}
+			if (pageUsers.length < perPage) break;
+			page++;
+		}
 
 		// 4. Fetch existing user profiles
 		const { data: existingProfiles } = await supabaseAdmin
@@ -2658,6 +2682,13 @@ export const CourseMutations = {
 	 */
 	async deleteReflectionQuestion(id: string) {
 		return supabaseAdmin.from('courses_reflection_questions').delete().eq('id', id);
+	},
+
+	/**
+	 * Delete all responses for a reflection question (before deleting the question itself)
+	 */
+	async deleteResponsesForQuestion(questionId: string) {
+		return supabaseAdmin.from('courses_reflection_responses').delete().eq('question_id', questionId);
 	},
 
 	// ========================================================================

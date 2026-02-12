@@ -7,7 +7,7 @@
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
 	import SessionTreeSidebar from '$lib/components/SessionTreeSidebar.svelte';
-	import StudentPreview from '$lib/components/StudentPreview.svelte';
+	import SessionContent from '../../../../courses/[slug]/SessionContent.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
@@ -53,6 +53,8 @@
 	let titleHovered = $state(false);
 	let showDeleteConfirm = $state(false);
 	let sessionToDelete = $state(null);
+	let showReflectionDeleteConfirm = $state(false);
+	let reflectionDeleteResponseCount = $state(0);
 
 	// Track the current title for debouncing
 	let pendingTitle = $state('');
@@ -222,6 +224,74 @@
 				saveMessage = '';
 			}, 2000);
 			toastError(`Failed to save: ${error.message}`);
+		}
+	};
+
+	const handleDeleteQuestion = async () => {
+		// Find the existing question ID
+		try {
+			const res = await fetch(
+				`/api/courses/module-reflection-questions?module_id=${selectedModule.id}&session_number=${selectedSession}`
+			);
+			const { questions } = await res.json();
+			const existingQuestion = questions?.[0];
+			if (!existingQuestion) return;
+
+			// Try delete — API returns response count if confirmation needed
+			const deleteRes = await fetch('/api/courses/module-reflection-questions', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: existingQuestion.id })
+			});
+			const result = await deleteRes.json();
+
+			if (result.needs_confirmation) {
+				// Responses exist — show modal with two options
+				reflectionDeleteResponseCount = result.response_count;
+				showReflectionDeleteConfirm = true;
+			} else {
+				// No responses — deleted cleanly
+				sessionData[selectedSession].reflection = '';
+				sessionData[selectedSession].reflectionEnabled = false;
+				toastSuccess('Reflection question deleted');
+			}
+		} catch (error) {
+			toastError(`Failed to delete: ${error.message}`);
+		}
+	};
+
+	const confirmDeleteQuestion = async (deleteResponses) => {
+		showReflectionDeleteConfirm = false;
+
+		try {
+			const res = await fetch(
+				`/api/courses/module-reflection-questions?module_id=${selectedModule.id}&session_number=${selectedSession}`
+			);
+			const { questions } = await res.json();
+			const existingQuestion = questions?.[0];
+			if (!existingQuestion) return;
+
+			const deleteRes = await fetch('/api/courses/module-reflection-questions', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: existingQuestion.id, delete_responses: deleteResponses })
+			});
+
+			if (!deleteRes.ok) {
+				const errorData = await deleteRes.json();
+				throw new Error(errorData.error || 'Delete failed');
+			}
+
+			sessionData[selectedSession].reflection = '';
+			sessionData[selectedSession].reflectionEnabled = false;
+
+			if (deleteResponses) {
+				toastSuccess('Question and all responses deleted');
+			} else {
+				toastSuccess('Question removed — participant responses preserved');
+			}
+		} catch (error) {
+			toastError(`Failed to delete: ${error.message}`);
 		}
 	};
 
@@ -651,6 +721,27 @@
 			}))
 			.sort((a, b) => a.session_number - b.session_number);
 	})());
+
+	// Preview data mapped for the real SessionContent component
+	const regularSessionNumbers = $derived(sessionNumbers.filter(n => n > 0));
+	const previewMaxSession = $derived(regularSessionNumbers.length > 0 ? Math.max(...regularSessionNumbers) : 0);
+	const previewTotalSessions = $derived(regularSessionNumbers.length);
+
+	const previewSessionData = $derived({
+		sessionNumber: selectedSession,
+		sessionTitle: currentSession.title || (selectedSession === 0 ? 'Pre-Start' : `Session ${selectedSession}`),
+		sessionOverview: currentSession.description || '',
+		materials: currentSession.materials || [],
+		reflectionQuestion: currentSession.reflection?.trim()
+			? { text: currentSession.reflection, id: 'preview' }
+			: null,
+		reflectionStatus: 'not_started'
+	});
+
+	const previewCourseData = $derived({
+		title: data.course?.name || 'Course',
+		currentSessionData: previewSessionData
+	});
 </script>
 
 <!-- Sessions Page with Tree Sidebar -->
@@ -777,76 +868,71 @@
 		<div class="p-3 sm:p-4 lg:p-6">
 			{#if !dataInitialized}
 				<!-- Skeleton Loading State -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 animate-pulse">
-					<!-- Left: Materials and Session Overview Skeletons -->
-					<div class="lg:col-span-2 space-y-4 sm:space-y-6">
-						<!-- Session Overview Skeleton -->
-						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
-							<div class="h-5 sm:h-6 bg-white/10 rounded w-1/3 mb-4"></div>
-							<div class="h-24 sm:h-32 bg-white/10 rounded"></div>
-						</div>
-
-						<!-- Materials Skeleton -->
-						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
-							<div class="h-5 sm:h-6 bg-white/10 rounded w-1/4 mb-4"></div>
-							<div class="space-y-3">
-								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
-								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
-								<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
-							</div>
+				<div class="max-w-5xl mx-auto space-y-4 sm:space-y-6 animate-pulse">
+					<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+						<div class="h-5 sm:h-6 bg-white/10 rounded w-1/3 mb-4"></div>
+						<div class="h-24 sm:h-32 bg-white/10 rounded"></div>
+					</div>
+					<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+						<div class="h-5 sm:h-6 bg-white/10 rounded w-1/4 mb-4"></div>
+						<div class="space-y-3">
+							<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
+							<div class="h-14 sm:h-16 bg-white/10 rounded"></div>
 						</div>
 					</div>
-
-					<!-- Right: Reflection Skeleton -->
-					<div>
-						<div class="bg-white/5 rounded-lg p-4 sm:p-6">
-							<div class="h-5 sm:h-6 bg-white/10 rounded w-2/3 mb-4"></div>
-							<div class="h-20 sm:h-24 bg-white/10 rounded"></div>
-						</div>
+					<div class="bg-white/5 rounded-lg p-4 sm:p-6">
+						<div class="h-5 sm:h-6 bg-white/10 rounded w-2/3 mb-4"></div>
+						<div class="h-20 sm:h-24 bg-white/10 rounded"></div>
 					</div>
 				</div>
 			{:else}
-				<!-- Actual Content with smooth transition -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 transition-opacity duration-200" style="animation: fadeIn 0.2s ease-in;">
-					<!-- Left: Materials and Session Overview -->
-					<div class="lg:col-span-2 space-y-4 sm:space-y-6">
-						<!-- Session Overview -->
-						<SessionOverviewEditor
-							sessionOverview={currentSession.description}
-							onOverviewChange={handleOverviewChange}
-							sessionNumber={selectedSession}
-						/>
+				<!-- Editors - Single Column -->
+				<div class="max-w-5xl mx-auto space-y-4 sm:space-y-6" style="animation: fadeIn 0.2s ease-in;">
+					<SessionOverviewEditor
+						sessionOverview={currentSession.description}
+						onOverviewChange={handleOverviewChange}
+						sessionNumber={selectedSession}
+					/>
 
-						<!-- Materials Editor -->
-						<MaterialEditor
-							supabase={data.supabase}
-							materials={currentSession.materials}
-							onMaterialsChange={handleMaterialsChange}
-							onSaveStatusChange={handleSaveStatusChange}
-							allowNativeContent={true}
-							allowDocumentUpload={true}
-							moduleId={selectedModule.id}
-							sessionNumber={selectedSession}
-							sessionId={currentSession.id}
-							courseId={data.course.id}
-						/>
+					<MaterialEditor
+						supabase={data.supabase}
+						materials={currentSession.materials}
+						onMaterialsChange={handleMaterialsChange}
+						onSaveStatusChange={handleSaveStatusChange}
+						allowNativeContent={true}
+						allowDocumentUpload={true}
+						moduleId={selectedModule.id}
+						sessionNumber={selectedSession}
+						sessionId={currentSession.id}
+						courseId={data.course.id}
+					/>
+
+					<ReflectionEditor
+						reflectionQuestion={currentSession.reflection}
+						onReflectionChange={handleReflectionChange}
+						onDeleteQuestion={handleDeleteQuestion}
+						sessionNumber={selectedSession}
+					/>
+				</div>
+
+				<!-- Student Preview -->
+				<div class="max-w-5xl mx-auto mt-8">
+					<div class="flex items-center gap-3 mb-3 px-1">
+						<span class="text-xs font-medium uppercase tracking-wider text-white/40">Participant Preview</span>
+						<div class="flex-1 h-px bg-white/10"></div>
 					</div>
-
-					<!-- Right: Reflection & Preview -->
-					<div class="space-y-4 sm:space-y-6">
-						<ReflectionEditor
-							reflectionQuestion={currentSession.reflection}
-							onReflectionChange={handleReflectionChange}
-							sessionNumber={selectedSession}
-						/>
-
-						<!-- Student Preview -->
-						<StudentPreview
-							sessionNumber={selectedSession}
-							sessionOverview={currentSession.description}
-							materials={currentSession.materials}
-						/>
-					</div>
+					<SessionContent
+						bind:currentSession={selectedSession}
+						availableSessions={previewMaxSession}
+						courseData={previewCourseData}
+						courseSlug={data.courseSlug}
+						materials={currentSession.materials || []}
+						currentSessionData={previewSessionData}
+						onSessionChange={handleSessionChange}
+						totalSessions={previewTotalSessions}
+						maxSessionNumber={previewMaxSession}
+						featureSettings={data.courseFeatures || {}}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -867,6 +953,29 @@
 		<li>Session description</li>
 	</ul>
 	<p class="text-sm text-red-600 mt-2 font-medium">This action cannot be undone.</p>
+</ConfirmationModal>
+
+<!-- Reflection Delete Confirmation Modal -->
+<ConfirmationModal
+	show={showReflectionDeleteConfirm}
+	title="Delete Reflection Question"
+	onCancel={() => showReflectionDeleteConfirm = false}
+	actions={[
+		{
+			label: 'Remove Question Only',
+			description: `Delete the question but keep all ${reflectionDeleteResponseCount} participant response${reflectionDeleteResponseCount === 1 ? '' : 's'}. Responses will be preserved in the database.`,
+			variant: 'primary',
+			onClick: () => confirmDeleteQuestion(false)
+		},
+		{
+			label: 'Delete Question & Responses',
+			description: `Permanently delete the question and all ${reflectionDeleteResponseCount} participant response${reflectionDeleteResponseCount === 1 ? '' : 's'}. This cannot be undone.`,
+			variant: 'danger',
+			onClick: () => confirmDeleteQuestion(true)
+		}
+	]}
+>
+	<p><strong>{reflectionDeleteResponseCount}</strong> participant{reflectionDeleteResponseCount === 1 ? ' has' : 's have'} already responded to this reflection question.</p>
 </ConfirmationModal>
 
 <style>

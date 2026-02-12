@@ -55,11 +55,6 @@
 							<div class="flex flex-wrap items-center gap-2 mb-2">
 								<Edit3 size="20" class="flex-shrink-0" style="color: var(--course-accent-light);" />
 								<h3 class="text-lg sm:text-xl font-bold text-gray-800">Session {currentReflectionQuestion.sessionNumber} Reflection Due</h3>
-								{#if currentReflectionQuestion.isOverdue}
-									<span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-										Overdue
-									</span>
-								{/if}
 							</div>
 							<p class="text-gray-700 mb-4 text-lg leading-relaxed">
 								{currentReflectionQuestion.question}

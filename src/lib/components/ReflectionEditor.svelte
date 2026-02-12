@@ -4,6 +4,7 @@
 	let {
 		reflectionQuestion = '',
 		onReflectionChange = () => {},
+		onDeleteQuestion = null,
 		placeholder = 'Write the reflection question for this week...',
 		sessionNumber = 1
 	} = $props();
@@ -38,10 +39,15 @@
 	};
 
 	const deleteQuestion = () => {
-		// Clear the question
-		textareaValue = '';
-		onReflectionChange('');
-		isEditing = false;
+		if (onDeleteQuestion) {
+			// Delegate to parent for confirmation flow (checks for responses)
+			onDeleteQuestion();
+		} else {
+			// Fallback: direct delete (no response check)
+			textareaValue = '';
+			onReflectionChange('');
+			isEditing = false;
+		}
 	};
 
 	// Sync with prop changes

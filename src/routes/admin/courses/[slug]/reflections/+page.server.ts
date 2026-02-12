@@ -8,6 +8,13 @@ export const load: PageServerLoad = async (event) => {
 	// Auth is already done in layout - no need to check again!
 	const { user } = await event.locals.safeGetSession();
 
+	// Get current user's display name for the marking modal
+	const { data: currentUserProfile } = await supabaseAdmin
+		.from('user_profiles')
+		.select('full_name')
+		.eq('id', user.id)
+		.single();
+
 	try {
 		// Get layout data (modules, cohorts, hubs already loaded and cached)
 		const layoutData = await event.parent();
@@ -141,6 +148,7 @@ export const load: PageServerLoad = async (event) => {
 			reflections: processedReflections,
 			cohorts: cohortOptions,
 			currentUserId: user.id,
+			currentUserName: currentUserProfile?.full_name || 'Unknown',
 			courseSlug
 		};
 

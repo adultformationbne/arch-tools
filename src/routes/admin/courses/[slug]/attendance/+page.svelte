@@ -2,10 +2,16 @@
 	import { Calendar, Users, CheckCircle, XCircle, ChevronDown, ChevronRight, User, Building, AlertCircle } from '$lib/icons';
 	import { getUserInitials } from '$lib/utils/avatar.js';
 
+	/**
+	 * @typedef {{ id: string, full_name: string, email: string, hub_name?: string, attendance: Array<{ session_number: number, present: boolean }> }} Student
+	 * @typedef {{ nonHubStudents?: Student[], hubStudents?: Student[] }} AttendanceData
+	 */
+
 	let { data } = $props();
 
 	const courseSlug = $derived(data.courseSlug);
 	const initialCohortId = $derived(data.cohorts[0]?.id || null);
+	/** @type {string|null} */
 	let selectedCohortId = $state(null);
 
 	// Initialize selectedCohortId from derived initial value
@@ -14,12 +20,28 @@
 			selectedCohortId = initialCohortId;
 		}
 	});
+	/** @type {number|null} */
 	let expandedSession = $state(null);
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
+	/** @type {Record<number, string>} */
+	let sessionSearchTerms = $state({});
+
+	/** @param {Student[]} students @param {number} sessionNum */
+	const filterStudents = (students, sessionNum) => {
+		const term = (sessionSearchTerms[sessionNum] || '').toLowerCase().trim();
+		if (!term) return students;
+		return students.filter(s => {
+			const name = (s.full_name || '').toLowerCase();
+			// Match if full name starts with term, or any word in name starts with term
+			return name.startsWith(term) || name.split(/\s+/).some(word => word.startsWith(term));
+		});
+	};
+	/** @type {AttendanceData} */
 	let attendanceData = $state({});
 	let isLoading = $state(false);
-	let overrideState = $state({ show: false, studentId: null, sessionNumber: null, studentName: null });
+	let overrideState = $state({ show: false, studentId: /** @type {string|null} */ (null), sessionNumber: /** @type {number|null} */ (null), studentName: /** @type {string|null} */ (null) });
 
+	/** @param {string} hubName */
 	const toggleHub = (hubName) => {
 		const newExpanded = new Set(expandedHubs);
 		if (newExpanded.has(hubName)) {
@@ -31,6 +53,7 @@
 	};
 
 	// Load attendance data when cohort is selected
+	/** @param {string|null} cohortId */
 	const loadAttendanceForCohort = async (cohortId) => {
 		if (!cohortId) return;
 
@@ -53,6 +76,7 @@
 		}
 	});
 
+	/** @param {number} sessionNum */
 	const toggleSession = (sessionNum) => {
 		expandedSession = expandedSession === sessionNum ? null : sessionNum;
 	};
@@ -60,6 +84,7 @@
 	// Debounce map to prevent rapid duplicate requests
 	const pendingRequests = new Map();
 
+	/** @param {string} userId @param {number} sessionNumber @param {boolean} present */
 	const markAttendance = async (userId, sessionNumber, present) => {
 		if (!selectedCohortId) return;
 
@@ -72,6 +97,7 @@
 		}
 
 		// Optimistically update the UI immediately
+		/** @param {Student[]} studentList */
 		const updateAttendanceOptimistically = (studentList) => {
 			return studentList.map(student => {
 				if (student.id === userId) {
@@ -120,6 +146,7 @@
 		pendingRequests.set(requestKey, timeoutId);
 	};
 
+	/** @param {number} sessionNum */
 	const getSessionStats = (sessionNum) => {
 		if (!attendanceData.nonHubStudents && !attendanceData.hubStudents) {
 			return { total: 0, marked: 0 };
@@ -137,13 +164,15 @@
 		return { total, marked };
 	};
 
+	/** @param {Student} student @param {number} sessionNum */
 	const getAttendanceStatus = (student, sessionNum) => {
 		const record = student.attendance?.find(a => a.session_number === sessionNum);
 		return record?.present;
 	};
 
-	const selectedCohort = $derived(data.cohorts.find(c => c.id === selectedCohortId));
+	const selectedCohort = $derived(data.cohorts.find(/** @param {any} c */ (c) => c.id === selectedCohortId));
 
+	/** @param {boolean} present */
 	const handleOverrideConfirm = async (present) => {
 		if (!overrideState.studentId || overrideState.sessionNumber === null) return;
 
@@ -241,16 +270,29 @@
 
 							<!-- Expanded Session Content -->
 							{#if isExpanded}
+								{@const filteredNonHub = filterStudents(attendanceData.nonHubStudents || [], sessionNum)}
+								{@const filteredHub = filterStudents(attendanceData.hubStudents || [], sessionNum)}
 								<div class="border-t border-gray-200">
+									<!-- Search Bar -->
+									<div class="px-3 sm:px-6 pt-3 sm:pt-4">
+										<input
+											type="text"
+											placeholder="Search by name..."
+											bind:value={sessionSearchTerms[sessionNum]}
+											class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+											style="--tw-ring-color: var(--course-accent-light);"
+										/>
+									</div>
+
 									<!-- Non-Hub Students Section -->
-									{#if attendanceData.nonHubStudents && attendanceData.nonHubStudents.length > 0}
+									{#if filteredNonHub.length > 0}
 										<div class="p-3 sm:p-6 border-b border-gray-200">
 											<h4 class="font-bold text-sm sm:text-md text-gray-700 mb-3 sm:mb-4 flex items-center gap-2">
 												<User size="18" class="w-4 h-4 sm:w-5 sm:h-5" />
-												Non-Hub Students ({attendanceData.nonHubStudents.length})
+												Non-Hub Students ({filteredNonHub.length})
 											</h4>
 											<div class="space-y-2 sm:space-y-3">
-												{#each attendanceData.nonHubStudents as student}
+												{#each filteredNonHub as student}
 													{@const status = getAttendanceStatus(student, sessionNum)}
 
 													<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-gray-50 rounded-lg">
@@ -265,12 +307,6 @@
 														</div>
 
 														<div class="flex items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
-															{#if status !== undefined}
-																<span class="text-xs sm:text-sm font-medium hidden sm:inline" class:text-green-600={status} class:text-red-600={!status}>
-																	{status ? 'Present' : 'Absent'}
-																</span>
-															{/if}
-
 															<button
 																onclick={() => markAttendance(student.id, sessionNum, true)}
 																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
@@ -303,22 +339,22 @@
 									{/if}
 
 									<!-- Hub Students Section (Read-only with override) -->
-									{#if attendanceData.hubStudents && attendanceData.hubStudents.length > 0}
+									{#if filteredHub.length > 0}
 										<div class="p-3 sm:p-6">
 											<h4 class="font-bold text-sm sm:text-md text-gray-700 mb-3 sm:mb-4 flex flex-wrap items-center gap-2">
 												<Building size="18" class="w-4 h-4 sm:w-5 sm:h-5" />
-												<span>Hub Students ({attendanceData.hubStudents.length})</span>
+												<span>Hub Students ({filteredHub.length})</span>
 												<span class="text-xs sm:text-sm font-normal text-gray-500">Marked by coordinators</span>
 											</h4>
 
-											{#each Object.entries(attendanceData.hubStudents.reduce((acc, student) => {
+											{#each Object.entries(filteredHub.reduce(/** @param {Record<string, Student[]>} acc @param {Student} student */ (acc, student) => {
 												const hubName = student.hub_name || 'Unknown Hub';
 												if (!acc[hubName]) acc[hubName] = [];
 												acc[hubName].push(student);
 												return acc;
-											}, {})) as [hubName, students]}
+											}, /** @type {Record<string, Student[]>} */ ({}))) as [hubName, students]}
 												{@const isHubExpanded = expandedHubs.has(hubName)}
-												{@const hubStats = students.reduce((acc, s) => {
+												{@const hubStats = /** @type {Student[]} */ (students).reduce(/** @param {{ present: number, absent: number, notMarked: number }} acc @param {Student} s */ (acc, s) => {
 													const status = getAttendanceStatus(s, sessionNum);
 													if (status === true) acc.present++;
 													else if (status === false) acc.absent++;
@@ -330,7 +366,7 @@
 													<!-- Hub Header (Clickable) -->
 													<button
 														onclick={() => toggleHub(hubName)}
-														class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+														class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition-colors"
 													>
 														<div class="flex items-center gap-2 sm:gap-3">
 															<Building size="18" class="text-gray-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
@@ -371,11 +407,11 @@
 													<!-- Hub Students (Expandable) -->
 													{#if isHubExpanded}
 														<div class="mt-2 space-y-2 ml-2 sm:ml-4">
-															{#each students as student}
+															{#each /** @type {Student[]} */ (students) as student}
 																{@const status = getAttendanceStatus(student, sessionNum)}
-																{@const record = student.attendance?.find(a => a.session_number === sessionNum)}
+																{@const record = student.attendance?.find(/** @param {{ session_number: number }} a */ (a) => a.session_number === sessionNum)}
 
-																<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-white rounded-lg border border-blue-100">
+																<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-gray-50 rounded-lg border border-gray-200">
 																	<div class="flex items-center gap-2 sm:gap-3">
 																		<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-white text-xs sm:text-sm flex-shrink-0" style="background-color: var(--course-accent-dark);">
 																			{getUserInitials(student.full_name)}
@@ -413,7 +449,7 @@
 																						studentName: student.full_name
 																					};
 																				}}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300"
 																			>
 																				Override
 																			</button>
@@ -442,10 +478,14 @@
 									{/if}
 
 									<!-- Empty State -->
-									{#if (!attendanceData.nonHubStudents || attendanceData.nonHubStudents.length === 0) && (!attendanceData.hubStudents || attendanceData.hubStudents.length === 0)}
+									{#if filteredNonHub.length === 0 && filteredHub.length === 0}
 										<div class="p-8 sm:p-12 text-center">
 											<Users size="48" class="mx-auto mb-4 text-gray-400 w-10 h-10 sm:w-12 sm:h-12" />
-											<p class="text-gray-600 text-sm sm:text-base">No students enrolled in this cohort</p>
+											{#if sessionSearchTerms[sessionNum]}
+												<p class="text-gray-600 text-sm sm:text-base">No students matching "{sessionSearchTerms[sessionNum]}"</p>
+											{:else}
+												<p class="text-gray-600 text-sm sm:text-base">No students enrolled in this cohort</p>
+											{/if}
 										</div>
 									{/if}
 								</div>

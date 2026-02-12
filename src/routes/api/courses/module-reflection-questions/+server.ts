@@ -137,11 +137,34 @@ export const DELETE: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { id } = body;
+		const { id, delete_responses } = body;
 
 		if (!id) {
 			return json({ error: 'Question id is required' }, { status: 400 });
 		}
+
+		// Check how many responses exist for this question
+		const { count, error: countError } = await CourseQueries.getResponseCountForQuestion(id);
+
+		if (countError) {
+			console.error('Error counting responses:', countError);
+			return json({ error: 'Failed to check existing responses' }, { status: 500 });
+		}
+
+		// If responses exist and caller hasn't chosen a mode, return the count for confirmation
+		if (count && count > 0 && delete_responses === undefined) {
+			return json({ needs_confirmation: true, response_count: count });
+		}
+
+		// If delete_responses is true, manually delete responses before the question
+		if (delete_responses && count && count > 0) {
+			const { error: deleteResponsesError } = await CourseMutations.deleteResponsesForQuestion(id);
+			if (deleteResponsesError) {
+				console.error('Error deleting responses:', deleteResponsesError);
+				return json({ error: 'Failed to delete responses' }, { status: 500 });
+			}
+		}
+		// If delete_responses is false, FK SET NULL will orphan the responses automatically
 
 		const { error } = await CourseMutations.deleteReflectionQuestion(id);
 
@@ -150,7 +173,7 @@ export const DELETE: RequestHandler = async (event) => {
 			return json({ error: 'Failed to delete module reflection question' }, { status: 500 });
 		}
 
-		return json({ success: true });
+		return json({ success: true, responses_deleted: delete_responses ? count : 0 });
 
 	} catch (error) {
 		console.error('Error in module reflection questions DELETE endpoint:', error);

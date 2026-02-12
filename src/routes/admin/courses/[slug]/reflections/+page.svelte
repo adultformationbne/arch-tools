@@ -5,11 +5,12 @@
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 	import ReflectionContent from '$lib/components/ReflectionContent.svelte';
-	import { needsReview, isComplete, isOverdue, normalizeStatus } from '$lib/utils/reflection-status';
+	import { needsReview, isComplete, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
 
 	const courseSlug = $derived(data.courseSlug);
+	const currentUserName = $derived(data.currentUserName);
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
 	let selectedSession = $state('all');
@@ -20,6 +21,7 @@
 	let viewingReflection = $state(null);
 	let isSaving = $state(false);
 	let isClaiming = $state(false);
+	let isAdvancing = $state(false);
 	let showMobileFilters = $state(false);
 
 	// For override confirmation
@@ -59,13 +61,9 @@
 		isPublic: false
 	});
 
-	// Helper to check if reflection is overdue (needs review + > 7 days old)
-	const isReflectionOverdue = (r) => isOverdue(r.dbStatus || r.status, r.submittedAt);
-
 	const filterOptions = $derived.by(() => [
 		{ value: 'all', label: 'All Reflections', count: reflections.length },
 		{ value: 'pending', label: 'Pending Review', count: reflections.filter(r => needsReview(r.dbStatus || r.status)).length },
-		{ value: 'overdue', label: 'Overdue', count: reflections.filter(r => isReflectionOverdue(r)).length },
 		{ value: 'passed', label: 'Passed', count: reflections.filter(r => isComplete(r.dbStatus || r.status)).length }
 	]);
 
@@ -91,9 +89,7 @@
 
 		// Filter by status using utility functions
 		if (selectedFilter === 'pending') {
-			filtered = filtered.filter(r => needsReview(r.dbStatus || r.status) && !isReflectionOverdue(r));
-		} else if (selectedFilter === 'overdue') {
-			filtered = filtered.filter(r => isReflectionOverdue(r));
+			filtered = filtered.filter(r => needsReview(r.dbStatus || r.status));
 		} else if (selectedFilter === 'passed') {
 			filtered = filtered.filter(r => isComplete(r.dbStatus || r.status));
 		}
@@ -119,16 +115,14 @@
 		}
 
 		return filtered.sort((a, b) => {
-			// Sort by: overdue first, then pending review, then complete
-			const aOverdue = isReflectionOverdue(a);
-			const bOverdue = isReflectionOverdue(b);
+			// Sort by: pending review first, then by submission date (oldest pending first)
 			const aNeedsReview = needsReview(a.dbStatus || a.status);
 			const bNeedsReview = needsReview(b.dbStatus || b.status);
 
-			if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
 			if (aNeedsReview !== bNeedsReview) return aNeedsReview ? -1 : 1;
 
-			// Then by submission date (newest first)
+			// Pending: oldest first (longest waiting). Completed: newest first.
+			if (aNeedsReview) return new Date(a.submittedAt) - new Date(b.submittedAt);
 			return new Date(b.submittedAt) - new Date(a.submittedAt);
 		});
 	});
@@ -226,53 +220,107 @@
 		markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
 	};
 
-	const submitMarking = async () => {
+	// Find the next pending reflection after the current one
+	const getNextPending = () => {
+		const currentId = selectedReflection?.id;
+		const pending = filteredReflections.filter(r =>
+			needsReview(r.dbStatus || r.status) && r.id !== currentId && !r.isBeingReviewed
+		);
+		return pending[0] || null;
+	};
+
+	const pendingCount = $derived(
+		filteredReflections.filter(r => needsReview(r.dbStatus || r.status)).length
+	);
+
+	const submitMarking = async (andAdvance = false) => {
 		if (!selectedReflection || isSaving) return;
 
 		isSaving = true;
+		if (andAdvance) isAdvancing = true;
+
+		// Pre-identify next reflection BEFORE any async work
+		const next = andAdvance ? getNextPending() : null;
 
 		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/reflections/api`, {
+			// Mark current + claim next in parallel (different records, no conflict)
+			const markPromise = fetch(`/admin/courses/${courseSlug}/reflections/api`, {
 				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-				},
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					reflection_id: selectedReflection.id,
 					feedback: markingForm.feedback.trim(),
 					grade: markingForm.passStatus
 				})
-			});
+			}).then(r => r.json());
 
-			const result = await response.json();
+			const claimPromise = next
+				? fetch(`/admin/courses/${courseSlug}/reflections/api`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ reflection_id: next.id })
+				}).then(r => r.json())
+				: null;
 
-			if (!result.success) {
-				if (result.alreadyMarked) {
-					toastWarning(`This reflection was already marked by ${result.markedBy}`);
-					await invalidateAll();
-					// Close modal without releasing claim (it's already marked)
+			const [markResult, claimResult] = await Promise.all([markPromise, claimPromise]);
+
+			if (!markResult.success) {
+				if (markResult.alreadyMarked) {
+					toastWarning(`This reflection was already marked by ${markResult.markedBy}`);
+					// Release the pre-emptive claim if we made one
+					if (claimResult?.success && next) {
+						fetch(`/admin/courses/${courseSlug}/reflections/api?reflection_id=${next.id}`, { method: 'DELETE' });
+					}
+					invalidateAll();
 					showMarkingModal = false;
 					selectedReflection = null;
 					markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
 					return;
 				}
-				throw new Error(result.message || 'Failed to mark reflection');
+				throw new Error(markResult.message || 'Failed to mark reflection');
 			}
 
-			toastSuccess(result.message || 'Reflection marked successfully');
+			// Optimistically update local state so the list reflects the change immediately
+			const markedId = selectedReflection.id;
+			reflections = reflections.map(r =>
+				r.id === markedId ? { ...r, dbStatus: markingForm.passStatus === 'pass' ? 'passed' : 'needs_revision', status: 'marked' } : r
+			);
 
-			// Refresh data - claim is released by PUT handler
-			await invalidateAll();
-			// Close without releasing (already released by PUT)
-			showMarkingModal = false;
-			selectedReflection = null;
-			markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
+			if (andAdvance && next && claimResult?.success) {
+				// Swap to next reflection in the modal
+				selectedReflection = next;
+				markingForm = {
+					feedback: next.feedback || '',
+					passStatus: next.grade || 'pass',
+					isPublic: next.isPublic
+				};
+				toastSuccess('Marked — next loaded');
+			} else if (andAdvance && !next) {
+				showMarkingModal = false;
+				selectedReflection = null;
+				markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
+				toastSuccess('All done — no more pending reflections');
+			} else if (andAdvance && claimResult && !claimResult.success) {
+				showMarkingModal = false;
+				selectedReflection = null;
+				markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
+				toastSuccess('Marked — next reflection unavailable');
+			} else {
+				toastSuccess(markResult.message || 'Reflection marked successfully');
+				showMarkingModal = false;
+				selectedReflection = null;
+				markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
+			}
+
+			// Sync with server in background (non-blocking)
+			invalidateAll();
 
 		} catch (error) {
 			console.error('Marking error:', error);
 			toastError('Failed to mark reflection. Please try again.');
 		} finally {
 			isSaving = false;
+			isAdvancing = false;
 		}
 	};
 
@@ -283,6 +331,16 @@
 			hour: '2-digit',
 			minute: '2-digit'
 		});
+	};
+
+	const timeAgo = (dateString) => {
+		const diff = Date.now() - new Date(dateString).getTime();
+		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+		if (days === 0) return 'today';
+		if (days === 1) return '1 day ago';
+		if (days < 30) return `${days} days ago`;
+		const months = Math.floor(days / 30);
+		return months === 1 ? '1 month ago' : `${months} months ago`;
 	};
 
 	const getWordCount = (text) => {
@@ -328,7 +386,7 @@
 				<input
 					bind:value={searchQuery}
 					type="text"
-					placeholder="Search students..."
+					placeholder="Search participants..."
 					class="w-full pl-8 pr-3 py-2 text-sm border rounded-lg text-white placeholder-white/40 focus:outline-none"
 					style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"
 				/>
@@ -485,10 +543,7 @@
 								</span>
 							{/if}
 							<ReflectionStatusBadge status={reflection.dbStatus || reflection.status} size="small" />
-							{#if isReflectionOverdue(reflection)}
-								<span class="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium bg-red-100 text-red-700">Overdue</span>
-							{/if}
-							<span class="text-[9px] sm:text-[10px] text-gray-400 hidden sm:inline">{formatDate(reflection.submittedAt)}</span>
+							<span class="text-[9px] sm:text-[10px] text-gray-400">{timeAgo(reflection.submittedAt)}</span>
 						</div>
 					</div>
 
@@ -551,96 +606,103 @@
 		role="presentation"
 	>
 		<div
-			class="bg-white rounded-lg sm:rounded-xl max-w-3xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
+			class="bg-white rounded-lg sm:rounded-xl max-w-5xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
 		>
-			<div class="p-3 sm:p-5">
-				<!-- Modal Header -->
-				<div class="flex items-start justify-between mb-3 sm:mb-4">
-					<div>
-						<h2 class="text-base sm:text-lg font-bold text-gray-800">Mark Reflection</h2>
-						<p class="text-[11px] sm:text-xs text-gray-500">{selectedReflection.student.name} • Session {selectedReflection.session}</p>
+			<!-- Modal Header (fixed) -->
+			<div class="flex items-start justify-between p-3 sm:p-5 pb-3 border-b border-gray-200">
+				<div>
+					<h2 class="text-base sm:text-lg font-bold text-gray-800">Mark Reflection</h2>
+					<p class="text-[11px] sm:text-xs text-gray-500">{selectedReflection.student.name} • Session {selectedReflection.session} • {getWordCount(selectedReflection.content)} words • {timeAgo(selectedReflection.submittedAt)}</p>
+				</div>
+				<button
+					onclick={closeMarkingModal}
+					class="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+				>
+					<X size="16" class="sm:hidden" />
+					<X size="18" class="hidden sm:block" />
+				</button>
+			</div>
+
+			<!-- Scrollable response area -->
+			<div class="flex-1 overflow-y-auto p-3 sm:p-5">
+				<div class="bg-gray-50 rounded-lg p-4 sm:p-5 text-sm sm:text-base leading-relaxed">
+					<ReflectionContent content={selectedReflection.content} mode="compact" />
+				</div>
+			</div>
+
+			<!-- Fixed bottom: marking form -->
+			<div class="border-t border-gray-200 p-3 sm:p-5 space-y-3">
+				<!-- Pass/Fail -->
+				<fieldset>
+					<div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+						<label class="flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm">
+							<input
+								bind:group={markingForm.passStatus}
+								type="radio"
+								value="pass"
+								class="text-green-600 focus:ring-green-500"
+							/>
+							<CheckCircle size="14" class="text-green-600" />
+							<span class="font-medium text-green-700">Pass</span>
+						</label>
+						<label class="flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm">
+							<input
+								bind:group={markingForm.passStatus}
+								type="radio"
+								value="fail"
+								class="text-red-600 focus:ring-red-500"
+							/>
+							<XCircle size="14" class="text-red-600" />
+							<span class="font-medium text-red-700">Needs Revision</span>
+						</label>
 					</div>
+				</fieldset>
+
+				<!-- Feedback -->
+				<div>
+					<textarea
+						id="reflection-feedback"
+						bind:value={markingForm.feedback}
+						placeholder="Provide constructive feedback..."
+						rows="3"
+						class="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900 bg-white"
+					></textarea>
+					<p class="text-[9px] sm:text-[10px] text-gray-400 mt-1">Visible to participant — {currentUserName}</p>
+				</div>
+
+				<!-- Actions -->
+				<div class="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
 					<button
 						onclick={closeMarkingModal}
-						class="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+						class="py-2 px-4 text-xs sm:text-sm font-medium rounded-lg transition-colors border border-gray-300 text-gray-600 hover:bg-gray-50"
 					>
-						<X size="16" class="sm:hidden" />
-						<X size="18" class="hidden sm:block" />
+						Cancel
 					</button>
-				</div>
-
-				<!-- Student Reflection -->
-				<div class="mb-3 sm:mb-4">
-					<h3 class="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">Student Response</h3>
-					<div class="bg-gray-50 rounded-lg p-3 sm:p-4 text-xs sm:text-sm max-h-40 sm:max-h-48 overflow-y-auto">
-						<ReflectionContent content={selectedReflection.content} mode="compact" />
-					</div>
-					<p class="text-[9px] sm:text-[10px] text-gray-400 mt-1">{getWordCount(selectedReflection.content)} words • {formatDate(selectedReflection.submittedAt)}</p>
-				</div>
-
-				<!-- Marking Form -->
-				<div class="space-y-3 sm:space-y-4">
-					<!-- Pass/Fail -->
-					<div>
-						<fieldset>
-							<legend class="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Assessment</legend>
-							<div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-								<label class="flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm">
-									<input
-										bind:group={markingForm.passStatus}
-										type="radio"
-										value="pass"
-										class="text-green-600 focus:ring-green-500"
-									/>
-									<CheckCircle size="14" class="text-green-600" />
-									<span class="font-medium text-green-700">Pass</span>
-								</label>
-								<label class="flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm">
-									<input
-										bind:group={markingForm.passStatus}
-										type="radio"
-										value="fail"
-										class="text-red-600 focus:ring-red-500"
-									/>
-									<XCircle size="14" class="text-red-600" />
-									<span class="font-medium text-red-700">Needs Revision</span>
-								</label>
-							</div>
-						</fieldset>
-					</div>
-
-					<!-- Feedback -->
-					<div>
-						<label class="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2 block" for="reflection-feedback">Feedback</label>
-						<textarea
-							id="reflection-feedback"
-							bind:value={markingForm.feedback}
-							placeholder="Provide constructive feedback..."
-							rows="4"
-							class="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900 bg-white"
-						></textarea>
-						<p class="text-[9px] sm:text-[10px] text-gray-400 mt-1">Visible to student</p>
-					</div>
-
-					<!-- Actions -->
-					<div class="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
+					<button
+						onclick={() => submitMarking(false)}
+						disabled={isSaving}
+						class="py-2 px-4 text-xs sm:text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
+					>
+						{isSaving && !isAdvancing ? 'Submitting...' : 'Submit'}
+					</button>
+					{#if pendingCount > 1}
 						<button
-							onclick={closeMarkingModal}
-							class="flex-1 py-2 px-4 text-xs sm:text-sm font-medium rounded-lg transition-colors border border-gray-300 text-gray-600 hover:bg-gray-50"
-						>
-							Cancel
-						</button>
-						<button
-							onclick={submitMarking}
+							onclick={() => submitMarking(true)}
 							disabled={isSaving}
-							class="flex-1 py-2 px-4 text-xs sm:text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
+							class="py-2 px-4 text-xs sm:text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-1.5"
 						>
-							{isSaving ? 'Submitting...' : 'Submit'}
+							{#if isAdvancing}
+								<div class="animate-spin w-3 h-3 border border-white/40 border-t-white rounded-full"></div>
+								Loading next...
+							{:else}
+								Submit & Next
+								<span class="text-green-200 text-[10px]">({pendingCount - 1})</span>
+							{/if}
 						</button>
-					</div>
+					{/if}
 				</div>
 			</div>
 		</div>
