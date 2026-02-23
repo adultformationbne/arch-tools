@@ -158,18 +158,6 @@ function processSpecialHelpers(template, data, options = {}) {
     return generateSubscribeSection();
   });
 
-  // Handle Survey section helper {{surveySection}}
-  // TEMPORARY: Remove after survey period ends
-  processed = processed.replace(/{{surveySection}}/g, () => {
-    return `
-    <div style="background:linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border:2px solid #0ea5e9; border-radius:16px; padding:24px 28px; margin:32px 0; text-align:center;">
-      <div style="font-size:24px; margin-bottom:8px;">📋</div>
-      <h3 style="font-size:18px; color:#0369a1; margin:0 0 12px 0; font-weight:600;">We'd Love Your Feedback!</h3>
-      <p style="font-size:14px; color:#475569; margin:0 0 16px 0; line-height:1.5;">Help us improve the Daily Gospel Reflection by sharing your thoughts in our quick survey.</p>
-      <a href="https://forms.office.com/pages/responsepage.aspx?id=qPHaAoUgEkOv60RMPA_dqrMvU70uNgRMrPZXidbEqEZUNk9QRVVXSUI3MUQ3Q1IyUUNFQjY0NlpPVyQlQCN0PWcu&route=shorturl" target="_blank" style="display:inline-block; background:#0ea5e9; color:white; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">Take the Survey</a>
-    </div>`;
-  });
-
   return processed;
 }
 

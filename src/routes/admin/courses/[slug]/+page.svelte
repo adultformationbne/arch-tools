@@ -52,6 +52,9 @@
 	let filterStatus = $state('all');
 	let filterSession = $state('all');
 	let filterReflections = $state('all');
+	let filterAttendance = $state('all');
+	let sortColumn = $state('name');
+	let sortDirection = $state('asc');
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
 
@@ -74,7 +77,11 @@
 	// Recent activity
 	let recentActivity = $state([]);
 
-	// Filtered participants
+	// Status sort order for consistent grouping
+	const statusOrder = { not_invited: 0, invited: 1, pending: 2, active: 3, held: 4, completed: 5, withdrawn: 6 };
+	const reflectionOrder = { behind: 0, on_track: 1, complete: 2 };
+
+	// Filtered and sorted participants
 	const filteredParticipants = $derived(
 		participants.filter(s => {
 			const query = searchQuery.toLowerCase();
@@ -93,9 +100,49 @@
 			})();
 			const matchesReflections = filterReflections === 'all' ||
 				s.reflectionStatus?.status === filterReflections;
-			return matchesSearch && matchesHub && matchesStatus && matchesSession && matchesReflections;
+			const matchesAttendance = filterAttendance === 'all' || s.attendanceStatus === filterAttendance;
+			return matchesSearch && matchesHub && matchesStatus && matchesSession && matchesReflections && matchesAttendance;
+		}).sort((a, b) => {
+			const dir = sortDirection === 'asc' ? 1 : -1;
+			let cmp = 0;
+			switch (sortColumn) {
+				case 'name':
+					cmp = (a.full_name || '').localeCompare(b.full_name || '');
+					break;
+				case 'hub':
+					cmp = (a.courses_hubs?.name || '').localeCompare(b.courses_hubs?.name || '');
+					break;
+				case 'status':
+					cmp = (statusOrder[getStatusKey(a)] ?? 99) - (statusOrder[getStatusKey(b)] ?? 99);
+					break;
+				case 'session':
+					cmp = (a.current_session || 0) - (b.current_session || 0);
+					break;
+				case 'attendance':
+					cmp = (a.attendanceCount || 0) - (b.attendanceCount || 0);
+					break;
+				case 'reflections':
+					cmp = (reflectionOrder[a.reflectionStatus?.status] ?? 99) - (reflectionOrder[b.reflectionStatus?.status] ?? 99);
+					if (cmp === 0) cmp = (a.reflectionStatus?.count || 0) - (b.reflectionStatus?.count || 0);
+					break;
+			}
+			return cmp * dir;
 		})
 	);
+
+	function toggleSort(column) {
+		if (sortColumn === column) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortColumn = column;
+			sortDirection = 'asc';
+		}
+	}
+
+	function sortIndicator(column) {
+		if (sortColumn !== column) return '';
+		return sortDirection === 'asc' ? ' \u25B2' : ' \u25BC';
+	}
 
 	// Any selected participant already received a welcome email?
 	const anySelectedWelcomed = $derived(
@@ -121,6 +168,9 @@
 			filterStatus = 'all';
 			filterSession = 'all';
 			filterReflections = 'all';
+			filterAttendance = 'all';
+			sortColumn = 'name';
+			sortDirection = 'asc';
 			searchQuery = '';
 			loadParticipants();
 			loadHubs();
@@ -168,13 +218,23 @@
 				});
 			}
 
+			const cohortSession = currentCohort.current_session || 0;
 			participants = (enrollmentResponse.success ? enrollmentResponse.data : []).map(user => {
 				const userReflections = reflectionsByUser.get(user.user_profile_id) || [];
-				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session, sessionsWithQuestions);
+				const reflectionStatus = getUserReflectionStatus(userReflections, currentCohort.current_session, sessionsWithQuestions);
+				const attCount = attendanceMap.get(user.id) || 0;
+
+				let attendanceStatus = 'complete';
+				if (cohortSession > 0) {
+					if (attCount >= cohortSession) attendanceStatus = 'complete';
+					else if (attCount >= cohortSession - 1) attendanceStatus = 'on_track';
+					else attendanceStatus = 'behind';
+				}
 
 				return {
 					...user,
-					attendanceCount: attendanceMap.get(user.id) || 0,
+					attendanceCount: attCount,
+					attendanceStatus,
 					reflectionStatus,
 					isBehind: currentCohort && user.current_session < currentCohort.current_session
 				};
@@ -244,7 +304,7 @@
 
 		const rows = filteredParticipants.map(p => {
 			const statusBadge = getStatusBadge(p);
-			const reflectionDisplay = p.reflectionStatus && p.current_session > 0
+			const reflectionDisplay = p.reflectionStatus && (selectedCohort?.current_session || 0) > 0
 				? getReflectionStatusDisplay(p)
 				: '';
 			const attendance = cohortSession > 0
@@ -533,6 +593,9 @@
 		if (!participant.welcome_email_sent_at && !participant.last_login_at) return 'not_invited';
 		if (!participant.last_login_at) return 'invited';
 		if (participant.status === 'pending') return 'pending';
+		if (participant.status === 'held') return 'held';
+		if (participant.status === 'withdrawn') return 'withdrawn';
+		if (participant.status === 'completed') return 'completed';
 		return 'active';
 	}
 
@@ -695,6 +758,9 @@
 							<option value="invited">Invited</option>
 							<option value="pending">Pending</option>
 							<option value="active">Active</option>
+							<option value="held">On Hold</option>
+							<option value="withdrawn">Withdrawn</option>
+							<option value="completed">Completed</option>
 						</select>
 						<select
 							bind:value={filterSession}
@@ -704,6 +770,15 @@
 							<option value="behind">Behind</option>
 							<option value="on_track">On Track</option>
 							<option value="ahead">Ahead</option>
+						</select>
+						<select
+							bind:value={filterAttendance}
+							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+						>
+							<option value="all">All Attendance</option>
+							<option value="complete">Perfect</option>
+							<option value="on_track">Missed 1</option>
+							<option value="behind">Missed 2+</option>
 						</select>
 						<select
 							bind:value={filterReflections}
@@ -814,13 +889,25 @@
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Participant</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('name')} class="hover:text-gray-900 cursor-pointer">Participant{sortIndicator('name')}</button>
+									</th>
 									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Phone</th>
-									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Hub</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Status</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Sess.</th>
-									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Attend.</th>
-									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Reflect.</th>
+									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('hub')} class="hover:text-gray-900 cursor-pointer">Hub{sortIndicator('hub')}</button>
+									</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('status')} class="hover:text-gray-900 cursor-pointer">Status{sortIndicator('status')}</button>
+									</th>
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('session')} class="hover:text-gray-900 cursor-pointer">Sess.{sortIndicator('session')}</button>
+									</th>
+									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('attendance')} class="hover:text-gray-900 cursor-pointer">Attend.{sortIndicator('attendance')}</button>
+									</th>
+									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('reflections')} class="hover:text-gray-900 cursor-pointer">Reflect.{sortIndicator('reflections')}</button>
+									</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
@@ -890,7 +977,7 @@
 										</td>
 										<!-- Reflections - hidden on mobile/tablet -->
 										<td class="hidden lg:table-cell px-2 sm:px-3 py-2">
-											{#if participant.reflectionStatus && participant.current_session > 0}
+											{#if participant.reflectionStatus && (selectedCohort?.current_session || 0) > 0}
 												<span class="text-xs tabular-nums text-gray-700">
 													{getReflectionStatusDisplay(participant)}
 												</span>
