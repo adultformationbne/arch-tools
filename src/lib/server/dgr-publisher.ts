@@ -226,6 +226,8 @@ ${truncatedText}`;
 				dgr_liturgical_date: params.liturgicalDate,
 				dgr_readings: params.readings,
 				dgr_gospel_quote: params.gospelQuote,
+				dgr_gospel_reference: params.gospelReference || '',
+				dgr_gospel_full_text: params.gospelFullText || '',
 				dgr_reflection: params.reflectionText,
 				dgr_author: params.authorName,
 				dgr_formatted_date: formattedDate

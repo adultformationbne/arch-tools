@@ -140,14 +140,60 @@
 	}
 
 
-	function toggleSelectStudent(studentId) {
+	let anchorIndex = $state(null);
+	let anchorSelected = $state(true);
+	let lastShiftChanged = $state(new Set());
+
+	function handleCheckboxClick(index, event) {
 		const newSelected = new Set(selectedStudents);
-		if (newSelected.has(studentId)) {
-			newSelected.delete(studentId);
+
+		if (event.shiftKey && anchorIndex !== null) {
+			const start = Math.min(anchorIndex, index);
+			const end = Math.max(anchorIndex, index);
+
+			for (const id of lastShiftChanged) {
+				if (anchorSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+
+			const newlyChanged = new Set();
+			for (let i = start; i <= end; i++) {
+				const sid = students[i]?.id;
+				if (sid) {
+					if (anchorSelected) {
+						if (!newSelected.has(sid)) newlyChanged.add(sid);
+						newSelected.add(sid);
+					} else {
+						if (newSelected.has(sid)) newlyChanged.add(sid);
+						newSelected.delete(sid);
+					}
+				}
+			}
+
+			lastShiftChanged = newlyChanged;
 		} else {
-			newSelected.add(studentId);
+			const id = students[index]?.id;
+			const wasSelected = id ? newSelected.has(id) : false;
+			if (id) {
+				if (wasSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+			anchorIndex = index;
+			anchorSelected = !wasSelected;
+			lastShiftChanged = new Set();
 		}
+
 		selectedStudents = newSelected;
+	}
+
+	function handleCheckboxMousedown(event) {
+		if (event.shiftKey) event.preventDefault();
 	}
 
 	function toggleSelectAll() {
@@ -453,13 +499,14 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each students as student}
+						{#each students as student, i}
 							<tr>
 								<td>
 									<input
 										type="checkbox"
 										checked={selectedStudents.has(student.id)}
-										onchange={() => toggleSelectStudent(student.id)}
+										onclick={(e) => handleCheckboxClick(i, e)}
+										onmousedown={handleCheckboxMousedown}
 									/>
 								</td>
 								<td>

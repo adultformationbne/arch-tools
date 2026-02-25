@@ -70,14 +70,61 @@
 		selectedStudents = new Set(selectedStudents);
 	}
 
-	function toggleStudent(studentId, e) {
-		e?.stopPropagation();
-		if (selectedStudents.has(studentId)) {
-			selectedStudents.delete(studentId);
+	let anchorIndex = $state(null);
+	let anchorSelected = $state(true);
+	let lastShiftChanged = $state(new Set());
+
+	function handleCheckboxClick(index, e) {
+		e.stopPropagation();
+		const newSelected = new Set(selectedStudents);
+
+		if (e.shiftKey && anchorIndex !== null) {
+			const start = Math.min(anchorIndex, index);
+			const end = Math.max(anchorIndex, index);
+
+			for (const id of lastShiftChanged) {
+				if (anchorSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+
+			const newlyChanged = new Set();
+			for (let i = start; i <= end; i++) {
+				const sid = filteredStudents[i]?.id;
+				if (sid) {
+					if (anchorSelected) {
+						if (!newSelected.has(sid)) newlyChanged.add(sid);
+						newSelected.add(sid);
+					} else {
+						if (newSelected.has(sid)) newlyChanged.add(sid);
+						newSelected.delete(sid);
+					}
+				}
+			}
+
+			lastShiftChanged = newlyChanged;
 		} else {
-			selectedStudents.add(studentId);
+			const id = filteredStudents[index]?.id;
+			const wasSelected = id ? newSelected.has(id) : false;
+			if (id) {
+				if (wasSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+			anchorIndex = index;
+			anchorSelected = !wasSelected;
+			lastShiftChanged = new Set();
 		}
-		selectedStudents = new Set(selectedStudents);
+
+		selectedStudents = newSelected;
+	}
+
+	function handleCheckboxMousedown(e) {
+		if (e.shiftKey) e.preventDefault();
 	}
 
 	function toggleExpanded(studentId) {
@@ -520,7 +567,7 @@
 								</td>
 							</tr>
 						{:else}
-							{#each filteredStudents as student}
+							{#each filteredStudents as student, i}
 								{@const isExpanded = expandedRows.has(student.id)}
 								{@const isSelected = selectedStudents.has(student.id)}
 								{@const cohortInfo = getCohortDisplay(student)}
@@ -533,8 +580,8 @@
 										<input
 											type="checkbox"
 											checked={isSelected}
-											onclick={(e) => e.stopPropagation()}
-											onchange={(e) => toggleStudent(student.id, e)}
+											onclick={(e) => handleCheckboxClick(i, e)}
+											onmousedown={handleCheckboxMousedown}
 											class="w-3.5 h-3.5 rounded border-gray-300 focus:ring-2"
 										/>
 									</td>

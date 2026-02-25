@@ -268,13 +268,64 @@
 		}
 	}
 
-	function toggleSelectParticipant(id) {
-		if (selectedParticipants.has(id)) {
-			selectedParticipants.delete(id);
+	let anchorIndex = $state(null);
+	let anchorSelected = $state(true); // was the anchor click a select (true) or deselect (false)?
+	let lastShiftChanged = $state(new Set()); // IDs changed by the last shift+click
+
+	function handleCheckboxClick(index, event) {
+		event.stopPropagation();
+		const newSelected = new Set(selectedParticipants);
+
+		if (event.shiftKey && anchorIndex !== null) {
+			const start = Math.min(anchorIndex, index);
+			const end = Math.max(anchorIndex, index);
+
+			// Undo previous shift changes
+			for (const id of lastShiftChanged) {
+				if (anchorSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+
+			// Apply new range based on anchor action
+			const newlyChanged = new Set();
+			for (let i = start; i <= end; i++) {
+				const pid = filteredParticipants[i]?.id;
+				if (pid) {
+					if (anchorSelected) {
+						if (!newSelected.has(pid)) newlyChanged.add(pid);
+						newSelected.add(pid);
+					} else {
+						if (newSelected.has(pid)) newlyChanged.add(pid);
+						newSelected.delete(pid);
+					}
+				}
+			}
+
+			lastShiftChanged = newlyChanged;
 		} else {
-			selectedParticipants.add(id);
+			// Regular click: toggle + set new anchor
+			const id = filteredParticipants[index]?.id;
+			const wasSelected = id ? newSelected.has(id) : false;
+			if (id) {
+				if (wasSelected) {
+					newSelected.delete(id);
+				} else {
+					newSelected.add(id);
+				}
+			}
+			anchorIndex = index;
+			anchorSelected = !wasSelected;
+			lastShiftChanged = new Set();
 		}
-		selectedParticipants = new Set(selectedParticipants);
+
+		selectedParticipants = newSelected;
+	}
+
+	function handleCheckboxMousedown(event) {
+		if (event.shiftKey) event.preventDefault();
 	}
 
 	// Sidebar actions
@@ -911,7 +962,7 @@
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
-								{#each filteredParticipants as participant}
+								{#each filteredParticipants as participant, i}
 									{@const totalSessions = selectedCohort.module?.total_sessions || 8}
 									{@const cohortSession = selectedCohort.current_session || 0}
 									{@const statusBadge = getStatusBadge(participant)}
@@ -923,7 +974,8 @@
 											<input
 												type="checkbox"
 												checked={selectedParticipants.has(participant.id)}
-												onchange={() => toggleSelectParticipant(participant.id)}
+												onclick={(e) => handleCheckboxClick(i, e)}
+												onmousedown={handleCheckboxMousedown}
 												class="rounded border-gray-300 w-3.5 h-3.5"
 											/>
 										</td>
