@@ -11,6 +11,7 @@ The DGR system manages daily gospel reflections written by contributors. Contrib
 | `dgr_contributors` | People who write reflections (includes `title` field for Fr, Sr, Br, Deacon) |
 | `dgr_schedule` | Actual assignments and submitted content |
 | `dgr_assignment_rules` | Rules to block patterns during certain seasons |
+| `dgr_promo_tiles` | Promotional tiles for DGR content |
 | `dgr_templates` | Email templates (welcome, reminder) |
 
 ## Date Assignment Flow

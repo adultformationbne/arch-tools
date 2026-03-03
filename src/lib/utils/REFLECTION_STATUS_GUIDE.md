@@ -1,7 +1,7 @@
 # Reflection Status Utility Guide
 
 ## Overview
-The reflection status utility provides a centralized system for tracking and displaying student reflection statuses in the ACCF platform.
+The reflection status utility provides a centralized system for tracking and displaying participant reflection statuses in the ACCF platform.
 
 ## Key Concepts
 
@@ -15,7 +15,7 @@ Each reflection can have one of these statuses:
 - `OVERDUE` - Submitted but not marked within 14 days
 
 ### Overall User Status (Prioritized)
-When a student has multiple reflections across sessions, we show the most urgent status:
+When a participant has multiple reflections across sessions, we show the most urgent status:
 
 **Priority Order (highest to lowest):**
 1. **MULTIPLE_OVERDUE** - 2+ reflections overdue
@@ -35,15 +35,15 @@ import {
   formatUserReflectionStatus,
   getStatusBadgeClass,
   fetchReflectionsByCohort
-} from '$lib/utils/reflection-status.js';
+} from '$lib/utils/reflection-status.ts';
 
 // Fetch all reflections for a cohort
 const reflectionsByUser = await fetchReflectionsByCohort(cohort.id);
 
-// For each student
-students.forEach(student => {
-  const userReflections = reflectionsByUser.get(student.auth_user_id) || [];
-  const status = getUserReflectionStatus(userReflections, student.current_session);
+// For each participant
+participants.forEach(participant => {
+  const userReflections = reflectionsByUser.get(participant.auth_user_id) || [];
+  const status = getUserReflectionStatus(userReflections, participant.current_session);
 
   // status = { status: 'overdue', count: 1, details: {...} }
 });
@@ -52,9 +52,9 @@ students.forEach(student => {
 ### Display in UI
 
 ```svelte
-{#if student.reflectionStatus}
-  <span class="badge {getStatusBadgeClass(student.reflectionStatus.status)}">
-    {formatUserReflectionStatus(student.reflectionStatus.status, student.reflectionStatus.count)}
+{#if participant.reflectionStatus}
+  <span class="badge {getStatusBadgeClass(participant.reflectionStatus.status)}">
+    {formatUserReflectionStatus(participant.reflectionStatus.status, participant.reflectionStatus.count)}
   </span>
 {/if}
 ```
@@ -72,8 +72,8 @@ students.forEach(student => {
 
 ## Database Schema
 
-The utility reads from `reflection_responses` table:
-- `user_id` - Student's auth user ID
+The utility reads from `courses_reflection_responses` table:
+- `user_id` - Participant's auth user ID
 - `cohort_id` - Cohort ID
 - `session_number` - Session 1-8
 - `status` - submitted, marked, needs_revision

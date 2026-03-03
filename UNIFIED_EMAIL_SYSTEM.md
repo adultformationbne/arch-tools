@@ -611,7 +611,6 @@ Two ways to add buttons:
 #### Nice to Have
 - [ ] Delivery tracking via Resend webhooks (foundation exists: `resend_id` stored)
 - [ ] Resend failed emails
-- [ ] Consolidate SendEmailView + EmailSenderModal (~1400 lines of duplication)
 - [ ] Group variables by category in picker
 - [ ] Search/filter for templates with many variables
 - [ ] Admin dashboard showing daily/monthly email usage

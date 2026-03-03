@@ -306,29 +306,26 @@ CREATE TABLE courses_attendance (
 );
 ```
 
-#### `courses_email_templates`
-Email templates for course communications.
+#### `email_templates` (unified)
+Email templates for course, DGR, and platform communications. Replaces the old `courses_email_templates` table. See [UNIFIED_EMAIL_SYSTEM.md](./UNIFIED_EMAIL_SYSTEM.md) for full details.
 
 ```sql
-CREATE TABLE courses_email_templates (
-  id UUID PRIMARY KEY,
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  template_key TEXT NOT NULL,             -- e.g., 'welcome_enrolled', 'session_advance'
-  name TEXT NOT NULL,                     -- Display name
+CREATE TABLE email_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  context TEXT NOT NULL,                  -- 'course', 'dgr', 'platform'
+  context_id UUID,                       -- For course templates: course.id
+  template_key TEXT NOT NULL,
+  name TEXT NOT NULL,
   description TEXT,
-  category TEXT,                          -- 'system', 'custom', 'automated'
-
-  -- Template content
-  subject_template TEXT NOT NULL,         -- Subject with {{variables}}
-  body_template TEXT NOT NULL,            -- HTML body with {{variables}}
-  available_variables JSONB,              -- List of supported variables
-
-  -- Automation
-  trigger_event TEXT,                     -- Event that triggers this email
+  category TEXT DEFAULT 'custom',        -- 'system' or 'custom'
+  subject_template TEXT NOT NULL,
+  body_template TEXT NOT NULL,
+  available_variables JSONB,
+  trigger_event TEXT,
   is_active BOOLEAN DEFAULT true,
-  is_deletable BOOLEAN DEFAULT true,      -- System templates can't be deleted
-
-  created_by UUID REFERENCES user_profiles(id),
+  is_deletable BOOLEAN DEFAULT true,
+  created_by UUID,
+  updated_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );

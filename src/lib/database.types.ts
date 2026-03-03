@@ -847,6 +847,7 @@ export type Database = {
           full_name: string | null
           id: string
           paid_at: string | null
+          pending_data: Json | null
           status: string
           stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
@@ -868,6 +869,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           paid_at?: string | null
+          pending_data?: Json | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -889,6 +891,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           paid_at?: string | null
+          pending_data?: Json | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -969,7 +972,7 @@ export type Database = {
           is_public: boolean | null
           marked_at: string | null
           marked_by: string | null
-          question_id: string
+          question_id: string | null
           response_text: string
           reviewing_by: string | null
           reviewing_started_at: string | null
@@ -985,7 +988,7 @@ export type Database = {
           is_public?: boolean | null
           marked_at?: string | null
           marked_by?: string | null
-          question_id: string
+          question_id?: string | null
           response_text: string
           reviewing_by?: string | null
           reviewing_started_at?: string | null
@@ -1001,7 +1004,7 @@ export type Database = {
           is_public?: boolean | null
           marked_at?: string | null
           marked_by?: string | null
-          question_id?: string
+          question_id?: string | null
           response_text?: string
           reviewing_by?: string | null
           reviewing_started_at?: string | null
@@ -2035,17 +2038,7 @@ export type Database = {
       }
     }
     Views: {
-      complete_books: {
-        Row: {
-          block_count: number | null
-          blocks: Json | null
-          book_id: string | null
-          created_at: string | null
-          document_title: string | null
-          version: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       activate_template_version: { Args: { p_id: string }; Returns: Json }
@@ -2065,6 +2058,16 @@ export type Database = {
           rule_name: string
           specific_contributor_id: string
         }[]
+      }
+      complete_checkout_and_enroll: {
+        Args: {
+          p_discount_amount_cents?: number
+          p_discount_code?: string
+          p_stripe_customer_id?: string
+          p_stripe_payment_intent_id?: string
+          p_stripe_session_id: string
+        }
+        Returns: Json
       }
       detect_chapter_sections: {
         Args: { p_book_id?: string }
@@ -2179,6 +2182,21 @@ export type Database = {
       }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      safe_create_enrollment: {
+        Args: {
+          p_cohort_id: string
+          p_email?: string
+          p_enrollment_link_id?: string
+          p_full_name?: string
+          p_hub_id?: string
+          p_payment_id?: string
+          p_payment_status?: string
+          p_role?: string
+          p_status?: string
+          p_user_profile_id?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       dgr_status: "pending" | "submitted" | "approved" | "published"

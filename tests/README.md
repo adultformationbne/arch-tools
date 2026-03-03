@@ -84,7 +84,7 @@ Tests all core CRUD operations at the database level:
 
 Documents and validates the correct API contracts:
 
-- ✅ **Reflection API** - Documents that API uses `content` (not `response_text`), `reflection_question_id` (not `question_id`)
+- ✅ **Reflection API** - Documents that API uses `content` (not `response_text`), `reflection_question_id` (not `question_id`) — table: `courses_reflection_responses`
 - ✅ **Reflection Status Enum** - Valid values: `draft`, `submitted`, `under_review`, `passed`, `needs_revision`, `resubmitted`
 - ✅ **Material Types** - Valid values: `video`, `link`, `native`
 - ✅ **Enrollment Statuses** - Valid values: `pending`, `invited`, `accepted`, `active`, `completed`, `withdrawn`

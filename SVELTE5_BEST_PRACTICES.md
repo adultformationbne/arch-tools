@@ -336,5 +336,5 @@ $effect(() => {
 
 ---
 
-**Last Updated:** Based on session editor refactoring (Nov 2024)
+**Last Updated:** March 2026
 **Svelte Version:** 5.x

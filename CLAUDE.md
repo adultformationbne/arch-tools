@@ -4,8 +4,6 @@
 
 **Env:** Copy `.env.example` → `.env` (Supabase + Resend keys)
 
-**📚 Important:** See [SVELTE5_BEST_PRACTICES.md](./SVELTE5_BEST_PRACTICES.md) for Svelte 5 patterns (state management, reactivity, effects)
-
 ---
 
 ## Critical Patterns
@@ -49,7 +47,7 @@ For confirmations:
 ### API Requests
 
 ```ts
-import { apiPost, apiGet, apiDelete } from '$lib/utils/api-handler.js';
+import { apiGet, apiPost, apiPut, apiDelete } from '$lib/utils/api-handler.js';
 
 const data = await apiGet('/api/endpoint', { successMessage: 'Done!' });
 await apiPost('/api/endpoint', formData, { successMessage: 'Saved' });
@@ -87,22 +85,9 @@ const { data } = await supabaseAdmin.from('table').select('*').eq('id', id);
 
 ---
 
-## Svelte 5 Quick Reference
+## Svelte 5 Essentials
 
-```ts
-// State & derived
-let count = $state(0);
-let doubled = $derived(count * 2);
-
-// Props (NOT export let)
-let { isOpen = false, onClose } = $props();
-
-// Effects
-$effect(() => { console.log(count); });
-
-// Events: onclick= (NOT on:click=)
-<button onclick={handler}>Click</button>
-```
+Use `$state()`, `$derived()`, `$props()`, `$effect()`. **NOT** `export let`, `on:click`, or stores. See [SVELTE5_BEST_PRACTICES.md](./SVELTE5_BEST_PRACTICES.md) for full patterns.
 
 ---
 
@@ -121,34 +106,26 @@ $effect(() => { console.log(count); });
 
 **Schema changes:** Follow **AGENTS.MD** workflow
 
-### ⚠️ CRITICAL: Table Query Efficiency
+### Table Query Efficiency
 
-**NEVER USE `mcp__supabase__list_tables` WITHOUT FILTERING - IT USES 14,000+ TOKENS AND KILLS THE CONTEXT WINDOW!**
-
-**ALWAYS use targeted SQL queries filtered by table prefix:**
+**NEVER use `mcp__supabase__list_tables` unfiltered (14,000+ tokens).** Always use targeted SQL:
 
 ```sql
--- ✅ CORRECT: Query only relevant tables
-SELECT table_name, column_count
-FROM information_schema.tables
-WHERE table_schema = 'public'
-  AND table_name LIKE 'courses%'  -- Filter by prefix!
-ORDER BY table_name
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name LIKE 'courses%'
+ORDER BY table_name;
 ```
 
-### Table Groups (use these prefixes to filter queries)
+### Table Groups (filter by prefix)
 
-- **Courses**: `courses%` (14 tables) - courses, courses_modules, courses_sessions, courses_materials, courses_cohorts, courses_enrollments, courses_reflection_questions, courses_reflection_responses, courses_hubs, courses_attendance, courses_activity_log, courses_community_feed, courses_email_templates, courses_enrollment_imports
-
-- **DGR**: `dgr_%` (5 tables) - dgr_assignment_rules, dgr_contributors, dgr_promo_tiles, dgr_schedule, dgr_templates
-
-- **Editor**: `editor_%` (4 tables) - editor_blocks, editor_books, editor_chapters, editor_logs
-
-- **Liturgical**: `lectionary%` OR `liturgical_%` OR `ordo_%` (6 tables) - lectionary, lectionary_readings, liturgical_calendar, liturgical_years, ordo_calendar, ordo_lectionary_mapping
-
-- **Platform**: `platform_%` OR `admin_%` OR `user_%` (4 tables) - platform_email_log, platform_email_templates, platform_settings, admin_settings, user_profiles
-
-**REMEMBER: Filtered queries = ~500 tokens. Unfiltered queries = 14,000+ tokens. ALWAYS FILTER!**
+| Group | Prefix | Count | Tables |
+|-------|--------|-------|--------|
+| **Courses** | `courses%` | 16 | courses, courses_activity_log, courses_attendance, courses_cohorts, courses_community_feed, courses_discount_codes, courses_enrollment_imports, courses_enrollment_links, courses_enrollments, courses_hubs, courses_materials, courses_modules, courses_payments, courses_reflection_questions, courses_reflection_responses, courses_sessions |
+| **DGR** | `dgr_%` | 5 | dgr_assignment_rules, dgr_contributors, dgr_promo_tiles, dgr_schedule, dgr_templates |
+| **Email** | `email_%` | 2 | email_templates, email_images |
+| **Liturgical** | `lectionary%` / `liturgical_%` / `ordo_%` | 6 | lectionary, lectionary_readings, liturgical_calendar, liturgical_years, ordo_calendar, ordo_lectionary_mapping |
+| **Platform** | `platform_%` / `admin_%` / `user_%` | 4 | admin_settings, platform_email_log, platform_settings, user_profiles |
+| **Other** | — | 4 | auth_otp_tracker, parishes, scheduled_tasks, stripe_events |
 
 ---
 
@@ -163,20 +140,7 @@ npm run validate-api  # Check API endpoint/frontend parameter mismatches
 
 ### API Contract Validation
 
-The `validate-api` script automatically detects mismatches between:
-- Frontend API calls (`apiGet`, `apiPost`, `apiPut`, `apiDelete`, `fetch`)
-- Backend endpoint definitions (+server.ts files)
-
-It checks:
-- Query parameter names (e.g., `?id=` vs `?template_id=`)
-- Body parameter names
-- HTTP methods
-
-**Example issues caught:**
-- DELETE endpoint expects `?template_id=` but frontend sends `?id=`
-- PUT endpoint expects `{ template_id: ... }` but frontend sends `{ id: ... }`
-
-See `tests/README.md` for test details. Tests auto-cleanup after running.
+`validate-api` detects mismatches between frontend API calls and backend endpoints (query params, body params, HTTP methods). See `tests/README.md` for details.
 
 ---
 
@@ -185,4 +149,6 @@ See `tests/README.md` for test details. Tests auto-cleanup after running.
 - **AGENTS.MD** - Database migration workflow
 - **AUTHENTICATION.md** - Detailed auth docs
 - **COURSES.md** - Course architecture
+- **DGR.md** - Daily Gospel Reflections system
+- **LITURGICAL_SYSTEM.md** - Liturgical calendar and readings
 - **UNIFIED_EMAIL_SYSTEM.md** - Email templates, sending, and branding (courses, DGR, platform)
