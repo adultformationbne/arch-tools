@@ -24,6 +24,7 @@ export const load: PageServerLoad = async (event) => {
 		.from('courses_chat_messages')
 		.select('*')
 		.eq('cohort_id', cohortId)
+		.is('deleted_at', null)
 		.order('created_at', { ascending: false })
 		.limit(50);
 

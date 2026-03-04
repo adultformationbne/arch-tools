@@ -27,6 +27,7 @@ let {
 	onSettingsClick,
 	onNewCohort,
 	cohorts = [],
+	archivedCohorts = [],
 	selectedCohortId = null,
 	onSelectCohort,
 	modules = [],
@@ -50,6 +51,7 @@ function closeMobileMenu() {
 
 // Cohort list expansion state
 let showAllCohorts = $state(false);
+let showArchivedCohorts = $state(false);
 const INITIAL_COHORT_LIMIT = 5;
 
 // Nav visibility helpers
@@ -198,9 +200,9 @@ const currentPageTitle = $derived(() => {
 	return item?.label || 'Admin';
 });
 
-// Get selected cohort name
+// Get selected cohort name (check both active and archived)
 const selectedCohortName = $derived(() => {
-	const cohort = cohorts.find(c => c.id === selectedCohortId);
+	const cohort = cohorts.find(c => c.id === selectedCohortId) || archivedCohorts.find(c => c.id === selectedCohortId);
 	return cohort?.name || null;
 });
 </script>
@@ -331,6 +333,33 @@ const selectedCohortName = $derived(() => {
 								<span>+{cohorts.length - INITIAL_COHORT_LIMIT} More</span>
 							{/if}
 						</button>
+					{/if}
+
+					{#if archivedCohorts.length > 0}
+						<button onclick={() => showArchivedCohorts = !showArchivedCohorts} class="btn-show-more btn-archived-toggle">
+							{#if showArchivedCohorts}
+								<ChevronUp size={14} />
+								<span>Hide Archived</span>
+							{:else}
+								<ChevronDown size={14} />
+								<span>Show Archived ({archivedCohorts.length})</span>
+							{/if}
+						</button>
+
+						{#if showArchivedCohorts}
+							<div class="cohort-list">
+								{#each archivedCohorts as cohort}
+									<button
+										onclick={() => handleCohortSelect(cohort.id)}
+										class="cohort-item archived-item"
+										class:active={selectedCohortId === cohort.id}
+									>
+										<span class="cohort-name">{cohort.name}</span>
+										<span class="cohort-session">Archived</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
 					{/if}
 				{:else}
 					<p class="text-white/50 text-sm px-4 py-2">No cohorts yet</p>
@@ -625,6 +654,24 @@ const selectedCohortName = $derived(() => {
 	.btn-show-more:active {
 		background: rgba(255, 255, 255, 0.1);
 		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.btn-archived-toggle {
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		padding-top: 10px;
+	}
+
+	.archived-item {
+		opacity: 0.6;
+	}
+
+	.archived-item:hover,
+	.archived-item:active {
+		opacity: 0.85;
+	}
+
+	.archived-item.active {
+		opacity: 1;
 	}
 
 	.nav-footer {

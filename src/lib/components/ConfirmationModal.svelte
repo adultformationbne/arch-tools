@@ -8,6 +8,7 @@
 		loadingMessage = 'Processing...',
 		confirmText = 'Confirm',
 		confirmIcon = null,
+		confirmDisabled = false,
 		cancelText = 'Cancel',
 		onConfirm = () => {},
 		onCancel = () => {},
@@ -102,7 +103,7 @@
 						<button onclick={onCancel} class="btn-secondary">
 							{cancelText}
 						</button>
-						<button onclick={onConfirm} class="btn-primary">
+						<button onclick={onConfirm} class="btn-primary" disabled={confirmDisabled}>
 							{#if confirmIcon}
 								{@const Icon = confirmIcon}
 								<Icon size={18} />
@@ -289,10 +290,15 @@
 		white-space: nowrap;
 	}
 
-	.btn-primary:hover {
+	.btn-primary:hover:not(:disabled) {
 		background: #d4a876;
 		transform: translateY(-1px);
 		box-shadow: 0 4px 12px rgba(197, 154, 107, 0.3);
+	}
+
+	.btn-primary:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
 	/* Multi-action mode */

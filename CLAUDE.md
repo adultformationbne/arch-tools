@@ -4,6 +4,14 @@
 
 **Env:** Copy `.env.example` → `.env` (Supabase + Resend keys)
 
+### File Editing (Tab-Indented Files)
+
+This codebase uses **tabs for indentation**. The Read tool renders tabs as spaces, which causes Edit `old_string` mismatches. To avoid whitespace rabbit holes:
+
+- **Keep `old_string` short** — use 1-3 unique lines, not large blocks
+- **If an Edit fails due to whitespace**, use `Bash` with a heredoc or `sed` to make the edit — do NOT loop trying `cat -vet`/`awk`/`sed -n` to diagnose indentation
+- **Never copy-paste indentation from Read output** into Edit — it will be wrong
+
 ---
 
 ## Critical Patterns

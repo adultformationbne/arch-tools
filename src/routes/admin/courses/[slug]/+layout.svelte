@@ -43,6 +43,7 @@
 	const enrollmentRole = $derived(data.enrollmentRole);
 	const isCourseAdmin = $derived(data.isCourseAdmin);
 	const cohorts = $derived(data.cohorts || []);
+	const archivedCohorts = $derived(data.archivedCohorts || []);
 	const courseTheme = $derived(data.courseTheme || {});
 	const courseBranding = $derived(data.courseBranding || {});
 	const courseFeatures = $derived(data.courseFeatures || {});
@@ -126,6 +127,7 @@
 		{enrollmentRole}
 		{isCourseAdmin}
 		{cohorts}
+		{archivedCohorts}
 		{courseBranding}
 		{courseFeatures}
 		{hasUnreadChat}
@@ -143,6 +145,7 @@
 			{enrollmentRole}
 			{isCourseAdmin}
 			{cohorts}
+			{archivedCohorts}
 			{courseBranding}
 			{courseFeatures}
 			{hasUnreadChat}

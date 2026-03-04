@@ -25,6 +25,7 @@ let {
     onSettingsClick,
     onNewCohort,
     cohorts = [],
+    archivedCohorts = [],
     selectedCohortId = null,
     onSelectCohort,
     modules = [],
@@ -48,6 +49,7 @@ function handleMouseLeaveSidebar() {
 
 // Cohort list expansion state
 let showAllCohorts = $state(false);
+let showArchivedCohorts = $state(false);
 const INITIAL_COHORT_LIMIT = 5;
 
 // Nav visibility helpers
@@ -259,6 +261,38 @@ function handleMouseEnter(href) {
 							<span>+{cohorts.length - INITIAL_COHORT_LIMIT} More</span>
 						{/if}
 					</button>
+				{/if}
+
+				{#if archivedCohorts.length > 0}
+					<button onclick={() => showArchivedCohorts = !showArchivedCohorts} class="btn-show-more btn-archived-toggle">
+						{#if showArchivedCohorts}
+							<ChevronUp size={12} />
+							<span>Hide Archived</span>
+						{:else}
+							<ChevronDown size={12} />
+							<span>Show Archived ({archivedCohorts.length})</span>
+						{/if}
+					</button>
+
+					{#if showArchivedCohorts}
+						<ul class="nav-list cohort-list">
+							{#each archivedCohorts as cohort}
+								<li>
+									<button
+										onclick={() => onSelectCohort?.(cohort.id)}
+										class="nav-item cohort-item archived-item"
+										class:active={selectedCohortId === cohort.id}
+										title="{cohort.name} (Archived)"
+									>
+										<div class="cohort-info">
+											<span class="cohort-name">{cohort.name}</span>
+											<span class="cohort-session">Archived</span>
+										</div>
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				{/if}
 			</div>
 		{/if}
@@ -658,5 +692,23 @@ function handleMouseEnter(href) {
 		background: rgba(255, 255, 255, 0.1);
 		color: rgba(255, 255, 255, 0.9);
 		border-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.btn-archived-toggle {
+		margin-top: 8px;
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		padding-top: 8px;
+	}
+
+	.archived-item {
+		opacity: 0.6;
+	}
+
+	.archived-item:hover {
+		opacity: 0.85;
+	}
+
+	.archived-item.active {
+		opacity: 1;
 	}
 </style>

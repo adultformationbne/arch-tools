@@ -234,13 +234,14 @@ export const DELETE: RequestHandler = async (event) => {
 
 	const { isAdmin, enrollment } = await verifyChatAccess(event, user.id, cohort_id);
 
-	// Only platform admins or enrolled admins can delete messages
 	const isEnrolledAdmin = enrollment?.role === 'admin';
-	if (!isAdmin && !isEnrolledAdmin) {
-		throw error(403, 'Only admins can delete messages');
-	}
+	const canAdminDelete = isAdmin || isEnrolledAdmin;
 
 	if (clear_all) {
+		// Only admins can clear all messages
+		if (!canAdminDelete) {
+			throw error(403, 'Only admins can clear all messages');
+		}
 		// Soft-delete all messages in the cohort
 		const { error: deleteError } = await supabaseAdmin
 			.from('courses_chat_messages')
@@ -257,6 +258,24 @@ export const DELETE: RequestHandler = async (event) => {
 	}
 
 	if (message_id) {
+		// Verify ownership or admin status for single message delete
+		if (!canAdminDelete) {
+			const { data: msg } = await supabaseAdmin
+				.from('courses_chat_messages')
+				.select('sender_id')
+				.eq('id', message_id)
+				.eq('cohort_id', cohort_id)
+				.is('deleted_at', null)
+				.maybeSingle();
+
+			if (!msg) {
+				throw error(404, 'Message not found');
+			}
+			if (msg.sender_id !== user.id) {
+				throw error(403, 'You can only delete your own messages');
+			}
+		}
+
 		// Soft-delete a single message
 		const { error: deleteError } = await supabaseAdmin
 			.from('courses_chat_messages')

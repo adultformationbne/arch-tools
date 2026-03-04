@@ -31,6 +31,7 @@ export const load: LayoutServerLoad = async (event) => {
 	let course: any;
 	let modules: any[];
 	let cohorts: any[];
+	let archivedCohorts: any[];
 	let hubs: any[];
 
 	if (cached) {
@@ -38,6 +39,7 @@ export const load: LayoutServerLoad = async (event) => {
 		course = cached.course;
 		modules = cached.modules;
 		cohorts = cached.cohorts;
+		archivedCohorts = cached.archivedCohorts;
 		hubs = cached.hubs;
 	} else {
 		// Cache miss - run full queries
@@ -61,10 +63,11 @@ export const load: LayoutServerLoad = async (event) => {
 
 		modules = adminDataResult.data.modules;
 		cohorts = adminDataResult.data.cohorts;
+		archivedCohorts = adminDataResult.data.archivedCohorts;
 		hubs = hubsResult.data || [];
 
 		// Store in cache for subsequent navigations
-		setCachedCourseData(courseSlug, { course, modules, cohorts, hubs });
+		setCachedCourseData(courseSlug, { course, modules, cohorts, archivedCohorts, hubs });
 	}
 
 	// Extract theme, branding, and feature settings
@@ -103,6 +106,7 @@ export const load: LayoutServerLoad = async (event) => {
 		isCourseAdmin: true,
 		modules,
 		cohorts,
+		archivedCohorts,
 		hubs,
 		course,
 		userId: user.id,

@@ -17,6 +17,7 @@
 
 	let messages = $state([...initialMessages]);
 	let messageInput = $state('');
+	let inputEl = $state(null);
 	let sending = $state(false);
 	let loadingMore = $state(false);
 	let hasMore = $state(initialMessages.length >= 50);
@@ -75,6 +76,7 @@
 
 		messages = [...messages, optimisticMsg];
 		messageInput = '';
+		if (inputEl) inputEl.style.height = 'auto';
 		scrollToBottom();
 
 		sending = true;
@@ -535,8 +537,10 @@
 			<textarea
 				class="chat-input"
 				placeholder="Type a message..."
+				bind:this={inputEl}
 				bind:value={messageInput}
 				onkeydown={handleKeydown}
+				oninput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
 				rows="1"
 				maxlength="2000"
 				disabled={sending}

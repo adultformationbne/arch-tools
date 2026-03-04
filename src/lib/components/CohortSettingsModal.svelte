@@ -1,5 +1,5 @@
 <script>
-	import { X, Trash2, AlertTriangle, CheckCircle } from '$lib/icons';
+	import { X, Trash2, AlertTriangle, CheckCircle, Archive, RotateCcw } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { getCohortStatusFromObject } from '$lib/utils/cohort-status';
 	import ConfirmationModal from './ConfirmationModal.svelte';
@@ -10,7 +10,8 @@
 		courseSlug = '',
 		onClose = () => {},
 		onUpdate = () => {},
-		onDelete = () => {}
+		onDelete = () => {},
+		onArchive = () => {}
 	} = $props();
 
 	// Form state
@@ -20,8 +21,15 @@
 	let saving = $state(false);
 	let deleting = $state(false);
 	let completing = $state(false);
+	let archiving = $state(false);
+	let unarchiving = $state(false);
 	let showDeleteConfirm = $state(false);
 	let showCompleteConfirm = $state(false);
+	let showArchiveConfirm = $state(false);
+	let deleteConfirmName = $state('');
+
+	// Check if this cohort is archived
+	const isArchived = $derived(cohort?.status === 'archived');
 
 	// Computed status based on session progress
 	const statusInfo = $derived(cohort ? getCohortStatusFromObject(cohort) : null);
@@ -29,7 +37,12 @@
 	// Check if cohort is on or past final session (can be marked complete)
 	const totalSessions = $derived(cohort?.total_sessions || cohort?.module?.total_sessions || 8);
 	const canMarkComplete = $derived(
-		cohort && statusInfo?.status === 'active' && cohort.current_session >= totalSessions
+		cohort && !isArchived && statusInfo?.status === 'active' && cohort.current_session >= totalSessions
+	);
+
+	// Delete confirmation requires typing the cohort name
+	const deleteNameMatches = $derived(
+		deleteConfirmName.trim().toLowerCase() === (cohort?.name || '').trim().toLowerCase()
 	);
 
 	// Reset form when modal opens
@@ -38,6 +51,7 @@
 			name = cohort.name || '';
 			startDate = cohort.start_date || '';
 			endDate = cohort.end_date || '';
+			deleteConfirmName = '';
 		}
 	});
 
@@ -111,6 +125,67 @@
 		}
 	}
 
+	async function handleArchive() {
+		showArchiveConfirm = false;
+		archiving = true;
+
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'archive_cohort',
+					cohortId: cohort.id
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to archive cohort');
+			}
+
+			toastSuccess('Cohort archived successfully');
+			onArchive();
+			onClose();
+		} catch (err) {
+			console.error('Error archiving cohort:', err);
+			toastError(err.message || 'Failed to archive cohort');
+		} finally {
+			archiving = false;
+		}
+	}
+
+	async function handleUnarchive() {
+		unarchiving = true;
+
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'unarchive_cohort',
+					cohortId: cohort.id
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to restore cohort');
+			}
+
+			toastSuccess('Cohort restored successfully');
+			onArchive();
+			onClose();
+		} catch (err) {
+			console.error('Error restoring cohort:', err);
+			toastError(err.message || 'Failed to restore cohort');
+		} finally {
+			unarchiving = false;
+		}
+	}
+
 	async function handleDelete() {
 		showDeleteConfirm = false;
 		deleting = true;
@@ -131,7 +206,7 @@
 				throw new Error(result.message || 'Failed to delete cohort');
 			}
 
-			toastSuccess('Cohort deleted successfully');
+			toastSuccess('Cohort permanently deleted');
 			onDelete();
 			onClose();
 		} catch (err) {
@@ -139,11 +214,14 @@
 			toastError(err.message || 'Failed to delete cohort');
 		} finally {
 			deleting = false;
+			deleteConfirmName = '';
 		}
 	}
 
+	const isBusy = $derived(saving || deleting || completing || archiving || unarchiving);
+
 	function handleClose() {
-		if (!saving && !deleting && !completing) {
+		if (!isBusy) {
 			onClose();
 		}
 	}
@@ -167,11 +245,16 @@
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4 border-b border-gray-200">
-				<h2 class="text-lg font-bold text-gray-900">Cohort Settings</h2>
+				<div class="flex items-center gap-2">
+					<h2 class="text-lg font-bold text-gray-900">Cohort Settings</h2>
+					{#if isArchived}
+						<span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">Archived</span>
+					{/if}
+				</div>
 				<button
 					onclick={handleClose}
 					class="p-1 text-gray-400 hover:text-gray-600 rounded"
-					disabled={saving || deleting}
+					disabled={isBusy}
 				>
 					<X size={20} />
 				</button>
@@ -190,6 +273,7 @@
 						bind:value={name}
 						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						placeholder="e.g., Feb 2025 - Foundations"
+						disabled={isArchived}
 					/>
 				</div>
 
@@ -204,6 +288,7 @@
 							type="date"
 							bind:value={startDate}
 							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							disabled={isArchived}
 						/>
 					</div>
 					<div>
@@ -215,18 +300,25 @@
 							type="date"
 							bind:value={endDate}
 							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							disabled={isArchived}
 						/>
 					</div>
 				</div>
-				<p class="text-xs text-gray-500 -mt-2">
-					Dates are for display only. Cohort progression is controlled by advancing sessions.
-				</p>
+				{#if !isArchived}
+					<p class="text-xs text-gray-500 -mt-2">
+						Dates are for display only. Cohort progression is controlled by advancing sessions.
+					</p>
+				{/if}
 
 				<!-- Status & Session Info (read-only, computed from session progress) -->
 				<div class="bg-gray-50 rounded-lg p-3 space-y-2">
 					<div class="flex items-center justify-between">
 						<span class="text-sm font-medium text-gray-700">Status</span>
-						{#if statusInfo}
+						{#if isArchived}
+							<span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">
+								Archived
+							</span>
+						{:else if statusInfo}
 							<span
 								class="px-2 py-0.5 rounded text-xs font-semibold"
 								style="background-color: {statusInfo.color}20; color: {statusInfo.color};"
@@ -247,12 +339,12 @@
 						<button
 							onclick={() => showCompleteConfirm = true}
 							class="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-							disabled={saving || deleting || completing}
+							disabled={isBusy}
 						>
 							<CheckCircle size={16} />
 							Mark as Complete
 						</button>
-					{:else}
+					{:else if !isArchived}
 						<p class="text-xs text-gray-500 pt-1 border-t border-gray-200">
 							Status updates automatically: Scheduled (session 0) → Active (in progress) → Completed (mark complete on final session)
 						</p>
@@ -262,31 +354,61 @@
 
 			<!-- Footer -->
 			<div class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-				<button
-					onclick={() => showDeleteConfirm = true}
-					class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-					disabled={saving || deleting}
-				>
-					<Trash2 size={16} />
-					Delete Cohort
-				</button>
-
-				<div class="flex gap-3">
+				{#if isArchived}
+					<!-- Archived cohort: Unarchive and Delete Permanently -->
+					<div class="flex gap-2">
+						<button
+							onclick={handleUnarchive}
+							class="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+							disabled={isBusy}
+						>
+							<RotateCcw size={16} />
+							{unarchiving ? 'Restoring...' : 'Restore'}
+						</button>
+						<button
+							onclick={() => showDeleteConfirm = true}
+							class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+							disabled={isBusy}
+						>
+							<Trash2 size={16} />
+							Delete Permanently
+						</button>
+					</div>
 					<button
 						onclick={handleClose}
 						class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
-						disabled={saving || deleting}
+						disabled={isBusy}
 					>
-						Cancel
+						Close
 					</button>
+				{:else}
+					<!-- Active cohort: Archive button instead of Delete -->
 					<button
-						onclick={handleSave}
-						class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-						disabled={saving || deleting}
+						onclick={() => showArchiveConfirm = true}
+						class="px-3 py-2 text-amber-700 hover:bg-amber-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+						disabled={isBusy}
 					>
-						{saving ? 'Saving...' : 'Save Changes'}
+						<Archive size={16} />
+						Archive Cohort
 					</button>
-				</div>
+
+					<div class="flex gap-3">
+						<button
+							onclick={handleClose}
+							class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
+							disabled={isBusy}
+						>
+							Cancel
+						</button>
+						<button
+							onclick={handleSave}
+							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+							disabled={isBusy}
+						>
+							{saving ? 'Saving...' : 'Save Changes'}
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -314,25 +436,68 @@
 	</div>
 </ConfirmationModal>
 
-<!-- Delete Confirmation -->
+<!-- Archive Confirmation -->
+<ConfirmationModal
+	show={showArchiveConfirm}
+	title="Archive Cohort"
+	confirmText={archiving ? 'Archiving...' : 'Archive'}
+	cancelText="Cancel"
+	onConfirm={handleArchive}
+	onCancel={() => showArchiveConfirm = false}
+>
+	<div class="flex items-start gap-3">
+		<div class="p-2 bg-amber-100 rounded-full">
+			<Archive size={20} class="text-amber-600" />
+		</div>
+		<div>
+			<p class="text-gray-900 font-medium">Archive "{cohort?.name}"?</p>
+			<p class="text-sm text-gray-600 mt-1">
+				The cohort will be hidden from the main list but all data (enrollments, attendance, reflections, chat messages) will be preserved. You can restore it at any time.
+			</p>
+		</div>
+	</div>
+</ConfirmationModal>
+
+<!-- Delete Permanently Confirmation (type-to-confirm) -->
 <ConfirmationModal
 	show={showDeleteConfirm}
-	title="Delete Cohort"
-	confirmText={deleting ? 'Deleting...' : 'Delete'}
+	title="Permanently Delete Cohort"
+	confirmText={deleting ? 'Deleting...' : 'Delete Permanently'}
 	cancelText="Cancel"
+	confirmDisabled={!deleteNameMatches}
 	onConfirm={handleDelete}
-	onCancel={() => showDeleteConfirm = false}
+	onCancel={() => { showDeleteConfirm = false; deleteConfirmName = ''; }}
 >
 	<div class="flex items-start gap-3">
 		<div class="p-2 bg-red-100 rounded-full">
 			<AlertTriangle size={20} class="text-red-600" />
 		</div>
-		<div>
-			<p class="text-gray-900 font-medium">Are you sure you want to delete "{cohort?.name}"?</p>
+		<div class="flex-1">
+			<p class="text-gray-900 font-medium">Permanently delete "{cohort?.name}"?</p>
 			<p class="text-sm text-gray-600 mt-1">
-				This will permanently delete the cohort and all its enrollments. This action cannot be undone.
-				Consider archiving instead if you want to keep the data.
+				This will permanently delete the cohort and all associated data:
 			</p>
+			<ul class="text-sm text-gray-600 mt-1 list-disc list-inside">
+				<li>All enrollments</li>
+				<li>Attendance records</li>
+				<li>Reflection responses</li>
+				<li>Chat messages</li>
+				<li>Activity logs</li>
+			</ul>
+			<p class="text-sm text-red-600 font-medium mt-2">This action cannot be undone.</p>
+			<div class="mt-3">
+				<label for="delete-confirm-name" class="block text-sm text-gray-700 mb-1">
+					Type <strong>{cohort?.name}</strong> to confirm:
+				</label>
+				<input
+					id="delete-confirm-name"
+					type="text"
+					bind:value={deleteConfirmName}
+					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+					placeholder={cohort?.name}
+					autocomplete="off"
+				/>
+			</div>
 		</div>
 	</div>
 </ConfirmationModal>

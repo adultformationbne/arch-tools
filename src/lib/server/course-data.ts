@@ -548,10 +548,11 @@ export const CourseAggregates = {
 	 * Returns modules and cohorts for admin dashboard
 	 */
 	async getAdminCourseData(courseId: string) {
-		// Parallel fetch modules, cohorts, and session counts
-		const [modulesResult, cohortsResult] = await Promise.all([
+		// Parallel fetch modules, active cohorts, and all cohorts (including archived)
+		const [modulesResult, cohortsResult, allCohortsResult] = await Promise.all([
 			CourseQueries.getModules(courseId),
-			CourseQueries.getCohorts(courseId)
+			CourseQueries.getCohorts(courseId),
+			CourseQueries.getCohorts(courseId, true)
 		]);
 
 		const modules = modulesResult.data || [];
@@ -570,19 +571,26 @@ export const CourseAggregates = {
 			});
 		}
 
-		// Flatten cohorts and attach module info + total_sessions
-		// Provide both 'modules' and 'courses_modules' for compatibility
-		const cohorts = (cohortsResult.data || []).map((cohort) => ({
+		// Helper to enrich cohorts with module info + total_sessions
+		const enrichCohort = (cohort: any) => ({
 			...cohort,
 			courses_modules: cohort.module,
 			modules: cohort.module, // Alias for attendance page compatibility
 			total_sessions: sessionCountMap.get(cohort.module_id) || 0
-		}));
+		});
+
+		// Active cohorts (non-archived)
+		const cohorts = (cohortsResult.data || []).map(enrichCohort);
+
+		// Archived cohorts only
+		const allCohorts = (allCohortsResult.data || []).map(enrichCohort);
+		const archivedCohorts = allCohorts.filter((c: any) => c.status === 'archived');
 
 		return {
 			data: {
 				modules: modules,
-				cohorts: cohorts
+				cohorts: cohorts,
+				archivedCohorts: archivedCohorts
 			},
 			error: modulesResult.error || cohortsResult.error
 		};
@@ -1302,6 +1310,20 @@ export const CourseMutations = {
 	/**
 	 * Delete a cohort (cascade deletes enrollments, then deletes cohort)
 	 */
+	async archiveCohort(cohortId: string) {
+		return supabaseAdmin
+			.from('courses_cohorts')
+			.update({ status: 'archived' })
+			.eq('id', cohortId);
+	},
+
+	async unarchiveCohort(cohortId: string) {
+		return supabaseAdmin
+			.from('courses_cohorts')
+			.update({ status: null })
+			.eq('id', cohortId);
+	},
+
 	async deleteCohort(cohortId: string) {
 		// Delete all enrollments for this cohort
 		const { error: deleteEnrollmentsError } = await supabaseAdmin

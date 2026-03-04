@@ -409,10 +409,59 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'archive_cohort': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				const archiveResult = await CourseMutations.archiveCohort(data.cohortId);
+
+				if (archiveResult.error) {
+					throw error(500, archiveResult.error.message || 'Failed to archive cohort');
+				}
+
+				invalidateCourseCache(courseSlug);
+				return json({
+					success: true,
+					message: 'Cohort archived successfully'
+				});
+			}
+
+			case 'unarchive_cohort': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				const unarchiveResult = await CourseMutations.unarchiveCohort(data.cohortId);
+
+				if (unarchiveResult.error) {
+					throw error(500, unarchiveResult.error.message || 'Failed to unarchive cohort');
+				}
+
+				invalidateCourseCache(courseSlug);
+				return json({
+					success: true,
+					message: 'Cohort restored successfully'
+				});
+			}
+
 			case 'delete_cohort': {
 				// Validate cohort belongs to this course
 				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
 					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				// Only allow deletion of archived cohorts
+				const { data: cohortRecord } = await supabaseAdmin
+					.from('courses_cohorts')
+					.select('status')
+					.eq('id', data.cohortId)
+					.single();
+
+				if (cohortRecord?.status !== 'archived') {
+					throw error(400, 'Cohort must be archived before it can be permanently deleted');
 				}
 
 				const result = await CourseMutations.deleteCohort(data.cohortId);
@@ -424,7 +473,7 @@ export const POST: RequestHandler = async (event) => {
 				invalidateCourseCache(courseSlug);
 				return json({
 					success: true,
-					message: 'Cohort deleted successfully'
+					message: 'Cohort permanently deleted'
 				});
 			}
 

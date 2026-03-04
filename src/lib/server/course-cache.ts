@@ -10,6 +10,7 @@ interface CachedCourseData {
 	course: any;
 	modules: any[];
 	cohorts: any[];
+	archivedCohorts: any[];
 	hubs: any[];
 	cachedAt: number;
 }
@@ -36,7 +37,7 @@ export function getCachedCourseData(slug: string): CachedCourseData | null {
  */
 export function setCachedCourseData(
 	slug: string,
-	data: { course: any; modules: any[]; cohorts: any[]; hubs: any[] }
+	data: { course: any; modules: any[]; cohorts: any[]; archivedCohorts: any[]; hubs: any[] }
 ) {
 	cache.set(slug, {
 		...data,
