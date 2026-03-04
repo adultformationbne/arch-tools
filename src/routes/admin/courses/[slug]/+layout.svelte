@@ -1,12 +1,30 @@
 <script>
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page, navigating } from '$app/stores';
-	import { setContext } from 'svelte';
+	import { setContext, onMount } from 'svelte';
 	import CourseAdminSidebar from '$lib/components/CourseAdminSidebar.svelte';
 	import CourseAdminMobileNav from '$lib/components/CourseAdminMobileNav.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 
 	let { data, children } = $props();
+
+	// Chat unread tracking
+	let hasUnreadChat = $state(data.hasUnreadChat || false);
+	const isOnChatPage = $derived($page.url.pathname.endsWith('/chat'));
+
+	// Reset unread when navigating to chat page
+	$effect(() => {
+		if (isOnChatPage) {
+			hasUnreadChat = false;
+		}
+	});
+
+	// Update from server data on navigation
+	$effect(() => {
+		if (data.hasUnreadChat !== undefined) {
+			hasUnreadChat = data.hasUnreadChat;
+		}
+	});
 
 	// Track navigation timing
 	let navStartTime = $state(null);
@@ -67,6 +85,34 @@
 	function handleSettingsClick() {
 		goto(`/admin/courses/${courseSlug}/settings`);
 	}
+
+	// Realtime subscription for unread chat dot
+	onMount(() => {
+		const cohortId = selectedCohortId;
+		if (!data.supabase || !cohortId) return;
+
+		const channel = data.supabase
+			.channel(`admin-chat-unread:${cohortId}`)
+			.on(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'courses_chat_messages',
+					filter: `cohort_id=eq.${cohortId}`
+				},
+				(payload) => {
+					if (!$page.url.pathname.endsWith('/chat') && payload.new.sender_id !== data.userId) {
+						hasUnreadChat = true;
+					}
+				}
+			)
+			.subscribe();
+
+		return () => {
+			data.supabase?.removeChannel(channel);
+		};
+	});
 </script>
 
 <div
@@ -82,6 +128,7 @@
 		{cohorts}
 		{courseBranding}
 		{courseFeatures}
+		{hasUnreadChat}
 		selectedCohortId={selectedCohortId}
 		onNewCohort={handleNewCohort}
 		onSelectCohort={handleSelectCohort}
@@ -98,6 +145,7 @@
 			{cohorts}
 			{courseBranding}
 			{courseFeatures}
+			{hasUnreadChat}
 			selectedCohortId={selectedCohortId}
 			onNewCohort={handleNewCohort}
 			onSelectCohort={handleSelectCohort}

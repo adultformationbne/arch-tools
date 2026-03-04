@@ -15,6 +15,7 @@ import {
     ChevronDown,
     ChevronUp,
     Mail,
+    MessageCircle,
     Link,
     Tag
 } from '$lib/icons';
@@ -30,7 +31,8 @@ let {
     enrollmentRole = null,
     isCourseAdmin = false,
     courseBranding = {},
-    courseFeatures = {}
+    courseFeatures = {},
+    hasUnreadChat = false
 } = $props();
 
 // Sidebar expansion state - defaults to collapsed (icons only)
@@ -149,6 +151,14 @@ const navItems = $derived([
         icon: Calendar,
         description: 'Track attendance',
         visible: canManageAttendance
+    },
+    {
+        label: 'Chat',
+        href: withCohort(`/admin/courses/${courseSlug}/chat`),
+        icon: MessageCircle,
+        description: 'Cohort chat',
+        visible: canManageCourse,
+        hasUnread: hasUnreadChat
     }
 ].filter((item) => item.visible));
 
@@ -196,7 +206,12 @@ function handleMouseEnter(href) {
 							onmouseenter={() => handleMouseEnter(item.href)}
 							data-sveltekit-preload-data="tap"
 						>
-							<item.icon size={16} class="nav-icon" />
+							<span class="nav-icon-wrap">
+								<item.icon size={16} class="nav-icon" />
+								{#if item.hasUnread}
+									<span class="unread-dot"></span>
+								{/if}
+							</span>
 							<span class="nav-label">{item.label}</span>
 						</a>
 					</li>
@@ -416,6 +431,24 @@ function handleMouseEnter(href) {
 
 	.nav-item.active :global(.nav-icon) {
 		color: var(--course-accent-darkest);
+	}
+
+	.nav-icon-wrap {
+		position: relative;
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.unread-dot {
+		position: absolute;
+		top: -3px;
+		right: -4px;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #ef4444;
+		box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
 	}
 
 	:global(.nav-icon) {

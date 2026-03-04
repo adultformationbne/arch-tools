@@ -1,8 +1,8 @@
 <script>
-	import { User, Home, BookOpen, MessageSquare, Menu, X } from '$lib/icons';
+	import { User, Home, BookOpen, MessageSquare, MessageCircle, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 
-	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {} } = $props();
+	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false } = $props();
 
 	let mobileMenuOpen = $state(false);
 
@@ -19,6 +19,7 @@
 		const path = $page.url.pathname;
 		if (path.endsWith('/materials')) return 'materials';
 		if (path.endsWith('/reflections')) return 'reflections';
+		if (path.endsWith('/chat')) return 'chat';
 		if (path.endsWith('/profile')) return 'profile';
 		return 'dashboard';
 	});
@@ -70,6 +71,18 @@
 				<span>Reflections</span>
 				<div class="glass-shine"></div>
 			</a>
+			{#if userRole === 'coordinator' || userRole === 'admin'}
+				<a
+					href="/courses/{courseSlug}/chat"
+					class="glass-link group"
+					class:active-glass={currentPage() === 'chat'}
+				>
+					<MessageCircle class="transition-transform group-hover:scale-110" size="14" />
+					<span>Chat</span>
+					{#if hasUnreadChat}<span class="unread-dot"></span>{/if}
+					<div class="glass-shine"></div>
+				</a>
+			{/if}
 		</div>
 
 		<!-- Mobile Menu Button -->
@@ -142,6 +155,18 @@
 					<MessageSquare size="20" />
 					<span>Reflections</span>
 				</a>
+				{#if userRole === 'coordinator' || userRole === 'admin'}
+					<a
+						href="/courses/{courseSlug}/chat"
+						class="mobile-link"
+						class:mobile-active={currentPage() === 'chat'}
+						onclick={closeMobileMenu}
+					>
+						<MessageCircle size="20" />
+						<span>Chat</span>
+						{#if hasUnreadChat}<span class="unread-dot"></span>{/if}
+					</a>
+				{/if}
 			</div>
 
 			<!-- Mobile User Section -->
@@ -305,5 +330,14 @@
 
 	.mobile-logout-btn:hover {
 		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.unread-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--course-accent-light, #c59a6b);
+		box-shadow: 0 0 6px var(--course-accent-light, #c59a6b);
+		flex-shrink: 0;
 	}
 </style>

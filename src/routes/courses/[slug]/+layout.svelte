@@ -1,5 +1,7 @@
 <script>
 	import CourseNavigation from './CourseNavigation.svelte';
+	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 
 	// This layout applies course-specific theming from the database settings
 	let { data, children } = $props();
@@ -10,6 +12,55 @@
 	const courseSlug = $derived(data.courseSlug || '');
 	const userName = $derived(data.userName || 'User');
 	const userRole = $derived(data.userRole || 'student');
+
+	// Chat unread tracking
+	let hasUnreadChat = $state(data.hasUnreadChat || false);
+	const cohortId = $derived(data.cohortId);
+	const isOnChatPage = $derived($page.url.pathname.endsWith('/chat'));
+
+	// Reset unread when navigating to chat page
+	$effect(() => {
+		if (isOnChatPage) {
+			hasUnreadChat = false;
+		}
+	});
+
+	// Update from server data on navigation
+	$effect(() => {
+		if (data.hasUnreadChat !== undefined) {
+			hasUnreadChat = data.hasUnreadChat;
+		}
+	});
+
+	// Realtime subscription for unread dot
+	onMount(() => {
+		if (!data.supabase || !cohortId || (userRole !== 'coordinator' && userRole !== 'admin')) {
+			return;
+		}
+
+		const channel = data.supabase
+			.channel(`chat-unread:${cohortId}`)
+			.on(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'courses_chat_messages',
+					filter: `cohort_id=eq.${cohortId}`
+				},
+				(payload) => {
+					// If not on chat page and message is from someone else, show unread dot
+					if (!$page.url.pathname.endsWith('/chat') && payload.new.sender_id !== data.userId) {
+						hasUnreadChat = true;
+					}
+				}
+			)
+			.subscribe();
+
+		return () => {
+			data.supabase?.removeChannel(channel);
+		};
+	});
 
 	// Build CSS custom property string for inline styles
 	function buildThemeStyles(themeSettings) {
@@ -47,6 +98,7 @@
 		{userName}
 		{userRole}
 		courseBranding={branding}
+		{hasUnreadChat}
 	/>
 
 	{@render children()}

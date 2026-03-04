@@ -238,6 +238,8 @@ async function getUserCourseEnrollment(
 			role,
 			status,
 			cohort_id,
+			hub_id,
+			full_name,
 			courses_cohorts!inner (
 				id,
 				name,

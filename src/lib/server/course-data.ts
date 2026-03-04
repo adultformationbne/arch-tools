@@ -1467,12 +1467,22 @@ export const CourseMutations = {
 			};
 		}
 
-		return supabaseAdmin
+		const result = await supabaseAdmin
 			.from('courses_enrollments')
 			.update(updateData)
 			.eq('id', userId)
 			.select()
 			.single();
+
+		// Sync full_name to user_profiles so all systems stay consistent
+		if (updates.full_name && result.data?.user_profile_id) {
+			await supabaseAdmin
+				.from('user_profiles')
+				.update({ full_name: updates.full_name })
+				.eq('id', result.data.user_profile_id);
+		}
+
+		return result;
 	},
 
 	/**

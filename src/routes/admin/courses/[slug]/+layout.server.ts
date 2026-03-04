@@ -14,6 +14,7 @@ import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
 import { getCachedCourseData, setCachedCourseData } from '$lib/server/course-cache.js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export const load: LayoutServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
@@ -72,6 +73,30 @@ export const load: LayoutServerLoad = async (event) => {
 	const courseBranding = settings.branding || {};
 	const courseFeatures = settings.features || {};
 
+	// Check for unread chat messages in selected cohort
+	const selectedCohortId = event.url.searchParams.get('cohort');
+	let hasUnreadChat = false;
+	if (selectedCohortId) {
+		const { data: readStatus } = await supabaseAdmin
+			.from('courses_chat_read_status')
+			.select('last_read_at')
+			.eq('cohort_id', selectedCohortId)
+			.eq('user_id', user.id)
+			.maybeSingle();
+
+		const lastRead = readStatus?.last_read_at || '1970-01-01';
+
+		const { data: newerMessages } = await supabaseAdmin
+			.from('courses_chat_messages')
+			.select('id')
+			.eq('cohort_id', selectedCohortId)
+			.is('deleted_at', null)
+			.gt('created_at', lastRead)
+			.limit(1);
+
+		hasUnreadChat = (newerMessages?.length ?? 0) > 0;
+	}
+
 	return {
 		courseSlug,
 		enrollmentRole: enrollment?.role,
@@ -80,6 +105,8 @@ export const load: LayoutServerLoad = async (event) => {
 		cohorts,
 		hubs,
 		course,
+		userId: user.id,
+		hasUnreadChat,
 		courseInfo: {
 			id: course.id,
 			slug: courseSlug,

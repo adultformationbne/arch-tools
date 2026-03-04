@@ -15,6 +15,7 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Mail,
+	MessageCircle,
 	Menu,
 	X,
 	Link,
@@ -32,7 +33,8 @@ let {
 	enrollmentRole = null,
 	isCourseAdmin = false,
 	courseBranding = {},
-	courseFeatures = {}
+	courseFeatures = {},
+	hasUnreadChat = false
 } = $props();
 
 // Mobile menu state
@@ -150,6 +152,14 @@ const navItems = $derived([
 		icon: Calendar,
 		description: 'Track attendance',
 		visible: canManageAttendance
+	},
+	{
+		label: 'Chat',
+		href: withCohort(`/admin/courses/${courseSlug}/chat`),
+		icon: MessageCircle,
+		description: 'Cohort chat',
+		visible: canManageCourse,
+		hasUnread: hasUnreadChat
 	}
 ].filter((item) => item.visible));
 
@@ -270,7 +280,12 @@ const selectedCohortName = $derived(() => {
 						onclick={handleNavClick}
 						onmouseenter={() => handleMouseEnter(item.href)}
 					>
-						<item.icon size={18} class="nav-icon flex-shrink-0" />
+						<span class="nav-icon-wrap">
+							<item.icon size={18} class="nav-icon flex-shrink-0" />
+							{#if item.hasUnread}
+								<span class="unread-dot"></span>
+							{/if}
+						</span>
 						<div class="nav-text min-w-0">
 							<span class="nav-label">{item.label}</span>
 							<span class="nav-description">{item.description}</span>
@@ -483,6 +498,24 @@ const selectedCohortName = $derived(() => {
 
 	.nav-item.active :global(.nav-icon) {
 		color: var(--course-accent-darkest, #1a2320);
+	}
+
+	.nav-icon-wrap {
+		position: relative;
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.unread-dot {
+		position: absolute;
+		top: -3px;
+		right: -4px;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #ef4444;
+		box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
 	}
 
 	:global(.nav-icon) {
