@@ -1,10 +1,6 @@
 # Authentication & Authorization System
 
-> **📌 Single Source of Truth** - This is the authoritative documentation for the authentication system. All previous docs (v1, security audits, changelogs) have been removed.
-
-**Last Updated:** 2026-02-04
-**Status:** ✅ Production Ready
-**System Type:** Invite-Only with Email + OTP
+Last Updated: 2026-02-04
 
 ---
 
@@ -96,7 +92,7 @@ User enters OTP → Redirect to dashboard
 2. System creates auth accounts for all new emails
 3. System creates user_profiles with `courses.participant` module
 4. System creates course enrollments linked to user_profile_id
-5. Admin informs students: "Login at [site]/login with your email"
+5. Admin informs participants: "Login at [site]/login with your email"
 
 **Both methods create users the same way** - auth.users account immediately, no emails, users login via `/login`.
 
@@ -410,7 +406,7 @@ The `{{loginLink}}` variable automatically:
 5. **No automatic email sent** - Admins communicate directly
 6. Admin tells user: "Visit [site]/login and sign in with your email address"
 
-### Enrolling Course Students (Bulk CSV Import)
+### Enrolling Course Participants (Bulk CSV Import)
 
 1. Navigate to course cohort management
 2. Click "Add Participants"
@@ -421,7 +417,7 @@ The `{{loginLink}}` variable automatically:
    - Assigns `courses.participant` module
    - Creates enrollment record
 5. **No automatic email sent** - Admins communicate directly
-6. Admin tells students: "Login at [site]/login with your email"
+6. Admin tells participants: "Login at [site]/login with your email"
 
 **Key Point:** Both methods create real auth accounts immediately. Users can login right away at `/login`.
 
@@ -434,7 +430,7 @@ The `{{loginLink}}` variable automatically:
 
 **Why it's acceptable:** This is an invite-only B2B system where:
 - Only pre-invited emails exist
-- Target users are known staff/members/students
+- Target users are known staff/members/participants
 - Enumeration doesn't grant access (still need OTP)
 
 ### 2. In-Memory Rate Limiting
@@ -577,7 +573,6 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 
 ### Security
 - [ ] Redis-based rate limiting for horizontal scaling
-- [x] ~~Per-email OTP send rate limit~~ → Implemented via OTP deduplication (v4)
 - [ ] Add CAPTCHA on login after N failed attempts
 - [ ] IP blocklist for known bad actors
 - [ ] Periodic cleanup of `auth_otp_tracker` table (old entries)
@@ -594,65 +589,3 @@ Dedicated "Forgot Password" flow with email-based reset link (similar to standar
 - [ ] Document admin password reset endpoint
 - [ ] Consider moving rate limiting to Postgres for persistence
 
----
-
-## Migration History
-
-### v4 - OTP Deduplication (2026-02-04)
-1. ✅ Added `auth_otp_tracker` table to track OTP sends (email, sent_at, expires_at)
-2. ✅ Created `/api/auth/send-otp` endpoint with deduplication logic
-3. ✅ Updated login page to use new endpoint instead of direct `signInWithOtp` calls
-4. ✅ Added rate limiting: 5 requests/min per IP
-5. ✅ Added force resend cooldown: 30 seconds minimum between explicit resends
-6. ✅ OTP validity window: 1 hour (matches Supabase config)
-
-**Root cause solved:** Users clicking email login links multiple times would generate new OTP codes each time, invalidating their previous code. When they entered the first code they received, it was already expired/invalid.
-
-**Solution:** Track OTP sends server-side. If a valid OTP exists (within 1 hour), return "already sent" without generating a new code. The previous code remains valid.
-
-### v3 - Session Management Fixes (2026-01-30)
-1. ✅ Fixed `refresh_token_not_found` errors blocking all logins
-2. ✅ Removed premature `signOut()` calls in `/login/callback` and `/login/confirm`
-3. ✅ Added try-catch error handling in `hooks.server.ts` for auth errors
-4. ✅ Made logout handlers robust (handle already-invalid sessions)
-5. ✅ Improved `check-email` to use direct user lookup via `user_profiles` → `getUserById`
-6. ✅ Added automatic cookie clearing on stale session detection
-
-**Root cause:** Callback handlers called `signOut()` before token verification. If verification failed (expired link), the user's existing session was revoked, causing `refresh_token_not_found` on all subsequent requests.
-
-### v2 - Unified Authentication (2025-11-17)
-1. ✅ Unified course enrollments with platform user auth
-2. ✅ Course bulk imports now create auth accounts immediately
-3. ✅ Removed `invitation_token` from courses_enrollments
-4. ✅ Removed all email-sending on user creation
-5. ✅ Removed `/signup` route
-6. ✅ Deleted `sendBulkInvitations()` and invitation email functions
-7. ✅ Everything through `/login` - single unified flow
-
-### v1 Migration (2025-11-13)
-1. ✅ Removed invitation code requirement
-2. ✅ Simplified to: Email → OTP → Password (for new users)
-3. ✅ Fixed RLS security bug (removed public SELECT on pending_invitations)
-4. ✅ Fixed auto-OTP on failed password (now explicit button)
-5. ✅ Dropped `platform_invitation_code` table
-6. ✅ Dropped `pending_invitations` table
-7. ✅ Removed all invitation code UI and API endpoints
-8. ✅ Removed `/login/invite` route
-
----
-
-## Summary
-
-**One System. One Flow. One Source of Truth.**
-
-- Platform users (via `/users`) → auth account created → admin tells user → `/login`
-- Course students (via CSV import) → auth account created → admin tells user → `/login`
-- No invitation tokens
-- No automatic emails
-- Everything goes through `/login`
-
-Simple. Consistent. Production-ready. 🎯
-
----
-
-**End of Documentation**

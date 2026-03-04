@@ -1,5 +1,7 @@
 # DGR (Daily Gospel Reflections) System
 
+Last Updated: 2026-03-04
+
 ## Overview
 
 The DGR system manages daily gospel reflections written by contributors. Contributors are assigned dates either through automatic patterns or manual assignment, then submit reflections which are reviewed and published.

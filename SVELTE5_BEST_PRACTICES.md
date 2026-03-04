@@ -1,5 +1,7 @@
 # Svelte 5 Best Practices - Lessons Learned
 
+Last Updated: 2026-03-04
+
 This guide documents best practices for Svelte 5 based on real-world refactoring experience.
 
 ---
@@ -334,7 +336,3 @@ $effect(() => {
 - [$effect Documentation](https://svelte.dev/docs/svelte/$effect)
 - [$derived Documentation](https://svelte.dev/docs/svelte/$derived)
 
----
-
-**Last Updated:** March 2026
-**Svelte Version:** 5.x

@@ -104,7 +104,7 @@ Use `$state()`, `$derived()`, `$props()`, `$effect()`. **NOT** `export let`, `on
 
 ## Database
 
-**Schema changes:** Follow **AGENTS.MD** workflow
+**Schema changes:** Follow **AGENTS.md** workflow
 
 ### Table Query Efficiency
 
@@ -146,7 +146,7 @@ npm run validate-api  # Check API endpoint/frontend parameter mismatches
 
 ## Other Docs
 
-- **AGENTS.MD** - Database migration workflow
+- **AGENTS.md** - Database migration workflow
 - **AUTHENTICATION.md** - Detailed auth docs
 - **COURSES.md** - Course architecture
 - **DGR.md** - Daily Gospel Reflections system

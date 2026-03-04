@@ -1,6 +1,6 @@
 # Arch Tools
 
-Platform for Archdiocesan ministries: course management (ACCF), Daily Gospel Reflections (DGR), liturgical calendar, and book editing tools.
+Platform for Archdiocesan ministries: course management (ACCF), Daily Gospel Reflections (DGR), and liturgical calendar.
 
 ## Stack
 
@@ -26,7 +26,7 @@ npm run dev
 - `LITURGICAL_SYSTEM.md` - Liturgical calendar and readings
 - `UNIFIED_EMAIL_SYSTEM.md` - Email template system
 - `SVELTE5_BEST_PRACTICES.md` - Svelte 5 patterns
-- `AGENTS.MD` - Database migration workflow
+- `AGENTS.md` - Database migration workflow
 
 ## Commands
 

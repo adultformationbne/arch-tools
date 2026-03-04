@@ -1,5 +1,7 @@
 # Unified Email Template System
 
+Last Updated: 2026-03-04
+
 This document describes the platform-wide email template system that provides consistent email management across courses, DGR, and platform contexts.
 
 ## Overview
@@ -66,11 +68,11 @@ Currently managed via database. Future admin UI planned.
 ### Course Variables
 | Variable | Description |
 |----------|-------------|
-| `{{firstName}}` | Student first name |
-| `{{lastName}}` | Student last name |
-| `{{fullName}}` | Student full name |
-| `{{email}}` | Student email address |
-| `{{hubName}}` | Student hub assignment |
+| `{{firstName}}` | Participant first name |
+| `{{lastName}}` | Participant last name |
+| `{{fullName}}` | Participant full name |
+| `{{email}}` | Participant email address |
+| `{{hubName}}` | Participant hub assignment |
 | `{{courseName}}` | Course name |
 | `{{courseSlug}}` | Course URL identifier |
 | `{{cohortName}}` | Cohort name |
@@ -525,56 +527,10 @@ All existing data was migrated. The old tables no longer exist.
 
 ---
 
-## Recent Updates (Jan 2026)
+## Design Decisions
 
-### Resend Quota Safety ✅
-- **Reactive detection**: `sendBulkEmails` detects Resend quota/rate limit errors automatically
-- **Error types**: Errors include `type` field (`QUOTA_EXCEEDED`, `RATE_LIMIT`, `SEND_ERROR`)
-- **Early abort**: Stops trying remaining batches if quota exceeded mid-send
-- **Warning propagation**: All bulk email endpoints return `quotaWarning` field
-- **Plan-agnostic**: Change your plan on resend.com anytime - no code changes needed here
-- **Usage tracking**: `getDailyEmailCount()` available for monitoring
+### Button Variables vs Editor Buttons
 
----
-
-## Updates (Dec 2025)
-
-### Unified Test Email System ✅
-- **TestEmailPanel component**: Unified modal for all contexts (courses, DGR, platform)
-- **Native MJML preview**: Server compiles template, displays in iframe (pixel-perfect)
-- **Real recipient selection**: Dropdown to preview with actual user data
-- **Unified endpoint**: `/api/emails/test` with `preview_only` mode for preview without sending
-- **Deleted old endpoints**: Removed context-specific test endpoints
-
-### Context-Aware Button Colors ✅
-- **TipTapEmailEditor**: Added `accentColor` prop using CSS custom property
-- **Courses**: Dark green (`#334642`)
-- **DGR**: Teal (`#009199`)
-- Buttons now render with correct color in editor
-
-### DGR Email Logs ✅
-- Added "Email Logs" view at `/dgr/emails?view=logs`
-- Queries `platform_email_log` where `metadata->>'context' = 'dgr'`
-- Shows date, recipient, subject, template, status
-
-### Bulk Send Confirmation ✅
-- **SendEmailView**: Added ConfirmationModal before sending
-- **EmailSenderModal**: Same confirmation pattern
-- Shows recipient count, subject preview, first 3 names
-
-### Button Parsing Fix ✅
-- Fixed `parseHTML` in TipTapEmailEditor to extract `data-text` and `data-href` attributes
-- Buttons now load correctly when editing saved templates
-
-### Other Fixes
-- **Sticky toolbar**: Fixed for both courses and DGR
-- **Platform logo in DGR**: Uses logo from platform settings
-- **Variable picker dropdown**: `{ }` button with floating dropdown
-- **Deleted dead code**: Removed unused EmailComposer, EmailTemplateCard, EmailTemplateEditorModal
-
-### Design Decisions
-
-#### Button Variables vs Editor Buttons
 Two ways to add buttons:
 
 1. **Variable-based** (`{{write_url_button}}`):
@@ -592,23 +548,13 @@ Two ways to add buttons:
 
 ---
 
-## TODO / Future Improvements
+## Future Improvements
 
-### Completed ✅
-- [x] Test with sample data
-- [x] Test with real user data (recipient dropdown)
-- [x] Native MJML preview in test panel
-- [x] Confirmation before bulk sending
-- [x] DGR email logs
-- [x] Resend quota safety checks (pre-flight check, warnings, early abort)
-
-### Still TODO
-
-#### Platform
+### Platform
 - [ ] Admin UI for platform email templates
 - [ ] Use cases TBD (password reset, announcements?)
 
-#### Nice to Have
+### Nice to Have
 - [ ] Delivery tracking via Resend webhooks (foundation exists: `resend_id` stored)
 - [ ] Resend failed emails
 - [ ] Group variables by category in picker

@@ -1,17 +1,16 @@
 # Courses Platform Documentation
 
-**Last Updated:** January 14, 2026
-**Status:** Production Implementation
+Last Updated: 2026-03-04
 
 ---
 
-## 🎯 Overview
+## Overview
 
 The ArchMin Courses platform is a flexible, multi-course system supporting programs like ACCF (Archdiocesan Centre for Catholic Formation) and future programs. Each course has its own branding, modules, cohorts, and enrollments.
 
 ---
 
-## 📊 Content Hierarchy
+## Content Hierarchy
 
 The platform follows this strict hierarchy:
 
@@ -27,17 +26,17 @@ Course (e.g., "ACCF")
 - **Course** = Top-level program (has theme, branding, contains multiple modules)
 - **Module** = Curriculum unit within a course (e.g., "Foundations of Faith")
 - **Session** = Individual class/week within a module (contains materials + reflection)
-- **Cohort** = A group of students going through a module together (has dates, enrollment)
+- **Cohort** = A group of participants going through a module together (has dates, enrollment)
 
 **Key Concepts:**
 - Modules belong to a course
 - Sessions belong to a module
 - Materials and reflections belong to sessions
-- Cohorts are instances of a module with enrolled students
+- Cohorts are instances of a module with enrolled participants
 
 ---
 
-## 🗄️ Current Database Schema
+## Current Database Schema
 
 ### Core Tables
 
@@ -119,7 +118,7 @@ CREATE TABLE courses_modules (
 ```
 
 #### `courses_cohorts`
-Cohorts are specific instances/offerings of a module with students.
+Cohorts are specific instances/offerings of a module with participants.
 
 ```sql
 CREATE TABLE courses_cohorts (
@@ -240,7 +239,7 @@ CREATE TABLE courses_reflection_questions (
 **Note:** Not every session has a reflection question. The system tracks which sessions have questions via `CourseQueries.getSessionsWithReflectionQuestions()`.
 
 #### `courses_reflection_responses`
-Student responses to reflection prompts.
+Participant responses to reflection prompts.
 
 ```sql
 CREATE TABLE courses_reflection_responses (
@@ -267,7 +266,7 @@ CREATE TABLE courses_reflection_responses (
 - `submitted` - Response submitted, awaiting review
 - `under_review` - Admin is currently reviewing
 - `passed` - Marked as passing
-- `needs_revision` - Requires student revision
+- `needs_revision` - Requires participant revision
 
 ### Supporting Tables
 
@@ -390,7 +389,7 @@ CREATE TABLE courses_enrollment_imports (
 
 ---
 
-## 📚 Session Structure Explained
+## Session Structure Explained
 
 Each session within a module contains two main components:
 
@@ -402,7 +401,7 @@ Stored in `courses_materials` table with reference to `session_id`:
   - YouTube videos only
   - Auto-fetches video title from YouTube oEmbed API
   - Shows live preview in edit mode
-  - Embeds player for students
+  - Embeds player for participants
 
 - **Link** (`type: 'link'`)
   - Any external URL (documents, websites, files, images)
@@ -425,7 +424,7 @@ Stored in `courses_materials` table with reference to `session_id`:
 
 Materials can be marked as `coordinator_only: true` to restrict visibility:
 
-- **Students** - Cannot see coordinator-only materials
+- **Participants** - Cannot see coordinator-only materials
 - **Hub Coordinators** - Can see all materials including coordinator-only
 - **Admins** - Can see all materials
 
@@ -460,9 +459,9 @@ const filterMaterials = (materials) =>
 ### Reflection Question (One per session)
 Stored in `courses_reflection_questions` table:
 - One text question per session
-- Students submit responses via `courses_reflection_responses`
+- Participants submit responses via `courses_reflection_responses`
 - Admins review and mark as `passed` or `needs_revision`
-- Can include feedback for students
+- Can include feedback for participants
 
 ### Session Metadata (Optional)
 Stored in `courses_sessions` table:
@@ -484,7 +483,7 @@ Session 1: Faith and Reason
 
 ---
 
-## 🎨 Course Branding System
+## Course Branding System
 
 ### Theme Application
 
@@ -552,7 +551,7 @@ Courses can be created/edited at `/courses` (internal admin route) with:
 
 ---
 
-## ⚙️ Course Settings System
+## Course Settings System
 
 Courses have configurable settings that control coordinator access, session progression, and feature availability. Settings are stored in the `courses.settings` JSONB column.
 
@@ -562,7 +561,7 @@ Manage course settings at `/admin/courses/[slug]/settings`:
 - Basic Information (name, description)
 - Branding (logo, theme colors)
 - **Coordinator Access** - How far ahead coordinators can see
-- **Session Progression** - How students advance through sessions
+- **Session Progression** - How participants advance through sessions
 - **Feature Toggles** - Enable/disable course features
 
 ### Settings Schema
@@ -600,12 +599,12 @@ interface CourseSettings {
 
 ### Coordinator Access Settings
 
-Controls how many sessions ahead coordinators can see compared to students:
+Controls how many sessions ahead coordinators can see compared to participants:
 
 | Setting | Behavior |
 |---------|----------|
 | `'all'` (default) | Coordinators see ALL sessions |
-| `2` | Coordinators see 2 sessions ahead of students |
+| `2` | Coordinators see 2 sessions ahead of participants |
 | `1` | Coordinators see 1 session ahead of students |
 
 **Implementation:** Applied in `/courses/[slug]/materials/+page.server.ts`
@@ -628,17 +627,17 @@ if (isAdmin) {
 
 ### Session Progression Settings
 
-Controls how students advance through sessions:
+Controls how participants advance through sessions:
 
 | Mode | Description |
 |------|-------------|
-| `manual` (default) | Admins manually advance students |
+| `manual` (default) | Admins manually advance participants |
 | `auto_time` | Auto-advance after X days (configurable) |
 | `require_completion` | Require reflection/attendance before advancing |
 
 **Completion Requirements (for `require_completion` mode):**
-- `reflectionSubmitted` - Student must submit reflection
-- `attendanceMarked` - Student must have attendance marked
+- `reflectionSubmitted` - Participant must submit reflection
+- `attendanceMarked` - Participant must have attendance marked
 
 ### Feature Toggles
 
@@ -688,7 +687,7 @@ return {
 
 ---
 
-## 🗂️ Route Structure
+## Route Structure
 
 ### Platform-Level Routes (Internal Admin)
 ```
@@ -698,14 +697,14 @@ return {
                                          # - Managed by platform admins only
 ```
 
-### Participant Routes (Student-Facing)
+### Participant Routes
 ```
 /courses/[slug]/                          # Course context (theme applied)
-├── (dashboard)                           # Student dashboard (main page)
+├── (dashboard)                           # Participant dashboard (main page)
 ├── materials                             # Session materials viewer
 ├── reflections                           # Reflection submission & status
 ├── write/[questionId]                    # Reflection writing page
-└── profile                               # Student profile
+└── profile                               # Participant profile
 ```
 
 ### Admin Routes (Course Management)
@@ -715,7 +714,7 @@ return {
 ├── modules/                              # Module CRUD
 ├── sessions/                             # Session editor (materials + reflections)
 │   └── ?module={id}                      # Pre-select module
-├── reflections/                          # Review & mark student submissions
+├── reflections/                          # Review & mark participant submissions
 ├── participants/                         # Enrollment management
 ├── attendance/                           # Attendance tracking
 ├── hubs/                                 # Hub management
@@ -742,7 +741,7 @@ return {
 
 ---
 
-## 🔐 Authentication & Authorization
+## Authentication & Authorization
 
 ### Platform-Level Modules (`user_profiles.modules`)
 
@@ -783,7 +782,7 @@ Users with the `courses.manager` module must be assigned to specific courses:
 
 | Role | Description |
 |------|-------------|
-| `student` | Regular course participant |
+| `student` | Regular course participant (DB value) |
 | `coordinator` | Hub coordinator for this course |
 
 **Critical:** Course managers and admins are NOT enrolled in cohorts. They manage courses via platform modules, not enrollments.
@@ -835,7 +834,7 @@ await requireModule(event, 'users');  // Throws error(403)
 
 ---
 
-## 📝 Course Management Workflow
+## Course Management Workflow
 
 ### 1. Create a Course
 
@@ -880,22 +879,22 @@ Navigate to `/admin/courses/[slug]`:
 4. Name the cohort (e.g., "Feb 2025 - Foundations")
 5. Click **"Create"**
 
-### 5. Enroll Students
+### 5. Enroll Participants
 
 From cohort dashboard:
 1. Click **"Add Participants"** button
 2. Options:
    - Upload CSV (bulk import)
-   - Add individual student
-3. Students receive invitation emails
+   - Add individual participant
+3. Participants receive invitation emails
 4. Track enrollment status (pending → invited → active)
 
 ---
 
-## 🎓 Student Experience
+## Participant Experience
 
 ### Course Access
-1. Student logs in
+1. Participant logs in
 2. If enrolled in one course → Auto-redirected to `/courses/[slug]/dashboard`
 3. If enrolled in multiple courses → Shown course selector at `/my-courses`
 
@@ -931,15 +930,15 @@ From cohort dashboard:
 
 ---
 
-## 👨‍💼 Admin Experience
+## Admin Experience
 
 ### Cohort Management Dashboard (`/admin/courses/[slug]`)
 - **Cohort pills** - Quick switch between cohorts (shows up to 4)
 - **Cohort details** - Module, dates, session progress, participant count
-- **Set current session** - Advance all students in cohort
+- **Set current session** - Advance all participants in cohort
 - **Recent activity** - Last 7 days of submissions/activity
 - **Participants list** - Full enrollment roster with progression tracking
-- **Bulk operations** - Advance students, manage attendance
+- **Bulk operations** - Advance participants, manage attendance
 
 ### Sessions Editor (`/admin/courses/[slug]/sessions`)
 - **Module selector dropdown** - Switch between modules
@@ -960,17 +959,17 @@ From cohort dashboard:
 - Queue of ungraded reflections
 - Mark passing/not passing
 - Provide written feedback
-- Filter by cohort, session, student
+- Filter by cohort, session, participant
 
 ---
 
-## 📊 Cohort Status Model
+## Cohort Status Model
 
 ### Session-Based Status
 
 Cohort status is determined by **session progression**, not dates:
 
-| `current_session` | `status` | Meaning | Student Access |
+| `current_session` | `status` | Meaning | Participant Access |
 |-------------------|----------|---------|----------------|
 | `0` | `'scheduled'` | Cohort created but not started | Can see start date, no materials |
 | `1-8` | `'active'` | Cohort in progress | Can access current session materials |
@@ -1000,7 +999,7 @@ if (current_session === 0 && status !== 'completed') {
 
 ---
 
-## 🔄 Course Lifecycle
+## Course Lifecycle
 
 ```
 1. Course Created
@@ -1011,7 +1010,7 @@ if (current_session === 0 && status !== 'completed') {
    ↓
 4. Cohort Created (status: upcoming, current_session: 0)
    ↓
-5. Students Enrolled (pending → invited → active)
+5. Participants Enrolled (pending → invited → active)
    ↓
 6. Admin Starts Cohort (status: active, current_session: 1)
    ↓
@@ -1022,7 +1021,7 @@ if (current_session === 0 && status !== 'completed') {
 
 ---
 
-## 🎨 Design System
+## Design System
 
 ### Course Cards (`/courses`)
 - Gradient accent bar (dark → light)
@@ -1041,7 +1040,7 @@ Components automatically use course theme:
 
 ---
 
-## 🔧 Technical Implementation
+## Technical Implementation
 
 ### Key Files
 
@@ -1079,7 +1078,7 @@ Components automatically use course theme:
 
 ---
 
-## 📦 Data Repository Pattern
+## Data Repository Pattern
 
 **As of January 2025**, all course data access goes through a centralized repository pattern in `/src/lib/server/course-data.ts`. This provides:
 
@@ -1330,7 +1329,7 @@ expect(result.enrollment).toBeDefined();
 
 ### Examples in Production
 
-**Student Dashboard:** `/src/routes/courses/[slug]/+page.server.ts`
+**Participant Dashboard:** `/src/routes/courses/[slug]/+page.server.ts`
 - Uses `CourseAggregates.getStudentDashboard()`
 - Reduced from 470 lines to 230 lines
 - Parallel query execution
@@ -1351,7 +1350,7 @@ The repository makes these easy to add:
 
 ---
 
-## 📧 Email Template System
+## Email Template System
 
 The platform includes a comprehensive email system for course communications with course-branded templates, variable substitution, and logging.
 
@@ -1379,9 +1378,9 @@ Email Flow:
 
 Templates support `{{variable}}` syntax. Available variables:
 
-**Student Variables:**
-- `{{firstName}}`, `{{lastName}}`, `{{fullName}}` - Student name
-- `{{email}}` - Student email address
+**Participant Variables:**
+- `{{firstName}}`, `{{lastName}}`, `{{fullName}}` - Participant name
+- `{{email}}` - Participant email address
 
 **Course Variables:**
 - `{{courseName}}` - Full course name
@@ -1396,13 +1395,13 @@ Templates support `{{variable}}` syntax. Available variables:
 
 **Link Variables:**
 - `{{loginLink}}` - Smart login link (pre-fills email, auto-sends OTP for new users)
-- `{{dashboardLink}}` - Student dashboard
+- `{{dashboardLink}}` - Participant dashboard
 - `{{materialsLink}}` - Materials page
 - `{{reflectionLink}}` - Reflections page
 
 **System Variables:**
 - `{{supportEmail}}` - Support email address
-- `{{hubName}}` - Student's hub name
+- `{{hubName}}` - Participant's hub name
 
 ### Email Service Functions
 
@@ -1490,18 +1489,18 @@ The email HTML is generated via MJML for cross-client compatibility (including O
 
 ---
 
-## 📊 Reflection Status System
+## Reflection Status System
 
-The platform uses a centralized reflection status system to ensure consistent calculations across all views (admin, student dashboard, hub coordinator).
+The platform uses a centralized reflection status system to ensure consistent calculations across all views (admin, participant dashboard, hub coordinator).
 
 ### Key Principle: Sessions with Questions
 
-**Not every session has a reflection question.** The system only counts sessions that actually have reflection questions when calculating a student's reflection status.
+**Not every session has a reflection question.** The system only counts sessions that actually have reflection questions when calculating a participant's reflection status.
 
 **Example:**
 - Module has sessions 1-9
 - Only sessions 1 and 2 have reflection questions
-- Student at session 5 should only have 2 expected reflections (not 5)
+- Participant at session 5 should only have 2 expected reflections (not 5)
 
 ### Architecture
 
@@ -1575,7 +1574,7 @@ const status = getUserReflectionStatus(
 1. **Always fetch `sessionsWithQuestions`** when calculating status for admin views
 2. **Pass it to `getUserReflectionStatus()`** - don't assume all sessions have questions
 3. **Hub coordinator view** checks `questionsBySession[currentSession]` server-side to determine if reflection status should be shown
-4. **Student reflections page** already handles this correctly by looping through `questionsBySession`
+4. **Participant reflections page** already handles this correctly by looping through `questionsBySession`
 
 ### Example: Admin Page Loading
 
@@ -1602,7 +1601,7 @@ participants = enrollments.map(user => {
 
 ### Hub Coordinator Reflection Status
 
-Hub coordinators see reflection status for students in their hub. This is calculated server-side:
+Hub coordinators see reflection status for participants in their hub. This is calculated server-side:
 
 ```typescript
 // In /courses/[slug]/+page.server.ts
@@ -1620,32 +1619,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 
 ---
 
-## 🚀 Future Enhancements
-
-### Multi-Course User Experience
-- Course switcher in header for users enrolled in multiple courses
-- Unified transcript showing progress across all courses
-- Cross-course analytics for platform admins
-
-### Advanced Materials
-- Shared materials library
-- Material versioning
-- Interactive content types (quizzes, exercises)
-
-### Enhanced Cohort Management
-- Automated session advancement (date-based)
-- Cohort templates
-- Sub-cohorts/groups
-
-### Reporting
-- Course completion certificates
-- Progress reports
-- Attendance analytics
-- Reflection quality metrics
-
----
-
-## 📊 Current Production Courses
+## Current Production Courses
 
 ### ACCF (Archdiocesan Centre for Catholic Formation)
 - **Slug:** `accf`
@@ -1657,7 +1631,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 
 ---
 
-## ❓ Common Tasks
+## Common Tasks
 
 ### How to change a course's theme?
 1. Go to `/courses`
@@ -1675,12 +1649,12 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 2. Select cohort (should be at `current_session = 0` with status `'scheduled'`)
 3. Click "Advance to Session 1" button
 4. Cohort status automatically becomes `'active'`
-5. Students can now access Session 1 materials
+5. Participants can now access Session 1 materials
 
-### How to advance students to the next session?
+### How to advance participants to the next session?
 1. Go to `/admin/courses/[slug]`
 2. Click "Advance to Session [X]" button
-3. All students in cohort advance together
+3. All participants in cohort advance together
 4. Cohort remains `'active'` until manually marked complete
 
 ### How to give someone course management access?
@@ -1697,14 +1671,14 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 2. Grant the user `courses.admin` module
 3. They can now manage ALL courses (no assignment or enrollment needed)
 
-**Important:** Course managers and admins should NOT be enrolled in cohorts. Cohort enrollments are for participants only (students and hub coordinators).
+**Important:** Course managers and admins should NOT be enrolled in cohorts. Cohort enrollments are for participants and hub coordinators only.
 
 ### How to mark a cohort as complete?
 1. Go to `/admin/courses/[slug]`
 2. Select the cohort
 3. Click "Mark Complete" button
 4. Status changes to `'completed'`
-5. Students still have access but cohort is archived
+5. Participants still have access but cohort is archived
 
 ### How to configure course settings (coordinator access, features)?
 1. Go to `/admin/courses/[slug]/settings`
@@ -1722,7 +1696,7 @@ The `HubCoordinatorBar.svelte` handles `null` status by showing "N/A".
 
 ---
 
-## 🎥 Material Editor Features
+## Material Editor Features
 
 ### YouTube Video Integration
 When adding a YouTube video material:
@@ -1770,4 +1744,3 @@ Upload files directly to Supabase Storage:
 
 ---
 
-*Last updated: November 26, 2025*

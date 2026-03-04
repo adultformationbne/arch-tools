@@ -1,23 +1,8 @@
 # Liturgical System - Complete Reference
 
-> **Last Updated:** January 2026
-> **Coverage:** 2025-2030 (730 days currently mapped)
+Last Updated: 2026-03-04
 
 This document covers the complete liturgical calendar, lectionary readings, and DGR (Daily Gospel Reflection) integration.
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Liturgical Concepts](#liturgical-concepts)
-3. [Database Schema](#database-schema)
-4. [Mapping Algorithm](#mapping-algorithm)
-5. [Scripts & Workflow](#scripts--workflow)
-6. [CLI Reference](#cli-reference)
-7. [DGR Integration](#dgr-integration)
-8. [API Reference](#api-reference)
-9. [Ordo CSV Import](#ordo-csv-import)
 
 ---
 
