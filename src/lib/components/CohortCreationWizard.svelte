@@ -210,8 +210,7 @@
 						<div class="form-group">
 							<label for="cohort-start-date">Start Date*</label>
 							<input id="cohort-start-date" type="date" bind:value={cohortData.startDate} required />
-							<p class="help-text">End date will be automatically calculated (8 weeks from start)</p>
-						</div>
+													</div>
 
 						<!-- Pricing Section -->
 						<div class="pricing-section">

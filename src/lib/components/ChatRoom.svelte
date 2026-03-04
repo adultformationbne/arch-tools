@@ -89,7 +89,12 @@
 		} catch (err) {
 			// Remove optimistic message on failure
 			messages = messages.filter((m) => m.id !== optimisticId);
-			toastError('Failed to send message');
+			if (err?.status === 403 || err?.message?.includes('paused')) {
+				chatEnabled = false;
+				toastError('Chat has been paused');
+			} else {
+				toastError('Failed to send message');
+			}
 		} finally {
 			sending = false;
 		}
