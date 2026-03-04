@@ -3,6 +3,7 @@ import type { LayoutServerLoad } from './$types';
 import { CourseQueries } from '$lib/server/course-data.js';
 import { requireCourseAccess } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 
 export const load: LayoutServerLoad = async (event) => {
 	const { params } = event;
@@ -33,6 +34,8 @@ export const load: LayoutServerLoad = async (event) => {
 	const settings = course.settings || {};
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
+	const courseSettings = getCourseSettings(settings);
+	const chatEnabled = courseSettings.features?.chatEnabled !== false;
 
 	// Check for unread chat messages (coordinators and admins only)
 	let hasUnreadChat = false;
@@ -56,6 +59,14 @@ export const load: LayoutServerLoad = async (event) => {
 		hasUnreadChat = (newerMessages?.length ?? 0) > 0;
 	}
 
+	// Get hub name for coordinator chat sidebar
+	let hubName = null;
+	if (enrollmentRole === 'coordinator' && enrollment?.hub_id) {
+		const { data: hub } = await supabaseAdmin
+			.from('courses_hubs').select('name').eq('id', enrollment.hub_id).maybeSingle();
+		hubName = hub?.name || null;
+	}
+
 	return {
 		userRole: enrollmentRole || 'student', // Use actual role: 'student' or 'coordinator'
 		userName: userProfile?.full_name || userProfile?.display_name || 'User',
@@ -65,6 +76,8 @@ export const load: LayoutServerLoad = async (event) => {
 		cohortId,
 		userId: user.id,
 		hasUnreadChat,
+		hubName,
+		chatEnabled,
 		courseInfo: {
 			id: course.id,
 			slug: course.slug,

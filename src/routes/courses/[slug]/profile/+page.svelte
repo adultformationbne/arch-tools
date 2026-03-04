@@ -42,14 +42,12 @@
 
 	// Form data - synced from userProfile via $effect
 	let profileForm = $state({
-		name: '',
-		email: ''
+		name: ''
 	});
 
 	// Sync form data when userProfile updates
 	$effect(() => {
 		profileForm.name = userProfile.name;
-		profileForm.email = userProfile.email;
 	});
 
 	let passwordForm = $state({
@@ -61,25 +59,22 @@
 	// Form handlers
 	const startEditingProfile = () => {
 		profileForm.name = userProfile.name;
-		profileForm.email = userProfile.email;
 		isEditingProfile = true;
 	};
 
 	const cancelEditingProfile = () => {
 		isEditingProfile = false;
 		profileForm.name = userProfile.name;
-		profileForm.email = userProfile.email;
 	};
 
 	const saveProfile = async () => {
 		try {
-			const response = await apiPost(
+			await apiPost(
 				'/api/profile/update',
-				{ name: profileForm.name, email: profileForm.email },
+				{ name: profileForm.name },
 				{ successMessage: 'Profile updated successfully' }
 			);
 			userProfile.name = profileForm.name;
-			userProfile.email = profileForm.email;
 			isEditingProfile = false;
 		} catch (error) {
 			toastError('Failed to update profile', 'Error');
@@ -182,13 +177,11 @@
 					/>
 				</div>
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-email">Email Address</label>
-					<input
-						id="profile-email"
-						type="email"
-						bind:value={profileForm.email}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
-					/>
+					<label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+					<div class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50">
+						{userProfile.email}
+					</div>
+					<p class="mt-1.5 text-xs text-gray-500">Contact your course administrator to update your email address</p>
 					</div>
 					<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
 						<button

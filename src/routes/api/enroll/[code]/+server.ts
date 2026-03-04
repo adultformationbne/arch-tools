@@ -247,6 +247,7 @@ async function handleFreeEnrollment(params: {
 		await supabaseAdmin
 			.from('user_profiles')
 			.update({
+				full_name: fullName,
 				phone,
 				parish_id: parishId,
 				parish_other: parishOther,

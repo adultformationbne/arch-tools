@@ -2,6 +2,8 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireAuth, getUserProfile, hasAnyModule } from '$lib/server/auth';
+import { CourseQueries } from '$lib/server/course-data.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 
 const ACTIVE_ENROLLMENT_STATUSES = ['active', 'invited', 'accepted'];
 
@@ -100,6 +102,15 @@ export const POST: RequestHandler = async (event) => {
 	}
 	if (trimmed.length > 2000) {
 		throw error(400, 'Message must be 2000 characters or less');
+	}
+
+	// Check if chat is enabled for this course
+	const { data: course } = await CourseQueries.getCourse(event.params.slug);
+	if (course) {
+		const settings = getCourseSettings(course.settings);
+		if (settings.features?.chatEnabled === false) {
+			throw error(403, 'Chat is currently paused for this course');
+		}
 	}
 
 	const { profile, enrollment, isAdmin } = await verifyChatAccess(event, user.id, cohort_id);

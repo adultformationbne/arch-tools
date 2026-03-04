@@ -10,7 +10,9 @@
 		cohortId,
 		userMeta,
 		courseSlug,
-		supabase
+		supabase,
+		onClose = null,
+		chatEnabled = true
 	} = $props();
 
 	let messages = $state([...initialMessages]);
@@ -55,7 +57,7 @@
 	// Send message
 	async function handleSend() {
 		const content = messageInput.trim();
-		if (!content || sending) return;
+		if (!content || sending || !chatEnabled) return;
 
 		// Optimistic insert
 		const optimisticId = `optimistic-${Date.now()}`;
@@ -377,6 +379,15 @@
 			<h2 class="text-sm font-semibold text-white">Chat</h2>
 		</div>
 		<div class="flex items-center gap-2">
+			{#if onClose}
+				<button
+					class="close-btn flex items-center justify-center w-7 h-7 rounded-full"
+					onclick={onClose}
+					title="Close chat"
+				>
+					<X size="16" class="text-white/70" />
+				</button>
+			{/if}
 			{#if isAdmin && messages.length > 0}
 				<button
 					class="clear-btn"
@@ -489,55 +500,61 @@
 							{/if}
 						{/if}
 
-						{#if (canEditMessage(msg) || canDeleteMessage(msg)) && editingMessageId !== msg.id}
-							<div class="message-actions">
-								<button class="action-toggle" onclick={(e) => { e.stopPropagation(); toggleMenu(msg.id); }} title="Actions">
-									<MoreVertical size="12" />
-								</button>
-								{#if activeMenuId === msg.id}
-									<div class="action-menu">
-										{#if canEditMessage(msg)}
-											<button class="action-menu-item" onclick={(e) => { e.stopPropagation(); startEdit(msg); }}>
-												<Edit2 size="12" />
-												<span>Edit</span>
-											</button>
-										{/if}
-										{#if canDeleteMessage(msg)}
-											<button class="action-menu-item danger" onclick={(e) => { e.stopPropagation(); deleteMessage(msg.id); }}>
-												<Trash2 size="12" />
-												<span>Delete</span>
-											</button>
-										{/if}
-									</div>
-								{/if}
-							</div>
-						{/if}
 					</div>
+					{#if (canEditMessage(msg) || canDeleteMessage(msg)) && editingMessageId !== msg.id}
+						<div class="message-actions">
+							<button class="action-toggle" onclick={(e) => { e.stopPropagation(); toggleMenu(msg.id); }} title="Actions">
+								<MoreVertical size="12" />
+							</button>
+							{#if activeMenuId === msg.id}
+								<div class="action-menu">
+									{#if canEditMessage(msg)}
+										<button class="action-menu-item" onclick={(e) => { e.stopPropagation(); startEdit(msg); }}>
+											<Edit2 size="12" />
+											<span>Edit</span>
+										</button>
+									{/if}
+									{#if canDeleteMessage(msg)}
+										<button class="action-menu-item danger" onclick={(e) => { e.stopPropagation(); deleteMessage(msg.id); }}>
+											<Trash2 size="12" />
+											<span>Delete</span>
+										</button>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				</div>
 			{/each}
 		{/if}
 	</div>
 
 	<!-- Input -->
-	<div class="chat-input-area">
-		<textarea
-			class="chat-input"
-			placeholder="Type a message..."
-			bind:value={messageInput}
-			onkeydown={handleKeydown}
-			rows="1"
-			maxlength="2000"
-			disabled={sending}
-		></textarea>
-		<button
-			class="send-btn"
-			onclick={handleSend}
-			disabled={!messageInput.trim() || sending}
-			title="Send message"
-		>
-			<Send size="16" />
-		</button>
-	</div>
+	{#if chatEnabled}
+		<div class="chat-input-area">
+			<textarea
+				class="chat-input"
+				placeholder="Type a message..."
+				bind:value={messageInput}
+				onkeydown={handleKeydown}
+				rows="1"
+				maxlength="2000"
+				disabled={sending}
+			></textarea>
+			<button
+				class="send-btn"
+				onclick={handleSend}
+				disabled={!messageInput.trim() || sending}
+				title="Send message"
+			>
+				<Send size="16" />
+			</button>
+		</div>
+	{:else}
+		<div class="chat-paused">
+			<span>Chat is currently paused</span>
+		</div>
+	{/if}
 </div>
 
 <ConfirmationModal
@@ -553,8 +570,8 @@
 	.chat-container {
 		display: flex;
 		flex-direction: column;
-		height: calc(100vh - 60px);
-		max-height: calc(100vh - 60px);
+		height: 100%;
+		max-height: 100%;
 		background: rgba(0, 0, 0, 0.15);
 		border-radius: 12px;
 		overflow: hidden;
@@ -678,6 +695,8 @@
 
 	.message-row {
 		display: flex;
+		align-items: center;
+		gap: 4px;
 		justify-content: flex-start;
 		margin-bottom: 4px;
 	}
@@ -692,7 +711,6 @@
 		border-radius: 12px 12px 12px 4px;
 		background: rgba(255, 255, 255, 0.08);
 		border: 1px solid rgba(255, 255, 255, 0.06);
-		position: relative;
 	}
 
 	.own-bubble {
@@ -737,9 +755,8 @@
 
 	/* Action menu */
 	.message-actions {
-		position: absolute;
-		top: 4px;
-		right: 4px;
+		position: relative;
+		flex-shrink: 0;
 	}
 
 	.action-toggle {
@@ -757,7 +774,7 @@
 		opacity: 0;
 	}
 
-	.message-bubble:hover .action-toggle {
+	.message-row:hover .action-toggle {
 		opacity: 1;
 	}
 
@@ -768,8 +785,8 @@
 
 	.action-menu {
 		position: absolute;
-		bottom: 0;
-		right: calc(100% + 4px);
+		top: calc(100% + 4px);
+		right: 0;
 		background: rgba(30, 35, 34, 0.95);
 		border: 1px solid rgba(255, 255, 255, 0.15);
 		border-radius: 8px;
@@ -947,11 +964,33 @@
 		cursor: not-allowed;
 	}
 
+	.chat-paused {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 14px 16px;
+		background: rgba(0, 0, 0, 0.2);
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		flex-shrink: 0;
+		color: rgba(255, 255, 255, 0.4);
+		font-size: 0.8125rem;
+		font-style: italic;
+	}
+
+	.close-btn {
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.close-btn:hover {
+		background: rgba(255, 255, 255, 0.15);
+	}
+
 	@media (max-width: 768px) {
 		.chat-container {
 			border-radius: 0;
-			height: calc(100vh - 50px);
-			max-height: calc(100vh - 50px);
 			border: none;
 		}
 

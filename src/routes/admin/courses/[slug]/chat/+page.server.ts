@@ -7,10 +7,13 @@ export const load: PageServerLoad = async (event) => {
 	const cohortId = event.url.searchParams.get('cohort');
 	const userId = layoutData.course ? (await event.locals.safeGetSession()).user?.id : null;
 
+	const chatEnabled = layoutData.courseFeatures?.chatEnabled !== false;
+
 	if (!cohortId || !userId) {
 		return {
 			messages: [],
 			cohortId: null,
+			chatEnabled,
 			userMeta: null,
 			noCohortSelected: !cohortId
 		};
@@ -46,6 +49,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		messages: (messages ?? []).reverse(),
 		cohortId,
+		chatEnabled,
 		userMeta: {
 			userId,
 			userName: profile?.full_name || profile?.display_name || 'Admin',

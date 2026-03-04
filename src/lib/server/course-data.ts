@@ -1929,7 +1929,7 @@ export const CourseMutations = {
 		// 2. Batch check existing enrollments in this cohort (include full_name for conflict detection)
 		const { data: existingEnrollments } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('id, email, full_name')
+			.select('id, email, full_name, user_profile_id')
 			.eq('cohort_id', cohortId)
 			.in('email', csvEmails);
 		const existingEnrollmentsByEmail = new Map(
@@ -2054,6 +2054,14 @@ export const CourseMutations = {
 							.from('courses_enrollments')
 							.update({ full_name: row.full_name })
 							.eq('id', existingEnrollment.id);
+
+						// Sync to user_profiles — DB trigger propagates to all other enrollments
+						if (existingEnrollment.user_profile_id) {
+							await supabaseAdmin
+								.from('user_profiles')
+								.update({ full_name: row.full_name })
+								.eq('id', existingEnrollment.user_profile_id);
+						}
 					}
 					// Don't add to rowsToProcess - enrollment already exists
 					continue;

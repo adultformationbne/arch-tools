@@ -1,7 +1,9 @@
 <script>
 	import CourseNavigation from './CourseNavigation.svelte';
+	import ChatRoom from '$lib/components/ChatRoom.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { apiGet, apiPost } from '$lib/utils/api-handler.js';
 
 	// This layout applies course-specific theming from the database settings
 	let { data, children } = $props();
@@ -13,17 +15,64 @@
 	const userName = $derived(data.userName || 'User');
 	const userRole = $derived(data.userRole || 'student');
 
+	// Chat sidebar state
+	const canChat = $derived(userRole === 'coordinator' && data.cohortId);
+	let chatOpen = $state(false);
+	let chatMessages = $state(null);
+	let chatUserMeta = $state(null);
+	let chatLoading = $state(false);
+
 	// Chat unread tracking
 	let hasUnreadChat = $state(data.hasUnreadChat || false);
 	const cohortId = $derived(data.cohortId);
-	const isOnChatPage = $derived($page.url.pathname.endsWith('/chat'));
 
-	// Reset unread when navigating to chat page
+	// Reset unread when chat sidebar opens; force reload if there were unread messages
 	$effect(() => {
-		if (isOnChatPage) {
+		if (chatOpen) {
+			if (hasUnreadChat) {
+				chatMessages = null;
+			}
 			hasUnreadChat = false;
 		}
 	});
+
+	// Lazy-load chat messages on first open
+	$effect(() => {
+		if (chatOpen && chatMessages === null && !chatLoading) {
+			loadChat();
+		}
+	});
+
+	async function loadChat() {
+		chatLoading = true;
+		try {
+			const result = await apiGet(
+				`/api/courses/${courseSlug}/chat?cohort_id=${cohortId}&limit=50`,
+				{ showToast: false }
+			);
+			chatMessages = result?.data || [];
+			chatUserMeta = {
+				userId: data.userId,
+				userName: data.userName,
+				userRole: data.userRole,
+				hubName: data.hubName || null
+			};
+			// Mark as read
+			await apiPost(`/api/courses/${courseSlug}/chat/read-status`, {
+				cohort_id: cohortId
+			}, { showToast: false });
+		} catch {
+			chatMessages = [];
+			chatUserMeta = {
+				userId: data.userId,
+				userName: data.userName,
+				userRole: data.userRole,
+				hubName: data.hubName || null
+			};
+		} finally {
+			chatLoading = false;
+		}
+	}
 
 	// Update from server data on navigation
 	$effect(() => {
@@ -49,8 +98,8 @@
 					filter: `cohort_id=eq.${cohortId}`
 				},
 				(payload) => {
-					// If not on chat page and message is from someone else, show unread dot
-					if (!$page.url.pathname.endsWith('/chat') && payload.new.sender_id !== data.userId) {
+					// If chat sidebar is closed and message is from someone else, show unread dot
+					if (!chatOpen && payload.new.sender_id !== data.userId) {
 						hasUnreadChat = true;
 					}
 				}
@@ -99,9 +148,35 @@
 		{userRole}
 		courseBranding={branding}
 		{hasUnreadChat}
+		onChatToggle={canChat ? () => chatOpen = !chatOpen : null}
 	/>
 
-	{@render children()}
+	<div class="course-content-area">
+		<main class="course-main">
+			{@render children()}
+		</main>
+
+		<!-- Chat Sidebar -->
+		{#if canChat && chatOpen}
+			<aside class="chat-sidebar">
+				{#if chatUserMeta && chatMessages}
+					<ChatRoom
+						messages={chatMessages}
+						cohortId={data.cohortId}
+						userMeta={chatUserMeta}
+						courseSlug={data.courseSlug}
+						supabase={data.supabase}
+						chatEnabled={data.chatEnabled !== false}
+						onClose={() => chatOpen = false}
+					/>
+				{:else}
+					<div class="chat-loading">
+						<div class="chat-loading-spinner"></div>
+					</div>
+				{/if}
+			</aside>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -111,5 +186,75 @@
 		background-color: var(--course-accent-dark);
 		color: var(--course-text-on-dark);
 		font-family: var(--course-font-family);
+	}
+
+	.course-content-area {
+		display: flex;
+		height: calc(100vh - 44px);
+		overflow: hidden;
+	}
+
+	.course-main {
+		flex: 1;
+		min-width: 0;
+		overflow-y: auto;
+	}
+
+	.chat-sidebar {
+		width: 400px;
+		flex-shrink: 0;
+		border-left: 1px solid rgba(255, 255, 255, 0.1);
+		background-color: var(--course-accent-dark, #334642);
+		animation: slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.chat-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+	}
+
+	.chat-loading-spinner {
+		width: 28px;
+		height: 28px;
+		border: 3px solid rgba(255, 255, 255, 0.1);
+		border-top-color: var(--course-accent-light, #c59a6b);
+		border-radius: 50%;
+		animation: spin 0.7s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	@keyframes slideIn {
+		from {
+			margin-right: -400px;
+		}
+		to {
+			margin-right: 0;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.chat-sidebar {
+			position: fixed;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			width: 100vw;
+			z-index: 51;
+			border-left: none;
+		}
+
+		@keyframes slideIn {
+			from {
+				transform: translateX(100%);
+			}
+			to {
+				transform: translateX(0);
+			}
+		}
 	}
 </style>

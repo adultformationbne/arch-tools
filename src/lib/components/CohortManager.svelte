@@ -31,6 +31,8 @@
 	let openDropdown = $state(null); // Track which student's dropdown is open
 	let dropdownPosition = $state({ top: 0, right: 0 }); // Track dropdown position
 	let editingSession = $state(null); // Track which student's session is being edited
+	let recentlyAddedIds = $state(new Set()); // Track newly added participants
+	let previousStudentIds = $state(new Set()); // Track known student IDs to detect new ones
 
 	// Confirmation modal state
 	let showDeleteConfirm = $state(false);
@@ -53,6 +55,9 @@
 	// Reload when cohort changes
 	$effect(() => {
 		if (cohort?.id) {
+			// Reset tracking when switching cohorts so we don't falsely flag everyone as new
+			previousStudentIds = new Set();
+			recentlyAddedIds = new Set();
 			loadStudents();
 			loadHubs();
 		}
@@ -98,7 +103,7 @@
 				});
 			}
 
-			students = (result.success ? result.data : []).map(user => {
+			const mappedStudents = (result.success ? result.data : []).map(user => {
 				// Get reflection status for this student
 				const userReflections = reflectionsByUser.get(user.auth_user_id) || [];
 				const reflectionStatus = getUserReflectionStatus(userReflections, user.current_session, sessionsWithQuestions);
@@ -118,6 +123,31 @@
 					reflectionStatus: reflectionStatus
 				};
 			});
+
+			// Detect newly added participants
+			const currentIds = new Set(mappedStudents.map(s => s.id));
+			if (previousStudentIds.size > 0) {
+				const newIds = new Set();
+				for (const id of currentIds) {
+					if (!previousStudentIds.has(id)) newIds.add(id);
+				}
+				if (newIds.size > 0) {
+					recentlyAddedIds = newIds;
+					// Auto-clear "new" indicators after 15 seconds
+					setTimeout(() => { recentlyAddedIds = new Set(); }, 15000);
+				}
+			}
+			previousStudentIds = currentIds;
+
+			// Sort: recently added first, then original order
+			if (recentlyAddedIds.size > 0) {
+				students = [
+					...mappedStudents.filter(s => recentlyAddedIds.has(s.id)),
+					...mappedStudents.filter(s => !recentlyAddedIds.has(s.id))
+				];
+			} else {
+				students = mappedStudents;
+			}
 
 			selectedStudents = new Set();
 		} catch (err) {
@@ -500,7 +530,7 @@
 					</thead>
 					<tbody>
 						{#each students as student, i}
-							<tr>
+							<tr class:newly-added={recentlyAddedIds.has(student.id)}>
 								<td>
 									<input
 										type="checkbox"
@@ -515,7 +545,12 @@
 											<AlertTriangle size={16} class="warning-icon" />
 										{/if}
 										<div class="name-content">
-											<span class="student-name">{student.full_name}</span>
+											<span class="student-name">
+												{student.full_name}
+												{#if recentlyAddedIds.has(student.id)}
+													<span class="new-badge">New</span>
+												{/if}
+											</span>
 											{#if student.role === 'coordinator'}
 												<div class="hub-coordinator-badge">
 													<Home size={12} />
@@ -986,6 +1021,32 @@
 	.student-name {
 		font-weight: 500;
 		color: var(--course-accent-darkest);
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.new-badge {
+		display: inline-block;
+		padding: 1px 6px;
+		background: var(--course-accent-light);
+		color: var(--course-accent-darkest);
+		border-radius: 4px;
+		font-size: 0.625rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		line-height: 1.4;
+	}
+
+	tr.newly-added {
+		animation: highlightFade 15s ease-out forwards;
+	}
+
+	@keyframes highlightFade {
+		0% { background-color: #fef9c3; }
+		70% { background-color: #fefce8; }
+		100% { background-color: transparent; }
 	}
 
 	.warning-icon {

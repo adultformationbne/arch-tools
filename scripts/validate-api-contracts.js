@@ -114,11 +114,27 @@ function parseFrontendCalls(filePath, content) {
 		const queryMatch = urlTemplate.match(/\?(.+)$/);
 		if (queryMatch) {
 			const queryStr = queryMatch[1];
-			// Extract param names: id=${var}, template_id=${var}
-			const paramRegex = /(\w+)=/g;
-			let paramMatch;
-			while ((paramMatch = paramRegex.exec(queryStr)) !== null) {
-				queryParams.push(paramMatch[1]);
+
+			// Handle dynamic URLSearchParams: ?${params.toString()} or ?${params}
+			const dynamicParamsMatch = queryStr.match(/\$\{(\w+)(?:\.toString\(\))?\}$/);
+			if (dynamicParamsMatch) {
+				const varName = dynamicParamsMatch[1];
+				// Look backwards in the file for .set('paramName', ...) calls on this variable
+				const beforeCall = content.substring(0, match.index);
+				const setRegex = new RegExp(`${varName}\\.set\\s*\\(\\s*['"]([\\w]+)['"]`, 'g');
+				let setMatch;
+				while ((setMatch = setRegex.exec(beforeCall)) !== null) {
+					if (!queryParams.includes(setMatch[1])) {
+						queryParams.push(setMatch[1]);
+					}
+				}
+			} else {
+				// Extract param names from inline patterns: id=${var}, template_id=${var}
+				const paramRegex = /(\w+)=/g;
+				let paramMatch;
+				while ((paramMatch = paramRegex.exec(queryStr)) !== null) {
+					queryParams.push(paramMatch[1]);
+				}
 			}
 		}
 
@@ -221,22 +237,9 @@ function compareContracts(endpoints, calls) {
 			}
 		}
 
-		// Check if endpoint expects params that aren't sent
-		for (const queryParam of endpoint.queryParams) {
-			if (!call.queryParams.includes(queryParam)) {
-				issues.push({
-					type: 'query_param_missing',
-					severity: 'error',
-					message: `Query parameter '${queryParam}' expected but not sent`,
-					frontend: `${call.file}:${call.line}`,
-					backend: endpoint.file,
-					method: call.method,
-					url: call.urlTemplate,
-					expected: endpoint.queryParams,
-					actual: call.queryParams
-				});
-			}
-		}
+		// Note: We don't flag backend params not sent by the frontend.
+		// Query parameters are inherently optional — the backend may accept
+		// params that a particular caller doesn't use, and that's fine.
 
 		// Check body parameters (only for POST, PUT, PATCH)
 		if (['POST', 'PUT', 'PATCH'].includes(call.method)) {

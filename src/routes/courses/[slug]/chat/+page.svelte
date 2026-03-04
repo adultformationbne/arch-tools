@@ -13,6 +13,7 @@
 		messages={data.messages}
 		cohortId={data.cohortId}
 		userMeta={data.userMeta}
+		chatEnabled={data.chatEnabled !== false}
 		{courseSlug}
 		{supabase}
 	/>

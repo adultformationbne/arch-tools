@@ -25,14 +25,33 @@
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
 	/** @type {Record<number, string>} */
 	let sessionSearchTerms = $state({});
+	/** @type {Record<number, 'all'|'pending'|'present'|'absent'>} */
+	let sessionStatusFilters = $state({});
+
+	/** @param {number} sessionNum */
+	const getStatusFilter = (sessionNum) => sessionStatusFilters[sessionNum] || 'all';
 
 	/** @param {Student[]} students @param {number} sessionNum */
 	const filterStudents = (students, sessionNum) => {
+		let filtered = students;
+
+		// Filter by status
+		const statusFilter = sessionStatusFilters[sessionNum] || 'all';
+		if (statusFilter !== 'all') {
+			filtered = filtered.filter(s => {
+				const record = s.attendance?.find(a => a.session_number === sessionNum);
+				if (statusFilter === 'pending') return record === undefined;
+				if (statusFilter === 'present') return record?.present === true;
+				if (statusFilter === 'absent') return record?.present === false;
+				return true;
+			});
+		}
+
+		// Filter by name
 		const term = (sessionSearchTerms[sessionNum] || '').toLowerCase().trim();
-		if (!term) return students;
-		return students.filter(s => {
+		if (!term) return filtered;
+		return filtered.filter(s => {
 			const name = (s.full_name || '').toLowerCase();
-			// Match if full name starts with term, or any word in name starts with term
 			return name.startsWith(term) || name.split(/\s+/).some(word => word.startsWith(term));
 		});
 	};
@@ -149,19 +168,23 @@
 	/** @param {number} sessionNum */
 	const getSessionStats = (sessionNum) => {
 		if (!attendanceData.nonHubStudents && !attendanceData.hubStudents) {
-			return { total: 0, marked: 0 };
+			return { total: 0, marked: 0, present: 0, absent: 0, pending: 0 };
 		}
 
 		const nonHub = attendanceData.nonHubStudents || [];
 		const hub = attendanceData.hubStudents || [];
-		const total = nonHub.length + hub.length;
+		const all = [...nonHub, ...hub];
+		const total = all.length;
 
-		const marked = [...nonHub, ...hub].filter(student => {
+		let present = 0, absent = 0, pending = 0;
+		for (const student of all) {
 			const record = student.attendance?.find(a => a.session_number === sessionNum);
-			return record !== undefined;
-		}).length;
+			if (record === undefined) pending++;
+			else if (record.present) present++;
+			else absent++;
+		}
 
-		return { total, marked };
+		return { total, marked: present + absent, present, absent, pending };
 	};
 
 	/** @param {Student} student @param {number} sessionNum */
@@ -273,8 +296,8 @@
 								{@const filteredNonHub = filterStudents(attendanceData.nonHubStudents || [], sessionNum)}
 								{@const filteredHub = filterStudents(attendanceData.hubStudents || [], sessionNum)}
 								<div class="border-t border-gray-200">
-									<!-- Search Bar -->
-									<div class="px-3 sm:px-6 pt-3 sm:pt-4">
+									<!-- Search & Filters -->
+									<div class="px-3 sm:px-6 pt-3 sm:pt-4 space-y-3">
 										<input
 											type="text"
 											placeholder="Search by name..."
@@ -282,6 +305,34 @@
 											class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
 											style="--tw-ring-color: var(--course-accent-light);"
 										/>
+										<!-- Status Filters -->
+										<div class="flex flex-wrap gap-2">
+											<button
+												onclick={() => sessionStatusFilters[sessionNum] = 'all'}
+												class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors {getStatusFilter(sessionNum) === 'all' ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+												style={getStatusFilter(sessionNum) === 'all' ? 'background-color: var(--course-accent-dark);' : ''}
+											>
+												All ({stats.total})
+											</button>
+											<button
+												onclick={() => sessionStatusFilters[sessionNum] = 'pending'}
+												class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors {getStatusFilter(sessionNum) === 'pending' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}"
+											>
+												Pending ({stats.pending})
+											</button>
+											<button
+												onclick={() => sessionStatusFilters[sessionNum] = 'present'}
+												class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors {getStatusFilter(sessionNum) === 'present' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'}"
+											>
+												Present ({stats.present})
+											</button>
+											<button
+												onclick={() => sessionStatusFilters[sessionNum] = 'absent'}
+												class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors {getStatusFilter(sessionNum) === 'absent' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100'}"
+											>
+												Absent ({stats.absent})
+											</button>
+										</div>
 									</div>
 
 									<!-- Non-Hub Students Section -->
@@ -482,9 +533,11 @@
 										<div class="p-8 sm:p-12 text-center">
 											<Users size="48" class="mx-auto mb-4 text-gray-400 w-10 h-10 sm:w-12 sm:h-12" />
 											{#if sessionSearchTerms[sessionNum]}
-												<p class="text-gray-600 text-sm sm:text-base">No students matching "{sessionSearchTerms[sessionNum]}"</p>
+												<p class="text-gray-600 text-sm sm:text-base">No participants matching "{sessionSearchTerms[sessionNum]}"</p>
+											{:else if getStatusFilter(sessionNum) !== 'all'}
+												<p class="text-gray-600 text-sm sm:text-base">No participants with "{getStatusFilter(sessionNum)}" status for this session</p>
 											{:else}
-												<p class="text-gray-600 text-sm sm:text-base">No students enrolled in this cohort</p>
+												<p class="text-gray-600 text-sm sm:text-base">No participants enrolled in this cohort</p>
 											{/if}
 										</div>
 									{/if}

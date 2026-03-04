@@ -2,7 +2,9 @@
 	import { User, Home, BookOpen, MessageSquare, MessageCircle, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 
-	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false } = $props();
+	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false, onChatToggle = null } = $props();
+
+	const canChat = $derived(userRole === 'coordinator' && onChatToggle);
 
 	let mobileMenuOpen = $state(false);
 
@@ -19,7 +21,6 @@
 		const path = $page.url.pathname;
 		if (path.endsWith('/materials')) return 'materials';
 		if (path.endsWith('/reflections')) return 'reflections';
-		if (path.endsWith('/chat')) return 'chat';
 		if (path.endsWith('/profile')) return 'profile';
 		return 'dashboard';
 	});
@@ -71,18 +72,6 @@
 				<span>Reflections</span>
 				<div class="glass-shine"></div>
 			</a>
-			{#if userRole === 'coordinator' || userRole === 'admin'}
-				<a
-					href="/courses/{courseSlug}/chat"
-					class="glass-link group"
-					class:active-glass={currentPage() === 'chat'}
-				>
-					<MessageCircle class="transition-transform group-hover:scale-110" size="14" />
-					<span>Chat</span>
-					{#if hasUnreadChat}<span class="unread-dot"></span>{/if}
-					<div class="glass-shine"></div>
-				</a>
-			{/if}
 		</div>
 
 		<!-- Mobile Menu Button -->
@@ -98,6 +87,16 @@
 					<Menu size="16" class="text-white/90" />
 				{/if}
 			</button>
+			{#if canChat}
+				<button
+					onclick={onChatToggle}
+					class="glass-mobile-btn chat-icon-btn flex items-center justify-center w-8 h-8 rounded-full relative"
+					aria-label="Toggle chat"
+				>
+					<MessageCircle size="16" class="text-white/90" />
+					{#if hasUnreadChat}<span class="chat-unread-dot"></span>{/if}
+				</button>
+			{/if}
 			<a
 				href="/courses/{courseSlug}/profile"
 				class="flex items-center justify-center w-8 h-8 glass-avatar rounded-full"
@@ -108,7 +107,18 @@
 		</div>
 
 		<!-- Desktop User Profile -->
-		<div class="hidden lg:flex items-center">
+		<div class="hidden lg:flex items-center gap-2">
+			{#if canChat}
+				<button
+					onclick={onChatToggle}
+					class="chat-icon-btn flex items-center justify-center w-8 h-8 glass-profile rounded-full transition-all cursor-pointer relative"
+					aria-label="Toggle chat"
+					title="Chat"
+				>
+					<MessageCircle size="15" class="text-white/90" />
+					{#if hasUnreadChat}<span class="chat-unread-dot"></span>{/if}
+				</button>
+			{/if}
 			<a
 				href="/courses/{courseSlug}/profile"
 				class="flex items-center gap-1.5 px-3 py-1 glass-profile rounded-full transition-all cursor-pointer"
@@ -155,18 +165,6 @@
 					<MessageSquare size="20" />
 					<span>Reflections</span>
 				</a>
-				{#if userRole === 'coordinator' || userRole === 'admin'}
-					<a
-						href="/courses/{courseSlug}/chat"
-						class="mobile-link"
-						class:mobile-active={currentPage() === 'chat'}
-						onclick={closeMobileMenu}
-					>
-						<MessageCircle size="20" />
-						<span>Chat</span>
-						{#if hasUnreadChat}<span class="unread-dot"></span>{/if}
-					</a>
-				{/if}
 			</div>
 
 			<!-- Mobile User Section -->
@@ -339,5 +337,21 @@
 		background: var(--course-accent-light, #c59a6b);
 		box-shadow: 0 0 6px var(--course-accent-light, #c59a6b);
 		flex-shrink: 0;
+	}
+
+	.chat-icon-btn:hover {
+		background: rgba(255, 255, 255, 0.15);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.chat-unread-dot {
+		position: absolute;
+		top: 2px;
+		right: 2px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--course-accent-light, #c59a6b);
+		box-shadow: 0 0 6px var(--course-accent-light, #c59a6b);
 	}
 </style>
