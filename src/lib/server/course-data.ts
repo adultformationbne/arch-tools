@@ -564,7 +564,8 @@ export const CourseAggregates = {
 			const { data: sessionCounts } = await supabaseAdmin
 				.from('courses_sessions')
 				.select('module_id')
-				.in('module_id', moduleIds);
+				.in('module_id', moduleIds)
+				.gt('session_number', 0);
 
 			sessionCounts?.forEach((s) => {
 				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);

@@ -4,6 +4,7 @@
 import { parseReadings } from './dgr-utils.js';
 import { formatReflectionText, escapeHtml } from './dgr-common.js';
 import { generateSubscribeSection } from './dgr-subscribe-section.js';
+import { generateShareSection } from './dgr-share-section.js';
 
 export function renderTemplate(templateHtml, data, options = {}) {
   let processed = templateHtml;
@@ -151,6 +152,11 @@ function processSpecialHelpers(template, data, options = {}) {
   processed = processed.replace(/{{randomIcon}}/g, () => {
     // Simple fallback for browser compatibility
     return 'https://archdiocesanministries.org.au/wp-content/uploads/2025/09/Asset-6.png';
+  });
+
+  // Handle Share section helper {{shareSection}}
+  processed = processed.replace(/{{shareSection}}/g, () => {
+    return generateShareSection(data.title);
   });
 
   // Handle Subscribe section helper {{subscribeSection}}

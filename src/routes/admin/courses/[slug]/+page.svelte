@@ -60,7 +60,9 @@
 
 	// Get selected cohort from URL params
 	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
-	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
+	const archivedCohorts = $derived(data.archivedCohorts || []);
+	const allCohorts = $derived([...cohorts, ...archivedCohorts]);
+	const selectedCohort = $derived(allCohorts.find(c => c.id === selectedCohortId));
 
 	// Calculate stats for sidebar
 	const stats = $derived({

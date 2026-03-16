@@ -66,7 +66,7 @@
 				<div class="rounded-lg p-2.5 text-center mt-3" style="background-color: rgba(255,255,255,0.1);">
 					<div class="text-xs text-white/70 uppercase tracking-wide mb-0.5">Current Session</div>
 					<div class="text-2xl font-bold text-white">
-						{cohort.current_session}<span class="text-base text-white/50">/{cohort.module?.total_sessions || 8}</span>
+						{cohort.current_session}<span class="text-base text-white/50">/{cohort.total_sessions || 8}</span>
 					</div>
 				</div>
 

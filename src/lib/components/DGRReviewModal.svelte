@@ -1,5 +1,5 @@
 <script>
-	import { X, Save, CheckCircle, FileText, User, Send, ChevronLeft, ChevronRight } from '$lib/icons';
+	import { X, Save, CheckCircle, FileText, User, ChevronLeft, ChevronRight } from '$lib/icons';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { formatContributorName } from '$lib/utils/dgr-helpers';
@@ -397,8 +397,8 @@
 									disabled={isSaving}
 									class="flex items-center gap-2 rounded-lg bg-[#009199] px-5 py-2 font-medium text-white hover:bg-[#007580] disabled:opacity-50"
 								>
-									<Send class="h-4 w-4" />
-									Send to WordPress
+									<CheckCircle class="h-4 w-4" />
+									Approve
 								</button>
 							{:else}
 								<button

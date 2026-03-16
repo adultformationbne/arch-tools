@@ -158,7 +158,7 @@
 						<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
 							Status
 						</th>
-						<th class="px-6 py-3"></th>
+						<th class="sticky right-0 bg-gray-50 px-6 py-3"></th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">
@@ -263,7 +263,7 @@
 									</span>
 								{/if}
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap">
+							<td class="sticky right-0 px-6 py-4 whitespace-nowrap shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.1)]" class:bg-white={entry.id || entry.from_pattern} class:bg-gray-50={!entry.id && !entry.from_pattern}>
 								{#if true}
 									{@const entryKey = entry.id || entry.date}
 									<div class="flex items-center justify-between gap-2">
