@@ -10,6 +10,6 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	return {
-		totalSessions: courseInfo.total_sessions || 8
+		totalSessions: courseInfo.total_sessions || 0
 	};
 };

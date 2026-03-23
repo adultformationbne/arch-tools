@@ -128,7 +128,7 @@
 	// Get selected template
 	const selectedTemplate = $derived(allTemplates.find(t => t.id === selectedTemplateId));
 	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
-	const maxSession = $derived(selectedCohort?.current_session || 8);
+	const maxSession = $derived(selectedCohort?.current_session || 1);
 
 	// Filter hubs to only show those with enrollments in the selected cohort
 	const filteredHubs = $derived.by(() => {

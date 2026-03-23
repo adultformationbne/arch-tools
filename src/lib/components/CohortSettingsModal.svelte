@@ -1,7 +1,7 @@
 <script>
 	import { X, Trash2, AlertTriangle, CheckCircle, Archive, RotateCcw } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
-	import { getCohortStatusFromObject } from '$lib/utils/cohort-status';
+	import { getCohortStatusFromObject, getTotalSessions } from '$lib/utils/cohort-status';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -35,7 +35,7 @@
 	const statusInfo = $derived(cohort ? getCohortStatusFromObject(cohort) : null);
 
 	// Check if cohort is on or past final session (can be marked complete)
-	const totalSessions = $derived(cohort?.total_sessions || cohort?.module?.total_sessions || 8);
+	const totalSessions = $derived(cohort ? getTotalSessions(cohort) : 0);
 	const canMarkComplete = $derived(
 		cohort && !isArchived && statusInfo?.status === 'active' && cohort.current_session >= totalSessions
 	);

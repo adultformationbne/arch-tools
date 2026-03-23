@@ -96,7 +96,7 @@
 	const displayData = $derived(liveHubData || hubData);
 	const students = $derived(displayData?.students || []);
 	const currentSession = $derived(liveHubData?.currentSession || hubData?.currentSession || 1);
-	const totalSessions = $derived(liveHubData?.totalSessions || 8);
+	const totalSessions = $derived(liveHubData?.totalSessions || hubData?.totalSessions || 0);
 	const hubName = $derived(liveHubData?.hub?.name || hubData?.hubName || 'Your Hub');
 
 	// Coordinators can mark attendance up to one session ahead

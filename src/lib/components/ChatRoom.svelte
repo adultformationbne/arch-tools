@@ -26,6 +26,7 @@
 	let showOnlineList = $state(false);
 	let userScrolledUp = $state(false);
 	let channel = $state(null);
+	let realtimeConnected = $state(false);
 
 	// Admin controls
 	let showClearConfirm = $state(false);
@@ -313,7 +314,7 @@
 						filter: `cohort_id=eq.${cohortId}`
 					},
 					(payload) => {
-						if (payload.eventType === 'INSERT') {
+							if (payload.eventType === 'INSERT') {
 							const newMsg = payload.new;
 							if (!messages.find((m) => m.id === newMsg.id)) {
 								if (newMsg.sender_id === userMeta.userId) {
@@ -347,16 +348,22 @@
 				)
 				.on('presence', { event: 'sync' }, () => {
 					const state = chan.presenceState();
+					const seen = new Set();
 					const users = [];
 					for (const key in state) {
 						const presences = state[key];
 						if (presences?.length) {
-							users.push(presences[0]);
+							const uid = presences[0].user_id;
+							if (!seen.has(uid)) {
+								seen.add(uid);
+								users.push(presences[0]);
+							}
 						}
 					}
 					onlineUsers = users;
 				})
 				.subscribe(async (status) => {
+					realtimeConnected = status === 'SUBSCRIBED';
 					if (status === 'SUBSCRIBED') {
 						await chan.track({
 							user_id: userMeta.userId,
@@ -408,9 +415,9 @@
 			<button
 				class="online-indicator"
 				onclick={() => (showOnlineList = !showOnlineList)}
-				title="Online users"
+				title={realtimeConnected ? `${onlineUsers.length} online` : 'Reconnecting...'}
 			>
-				<span class="online-dot"></span>
+				<span class={realtimeConnected ? 'online-dot' : 'online-dot disconnected'}></span>
 				<Users size="14" class="text-white/70" />
 				<span class="text-xs text-white/70">{onlineUsers.length}</span>
 			</button>
@@ -619,6 +626,18 @@
 		border-radius: 50%;
 		background: #22c55e;
 		box-shadow: 0 0 4px #22c55e;
+		transition: background 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.online-dot.disconnected {
+		background: #eab308;
+		box-shadow: 0 0 4px #eab308;
+		animation: pulse-dot 1.5s ease-in-out infinite;
+	}
+
+	@keyframes pulse-dot {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.4; }
 	}
 
 	.online-list {

@@ -3,7 +3,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
 import { generateSystemTemplatesForCourse } from '$lib/server/course-email-templates';
-import { getCohortStatus } from '$lib/utils/cohort-status';
+import { getCohortStatus, getTotalSessions } from '$lib/utils/cohort-status';
 
 /**
  * GET - List all courses with module counts
@@ -45,7 +45,8 @@ export const GET: RequestHandler = async (event) => {
 			const { data: sessionCounts } = await supabaseAdmin
 				.from('courses_sessions')
 				.select('module_id')
-				.in('module_id', allModuleIds);
+				.in('module_id', allModuleIds)
+				.gt('session_number', 0);
 
 			sessionCounts?.forEach(s => {
 				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
@@ -56,7 +57,7 @@ export const GET: RequestHandler = async (event) => {
 		const transformedCourses = courses?.map(course => {
 			// Count active cohorts using computed status
 			const activeCohorts = course.cohorts?.filter(c => {
-				const totalSessions = sessionCountMap.get(c.module_id) || 8;
+				const totalSessions = sessionCountMap.get(c.module_id) || 0;
 				const status = getCohortStatus(c.current_session || 0, totalSessions);
 				return status === 'active';
 			}).length || 0;

@@ -112,7 +112,7 @@ export const load: PageServerLoad = async (event) => {
 			if (response.status === 'passed') stats.passed++;
 		}
 
-		const totalSessions = sessionsResult.count || 8;
+		const totalSessions = sessionsResult.count || 0;
 
 		// Deduplicate by email and attach progress data
 		const userMap = new Map();

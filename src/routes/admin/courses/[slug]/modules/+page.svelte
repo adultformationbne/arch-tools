@@ -5,11 +5,11 @@
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { toastError } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
-	import { getCohortStatus } from '$lib/utils/cohort-status';
+	import { getCohortStatus, getTotalSessions } from '$lib/utils/cohort-status';
 
 	// Helper to check if cohort is active based on session progress
 	const isActiveCohort = (cohort) => {
-		const status = getCohortStatus(cohort.current_session || 0, cohort.total_sessions || 8);
+		const status = getCohortStatus(cohort.current_session || 0, getTotalSessions(cohort));
 		return status === 'active';
 	};
 

@@ -19,6 +19,7 @@
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
+	import { getTotalSessions } from '$lib/utils/cohort-status';
 
 	let { data } = $props();
 
@@ -346,7 +347,7 @@
 	function handleExport() {
 		if (!selectedCohort) return;
 
-		const totalSessions = selectedCohort.module?.total_sessions || 8;
+		const totalSessions = getTotalSessions(selectedCohort);
 		const cohortSession = selectedCohort.current_session || 0;
 
 		const headers = [
@@ -677,7 +678,7 @@
 				<div class="flex items-center justify-between mb-2">
 					<div class="min-w-0">
 						<h2 class="text-sm font-bold text-white truncate">{selectedCohort.name}</h2>
-						<p class="text-xs text-white/60">Session {selectedCohort.current_session}/{selectedCohort.module?.total_sessions || 8} • {stats.participantCount} participants</p>
+						<p class="text-xs text-white/60">Session {selectedCohort.current_session}/{getTotalSessions(selectedCohort)} • {stats.participantCount} participants</p>
 					</div>
 				</div>
 				<!-- Mobile Quick Actions -->
@@ -764,7 +765,7 @@
 							>
 								<div>
 									<span class="text-white font-medium text-sm block">{cohort.name}</span>
-									<span class="text-white/60 text-xs">Session {cohort.current_session}/{cohort.module?.total_sessions || 8}</span>
+									<span class="text-white/60 text-xs">Session {cohort.current_session}/{getTotalSessions(cohort)}</span>
 								</div>
 								<ArrowRight size={16} class="text-white/50" />
 							</button>
@@ -965,7 +966,7 @@
 							</thead>
 							<tbody class="divide-y divide-gray-100">
 								{#each filteredParticipants as participant, i}
-									{@const totalSessions = selectedCohort.module?.total_sessions || 8}
+									{@const totalSessions = getTotalSessions(selectedCohort)}
 									{@const cohortSession = selectedCohort.current_session || 0}
 									{@const statusBadge = getStatusBadge(participant)}
 									<tr
@@ -1133,7 +1134,7 @@
 	{courseSlug}
 	cohort={selectedCohort}
 	{hubs}
-	totalSessions={selectedCohort?.module?.total_sessions || 8}
+	totalSessions={getTotalSessions(selectedCohort)}
 	onClose={() => {
 		showParticipantDetail = false;
 		selectedParticipantForDetail = null;

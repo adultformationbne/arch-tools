@@ -1,5 +1,5 @@
 <script>
-	import { getCohortStatusFromObject } from '$lib/utils/cohort-status';
+	import { getCohortStatusFromObject, getTotalSessions } from '$lib/utils/cohort-status';
 
 	let { cohort, isActive = false, onClick = () => {} } = $props();
 
@@ -38,7 +38,7 @@
 			{#if statusInfo.status === 'completed'}
 				{formatDate(cohort.end_date || cohort.endDate)}
 			{:else if statusInfo.status === 'active'}
-				Session {cohort.current_session || cohort.currentSession || 1}/{cohort.total_sessions || cohort.totalSessions || cohort.module?.total_sessions || 8}
+				Session {cohort.current_session || cohort.currentSession || 1}/{getTotalSessions(cohort)}
 			{:else}
 				{formatDate(cohort.start_date || cohort.startDate)}
 			{/if}

@@ -50,6 +50,20 @@ export function getCohortStatusInfo(currentSession: number, totalSessions: numbe
 }
 
 /**
+ * Extract total sessions from a cohort object.
+ * Single source of truth — use this instead of `|| 8` fallbacks.
+ * Checks cohort.total_sessions, cohort.totalSessions, cohort.module?.total_sessions.
+ * Falls back to 0 (not 8) so missing data is visible rather than silently wrong.
+ */
+export function getTotalSessions(cohort: {
+	total_sessions?: number;
+	totalSessions?: number;
+	module?: { total_sessions?: number };
+}): number {
+	return cohort?.total_sessions ?? cohort?.totalSessions ?? cohort?.module?.total_sessions ?? 0;
+}
+
+/**
  * Helper to get status info from a cohort object
  * Handles various property naming conventions
  */
@@ -61,6 +75,6 @@ export function getCohortStatusFromObject(cohort: {
 	module?: { total_sessions?: number };
 }): CohortStatusInfo {
 	const currentSession = cohort.current_session ?? cohort.currentSession ?? 0;
-	const totalSessions = cohort.total_sessions ?? cohort.totalSessions ?? cohort.module?.total_sessions ?? 8;
+	const totalSessions = getTotalSessions(cohort);
 	return getCohortStatusInfo(currentSession, totalSessions);
 }

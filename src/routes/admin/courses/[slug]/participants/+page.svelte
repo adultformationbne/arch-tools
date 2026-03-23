@@ -750,7 +750,7 @@
 	participant={selectedParticipantForDetail}
 	courseSlug={course?.slug}
 	hubs={hubs}
-	totalSessions={data.totalSessions || 8}
+	totalSessions={data.totalSessions}
 	showCohortHistory={false}
 	onClose={() => {
 		showParticipantDetail = false;
