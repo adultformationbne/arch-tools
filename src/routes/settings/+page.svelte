@@ -47,6 +47,7 @@
 		{ id: 'platform.admin', name: 'Platform Admin', description: 'Manage users, invitations, permissions, and platform settings' },
 		{ id: 'dgr', name: 'Daily Gospel Reflections', description: 'Manage DGR contributors and schedule' },
 		{ id: 'editor', name: 'Content Editor', description: 'Edit books, blocks, and chapters' },
+		{ id: 'cardpacks', name: 'Card Packs', description: 'Build and manage digital card packs' },
 		{ id: 'courses.participant', name: 'Course Participant', description: 'Access My Courses and participant dashboards' },
 		{ id: 'courses.manager', name: 'Course Manager', description: 'Manage assigned courses and cohorts' },
 		{ id: 'courses.admin', name: 'Course Admin', description: 'Manage all courses platform-wide' }

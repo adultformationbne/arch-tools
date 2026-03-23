@@ -75,6 +75,15 @@
 						DGR
 					</a>
 				{/if}
+				{#if hasModule('cardpacks')}
+					<a
+						href="/cardpacks"
+						class="rounded-full px-3 py-1 text-xs font-medium transition-colors {$page.url.pathname.startsWith('/cardpacks') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+						title="Card pack builder"
+					>
+						Card Packs
+					</a>
+				{/if}
 			</div>
 
 			<!-- Mobile Menu Button + Right Side Actions -->
@@ -172,6 +181,15 @@
 					onclick={closeMobileMenu}
 				>
 					DGR
+				</a>
+			{/if}
+			{#if hasModule('cardpacks')}
+				<a
+					href="/cardpacks"
+					class="block px-3 py-1.5 rounded text-xs font-medium transition-colors {$page.url.pathname.startsWith('/cardpacks') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}"
+					onclick={closeMobileMenu}
+				>
+					Card Packs
 				</a>
 			{/if}
 

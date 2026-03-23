@@ -77,6 +77,7 @@ export async function POST(event) {
 			'platform.admin',
 			'editor',
 			'dgr',
+			'cardpacks',
 			'courses.participant',
 			'courses.manager',
 			'courses.admin'
@@ -387,6 +388,7 @@ export async function PUT(event) {
 				'platform.admin',
 				'editor',
 				'dgr',
+				'cardpacks',
 				'courses.participant',
 				'courses.manager',
 				'courses.admin'
