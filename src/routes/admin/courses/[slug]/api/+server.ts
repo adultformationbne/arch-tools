@@ -707,16 +707,24 @@ export const POST: RequestHandler = async (event) => {
 
 			case 'advance_students': {
 				if (!data.studentIds || data.studentIds.length === 0) {
-					throw error(400, 'No students selected');
-				}
-
-				if (data.targetSession < 0 || data.targetSession > 8) {
-					throw error(400, 'Invalid session number');
+					throw error(400, 'No participants selected');
 				}
 
 				// Validate cohort belongs to this course
 				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
 					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				// Get cohort's total sessions for validation
+				const { data: cohortForValidation } = await supabaseAdmin
+					.from('courses_cohorts')
+					.select('module:module_id(total_sessions)')
+					.eq('id', data.cohortId)
+					.single();
+				const maxSessions = cohortForValidation?.module?.total_sessions || 20;
+
+				if (data.targetSession < 0 || data.targetSession > maxSessions) {
+					throw error(400, 'Invalid session number');
 				}
 				// Validate all student enrollments belong to this course
 				if (!await validateEnrollmentsBelongToCourse(data.studentIds, courseSlug)) {

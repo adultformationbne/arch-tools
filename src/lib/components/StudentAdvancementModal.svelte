@@ -2,6 +2,7 @@
 	import { Mail, ArrowRight, Settings, Home } from '$lib/icons';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
+	import { getTotalSessions } from '$lib/utils/cohort-status.js';
 
 	let {
 		cohort,
@@ -13,13 +14,11 @@
 		initialSelectedIds = []
 	} = $props();
 
+	// Dynamic total sessions from cohort data
+	const totalSessions = $derived(getTotalSessions(cohort));
+
 	// Initialize from cohort prop
 	let selectedSession = $state(1);
-
-	// Sync when cohort changes
-	$effect(() => {
-		selectedSession = (cohort?.current_session || 0) + 1;
-	});
 	let selectedStudents = $state([]);
 	let sendEmail = $state(true);
 	let isProcessing = $state(false);
@@ -58,7 +57,7 @@
 
 	async function advanceStudents() {
 		if (allSelectedIds.length === 0) {
-			toastError('Please select at least one student');
+			toastError('Please select at least one participant');
 			return;
 		}
 
@@ -100,7 +99,8 @@
 	// Reset selected session when modal opens, pre-select students if provided
 	$effect(() => {
 		if (show && cohort) {
-			selectedSession = (cohort.current_session || 0) + 1;
+			// Default to the cohort's current session (catch people up), not current+1
+			selectedSession = cohort.current_session || 1;
 
 			// If initialSelectedIds provided, pre-select eligible students from that list
 			if (initialSelectedIds && initialSelectedIds.length > 0) {
@@ -118,7 +118,7 @@
 	<div class="modal-overlay" onmousedown={(e) => e.target === e.currentTarget && closeModal()} onkeydown={(e) => e.key === 'Enter' && !isProcessing && closeModal()} role="presentation">
 		<div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && !isProcessing && closeModal()} role="dialog" aria-modal="true" aria-labelledby="advancement-title" tabindex="-1">
 			<div class="modal-header">
-				<h2 id="advancement-title">Advance Students to Session {selectedSession}</h2>
+				<h2 id="advancement-title">Advance Participants to Session {selectedSession}</h2>
 				<button onclick={closeModal} class="close-button" disabled={isProcessing}>×</button>
 			</div>
 
@@ -131,7 +131,7 @@
 						class="session-select"
 						disabled={isProcessing}
 					>
-						{#each [1, 2, 3, 4, 5, 6, 7, 8] as session}
+						{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as session}
 							<option value={session}>Session {session}</option>
 						{/each}
 					</select>
@@ -147,7 +147,7 @@
 								disabled={isProcessing || eligibleStudents.length === 0}
 							/>
 							<span class="select-all-text">
-								Select All Students ({eligibleStudents.length} eligible)
+								Select All Participants ({eligibleStudents.length} eligible)
 							</span>
 						</label>
 					</div>
