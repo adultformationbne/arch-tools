@@ -146,11 +146,11 @@ export function buildCourseVariablesFromEnrollment(
 }
 
 export const COURSE_VARIABLES: EmailVariable[] = [
-	{ name: 'firstName', description: 'Student first name' },
-	{ name: 'lastName', description: 'Student last name' },
-	{ name: 'fullName', description: 'Student full name' },
-	{ name: 'email', description: 'Student email address' },
-	{ name: 'hubName', description: 'Student hub assignment' },
+	{ name: 'firstName', description: 'Participant first name' },
+	{ name: 'lastName', description: 'Participant last name' },
+	{ name: 'fullName', description: 'Participant full name' },
+	{ name: 'email', description: 'Participant email address' },
+	{ name: 'hubName', description: 'Participant hub assignment' },
 	{ name: 'courseName', description: 'Course name' },
 	{ name: 'courseSlug', description: 'Course URL identifier' },
 	{ name: 'cohortName', description: 'Cohort name' },
@@ -160,6 +160,7 @@ export const COURSE_VARIABLES: EmailVariable[] = [
 	{ name: 'sessionTitle', description: 'Session title', contextDependent: true },
 	{ name: 'currentSession', description: 'Current cohort session' },
 	{ name: 'loginLink', description: 'Course login page' },
+	{ name: 'loginButton', description: 'Styled login button (HTML)' },
 	{ name: 'dashboardLink', description: 'Course dashboard' },
 	{ name: 'materialsLink', description: 'Course materials page' },
 	{ name: 'reflectionLink', description: 'Reflections page' },

@@ -148,6 +148,7 @@ async function sendReflectionMarkedEmail({
 			course: {
 				name: course.name,
 				slug: course.slug,
+				settings: course.settings,
 				email_branding_config: course.email_branding_config
 			},
 			cohort: {
@@ -164,7 +165,7 @@ async function sendReflectionMarkedEmail({
 
 		// Create login button
 		const courseSettings = course.settings || {};
-		const accentDark = courseSettings.accentDark || '#334642';
+		const accentDark = courseSettings.theme?.accentDark || '#334642';
 		variables.loginButton = createEmailButton('View Your Feedback', variables.loginLink, accentDark);
 
 		// Render template

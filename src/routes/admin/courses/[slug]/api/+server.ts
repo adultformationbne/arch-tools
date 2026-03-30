@@ -822,6 +822,7 @@ export const POST: RequestHandler = async (event) => {
 											course: {
 												name: course.name,
 												slug: course.slug,
+												settings: course.settings,
 												email_branding_config: course.email_branding_config
 											},
 											cohort: cohort ? {

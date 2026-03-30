@@ -734,6 +734,10 @@ export function buildVariableContext({
 	// Hub name fallback for sent emails
 	if (!variables.hubName) variables.hubName = 'N/A';
 
+	// Always provide loginButton so templates can use {{loginButton}}
+	const accentDark = course?.settings?.theme?.accentDark || course?.accent_dark || '#334642';
+	variables.loginButton = createEmailButton('Go to Course', variables.loginLink, accentDark);
+
 	return variables;
 }
 
