@@ -8,10 +8,9 @@ export const load: PageServerLoad = async (event) => {
 		redirectTo: '/login?error=insufficient_permissions'
 	});
 
-	// Load all packs (master list) with their cards
 	const { data: packs } = await supabaseAdmin
 		.from('cardpack_packs')
-		.select('*, cardpack_cards(*)')
+		.select('*, cardpack_cards(*, cardpack_card_labels(label_id)), cardpack_labels(*)')
 		.order('created_at', { ascending: false });
 
 	return {

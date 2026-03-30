@@ -20,6 +20,8 @@
 			selectedCohortId = initialCohortId;
 		}
 	});
+	const selectedCohort = $derived(data.cohorts?.find(c => c.id === selectedCohortId));
+	const totalSessions = $derived(selectedCohort?.total_sessions || 0);
 	/** @type {number|null} */
 	let expandedSession = $state(null);
 	let expandedHubs = $state(new Set()); // Track which hubs are expanded
@@ -193,8 +195,6 @@
 		return record?.present;
 	};
 
-	const selectedCohort = $derived(data.cohorts.find(/** @param {any} c */ (c) => c.id === selectedCohortId));
-
 	/** @param {boolean} present */
 	const handleOverrideConfirm = async (present) => {
 		if (!overrideState.studentId || overrideState.sessionNumber === null) return;
@@ -247,7 +247,7 @@
 			{:else if selectedCohortId && attendanceData}
 				<!-- Session Grid -->
 				<div class="space-y-2 sm:space-y-3">
-					{#each Array(8) as _, sessionIndex}
+					{#each Array(totalSessions) as _, sessionIndex}
 						{@const sessionNum = sessionIndex + 1}
 						{@const stats = getSessionStats(sessionNum)}
 						{@const isExpanded = expandedSession === sessionNum}

@@ -4,25 +4,18 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export async function POST(event) {
 	await requireModule(event, 'cardpacks');
-	const { packId, content, color } = await event.request.json();
+	const { packId, content, labelIds } = await event.request.json();
 
-	if (!packId) {
-		throw error(400, 'Pack ID is required');
-	}
-	if (!content?.trim()) {
-		throw error(400, 'Card content is required');
-	}
+	if (!packId) throw error(400, 'Pack ID is required');
+	if (!content?.trim()) throw error(400, 'Card content is required');
 
-	// Verify pack exists
 	const { data: pack } = await supabaseAdmin
 		.from('cardpack_packs')
 		.select('id')
 		.eq('id', packId)
 		.single();
 
-	if (!pack) {
-		throw error(404, 'Card pack not found');
-	}
+	if (!pack) throw error(404, 'Card pack not found');
 
 	// Get next sort order
 	const { data: lastCard } = await supabaseAdmin
@@ -40,35 +33,39 @@ export async function POST(event) {
 		.insert({
 			pack_id: packId,
 			content: content.trim(),
-			color: color || 'gray',
 			sort_order: sortOrder
 		})
 		.select()
 		.single();
 
-	if (insertError) {
-		throw error(500, 'Failed to create card');
+	if (insertError) throw error(500, 'Failed to create card');
+
+	// Attach labels
+	let cardLabels = [];
+	if (Array.isArray(labelIds) && labelIds.length > 0) {
+		const rows = labelIds.map((label_id) => ({ card_id: card.id, label_id }));
+		const { data: inserted } = await supabaseAdmin
+			.from('cardpack_card_labels')
+			.insert(rows)
+			.select();
+		cardLabels = inserted ?? [];
 	}
 
-	return json({ card });
+	return json({ card: { ...card, cardpack_card_labels: cardLabels } });
 }
 
 export async function DELETE(event) {
 	await requireModule(event, 'cardpacks');
 	const { cardId } = await event.request.json();
 
-	if (!cardId) {
-		throw error(400, 'Card ID is required');
-	}
+	if (!cardId) throw error(400, 'Card ID is required');
 
 	const { error: deleteError } = await supabaseAdmin
 		.from('cardpack_cards')
 		.delete()
 		.eq('id', cardId);
 
-	if (deleteError) {
-		throw error(500, 'Failed to delete card');
-	}
+	if (deleteError) throw error(500, 'Failed to delete card');
 
 	return json({ success: true });
 }
