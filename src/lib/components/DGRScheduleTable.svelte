@@ -24,6 +24,7 @@
 	} = $props();
 
 	let hoveredReminderId = $state(null);
+	let openDropdownKey = $state(null);
 	let dropdownRefs = new Map();
 	let dropdownControllers = new Map();
 
@@ -40,7 +41,9 @@
 		if (refs.button && refs.menu) {
 			const controller = createDropdown(refs.button, refs.menu, {
 				placement: 'bottom-end',
-				offset: 4
+				offset: 4,
+				onShow: () => { openDropdownKey = entryKey; },
+				onHide: () => { if (openDropdownKey === entryKey) openDropdownKey = null; }
 			});
 			dropdownControllers.set(entryKey, controller);
 		}
@@ -163,7 +166,7 @@
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">
 					{#each schedule as entry (entry.id || entry.date)}
-						<tr class:bg-gray-50={!entry.id && !entry.from_pattern}>
+						<tr class:bg-gray-50={!entry.id && !entry.from_pattern} style={openDropdownKey === (entry.id || entry.date) ? 'position: relative; z-index: 10;' : ''}>
 							<!-- Liturgical Season Color Bar -->
 							<td class="relative p-0">
 								{#if entry.liturgical_season}
