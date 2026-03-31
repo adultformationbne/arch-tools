@@ -159,7 +159,10 @@
 	function substituteVariables(template, recipient) {
 		if (!template || !recipient) return template;
 		const origin = typeof window !== 'undefined' ? window.location.origin : '';
-		const variables = buildCourseVariablesFromEnrollment(recipient, course, cohorts, origin);
+		const accentColor = course?.settings?.theme?.accentDark || '#334642';
+		const variables = buildCourseVariablesFromEnrollment(recipient, course, cohorts, origin, {
+			accentColor
+		});
 		return substituteVars(template, variables);
 	}
 

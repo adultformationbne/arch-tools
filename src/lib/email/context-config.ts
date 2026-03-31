@@ -11,6 +11,7 @@
  */
 
 import { formatContributorName } from '$lib/utils/dgr-helpers';
+import { createEmailButton } from '$lib/email/email-button';
 
 export type EmailContext = 'course' | 'dgr' | 'platform';
 
@@ -71,11 +72,25 @@ export interface EmailContextConfig {
  * Works with both raw API enrollment data and normalized EmailRecipient.raw.
  * Handles multiple data shapes: nested cohort (courses_cohorts/cohort) or separate cohort lookup.
  */
+export interface BuildCourseVariablesOptions {
+	/** Accent color for the login button. If provided, a loginButton is generated. */
+	accentColor?: string;
+	/** Custom button text. Default: 'Go to Course' */
+	buttonText?: string;
+	/** Session override data */
+	session?: { session_number?: string | number; title?: string };
+	/** Use smart login URL with email pre-fill + auto-OTP (&send=true) */
+	smartLogin?: boolean;
+	/** Fallback value for empty hubName (server-side uses 'N/A', client-side uses '') */
+	hubNameFallback?: string;
+}
+
 export function buildCourseVariablesFromEnrollment(
 	enrollment: Record<string, unknown>,
 	courseData: Record<string, unknown> | undefined,
 	cohortsList: Array<Record<string, unknown>> | undefined,
-	origin: string
+	origin: string,
+	options?: BuildCourseVariablesOptions
 ): Record<string, string> {
 	// Get cohort data - handles nested (courses_cohorts, cohort) or lookup by cohort_id
 	const cohortData =
@@ -88,6 +103,7 @@ export function buildCourseVariablesFromEnrollment(
 	const nameParts = fullName.split(' ');
 	const firstName = nameParts[0] || '';
 	const lastName = nameParts.slice(1).join(' ') || '';
+	const email = (enrollment.email as string) || '';
 
 	const slug = (courseData?.slug as string) || '';
 	const emailBrandingConfig = courseData?.email_branding_config as
@@ -116,33 +132,68 @@ export function buildCourseVariablesFromEnrollment(
 	const startDate = safeFormatDate(cohortData.start_date);
 	const endDate = safeFormatDate(cohortData.end_date);
 
-	const hubName =
+	let hubName =
 		((enrollment.courses_hubs as Record<string, unknown>)?.name as string) ||
 		((enrollment.hub as Record<string, unknown>)?.name as string) ||
 		'';
 
-	return {
+	if (!hubName && options?.hubNameFallback) {
+		hubName = options.hubNameFallback;
+	}
+
+	// Login link: smart (with email pre-fill + auto-OTP) or plain course URL
+	let loginLink: string;
+	if (options?.smartLogin && email) {
+		loginLink = slug
+			? `${origin}/login?course=${slug}&email=${encodeURIComponent(email)}&send=true`
+			: `${origin}/login?email=${encodeURIComponent(email)}&send=true`;
+	} else {
+		loginLink = `${origin}/courses/${slug}`;
+	}
+
+	// Session overrides
+	let sessionNumber = String(
+		(enrollment.current_session as number) || (cohortData.current_session as number) || ''
+	);
+	let sessionTitle = '';
+
+	if (options?.session) {
+		if (options.session.session_number) {
+			sessionNumber = String(options.session.session_number);
+		}
+		if (options.session.title) {
+			sessionTitle = options.session.title;
+		}
+	}
+
+	const variables: Record<string, string> = {
 		firstName,
 		lastName,
 		fullName,
-		email: (enrollment.email as string) || '',
+		email,
 		hubName,
 		courseName: (courseData?.name as string) || '',
 		courseSlug: slug,
 		cohortName: (cohortData.name as string) || '',
 		startDate,
 		endDate,
-		sessionNumber: String(
-			(enrollment.current_session as number) || (cohortData.current_session as number) || ''
-		),
-		sessionTitle: '',
+		sessionNumber,
+		sessionTitle,
 		currentSession: String((cohortData.current_session as number) || ''),
-		loginLink: `${origin}/courses/${slug}`,
+		loginLink,
 		dashboardLink: `${origin}/courses/${slug}`,
 		materialsLink: `${origin}/courses/${slug}/materials`,
 		reflectionLink: `${origin}/courses/${slug}/reflections`,
 		supportEmail: replyToEmail
 	};
+
+	// Generate loginButton if accent color is provided
+	if (options?.accentColor) {
+		const buttonText = options.buttonText || 'Go to Course';
+		variables.loginButton = createEmailButton(buttonText, loginLink, options.accentColor);
+	}
+
+	return variables;
 }
 
 export const COURSE_VARIABLES: EmailVariable[] = [
@@ -186,7 +237,12 @@ const courseContext: EmailContextConfig = {
 	buildVariables: (recipient, contextData, origin) => {
 		const course = contextData.course as Record<string, unknown> | undefined;
 		const cohorts = contextData.cohorts as Array<Record<string, unknown>> | undefined;
-		return buildCourseVariablesFromEnrollment(recipient.raw, course, cohorts, origin);
+		const settings = course?.settings as Record<string, unknown> | undefined;
+		const theme = settings?.theme as Record<string, unknown> | undefined;
+		const accentColor = (theme?.accentDark as string) || '#334642';
+		return buildCourseVariablesFromEnrollment(recipient.raw, course, cohorts, origin, {
+			accentColor
+		});
 	},
 
 	sampleRecipient: {
@@ -260,8 +316,8 @@ const dgrContext: EmailContextConfig = {
 		const accessToken = (raw.access_token as string) || '';
 		const writeUrl = `${origin}/dgr/write/${accessToken}`;
 
-		// Build the button HTML
-		const writeUrlButton = `<a href="${writeUrl}" style="background-color:#009199;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold;">Write Your Reflection</a>`;
+		// Build the button using shared MJML-compatible function
+		const writeUrlButton = createEmailButton('Write Your Reflection', writeUrl, '#009199');
 
 		return {
 			contributor_name: name,
@@ -287,8 +343,7 @@ const dgrContext: EmailContextConfig = {
 			contributor_title: '',
 			contributor_email: 'jane.doe@example.com',
 			write_url: 'https://example.com/dgr/write/sample123',
-			write_url_button:
-				'<a href="https://example.com/dgr/write/sample123" style="background-color:#009199;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold;">Write Your Reflection</a>',
+			write_url_button: createEmailButton('Write Your Reflection', 'https://example.com/dgr/write/sample123', '#009199'),
 			due_date: 'Monday, 15 January 2025',
 			due_date_text: 'tomorrow',
 			liturgical_date: 'Second Sunday in Ordinary Time',

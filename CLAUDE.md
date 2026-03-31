@@ -91,6 +91,21 @@ const { data } = await supabaseAdmin.from('table').select('*').eq('id', id);
 
 **Client:** Access via `event.locals.supabase` in load functions
 
+### Email Template Variables
+
+Email templates use `{{variable}}` substitution. Variables containing HTML **must** use `data-type` patterns recognized by `convertToMjmlComponents()` in `compiler.js`. This ensures they work in both browser preview AND MJML email compilation.
+
+**Rules:**
+- **Buttons:** Use `createEmailButton()` from `$lib/email/email-button.ts` — NEVER raw HTML tables/VML/`<mj-button>`
+- **All course variables:** Use `buildCourseVariablesFromEnrollment()` from `$lib/email/context-config.ts` — this is the single source of truth. `buildVariableContext()` in email-service.js is just a thin input adapter.
+- **New HTML variables:** Must output `data-type="..."` patterns and add a corresponding conversion in `convertToMjmlComponents()`
+
+```ts
+import { createEmailButton } from '$lib/email/email-button';
+// Works in both browser preview (styled <a> tag) and email sending (converts to <mj-button>)
+variables.loginButton = createEmailButton('Go to Course', url, accentDark);
+```
+
 ---
 
 ## Svelte 5 Essentials
@@ -106,7 +121,8 @@ Use `$state()`, `$derived()`, `$props()`, `$effect()`. **NOT** `export let`, `on
 - **API:** `$lib/utils/api-handler.js`
 - **Validation:** `$lib/utils/form-validator.js`
 - **Dropdown:** `$lib/utils/dropdown.js`
-- **Email:** `$lib/utils/email-service.js`
+- **Email:** `$lib/utils/email-service.js`, `$lib/email/compiler.js`, `$lib/email/context-config.ts`
+- **Email Button:** `$lib/email/email-button.ts` (shared, client+server importable)
 - **Reflection Status:** `$lib/utils/reflection-status.ts` (status labels, badges, icons for courses reflections)
 - **DB Types:** `$lib/database.types.ts` (regenerate with `npm run update-types`)
 

@@ -154,7 +154,7 @@ export async function POST({ request, locals }) {
 			'Submit Your Reflection',
 			submissionUrl,
 			'#009199',
-			{ width: 280, height: 50, borderRadius: 8 }
+			{ borderRadius: 8 }
 		);
 
 		// Parse name into first/last, with title support
@@ -334,8 +334,6 @@ async function handleBulkReminders(reminders, user) {
 
 		// Generate button HTML
 		const buttonHtml = createEmailButton('Submit Your Reflection', submissionUrl, '#009199', {
-			width: 280,
-			height: 50,
 			borderRadius: 8
 		});
 

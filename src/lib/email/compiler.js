@@ -114,8 +114,24 @@ function plainTextToHtml(text) {
 }
 
 /**
- * Convert TipTap HTML elements to MJML components
- * @param {string} html - HTML content from TipTap
+ * Convert HTML elements to MJML components before compilation.
+ *
+ * IMPORTANT: All HTML that gets injected into email templates (via {{variables}}
+ * or TipTap editor output) must use these data-type patterns so it works in
+ * BOTH contexts:
+ *   - Browser preview: rendered as styled HTML via {@html} in Svelte
+ *   - Email sending: converted to MJML components here, then compiled
+ *
+ * Supported patterns:
+ *   - Buttons:  <div data-type="email-button" data-text="..." data-href="...">
+ *               Use createEmailButton() from $lib/email/email-button.ts
+ *   - Dividers: <hr data-type="email-divider" />
+ *   - Images:   <img src="..." alt="..." />
+ *
+ * NEVER inject raw HTML tables, VML, or MJML tags directly into template
+ * variables — they will break in one context or the other.
+ *
+ * @param {string} html - HTML content (from TipTap or template variable substitution)
  * @param {string} accentDark - Accent color for buttons
  * @returns {string} HTML with MJML-compatible elements
  */

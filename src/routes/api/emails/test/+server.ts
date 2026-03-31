@@ -19,6 +19,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { sendEmail, renderTemplate } from '$lib/utils/email-service.js';
+import { createEmailButton } from '$lib/email/email-button';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
@@ -41,6 +42,7 @@ const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
 		sessionTitle: 'Introduction',
 		currentSession: '1',
 		loginLink: 'https://example.com/courses/sample-course',
+		loginButton: '',
 		dashboardLink: 'https://example.com/courses/sample-course',
 		materialsLink: 'https://example.com/courses/sample-course/materials',
 		reflectionLink: 'https://example.com/courses/sample-course/reflections',
@@ -52,8 +54,7 @@ const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
 		contributor_title: '',
 		contributor_email: 'jane.doe@example.com',
 		write_url: 'https://example.com/dgr/write/sample123',
-		write_url_button:
-			'<a href="https://example.com/dgr/write/sample123" style="background-color:#009199;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold;">Write Your Reflection</a>',
+		write_url_button: createEmailButton('Write Your Reflection', 'https://example.com/dgr/write/sample123', '#009199'),
 		due_date: 'Monday, 15 January 2025',
 		due_date_text: 'tomorrow',
 		liturgical_date: 'Second Sunday in Ordinary Time',
@@ -123,9 +124,11 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 				variables.dashboardLink = `${origin}/courses/${context_id}`;
 				variables.materialsLink = `${origin}/courses/${context_id}/materials`;
 				variables.reflectionLink = `${origin}/courses/${context_id}/reflections`;
+				const btnColor = branding.accent_dark || DEFAULT_COLORS.course.accentDark;
+				variables.loginButton = createEmailButton('Go to Course', variables.loginLink, btnColor);
 			} else if (context === 'dgr') {
 				variables.write_url = `${origin}/dgr/write/sample123`;
-				variables.write_url_button = `<a href="${origin}/dgr/write/sample123" style="background-color:#009199;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold;">Write Your Reflection</a>`;
+				variables.write_url_button = createEmailButton('Write Your Reflection', `${origin}/dgr/write/sample123`, '#009199');
 			}
 		}
 
@@ -245,7 +248,7 @@ async function fetchCourseRecipientVariables(
 				end_date,
 				courses_modules!inner (
 					course_id,
-					courses!inner ( id, name, slug, email_branding_config )
+					courses!inner ( id, name, slug, settings, email_branding_config )
 				)
 			)
 		`)
@@ -258,12 +261,17 @@ async function fetchCourseRecipientVariables(
 	}
 
 	const course = enrollment.courses_cohorts?.courses_modules?.courses;
-	// Use shared variable builder (handles name parsing, dates, links, supportEmail)
+	const accentDark = course?.settings?.theme?.accentDark || '#334642';
+
 	return buildCourseVariablesFromEnrollment(
 		enrollment,
 		{ ...course, slug: course?.slug || courseSlug || '' },
-		null,
-		origin
+		undefined,
+		origin,
+		{
+			smartLogin: true,
+			accentColor: accentDark
+		}
 	);
 }
 
@@ -298,7 +306,7 @@ async function fetchDgrRecipientVariables(
 		contributor_title: title,
 		contributor_email: contributor.email || '',
 		write_url: writeUrl,
-		write_url_button: `<a href="${writeUrl}" style="background-color:#009199;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold;">Write Your Reflection</a>`,
+		write_url_button: createEmailButton('Write Your Reflection', writeUrl, '#009199'),
 		// Context-dependent vars - use sample values
 		due_date: 'Monday, 15 January 2025',
 		due_date_text: 'tomorrow',

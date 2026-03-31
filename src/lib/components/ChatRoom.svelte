@@ -742,8 +742,8 @@
 	}
 
 	.own-bubble {
-		background: rgba(197, 154, 107, 0.2);
-		border-color: rgba(197, 154, 107, 0.3);
+		background: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, transparent);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
 		border-radius: 12px 12px 4px 12px;
 	}
 
@@ -862,7 +862,7 @@
 		padding: 6px 10px;
 		border-radius: 8px;
 		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(197, 154, 107, 0.4);
+		border: 1px solid color-mix(in srgb, var(--course-accent-light, #c59a6b) 40%, transparent);
 		color: white;
 		font-size: 0.875rem;
 		font-family: inherit;
@@ -871,7 +871,7 @@
 	}
 
 	.edit-input:focus {
-		border-color: rgba(197, 154, 107, 0.6);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, transparent);
 	}
 
 	.edit-actions {
@@ -964,7 +964,7 @@
 	}
 
 	.chat-input:focus {
-		border-color: rgba(197, 154, 107, 0.5);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 50%, transparent);
 	}
 
 	.send-btn {
@@ -984,7 +984,7 @@
 
 	.send-btn:hover:not(:disabled) {
 		transform: scale(1.05);
-		box-shadow: 0 2px 8px rgba(197, 154, 107, 0.3);
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
 	}
 
 	.send-btn:disabled {

@@ -87,7 +87,7 @@ export async function POST({ request, locals }) {
 				'Access Your Writing Portal',
 				writeUrl,
 				'#009199',
-				{ width: 280, height: 50, borderRadius: 8 }
+				{ borderRadius: 8 }
 			);
 
 			// Parse name into first/last, with title support

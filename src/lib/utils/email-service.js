@@ -5,6 +5,7 @@
 
 import { Resend } from 'resend';
 import { buildCourseVariablesFromEnrollment } from '$lib/email/context-config';
+export { createEmailButton } from '$lib/email/email-button';
 
 /** Build email log entry with consistent column structure */
 function buildLogEntry({ to, emailType, subject, body, status, resendId = null, errorMessage = null, referenceId = null, metadata = {} }) {
@@ -602,59 +603,7 @@ export function createBrandedEmailHtml({
 	});
 }
 
-/**
- * Create bulletproof styled button link for emails
- * Uses VML for Outlook compatibility + standard HTML/CSS for other clients
- * @param {string} text Button text
- * @param {string} url Button link URL
- * @param {string} backgroundColor Button background color (hex)
- * @param {Object} options Additional options
- * @param {boolean} options.centered Center the button (default: true)
- * @param {number} options.width Button width in pixels (default: 220)
- * @param {number} options.height Button height in pixels (default: 50)
- * @param {number} options.borderRadius Border radius in pixels (default: 6)
- * @returns {string} HTML for bulletproof email button
- * @see https://buttons.cm/ - Campaign Monitor's bulletproof button generator
- */
-export function createEmailButton(text, url, backgroundColor = '#334642', options = {}) {
-	const {
-		centered = true,
-		width = 220,
-		height = 50,
-		borderRadius = 6
-	} = options;
-
-	const arcSize = Math.round((borderRadius / Math.min(width, height)) * 100);
-
-	const button = `
-<!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${url}" style="height:${height}px;v-text-anchor:middle;width:${width}px;" arcsize="${arcSize}%" stroke="f" fillcolor="${backgroundColor}">
-<w:anchorlock/>
-<center>
-<![endif]-->
-<a href="${url}" style="background-color:${backgroundColor};border-radius:${borderRadius}px;color:#ffffff;display:inline-block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;font-weight:600;line-height:${height}px;text-align:center;text-decoration:none;width:${width}px;-webkit-text-size-adjust:none;">
-${text}
-</a>
-<!--[if mso]>
-</center>
-</v:roundrect>
-<![endif]-->
-`.trim();
-
-	if (centered) {
-		return `
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:24px auto;">
-<tr>
-<td align="center">
-${button}
-</td>
-</tr>
-</table>
-`.trim();
-	}
-
-	return button;
-}
+// createEmailButton is re-exported from '$lib/email/email-button' at top of file
 
 /**
  * Get course email template from database
@@ -709,7 +658,8 @@ export function buildVariableContext({
 	session = null,
 	siteUrl
 }) {
-	// Build enrollment-like object for shared function
+	// Reshape caller's input into the enrollment-like shape that
+	// buildCourseVariablesFromEnrollment expects, then delegate fully.
 	const enrollmentLike = {
 		full_name: enrollment.full_name,
 		email: enrollment.email,
@@ -718,27 +668,14 @@ export function buildVariableContext({
 		...(cohort ? { courses_cohorts: cohort } : {})
 	};
 
-	const variables = buildCourseVariablesFromEnrollment(enrollmentLike, course, null, siteUrl);
-
-	// Override loginLink with smart login (includes email pre-fill for auto-OTP)
-	variables.loginLink = course?.slug
-		? `${siteUrl}/login?course=${course.slug}&email=${encodeURIComponent(enrollment.email || '')}&send=true`
-		: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email || '')}&send=true`;
-
-	// Session-specific overrides
-	if (session) {
-		variables.sessionNumber = String(session.session_number || variables.sessionNumber);
-		variables.sessionTitle = session.title || variables.sessionTitle;
-	}
-
-	// Hub name fallback for sent emails
-	if (!variables.hubName) variables.hubName = 'N/A';
-
-	// Always provide loginButton so templates can use {{loginButton}}
 	const accentDark = course?.settings?.theme?.accentDark || course?.accent_dark || '#334642';
-	variables.loginButton = createEmailButton('Go to Course', variables.loginLink, accentDark);
 
-	return variables;
+	return buildCourseVariablesFromEnrollment(enrollmentLike, course, null, siteUrl, {
+		smartLogin: true,
+		hubNameFallback: 'N/A',
+		accentColor: accentDark,
+		session
+	});
 }
 
 /**
