@@ -111,7 +111,7 @@ const navItems = $derived([
 		href: withCohort(`/admin/courses/${courseSlug}/reflections`),
 		icon: PenSquare,
 		description: 'Review submissions',
-		visible: canManageCourse
+		visible: canManageCourse && courseFeatures.reflectionsEnabled !== false
 	},
 	{
 		label: 'Emails',
@@ -146,21 +146,21 @@ const navItems = $derived([
 		href: withCohort(`/admin/courses/${courseSlug}/hubs`),
 		icon: MapPin,
 		description: 'Hub management',
-		visible: canViewHubs
+		visible: canViewHubs && courseFeatures.hubsEnabled !== false
 	},
 	{
 		label: 'Attendance',
 		href: withCohort(`/admin/courses/${courseSlug}/attendance`),
 		icon: Calendar,
 		description: 'Track attendance',
-		visible: canManageAttendance
+		visible: canManageAttendance && courseFeatures.attendanceEnabled !== false
 	},
 	{
 		label: 'Chat',
 		href: withCohort(`/admin/courses/${courseSlug}/chat`),
 		icon: MessageCircle,
 		description: 'Cohort chat',
-		visible: canManageCourse,
+		visible: canManageCourse && courseFeatures.chatEnabled !== false,
 		hasUnread: hasUnreadChat
 	}
 ].filter((item) => item.visible));

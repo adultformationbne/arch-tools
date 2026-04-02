@@ -448,6 +448,36 @@ export const actions: Actions = {
 			});
 		}
 
+		// Handle manager assignments (manager_ids from hidden inputs)
+		const managerIds = formData.getAll('manager_ids').map(id => id.toString());
+		const { data: allManagers } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, assigned_course_ids')
+			.contains('modules', ['courses.manager']);
+
+		if (allManagers) {
+			for (const manager of allManagers) {
+				const currentAssignments = manager.assigned_course_ids || [];
+				const shouldBeAssigned = managerIds.includes(manager.id);
+				const isCurrentlyAssigned = currentAssignments.includes(courseId);
+
+				let newAssignments = [...currentAssignments];
+
+				if (shouldBeAssigned && !isCurrentlyAssigned) {
+					newAssignments.push(courseId);
+				} else if (!shouldBeAssigned && isCurrentlyAssigned) {
+					newAssignments = newAssignments.filter((id: string) => id !== courseId);
+				} else {
+					continue;
+				}
+
+				await supabaseAdmin
+					.from('user_profiles')
+					.update({ assigned_course_ids: newAssignments })
+					.eq('id', manager.id);
+			}
+		}
+
 		return {
 			type: 'success',
 			message: 'Course updated successfully.',

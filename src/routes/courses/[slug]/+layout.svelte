@@ -147,6 +147,7 @@
 		{userName}
 		{userRole}
 		courseBranding={branding}
+		featureSettings={data.courseFeatures}
 		{hasUnreadChat}
 		onChatToggle={canChat ? () => chatOpen = !chatOpen : null}
 	/>

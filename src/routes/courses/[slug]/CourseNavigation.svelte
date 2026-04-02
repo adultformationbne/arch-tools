@@ -2,7 +2,10 @@
 	import { User, Home, BookOpen, MessageSquare, MessageCircle, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 
-	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false, onChatToggle = null } = $props();
+	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false, onChatToggle = null, featureSettings = {} } = $props();
+
+	const materialsVisible = $derived(featureSettings?.materialsEnabled !== false);
+	const reflectionsVisible = $derived(featureSettings?.reflectionsEnabled !== false);
 
 	const canChat = $derived(userRole === 'coordinator' && onChatToggle);
 
@@ -54,6 +57,7 @@
 				<span>Dashboard</span>
 				<div class="glass-shine"></div>
 			</a>
+			{#if materialsVisible}
 			<a
 				href="/courses/{courseSlug}/materials"
 				class="glass-link group"
@@ -63,6 +67,8 @@
 				<span>Materials</span>
 				<div class="glass-shine"></div>
 			</a>
+			{/if}
+			{#if reflectionsVisible}
 			<a
 				href="/courses/{courseSlug}/reflections"
 				class="glass-link group"
@@ -72,6 +78,7 @@
 				<span>Reflections</span>
 				<div class="glass-shine"></div>
 			</a>
+			{/if}
 		</div>
 
 		<!-- Mobile Menu Button -->
@@ -147,6 +154,7 @@
 					<Home size="20" />
 					<span>Dashboard</span>
 				</a>
+				{#if materialsVisible}
 				<a
 					href="/courses/{courseSlug}/materials"
 					class="mobile-link"
@@ -156,6 +164,8 @@
 					<BookOpen size="20" />
 					<span>Materials</span>
 				</a>
+				{/if}
+				{#if reflectionsVisible}
 				<a
 					href="/courses/{courseSlug}/reflections"
 					class="mobile-link"
@@ -165,6 +175,7 @@
 					<MessageSquare size="20" />
 					<span>Reflections</span>
 				</a>
+				{/if}
 			</div>
 
 			<!-- Mobile User Section -->

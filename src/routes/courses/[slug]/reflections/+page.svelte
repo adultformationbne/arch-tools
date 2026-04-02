@@ -12,6 +12,7 @@
 	const cohortReflections = $derived(data.cohortReflections);
 	const currentReflectionQuestion = $derived(data.currentReflectionQuestion);
 	const courseSlug = $derived(data.courseSlug);
+	const communityFeedEnabled = $derived(data.communityFeedEnabled);
 
 	// Page state
 	let activeTab = $state('my-reflections'); // 'my-reflections' | 'my-cohort'
@@ -76,6 +77,7 @@
 			{/if}
 
 			<!-- Tab Navigation -->
+			{#if communityFeedEnabled}
 			<div class="flex gap-1 mb-6 sm:mb-8 p-1 rounded-2xl" style="background-color: rgba(234, 226, 217, 0.1);">
 				<button
 					onclick={() => activeTab = 'my-reflections'}
@@ -104,6 +106,7 @@
 					<span class="sm:hidden">Cohort</span>
 				</button>
 			</div>
+			{/if}
 
 			<!-- Reflections Feed -->
 			<div class="space-y-6">
@@ -287,7 +290,7 @@
 						</div>
 					{/each}
 
-				{:else}
+				{:else if communityFeedEnabled}
 					<!-- My Cohort Reflections -->
 					{#each cohortReflections as reflection}
 						<div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm">

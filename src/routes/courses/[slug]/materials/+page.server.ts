@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries, groupMaterialsBySession } from '$lib/server/course-data.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
@@ -13,6 +13,12 @@ export const load: PageServerLoad = async (event) => {
 	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
+	// Check if materials are enabled for this course
+	const materialSettings = getCourseSettings(course?.settings);
+	if (materialSettings.features?.materialsEnabled === false) {
+		throw redirect(302, `/courses/${courseSlug}`);
+	}
 
 	// Get user's enrollment
 	const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(

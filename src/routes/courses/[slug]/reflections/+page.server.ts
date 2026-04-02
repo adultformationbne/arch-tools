@@ -119,6 +119,8 @@ export const load: PageServerLoad = async (event) => {
 			}
 		: null;
 
+	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
+
 	return {
 		myReflections: processedMyReflections,
 		cohortReflections: processedCohortReflections,
@@ -126,6 +128,7 @@ export const load: PageServerLoad = async (event) => {
 		userId: user.id,
 		cohortId: enrollment.cohort_id,
 		currentSession,
-		courseSlug
+		courseSlug,
+		communityFeedEnabled
 	};
 };

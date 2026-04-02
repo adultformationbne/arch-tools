@@ -11,6 +11,7 @@
 		hubs = [],
 		totalSessions = 8,
 		showCohortHistory = true,
+		courseFeatures = {},
 		onClose = () => {},
 		onUpdate = () => {},
 		onEmail = () => {}
@@ -372,6 +373,7 @@
 							</p>
 						{/if}
 					</div>
+					{#if courseFeatures.attendanceEnabled !== false}
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
 						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Attendance</p>
 						<p class="text-sm font-medium text-gray-900">
@@ -382,6 +384,7 @@
 							{/if}
 						</p>
 					</div>
+					{/if}
 				</div>
 
 				<!-- Edit Form -->
@@ -443,6 +446,7 @@
 					</div>
 
 					<div class="grid grid-cols-2 gap-4">
+						{#if courseFeatures.hubsEnabled !== false}
 						<div>
 							<label for="participant-hub" class="block text-sm font-medium text-gray-700 mb-1">Hub</label>
 							<select
@@ -457,6 +461,7 @@
 								{/each}
 							</select>
 						</div>
+						{/if}
 						<div>
 							<label for="participant-session" class="block text-sm font-medium text-gray-700 mb-1">Current Session</label>
 							<select
@@ -545,6 +550,7 @@
 
 				{#if showCohortHistory}
 					<!-- Attendance History -->
+					{#if courseFeatures.attendanceEnabled !== false}
 					<div class="mt-6 pt-4 border-t border-gray-200">
 						<button
 							onclick={() => showAttendance = !showAttendance}
@@ -605,6 +611,7 @@
 							</div>
 						{/if}
 					</div>
+					{/if}
 
 					<!-- Reflection History -->
 					<div class="mt-6 pt-4 border-t border-gray-200">

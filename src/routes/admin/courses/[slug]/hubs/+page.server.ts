@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
@@ -11,6 +11,11 @@ export const load: PageServerLoad = async (event) => {
 		const courseInfo = layoutData?.courseInfo;
 		const cohorts = layoutData?.cohorts || [];
 		const layoutHubs = layoutData?.hubs || [];
+		const courseFeatures = layoutData?.courseFeatures || {};
+
+		if (courseFeatures.hubsEnabled === false) {
+			throw redirect(302, `/admin/courses/${event.params.slug}`);
+		}
 
 		if (!courseInfo) {
 			throw error(404, 'Course not found');

@@ -1,5 +1,5 @@
 <script>
-	import { Save, Upload, X, Loader2 } from '$lib/icons';
+	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
@@ -46,7 +46,10 @@
 		features: {
 			reflectionsEnabled: true,
 			communityFeedEnabled: true,
+			chatEnabled: true,
 			attendanceEnabled: true,
+			materialsEnabled: true,
+			hubsEnabled: true,
 			paymentsEnabled: false
 		}
 	});
@@ -92,7 +95,10 @@
 			// Feature toggles
 			settings.features.reflectionsEnabled = parsedSettings.features?.reflectionsEnabled ?? true;
 			settings.features.communityFeedEnabled = parsedSettings.features?.communityFeedEnabled ?? true;
+			settings.features.chatEnabled = parsedSettings.features?.chatEnabled ?? true;
 			settings.features.attendanceEnabled = parsedSettings.features?.attendanceEnabled ?? true;
+			settings.features.materialsEnabled = parsedSettings.features?.materialsEnabled ?? true;
+			settings.features.hubsEnabled = parsedSettings.features?.hubsEnabled ?? true;
 			settings.features.paymentsEnabled = parsedSettings.features?.paymentsEnabled ?? false;
 		}
 	});
@@ -574,59 +580,180 @@
 
 			<!-- Feature Toggles Section -->
 			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
-				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Feature Toggles</h2>
-				<p class="text-sm text-gray-600 mb-3 sm:mb-4">
-					Enable or disable course features
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-1">Features</h2>
+				<p class="text-sm text-gray-500 mb-4 sm:mb-5">
+					Toggle features on or off for this course
 				</p>
 
-				<div class="space-y-3">
-					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-						<input
-							type="checkbox"
-							bind:checked={settings.features.reflectionsEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
-						/>
-						<div>
-							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Reflections</span>
-							<p class="text-xs sm:text-sm text-gray-500">Allow students to submit reflections for each session</p>
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+					<!-- Reflections -->
+					<button
+						type="button"
+						onclick={() => settings.features.reflectionsEnabled = !settings.features.reflectionsEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.reflectionsEnabled}
+						class:bg-emerald-50={settings.features.reflectionsEnabled}
+						class:border-gray-200={!settings.features.reflectionsEnabled}
+						class:bg-gray-50={!settings.features.reflectionsEnabled}
+						class:hover:border-emerald-300={!settings.features.reflectionsEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.reflectionsEnabled} class:text-white={settings.features.reflectionsEnabled} class:bg-gray-200={!settings.features.reflectionsEnabled} class:text-gray-400={!settings.features.reflectionsEnabled}>
+									<PenSquare size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Reflections</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.reflectionsEnabled} class:bg-gray-300={!settings.features.reflectionsEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.reflectionsEnabled} class:translate-x-0.5={!settings.features.reflectionsEnabled}></div>
+							</div>
 						</div>
-					</label>
+						<p class="text-xs text-gray-500 leading-relaxed">Participants submit written reflections for each session</p>
 
-					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-						<input
-							type="checkbox"
-							bind:checked={settings.features.communityFeedEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
-						/>
-						<div>
-							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Community Feed</span>
-							<p class="text-xs sm:text-sm text-gray-500">Allow students to view and post in the course community feed</p>
-						</div>
-					</label>
+						{#if settings.features.reflectionsEnabled}
+							<div class="mt-3 pt-3 border-t border-emerald-200/60">
+								<label
+									class="flex items-center gap-2.5 cursor-pointer"
+									onclick={(e) => e.stopPropagation()}
+								>
+									<input
+										type="checkbox"
+										bind:checked={settings.features.communityFeedEnabled}
+										class="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+									/>
+									<div>
+										<span class="text-sm font-medium text-gray-700">Community Feed</span>
+										<p class="text-xs text-gray-500">Participants can share reflections publicly and view others</p>
+									</div>
+								</label>
+							</div>
+						{/if}
+					</button>
 
-					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-						<input
-							type="checkbox"
-							bind:checked={settings.features.attendanceEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
-						/>
-						<div>
-							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Attendance Tracking</span>
-							<p class="text-xs sm:text-sm text-gray-500">Track and manage student attendance for each session</p>
+					<!-- Chat -->
+					<button
+						type="button"
+						onclick={() => settings.features.chatEnabled = !settings.features.chatEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.chatEnabled}
+						class:bg-emerald-50={settings.features.chatEnabled}
+						class:border-gray-200={!settings.features.chatEnabled}
+						class:bg-gray-50={!settings.features.chatEnabled}
+						class:hover:border-emerald-300={!settings.features.chatEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.chatEnabled} class:text-white={settings.features.chatEnabled} class:bg-gray-200={!settings.features.chatEnabled} class:text-gray-400={!settings.features.chatEnabled}>
+									<MessageCircle size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Chat</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.chatEnabled} class:bg-gray-300={!settings.features.chatEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.chatEnabled} class:translate-x-0.5={!settings.features.chatEnabled}></div>
+							</div>
 						</div>
-					</label>
+						<p class="text-xs text-gray-500 leading-relaxed">Direct messaging between participants within their cohort</p>
+					</button>
 
-					<label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-						<input
-							type="checkbox"
-							bind:checked={settings.features.paymentsEnabled}
-							class="w-5 h-5 rounded border-gray-300 text-blue-600 mt-0.5 flex-shrink-0"
-						/>
-						<div>
-							<span class="font-medium text-gray-900 text-sm sm:text-base">Enable Payments & Enrollment Links</span>
-							<p class="text-xs sm:text-sm text-gray-500">Enable Stripe payments, enrollment links, and discount codes</p>
+					<!-- Attendance -->
+					<button
+						type="button"
+						onclick={() => settings.features.attendanceEnabled = !settings.features.attendanceEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.attendanceEnabled}
+						class:bg-emerald-50={settings.features.attendanceEnabled}
+						class:border-gray-200={!settings.features.attendanceEnabled}
+						class:bg-gray-50={!settings.features.attendanceEnabled}
+						class:hover:border-emerald-300={!settings.features.attendanceEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.attendanceEnabled} class:text-white={settings.features.attendanceEnabled} class:bg-gray-200={!settings.features.attendanceEnabled} class:text-gray-400={!settings.features.attendanceEnabled}>
+									<Calendar size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Attendance</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.attendanceEnabled} class:bg-gray-300={!settings.features.attendanceEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.attendanceEnabled} class:translate-x-0.5={!settings.features.attendanceEnabled}></div>
+							</div>
 						</div>
-					</label>
+						<p class="text-xs text-gray-500 leading-relaxed">Track and manage participant attendance for each session</p>
+					</button>
+
+					<!-- Materials -->
+					<button
+						type="button"
+						onclick={() => settings.features.materialsEnabled = !settings.features.materialsEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.materialsEnabled}
+						class:bg-emerald-50={settings.features.materialsEnabled}
+						class:border-gray-200={!settings.features.materialsEnabled}
+						class:bg-gray-50={!settings.features.materialsEnabled}
+						class:hover:border-emerald-300={!settings.features.materialsEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.materialsEnabled} class:text-white={settings.features.materialsEnabled} class:bg-gray-200={!settings.features.materialsEnabled} class:text-gray-400={!settings.features.materialsEnabled}>
+									<BookOpen size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Materials</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.materialsEnabled} class:bg-gray-300={!settings.features.materialsEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.materialsEnabled} class:translate-x-0.5={!settings.features.materialsEnabled}></div>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 leading-relaxed">Share session materials and resources with participants</p>
+					</button>
+
+					<!-- Hub Groups -->
+					<button
+						type="button"
+						onclick={() => settings.features.hubsEnabled = !settings.features.hubsEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.hubsEnabled}
+						class:bg-emerald-50={settings.features.hubsEnabled}
+						class:border-gray-200={!settings.features.hubsEnabled}
+						class:bg-gray-50={!settings.features.hubsEnabled}
+						class:hover:border-emerald-300={!settings.features.hubsEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.hubsEnabled} class:text-white={settings.features.hubsEnabled} class:bg-gray-200={!settings.features.hubsEnabled} class:text-gray-400={!settings.features.hubsEnabled}>
+									<MapPin size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Hub Groups</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.hubsEnabled} class:bg-gray-300={!settings.features.hubsEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.hubsEnabled} class:translate-x-0.5={!settings.features.hubsEnabled}></div>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 leading-relaxed">Organise participants into hub groups with coordinators</p>
+					</button>
+
+					<!-- Payments -->
+					<button
+						type="button"
+						onclick={() => settings.features.paymentsEnabled = !settings.features.paymentsEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-emerald-400={settings.features.paymentsEnabled}
+						class:bg-emerald-50={settings.features.paymentsEnabled}
+						class:border-gray-200={!settings.features.paymentsEnabled}
+						class:bg-gray-50={!settings.features.paymentsEnabled}
+						class:hover:border-emerald-300={!settings.features.paymentsEnabled}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.paymentsEnabled} class:text-white={settings.features.paymentsEnabled} class:bg-gray-200={!settings.features.paymentsEnabled} class:text-gray-400={!settings.features.paymentsEnabled}>
+									<Tag size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Payments</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.paymentsEnabled} class:bg-gray-300={!settings.features.paymentsEnabled}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.paymentsEnabled} class:translate-x-0.5={!settings.features.paymentsEnabled}></div>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 leading-relaxed">Stripe payments, enrollment links, and discount codes</p>
+					</button>
 				</div>
 			</div>
 

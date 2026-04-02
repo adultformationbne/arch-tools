@@ -36,6 +36,7 @@ export const load: LayoutServerLoad = async (event) => {
 	const courseBranding = settings.branding || {};
 	const courseSettings = getCourseSettings(settings);
 	const chatEnabled = courseSettings.features?.chatEnabled !== false;
+	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
 	// Check for unread chat messages (coordinators and admins only)
 	let hasUnreadChat = false;
@@ -78,6 +79,7 @@ export const load: LayoutServerLoad = async (event) => {
 		hasUnreadChat,
 		hubName,
 		chatEnabled,
+		communityFeedEnabled,
 		courseInfo: {
 			id: course.id,
 			slug: course.slug,
@@ -86,6 +88,7 @@ export const load: LayoutServerLoad = async (event) => {
 			description: course.description
 		},
 		courseTheme,
-		courseBranding
+		courseBranding,
+		courseFeatures: courseSettings.features || {}
 	};
 };

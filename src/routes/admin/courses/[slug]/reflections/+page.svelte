@@ -11,10 +11,12 @@
 
 	const courseSlug = $derived(data.courseSlug);
 	const currentUserName = $derived(data.currentUserName);
+	const communityFeedEnabled = $derived(data.communityFeedEnabled);
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
 	let selectedSession = $state('all');
 	let searchQuery = $state('');
+	let selectedParticipant = $state('all');
 	let selectedReflection = $state(null);
 	let showMarkingModal = $state(false);
 	let showViewModal = $state(false);
@@ -42,6 +44,18 @@
 	const sessions = $derived.by(() => {
 		const sessionSet = new Set(reflections.map(r => r.session).filter(s => s != null));
 		return [...sessionSet].sort((a, b) => a - b);
+	});
+
+	// Derive unique participants for filter dropdown
+	const participants = $derived.by(() => {
+		const map = new Map();
+		for (const r of reflections) {
+			const id = r.student?.id;
+			if (id && !map.has(id)) {
+				map.set(id, { id, name: r.student.name, email: r.student.email });
+			}
+		}
+		return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 	});
 
 	// Poll for updates every 30 seconds to see claim changes from other users
@@ -104,12 +118,15 @@
 			filtered = filtered.filter(r => r.session === selectedSession);
 		}
 
-		// Search filter
+		// Filter by participant
+		if (selectedParticipant !== 'all') {
+			filtered = filtered.filter(r => r.student?.id === selectedParticipant);
+		}
+
+		// Search filter (content only — use participant dropdown for name filtering)
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
 			filtered = filtered.filter(r =>
-				r.student.name.toLowerCase().includes(query) ||
-				r.student.email.toLowerCase().includes(query) ||
 				r.content.toLowerCase().includes(query)
 			);
 		}
@@ -386,7 +403,7 @@
 				<input
 					bind:value={searchQuery}
 					type="text"
-					placeholder="Search participants..."
+					placeholder="Search content..."
 					class="w-full pl-8 pr-3 py-2 text-sm border rounded-lg text-white placeholder-white/40 focus:outline-none"
 					style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"
 				/>
@@ -431,6 +448,18 @@
 					<option value={session} class="text-gray-900">Session {session}</option>
 				{/each}
 			</select>
+
+			<!-- Mobile Participant Select -->
+			<select
+				bind:value={selectedParticipant}
+				class="w-full px-3 py-2 text-sm rounded-lg text-white focus:outline-none"
+				style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+			>
+				<option value="all" class="text-gray-900">All Participants</option>
+				{#each participants as participant}
+					<option value={participant.id} class="text-gray-900">{participant.name}</option>
+				{/each}
+			</select>
 		</div>
 	{/if}
 
@@ -454,7 +483,7 @@
 						id="reflection-search"
 						bind:value={searchQuery}
 						type="text"
-						placeholder="Search..."
+						placeholder="Search content..."
 						class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg text-white placeholder-white/40 focus:outline-none"
 						style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"
 					/>
@@ -509,6 +538,22 @@
 					{/each}
 				</select>
 			</div>
+
+			<!-- Participant Filter -->
+			<div>
+				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="participant-filter">Participant</label>
+				<select
+					id="participant-filter"
+					bind:value={selectedParticipant}
+					class="w-full px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
+					style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+				>
+					<option value="all" class="text-gray-900">All Participants</option>
+					{#each participants as participant}
+						<option value={participant.id} class="text-gray-900">{participant.name}</option>
+					{/each}
+				</select>
+			</div>
 		</div>
 	</div>
 
@@ -560,6 +605,7 @@
 					<!-- Footer -->
 					<div class="flex items-center justify-between pt-2 border-t border-gray-100">
 						<div class="flex flex-wrap items-center gap-2 sm:gap-3 text-[10px] sm:text-xs">
+							{#if communityFeedEnabled}
 							<div class="flex items-center gap-1">
 								{#if reflection.isPublic}
 									<div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -569,6 +615,7 @@
 									<span class="text-gray-500">Private</span>
 								{/if}
 							</div>
+							{/if}
 							{#if reflection.feedback}
 								<span class="text-blue-600 hidden sm:inline">Has feedback</span>
 								<span class="text-blue-600 sm:hidden">Feedback</span>
@@ -806,6 +853,7 @@
 				{/if}
 
 				<!-- Visibility -->
+				{#if communityFeedEnabled}
 				<div class="flex items-center gap-2 pt-2 sm:pt-3 border-t border-gray-100">
 					{#if viewingReflection.isPublic}
 						<div class="flex items-center gap-1.5 text-green-600">
@@ -819,6 +867,7 @@
 						</div>
 					{/if}
 				</div>
+				{/if}
 			</div>
 
 			<!-- Modal Footer -->

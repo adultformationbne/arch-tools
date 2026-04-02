@@ -5,7 +5,7 @@
 		accentDark = '#334642',
 		accentLight = '#c59a6b',
 		fontFamily = 'Inter',
-		onThemeChange = (theme) => {}
+		onThemeChange = (theme: any) => {}
 	} = $props();
 
 	// Available fonts
@@ -17,31 +17,20 @@
 		{ value: 'Times New Roman', label: 'Times New Roman', style: 'font-serif' }
 	];
 
-	// Local state (initialized from props)
-	let selectedAccentDark = $state('#334642');
-	let selectedAccentLight = $state('#c59a6b');
-	let selectedFont = $state('Inter');
+	function updateDark(value: string) {
+		onThemeChange({ accentDark: value, accentLight, fontFamily });
+	}
 
-	// Sync state when props change
-	$effect(() => {
-		selectedAccentDark = accentDark;
-		selectedAccentLight = accentLight;
-		selectedFont = fontFamily;
-	});
+	function updateLight(value: string) {
+		onThemeChange({ accentDark, accentLight: value, fontFamily });
+	}
 
-	// Update parent when theme changes
-	$effect(() => {
-		onThemeChange({
-			accentDark: selectedAccentDark,
-			accentLight: selectedAccentLight,
-			fontFamily: selectedFont
-		});
-	});
+	function updateFont(value: string) {
+		onThemeChange({ accentDark, accentLight, fontFamily: value });
+	}
 
-	// Get font style class
-	function getFontClass(fontValue: string) {
-		const font = fonts.find((f) => f.value === fontValue);
-		return font?.style || 'font-sans';
+	function applyPreset(dark: string, light: string, font: string) {
+		onThemeChange({ accentDark: dark, accentLight: light, fontFamily: font });
 	}
 </script>
 
@@ -63,12 +52,14 @@
 					<input
 						type="color"
 						id="accent-dark"
-						bind:value={selectedAccentDark}
+						value={accentDark}
+						oninput={(e) => updateDark(e.currentTarget.value)}
 						class="h-10 w-16 cursor-pointer rounded border border-gray-300"
 					/>
 					<input
 						type="text"
-						bind:value={selectedAccentDark}
+						value={accentDark}
+						oninput={(e) => updateDark(e.currentTarget.value)}
 						class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
 						placeholder="#334642"
 					/>
@@ -84,12 +75,14 @@
 					<input
 						type="color"
 						id="accent-light"
-						bind:value={selectedAccentLight}
+						value={accentLight}
+						oninput={(e) => updateLight(e.currentTarget.value)}
 						class="h-10 w-16 cursor-pointer rounded border border-gray-300"
 					/>
 					<input
 						type="text"
-						bind:value={selectedAccentLight}
+						value={accentLight}
+						oninput={(e) => updateLight(e.currentTarget.value)}
 						class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
 						placeholder="#c59a6b"
 					/>
@@ -106,7 +99,8 @@
 		</h3>
 
 		<select
-			bind:value={selectedFont}
+			value={fontFamily}
+			onchange={(e) => updateFont(e.currentTarget.value)}
 			class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
 		>
 			{#each fonts as font}
@@ -121,12 +115,12 @@
 
 		<div
 			class="overflow-hidden rounded-xl border border-gray-300 shadow-lg"
-			style="background-color: {selectedAccentLight};"
+			style="background-color: {accentLight};"
 		>
 			<!-- Header with dark accent -->
 			<div
 				class="px-6 py-4"
-				style="background-color: {selectedAccentDark}; color: white; font-family: '{selectedFont}', sans-serif;"
+				style="background-color: {accentDark}; color: white; font-family: '{fontFamily}', sans-serif;"
 			>
 				<h4 class="text-lg font-bold">Course Title</h4>
 				<p class="mt-1 text-sm opacity-90">Welcome to your course</p>
@@ -136,9 +130,9 @@
 			<div class="p-6">
 				<div
 					class="rounded-lg bg-white p-4 shadow-sm"
-					style="font-family: '{selectedFont}', sans-serif;"
+					style="font-family: '{fontFamily}', sans-serif;"
 				>
-					<h5 class="mb-2 font-semibold" style="color: {selectedAccentDark};">
+					<h5 class="mb-2 font-semibold" style="color: {accentDark};">
 						Module 1: Introduction
 					</h5>
 					<p class="text-sm text-gray-600">
@@ -150,7 +144,7 @@
 					<!-- Sample button -->
 					<button
 						class="mt-4 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-						style="background-color: {selectedAccentDark}; font-family: '{selectedFont}', sans-serif;"
+						style="background-color: {accentDark}; font-family: '{fontFamily}', sans-serif;"
 					>
 						Continue Learning
 					</button>
@@ -160,7 +154,7 @@
 			<!-- Footer with light accent text -->
 			<div
 				class="border-t px-6 py-3 text-center text-xs"
-				style="background-color: {selectedAccentLight}; color: {selectedAccentDark}; font-family: '{selectedFont}', sans-serif; border-color: {selectedAccentDark}33;"
+				style="background-color: {accentLight}; color: {accentDark}; font-family: '{fontFamily}', sans-serif; border-color: {accentDark}33;"
 			>
 				Course branding reflects your organization's identity
 			</div>
@@ -173,11 +167,7 @@
 		<div class="flex flex-wrap gap-2">
 			<button
 				type="button"
-				onclick={() => {
-					selectedAccentDark = '#334642';
-					selectedAccentLight = '#c59a6b';
-					selectedFont = 'Inter';
-				}}
+				onclick={() => applyPreset('#334642', '#c59a6b', 'Inter')}
 				class="rounded-lg border-2 border-gray-300 px-3 py-2 text-xs font-medium transition-colors hover:border-gray-400"
 			>
 				<div class="flex items-center gap-2">
@@ -191,11 +181,7 @@
 
 			<button
 				type="button"
-				onclick={() => {
-					selectedAccentDark = '#1e3a8a';
-					selectedAccentLight = '#93c5fd';
-					selectedFont = 'Inter';
-				}}
+				onclick={() => applyPreset('#1e3a8a', '#93c5fd', 'Inter')}
 				class="rounded-lg border-2 border-gray-300 px-3 py-2 text-xs font-medium transition-colors hover:border-gray-400"
 			>
 				<div class="flex items-center gap-2">
@@ -209,11 +195,7 @@
 
 			<button
 				type="button"
-				onclick={() => {
-					selectedAccentDark = '#7c2d12';
-					selectedAccentLight = '#fed7aa';
-					selectedFont = 'Georgia';
-				}}
+				onclick={() => applyPreset('#7c2d12', '#fed7aa', 'Georgia')}
 				class="rounded-lg border-2 border-gray-300 px-3 py-2 text-xs font-medium transition-colors hover:border-gray-400"
 			>
 				<div class="flex items-center gap-2">
@@ -227,11 +209,7 @@
 
 			<button
 				type="button"
-				onclick={() => {
-					selectedAccentDark = '#064e3b';
-					selectedAccentLight = '#a7f3d0';
-					selectedFont = 'Inter';
-				}}
+				onclick={() => applyPreset('#064e3b', '#a7f3d0', 'Inter')}
 				class="rounded-lg border-2 border-gray-300 px-3 py-2 text-xs font-medium transition-colors hover:border-gray-400"
 			>
 				<div class="flex items-center gap-2">

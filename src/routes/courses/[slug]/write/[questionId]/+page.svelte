@@ -12,6 +12,7 @@
 	const questionId = $derived(data.questionId);
 	const existingReflection = $derived(data.existingReflection);
 	const isEditable = $derived(data.isEditable);
+	const communityFeedEnabled = $derived(data.communityFeedEnabled);
 
 	// Writing state - synced from data via $effect
 	let content = $state('');
@@ -25,7 +26,8 @@
 	$effect(() => {
 		if (existingReflection && !hasInitialized) {
 			content = existingReflection.response_text || '';
-			isPrivate = !(existingReflection.is_public ?? false);
+			// If community feed is disabled, always treat as private
+			isPrivate = !communityFeedEnabled || !(existingReflection.is_public ?? false);
 			hasInitialized = true;
 		}
 	});
@@ -186,6 +188,7 @@
 			<!-- Right: Actions -->
 			<div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
 				{#if isEditable}
+					{#if communityFeedEnabled}
 					<!-- Privacy Toggle - Compact on mobile -->
 					<button
 						onclick={() => isPrivate = !isPrivate}
@@ -235,6 +238,7 @@
 							<span>Public</span>
 						</button>
 					</div>
+					{/if}
 
 					<!-- Save Draft - Icon only on mobile -->
 					<button
@@ -265,6 +269,7 @@
 					</button>
 				{:else}
 					<!-- Read-only indicator -->
+					{#if communityFeedEnabled}
 					<div class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 rounded-lg">
 						{#if isPrivate}
 							<EyeOff size="16" class="text-gray-600" />
@@ -275,6 +280,7 @@
 							{isPrivate ? 'Private' : 'Public'}
 						</span>
 					</div>
+					{/if}
 				{/if}
 			</div>
 		</div>

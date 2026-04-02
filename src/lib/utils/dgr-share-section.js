@@ -4,8 +4,8 @@
  * Falls back to mailto: for browsers without Web Share support
  */
 
-export function generateShareSection(postTitle = '') {
-	const subscribeUrl = 'https://share-ap1.hsforms.com/1tifbJAvIRhmZf5yuh3qEsQ7av94g';
+export function generateShareSection(postTitle = '', postUrl = '') {
+	const shareUrl = postUrl || 'https://archdiocesanministries.org.au/daily-gospel-reflections/';
 	const shareTitle = 'Daily Gospel Reflections';
 	const shareText = postTitle || shareTitle;
 
@@ -14,7 +14,7 @@ export function generateShareSection(postTitle = '') {
 	const body = encodeURIComponent(
 		"Hi,\n\n" +
 		shareText + "\n" +
-		subscribeUrl + "\n\n" +
+		shareUrl + "\n\n" +
 		"God bless!"
 	);
 	const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
@@ -26,7 +26,7 @@ export function generateShareSection(postTitle = '') {
 		`navigator.share({`,
 		`title: '${shareTitle}',`,
 		`text: '${shareText.replace(/'/g, "\\'")}',`,
-		`url: '${subscribeUrl}'`,
+		`url: '${shareUrl}'`,
 		`}).catch(function(){});`,
 		`} else {`,
 		`window.location.href = '${mailtoLink}';`,

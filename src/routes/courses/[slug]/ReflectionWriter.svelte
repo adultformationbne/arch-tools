@@ -8,6 +8,7 @@
 		questionId = null,
 		existingContent = '',
 		existingIsPublic = false,
+		communityFeedEnabled = true,
 		isVisible = $bindable(false),
 		onClose = () => {},
 		onSave = () => {}
@@ -179,6 +180,7 @@
 				</div>
 
 				<!-- Privacy Toggle -->
+				{#if communityFeedEnabled}
 				<div class="flex items-center gap-3">
 					<button
 						class="flex items-center gap-2 px-5 py-2.5 rounded-full transition-all border-2"
@@ -200,6 +202,7 @@
 						{isPrivate ? 'Only you and your marker' : 'Visible to your cohort'}
 					</span>
 				</div>
+				{/if}
 			</div>
 
 			<!-- Writing Area -->

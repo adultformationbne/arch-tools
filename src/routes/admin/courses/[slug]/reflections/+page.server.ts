@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
@@ -22,6 +22,11 @@ export const load: PageServerLoad = async (event) => {
 		const courseInfo = layoutData?.courseInfo || {};
 		const courseId = courseInfo.id;
 		const cohorts = layoutData?.cohorts || [];
+		const courseFeatures = layoutData?.courseFeatures || {};
+
+		if (courseFeatures.reflectionsEnabled === false) {
+			throw redirect(302, `/admin/courses/${courseSlug}`);
+		}
 
 		if (!courseId) {
 			throw error(404, 'Course not found');
@@ -149,7 +154,8 @@ export const load: PageServerLoad = async (event) => {
 			cohorts: cohortOptions,
 			currentUserId: user.id,
 			currentUserName: currentUserProfile?.full_name || 'Unknown',
-			courseSlug
+			courseSlug,
+			communityFeedEnabled: courseFeatures.communityFeedEnabled !== false
 		};
 
 	} catch (err) {

@@ -26,6 +26,7 @@
 	const courseSlug = $derived(data.courseSlug);
 	let modules = $derived(data.modules || []);
 	let cohorts = $derived(data.cohorts || []);
+	const courseFeatures = $derived(data.courseFeatures || {});
 
 	// Modal state
 	let showCohortSettings = $state(false);
@@ -699,7 +700,7 @@
 						<ArrowRight size={14} />
 						Advance
 					</button>
-					<button
+										<button
 						onclick={handleEmailAll}
 						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
 						style="background-color: rgba(255,255,255,0.1);"
@@ -1134,6 +1135,7 @@
 	{courseSlug}
 	cohort={selectedCohort}
 	{hubs}
+	{courseFeatures}
 	totalSessions={getTotalSessions(selectedCohort)}
 	onClose={() => {
 		showParticipantDetail = false;

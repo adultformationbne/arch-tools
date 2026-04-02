@@ -14,11 +14,11 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
-	import { enhance } from '$app/forms';
+	import { applyAction, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
-	let { data, form } = $props();
+	let { data } = $props();
 	const courses = $derived(data.courses || []);
 	const managers = $derived(data.managers || []);
 	const userRole = $derived(data.userRole);
@@ -35,11 +35,10 @@
 		name: '',
 		slug: '',
 		description: '',
-		metadata: '{}',
-		settings: '{}'
+		metadata: '{}'
 	});
 
-	// Theme data
+	// Theme data (kept separate, merged into settings at submit time)
 	let themeData = $state({
 		accentDark: '#334642',
 		accentLight: '#c59a6b',
@@ -59,21 +58,15 @@
 	let logoPreview = $state('');
 	let logoFile = $state<File | null>(null);
 
+	// Base settings JSON (for advanced settings textarea, excludes theme/branding)
+	let baseSettingsJson = $state('{}');
+
 	// Reset form data
 	function resetForm() {
-		formData = {
-			name: '',
-			slug: '',
-			description: '',
-			metadata: '{}',
-			settings: '{}'
-		};
+		formData = { name: '', slug: '', description: '', metadata: '{}' };
 		selectedManagerIds = [];
-		themeData = {
-			accentDark: '#334642',
-			accentLight: '#c59a6b',
-			fontFamily: 'Inter'
-		};
+		themeData = { accentDark: '#334642', accentLight: '#c59a6b', fontFamily: 'Inter' };
+		baseSettingsJson = '{}';
 		isSubmitting = false;
 		logoUrl = '';
 		logoPath = '';
@@ -87,21 +80,18 @@
 		const file = input.files?.[0];
 		if (!file) return;
 
-		// Validate file type
 		const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 		if (!allowedTypes.includes(file.type)) {
 			toastError('Logo must be an image (JPEG, PNG, GIF, WebP, or SVG)');
 			return;
 		}
 
-		// Validate file size (2MB max)
 		if (file.size > 2 * 1024 * 1024) {
 			toastError('Logo must be less than 2MB');
 			return;
 		}
 
 		logoFile = file;
-		// Create preview URL
 		logoPreview = URL.createObjectURL(file);
 	}
 
@@ -144,33 +134,28 @@
 		logoPath = '';
 		logoPreview = '';
 		logoFile = null;
-		// Update settings to remove logo
-		const currentSettings = JSON.parse(formData.settings || '{}');
-		if (currentSettings.branding) {
-			currentSettings.branding.logoUrl = '';
-			currentSettings.branding.showLogo = false;
-		}
-		formData.settings = JSON.stringify(currentSettings, null, 2);
 	}
 
-	// Update settings JSON when theme changes
+	// Theme changes just update local state (merged at submit time)
 	function handleThemeChange(theme: any) {
 		themeData = theme;
-		// Update the settings field with theme data
-		const currentSettings = JSON.parse(formData.settings || '{}');
-		currentSettings.theme = theme;
-		formData.settings = JSON.stringify(currentSettings, null, 2);
 	}
 
-	// Update settings with branding (logo)
-	function updateBrandingSettings(newLogoUrl: string) {
-		const currentSettings = JSON.parse(formData.settings || '{}');
-		currentSettings.branding = {
-			...(currentSettings.branding || {}),
-			logoUrl: newLogoUrl,
-			showLogo: !!newLogoUrl
+	// Build final settings JSON from base settings + theme + branding
+	function buildSettingsJson(): string {
+		let settings: Record<string, any> = {};
+		try {
+			settings = JSON.parse(baseSettingsJson || '{}');
+		} catch {
+			settings = {};
+		}
+		settings.theme = themeData;
+		settings.branding = {
+			...(settings.branding || {}),
+			logoUrl: logoUrl,
+			showLogo: !!logoUrl
 		};
-		formData.settings = JSON.stringify(currentSettings, null, 2);
+		return JSON.stringify(settings, null, 2);
 	}
 
 	// Open create modal
@@ -186,8 +171,7 @@
 			name: course.name || '',
 			slug: course.slug || '',
 			description: course.description || '',
-			metadata: JSON.stringify(course.metadata || {}, null, 2),
-			settings: JSON.stringify(course.settings || {}, null, 2)
+			metadata: JSON.stringify(course.metadata || {}, null, 2)
 		};
 		// Extract theme from settings
 		if (course.settings?.theme) {
@@ -197,12 +181,13 @@
 				fontFamily: course.settings.theme.fontFamily || 'Inter'
 			};
 		} else {
-			themeData = {
-				accentDark: '#334642',
-				accentLight: '#c59a6b',
-				fontFamily: 'Inter'
-			};
+			themeData = { accentDark: '#334642', accentLight: '#c59a6b', fontFamily: 'Inter' };
 		}
+		// Store base settings (without theme/branding, for the advanced textarea)
+		const settingsCopy = { ...(course.settings || {}) };
+		delete settingsCopy.theme;
+		delete settingsCopy.branding;
+		baseSettingsJson = JSON.stringify(settingsCopy, null, 2);
 		// Extract logo from branding settings
 		if (course.settings?.branding?.logoUrl) {
 			logoUrl = course.settings.branding.logoUrl;
@@ -226,21 +211,41 @@
 		showDeleteModal = true;
 	}
 
-	// Handle form responses
-	$effect(() => {
-		if (form) {
-			isSubmitting = false;
-			if (form.type === 'success') {
-				toastSuccess(form.message, 'Success');
-				showCreateModal = false;
-				showEditModal = false;
-				showDeleteModal = false;
-				resetForm();
-			} else if (form.type === 'error') {
-				toastError(form.message, 'Error');
+	// Enhance callback with optional pre-submit hook
+	function handleFormResult(options?: { beforeSubmit?: (fd: FormData) => Promise<void> }) {
+		return async ({ formData: fd, cancel }: any) => {
+			isSubmitting = true;
+
+			try {
+				if (options?.beforeSubmit) {
+					await options.beforeSubmit(fd);
+				}
+			} catch (error) {
+				isSubmitting = false;
+				toastError(error instanceof Error ? error.message : 'Pre-submit error');
+				cancel();
+				return;
 			}
-		}
-	});
+
+			return async ({ result }: any) => {
+				isSubmitting = false;
+				if (result.type === 'success') {
+					const msg = result.data?.message || 'Success';
+					toastSuccess(msg, 'Success');
+					showCreateModal = false;
+					showEditModal = false;
+					showDeleteModal = false;
+					resetForm();
+					await invalidateAll();
+				} else if (result.type === 'failure') {
+					const msg = result.data?.message || 'An error occurred';
+					toastError(msg, 'Error');
+				} else {
+					await applyAction(result);
+				}
+			};
+		};
+	}
 
 	// Get status badge color
 	function getStatusColor(status: string) {
@@ -254,41 +259,13 @@
 
 	// Check if user can delete a course
 	function canDeleteCourse(course: any) {
-		// Admins can delete any course
 		if (userRole === 'admin') return true;
-
-		// Managers can only delete courses they created
 		if (userRole === 'manager') {
 			const createdByRole = course.metadata?.created_by_role;
 			const createdByUserId = course.metadata?.created_by_user_id;
 			return createdByRole === 'manager' && createdByUserId === userProfile?.id;
 		}
-
 		return false;
-	}
-
-	// Save manager assignments separately
-	async function handleSaveManagers() {
-		try {
-			const formData = new FormData();
-			formData.append('course_id', selectedCourse.id);
-			selectedManagerIds.forEach(id => {
-				formData.append('manager_ids', id);
-			});
-
-			const response = await fetch('?/updateManagers', {
-				method: 'POST',
-				body: formData
-			});
-
-			if (response.ok) {
-				await invalidateAll();
-				toastSuccess('Manager assignments updated', 'Success');
-			}
-		} catch (error) {
-			console.error('Error updating managers:', error);
-			toastError('Failed to update manager assignments', 'Error');
-		}
 	}
 </script>
 
@@ -351,7 +328,6 @@
 							</div>
 
 							<div class="flex-1 p-6">
-								<!-- Course Header -->
 								<div class="mb-2">
 									<h3 class="text-xl font-semibold" style="color: {accentDark};">
 										{course.name}
@@ -359,7 +335,6 @@
 									<p class="mt-1 text-sm font-mono text-gray-500">/{course.slug}</p>
 								</div>
 
-								<!-- Course Description -->
 								{#if course.description}
 									<p class="line-clamp-3 text-sm text-gray-600">
 										{course.description}
@@ -424,7 +399,19 @@
 	size="lg"
 	onClose={() => (showCreateModal = false)}
 >
-	<form method="POST" action="?/create" use:enhance>
+	<form
+		method="POST"
+		action="?/create"
+		use:enhance={handleFormResult({
+			beforeSubmit: async (fd) => {
+				if (logoFile && formData.slug) {
+					const uploadedUrl = await uploadLogo(formData.slug);
+					if (uploadedUrl) logoUrl = uploadedUrl;
+				}
+				fd.set('settings', buildSettingsJson());
+			}
+		})}
+	>
 		<div class="space-y-4">
 			<div class="space-y-4">
 				<div>
@@ -553,12 +540,11 @@
 
 					<div>
 						<label for="settings" class="mb-1 block text-sm font-medium text-gray-700">
-							Settings (auto-updated with theme)
+							Settings (theme & branding merged automatically)
 						</label>
 						<textarea
 							id="settings"
-							name="settings"
-							bind:value={formData.settings}
+							bind:value={baseSettingsJson}
 							rows="3"
 							class="block w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
 						></textarea>
@@ -566,30 +552,17 @@
 				</div>
 			</details>
 		</div>
-	</form>
 
-	{#snippet footer()}
-		<div class="flex justify-end gap-3">
-			<Button variant="secondary" onclick={() => (showCreateModal = false)}>Cancel</Button>
-			<Button
-				variant="primary"
-				loading={isSubmitting || isUploadingLogo}
-				onclick={async () => {
-					isSubmitting = true;
-					// Upload logo first if there's a file
-					if (logoFile && formData.slug) {
-						const uploadedUrl = await uploadLogo(formData.slug);
-						if (uploadedUrl) {
-							updateBrandingSettings(uploadedUrl);
-						}
-					}
-					document.querySelector('form[action="?/create"]')?.requestSubmit();
-				}}
-			>
-				{isUploadingLogo ? 'Uploading...' : 'Create Course'}
-			</Button>
+		<!-- Form footer (inside form so submit button works natively) -->
+		<div class="-mx-6 -mb-6 mt-6 border-t border-gray-200 bg-gray-50 px-6 py-4">
+			<div class="flex justify-end gap-3">
+				<Button variant="secondary" onclick={() => (showCreateModal = false)}>Cancel</Button>
+				<Button variant="primary" type="submit" loading={isSubmitting || isUploadingLogo}>
+					{isUploadingLogo ? 'Uploading...' : 'Create Course'}
+				</Button>
+			</div>
 		</div>
-	{/snippet}
+	</form>
 </Modal>
 
 <!-- Edit Course Modal -->
@@ -599,8 +572,25 @@
 	size="lg"
 	onClose={() => (showEditModal = false)}
 >
-	<form method="POST" action="?/update" use:enhance>
+	<form
+		method="POST"
+		action="?/update"
+		use:enhance={handleFormResult({
+			beforeSubmit: async (fd) => {
+				if (logoFile && formData.slug) {
+					const uploadedUrl = await uploadLogo(formData.slug);
+					if (uploadedUrl) logoUrl = uploadedUrl;
+				} else if (!logoPreview && logoUrl) {
+					logoUrl = '';
+				}
+				fd.set('settings', buildSettingsJson());
+			}
+		})}
+	>
 		<input type="hidden" name="course_id" value={selectedCourse?.id || ''} />
+		{#each selectedManagerIds as managerId}
+			<input type="hidden" name="manager_ids" value={managerId} />
+		{/each}
 
 		<div class="space-y-4">
 			<div class="space-y-4">
@@ -719,7 +709,6 @@
 							<label class="flex items-center gap-3 rounded p-2 hover:bg-gray-100 cursor-pointer">
 								<input
 									type="checkbox"
-									value={manager.id}
 									checked={selectedManagerIds.includes(manager.id)}
 									onchange={(e) => {
 										if (e.target.checked) {
@@ -761,12 +750,11 @@
 
 					<div>
 						<label for="edit_settings" class="mb-1 block text-sm font-medium text-gray-700">
-							Settings (auto-updated with theme)
+							Settings (theme & branding merged automatically)
 						</label>
 						<textarea
 							id="edit_settings"
-							name="settings"
-							bind:value={formData.settings}
+							bind:value={baseSettingsJson}
 							rows="3"
 							class="block w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
 						></textarea>
@@ -774,49 +762,32 @@
 				</div>
 			</details>
 		</div>
-	</form>
 
-	{#snippet footer()}
-		<div class="flex items-center justify-between">
-			{#if canDeleteCourse(selectedCourse)}
-				<Button
-					variant="danger"
-					onclick={() => {
-						showEditModal = false;
-						openDeleteModal(selectedCourse);
-					}}
-				>
-					Delete Course
-				</Button>
-			{:else}
-				<div></div>
-			{/if}
-			<div class="flex gap-3">
-				<Button variant="secondary" onclick={() => (showEditModal = false)}>Cancel</Button>
-				<Button
-					variant="primary"
-					loading={isSubmitting || isUploadingLogo}
-					onclick={async () => {
-						isSubmitting = true;
-						// Upload logo first if there's a new file
-						if (logoFile && formData.slug) {
-							const uploadedUrl = await uploadLogo(formData.slug);
-							if (uploadedUrl) {
-								updateBrandingSettings(uploadedUrl);
-							}
-						} else if (!logoPreview && logoUrl) {
-							// Logo was removed
-							updateBrandingSettings('');
-						}
-						document.querySelector('form[action="?/update"]')?.requestSubmit();
-						await handleSaveManagers();
-					}}
-				>
-					{isUploadingLogo ? 'Uploading...' : 'Save Changes'}
-				</Button>
+		<!-- Form footer (inside form so submit button works natively) -->
+		<div class="-mx-6 -mb-6 mt-6 border-t border-gray-200 bg-gray-50 px-6 py-4">
+			<div class="flex items-center justify-between">
+				{#if canDeleteCourse(selectedCourse)}
+					<Button
+						variant="danger"
+						onclick={() => {
+							showEditModal = false;
+							openDeleteModal(selectedCourse);
+						}}
+					>
+						Delete Course
+					</Button>
+				{:else}
+					<div></div>
+				{/if}
+				<div class="flex gap-3">
+					<Button variant="secondary" onclick={() => (showEditModal = false)}>Cancel</Button>
+					<Button variant="primary" type="submit" loading={isSubmitting || isUploadingLogo}>
+						{isUploadingLogo ? 'Uploading...' : 'Save Changes'}
+					</Button>
+				</div>
 			</div>
 		</div>
-	{/snippet}
+	</form>
 </Modal>
 
 <!-- Delete Confirmation Modal -->
@@ -826,7 +797,7 @@
 	size="sm"
 	onClose={() => (showDeleteModal = false)}
 >
-	<form method="POST" action="?/delete" use:enhance>
+	<form method="POST" action="?/delete" use:enhance={handleFormResult()}>
 		<input type="hidden" name="course_id" value={selectedCourse?.id || ''} />
 
 		<div class="space-y-4">
@@ -848,23 +819,17 @@
 				</p>
 			</div>
 		</div>
-	</form>
 
-	{#snippet footer()}
-		<div class="flex justify-end gap-3">
-			<Button variant="secondary" onclick={() => (showDeleteModal = false)}>Cancel</Button>
-			<Button
-				variant="danger"
-				loading={isSubmitting}
-				onclick={() => {
-					isSubmitting = true;
-					document.querySelector('form[action="?/delete"]').requestSubmit();
-				}}
-			>
-				Delete Course
-			</Button>
+		<!-- Form footer -->
+		<div class="-mx-6 -mb-6 mt-6 border-t border-gray-200 bg-gray-50 px-6 py-4">
+			<div class="flex justify-end gap-3">
+				<Button variant="secondary" onclick={() => (showDeleteModal = false)}>Cancel</Button>
+				<Button variant="danger" type="submit" loading={isSubmitting}>
+					Delete Course
+				</Button>
+			</div>
 		</div>
-	{/snippet}
+	</form>
 </Modal>
 
 <style>

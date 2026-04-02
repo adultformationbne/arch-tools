@@ -16,8 +16,9 @@
 		featureSettings = {}
 	} = $props();
 
-	// Check if reflections are enabled (default true for backwards compatibility)
+	// Check if features are enabled (default true for backwards compatibility)
 	const reflectionsEnabled = $derived(featureSettings?.reflectionsEnabled !== false);
+	const materialsEnabled = $derived(featureSettings?.materialsEnabled !== false);
 
 	// Question truncation length
 	const QUESTION_TRUNCATE_LENGTH = 200;
@@ -211,6 +212,7 @@
 						</div>
 
 						<!-- Top Right: Materials (order-3 on mobile to appear after overview) -->
+						{#if materialsEnabled}
 						<div class="order-3 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{currentSession === 0 ? 'Welcome Materials' : 'Materials'}</h3>
 							<div class="flex flex-wrap gap-2">
@@ -241,6 +243,7 @@
 								{/each}
 							</div>
 						</div>
+						{/if}
 
 						<!-- Bottom Left: Session Overview (order-2 on mobile to appear after title) -->
 						<div class="flex flex-col order-2 lg:order-none">
@@ -409,6 +412,7 @@
 						</div>
 
 						<!-- Top Right: Materials (order-3 on mobile) -->
+						{#if materialsEnabled}
 						<div class="flex flex-col order-3 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Welcome Materials</h3>
 							<div class="space-y-2">
@@ -439,6 +443,7 @@
 								{/each}
 							</div>
 						</div>
+						{/if}
 
 						<!-- Bottom Left: Session Overview (order-2 on mobile) -->
 						<div class="flex flex-col order-2 lg:order-none">
@@ -607,6 +612,7 @@
 						</div>
 
 						<!-- Top Right: Materials (order-3 on mobile) -->
+						{#if materialsEnabled}
 						<div class="flex flex-col order-3 lg:order-none">
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Materials</h3>
 							<div class="space-y-2">
@@ -637,6 +643,7 @@
 								{/each}
 							</div>
 						</div>
+						{/if}
 
 						<!-- Bottom Left: Session Overview (order-2 on mobile) -->
 						<div class="flex flex-col order-2 lg:order-none">

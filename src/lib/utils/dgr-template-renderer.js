@@ -156,7 +156,13 @@ function processSpecialHelpers(template, data, options = {}) {
 
   // Handle Share section helper {{shareSection}}
   processed = processed.replace(/{{shareSection}}/g, () => {
-    return generateShareSection(data.title);
+    // Build the WordPress post URL from the formatted date (e.g. "Thursday, 2 April 2026" -> "thursday-2-april-2026")
+    let postUrl = '';
+    if (data.formattedDate) {
+      const slug = data.formattedDate.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      postUrl = `https://archdiocesanministries.org.au/${slug}/`;
+    }
+    return generateShareSection(data.title, postUrl);
   });
 
   // Handle Subscribe section helper {{subscribeSection}}

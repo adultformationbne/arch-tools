@@ -43,6 +43,9 @@ export interface CourseSettings {
 		attendanceEnabled?: boolean;
 		paymentsEnabled?: boolean;
 		chatEnabled?: boolean;
+		chatAllowParticipants?: boolean;
+		materialsEnabled?: boolean;
+		hubsEnabled?: boolean;
 	};
 }
 
@@ -66,7 +69,9 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		communityFeedEnabled: true,
 		attendanceEnabled: true,
 		paymentsEnabled: false,
-		chatEnabled: true
+		chatEnabled: true,
+		materialsEnabled: true,
+		hubsEnabled: true
 	}
 };
 
@@ -110,7 +115,11 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 			paymentsEnabled:
 				settings.features?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.paymentsEnabled,
 			chatEnabled:
-				settings.features?.chatEnabled ?? DEFAULT_COURSE_SETTINGS.features.chatEnabled
+				settings.features?.chatEnabled ?? DEFAULT_COURSE_SETTINGS.features.chatEnabled,
+			materialsEnabled:
+				settings.features?.materialsEnabled ?? DEFAULT_COURSE_SETTINGS.features.materialsEnabled,
+			hubsEnabled:
+				settings.features?.hubsEnabled ?? DEFAULT_COURSE_SETTINGS.features.hubsEnabled
 		}
 	};
 }

@@ -13,6 +13,7 @@
 	let students = $derived(data.users || []);
 	let hubs = $derived(data.hubs || []);
 	let cohorts = $derived(data.cohorts || []);
+	const courseFeatures = $derived(data.courseFeatures || {});
 
 	// Filter state
 	let searchQuery = $state('');
@@ -344,6 +345,7 @@
 				</div>
 			</div>
 
+			{#if courseFeatures.hubsEnabled !== false}
 			<div>
 				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="hub-filter">Hub</label>
 				<select
@@ -359,6 +361,7 @@
 					{/each}
 				</select>
 			</div>
+			{/if}
 		</div>
 
 		<div class="p-3 border-t" style="border-color: rgba(255,255,255,0.1);">
@@ -452,6 +455,7 @@
 						</select>
 
 						<!-- Hub filter -->
+						{#if courseFeatures.hubsEnabled !== false}
 						<select
 							bind:value={selectedHub}
 							class="flex-shrink-0 px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
@@ -463,6 +467,7 @@
 								<option value={hub.id} class="text-gray-900">{hub.name}</option>
 							{/each}
 						</select>
+						{/if}
 
 						<!-- Cohort filter (if multiple cohorts) -->
 						{#if cohorts.length > 1}
@@ -752,6 +757,7 @@
 	hubs={hubs}
 	totalSessions={data.totalSessions}
 	showCohortHistory={false}
+	{courseFeatures}
 	onClose={() => {
 		showParticipantDetail = false;
 		selectedParticipantForDetail = null;

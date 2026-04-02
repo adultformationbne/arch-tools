@@ -86,11 +86,14 @@ export const load: PageServerLoad = async (event) => {
 		(existingReflection.status === 'submitted' && !existingReflection.marked_by) ||
 		existingReflection.status === 'needs_revision';
 
+	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
+
 	return {
 		question: questionData.question_text,
 		questionId: questionData.id,
 		courseSlug,
 		existingReflection,
-		isEditable
+		isEditable,
+		communityFeedEnabled
 	};
 };
