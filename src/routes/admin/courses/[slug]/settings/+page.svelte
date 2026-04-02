@@ -1,5 +1,5 @@
 <script>
-	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag } from '$lib/icons';
+	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag, UserPlus, Link } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
@@ -33,7 +33,7 @@
 			replyToEmail: ''
 		},
 		coordinatorAccess: {
-			sessionsAhead: 'all'
+			sessionsAhead: /** @type {'all' | number} */ ('all')
 		},
 		sessionProgression: {
 			mode: 'manual',
@@ -47,14 +47,18 @@
 			reflectionsEnabled: true,
 			communityFeedEnabled: true,
 			chatEnabled: true,
+			chatAllowParticipants: false,
 			attendanceEnabled: true,
 			materialsEnabled: true,
 			hubsEnabled: true,
-			paymentsEnabled: false
+			enrollmentEnabled: false,
+			acceptPayments: false,
+			discountCodes: false
 		}
 	});
 
 	// State for coordinator access limited mode
+	/** @type {number} */
 	let sessionsAheadCount = $state(2);
 
 	// Sync form state when course data changes
@@ -96,10 +100,14 @@
 			settings.features.reflectionsEnabled = parsedSettings.features?.reflectionsEnabled ?? true;
 			settings.features.communityFeedEnabled = parsedSettings.features?.communityFeedEnabled ?? true;
 			settings.features.chatEnabled = parsedSettings.features?.chatEnabled ?? true;
+			settings.features.chatAllowParticipants = parsedSettings.features?.chatAllowParticipants ?? false;
 			settings.features.attendanceEnabled = parsedSettings.features?.attendanceEnabled ?? true;
 			settings.features.materialsEnabled = parsedSettings.features?.materialsEnabled ?? true;
 			settings.features.hubsEnabled = parsedSettings.features?.hubsEnabled ?? true;
-			settings.features.paymentsEnabled = parsedSettings.features?.paymentsEnabled ?? false;
+			const legacyPayments = parsedSettings.features?.['paymentsEnabled'];
+			settings.features.enrollmentEnabled = parsedSettings.features?.enrollmentEnabled ?? legacyPayments ?? false;
+			settings.features.acceptPayments = parsedSettings.features?.acceptPayments ?? legacyPayments ?? false;
+			settings.features.discountCodes = parsedSettings.features?.discountCodes ?? legacyPayments ?? false;
 		}
 	});
 
@@ -108,8 +116,9 @@
 		settings.coordinatorAccess.sessionsAhead === 'all' ? 'all' : 'limited'
 	);
 
+	/** @param {Event} event */
 	async function handleLogoUpload(event) {
-		const file = event.target.files?.[0];
+		const file = /** @type {HTMLInputElement} */ (event.target)?.files?.[0];
 		if (!file) return;
 
 		// Validate file type
@@ -147,7 +156,7 @@
 			toastSuccess('Logo uploaded successfully');
 		} catch (error) {
 			console.error('Logo upload error:', error);
-			toastError(error.message || 'Failed to upload logo');
+			toastError(error instanceof Error ? error.message : 'Failed to upload logo');
 		} finally {
 			uploadingLogo = false;
 		}
@@ -157,6 +166,7 @@
 		settings.branding.logoUrl = '';
 	}
 
+	/** @param {'all' | 'limited'} mode */
 	function setCoordinatorAccessMode(mode) {
 		if (mode === 'all') {
 			settings.coordinatorAccess.sessionsAhead = 'all';
@@ -165,6 +175,7 @@
 		}
 	}
 
+	/** @param {number} value */
 	function updateSessionsAheadCount(value) {
 		sessionsAheadCount = value;
 		if (coordinatorAccessMode === 'limited') {
@@ -209,10 +220,39 @@
 			await invalidateAll();
 		} catch (error) {
 			console.error('Save error:', error);
-			toastError(error.message || 'Failed to save settings');
+			toastError(error instanceof Error ? error.message : 'Failed to save settings');
 		} finally {
 			saving = false;
 		}
+	}
+
+	// Feature toggle style helpers
+	/** @param {boolean} enabled */
+	function toggleCardStyle(enabled) {
+		if (enabled) {
+			return `border-color: ${settings.theme.accentDark}40; background-color: ${settings.theme.accentLight}25;`;
+		}
+		return '';
+	}
+
+	/** @param {boolean} enabled */
+	function toggleIconStyle(enabled) {
+		if (enabled) {
+			return `background-color: ${settings.theme.accentDark}; color: white;`;
+		}
+		return '';
+	}
+
+	/** @param {boolean} enabled */
+	function toggleTrackStyle(enabled) {
+		if (enabled) {
+			return `background-color: ${settings.theme.accentDark};`;
+		}
+		return '';
+	}
+
+	function toggleSubBorderStyle() {
+		return `border-color: ${settings.theme.accentDark}20;`;
 	}
 </script>
 
@@ -476,7 +516,7 @@
 										min="1"
 										max="10"
 										value={sessionsAheadCount}
-										oninput={(e) => updateSessionsAheadCount(parseInt(e.target.value) || 1)}
+										oninput={(e) => updateSessionsAheadCount(parseInt(/** @type {HTMLInputElement} */ (e.target).value) || 1)}
 										disabled={coordinatorAccessMode !== 'limited'}
 										class="w-16 px-2 py-1.5 sm:py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
 									/>
@@ -591,27 +631,26 @@
 						type="button"
 						onclick={() => settings.features.reflectionsEnabled = !settings.features.reflectionsEnabled}
 						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.reflectionsEnabled}
-						class:bg-emerald-50={settings.features.reflectionsEnabled}
 						class:border-gray-200={!settings.features.reflectionsEnabled}
 						class:bg-gray-50={!settings.features.reflectionsEnabled}
-						class:hover:border-emerald-300={!settings.features.reflectionsEnabled}
+						class:hover:border-gray-300={!settings.features.reflectionsEnabled}
+						style={toggleCardStyle(settings.features.reflectionsEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.reflectionsEnabled} class:text-white={settings.features.reflectionsEnabled} class:bg-gray-200={!settings.features.reflectionsEnabled} class:text-gray-400={!settings.features.reflectionsEnabled}>
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.reflectionsEnabled} class:text-gray-400={!settings.features.reflectionsEnabled} style={toggleIconStyle(settings.features.reflectionsEnabled)}>
 									<PenSquare size={18} />
 								</div>
 								<span class="font-semibold text-gray-900">Reflections</span>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.reflectionsEnabled} class:bg-gray-300={!settings.features.reflectionsEnabled}>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.reflectionsEnabled} style={toggleTrackStyle(settings.features.reflectionsEnabled)}>
 								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.reflectionsEnabled} class:translate-x-0.5={!settings.features.reflectionsEnabled}></div>
 							</div>
 						</div>
 						<p class="text-xs text-gray-500 leading-relaxed">Participants submit written reflections for each session</p>
 
 						{#if settings.features.reflectionsEnabled}
-							<div class="mt-3 pt-3 border-t border-emerald-200/60">
+							<div class="mt-3 pt-3 border-t" style={toggleSubBorderStyle()}>
 								<label
 									class="flex items-center gap-2.5 cursor-pointer"
 									onclick={(e) => e.stopPropagation()}
@@ -619,7 +658,8 @@
 									<input
 										type="checkbox"
 										bind:checked={settings.features.communityFeedEnabled}
-										class="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+										class="w-4 h-4 rounded border-gray-300"
+										style="accent-color: {settings.theme.accentDark};"
 									/>
 									<div>
 										<span class="text-sm font-medium text-gray-700">Community Feed</span>
@@ -635,24 +675,47 @@
 						type="button"
 						onclick={() => settings.features.chatEnabled = !settings.features.chatEnabled}
 						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.chatEnabled}
-						class:bg-emerald-50={settings.features.chatEnabled}
 						class:border-gray-200={!settings.features.chatEnabled}
 						class:bg-gray-50={!settings.features.chatEnabled}
-						class:hover:border-emerald-300={!settings.features.chatEnabled}
+						class:hover:border-gray-300={!settings.features.chatEnabled}
+						style={toggleCardStyle(settings.features.chatEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.chatEnabled} class:text-white={settings.features.chatEnabled} class:bg-gray-200={!settings.features.chatEnabled} class:text-gray-400={!settings.features.chatEnabled}>
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.chatEnabled} class:text-gray-400={!settings.features.chatEnabled} style={toggleIconStyle(settings.features.chatEnabled)}>
 									<MessageCircle size={18} />
 								</div>
 								<span class="font-semibold text-gray-900">Chat</span>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.chatEnabled} class:bg-gray-300={!settings.features.chatEnabled}>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.chatEnabled} style={toggleTrackStyle(settings.features.chatEnabled)}>
 								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.chatEnabled} class:translate-x-0.5={!settings.features.chatEnabled}></div>
 							</div>
 						</div>
-						<p class="text-xs text-gray-500 leading-relaxed">Direct messaging between participants within their cohort</p>
+						<p class="text-xs text-gray-500 leading-relaxed">Messaging within each cohort</p>
+
+						{#if settings.features.chatEnabled}
+							<div class="mt-3 pt-3 border-t space-y-2" style={toggleSubBorderStyle()}>
+								<div class="flex items-center gap-2 text-xs font-medium" style="color: {settings.theme.accentDark};">
+									<MapPin size={12} />
+									<span>Hub coordinators can always chat</span>
+								</div>
+								<label
+									class="flex items-center gap-2.5 cursor-pointer"
+									onclick={(e) => e.stopPropagation()}
+								>
+									<input
+										type="checkbox"
+										bind:checked={settings.features.chatAllowParticipants}
+										class="w-4 h-4 rounded border-gray-300"
+										style="accent-color: {settings.theme.accentDark};"
+									/>
+									<div>
+										<span class="text-sm font-medium text-gray-700">Allow participants to chat</span>
+										<p class="text-xs text-gray-500">All enrolled participants can send messages in their cohort chat</p>
+									</div>
+								</label>
+							</div>
+						{/if}
 					</button>
 
 					<!-- Attendance -->
@@ -660,20 +723,19 @@
 						type="button"
 						onclick={() => settings.features.attendanceEnabled = !settings.features.attendanceEnabled}
 						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.attendanceEnabled}
-						class:bg-emerald-50={settings.features.attendanceEnabled}
 						class:border-gray-200={!settings.features.attendanceEnabled}
 						class:bg-gray-50={!settings.features.attendanceEnabled}
-						class:hover:border-emerald-300={!settings.features.attendanceEnabled}
+						class:hover:border-gray-300={!settings.features.attendanceEnabled}
+						style={toggleCardStyle(settings.features.attendanceEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.attendanceEnabled} class:text-white={settings.features.attendanceEnabled} class:bg-gray-200={!settings.features.attendanceEnabled} class:text-gray-400={!settings.features.attendanceEnabled}>
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.attendanceEnabled} class:text-gray-400={!settings.features.attendanceEnabled} style={toggleIconStyle(settings.features.attendanceEnabled)}>
 									<Calendar size={18} />
 								</div>
 								<span class="font-semibold text-gray-900">Attendance</span>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.attendanceEnabled} class:bg-gray-300={!settings.features.attendanceEnabled}>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.attendanceEnabled} style={toggleTrackStyle(settings.features.attendanceEnabled)}>
 								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.attendanceEnabled} class:translate-x-0.5={!settings.features.attendanceEnabled}></div>
 							</div>
 						</div>
@@ -685,20 +747,19 @@
 						type="button"
 						onclick={() => settings.features.materialsEnabled = !settings.features.materialsEnabled}
 						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.materialsEnabled}
-						class:bg-emerald-50={settings.features.materialsEnabled}
 						class:border-gray-200={!settings.features.materialsEnabled}
 						class:bg-gray-50={!settings.features.materialsEnabled}
-						class:hover:border-emerald-300={!settings.features.materialsEnabled}
+						class:hover:border-gray-300={!settings.features.materialsEnabled}
+						style={toggleCardStyle(settings.features.materialsEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.materialsEnabled} class:text-white={settings.features.materialsEnabled} class:bg-gray-200={!settings.features.materialsEnabled} class:text-gray-400={!settings.features.materialsEnabled}>
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.materialsEnabled} class:text-gray-400={!settings.features.materialsEnabled} style={toggleIconStyle(settings.features.materialsEnabled)}>
 									<BookOpen size={18} />
 								</div>
 								<span class="font-semibold text-gray-900">Materials</span>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.materialsEnabled} class:bg-gray-300={!settings.features.materialsEnabled}>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.materialsEnabled} style={toggleTrackStyle(settings.features.materialsEnabled)}>
 								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.materialsEnabled} class:translate-x-0.5={!settings.features.materialsEnabled}></div>
 							</div>
 						</div>
@@ -710,49 +771,89 @@
 						type="button"
 						onclick={() => settings.features.hubsEnabled = !settings.features.hubsEnabled}
 						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.hubsEnabled}
-						class:bg-emerald-50={settings.features.hubsEnabled}
 						class:border-gray-200={!settings.features.hubsEnabled}
 						class:bg-gray-50={!settings.features.hubsEnabled}
-						class:hover:border-emerald-300={!settings.features.hubsEnabled}
+						class:hover:border-gray-300={!settings.features.hubsEnabled}
+						style={toggleCardStyle(settings.features.hubsEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.hubsEnabled} class:text-white={settings.features.hubsEnabled} class:bg-gray-200={!settings.features.hubsEnabled} class:text-gray-400={!settings.features.hubsEnabled}>
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.hubsEnabled} class:text-gray-400={!settings.features.hubsEnabled} style={toggleIconStyle(settings.features.hubsEnabled)}>
 									<MapPin size={18} />
 								</div>
 								<span class="font-semibold text-gray-900">Hub Groups</span>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.hubsEnabled} class:bg-gray-300={!settings.features.hubsEnabled}>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.hubsEnabled} style={toggleTrackStyle(settings.features.hubsEnabled)}>
 								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.hubsEnabled} class:translate-x-0.5={!settings.features.hubsEnabled}></div>
 							</div>
 						</div>
 						<p class="text-xs text-gray-500 leading-relaxed">Organise participants into hub groups with coordinators</p>
 					</button>
 
-					<!-- Payments -->
+				</div>
+
+				<!-- Enrollment - Full Width -->
+				<div class="mt-3 sm:mt-4">
 					<button
 						type="button"
-						onclick={() => settings.features.paymentsEnabled = !settings.features.paymentsEnabled}
-						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
-						class:border-emerald-400={settings.features.paymentsEnabled}
-						class:bg-emerald-50={settings.features.paymentsEnabled}
-						class:border-gray-200={!settings.features.paymentsEnabled}
-						class:bg-gray-50={!settings.features.paymentsEnabled}
-						class:hover:border-emerald-300={!settings.features.paymentsEnabled}
+						onclick={() => settings.features.enrollmentEnabled = !settings.features.enrollmentEnabled}
+						class="relative w-full flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-gray-200={!settings.features.enrollmentEnabled}
+						class:bg-gray-50={!settings.features.enrollmentEnabled}
+						class:hover:border-gray-300={!settings.features.enrollmentEnabled}
+						style={toggleCardStyle(settings.features.enrollmentEnabled)}
 					>
 						<div class="flex items-center justify-between mb-2">
 							<div class="flex items-center gap-2.5">
-								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-emerald-500={settings.features.paymentsEnabled} class:text-white={settings.features.paymentsEnabled} class:bg-gray-200={!settings.features.paymentsEnabled} class:text-gray-400={!settings.features.paymentsEnabled}>
-									<Tag size={18} />
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.enrollmentEnabled} class:text-gray-400={!settings.features.enrollmentEnabled} style={toggleIconStyle(settings.features.enrollmentEnabled)}>
+									<UserPlus size={18} />
 								</div>
-								<span class="font-semibold text-gray-900">Payments</span>
+								<div>
+									<span class="font-semibold text-gray-900">Enrollment</span>
+									<p class="text-xs text-gray-500 leading-relaxed">Self-service signup via enrollment links, payments, and discount codes</p>
+								</div>
 							</div>
-							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-emerald-500={settings.features.paymentsEnabled} class:bg-gray-300={!settings.features.paymentsEnabled}>
-								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.paymentsEnabled} class:translate-x-0.5={!settings.features.paymentsEnabled}></div>
+							<div class="w-11 h-6 rounded-full transition-colors relative shrink-0" class:bg-gray-300={!settings.features.enrollmentEnabled} style={toggleTrackStyle(settings.features.enrollmentEnabled)}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.enrollmentEnabled} class:translate-x-0.5={!settings.features.enrollmentEnabled}></div>
 							</div>
 						</div>
-						<p class="text-xs text-gray-500 leading-relaxed">Stripe payments, enrollment links, and discount codes</p>
+
+						{#if settings.features.enrollmentEnabled}
+							<div class="mt-3 pt-3 border-t space-y-3" style={toggleSubBorderStyle()} onclick={(e) => e.stopPropagation()}>
+								<p class="text-xs text-gray-500">When disabled, participants are managed directly by admins with no self-service signup.</p>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+									<!-- Accept Payments -->
+									<label class="flex items-start gap-2.5 cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-white/50 transition-colors">
+										<input
+											type="checkbox"
+											bind:checked={settings.features.acceptPayments}
+											class="w-4 h-4 mt-0.5 rounded border-gray-300"
+											style="accent-color: {settings.theme.accentDark};"
+										/>
+										<div>
+											<span class="text-sm font-medium text-gray-700">Accept payments</span>
+											<p class="text-xs text-gray-500">Enrollment links can include pricing via Stripe checkout</p>
+										</div>
+									</label>
+
+									<!-- Discount Codes -->
+										<label class="flex items-start gap-2.5 rounded-lg border border-gray-200 p-3 transition-colors {settings.features.acceptPayments ? 'cursor-pointer hover:bg-white/50' : 'opacity-50 pointer-events-none'}">
+										<input
+											type="checkbox"
+											bind:checked={settings.features.discountCodes}
+											disabled={!settings.features.acceptPayments}
+											class="w-4 h-4 mt-0.5 rounded border-gray-300"
+											style="accent-color: {settings.theme.accentDark};"
+										/>
+										<div>
+											<span class="text-sm font-medium text-gray-700">Discount codes</span>
+											<p class="text-xs text-gray-500">Create and manage discount codes for enrollment</p>
+										</div>
+									</label>
+								</div>
+							</div>
+						{/if}
 					</button>
 				</div>
 			</div>

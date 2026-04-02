@@ -132,14 +132,14 @@ const navItems = $derived([
 		href: `/admin/courses/${courseSlug}/enrollment-links`,
 		icon: Link,
 		description: 'Public sign-up links',
-		visible: canManageCourse && courseFeatures.paymentsEnabled
+		visible: canManageCourse && courseFeatures.enrollmentEnabled
 	},
 	{
 		label: 'Discounts',
 		href: `/admin/courses/${courseSlug}/discounts`,
 		icon: Tag,
 		description: 'Discount codes',
-		visible: canManageCourse && courseFeatures.paymentsEnabled
+		visible: canManageCourse && courseFeatures.enrollmentEnabled && courseFeatures.discountCodes !== false
 	},
 	{
 		label: 'Hubs',

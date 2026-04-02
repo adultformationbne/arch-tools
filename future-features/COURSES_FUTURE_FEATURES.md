@@ -35,6 +35,143 @@
 - Paid enrollment → Mock checkout (dev) or Stripe Checkout (prod)
 - Payment cancelled → User notified, can retry
 
+### 🔲 NEXT: Enrollment System Overhaul
+
+The current `paymentsEnabled` feature flag is being renamed to `enrollmentEnabled` and expanded to cover the full enrollment lifecycle. Enrollment is not just about payments — it encompasses how participants get into a course.
+
+#### Enrollment Modes (Course-Level Setting)
+
+There are three distinct ways participants end up in a course:
+
+| Mode | Description | Admin Pages Shown | Example |
+|------|-------------|-------------------|---------|
+| **Closed** | Admin manages all participants directly. No self-service signup. Enrollment links and discount pages are hidden. | Participants only | Diocese assigns 30 people to a formation program |
+| **Open Enrollment** | Self-service signup via enrollment links. Can be free or paid. Links are unguessable random codes (`/enroll/x7k9m2`). | Enrollment Links, Discounts, Participants | Public course advertised on website or shared via email |
+
+When enrollment is **Open**, sub-settings control the details:
+
+#### Enrollment Sub-Settings (When Enabled)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| **Accept payments** | Toggle | `false` | Whether enrollment links can have pricing and go through Stripe checkout |
+| **Discount codes** | Toggle | `false` | Whether discount code management is available (only relevant if payments enabled) |
+| **Max capacity** | Number or null | `null` | Course-wide maximum enrollments across all cohorts. `null` = unlimited. Cohorts can also set their own `max_enrollments` independently. |
+| **Require approval** | Toggle | `false` | Course-wide default for whether enrollments need admin approval before access is granted. Can be overridden per-cohort via `enrollment_type`. |
+
+#### Approval + Payment Flow (Future)
+
+Currently, paid enrollment goes straight to Stripe checkout. A future enhancement adds an **"approve then pay"** workflow:
+
+```
+Current flow (paid, no approval):
+  Participant → Enrollment form → Stripe checkout → Password setup → Active
+
+Current flow (free, approval required):
+  Participant → Enrollment form → Pending → Admin approves → Password setup → Active
+
+Future flow (paid + approval required):
+  Participant → Enrollment form → Pending (no payment yet)
+    → Admin reviews application
+    → Admin approves → System sends payment email with checkout link
+    → Participant pays via link → Password setup → Active
+    → Admin rejects → System sends rejection email
+```
+
+**Implementation requirements for approve-then-pay:**
+- New enrollment status: `approved_awaiting_payment`
+- Payment link generation (Stripe Checkout session created on approval, not on submission)
+- Email trigger on approval with payment link
+- Email trigger on rejection (configurable template)
+- Expiry on payment links (e.g., 7 days to complete payment)
+- Admin UI to see "approved but unpaid" enrollments
+
+**Use cases:**
+- Scholarship vetting: Review applications before accepting payment
+- Capacity management: Curate who gets in before charging
+- Organisational approval: Manager must approve before employee pays
+- Interview/screening: Some programs require a conversation first
+
+#### Password Protection on Enrollment Links (Future)
+
+Enrollment links are already unguessable random codes, but for extra security an admin could optionally set a password on a link:
+
+```
+Admin creates link → Sets optional password "parish2026"
+Shares link in newsletter → Gives password at parish meeting
+Participant visits /enroll/x7k9m2 → Prompted for password before seeing form
+```
+
+**Implementation:** Add `password_hash` column to `courses_enrollment_links`. If set, show password prompt before rendering enrollment form. Simple bcrypt check server-side.
+
+#### Max Capacity (Course-Wide vs Cohort-Level)
+
+Capacity can be enforced at two levels:
+
+```
+Course-level: settings.features.enrollment.maxCapacity = 100
+  → Total enrollments across ALL cohorts cannot exceed 100
+  → Useful for accreditation limits, venue capacity
+
+Cohort-level: courses_cohorts.max_enrollments = 30
+  → Individual cohort capped at 30
+  → Already implemented
+  → Independent of course-level cap
+
+Both can be set simultaneously:
+  Course max: 100, Cohort A max: 30, Cohort B max: 30
+  → Each cohort stops at 30, total stops at 100
+```
+
+#### Settings Structure
+
+```typescript
+// In CourseSettings.features
+interface EnrollmentFeatureSettings {
+  enrollmentEnabled: boolean;        // Master toggle (replaces paymentsEnabled)
+  acceptPayments: boolean;           // Show pricing/Stripe integration
+  discountCodes: boolean;            // Show discount code management
+  maxCapacity: number | null;        // Course-wide cap, null = unlimited
+  requireApproval: boolean;          // Default approval requirement
+}
+```
+
+#### Nav Items Controlled by enrollmentEnabled
+
+When `enrollmentEnabled = false`:
+- "Enrollment Links" hidden from admin sidebar/mobile nav
+- "Discounts" hidden from admin sidebar/mobile nav
+- Enrollment link management pages inaccessible
+
+When `enrollmentEnabled = true` but `acceptPayments = false`:
+- "Enrollment Links" shown (for free enrollment links)
+- "Discounts" hidden (no payments = no discounts)
+- Pricing fields hidden in enrollment link creation
+
+When `enrollmentEnabled = true` and `acceptPayments = true`:
+- Everything shown
+- "Discounts" visibility controlled by `discountCodes` sub-toggle
+
+#### Migration Path
+
+```typescript
+// Backwards compatibility: paymentsEnabled → enrollmentEnabled
+// If a course has paymentsEnabled: true, migrate to:
+{
+  enrollmentEnabled: true,
+  acceptPayments: true,
+  discountCodes: true
+}
+// If paymentsEnabled: false (or missing), migrate to:
+{
+  enrollmentEnabled: false,
+  acceptPayments: false,
+  discountCodes: false
+}
+```
+
+---
+
 ### 🚧 STRETCH GOALS (Future)
 
 **UI/UX Improvements:**

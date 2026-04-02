@@ -10,6 +10,7 @@ export interface CourseSettings {
 	theme?: {
 		accentDark?: string;
 		accentLight?: string;
+		accentDarkest?: string;
 		fontFamily?: string;
 	};
 	branding?: {
@@ -41,7 +42,9 @@ export interface CourseSettings {
 		reflectionsEnabled?: boolean;
 		communityFeedEnabled?: boolean;
 		attendanceEnabled?: boolean;
-		paymentsEnabled?: boolean;
+		enrollmentEnabled?: boolean;
+		acceptPayments?: boolean;
+		discountCodes?: boolean;
 		chatEnabled?: boolean;
 		chatAllowParticipants?: boolean;
 		materialsEnabled?: boolean;
@@ -68,8 +71,11 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		reflectionsEnabled: true,
 		communityFeedEnabled: true,
 		attendanceEnabled: true,
-		paymentsEnabled: false,
+		enrollmentEnabled: false,
+		acceptPayments: false,
+		discountCodes: false,
 		chatEnabled: true,
+		chatAllowParticipants: false,
 		materialsEnabled: true,
 		hubsEnabled: true
 	}
@@ -99,10 +105,10 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 			completionRequirements: {
 				reflectionSubmitted:
 					settings.sessionProgression?.completionRequirements?.reflectionSubmitted ??
-					DEFAULT_COURSE_SETTINGS.sessionProgression.completionRequirements.reflectionSubmitted,
+					DEFAULT_COURSE_SETTINGS.sessionProgression.completionRequirements!.reflectionSubmitted,
 				attendanceMarked:
 					settings.sessionProgression?.completionRequirements?.attendanceMarked ??
-					DEFAULT_COURSE_SETTINGS.sessionProgression.completionRequirements.attendanceMarked
+					DEFAULT_COURSE_SETTINGS.sessionProgression.completionRequirements!.attendanceMarked
 			}
 		},
 		features: {
@@ -112,10 +118,16 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 				settings.features?.communityFeedEnabled ?? DEFAULT_COURSE_SETTINGS.features.communityFeedEnabled,
 			attendanceEnabled:
 				settings.features?.attendanceEnabled ?? DEFAULT_COURSE_SETTINGS.features.attendanceEnabled,
-			paymentsEnabled:
-				settings.features?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.paymentsEnabled,
+			enrollmentEnabled:
+				settings.features?.enrollmentEnabled ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.enrollmentEnabled,
+			acceptPayments:
+				settings.features?.acceptPayments ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.acceptPayments,
+			discountCodes:
+				settings.features?.discountCodes ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.discountCodes,
 			chatEnabled:
 				settings.features?.chatEnabled ?? DEFAULT_COURSE_SETTINGS.features.chatEnabled,
+			chatAllowParticipants:
+				settings.features?.chatAllowParticipants ?? DEFAULT_COURSE_SETTINGS.features.chatAllowParticipants,
 			materialsEnabled:
 				settings.features?.materialsEnabled ?? DEFAULT_COURSE_SETTINGS.features.materialsEnabled,
 			hubsEnabled:
