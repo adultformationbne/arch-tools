@@ -3,11 +3,31 @@
 	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from '$lib/icons';
 	import MuxVideoPlayer from '$lib/components/MuxVideoPlayer.svelte';
 
+	/**
+	 * @typedef {{
+	 *   id: string;
+	 *   title: string;
+	 *   type: string;
+	 *   content: string;
+	 *   mux_playback_id: string | null;
+	 *   mux_status: string | null;
+	 *   mux_asset_id: string | null;
+	 *   coordinator_only: boolean | null;
+	 *   session_id: string;
+	 *   description: string | null;
+	 *   display_order: number | null;
+	 *   session?: { id: string; session_number: number; module_id: string; title: string };
+	 * }} Material
+	 */
+
 	let { data } = $props();
 
 	// Extract data from server load using $derived for reactivity
+	/** @type {Record<number, Material[]>} */
 	const materialsBySession = $derived(data.materialsBySession);
+	/** @type {number} */
 	const currentSession = $derived(data.currentSession);
+	/** @type {Material[]} */
 	const materials = $derived(data.materials);
 	const courseName = $derived(data.courseName);
 	const courseTheme = $derived(data.courseTheme);
@@ -37,6 +57,7 @@
 		return currentSession;
 	});
 
+	/** @type {Material | null} */
 	let selectedMaterial = $state(null);
 	let expandedSessions = $state(new Set());
 	let mobileSelectedSession = $state(0);
@@ -387,7 +408,7 @@
 					<MuxVideoPlayer
 						playbackId={selectedMaterial.mux_playback_id}
 						title={selectedMaterial.title}
-						status={selectedMaterial.mux_status}
+						status={selectedMaterial.mux_status ?? undefined}
 					/>
 				{:else if selectedMaterial?.type === 'embed'}
 					<!-- Embedded Video (SharePoint/Stream) - Theatre Mode -->

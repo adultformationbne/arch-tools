@@ -23,6 +23,10 @@ export const load: LayoutServerLoad = async (event) => {
 		redirectTo: '/courses'
 	});
 
+	if (!user) {
+		throw error(401, 'Not authenticated');
+	}
+
 	const enrollmentRole = enrollment?.role ?? null;
 	const cohortId = enrollment?.cohort_id ?? null;
 
@@ -36,11 +40,17 @@ export const load: LayoutServerLoad = async (event) => {
 	const courseBranding = settings.branding || {};
 	const courseSettings = getCourseSettings(settings);
 	const chatEnabled = courseSettings.features?.chatEnabled !== false;
+	const chatAllowParticipants = courseSettings.features?.chatAllowParticipants === true;
 	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
-	// Check for unread chat messages (coordinators and admins only)
+	// Determine who can chat: coordinators always, participants only if setting allows
+	const userCanChat = chatEnabled && cohortId && (
+		enrollmentRole === 'coordinator' || enrollmentRole === 'admin' || chatAllowParticipants
+	);
+
+	// Check for unread chat messages (only if user can chat)
 	let hasUnreadChat = false;
-	if (cohortId && (enrollmentRole === 'coordinator' || enrollmentRole === 'admin')) {
+	if (userCanChat) {
 		const { data: readStatus } = await supabaseAdmin
 			.from('courses_chat_read_status')
 			.select('last_read_at')
@@ -79,6 +89,7 @@ export const load: LayoutServerLoad = async (event) => {
 		hasUnreadChat,
 		hubName,
 		chatEnabled,
+		userCanChat,
 		communityFeedEnabled,
 		courseInfo: {
 			id: course.id,

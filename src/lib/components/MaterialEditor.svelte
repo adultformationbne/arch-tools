@@ -35,7 +35,22 @@
 		onSaveStatusChange = () => {}
 	} = $props();
 
-	let editingMaterial = $state(null);
+	/**
+	 * @typedef {{
+	 *   id: string,
+	 *   type: string,
+	 *   title: string,
+	 *   content: string,
+	 *   url: string,
+	 *   order: number,
+	 *   coordinatorOnly: boolean,
+	 *   description: string,
+	 *   mux_status: string,
+	 *   mux_playback_id: string,
+	 *   mux_asset_id: string
+	 * }} EditingMaterial
+	 */
+	let editingMaterial = $state(/** @type {EditingMaterial | null} */ (null));
 	let showDeleteConfirm = $state(false);
 	let materialToDelete = $state(null);
 	let showAddModal = $state(false);
@@ -184,25 +199,26 @@
 
 	const saveEditMaterial = async () => {
 		if (!editingMaterial) return;
+		const editing = editingMaterial;
 
 		try {
 			onSaveStatusChange(true, 'Updating material...');
 
 			// Normalize URLs for video and link types
-			const content = (editingMaterial.type === 'native' || editingMaterial.type === 'embed')
-				? editingMaterial.content
-				: normalizeUrl(editingMaterial.url);
+			const content = (editing.type === 'native' || editing.type === 'embed')
+				? editing.content
+				: normalizeUrl(editing.url);
 
 			const response = await fetch('/api/courses/module-materials', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					id: editingMaterial.id,
-					type: editingMaterial.type,
-					title: editingMaterial.title,
+					id: editing.id,
+					type: editing.type,
+					title: editing.title,
 					content: content,
-					display_order: editingMaterial.order,
-					coordinator_only: editingMaterial.coordinatorOnly
+					display_order: editing.order,
+					coordinator_only: editing.coordinatorOnly
 				})
 			});
 
@@ -215,16 +231,16 @@
 					title: material.title,
 					url: (material.type === 'native' || material.type === 'embed') ? '' : material.content,
 					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
-					description: editingMaterial.description,
+					description: editing.description,
 					order: material.display_order,
 					coordinatorOnly: material.coordinator_only || false,
-					mux_status: editingMaterial.mux_status,
-					mux_playback_id: editingMaterial.mux_playback_id,
-					mux_asset_id: editingMaterial.mux_asset_id
+					mux_status: editing.mux_status,
+					mux_playback_id: editing.mux_playback_id,
+					mux_asset_id: editing.mux_asset_id
 				};
 
 				const updatedMaterials = materials.map(m =>
-					m.id === editingMaterial.id ? updatedMaterialForUI : m
+					m.id === editing.id ? updatedMaterialForUI : m
 				);
 				onMaterialsChange(updatedMaterials);
 				editingMaterial = null;
@@ -482,7 +498,7 @@
 				<!-- Expanded Content -->
 				{#if isExpanded}
 					<div class="border-t border-gray-100 bg-gray-50 p-4">
-						{#if isEditing}
+						{#if isEditing && editingMaterial}
 							<!-- Edit Form -->
 							<div class="space-y-4 bg-white p-4 rounded-lg">
 								<div class="grid grid-cols-1 md:grid-cols-2 gap-4">

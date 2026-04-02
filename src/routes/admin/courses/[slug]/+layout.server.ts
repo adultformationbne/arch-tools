@@ -20,10 +20,14 @@ export const load: LayoutServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
 	// Always verify auth on every request
-	const { user, enrollment } = await requireCourseAdmin(event, courseSlug, {
+	const { user, profile, viaModule } = await requireCourseAdmin(event, courseSlug, {
 		mode: 'redirect',
 		redirectTo: '/courses'
 	});
+
+	if (!user) {
+		throw redirect(303, '/courses');
+	}
 
 	// Check cache for course data
 	const cached = getCachedCourseData(courseSlug);
@@ -102,7 +106,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		courseSlug,
-		enrollmentRole: enrollment?.role,
+		enrollmentRole: viaModule,
 		isCourseAdmin: true,
 		modules,
 		cohorts,

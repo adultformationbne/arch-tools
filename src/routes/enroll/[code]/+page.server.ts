@@ -71,9 +71,9 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		throw error(400, linkValidation.reason || 'This enrollment link is not valid');
 	}
 
-	const cohort = link.cohort;
-	const module = cohort?.module;
-	const course = module?.course;
+	const cohort = Array.isArray(link.cohort) ? link.cohort[0] : link.cohort;
+	const module = Array.isArray(cohort?.module) ? cohort?.module[0] : cohort?.module;
+	const course = Array.isArray(module?.course) ? module?.course[0] : module?.course;
 
 	if (!cohort || !module || !course) {
 		throw error(404, 'Course information not found');
@@ -107,7 +107,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 	// Calculate effective price
 	const pricing = getEffectivePrice({
 		enrollmentLink: { price_cents: link.price_cents },
-		hub: link.hub,
+		hub: Array.isArray(link.hub) ? link.hub[0] : link.hub,
 		cohort: {
 			price_cents: cohort.price_cents,
 			currency: cohort.currency,
@@ -128,7 +128,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 
 	// Check if user is already logged in
 	const session = await locals.safeGetSession?.();
-	let existingUser = null;
+	let existingUser: { id: string; full_name: string | null; email: string; phone: string | null; parish_id: string | null } | null = null;
 
 	if (session?.user) {
 		const { data: profile } = await supabaseAdmin
@@ -174,7 +174,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			name: link.name,
 			hubId: link.hub_id
 		},
-		hub: link.hub,
+		hub: Array.isArray(link.hub) ? link.hub[0] : link.hub,
 		cohort: {
 			id: cohort.id,
 			name: cohort.name,

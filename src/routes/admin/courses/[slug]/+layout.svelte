@@ -27,6 +27,7 @@
 	});
 
 	// Track navigation timing
+	/** @type {number | null} */
 	let navStartTime = $state(null);
 
 	$effect(() => {
@@ -66,6 +67,7 @@
 	// Expose to child pages via context
 	setContext('openCohortWizard', handleNewCohort);
 
+	/** @param {{ cohortId?: string }} result */
 	async function handleWizardComplete(result) {
 		showCohortWizard = false;
 		await invalidateAll();
@@ -76,6 +78,7 @@
 		}
 	}
 
+	/** @param {string} cohortId */
 	function handleSelectCohort(cohortId) {
 		// Update cohort param while staying on current page
 		const newUrl = new URL($page.url);
@@ -102,7 +105,7 @@
 					table: 'courses_chat_messages',
 					filter: `cohort_id=eq.${cohortId}`
 				},
-				(payload) => {
+				(/** @type {any} */ payload) => {
 					if (!$page.url.pathname.endsWith('/chat') && payload.new.sender_id !== data.userId) {
 						hasUnreadChat = true;
 					}

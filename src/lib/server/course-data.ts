@@ -1455,7 +1455,7 @@ export const CourseMutations = {
 			full_name?: string;
 			notes?: string;
 			role?: string;
-			hub_id?: string;
+			hub_id?: string | null;
 			assigned_admin_id?: string;
 			current_session?: number;
 			status?: string;

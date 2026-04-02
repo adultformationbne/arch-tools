@@ -26,16 +26,16 @@ const SAMPLE_THUMBNAIL_DATA = {
 export async function generateThumbnailFromPreview(previewElement, width = 400, height = 300) {
   try {
     // Load html2canvas dynamically if not available
-    if (!window.html2canvas) {
+    if (!/** @type {any} */ (window).html2canvas) {
       await loadHtml2Canvas();
     }
 
-    if (!window.html2canvas) {
+    if (!/** @type {any} */ (window).html2canvas) {
       throw new Error('html2canvas not available');
     }
 
     // Capture the preview element
-    const canvas = await window.html2canvas(previewElement, {
+    const canvas = await /** @type {any} */ (window).html2canvas(previewElement, {
       width: width * 2,
       height: height * 2,
       scale: 0.5,
@@ -86,13 +86,13 @@ export async function generateThumbnailCanvas(templateHtml, width = 400, height 
     document.body.appendChild(container);
 
     // Load html2canvas if needed
-    if (!window.html2canvas) {
+    if (!/** @type {any} */ (window).html2canvas) {
       await loadHtml2Canvas();
     }
 
     let canvas;
-    if (window.html2canvas) {
-      canvas = await window.html2canvas(container, {
+    if (/** @type {any} */ (window).html2canvas) {
+      canvas = await /** @type {any} */ (window).html2canvas(container, {
         width: width * 2,
         height: height * 2,
         scale: 0.5,
@@ -158,6 +158,7 @@ function generateFallbackThumbnail(width = 400, height = 300) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas.toDataURL('image/png', 0.8);
 
   // Draw a simple preview
   ctx.fillStyle = '#ffffff';
@@ -204,6 +205,7 @@ function generateSVGThumbnail(html, width, height) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return Promise.resolve(null);
 
   return new Promise((resolve) => {
     const img = new Image();

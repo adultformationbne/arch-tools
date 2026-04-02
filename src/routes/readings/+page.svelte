@@ -3,8 +3,10 @@
 	import { Calendar, BookOpen, Share2, Printer, ChevronLeft, ChevronRight } from '$lib/icons';
 
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
+	/** @type {{ success: boolean, date: string, liturgical_day: string, liturgical_rank: string, liturgical_season: string, liturgical_week: string | null, year_cycle: string, readings: { first_reading: string | null, psalm: string | null, second_reading: string | null, gospel: string | null }, region: string } | null} */
 	let readings = $state(null);
 	let loading = $state(true);
+	/** @type {string | null} */
 	let error = $state(null);
 	let copied = $state(false);
 
@@ -202,12 +204,12 @@
 
 				<!-- Readings -->
 				{#if readings}
-					{@const readingsArray = [
-						readings.readings.first_reading && { type: 'First Reading', text: readings.readings.first_reading },
-						readings.readings.psalm && { type: 'Responsorial Psalm', text: readings.readings.psalm, italic: true },
-						readings.readings.second_reading && { type: 'Second Reading', text: readings.readings.second_reading },
-						readings.readings.gospel && { type: 'Gospel', text: readings.readings.gospel, larger: true }
-					].filter(Boolean)}
+					{@const readingsArray = /** @type {{ type: string, text: string, italic?: boolean, larger?: boolean }[]} */ ([
+						readings.readings.first_reading ? { type: 'First Reading', text: readings.readings.first_reading } : null,
+						readings.readings.psalm ? { type: 'Responsorial Psalm', text: readings.readings.psalm, italic: true } : null,
+						readings.readings.second_reading ? { type: 'Second Reading', text: readings.readings.second_reading } : null,
+						readings.readings.gospel ? { type: 'Gospel', text: readings.readings.gospel, larger: true } : null
+					].filter(/** @param {any} r */ (r) => r !== null))}
 
 					<div>
 						{#each readingsArray as reading, index}

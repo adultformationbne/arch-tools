@@ -9,9 +9,11 @@
 		labelledBy = undefined
 	} = $props();
 
+	/** @type {HTMLDivElement | null} */
 	let editor = $state(null);
 	let isEditing = $state(false);
 	let isInternalUpdate = false; // Flag to prevent effect from re-initing during user input
+	/** @type {ReturnType<typeof setTimeout> | null} */
 	let domCleanupTimer = null; // Debounce timer for DOM normalization
 
 	// Track current formatting state
@@ -44,7 +46,7 @@
 		if (!editor) return;
 
 		const selection = window.getSelection();
-		if (selection.rangeCount === 0) return;
+		if (!selection || selection.rangeCount === 0) return;
 
 		// Check current formatting
 		formatState = {
@@ -59,11 +61,11 @@
 
 	const getParentElement = (tagName) => {
 		const selection = window.getSelection();
-		if (selection.rangeCount === 0) return null;
+		if (!selection || selection.rangeCount === 0) return null;
 
 		let node = selection.anchorNode;
 		while (node && node !== editor) {
-			if (node.nodeType === Node.ELEMENT_NODE && node.tagName === tagName) {
+			if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).tagName === tagName) {
 				return node;
 			}
 			node = node.parentNode;
@@ -71,7 +73,7 @@
 		return null;
 	};
 
-	const execCommand = (command, value = null) => {
+	const execCommand = (command, value = undefined) => {
 		document.execCommand(command, false, value);
 		updateFormatState();
 		updateContent();
@@ -79,7 +81,7 @@
 
 	const toggleHeading = () => {
 		const selection = window.getSelection();
-		if (selection.rangeCount === 0) return;
+		if (!selection || selection.rangeCount === 0) return;
 
 		// Check if we're already in a heading - if so, convert to paragraph
 		const currentHeading = getParentElement('H2');
@@ -93,12 +95,12 @@
 		// Apply styles directly to ensure they show up
 		setTimeout(() => {
 			// Apply paragraph styles to any new paragraphs
-			const paragraphs = editor.querySelectorAll('p');
-			paragraphs.forEach(p => applyParagraphStyles(p));
+			const paragraphs = editor?.querySelectorAll('p');
+			paragraphs?.forEach(p => applyParagraphStyles(p));
 
 			// Apply heading styles
-			const headings = editor.querySelectorAll('h2');
-			headings.forEach(heading => {
+			const headings = editor?.querySelectorAll('h2');
+			headings?.forEach(heading => {
 				applyHeadingStyles(heading);
 			});
 			updateFormatState();
@@ -123,8 +125,8 @@
 
 		// Apply proper list styling after creation
 		setTimeout(() => {
-			const lists = editor.querySelectorAll('ul, ol');
-			lists.forEach(list => {
+			const lists = editor?.querySelectorAll('ul, ol');
+			lists?.forEach(list => {
 				applyListStyles(list);
 			});
 			updateFormatState();
@@ -145,7 +147,7 @@
 		isInternalUpdate = true;
 		// Strip any inline styles before saving - store clean semantic HTML only
 		const temp = document.createElement('div');
-		temp.innerHTML = editor.innerHTML;
+		temp.innerHTML = /** @type {HTMLDivElement} */ (editor).innerHTML;
 
 		// Remove all inline styles
 		temp.querySelectorAll('*').forEach(el => el.removeAttribute('style'));
@@ -174,39 +176,40 @@
 			// Check if we're in a list item and it's empty - if so, exit the list
 			const listItem = getParentElement('LI');
 			if (listItem) {
-				const isEmpty = !listItem.textContent.trim() &&
-					(!listItem.innerHTML || listItem.innerHTML === '<br>' || listItem.innerHTML === '');
+				const li = /** @type {HTMLElement} */ (listItem);
+				const isEmpty = !(li.textContent || '').trim() &&
+					(!li.innerHTML || li.innerHTML === '<br>' || li.innerHTML === '');
 
 				if (isEmpty) {
 					e.preventDefault();
 					e.stopPropagation();
 
 					// Find the parent list (UL or OL)
-					const list = listItem.closest('ul, ol');
+					const list = /** @type {Element} */ (listItem).closest('ul, ol');
 					if (list) {
 						// Create a new paragraph after the list
 						const p = document.createElement('p');
 						p.innerHTML = '<br>';
 
 						// Remove the empty list item
-						listItem.remove();
+						/** @type {Element} */ (listItem).remove();
 
 						// If the list is now empty, remove it too
 						if (!list.querySelector('li')) {
-							list.parentNode.insertBefore(p, list);
+							list.parentNode?.insertBefore(p, list);
 							list.remove();
 						} else {
 							// Insert paragraph after the list
-							list.parentNode.insertBefore(p, list.nextSibling);
+							list.parentNode?.insertBefore(p, list.nextSibling);
 						}
 
 						// Move cursor to the new paragraph
-						const selection = window.getSelection();
+						const sel = window.getSelection();
 						const range = document.createRange();
 						range.setStart(p, 0);
 						range.collapse(true);
-						selection.removeAllRanges();
-						selection.addRange(range);
+						sel?.removeAllRanges();
+						sel?.addRange(range);
 
 						updateFormatState();
 						updateContent();
@@ -221,14 +224,14 @@
 			setTimeout(() => {
 				// Check if we're in a div (browser sometimes creates divs instead of p)
 				const selection = window.getSelection();
-				if (selection.rangeCount > 0) {
+				if (selection && selection.rangeCount > 0) {
 					let node = selection.anchorNode;
 					while (node && node !== editor) {
-						if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'DIV') {
+						if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).tagName === 'DIV') {
 							// Convert div to paragraph
 							const p = document.createElement('p');
-							p.innerHTML = node.innerHTML;
-							node.parentNode.replaceChild(p, node);
+							p.innerHTML = /** @type {HTMLElement} */ (node).innerHTML;
+							node.parentNode?.replaceChild(p, node);
 							applyParagraphStyles(p);
 
 							// Move cursor to the new paragraph
@@ -297,7 +300,7 @@
 		// Give the browser a moment to set up, then check cursor position
 		setTimeout(() => {
 			const selection = window.getSelection();
-			if (!selection.rangeCount) return;
+			if (!selection || !selection.rangeCount) return;
 
 			const range = selection.getRangeAt(0);
 			let node = range.startContainer;
@@ -305,11 +308,11 @@
 			// Check if cursor is at root level (directly in editor, not in a child element)
 			if (node === editor || (node.nodeType === Node.TEXT_NODE && node.parentNode === editor)) {
 				// Find the first paragraph or create one
-				let firstP = editor.querySelector('p');
+				let firstP = editor?.querySelector('p');
 				if (!firstP) {
 					firstP = document.createElement('p');
 					firstP.innerHTML = '<br>';
-					editor.appendChild(firstP);
+					editor?.appendChild(firstP);
 				}
 
 				// Place cursor inside the paragraph
@@ -320,8 +323,8 @@
 					newRange.setStart(firstP, 0);
 				}
 				newRange.collapse(true);
-				selection.removeAllRanges();
-				selection.addRange(newRange);
+				selection?.removeAllRanges();
+				selection?.addRange(newRange);
 			}
 		}, 0);
 	};
@@ -333,7 +336,7 @@
 
 	$effect(() => {
 		// Only re-init for external content changes, not internal user input
-		if (editor && content !== editor.innerHTML && !isInternalUpdate) {
+		if (editor && content !== /** @type {HTMLDivElement} */ (editor).innerHTML && !isInternalUpdate) {
 			initEditor();
 		}
 		// Reset the flag after the effect runs
@@ -344,7 +347,7 @@
 	const handlePaste = (e) => {
 		e.preventDefault();
 
-		const clipboardData = e.clipboardData || window.clipboardData;
+		const clipboardData = e.clipboardData;
 		const htmlData = clipboardData.getData('text/html');
 		const textData = clipboardData.getData('text/plain');
 
@@ -377,7 +380,7 @@
 		let cursorNode = null;
 		let cursorOffset = 0;
 
-		if (selection.rangeCount > 0) {
+		if (selection && selection.rangeCount > 0) {
 			const range = selection.getRangeAt(0);
 			cursorNode = range.startContainer;
 			cursorOffset = range.startOffset;
@@ -388,20 +391,19 @@
 		const walker = document.createTreeWalker(
 			editor,
 			NodeFilter.SHOW_TEXT,
-			null,
-			false
+			null
 		);
 
 		let node;
 		while (node = walker.nextNode()) {
-			if (node.parentNode === editor && node.textContent.trim()) {
+			if (node.parentNode === editor && (node.textContent || '').trim()) {
 				textNodes.push(node);
 			}
 		}
 
 		textNodes.forEach(textNode => {
 			const p = document.createElement('p');
-			textNode.parentNode.insertBefore(p, textNode);
+			textNode.parentNode?.insertBefore(p, textNode);
 			p.appendChild(textNode);
 			applyParagraphStyles(p);
 
@@ -409,10 +411,10 @@
 			if (textNode === cursorNode) {
 				try {
 					const newRange = document.createRange();
-					newRange.setStart(textNode, Math.min(cursorOffset, textNode.length));
+					newRange.setStart(textNode, Math.min(cursorOffset, /** @type {Text} */ (textNode).length));
 					newRange.collapse(true);
-					selection.removeAllRanges();
-					selection.addRange(newRange);
+					selection?.removeAllRanges();
+					selection?.addRange(newRange);
 				} catch (e) {
 					// Cursor restoration failed, browser will handle it
 				}
@@ -420,28 +422,29 @@
 		});
 
 		// Convert any divs to paragraphs
-		const divs = editor.querySelectorAll('div');
+		const editorEl = /** @type {HTMLDivElement} */ (editor);
+		const divs = editorEl.querySelectorAll('div');
 		divs.forEach(div => {
 			if (div.parentNode === editor) {
 				const p = document.createElement('p');
 				p.innerHTML = div.innerHTML;
-				div.parentNode.replaceChild(p, div);
+				div.parentNode?.replaceChild(p, div);
 				applyParagraphStyles(p);
 			}
 		});
 
 		// Reapply paragraph styles
-		const paragraphs = editor.querySelectorAll('p');
+		const paragraphs = editorEl.querySelectorAll('p');
 		paragraphs.forEach(p => applyParagraphStyles(p));
 
 		// Reapply heading styles
-		const headings = editor.querySelectorAll('h2');
+		const headings = editorEl.querySelectorAll('h2');
 		headings.forEach(heading => {
 			applyHeadingStyles(heading);
 		});
 
 		// Reapply list styles
-		const lists = editor.querySelectorAll('ul, ol');
+		const lists = editorEl.querySelectorAll('ul, ol');
 		lists.forEach(list => {
 			applyListStyles(list);
 		});

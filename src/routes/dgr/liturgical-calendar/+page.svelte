@@ -3,15 +3,22 @@
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
+	/** @type {number | null} */
 	let selectedYear = $state(null);
+	/** @type {number[]} */
 	let availableYears = $state([]);
+	/** @type {any[]} */
 	let calendarData = $state([]);
 	let loading = $state(false);
 	let uploadMode = $state(false);
+	/** @type {File | null} */
 	let uploadFile = $state(null);
+	/** @type {string | null} */
 	let uploadPreview = $state(null);
 	let uploadYear = $state(2027);
+	/** @type {{ total: number, exact: number, partial: number, unmatched: number, entries: any[] } | null} */
 	let matchingResults = $state(null);
+	/** @type {Record<string, any> | null} */
 	let editingEntry = $state(null);
 
 	// Load available years on mount
@@ -73,8 +80,8 @@
 		// Preview first few lines
 		const reader = new FileReader();
 		reader.onload = (e) => {
-			const text = e.target.result;
-			const lines = text.split('\n').slice(0, 10);
+			const text = /** @type {string} */ (e.target?.result);
+			const lines = text?.split('\n').slice(0, 10);
 			uploadPreview = lines.join('\n');
 		};
 		reader.readAsText(file);

@@ -15,15 +15,17 @@
 	const userName = $derived(data.userName || 'User');
 	const userRole = $derived(data.userRole || 'student');
 
-	// Chat sidebar state
-	const canChat = $derived(userRole === 'coordinator' && data.cohortId);
+	// Chat sidebar state - server determines who can chat based on feature settings
+	const canChat = $derived(data.userCanChat);
 	let chatOpen = $state(false);
+	/** @type {any[] | null} */
 	let chatMessages = $state(null);
+	/** @type {{ userId: string, userName: string, userRole: string, hubName: string | null } | null} */
 	let chatUserMeta = $state(null);
 	let chatLoading = $state(false);
 
 	// Chat unread tracking
-	let hasUnreadChat = $state(data.hasUnreadChat || false);
+	let hasUnreadChat = $state(data?.hasUnreadChat || false);
 	const cohortId = $derived(data.cohortId);
 
 	// Reset unread when chat sidebar opens; force reload if there were unread messages
@@ -83,7 +85,7 @@
 
 	// Realtime subscription for unread dot
 	onMount(() => {
-		if (!data.supabase || !cohortId || (userRole !== 'coordinator' && userRole !== 'admin')) {
+		if (!data.supabase || !cohortId || !canChat) {
 			return;
 		}
 
@@ -97,7 +99,7 @@
 					table: 'courses_chat_messages',
 					filter: `cohort_id=eq.${cohortId}`
 				},
-				(payload) => {
+				(/** @type {any} */ payload) => {
 					// If chat sidebar is closed and message is from someone else, show unread dot
 					if (!chatOpen && payload.new.sender_id !== data.userId) {
 						hasUnreadChat = true;
@@ -112,6 +114,7 @@
 	});
 
 	// Build CSS custom property string for inline styles
+	/** @param {Record<string, any>} themeSettings */
 	function buildThemeStyles(themeSettings) {
 		const styles = [];
 

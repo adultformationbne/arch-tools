@@ -10,7 +10,7 @@
 		closeOnBackdrop = true,
 		closeOnEscape = true,
 		children,
-		footer
+		footer = undefined
 	} = $props();
 
 	let modalElement = $state(null);

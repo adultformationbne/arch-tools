@@ -40,7 +40,6 @@
 		readonly = false,
 		id = '',
 		name = '',
-		autocomplete = '',
 
 		// Styling
 		class: className = '',
@@ -122,11 +121,11 @@
 	});
 
 	// Determine if field should show as invalid
-	$derived: isInvalid = (() => !!(error && touched && showError))();
-	$derived: showValidationError = (() => isInvalid && error)();
+	let isInvalid = $derived(!!(error && touched && showError));
+	let showValidationError = $derived(isInvalid && error);
 
 	// CSS classes
-	$derived: baseFieldClasses = (() => `
+	let baseFieldClasses = $derived(`
 		block w-full rounded-md border text-sm transition-colors
 		focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none
 		disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
@@ -135,14 +134,14 @@
 			: 'border-gray-300 focus:border-blue-500'
 		}
 		${fieldClass}
-	`.trim())();
+	`.trim());
 
-	$derived: baseLabelClasses = (() => `
+	let baseLabelClasses = $derived(`
 		block text-sm font-medium
 		${isInvalid ? 'text-red-700' : 'text-gray-700'}
 		${required ? "after:content-['*'] after:text-red-500" : ''}
 		${labelClass}
-	`.trim())();
+	`.trim());
 </script>
 
 <div class="form-field {className}">
@@ -172,7 +171,6 @@
 			{readonly}
 			{rows}
 			{cols}
-			{autocomplete}
 			class={baseFieldClasses}
 			aria-invalid={isInvalid}
 			aria-describedby={showValidationError ? `${fieldId}-error` : helpText ? `${fieldId}-help` : undefined}
@@ -188,7 +186,6 @@
 			{name}
 			{required}
 			{disabled}
-			{autocomplete}
 			class={baseFieldClasses}
 			aria-invalid={isInvalid}
 			aria-describedby={showValidationError ? `${fieldId}-error` : helpText ? `${fieldId}-help` : undefined}
@@ -220,7 +217,6 @@
 			{required}
 			{disabled}
 			{readonly}
-			{autocomplete}
 			class={baseFieldClasses}
 			aria-invalid={isInvalid}
 			aria-describedby={showValidationError ? `${fieldId}-error` : helpText ? `${fieldId}-help` : undefined}

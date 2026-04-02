@@ -4,7 +4,9 @@
 
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
 	let loading = $state(false);
+	/** @type {any} */
 	let result = $state(null);
+	/** @type {string | null} */
 	let error = $state(null);
 
 	async function lookupReadings() {
@@ -27,7 +29,7 @@
 				result = data.readings;
 			}
 		} catch (err) {
-			error = 'Failed to fetch readings: ' + err.message;
+			error = 'Failed to fetch readings: ' + (err instanceof Error ? err.message : String(err));
 		} finally {
 			loading = false;
 		}

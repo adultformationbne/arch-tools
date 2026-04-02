@@ -26,10 +26,12 @@
 	let reflectionsByUser = $state(new Map()); // Map of user_id -> reflections array
 	let sessionsWithQuestions = $state([]); // Session numbers that have reflection questions
 	let loadingStudents = $state(false);
+	/** @type {{ id: any, full_name: string, role: string, hub_id: any } | null} */
 	let editingStudent = $state(null);
 	let selectedStudents = $state(new Set());
 	let openDropdown = $state(null); // Track which student's dropdown is open
 	let dropdownPosition = $state({ top: 0, right: 0 }); // Track dropdown position
+	/** @type {{ id: any, value: number, studentName: string } | null} */
 	let editingSession = $state(null); // Track which student's session is being edited
 	let recentlyAddedIds = $state(new Set()); // Track newly added participants
 	let previousStudentIds = $state(new Set()); // Track known student IDs to detect new ones
@@ -240,6 +242,7 @@
 	}
 
 	async function saveEditStudent() {
+		if (!editingStudent) return;
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
 				method: 'POST',

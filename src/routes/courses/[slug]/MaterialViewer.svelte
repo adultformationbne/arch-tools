@@ -1,17 +1,29 @@
 <script>
 	import { X, Download, ChevronDown, ChevronRight, FileText, Play, Mic, Book, Printer } from '$lib/icons';
 
+	/**
+	 * @typedef {Object} CourseMaterial
+	 * @property {string} id
+	 * @property {string} title
+	 * @property {string} content
+	 * @property {string} type
+	 * @property {string} [description]
+	 * @property {string} session_id
+	 * @property {number} [display_order]
+	 */
+
 	let {
-		material = null,
+		/** @type {CourseMaterial | null} */ material = null,
 		isVisible = $bindable(false),
 		currentSession = 8,
-		materialsBySession = {},
+		/** @type {Record<string, CourseMaterial[]>} */ materialsBySession = {},
 		courseName = 'Course Materials',
-		courseTheme = {},
-		courseBranding = {},
+		/** @type {{accentDark?: string}} */ courseTheme = {},
+		/** @type {{logoUrl?: string, showLogo?: boolean}} */ courseBranding = {},
 		onClose = () => {}
 	} = $props();
 
+	/** @type {CourseMaterial | null} */
 	let selectedMaterial = $state(null);
 	let expandedSessions = $state(new Set([currentSession]));
 

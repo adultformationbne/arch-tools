@@ -62,6 +62,7 @@
 
 	function formatDate(dateStr) {
 		const date = new Date(dateStr + 'T00:00:00');
+		/** @type {Intl.DateTimeFormatOptions} */
 		const options = {
 			weekday: 'short',
 			day: 'numeric',
@@ -97,6 +98,7 @@
 	}
 
 	// State for readings popover
+	/** @type {{ show: boolean, readings: { first_reading?: string, psalm?: string, second_reading?: string, gospel?: string } | null, x: number, y: number }} */
 	let readingsPopover = $state({ show: false, readings: null, x: 0, y: 0 });
 
 	function showReadings(event, readings) {
@@ -118,7 +120,7 @@
 		const entryDate = new Date(dateStr + 'T00:00:00');
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const diffTime = entryDate - today;
+		const diffTime = entryDate.getTime() - today.getTime();
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 		return diffDays >= 0 && diffDays <= 14;
 	}
@@ -128,7 +130,7 @@
 		const entryDate = new Date(dateStr + 'T00:00:00');
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const diffTime = entryDate - today;
+		const diffTime = entryDate.getTime() - today.getTime();
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 		return diffDays;
 	}
@@ -213,7 +215,7 @@
 									<!-- Pattern-based assignment (no schedule row yet) -->
 									<select
 										value={entry.contributor_id || ''}
-										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+										onchange={(e) => onUpdateAssignment(entry, /** @type {HTMLSelectElement} */ (e.target).value)}
 										class="max-w-[200px] truncate rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
@@ -227,7 +229,7 @@
 									<!-- Actual schedule entry -->
 									<select
 										value={entry.contributor_id || ''}
-										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+										onchange={(e) => onUpdateAssignment(entry, /** @type {HTMLSelectElement} */ (e.target).value)}
 										class="max-w-[200px] truncate rounded border border-gray-300 px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>
@@ -241,7 +243,7 @@
 									<!-- Unassigned date (no schedule row, no pattern) -->
 									<select
 										value=""
-										onchange={(e) => onUpdateAssignment(entry, e.target.value)}
+										onchange={(e) => onUpdateAssignment(entry, /** @type {HTMLSelectElement} */ (e.target).value)}
 										class="max-w-[200px] truncate rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 									>
 										<option value="">Unassigned</option>

@@ -4,6 +4,11 @@
 	import { getUserInitials } from '$lib/utils/avatar.js';
 
 	// Props from parent
+	/**
+	 * @typedef {{ currentSession: number, totalSessions: number, hubName: string, students?: Array<any> }} HubDataProp
+	 */
+
+	/** @type {{ hubData?: HubDataProp | null, courseSlug?: string }} */
 	let { hubData = null, courseSlug = '' } = $props();
 
 	let isExpanded = $state(false);
@@ -11,10 +16,10 @@
 	let isSaving = $state(false);
 
 	// Live data fetched from API
-	let liveHubData = $state(null);
+	let liveHubData = $state(/** @type {{ students: Array<{id: string, name: string, email: string, role?: string, attendance?: Record<number, boolean>}>, currentSession: number, totalSessions: number, hub: { name: string } } | null} */ (null));
 
 	// Selected session for viewing/editing (defaults to current)
-	let selectedSession = $state(null);
+	let selectedSession = $state(/** @type {number | null} */ (null));
 
 	const toggleExpanded = async () => {
 		isExpanded = !isExpanded;
@@ -49,8 +54,8 @@
 		const student = liveHubData?.students?.find(s => s.id === studentId);
 		if (student) {
 			if (!student.attendance) student.attendance = {};
-			student.attendance[selectedSession] = present;
-			liveHubData = { ...liveHubData };
+			if (selectedSession !== null) student.attendance[selectedSession] = present;
+			if (liveHubData) liveHubData = { ...liveHubData };
 		}
 
 		try {
@@ -78,7 +83,7 @@
 	const markAllAttendance = async (present) => {
 		isSaving = true;
 		const studentsToMark = students.filter(s => {
-			const status = s.attendance?.[selectedSession];
+			const status = selectedSession !== null ? s.attendance?.[selectedSession] : undefined;
 			return status === undefined || status !== present;
 		});
 
@@ -95,14 +100,15 @@
 	// Use live data if available, otherwise fall back to initial props
 	const displayData = $derived(liveHubData || hubData);
 	const students = $derived(displayData?.students || []);
-	const currentSession = $derived(liveHubData?.currentSession || hubData?.currentSession || 1);
-	const totalSessions = $derived(liveHubData?.totalSessions || hubData?.totalSessions || 0);
-	const hubName = $derived(liveHubData?.hub?.name || hubData?.hubName || 'Your Hub');
+	const currentSession = $derived(displayData?.currentSession ?? 1);
+	const totalSessions = $derived(displayData?.totalSessions ?? 0);
+	const hubName = $derived(liveHubData?.hub?.name || /** @type {any} */ (hubData)?.hubName || 'Your Hub');
 
 	// Coordinators can mark attendance up to one session ahead
 	const maxSelectableSession = $derived(Math.min(currentSession + 1, totalSessions));
 
 	const navigateSession = (direction) => {
+		if (selectedSession === null) return;
 		if (direction === 'prev' && selectedSession > 1) {
 			selectedSession--;
 		} else if (direction === 'next' && selectedSession < maxSelectableSession) {
@@ -122,7 +128,7 @@
 		let absent = 0;
 		let unmarked = 0;
 		students.forEach(s => {
-			const status = s.attendance?.[selectedSession];
+			const status = selectedSession !== null ? s.attendance?.[selectedSession] : undefined;
 			if (status === true) present++;
 			else if (status === false) absent++;
 			else unmarked++;
@@ -135,7 +141,7 @@
 
 	// Get attendance status for a student in the selected session
 	const getAttendanceStatus = (student) => {
-		const status = student.attendance?.[selectedSession];
+		const status = selectedSession !== null ? student.attendance?.[selectedSession] : undefined;
 		if (status === true) return 'present';
 		if (status === false) return 'absent';
 		return 'unmarked';
@@ -216,7 +222,7 @@
 									<!-- Prev -->
 									<button
 										onclick={() => navigateSession('prev')}
-										disabled={selectedSession <= 1}
+										disabled={selectedSession === null || selectedSession <= 1}
 										class="p-2 rounded-lg transition-colors disabled:opacity-30"
 										style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
 									>
@@ -242,14 +248,14 @@
 									<!-- Next -->
 									<button
 										onclick={() => navigateSession('next')}
-										disabled={selectedSession >= maxSelectableSession}
+										disabled={selectedSession === null || selectedSession >= maxSelectableSession}
 										class="p-2 rounded-lg transition-colors disabled:opacity-30"
 										style="background-color: var(--course-accent-dark); color: var(--course-text-on-dark);"
 									>
 										<ChevronRight size="18" />
 									</button>
 
-									{#if selectedSession < currentSession}
+									{#if selectedSession !== null && selectedSession < currentSession}
 										<span class="ml-3 px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
 											Past Session
 										</span>

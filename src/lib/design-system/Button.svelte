@@ -10,7 +10,7 @@
 		iconPosition = 'left',
 		children,
 		class: customClass = '',
-		onclick,
+		onclick = undefined,
 		...props
 	} = $props();
 

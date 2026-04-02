@@ -7,7 +7,7 @@
 	const materialsVisible = $derived(featureSettings?.materialsEnabled !== false);
 	const reflectionsVisible = $derived(featureSettings?.reflectionsEnabled !== false);
 
-	const canChat = $derived(userRole === 'coordinator' && onChatToggle);
+	const canChat = $derived(!!onChatToggle);
 
 	let mobileMenuOpen = $state(false);
 

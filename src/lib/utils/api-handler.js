@@ -172,6 +172,7 @@ export async function apiPatch(url, data, config = {}) {
 	);
 }
 
+/** @param {string} url @param {Record<string, any> | null} [data] @param {Record<string, any>} [config] */
 export async function apiDelete(url, data = null, config = {}) {
 	const options = { method: 'DELETE' };
 

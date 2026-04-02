@@ -2,6 +2,13 @@
 	import { Upload, FileText, AlertCircle, ClipboardPaste, Download, X } from '$lib/icons';
 	import { isValidEmail } from '$lib/utils/form-validator.js';
 
+	/**
+	 * @typedef {{ type: string; values: number[] }} SchedulePattern
+	 * @typedef {{ name: string; email: string; notes: string | null; schedule_pattern: SchedulePattern | null }} ContributorRow
+	 * @typedef {{ data: ContributorRow[]; errors: string[] }} ParsedResult
+	 */
+
+	/** @type {{ onUpload?: (data: ContributorRow[]) => void; onClose?: () => void }} */
 	let {
 		onUpload = (data) => {},
 		onClose = () => {}
@@ -13,6 +20,7 @@
 	let uploading = $state(false);
 	let showPasteMode = $state(false);
 	let pastedText = $state('');
+	/** @type {ParsedResult | null} */
 	let parsedData = $state(null);
 
 	function handleDrag(e) {
@@ -387,8 +395,8 @@ Deacon Thomas,thomas@example.com,Prefers Saturdays,,`;
 										<td class="px-4 py-2 text-gray-500">
 											{#if contributor.schedule_pattern}
 												{contributor.schedule_pattern.type === 'day_of_week'
-													? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][contributor.schedule_pattern.value]
-													: `Day ${contributor.schedule_pattern.value}`}
+													? contributor.schedule_pattern.values.map(v => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][v]).join(', ')
+													: `Day ${contributor.schedule_pattern.values.join(', ')}`}
 											{:else}
 												<span class="text-gray-400">Manual</span>
 											{/if}

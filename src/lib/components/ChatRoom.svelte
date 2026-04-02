@@ -17,15 +17,15 @@
 
 	let messages = $state([...initialMessages]);
 	let messageInput = $state('');
-	let inputEl = $state(null);
+	let inputEl = $state(/** @type {HTMLTextAreaElement | null} */ (null));
 	let sending = $state(false);
 	let loadingMore = $state(false);
 	let hasMore = $state(initialMessages.length >= 50);
-	let messagesContainer = $state(null);
+	let messagesContainer = $state(/** @type {HTMLDivElement | null} */ (null));
 	let onlineUsers = $state([]);
 	let showOnlineList = $state(false);
 	let userScrolledUp = $state(false);
-	let channel = $state(null);
+	let channel = $state(/** @type {any} */ (null));
 	let realtimeConnected = $state(false);
 
 	// Admin controls
@@ -48,9 +48,10 @@
 
 	function scrollToBottom(smooth = true) {
 		if (!messagesContainer) return;
+		const el = messagesContainer;
 		requestAnimationFrame(() => {
-			messagesContainer.scrollTo({
-				top: messagesContainer.scrollHeight,
+			el.scrollTo({
+				top: el.scrollHeight,
 				behavior: smooth ? 'smooth' : 'instant'
 			});
 		});
@@ -552,7 +553,7 @@
 				bind:this={inputEl}
 				bind:value={messageInput}
 				onkeydown={handleKeydown}
-				oninput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+				oninput={(e) => { const t = /** @type {HTMLTextAreaElement} */ (e.target); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; }}
 				rows="1"
 				maxlength="2000"
 				disabled={sending}

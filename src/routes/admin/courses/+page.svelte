@@ -28,7 +28,7 @@
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
 	let showDeleteModal = $state(false);
-	let selectedCourse = $state(null);
+	let selectedCourse: any = $state(null);
 
 	// Form data
 	let formData = $state({
@@ -50,7 +50,7 @@
 	let isUploadingLogo = $state(false);
 
 	// Manager assignment
-	let selectedManagerIds = $state([]);
+	let selectedManagerIds: string[] = $state([]);
 
 	// Logo state
 	let logoUrl = $state('');
@@ -710,8 +710,9 @@
 								<input
 									type="checkbox"
 									checked={selectedManagerIds.includes(manager.id)}
-									onchange={(e) => {
-										if (e.target.checked) {
+									onchange={(e: Event) => {
+										const target = e.target as HTMLInputElement;
+										if (target.checked) {
 											selectedManagerIds = [...selectedManagerIds, manager.id];
 										} else {
 											selectedManagerIds = selectedManagerIds.filter(id => id !== manager.id);

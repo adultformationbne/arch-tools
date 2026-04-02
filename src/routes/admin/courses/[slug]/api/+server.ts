@@ -12,7 +12,7 @@ import {
 } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
-import type { RequestHandler } from './$types';
+import type { RequestHandler } from '@sveltejs/kit';
 
 // ================================================================
 // VALIDATION HELPERS - Ensure entities belong to the current course
@@ -131,9 +131,11 @@ async function validateEnrollmentsBelongToCourse(enrollmentIds: string[], course
  */
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
+	if (!courseSlug) throw error(400, 'Missing course slug');
 
 	// Require admin authentication
 	const { user, profile } = await requireCourseAdmin(event, courseSlug);
+	if (!user) throw error(401, 'Unauthorized');
 	const actorName = profile.full_name || user.email || 'Admin';
 
 	try {
@@ -682,7 +684,7 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to delete user accounts');
 				}
 
-				const { deleted, accountsDeleted, enrollmentsDeleted, errors } = result.data!;
+				const { deleted, accountsDeleted = 0, enrollmentsDeleted = 0, errors = [] } = result.data!;
 
 				let message = '';
 				if (accountsDeleted > 0 && errors.length === 0) {
@@ -721,7 +723,8 @@ export const POST: RequestHandler = async (event) => {
 					.select('module:module_id(total_sessions)')
 					.eq('id', data.cohortId)
 					.single();
-				const maxSessions = cohortForValidation?.module?.total_sessions || 20;
+				const module = cohortForValidation?.module as unknown as { total_sessions: number } | null;
+				const maxSessions = module?.total_sessions || 20;
 
 				if (data.targetSession < 0 || data.targetSession > maxSessions) {
 					throw error(400, 'Invalid session number');
@@ -816,7 +819,7 @@ export const POST: RequestHandler = async (event) => {
 											enrollment: {
 												full_name: enrollment.full_name,
 												email: enrollment.email,
-												hub_name: enrollment.courses_hubs?.name || null,
+												hub_name: (enrollment.courses_hubs as unknown as { id: string; name: string } | null)?.name || null,
 												current_session: data.targetSession
 											},
 											course: {
@@ -998,6 +1001,7 @@ export const POST: RequestHandler = async (event) => {
  */
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
+	if (!courseSlug) throw error(400, 'Missing course slug');
 
 	// Require admin authentication
 	await requireCourseAdmin(event, courseSlug);

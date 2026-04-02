@@ -8,13 +8,17 @@
 	import { fetchScripturePassage } from '$lib/utils/scripture.js';
 	import { formatReading, formatContributorName } from '$lib/utils/dgr-helpers';
 
+	/** @type {{data: {token: string, isAuthenticated?: boolean}}} */
 	const { data } = $props();
 	const token = $derived(data.token);
 	const isAuthenticated = $derived(data.isAuthenticated);
 
+	/** @type {any} */
 	let contributor = $state(null);
+	/** @type {Array<{date: string, schedule_id?: string, status?: string, has_content?: boolean, reflection_title?: string, gospel_quote?: string, reflection_content?: string, liturgical_day?: string, liturgical_date?: string}>} */
 	let dates = $state([]);
 	let loading = $state(true);
+	/** @type {{date: string, schedule_id?: string, status?: string, has_content?: boolean, reflection_title?: string, gospel_quote?: string, reflection_content?: string, liturgical_day?: string, liturgical_date?: string} | null} */
 	let selectedDate = $state(null);
 
 	// Filter state
@@ -25,12 +29,16 @@
 	let gospelQuote = $state('');
 	let reflectionContent = $state('');
 	let saving = $state(false);
+	/** @type {Date | null} */
 	let lastSaved = $state(null);
+	/** @type {ReturnType<typeof setTimeout> | null} */
 	let saveDebounceTimeout = null;
 
 	// Readings state
+	/** @type {{first_reading?: string, psalm?: string, second_reading?: string, gospel_reading?: string, liturgical_day?: string, liturgical_date?: string} | null} */
 	let readings = $state(null);
 	let loadingReadings = $state(false);
+	/** @type {string | null} */
 	let gospelText = $state(null);
 	let loadingGospelText = $state(false);
 	let readingsExpanded = $state(false); // Collapsed by default on mobile
@@ -300,7 +308,7 @@
 			if (result.error) throw new Error(result.error);
 
 			// Update local state
-			const dateIndex = dates.findIndex((d) => d.date === selectedDate.date);
+			const dateIndex = dates.findIndex((d) => d.date === /** @type {NonNullable<typeof selectedDate>} */(selectedDate).date);
 			if (dateIndex !== -1) {
 				dates[dateIndex] = {
 					...dates[dateIndex],
@@ -334,7 +342,7 @@
 
 	function handleContentChange() {
 		justSubmitted = false; // Reset when user starts editing
-		clearTimeout(saveDebounceTimeout);
+		if (saveDebounceTimeout) clearTimeout(saveDebounceTimeout);
 		saveDebounceTimeout = setTimeout(() => {
 			if (reflectionTitle.trim() && gospelQuote.trim() && reflectionContent.trim()) {
 				saveReflection('save');
@@ -369,7 +377,7 @@
 			justSubmitted = false;
 
 			// Update local state to reflect cleared content
-			const dateIndex = dates.findIndex((d) => d.date === selectedDate.date);
+			const dateIndex = dates.findIndex((d) => d.date === /** @type {NonNullable<typeof selectedDate>} */ (selectedDate).date);
 			if (dateIndex !== -1) {
 				dates[dateIndex] = {
 					...dates[dateIndex],
@@ -487,7 +495,7 @@
 
 	// Find next pending/draft date (skips submitted/approved/published)
 	function getNextPendingDate() {
-		const currentIndex = selectedDate ? dates.findIndex(d => d.date === selectedDate.date) : -1;
+		const currentIndex = selectedDate ? dates.findIndex(d => d.date === /** @type {NonNullable<typeof selectedDate>} */ (selectedDate).date) : -1;
 		for (let i = currentIndex + 1; i < dates.length; i++) {
 			const status = getStatusKey(dates[i]);
 			if (status === 'not_started' || status === 'draft') {
@@ -526,7 +534,8 @@
 	);
 
 	// Get liturgical info for header display
-	let liturgicalLabel = $derived(readings?.liturgical_day || selectedDate?.liturgical_date || '');
+	/** @type {string} */
+	let liturgicalLabel = $derived(/** @type {any} */(readings)?.liturgical_day || /** @type {any} */(selectedDate)?.liturgical_date || '');
 </script>
 
 <svelte:head>
@@ -968,8 +977,6 @@
 					<iframe
 						src="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
 						frameborder="0"
-						webkitallowfullscreen
-						mozallowfullscreen
 						allowfullscreen
 						style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
 						title="DGR Writer Introduction"

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X, Eye } from '$lib/icons';
 	import { toastSuccess, toastError, toastWarning } from '$lib/utils/toast-helpers.js';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -6,6 +6,48 @@
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
 	import ReflectionContent from '$lib/components/ReflectionContent.svelte';
 	import { needsReview, isComplete, normalizeStatus } from '$lib/utils/reflection-status';
+	import ParticipantSearch from '$lib/components/ParticipantSearch.svelte';
+
+	interface ReflectionStudent {
+		id: string;
+		name: string;
+		email: string;
+		hub: string;
+	}
+
+	interface ReflectionCohort {
+		id: string;
+		name: string;
+		moduleName?: string;
+	}
+
+	interface Reflection {
+		id: string;
+		student: ReflectionStudent;
+		cohort: ReflectionCohort;
+		session: number;
+		question: string;
+		content: string;
+		isPublic: boolean;
+		submittedAt: string;
+		status: string;
+		dbStatus: string;
+		grade: string | null;
+		feedback: string;
+		markedAt: string | null;
+		markedBy: string | null;
+		assignedTo: string | null;
+		reviewingBy: string | null;
+		reviewingByName: string | null;
+		reviewingStartedAt: string | null;
+		isBeingReviewed: boolean;
+	}
+
+	interface CohortOption {
+		id: string;
+		name: string;
+		moduleName: string;
+	}
 
 	let { data } = $props();
 
@@ -14,13 +56,13 @@
 	const communityFeedEnabled = $derived(data.communityFeedEnabled);
 	let selectedFilter = $state('pending');
 	let selectedCohort = $state('all');
-	let selectedSession = $state('all');
+	let selectedSession: string | number = $state('all');
 	let searchQuery = $state('');
 	let selectedParticipant = $state('all');
-	let selectedReflection = $state(null);
+	let selectedReflection: Reflection | null = $state(null);
 	let showMarkingModal = $state(false);
 	let showViewModal = $state(false);
-	let viewingReflection = $state(null);
+	let viewingReflection: Reflection | null = $state(null);
 	let isSaving = $state(false);
 	let isClaiming = $state(false);
 	let isAdvancing = $state(false);
@@ -28,11 +70,11 @@
 
 	// For override confirmation
 	let showOverrideConfirm = $state(false);
-	let pendingOverrideReflection = $state(null);
+	let pendingOverrideReflection: Reflection | null = $state(null);
 
 	// Real reflection data from server
-	let reflections = $state([]);
-	let cohorts = $state([]);
+	let reflections: Reflection[] = $state([]);
+	let cohorts: CohortOption[] = $state([]);
 
 	// Sync data when it changes (after invalidateAll)
 	$effect(() => {
@@ -81,19 +123,19 @@
 		{ value: 'passed', label: 'Passed', count: reflections.filter(r => isComplete(r.dbStatus || r.status)).length }
 	]);
 
-	const getPassStatusIcon = (passStatus) => {
+	const getPassStatusIcon = (passStatus: string) => {
 		if (passStatus === 'pass') return CheckCircle;
 		if (passStatus === 'fail') return XCircle;
 		return Clock;
 	};
 
-	const getPassStatusColor = (passStatus) => {
+	const getPassStatusColor = (passStatus: string) => {
 		if (passStatus === 'pass') return 'text-green-600';
 		if (passStatus === 'fail') return 'text-red-600';
 		return 'text-orange-600';
 	};
 
-	const getCohortDisplayName = (cohort) => {
+	const getCohortDisplayName = (cohort: ReflectionCohort | string) => {
 		if (typeof cohort === 'string') return cohort;
 		return cohort?.name || 'Unknown Cohort';
 	};
@@ -110,7 +152,7 @@
 
 		// Filter by cohort
 		if (selectedCohort !== 'all') {
-			filtered = filtered.filter(r => r.cohort?.id === selectedCohort || r.cohort === selectedCohort);
+			filtered = filtered.filter(r => r.cohort?.id === selectedCohort);
 		}
 
 		// Filter by session
@@ -139,12 +181,12 @@
 			if (aNeedsReview !== bNeedsReview) return aNeedsReview ? -1 : 1;
 
 			// Pending: oldest first (longest waiting). Completed: newest first.
-			if (aNeedsReview) return new Date(a.submittedAt) - new Date(b.submittedAt);
-			return new Date(b.submittedAt) - new Date(a.submittedAt);
+			if (aNeedsReview) return new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
+			return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
 		});
 	});
 
-	const openMarkingModal = async (reflection, forceOverride = false) => {
+	const openMarkingModal = async (reflection: Reflection, forceOverride = false) => {
 		if (isClaiming) return;
 
 		// If being reviewed by someone else and not forcing override, show confirmation
@@ -341,7 +383,7 @@
 		}
 	};
 
-	const formatDate = (dateString) => {
+	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
@@ -350,7 +392,7 @@
 		});
 	};
 
-	const timeAgo = (dateString) => {
+	const timeAgo = (dateString: string) => {
 		const diff = Date.now() - new Date(dateString).getTime();
 		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 		if (days === 0) return 'today';
@@ -360,11 +402,11 @@
 		return months === 1 ? '1 month ago' : `${months} months ago`;
 	};
 
-	const getWordCount = (text) => {
+	const getWordCount = (text: string) => {
 		return text.trim().split(/\s+/).length;
 	};
 
-	const openViewModal = (reflection) => {
+	const openViewModal = (reflection: Reflection) => {
 		viewingReflection = reflection;
 		showViewModal = true;
 	};
@@ -449,17 +491,8 @@
 				{/each}
 			</select>
 
-			<!-- Mobile Participant Select -->
-			<select
-				bind:value={selectedParticipant}
-				class="w-full px-3 py-2 text-sm rounded-lg text-white focus:outline-none"
-				style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
-			>
-				<option value="all" class="text-gray-900">All Participants</option>
-				{#each participants as participant}
-					<option value={participant.id} class="text-gray-900">{participant.name}</option>
-				{/each}
-			</select>
+			<!-- Mobile Participant Search -->
+			<ParticipantSearch {participants} bind:selected={selectedParticipant} variant="mobile" />
 		</div>
 	{/if}
 
@@ -541,18 +574,8 @@
 
 			<!-- Participant Filter -->
 			<div>
-				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="participant-filter">Participant</label>
-				<select
-					id="participant-filter"
-					bind:value={selectedParticipant}
-					class="w-full px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
-					style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
-				>
-					<option value="all" class="text-gray-900">All Participants</option>
-					{#each participants as participant}
-						<option value={participant.id} class="text-gray-900">{participant.name}</option>
-					{/each}
-				</select>
+				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1">Participant</label>
+				<ParticipantSearch {participants} bind:selected={selectedParticipant} variant="desktop" />
 			</div>
 		</div>
 	</div>
@@ -881,7 +904,7 @@
 				</button>
 				{#if needsReview(viewingReflection.dbStatus || viewingReflection.status)}
 					<button
-						onclick={() => openMarkingModal(viewingReflection)}
+						onclick={() => openMarkingModal(viewingReflection!)}
 						disabled={isClaiming}
 						class="px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1 sm:gap-1.5"
 					>
@@ -894,7 +917,7 @@
 					</button>
 				{:else}
 					<button
-						onclick={() => openMarkingModal(viewingReflection)}
+						onclick={() => openMarkingModal(viewingReflection!)}
 						disabled={isClaiming}
 						class="px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-1 sm:gap-1.5"
 					>

@@ -18,15 +18,21 @@
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from '$lib/icons';
 
+	/** @type {any[]} */
 	let schedule = $state([]);
+	/** @type {any[]} */
 	let contributors = $state([]);
+	/** @type {any[]} */
 	let assignmentRules = $state([]);
 	let loading = $state(true);
 	let activeSection = $state('schedule');
 	let activeSubSection = $state('schedule');
 	let reviewModalOpen = $state(false);
+	/** @type {any} */
 	let selectedReflection = $state(null);
+	/** @type {{ open: boolean, entry: any }} */
 	let confirmDeleteModal = $state({ open: false, entry: null });
+	/** @type {{ open: boolean, entry: any, firstReading: string, psalm: string, secondReading: string, gospel: string }} */
 	let editReadingsModal = $state({
 		open: false,
 		entry: null,
@@ -35,23 +41,28 @@
 		secondReading: '',
 		gospel: ''
 	});
+	/** @type {{ open: boolean, entry: any, message: string }} */
 	let sendReminderConfirmModal = $state({ open: false, entry: null, message: '' });
 
 	// Quick Add modal state
 	let quickAddModalOpen = $state(false);
+	/** @type {any} */
 	let quickAddEntry = $state(null);
 	let quickAddFormData = $state(getInitialDGRFormData());
 	let quickAddSaving = $state(false);
+	/** @type {any} */
 	let quickAddResult = $state(null);
 	let quickAddUseNewDesign = $state(true);
 	let quickAddFetchingGospel = $state(false);
 	let quickAddGospelFullText = $state('');
 	let quickAddGospelReference = $state('');
+	/** @type {any[]} */
 	let quickAddPromoTiles = $state([]);
 	let quickAddPreviewHtml = $state('');
 
 	// Preview modal state
 	let previewModalOpen = $state(false);
+	/** @type {any} */
 	let previewEntry = $state(null);
 	let previewHtml = $state('');
 	let previewLoading = $state(false);
@@ -70,7 +81,7 @@
 	let newContributor = $state({
 		name: '',
 		email: '',
-		preferred_days: [],
+		/** @type {string[]} */ preferred_days: [],
 		day_of_month: null,
 		notes: ''
 	});
@@ -556,6 +567,7 @@
 
 	// Bulk reminder state
 	let bulkReminderSending = $state(false);
+	/** @type {{ open: boolean, entries: any[] }} */
 	let bulkReminderConfirmModal = $state({ open: false, entries: [] });
 
 
@@ -1135,7 +1147,7 @@
 	function confirmSendReminder(entry) {
 		// Build confirmation message
 		const contributor = entry.contributor || contributors.find(c => c.id === entry.contributor_id);
-		const daysUntil = Math.ceil((new Date(entry.date) - new Date()) / (1000 * 60 * 60 * 24));
+		const daysUntil = Math.ceil((new Date(entry.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 		const daysText = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
 		const reminderCount = entry.reminder_history?.length || 0;
 
@@ -1403,7 +1415,7 @@
 				Cancel
 			</button>
 			<button
-				onclick={() => deleteScheduleEntry(confirmDeleteModal.entry.id)}
+				onclick={() => deleteScheduleEntry(confirmDeleteModal.entry?.id)}
 				class="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
 			>
 				Remove Entry
@@ -1609,7 +1621,7 @@
 			{#if previewEntry?.status === 'approved'}
 				<button
 					onclick={() => {
-						sendToWordPress(previewEntry.id);
+						sendToWordPress(previewEntry?.id);
 						closePreviewModal();
 					}}
 					class="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
@@ -1648,7 +1660,6 @@
 	title="Send Bulk Reminders"
 	confirmText="Send All"
 	cancelText="Cancel"
-	variant="warning"
 	onConfirm={sendBulkReminders}
 	onCancel={() => bulkReminderConfirmModal = { open: false, entries: [] }}
 >

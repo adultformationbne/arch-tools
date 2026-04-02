@@ -7,7 +7,18 @@ import { Resend } from 'resend';
 import { buildCourseVariablesFromEnrollment } from '$lib/email/context-config';
 export { createEmailButton } from '$lib/email/email-button';
 
-/** Build email log entry with consistent column structure */
+/** Build email log entry with consistent column structure
+ * @param {Object} params
+ * @param {string} params.to
+ * @param {string} params.emailType
+ * @param {string} params.subject
+ * @param {string} params.body
+ * @param {string} params.status
+ * @param {string|null} [params.resendId]
+ * @param {string|null} [params.errorMessage]
+ * @param {string|null} [params.referenceId]
+ * @param {Record<string, any>} [params.metadata]
+ */
 function buildLogEntry({ to, emailType, subject, body, status, resendId = null, errorMessage = null, referenceId = null, metadata = {} }) {
 	return {
 		recipient_email: to,
@@ -189,9 +200,9 @@ export async function sendEmail({
 	subject,
 	html,
 	emailType,
-	referenceId = null,
+	referenceId = undefined,
 	metadata = {},
-	replyTo = null,
+	replyTo = undefined,
 	resendApiKey,
 	supabase
 }) {
@@ -262,14 +273,15 @@ export async function sendEmail({
 /**
  * Send bulk emails using Resend Batch API (up to 100 emails per request)
  * Automatically detects and handles Resend quota/rate limit errors.
- * @param {Array<{to: string, subject: string, html: string, metadata?: Object}>} emails Array of email objects
- * @param {string} emailType Type of email for logging
- * @param {string} resendApiKey Resend API key
- * @param {Object} supabase Supabase client
- * @param {Object} [options] Additional options
- * @param {Object} [options.commonMetadata] Metadata to merge into all emails
- * @param {string} [options.replyTo] Reply-to email (overrides platform default)
- * @returns {Promise<{sent: number, failed: number, errors: Array, quotaWarning?: string}>}
+ * @param {Object} params
+ * @param {Array<{to: string, subject: string, html: string, metadata?: any}>} params.emails Array of email objects
+ * @param {string} params.emailType Type of email for logging
+ * @param {string} params.resendApiKey Resend API key
+ * @param {Object} params.supabase Supabase client
+ * @param {Object} [params.options] Additional options
+ * @param {Object} [params.options.commonMetadata] Metadata to merge into all emails
+ * @param {string} [params.options.replyTo] Reply-to email (overrides platform default)
+ * @returns {Promise<{sent: number, failed: number, errors: any[], quotaWarning?: string}>}
  */
 export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase, options = {} }) {
 	if (!resendApiKey) {
@@ -280,11 +292,12 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	const resend = new Resend(resendApiKey);
 	const platformSettings = await getPlatformSettings();
 
+	/** @type {{sent: number, failed: number, errors: any[], quotaWarning?: string}} */
 	const results = {
 		sent: 0,
 		failed: 0,
 		errors: [],
-		quotaWarning: null
+		quotaWarning: undefined
 	};
 
 	// Note: No pre-flight quota check - we rely on Resend's error responses
@@ -425,7 +438,15 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	return results;
 }
 
-/** Log batch of emails to database */
+/** Log batch of emails to database
+ * @param {Object} supabase
+ * @param {Array<any>} emails
+ * @param {string} emailType
+ * @param {string} status
+ * @param {string|null} [errorMessage]
+ * @param {Record<string,any>} [commonMetadata]
+ * @param {Array<any>} [results]
+ */
 async function logBatchEmails(supabase, emails, emailType, status, errorMessage = null, commonMetadata = {}, results = []) {
 	if (!supabase) return;
 
@@ -583,7 +604,7 @@ export function createBrandedEmailHtml({
 	accentDark = '#334642',
 	accentLight = '#eae2d9',
 	accentDarkest = '#1e2322',
-	logoUrl = null,
+	logoUrl = undefined,
 	siteUrl = 'https://archdiocesanministries.org.au'
 }) {
 	if (!content) return '';
@@ -670,7 +691,7 @@ export function buildVariableContext({
 
 	const accentDark = course?.settings?.theme?.accentDark || course?.accent_dark || '#334642';
 
-	return buildCourseVariablesFromEnrollment(enrollmentLike, course, null, siteUrl, {
+	return buildCourseVariablesFromEnrollment(enrollmentLike, course, undefined, siteUrl, {
 		smartLogin: true,
 		hubNameFallback: 'N/A',
 		accentColor: accentDark,
@@ -720,10 +741,10 @@ export async function sendBrandedEmail({
 	subject,
 	bodyHtml,
 	emailType,
-	branding = {},
+	branding = /** @type {any} */ ({}),
 	context = 'platform',
-	contextId = null,
-	templateId = null,
+	contextId = undefined,
+	templateId = undefined,
 	metadata = {},
 	resendApiKey,
 	supabase
@@ -733,7 +754,7 @@ export async function sendBrandedEmail({
 	const accentDark = branding.accentDark || '#334642';
 	const accentLight = branding.accentLight || '#eae2d9';
 	const accentDarkest = branding.accentDarkest || '#1e2322';
-	const logoUrl = branding.logoUrl || null;
+	const logoUrl = branding.logoUrl || undefined;
 
 	// Wrap body in branded HTML
 	const html = createBrandedEmailHtml({
@@ -788,9 +809,9 @@ export async function sendCourseEmail({
 	bodyHtml,
 	emailType,
 	course,
-	cohortId = null,
-	enrollmentId = null,
-	templateId = null,
+	cohortId = undefined,
+	enrollmentId = undefined,
+	templateId = undefined,
 	metadata = {},
 	resendApiKey,
 	supabase
@@ -800,10 +821,10 @@ export async function sendCourseEmail({
 	const accentLight = course.settings?.theme?.accentLight || course.accent_light || '#eae2d9';
 	const accentDarkest =
 		course.settings?.theme?.accentDarkest || course.accent_darkest || '#1e2322';
-	const logoUrl = course.settings?.branding?.logoUrl || null;
+	const logoUrl = course.settings?.branding?.logoUrl || undefined;
 
 	// Get course-specific reply-to email (if set, overrides platform default)
-	const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+	const courseReplyTo = course.email_branding_config?.reply_to_email || undefined;
 
 	// Wrap body in branded HTML
 	const html = createBrandedEmailHtml({
@@ -874,7 +895,7 @@ export const DGR_BRANDING = {
 	accentDark: '#009199', // DGR teal
 	accentLight: '#e0f2f1',
 	accentDarkest: '#00695c',
-	logoUrl: null // Could be configured per project
+	logoUrl: undefined // Could be configured per project
 };
 
 /**
@@ -896,8 +917,8 @@ export async function sendDgrEmail({
 	subject,
 	bodyHtml,
 	emailType,
-	contributorId = null,
-	templateId = null,
+	contributorId = undefined,
+	templateId = undefined,
 	metadata = {},
 	resendApiKey,
 	supabase
