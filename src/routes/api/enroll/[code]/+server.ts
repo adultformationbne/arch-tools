@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { createCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
+import { getCourseSettings } from '$lib/types/course-settings';
 import { checkRateLimit } from '$lib/server/rate-limit';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 
@@ -128,6 +129,29 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		throw error(400, 'Enrollment for this cohort has closed');
 	}
 
+	// Check course-wide max capacity
+	const courseSettings = getCourseSettings(course.settings);
+	if (courseSettings.features?.maxCapacity) {
+		const { data: courseModules } = await supabaseAdmin
+			.from('courses_modules')
+			.select('id')
+			.eq('course_id', course.id);
+		const moduleIds = courseModules?.map(m => m.id) ?? [];
+		const { data: courseCohorts } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('id')
+			.in('module_id', moduleIds);
+		const cohortIds = courseCohorts?.map(c => c.id) ?? [];
+		const { count: courseCount } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id', { count: 'exact', head: true })
+			.in('cohort_id', cohortIds)
+			.neq('status', 'withdrawn');
+		if (courseCount !== null && courseCount >= courseSettings.features.maxCapacity) {
+			throw error(400, 'This course is currently full');
+		}
+	}
+
 	// Calculate effective price
 	const pricing = getEffectivePrice({
 		enrollmentLink: { price_cents: link.price_cents },
@@ -156,14 +180,15 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			cohort,
 			course,
 			link,
-				fullName,
+			fullName,
 			email: normalizedEmail,
 			phone,
 			parishId,
 			parishOther,
 			referralSource,
 			referralOther,
-			existingUser
+			existingUser,
+			courseSettings
 		});
 	}
 
@@ -196,6 +221,7 @@ async function handleFreeEnrollment(params: {
 	referralSource: string | null;
 	referralOther: string | null;
 	existingUser: { id: string; stripe_customer_id: string | null } | null;
+	courseSettings?: ReturnType<typeof getCourseSettings>;
 }) {
 	const {
 		cohort,
@@ -208,10 +234,14 @@ async function handleFreeEnrollment(params: {
 		parishOther,
 		referralSource,
 		referralOther,
-		existingUser
+		existingUser,
+		courseSettings
 	} = params;
 
-	const isApprovalRequired = cohort.enrollment_type === 'approval_required';
+	// Cohort-level overrides course-level; null/empty cohort type defers to course setting
+	const isApprovalRequired =
+		cohort.enrollment_type === 'approval_required' ||
+		(cohort.enrollment_type !== 'auto_approve' && (courseSettings?.features?.requireApproval ?? false));
 	const enrollmentStatus = isApprovalRequired ? 'pending' : 'invited';
 
 	// Use atomic safe_create_enrollment to prevent race conditions on capacity

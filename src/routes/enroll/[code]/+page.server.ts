@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
+import { getCourseSettings } from '$lib/types/course-settings';
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const { code } = params;
@@ -102,6 +103,29 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 
 		if (count && count >= cohort.max_enrollments) {
 			throw error(400, 'This cohort is full');
+		}
+	}
+
+	// Check course-wide max capacity
+	const courseSettings = getCourseSettings(course.settings);
+	if (courseSettings.features?.maxCapacity) {
+		const { data: courseModules } = await supabaseAdmin
+			.from('courses_modules')
+			.select('id')
+			.eq('course_id', course.id);
+		const moduleIds = courseModules?.map(m => m.id) ?? [];
+		const { data: courseCohorts } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('id')
+			.in('module_id', moduleIds);
+		const cohortIds = courseCohorts?.map(c => c.id) ?? [];
+		const { count: courseCount } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id', { count: 'exact', head: true })
+			.in('cohort_id', cohortIds)
+			.neq('status', 'withdrawn');
+		if (courseCount !== null && courseCount >= courseSettings.features.maxCapacity) {
+			throw error(400, 'This course is currently full');
 		}
 	}
 

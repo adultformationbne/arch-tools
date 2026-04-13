@@ -853,6 +853,37 @@
 									</label>
 								</div>
 
+								<!-- Max Capacity + Require Approval -->
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+									<!-- Max Capacity -->
+									<div class="flex flex-col gap-1 rounded-lg border border-gray-200 p-3 bg-white/30" onclick={(e) => e.stopPropagation()}>
+										<span class="text-sm font-medium text-gray-700">Max capacity</span>
+										<input
+											type="number"
+											min="1"
+											placeholder="Unlimited"
+											value={settings.features.maxCapacity ?? ''}
+											oninput={(e) => settings.features.maxCapacity = e.currentTarget.value ? parseInt(e.currentTarget.value) : null}
+											class="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										/>
+										<p class="text-xs text-gray-500">Course-wide cap across all cohorts</p>
+									</div>
+
+									<!-- Require Approval -->
+									<label class="flex items-start gap-2.5 cursor-pointer rounded-lg border border-gray-200 p-3 bg-white/30 hover:bg-white/50 transition-colors" onclick={(e) => e.stopPropagation()}>
+										<input
+											type="checkbox"
+											bind:checked={settings.features.requireApproval}
+											class="w-4 h-4 mt-0.5 rounded border-gray-300"
+											style="accent-color: {settings.theme.accentDark};"
+										/>
+										<div>
+											<span class="text-sm font-medium text-gray-700">Require approval</span>
+											<p class="text-xs text-gray-500">Participants must be approved before gaining access. Can be overridden per cohort.</p>
+										</div>
+									</label>
+								</div>
+
 							</div>
 						{/if}
 					</button>

@@ -49,6 +49,8 @@ export interface CourseSettings {
 		chatAllowParticipants?: boolean;
 		materialsEnabled?: boolean;
 		hubsEnabled?: boolean;
+		maxCapacity?: number | null;
+		requireApproval?: boolean;
 	};
 }
 
@@ -77,7 +79,9 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		chatEnabled: true,
 		chatAllowParticipants: false,
 		materialsEnabled: true,
-		hubsEnabled: true
+		hubsEnabled: true,
+		maxCapacity: null,
+		requireApproval: false
 	}
 };
 
@@ -131,7 +135,11 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 			materialsEnabled:
 				settings.features?.materialsEnabled ?? DEFAULT_COURSE_SETTINGS.features.materialsEnabled,
 			hubsEnabled:
-				settings.features?.hubsEnabled ?? DEFAULT_COURSE_SETTINGS.features.hubsEnabled
+				settings.features?.hubsEnabled ?? DEFAULT_COURSE_SETTINGS.features.hubsEnabled,
+			maxCapacity:
+				settings.features?.maxCapacity ?? DEFAULT_COURSE_SETTINGS.features.maxCapacity,
+			requireApproval:
+				settings.features?.requireApproval ?? DEFAULT_COURSE_SETTINGS.features.requireApproval
 		}
 	};
 }
