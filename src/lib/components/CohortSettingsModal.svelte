@@ -8,6 +8,7 @@
 		show = false,
 		cohort = null,
 		courseSlug = '',
+		courseFeatures = {},
 		onClose = () => {},
 		onUpdate = () => {},
 		onDelete = () => {},
@@ -18,6 +19,15 @@
 	let name = $state('');
 	let startDate = $state('');
 	let endDate = $state('');
+
+	// Enrollment settings state
+	let enrollmentType = $state('');
+	let isFree = $state(true);
+	let priceCents = $state('');
+	let currency = $state('AUD');
+	let enrollmentOpensAt = $state('');
+	let enrollmentClosesAt = $state('');
+	let maxEnrollments = $state('');
 	let saving = $state(false);
 	let deleting = $state(false);
 	let completing = $state(false);
@@ -52,8 +62,54 @@
 			startDate = cohort.start_date || '';
 			endDate = cohort.end_date || '';
 			deleteConfirmName = '';
+
+			// Enrollment settings
+			enrollmentType = cohort.enrollment_type || '';
+			isFree = cohort.is_free ?? true;
+			priceCents = cohort.price_cents ? (cohort.price_cents / 100).toFixed(2) : '';
+			currency = cohort.currency || 'AUD';
+			enrollmentOpensAt = cohort.enrollment_opens_at ? cohort.enrollment_opens_at.slice(0, 16) : '';
+			enrollmentClosesAt = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 16) : '';
+			maxEnrollments = cohort.max_enrollments ? String(cohort.max_enrollments) : '';
 		}
 	});
+
+	let savingEnrollment = $state(false);
+
+	async function handleSaveEnrollment() {
+		savingEnrollment = true;
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'update_cohort_enrollment',
+					cohortId: cohort.id,
+					enrollmentType: enrollmentType || null,
+					isFree,
+					priceCents: !isFree && priceCents ? Math.round(parseFloat(priceCents) * 100) : null,
+					currency,
+					enrollmentOpensAt: enrollmentOpensAt || null,
+					enrollmentClosesAt: enrollmentClosesAt || null,
+					maxEnrollments: maxEnrollments ? parseInt(maxEnrollments) : null
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to update enrollment settings');
+			}
+
+			toastSuccess('Enrollment settings updated');
+			onUpdate();
+		} catch (err) {
+			console.error('Error updating enrollment settings:', err);
+			toastError(err.message || 'Failed to update enrollment settings');
+		} finally {
+			savingEnrollment = false;
+		}
+	}
 
 	async function handleSave() {
 		if (!name.trim()) {
@@ -350,6 +406,131 @@
 						</p>
 					{/if}
 				</div>
+
+				<!-- Enrollment Settings Section -->
+				{#if courseFeatures.enrollmentEnabled && !isArchived}
+					<div class="border-t border-gray-200 pt-4">
+						<h3 class="text-sm font-semibold text-gray-900 mb-3">Enrollment Settings</h3>
+
+						<!-- Enrollment Type -->
+						<div class="mb-3">
+							<label for="enrollment-type" class="block text-sm font-medium text-gray-700 mb-1">
+								Enrollment Type
+							</label>
+							<select
+								id="enrollment-type"
+								bind:value={enrollmentType}
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							>
+								<option value="">Use course default</option>
+								<option value="auto_approve">Auto-approve</option>
+								<option value="approval_required">Require approval</option>
+							</select>
+							<p class="text-xs text-gray-500 mt-1">Controls whether participants need admin approval</p>
+						</div>
+
+						<!-- Pricing (only when acceptPayments enabled) -->
+						{#if courseFeatures.acceptPayments}
+							<div class="mb-3">
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input
+										type="checkbox"
+										bind:checked={isFree}
+										class="w-4 h-4 rounded border-gray-300"
+									/>
+									<span class="text-sm font-medium text-gray-700">Free enrollment</span>
+								</label>
+							</div>
+
+							{#if !isFree}
+								<div class="grid grid-cols-2 gap-3 mb-3">
+									<div>
+										<label for="cohort-price" class="block text-sm font-medium text-gray-700 mb-1">
+											Price
+										</label>
+										<div class="relative">
+											<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+											<input
+												id="cohort-price"
+												type="number"
+												bind:value={priceCents}
+												step="0.01"
+												min="0"
+												placeholder="0.00"
+												class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+											/>
+										</div>
+									</div>
+									<div>
+										<label for="cohort-currency" class="block text-sm font-medium text-gray-700 mb-1">
+											Currency
+										</label>
+										<select
+											id="cohort-currency"
+											bind:value={currency}
+											class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										>
+											<option value="AUD">AUD</option>
+											<option value="USD">USD</option>
+											<option value="NZD">NZD</option>
+										</select>
+									</div>
+								</div>
+							{/if}
+						{/if}
+
+						<!-- Enrollment Window -->
+						<div class="grid grid-cols-2 gap-3 mb-3">
+							<div>
+								<label for="enrollment-opens" class="block text-sm font-medium text-gray-700 mb-1">
+									Opens at
+								</label>
+								<input
+									id="enrollment-opens"
+									type="datetime-local"
+									bind:value={enrollmentOpensAt}
+									class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								/>
+							</div>
+							<div>
+								<label for="enrollment-closes" class="block text-sm font-medium text-gray-700 mb-1">
+									Closes at
+								</label>
+								<input
+									id="enrollment-closes"
+									type="datetime-local"
+									bind:value={enrollmentClosesAt}
+									class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								/>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 mb-3">Leave empty for no enrollment window restrictions</p>
+
+						<!-- Max Enrollments -->
+						<div class="mb-3">
+							<label for="max-enrollments" class="block text-sm font-medium text-gray-700 mb-1">
+								Max Enrollments
+							</label>
+							<input
+								id="max-enrollments"
+								type="number"
+								bind:value={maxEnrollments}
+								min="1"
+								placeholder="Unlimited"
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							/>
+							<p class="text-xs text-gray-500 mt-1">Cohort-level cap. Leave empty for unlimited.</p>
+						</div>
+
+						<button
+							onclick={handleSaveEnrollment}
+							class="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+							disabled={isBusy || savingEnrollment}
+						>
+							{savingEnrollment ? 'Saving...' : 'Save Enrollment Settings'}
+						</button>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Footer -->

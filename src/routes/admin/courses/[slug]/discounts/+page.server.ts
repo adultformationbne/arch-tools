@@ -1,8 +1,16 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
+	const courseFeatures = parentData.courseFeatures || {};
+
+	// Redirect if both discountCodes and acceptPayments are disabled
+	if (!courseFeatures.discountCodes && !courseFeatures.acceptPayments) {
+		throw redirect(302, `/admin/courses/${parentData.courseSlug}`);
+	}
+
 	const courseId = parentData.courseInfo.id;
 	const layoutCohorts = parentData.cohorts || [];
 

@@ -926,11 +926,27 @@
 						<span class="ml-2 text-sm text-white/70">Loading...</span>
 					</div>
 				{:else if filteredParticipants.length === 0}
-					<div class="bg-white rounded border border-gray-200 p-8 text-center">
-						<p class="text-sm text-gray-500">
-							{participants.length === 0 ? 'No participants enrolled yet.' : 'No participants match your search.'}
-						</p>
-					</div>
+					{#if participants.length === 0}
+						<div class="bg-white rounded-lg border-2 border-dashed border-gray-200 p-12 text-center">
+							<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style="background-color: var(--course-accent-dark, #334642)20;">
+								<UserPlus size={22} style="color: var(--course-accent-dark, #334642);" />
+							</div>
+							<h3 class="mb-1 text-sm font-semibold text-gray-900">No participants yet</h3>
+							<p class="mb-5 text-sm text-gray-500">Add participants manually or via CSV upload to get started.</p>
+							<button
+								onclick={handleAddParticipant}
+								class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+								style="background-color: var(--course-accent-dark, #334642);"
+							>
+								<UserPlus size={16} />
+								Add Participants
+							</button>
+						</div>
+					{:else}
+						<div class="bg-white rounded border border-gray-200 p-8 text-center">
+							<p class="text-sm text-gray-500">No participants match your search.</p>
+						</div>
+					{/if}
 				{:else}
 					<div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
 						<table class="w-full min-w-[540px] sm:min-w-[700px] lg:min-w-[900px]">
@@ -1062,6 +1078,7 @@
 	show={showCohortSettings}
 	cohort={selectedCohort}
 	{courseSlug}
+	{courseFeatures}
 	onClose={() => showCohortSettings = false}
 	onUpdate={handleCohortUpdate}
 	onDelete={handleCohortDelete}

@@ -167,6 +167,7 @@
 	<CohortCreationWizard
 		{courseSlug}
 		{modules}
+		{courseFeatures}
 		show={showCohortWizard}
 		onClose={() => showCohortWizard = false}
 		onComplete={handleWizardComplete}

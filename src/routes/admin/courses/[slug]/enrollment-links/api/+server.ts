@@ -3,17 +3,27 @@ import type { RequestHandler } from './$types';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { generateEnrollmentCode } from '$lib/utils/enrollment-links';
+import { getCourseSettings } from '$lib/types/course-settings';
 
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 	await requireCourseAdmin(event, courseSlug);
+
+	// Load course settings for feature flag checks
+	const { data: courseData } = await supabaseAdmin
+		.from('courses')
+		.select('settings')
+		.eq('slug', courseSlug)
+		.single();
+
+	const courseSettings = getCourseSettings(courseData?.settings);
 
 	const body = await event.request.json();
 	const { action } = body;
 
 	switch (action) {
 		case 'create':
-			return handleCreate(body);
+			return handleCreate(body, courseSettings);
 		case 'toggle':
 			return handleToggle(body);
 		default:
@@ -51,11 +61,16 @@ async function handleCreate(body: {
 	priceCents?: number | null;
 	maxUses?: number | null;
 	expiresAt?: string | null;
-}) {
+}, courseSettings: ReturnType<typeof getCourseSettings>) {
 	const { cohortId, hubId, name, priceCents, maxUses, expiresAt } = body;
 
 	if (!cohortId) {
 		throw error(400, 'Cohort ID is required');
+	}
+
+	// Enforce acceptPayments flag
+	if (!courseSettings.features?.acceptPayments && priceCents) {
+		throw error(400, 'Payments are not enabled for this course. Cannot set a price on enrollment links.');
 	}
 
 	// Verify cohort exists

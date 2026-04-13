@@ -501,6 +501,39 @@ export const POST: RequestHandler = async (event) => {
 
 			// Note: update_cohort_status removed - status is now computed from session progress
 
+			case 'update_cohort_enrollment': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				const updateFields: Record<string, any> = {
+					enrollment_type: data.enrollmentType || null,
+					is_free: data.isFree ?? true,
+					price_cents: data.priceCents || null,
+					currency: data.currency || 'AUD',
+					enrollment_opens_at: data.enrollmentOpensAt ? new Date(data.enrollmentOpensAt).toISOString() : null,
+					enrollment_closes_at: data.enrollmentClosesAt ? new Date(data.enrollmentClosesAt).toISOString() : null,
+					max_enrollments: data.maxEnrollments || null
+				};
+
+				const { error: updateError } = await supabaseAdmin
+					.from('courses_cohorts')
+					.update(updateFields)
+					.eq('id', data.cohortId);
+
+				if (updateError) {
+					console.error('Failed to update cohort enrollment settings:', updateError);
+					throw error(500, 'Failed to update enrollment settings');
+				}
+
+				invalidateCourseCache(courseSlug);
+				return json({
+					success: true,
+					message: 'Enrollment settings updated successfully'
+				});
+			}
+
 			// ================================================================
 			// ENROLLMENT MANAGEMENT
 			// ================================================================

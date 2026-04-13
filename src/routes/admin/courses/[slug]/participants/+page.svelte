@@ -4,6 +4,7 @@
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data } = $props();
 
@@ -258,6 +259,56 @@
 		toastSuccess(`Exported ${filteredStudents.length} participants`);
 	}
 
+	// Pending approval counts
+	let pendingCount = $derived(students.filter(s => s.status === 'pending').length);
+
+	// Approve/reject state
+	let approvingId = $state(null);
+	let rejectingId = $state(null);
+	let showRejectConfirm = $state(false);
+	let enrollmentToReject = $state(null);
+
+	async function handleApprove(enrollmentId) {
+		approvingId = enrollmentId;
+		try {
+			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'approve', enrollmentId })
+			});
+			const result = await response.json();
+			if (!response.ok || !result.success) throw new Error(result.message || 'Failed to approve');
+			toastSuccess('Participant approved');
+			await invalidateAll();
+		} catch (err) {
+			toastError(err.message || 'Failed to approve enrollment');
+		} finally {
+			approvingId = null;
+		}
+	}
+
+	async function handleReject() {
+		if (!enrollmentToReject) return;
+		rejectingId = enrollmentToReject;
+		showRejectConfirm = false;
+		try {
+			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'reject', enrollmentId: enrollmentToReject })
+			});
+			const result = await response.json();
+			if (!response.ok || !result.success) throw new Error(result.message || 'Failed to reject');
+			toastSuccess('Enrollment rejected');
+			await invalidateAll();
+		} catch (err) {
+			toastError(err.message || 'Failed to reject enrollment');
+		} finally {
+			rejectingId = null;
+			enrollmentToReject = null;
+		}
+	}
+
 	// Get cohort names for display
 	function getCohortDisplay(student) {
 		if (student.all_cohorts?.length > 0) {
@@ -323,13 +374,25 @@
 				</div>
 			{/if}
 
+			{#if pendingCount > 0 && courseFeatures.enrollmentEnabled}
+				<div class="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-2.5">
+					<button
+						onclick={() => selectedStatus = 'pending'}
+						class="w-full flex items-center justify-between text-xs font-semibold text-yellow-200 hover:text-yellow-100"
+					>
+						<span>Pending Approval</span>
+						<span class="bg-yellow-400 text-yellow-900 rounded-full px-2 py-0.5 text-[10px] font-bold">{pendingCount}</span>
+					</button>
+				</div>
+			{/if}
+
 			<div>
 				<h3 class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 px-1">Status</h3>
 				<div class="space-y-0.5">
 					{#each [
 						{ value: 'all', label: 'All Statuses' },
 						{ value: 'active', label: 'Active' },
-						{ value: 'pending', label: 'Pending' },
+						{ value: 'pending', label: 'Pending Approval' },
 						{ value: 'invited', label: 'Invited' },
 						{ value: 'completed', label: 'Completed' },
 						{ value: 'withdrawn', label: 'Withdrawn' }
@@ -710,14 +773,30 @@
 													<div class="text-[10px] font-semibold uppercase text-gray-400 mb-1">Enrolled</div>
 													<div class="text-gray-700">{student.created_at ? new Date(student.created_at).toLocaleDateString() : '-'}</div>
 												</div>
-												<div class="flex items-end sm:col-span-1">
+												<div class="flex items-end gap-2 sm:col-span-1 flex-wrap">
 													<button
 														onclick={(e) => openParticipantDetail(student, e)}
-														class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
+														class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
 													>
 														<Eye size={14} />
 														Edit Profile
 													</button>
+													{#if student.status === 'pending'}
+														<button
+															onclick={(e) => { e.stopPropagation(); handleApprove(student.id); }}
+															disabled={approvingId === student.id}
+															class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+														>
+															{approvingId === student.id ? 'Approving...' : 'Approve'}
+														</button>
+														<button
+															onclick={(e) => { e.stopPropagation(); enrollmentToReject = student.id; showRejectConfirm = true; }}
+															disabled={rejectingId === student.id}
+															class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+														>
+															{rejectingId === student.id ? 'Rejecting...' : 'Reject'}
+														</button>
+													{/if}
 												</div>
 											</div>
 										</td>
@@ -765,6 +844,18 @@
 	onUpdate={handleParticipantDetailUpdate}
 	onEmail={handleParticipantDetailEmail}
 />
+
+<!-- Reject Enrollment Confirmation Modal -->
+<ConfirmationModal
+	show={showRejectConfirm}
+	confirmText="Reject"
+	confirmClass="bg-red-600 hover:bg-red-700"
+	onConfirm={handleReject}
+	onCancel={() => { showRejectConfirm = false; enrollmentToReject = null; }}
+>
+	<p class="text-gray-900 font-medium">Reject this enrollment request?</p>
+	<p class="mt-1 text-sm text-gray-600">The participant's status will be set to withdrawn. This action can be reversed by manually updating their status.</p>
+</ConfirmationModal>
 
 <style>
 	/* Use course accent color for checkboxes */

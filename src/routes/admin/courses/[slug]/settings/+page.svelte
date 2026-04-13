@@ -53,7 +53,7 @@
 			hubsEnabled: true,
 			enrollmentEnabled: false,
 			acceptPayments: false,
-			discountCodes: false
+			discountCodes: false,
 		}
 	});
 
@@ -852,6 +852,7 @@
 										</div>
 									</label>
 								</div>
+
 							</div>
 						{/if}
 					</button>

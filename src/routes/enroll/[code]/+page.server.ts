@@ -1,4 +1,4 @@
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
@@ -91,7 +91,8 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		throw error(400, 'Enrollment for this cohort has closed');
 	}
 
-	// Check max enrollments
+
+	// Check cohort max enrollments
 	if (cohort.max_enrollments) {
 		const { count } = await supabaseAdmin
 			.from('courses_enrollments')
@@ -138,20 +139,6 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			.single();
 
 		if (profile) {
-			// Check if already enrolled in this cohort
-			const { data: existingEnrollment } = await supabaseAdmin
-				.from('courses_enrollments')
-				.select('id, status')
-				.eq('user_profile_id', profile.id)
-				.eq('cohort_id', cohort.id)
-				.neq('status', 'withdrawn')
-				.single();
-
-			if (existingEnrollment) {
-				// Already enrolled - redirect to course
-				throw redirect(302, `/my-courses/${course.slug}`);
-			}
-
 			existingUser = profile;
 		}
 	}

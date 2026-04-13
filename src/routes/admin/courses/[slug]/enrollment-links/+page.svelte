@@ -21,6 +21,8 @@
 
 	let { data } = $props();
 
+	const courseFeatures = $derived(data.courseFeatures || {});
+
 	// Modal state
 	let showCreateModal = $state(false);
 	let showDeleteConfirm = $state(false);
@@ -83,7 +85,7 @@
 				cohortId: selectedCohortId,
 				hubId: selectedHubId || null,
 				name: linkName || null,
-				priceCents: customPrice ? Math.round(parseFloat(customPrice) * 100) : null,
+				priceCents: courseFeatures.acceptPayments && customPrice ? Math.round(parseFloat(customPrice) * 100) : null,
 				maxUses: maxUses ? parseInt(maxUses) : null,
 				expiresAt: expiresAt || null
 			});
@@ -399,7 +401,8 @@
 					<p class="mt-1 text-xs text-gray-500">A friendly name to identify this link</p>
 				</div>
 
-				<!-- Custom price (optional) -->
+				<!-- Custom price (optional) - only when payments enabled -->
+				{#if courseFeatures.acceptPayments}
 				<div>
 					<label for="price" class="mb-1 block text-sm font-medium text-gray-700">
 						Custom Price (optional)
@@ -426,6 +429,7 @@
 								: 'Not set'})
 					</p>
 				</div>
+				{/if}
 
 				<!-- Max uses (optional) -->
 				<div>

@@ -93,7 +93,8 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 						name,
 						slug,
 						default_price_cents,
-						default_currency
+						default_currency,
+						settings
 					)
 				)
 			)
@@ -155,7 +156,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			cohort,
 			course,
 			link,
-			fullName,
+				fullName,
 			email: normalizedEmail,
 			phone,
 			parishId,

@@ -236,7 +236,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const isCoursesRoute =
 		coursesRoutePrefixes.some(route => pathname.startsWith(route)) || pathname === '/';
 	const publicRoutes = ['/', '/login', '/login/setup-password', '/readings', '/privacy-policy'];
-	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/'];
+	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/', '/enroll/'];
 	const isExplicitPublic = publicRoutes.some(route => pathname === route);
 	const isPrefixPublic = publicPrefixes.some(prefix => pathname.startsWith(prefix));
 	const isPublicRoute = isExplicitPublic || isPrefixPublic;

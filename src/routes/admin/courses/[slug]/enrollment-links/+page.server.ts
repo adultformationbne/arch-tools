@@ -1,8 +1,16 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
+	const courseFeatures = parentData.courseFeatures || {};
+
+	// Redirect if enrollment is disabled
+	if (!courseFeatures.enrollmentEnabled) {
+		throw redirect(302, `/admin/courses/${parentData.courseSlug}`);
+	}
+
 	const layoutCohorts = parentData.cohorts || [];
 	const layoutHubs = parentData.hubs || [];
 
@@ -40,6 +48,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	return {
 		cohorts: layoutCohorts,
 		enrollmentLinks,
-		hubs: layoutHubs
+		hubs: layoutHubs,
+		courseFeatures
 	};
 };
