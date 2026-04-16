@@ -165,11 +165,13 @@
 			filtered = filtered.filter(r => r.student?.id === selectedParticipant);
 		}
 
-		// Search filter (content only — use participant dropdown for name filtering)
+		// Search filter — matches content, participant name, and email
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
 			filtered = filtered.filter(r =>
-				r.content.toLowerCase().includes(query)
+				r.content.toLowerCase().includes(query) ||
+				r.student?.name?.toLowerCase().includes(query) ||
+				r.student?.email?.toLowerCase().includes(query)
 			);
 		}
 
@@ -445,7 +447,7 @@
 				<input
 					bind:value={searchQuery}
 					type="text"
-					placeholder="Search content..."
+					placeholder="Search by name or content..."
 					class="w-full pl-8 pr-3 py-2 text-sm border rounded-lg text-white placeholder-white/40 focus:outline-none"
 					style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"
 				/>
@@ -516,7 +518,7 @@
 						id="reflection-search"
 						bind:value={searchQuery}
 						type="text"
-						placeholder="Search content..."
+						placeholder="Search by name or content..."
 						class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg text-white placeholder-white/40 focus:outline-none"
 						style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"
 					/>
@@ -697,9 +699,20 @@
 			</div>
 
 			<!-- Scrollable response area -->
-			<div class="flex-1 overflow-y-auto p-3 sm:p-5">
-				<div class="bg-gray-50 rounded-lg p-4 sm:p-5 text-sm sm:text-base leading-relaxed">
-					<ReflectionContent content={selectedReflection.content} mode="compact" />
+			<div class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
+				<!-- Question -->
+				<div>
+					<h3 class="text-[9px] sm:text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:mb-1.5">Question</h3>
+					<div class="bg-gray-50 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+						<p class="text-[11px] sm:text-xs text-gray-700 italic">"{selectedReflection.question}"</p>
+					</div>
+				</div>
+				<!-- Response -->
+				<div>
+					<h3 class="text-[9px] sm:text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:mb-1.5">Response</h3>
+					<div class="bg-blue-50 rounded-lg p-4 sm:p-5 text-sm sm:text-base leading-relaxed border border-blue-100">
+						<ReflectionContent content={selectedReflection.content} mode="compact" />
+					</div>
 				</div>
 			</div>
 

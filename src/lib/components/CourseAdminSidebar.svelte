@@ -17,7 +17,8 @@ import {
     Mail,
     MessageCircle,
     Link,
-    Tag
+    Tag,
+    Zap
 } from '$lib/icons';
 
 let {
@@ -111,6 +112,13 @@ const navItems = $derived([
         icon: PenSquare,
         description: 'Review submissions',
         visible: canManageCourse && courseFeatures.reflectionsEnabled !== false
+    },
+    {
+        label: 'Quizzes',
+        href: withCohort(`/admin/courses/${courseSlug}/quizzes`),
+        icon: Zap,
+        description: 'Marking queue & results',
+        visible: canManageCourse
     },
     {
         label: 'Emails',

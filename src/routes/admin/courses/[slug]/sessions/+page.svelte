@@ -5,6 +5,7 @@
 	import { Pencil, Menu, X } from '$lib/icons';
 	import MaterialEditor from '$lib/components/MaterialEditor.svelte';
 	import ReflectionEditor from '$lib/components/ReflectionEditor.svelte';
+	import QuizEditor from '$lib/components/QuizEditor.svelte';
 	import SessionOverviewEditor from '$lib/components/SessionOverviewEditor.svelte';
 	import SessionTreeSidebar from '$lib/components/SessionTreeSidebar.svelte';
 	import SessionContent from '../../../../courses/[slug]/SessionContent.svelte';
@@ -911,6 +912,12 @@
 						reflectionQuestion={currentSession.reflection}
 						onReflectionChange={handleReflectionChange}
 						onDeleteQuestion={handleDeleteQuestion}
+						sessionNumber={selectedSession}
+					/>
+
+					<QuizEditor
+						sessionId={currentSession.id || ''}
+						courseId={data.course?.id || ''}
 						sessionNumber={selectedSession}
 					/>
 				</div>

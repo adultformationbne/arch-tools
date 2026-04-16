@@ -14,15 +14,17 @@ export async function GET() {
 			return json({ error: error.message }, { status: 500 });
 		}
 
-		// Only return tiles that have image URLs
+		// Return all tiles (including expired) for admin management
 		const formattedTiles = tiles
 			?.filter(tile => tile.image_url && tile.image_url.trim())
 			.map(tile => ({
+				id: tile.id,
 				position: tile.position,
 				image_url: tile.image_url,
 				title: tile.title || '',
 				link_url: tile.link_url || '',
-				active: tile.active ?? true
+				active: tile.active ?? true,
+				expires_at: tile.expires_at || null
 			}))
 			.sort((a, b) => a.position - b.position) || [];
 
@@ -59,7 +61,8 @@ export async function POST({ request }) {
 				image_url: tile.image_url || '',
 				title: tile.title || '',
 				link_url: tile.link_url || '',
-				active: true
+				active: true,
+				expires_at: tile.expires_at || null
 			}));
 
 			const { error: insertError } = await supabaseAdmin

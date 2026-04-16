@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool } from '$lib/icons';
+	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 
@@ -13,7 +13,8 @@
 		onSessionChange,
 		totalSessions,
 		maxSessionNumber,
-		featureSettings = {}
+		featureSettings = {},
+		quizzesBySession = {}
 	} = $props();
 
 	// Check if features are enabled (default true for backwards compatibility)
@@ -91,6 +92,40 @@
 			truncated: text.slice(0, QUESTION_TRUNCATE_LENGTH) + '...',
 			needsTruncation: true
 		};
+	};
+
+	// Quiz helpers
+	const currentQuiz = $derived(quizzesBySession[currentSession] ?? null);
+
+	const getQuizStatusLabel = (status) => {
+		if (!status) return 'Not started';
+		const labels = {
+			in_progress: 'In progress',
+			submitted: 'Submitted',
+			passed: 'Passed',
+			failed: 'Failed',
+			pending_review: 'Pending review',
+			reviewing: 'Being reviewed'
+		};
+		return labels[status] ?? status;
+	};
+
+	const getQuizStatusColor = (status) => {
+		if (!status) return 'bg-orange-400';
+		if (status === 'passed') return 'bg-green-500';
+		if (status === 'failed') return 'bg-red-400';
+		if (status === 'pending_review' || status === 'reviewing') return 'bg-blue-400';
+		return 'bg-orange-400';
+	};
+
+	const getQuizButtonLabel = (status, quiz) => {
+		if (!status) return 'Start Quiz';
+		if (status === 'in_progress') return 'Continue Quiz';
+		if (status === 'passed') return 'View Results';
+		if (status === 'failed' && quiz?.allow_retakes) return 'Retake Quiz';
+		if (status === 'failed') return 'View Results';
+		if (status === 'pending_review' || status === 'reviewing') return 'View Submission';
+		return 'View Results';
 	};
 
 	// Helper to get reflection button label based on status
@@ -706,6 +741,61 @@
 								{/if}
 								</div>
 							{/if}
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Quiz Panel (shown below session content if a quiz exists for this session) -->
+		{#if currentQuiz}
+			<div class="mt-6 mb-2 px-4 sm:px-0">
+				<div class="max-w-7xl mx-auto">
+					<div class="rounded-xl border border-gray-200 bg-white p-5">
+						<div class="flex items-start gap-3">
+							<div class="p-2 rounded-lg flex-shrink-0" style="background-color: var(--course-accent-dark, #334642);">
+								{#if currentQuiz.mode === 'instant'}
+									<Zap size="18" class="text-white" />
+								{:else}
+									<PenTool size="18" class="text-white" />
+								{/if}
+							</div>
+							<div class="flex-1 min-w-0">
+								<p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5">Quiz</p>
+								<p class="font-semibold text-gray-800 text-sm">
+									{currentQuiz.title || (currentSession === 0 ? 'Pre-Start Quiz' : `Session ${currentSession} Quiz`)}
+								</p>
+								<p class="text-xs text-gray-500 mt-0.5">
+									{currentQuiz.mode === 'instant' ? 'Multiple choice' : 'Short answer'}
+									· {currentQuiz.question_count} question{currentQuiz.question_count !== 1 ? 's' : ''}
+									{#if currentQuiz.mode === 'instant' && currentQuiz.pass_threshold}
+										· Pass: {currentQuiz.pass_threshold}%
+									{/if}
+								</p>
+							</div>
+							<div class="flex items-center gap-3 flex-shrink-0">
+								{#if currentQuiz.latestAttempt}
+									<div class="flex items-center gap-1.5">
+										<div class="w-2 h-2 rounded-full {getQuizStatusColor(currentQuiz.latestAttempt.status)}"></div>
+										<span class="text-xs text-gray-600 font-medium">{getQuizStatusLabel(currentQuiz.latestAttempt.status)}</span>
+										{#if currentQuiz.latestAttempt.score !== null && currentQuiz.mode === 'instant'}
+											<span class="text-xs text-gray-400">({currentQuiz.latestAttempt.score}%)</span>
+										{/if}
+									</div>
+								{:else}
+									<div class="flex items-center gap-1.5">
+										<div class="w-2 h-2 rounded-full bg-orange-400"></div>
+										<span class="text-xs text-gray-600 font-medium">Not started</span>
+									</div>
+								{/if}
+								<a
+									href="/courses/{courseSlug}/quiz/{currentQuiz.id}"
+									class="flex items-center gap-1.5 px-3 py-1.5 text-white font-semibold text-xs rounded-lg transition-colors hover:opacity-90 no-underline"
+									style="background-color: var(--course-accent-dark, #334642);"
+								>
+									{getQuizButtonLabel(currentQuiz.latestAttempt?.status ?? null, currentQuiz)}
+								</a>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

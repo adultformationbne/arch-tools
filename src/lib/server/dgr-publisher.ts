@@ -96,10 +96,14 @@ ${truncatedText}`;
 
 	// Fetch promo tiles for templates that support them
 	try {
+		const today = new Date().toISOString().split('T')[0];
 		const { data: tiles, error } = await supabaseAdmin
 			.from('dgr_promo_tiles')
 			.select('*')
 			.eq('active', true)
+			.not('image_url', 'is', null)
+			.neq('image_url', '')
+			.or(`expires_at.is.null,expires_at.gte.${today}`)
 			.order('position');
 
 		if (!error && tiles) {

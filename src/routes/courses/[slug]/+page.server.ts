@@ -6,6 +6,7 @@ import {
 	groupMaterialsBySession,
 	groupQuestionsBySession
 } from '$lib/server/course-data.js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 import { getUserInitials } from '$lib/utils/avatar.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
@@ -290,6 +291,67 @@ export const load: PageServerLoad = async (event) => {
 			}
 		: null;
 
+	// Load quiz data for all sessions: quizzesBySession[sessionNumber] = { id, mode, title, question_count, latestAttempt }
+	const sessionIds = sessions.map(s => s.id);
+	let quizzesBySession: Record<number, any> = {};
+	if (sessionIds.length > 0) {
+		const { data: quizzes } = await supabaseAdmin
+			.from('courses_quizzes')
+			.select('id, session_id, mode, title, require_pass_to_advance, allow_retakes, max_attempts, pass_threshold')
+			.in('session_id', sessionIds)
+			.eq('published', true);
+
+		if (quizzes && quizzes.length > 0) {
+			const quizIds = quizzes.map(q => q.id);
+
+			// Get all attempts for this enrollment
+			const { data: attempts } = await supabaseAdmin
+				.from('courses_quiz_attempts')
+				.select('id, quiz_id, attempt_number, status, score, overall_feedback, submitted_at, marked_at')
+				.eq('enrollment_id', enrollment.id)
+				.in('quiz_id', quizIds)
+				.order('attempt_number', { ascending: false });
+
+			// Get question counts
+			const { data: questionCounts } = await supabaseAdmin
+				.from('courses_quiz_questions')
+				.select('quiz_id')
+				.in('quiz_id', quizIds);
+
+			const countByQuiz: Record<string, number> = {};
+			for (const qc of questionCounts ?? []) {
+				countByQuiz[qc.quiz_id] = (countByQuiz[qc.quiz_id] ?? 0) + 1;
+			}
+
+			// Group attempts by quiz_id (already sorted desc by attempt_number)
+			const attemptsByQuiz: Record<string, any[]> = {};
+			for (const a of attempts ?? []) {
+				if (!attemptsByQuiz[a.quiz_id]) attemptsByQuiz[a.quiz_id] = [];
+				attemptsByQuiz[a.quiz_id].push(a);
+			}
+
+			// Build quizzesBySession
+			for (const quiz of quizzes) {
+				const session = sessions.find(s => s.id === quiz.session_id);
+				if (!session) continue;
+				const quizAttempts = attemptsByQuiz[quiz.id] ?? [];
+				const latestAttempt = quizAttempts[0] ?? null;
+				quizzesBySession[session.session_number] = {
+					id: quiz.id,
+					mode: quiz.mode,
+					title: quiz.title,
+					require_pass_to_advance: quiz.require_pass_to_advance,
+					allow_retakes: quiz.allow_retakes,
+					max_attempts: quiz.max_attempts,
+					pass_threshold: quiz.pass_threshold,
+					question_count: countByQuiz[quiz.id] ?? 0,
+					latestAttempt,
+					allAttempts: quizAttempts
+				};
+			}
+		}
+	}
+
 	// Filter materialsBySession for coordinator-only materials
 	const filteredMaterialsBySession = Object.fromEntries(
 		Object.entries(materialsBySession).map(([sessionNum, mats]) => [
@@ -313,6 +375,21 @@ export const load: PageServerLoad = async (event) => {
 		}
 	} else {
 		availableSessions = currentSession;
+
+		// Quiz gating: if a session has a quiz with require_pass_to_advance = true
+		// and the participant hasn't passed it, cap availableSessions at that session.
+		// Check sessions 1..currentSession in order; the first unblocked session caps the advance.
+		for (let s = 1; s <= currentSession; s++) {
+			const quizForSession = quizzesBySession[s];
+			if (quizForSession?.require_pass_to_advance) {
+				const hasPassed = quizForSession.allAttempts?.some((a: any) => a.status === 'passed');
+				if (!hasPassed) {
+					// Participant is blocked from advancing beyond session s
+					availableSessions = Math.min(availableSessions, s);
+					break;
+				}
+			}
+		}
 	}
 
 	return {
@@ -330,6 +407,7 @@ export const load: PageServerLoad = async (event) => {
 		hubData: formattedHubData,
 		totalSessions,
 		maxSessionNumber,
-		featureSettings
+		featureSettings,
+		quizzesBySession
 	};
 };

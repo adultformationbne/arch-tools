@@ -114,7 +114,11 @@ function processSpecialHelpers(template, data, options = {}) {
     const tilesValue = data[variable];
     if (!tilesValue || !Array.isArray(tilesValue) || tilesValue.length === 0) return '';
 
-    const activeTiles = tilesValue.filter(tile => tile.active && tile.image_url);
+    const today = new Date().toISOString().split('T')[0];
+    const activeTiles = tilesValue.filter(tile =>
+      tile.active && tile.image_url &&
+      (tile.expires_at == null || tile.expires_at >= today)
+    );
     if (activeTiles.length === 0) return '';
 
     // Adjust tile size based on count - bigger when fewer tiles

@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
 	import SessionContent from './SessionContent.svelte';
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
@@ -20,6 +21,7 @@
 	const totalSessions = $derived(data.totalSessions);
 	const maxSessionNumber = $derived(data.maxSessionNumber);
 	const featureSettings = $derived(data.featureSettings);
+	const quizzesBySession = $derived(data.quizzesBySession ?? {});
 
 	// Intro video modal state
 	let showIntroVideo = $state(false);
@@ -51,6 +53,20 @@
 		} catch (err) {
 			console.error('Failed to track page view:', err);
 		}
+
+		// Re-fetch session data when returning to tab (e.g. after qualitative quiz gets marked)
+		let lastInvalidate = 0;
+		const handleVisibility = () => {
+			if (document.visibilityState === 'visible') {
+				const now = Date.now();
+				if (now - lastInvalidate > 60_000) {
+					lastInvalidate = now;
+					invalidateAll();
+				}
+			}
+		};
+		document.addEventListener('visibilitychange', handleVisibility);
+		return () => document.removeEventListener('visibilitychange', handleVisibility);
 	});
 
 	// Svelte 5 state with runes
@@ -144,6 +160,7 @@
 		totalSessions={totalSessions}
 		maxSessionNumber={maxSessionNumber}
 		featureSettings={featureSettings}
+		{quizzesBySession}
 	/>
 
 	<!-- Past Reflections Section (only if reflections enabled) -->

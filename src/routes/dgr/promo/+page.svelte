@@ -3,7 +3,7 @@
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import DGRPromoTilesEditor from '$lib/components/DGRPromoTilesEditor.svelte';
 
-	let promoTiles = $state([{ position: 1, image_url: '', title: '', link_url: '' }]);
+	let promoTiles = $state([{ position: 1, image_url: '', title: '', link_url: '', expires_at: null }]);
 	let savingTiles = $state(false);
 	let loading = $state(true);
 
@@ -30,11 +30,12 @@
 						position: tile.position,
 						image_url: tile.image_url || '',
 						title: tile.title || '',
-						link_url: tile.link_url || ''
+						link_url: tile.link_url || '',
+						expires_at: tile.expires_at || null
 					}));
 				} else {
 					// No active tiles, start with one empty tile
-					promoTiles = [{ position: 1, image_url: '', title: '', link_url: '' }];
+					promoTiles = [{ position: 1, image_url: '', title: '', link_url: '', expires_at: null }];
 				}
 			}
 		} catch (error) {
@@ -100,7 +101,8 @@
 				position: promoTiles.length + 1,
 				image_url: '',
 				title: '',
-				link_url: ''
+				link_url: '',
+				expires_at: null
 			});
 		}
 	}
