@@ -780,23 +780,23 @@
 		{:else}
 			<div class="p-3 sm:p-4 lg:p-6">
 				<!-- Page Header + Search + Filters -->
-				<div class="flex flex-col gap-2 mb-3">
-					<div class="flex items-center justify-between">
-						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block">Participants</h1>
+				<div class="flex flex-col gap-2 mb-4">
+					<div class="flex items-center justify-between gap-3">
+						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block shrink-0">Participants</h1>
 						<div class="relative w-full lg:w-64">
-							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/50" />
 							<input
 								type="text"
 								bind:value={searchQuery}
 								placeholder="Search participants..."
-								class="w-full pl-8 pr-3 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+								class="w-full pl-8 pr-3 py-1.5 text-sm border border-white/20 rounded-lg focus:ring-1 focus:ring-white/30 focus:outline-none bg-white/10 text-white placeholder:text-white/40"
 							/>
 						</div>
 					</div>
-					<div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+					<div class="flex flex-wrap gap-1.5">
 						<select
 							bind:value={filterHub}
-							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterHub !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
 						>
 							<option value="all">All Hubs</option>
 							<option value="none">No Hub</option>
@@ -806,7 +806,7 @@
 						</select>
 						<select
 							bind:value={filterStatus}
-							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterStatus !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
 						>
 							<option value="all">All Statuses</option>
 							<option value="not_invited">Not Invited</option>
@@ -819,7 +819,7 @@
 						</select>
 						<select
 							bind:value={filterSession}
-							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterSession !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
 						>
 							<option value="all">All Sessions</option>
 							<option value="behind">Behind</option>
@@ -828,7 +828,7 @@
 						</select>
 						<select
 							bind:value={filterAttendance}
-							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterAttendance !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
 						>
 							<option value="all">All Attendance</option>
 							<option value="complete">Perfect</option>
@@ -837,7 +837,7 @@
 						</select>
 						<select
 							bind:value={filterReflections}
-							class="px-2 py-2 sm:py-1.5 text-sm border border-gray-300 rounded-lg sm:rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterReflections !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
 						>
 							<option value="all">All Reflections</option>
 							<option value="complete">Complete</option>
@@ -846,7 +846,6 @@
 						</select>
 					</div>
 				</div>
-
 				<!-- Compact Bulk Action Bar (shows when participants selected) -->
 				{#if selectedParticipants.size > 0}
 					<div class="rounded-lg px-3 py-2 mb-3" style="background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
@@ -1099,6 +1098,7 @@
 	initialSelectedIds={advancementInitialIds}
 	bind:show={showAdvancementModal}
 	onComplete={handleAdvancementComplete}
+	platformFromEmail={data.platformFromEmail || ''}
 />
 
 <ConfirmationModal

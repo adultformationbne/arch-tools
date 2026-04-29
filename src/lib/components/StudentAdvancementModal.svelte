@@ -11,7 +11,8 @@
 		onComplete,
 		courseSlug,
 		// Optional: pre-select specific student IDs when modal opens
-		initialSelectedIds = []
+		initialSelectedIds = [],
+		platformFromEmail = ''
 	} = $props();
 
 	// Dynamic total sessions from cohort data
@@ -21,6 +22,7 @@
 	let selectedSession = $state(1);
 	let selectedStudents = $state([]);
 	let sendEmail = $state(true);
+	let customFromEmail = $state('');
 	let isProcessing = $state(false);
 
 	// Filter eligible enrollments by session and status
@@ -70,7 +72,8 @@
 					cohortId: cohort.id,
 					studentIds: allSelectedIds,
 					targetSession: selectedSession,
-					sendEmail
+					sendEmail,
+					fromEmail: customFromEmail.trim() || null
 				},
 				{
 					loadingMessage: 'Advancing participants...',
@@ -205,15 +208,31 @@
 						<Mail size={18} />
 						<span>Send "Session {selectedSession} Available" email notification</span>
 					</label>
-					<a
-						href="/admin/courses/{courseSlug}/emails"
-						target="_blank"
-						class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 hover:underline pl-3"
-						title="Edit the Session Materials Ready template"
-					>
-						<Settings size={14} />
-						<span>Edit email template</span>
-					</a>
+					{#if sendEmail}
+						<div class="pl-3 flex flex-col gap-1">
+							<label for="from-email" class="text-xs font-medium text-gray-600">Send from</label>
+							<input
+								id="from-email"
+								type="email"
+								bind:value={customFromEmail}
+								placeholder={platformFromEmail || 'System default'}
+								disabled={isProcessing}
+								class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:border-gray-400"
+							/>
+							{#if !customFromEmail.trim() && platformFromEmail}
+								<p class="text-xs text-gray-400">Default: {platformFromEmail}</p>
+							{/if}
+						</div>
+						<a
+							href="/admin/courses/{courseSlug}/emails?view=session_materials_ready"
+							target="_blank"
+							class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 hover:underline pl-3"
+							title="Edit the Session Materials Ready template"
+						>
+							<Settings size={14} />
+							<span>Edit email template</span>
+						</a>
+					{/if}
 				</div>
 			</div>
 

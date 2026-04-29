@@ -753,7 +753,7 @@
 						rows="3"
 						class="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900 bg-white"
 					></textarea>
-					<p class="text-[9px] sm:text-[10px] text-gray-400 mt-1">Visible to participant — {currentUserName}</p>
+					<p class="text-[9px] sm:text-[10px] text-gray-500 mt-1">Feedback and your name (<strong>{currentUserName}</strong>) will be visible to the participant.</p>
 				</div>
 
 				<!-- Actions -->

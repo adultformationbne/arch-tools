@@ -16,11 +16,11 @@
 	// Get initial mode for SendEmailView
 	const initialMode = $derived($page.url.searchParams.get('mode') || 'choose');
 
-	// Find selected template if viewing one
+	// Find selected template if viewing one (supports both id and template_key)
 	const selectedTemplate = $derived.by(() => {
 		if (selectedView === 'logs' || selectedView === 'new' || selectedView === 'send') return null;
 		return [...(data.systemTemplates || []), ...(data.customTemplates || [])].find(
-			(t) => t.id === selectedView
+			(t) => t.id === selectedView || t.template_key === selectedView
 		);
 	});
 

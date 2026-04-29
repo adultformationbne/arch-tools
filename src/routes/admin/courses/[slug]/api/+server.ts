@@ -913,10 +913,7 @@ export const POST: RequestHandler = async (event) => {
 
 									// Send emails
 									if (emailsToSend.length > 0) {
-										// Get course-specific reply-to email
 										const courseReplyTo = course.email_branding_config?.reply_to_email || null;
-										console.log('[advance_students] course.email_branding_config:', course.email_branding_config);
-										console.log('[advance_students] courseReplyTo:', courseReplyTo);
 
 										emailResults = await sendBulkEmails({
 											emails: emailsToSend,
@@ -925,6 +922,7 @@ export const POST: RequestHandler = async (event) => {
 											supabase: supabaseAdmin,
 											options: {
 												replyTo: courseReplyTo,
+												fromEmail: data.fromEmail || null,
 												commonMetadata: {
 													sentBy: user.id,
 													sentAt: new Date().toISOString()

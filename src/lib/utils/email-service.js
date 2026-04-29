@@ -281,6 +281,7 @@ export async function sendEmail({
  * @param {Object} [params.options] Additional options
  * @param {Object} [params.options.commonMetadata] Metadata to merge into all emails
  * @param {string} [params.options.replyTo] Reply-to email (overrides platform default)
+ * @param {string} [params.options.fromEmail] From email (overrides platform default)
  * @returns {Promise<{sent: number, failed: number, errors: any[], quotaWarning?: string}>}
  */
 export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase, options = {} }) {
@@ -304,7 +305,8 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 	// to detect quota limits. This allows the limits to be managed by Resend
 	// based on whatever plan is active.
 
-	// Determine reply-to: use provided value, or fall back to platform default
+	// Determine from/reply-to: use provided values, or fall back to platform defaults
+	const effectiveFrom = options.fromEmail || platformSettings.fromEmail;
 	const effectiveReplyTo = options.replyTo || platformSettings.replyToEmail;
 
 	// Resend batch API supports up to 100 emails per request
@@ -316,7 +318,7 @@ export async function sendBulkEmails({ emails, emailType, resendApiKey, supabase
 		// Format emails for Resend batch API
 		const batchPayload = batch.map((email) => {
 			const payload = {
-				from: platformSettings.fromEmail,
+				from: effectiveFrom,
 				to: [email.to],
 				subject: email.subject,
 				html: email.html

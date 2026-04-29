@@ -126,6 +126,16 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 				variables.reflectionLink = `${origin}/courses/${context_id}/reflections`;
 				const btnColor = branding.accent_dark || DEFAULT_COLORS.course.accentDark;
 				variables.loginButton = createEmailButton('Go to Course', variables.loginLink, btnColor);
+				// Use the real course name instead of the sample placeholder
+				const { data: courseRow } = await supabaseAdmin
+					.from('courses')
+					.select('name')
+					.eq('slug', context_id)
+					.single();
+				if (courseRow?.name) {
+					variables.courseName = courseRow.name;
+					variables.courseSlug = context_id;
+				}
 			} else if (context === 'dgr') {
 				variables.write_url = `${origin}/dgr/write/sample123`;
 				variables.write_url_button = createEmailButton('Write Your Reflection', `${origin}/dgr/write/sample123`, '#009199');
