@@ -536,6 +536,10 @@
 	// Get liturgical info for header display
 	/** @type {string} */
 	let liturgicalLabel = $derived(/** @type {any} */(readings)?.liturgical_day || /** @type {any} */(selectedDate)?.liturgical_date || '');
+
+	let isSubmittedStatus = $derived(
+		justSubmitted || ['submitted', 'approved', 'published'].includes(selectedDate?.status || '')
+	);
 </script>
 
 <svelte:head>
@@ -649,14 +653,21 @@
 						Save Draft
 					</button>
 
-					<button
-						onclick={() => saveReflection('submit')}
-						disabled={saving || !hasContent}
-						class="inline-flex items-center gap-2 rounded-lg bg-[#009199] px-4 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50"
-					>
-						<Send class="h-4 w-4" />
-						Submit
-					</button>
+					{#if isSubmittedStatus}
+						<div class="inline-flex items-center gap-2 rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-700">
+							<Check class="h-4 w-4" />
+							Submitted
+						</div>
+					{:else}
+						<button
+							onclick={() => saveReflection('submit')}
+							disabled={saving || !hasContent}
+							class="inline-flex items-center gap-2 rounded-lg bg-[#009199] px-4 py-2 text-sm font-medium text-white hover:bg-[#007580] disabled:opacity-50"
+						>
+							<Send class="h-4 w-4" />
+							Submit
+						</button>
+					{/if}
 				</div>
 			{/if}
 		</header>

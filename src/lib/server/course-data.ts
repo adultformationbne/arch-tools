@@ -2488,7 +2488,8 @@ export const CourseMutations = {
 				getCourseEmailTemplate,
 				buildVariableContext,
 				renderTemplateForRecipient,
-				sendSingleEmail,
+				sendEmail,
+				buildCourseFromEmail,
 				createEmailButton
 			} = await import('$lib/utils/email-service.js');
 			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
@@ -2557,22 +2558,22 @@ export const CourseMutations = {
 			});
 
 			// Send email
-			const result = await sendSingleEmail({
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const result = await sendEmail({
 				to: enrollment.email,
 				subject: rendered.subject,
 				html: compiledHtml,
 				emailType: 'self_enrollment_welcome',
+				fromEmail: courseFromEmail,
+				replyTo: course.email_branding_config?.reply_to_email,
+				metadata: {
+					context: 'course',
+					course_id: course.id,
+					enrollment_id: enrollmentId,
+					template_id: template.id
+				},
 				resendApiKey: RESEND_API_KEY,
-				supabase: supabaseAdmin,
-				options: {
-					replyTo: course.email_branding_config?.reply_to_email,
-					metadata: {
-						context: 'course',
-						course_id: course.id,
-						enrollment_id: enrollmentId,
-						template_id: template.id
-					}
-				}
+				supabase: supabaseAdmin
 			});
 
 			if (result.success) {

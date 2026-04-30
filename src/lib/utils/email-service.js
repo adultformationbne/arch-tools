@@ -195,6 +195,22 @@ export async function getEmailTemplate(supabase, templateKey, context = 'platfor
  * @param {Object} [options.supabase] Supabase client (for logging)
  * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
  */
+/**
+ * Build the "from" address for a course email.
+ * Uses email_branding_config.from_email if set, otherwise derives from course slug + platform domain.
+ * @param {Object} course Course record with name, slug, email_branding_config
+ * @returns {Promise<string>} Formatted from address
+ */
+export async function buildCourseFromEmail(course) {
+	if (course.email_branding_config?.from_email) {
+		return course.email_branding_config.from_email;
+	}
+	const platformSettings = await getPlatformSettings();
+	const domainMatch = platformSettings.fromEmail.match(/@([^>\s]+)/);
+	if (!domainMatch) return platformSettings.fromEmail;
+	return `${course.name} <${course.slug}@${domainMatch[1]}>`;
+}
+
 export async function sendEmail({
 	to,
 	subject,
@@ -203,6 +219,7 @@ export async function sendEmail({
 	referenceId = undefined,
 	metadata = {},
 	replyTo = undefined,
+	fromEmail = undefined,
 	resendApiKey,
 	supabase
 }) {
@@ -227,7 +244,7 @@ export async function sendEmail({
 
 		// Build email payload
 		const emailPayload = {
-			from: platformSettings.fromEmail,
+			from: fromEmail || platformSettings.fromEmail,
 			to: [to],
 			subject,
 			html
@@ -825,7 +842,8 @@ export async function sendCourseEmail({
 		course.settings?.theme?.accentDarkest || course.accent_darkest || '#1e2322';
 	const logoUrl = course.settings?.branding?.logoUrl || undefined;
 
-	// Get course-specific reply-to email (if set, overrides platform default)
+	// Get course-specific from/reply-to emails
+	const courseFromEmail = await buildCourseFromEmail(course);
 	const courseReplyTo = course.email_branding_config?.reply_to_email || undefined;
 
 	// Wrap body in branded HTML
@@ -847,6 +865,7 @@ export async function sendCourseEmail({
 		html,
 		emailType,
 		referenceId: cohortId,
+		fromEmail: courseFromEmail,
 		replyTo: courseReplyTo,
 		metadata: {
 			...metadata,

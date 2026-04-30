@@ -6,7 +6,8 @@ import {
 	buildVariableContext,
 	renderTemplateForRecipient,
 	sendBulkEmails,
-	getCourseEmailTemplate
+	getCourseEmailTemplate,
+	buildCourseFromEmail
 } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
@@ -226,7 +227,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Send all emails using batch API (up to 100 per request)
-		// Use course-specific reply-to if set
+		const courseFromEmail = await buildCourseFromEmail(course);
 		const courseReplyTo = course.email_branding_config?.reply_to_email || null;
 
 		const results = await sendBulkEmails({
@@ -235,6 +236,7 @@ export const POST: RequestHandler = async (event) => {
 			resendApiKey: RESEND_API_KEY,
 			supabase: supabaseAdmin,
 			options: {
+				fromEmail: courseFromEmail,
 				replyTo: courseReplyTo,
 				commonMetadata: {
 					sentBy: user.id,

@@ -67,6 +67,7 @@
 	let isClaiming = $state(false);
 	let isAdvancing = $state(false);
 	let showMobileFilters = $state(false);
+	let sortBy = $state('smart'); // smart | submitted | name | marked
 
 	// For override confirmation
 	let showOverrideConfirm = $state(false);
@@ -176,13 +177,21 @@
 		}
 
 		return filtered.sort((a, b) => {
-			// Sort by: pending review first, then by submission date (oldest pending first)
+			if (sortBy === 'name') {
+				return (a.student?.name || '').localeCompare(b.student?.name || '');
+			}
+			if (sortBy === 'submitted') {
+				return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+			}
+			if (sortBy === 'marked') {
+				const aTime = a.markedAt ? new Date(a.markedAt).getTime() : 0;
+				const bTime = b.markedAt ? new Date(b.markedAt).getTime() : 0;
+				return bTime - aTime;
+			}
+			// 'smart': pending first, oldest pending first, newest completed first
 			const aNeedsReview = needsReview(a.dbStatus || a.status);
 			const bNeedsReview = needsReview(b.dbStatus || b.status);
-
 			if (aNeedsReview !== bNeedsReview) return aNeedsReview ? -1 : 1;
-
-			// Pending: oldest first (longest waiting). Completed: newest first.
 			if (aNeedsReview) return new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
 			return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
 		});
@@ -493,6 +502,18 @@
 				{/each}
 			</select>
 
+			<!-- Mobile Sort -->
+			<select
+				bind:value={sortBy}
+				class="w-full px-3 py-2 text-sm rounded-lg text-white focus:outline-none"
+				style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+			>
+				<option value="smart" class="text-gray-900">Sort: Priority (default)</option>
+				<option value="submitted" class="text-gray-900">Sort: Last Submitted</option>
+				<option value="name" class="text-gray-900">Sort: Name (A–Z)</option>
+				<option value="marked" class="text-gray-900">Sort: Last Marked</option>
+			</select>
+
 			<!-- Mobile Participant Search -->
 			<ParticipantSearch {participants} bind:selected={selectedParticipant} variant="mobile" />
 		</div>
@@ -578,6 +599,27 @@
 			<div>
 				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1">Participant</label>
 				<ParticipantSearch {participants} bind:selected={selectedParticipant} variant="desktop" />
+			</div>
+
+			<!-- Sort -->
+			<div>
+				<h3 class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 px-1">Sort By</h3>
+				<div class="space-y-0.5">
+					{#each [
+						{ value: 'smart', label: 'Priority (default)' },
+						{ value: 'submitted', label: 'Last Submitted' },
+						{ value: 'name', label: 'Name (A–Z)' },
+						{ value: 'marked', label: 'Last Marked' }
+					] as opt}
+						<button
+							onclick={() => sortBy = opt.value}
+							class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-colors {sortBy === opt.value ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}"
+							style={sortBy === opt.value ? 'background-color: color-mix(in srgb, var(--course-accent-light) 20%, transparent)' : ''}
+						>
+							{opt.label}
+						</button>
+					{/each}
+				</div>
 			</div>
 		</div>
 	</div>
