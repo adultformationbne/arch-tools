@@ -958,11 +958,11 @@ export type Database = {
       courses_materials: {
         Row: {
           content: string
-          coordinator_only: boolean | null
           created_at: string | null
           description: string | null
           display_order: number | null
           id: string
+          min_role: string
           mux_asset_id: string | null
           mux_playback_id: string | null
           mux_status: string | null
@@ -974,11 +974,11 @@ export type Database = {
         }
         Insert: {
           content: string
-          coordinator_only?: boolean | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
           id?: string
+          min_role?: string
           mux_asset_id?: string | null
           mux_playback_id?: string | null
           mux_status?: string | null
@@ -990,11 +990,11 @@ export type Database = {
         }
         Update: {
           content?: string
-          coordinator_only?: boolean | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
           id?: string
+          min_role?: string
           mux_asset_id?: string | null
           mux_playback_id?: string | null
           mux_status?: string | null
@@ -1010,6 +1010,36 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "courses_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses_materials_hub_visibility: {
+        Row: {
+          material_id: string
+          hub_id: string
+        }
+        Insert: {
+          material_id: string
+          hub_id: string
+        }
+        Update: {
+          material_id?: string
+          hub_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_materials_hub_visibility_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "courses_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_materials_hub_visibility_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "courses_hubs"
             referencedColumns: ["id"]
           },
         ]

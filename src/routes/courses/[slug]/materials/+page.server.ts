@@ -88,10 +88,15 @@ export const load: PageServerLoad = async (event) => {
 		throw error(500, 'Failed to load materials');
 	}
 
-	// Filter materials based on coordinator_only flag
-	const filteredMaterials = (materials || []).filter(
-		(m) => !m.coordinator_only || isStaffRole
-	);
+	const userHubId = enrollment.hub_id;
+
+	const filteredMaterials = (materials || []).filter((m) => {
+		if (m.min_role === 'coordinator' && !isStaffRole) return false;
+		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
+		if (hubRestrictions.length === 0) return true;
+		if (!userHubId) return false;
+		return hubRestrictions.some((h) => h.hub_id === userHubId);
+	});
 
 	// Group filtered materials by session
 	const materialsBySession = groupMaterialsBySession(filteredMaterials);

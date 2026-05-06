@@ -82,7 +82,8 @@ export const POST: RequestHandler = async (event) => {
 			content,
 			description,
 			display_order,
-			coordinator_only,
+			min_role,
+			hub_ids,
 			mux_upload_id,
 			mux_asset_id,
 			mux_playback_id,
@@ -118,7 +119,7 @@ export const POST: RequestHandler = async (event) => {
 			content: content || '',
 			description: description || null,
 			displayOrder: display_order,
-			coordinatorOnly: coordinator_only,
+			minRole: min_role || 'participant',
 			muxUploadId: mux_upload_id,
 			muxAssetId: mux_asset_id,
 			muxPlaybackId: mux_playback_id,
@@ -128,6 +129,10 @@ export const POST: RequestHandler = async (event) => {
 		if (error) {
 			console.error('Error creating module material:', error);
 			return json({ error: 'Failed to create module material' }, { status: 500 });
+		}
+
+		if (data && Array.isArray(hub_ids)) {
+			await CourseMutations.setMaterialHubVisibility(data.id, hub_ids);
 		}
 
 		return json({ material: data }, { status: 201 });
@@ -150,7 +155,8 @@ export const PUT: RequestHandler = async (event) => {
 			content,
 			description,
 			display_order,
-			coordinator_only,
+			min_role,
+			hub_ids,
 			mux_upload_id,
 			mux_asset_id,
 			mux_playback_id,
@@ -177,7 +183,7 @@ export const PUT: RequestHandler = async (event) => {
 			content,
 			description,
 			displayOrder: display_order,
-			coordinatorOnly: coordinator_only,
+			minRole: min_role,
 			muxUploadId: mux_upload_id,
 			muxAssetId: mux_asset_id,
 			muxPlaybackId: mux_playback_id,
@@ -191,6 +197,10 @@ export const PUT: RequestHandler = async (event) => {
 
 		if (!data) {
 			return json({ error: 'Material not found' }, { status: 404 });
+		}
+
+		if (Array.isArray(hub_ids)) {
+			await CourseMutations.setMaterialHubVisibility(id, hub_ids);
 		}
 
 		return json({ material: data });

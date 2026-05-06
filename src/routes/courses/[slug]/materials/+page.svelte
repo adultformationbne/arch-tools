@@ -12,7 +12,7 @@
 	 *   mux_playback_id: string | null;
 	 *   mux_status: string | null;
 	 *   mux_asset_id: string | null;
-	 *   coordinator_only: boolean | null;
+	 *   min_role: string;
 	 *   session_id: string;
 	 *   description: string | null;
 	 *   display_order: number | null;

@@ -145,14 +145,21 @@ export const load: PageServerLoad = async (event) => {
 	const currentSessionMaterials = materialsBySession[currentSession] || [];
 	const currentSessionInfo = sessionsByNumber[currentSession];
 
-	// Check if user can see coordinator-only materials
 	const userRole = enrollment.role || 'student';
-	const canSeeCoordinatorMaterials = userRole === 'coordinator' || userRole === 'admin';
+	const isStaff = userRole === 'coordinator' || userRole === 'admin';
+	const userHubId = enrollment.hub_id;
 
-	// Filter materials based on coordinator_only flag and user role
+	const canSeeMaterial = (m: any) => {
+		if (m.min_role === 'coordinator' && !isStaff) return false;
+		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
+		if (hubRestrictions.length === 0) return true;
+		if (!userHubId) return false;
+		return hubRestrictions.some((h: { hub_id: string }) => h.hub_id === userHubId);
+	};
+
 	const filterMaterials = (materialsList: any[]) => {
 		return materialsList
-			.filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials)
+			.filter(canSeeMaterial)
 			.map((m) => ({
 				id: m.id,
 				type: m.type,
@@ -160,7 +167,7 @@ export const load: PageServerLoad = async (event) => {
 				content: m.content,
 				url: m.content,
 				viewable: true,
-				coordinatorOnly: m.coordinator_only || false
+				coordinatorOnly: m.min_role === 'coordinator'
 			}));
 	};
 
@@ -352,11 +359,10 @@ export const load: PageServerLoad = async (event) => {
 		}
 	}
 
-	// Filter materialsBySession for coordinator-only materials
 	const filteredMaterialsBySession = Object.fromEntries(
 		Object.entries(materialsBySession).map(([sessionNum, mats]) => [
 			sessionNum,
-			(mats as any[]).filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials)
+			(mats as any[]).filter(canSeeMaterial)
 		])
 	);
 
@@ -393,7 +399,7 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	return {
-		materials: materials.filter((m) => !m.coordinator_only || canSeeCoordinatorMaterials),
+		materials: materials.filter(canSeeMaterial),
 		materialsBySession: filteredMaterialsBySession,
 		currentSession,
 		availableSessions,

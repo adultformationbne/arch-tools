@@ -81,7 +81,8 @@
 					content: (m.type === 'native' || m.type === 'embed') ? m.content : '',
 					description: m.description || '',
 					order: m.display_order,
-					coordinatorOnly: m.coordinator_only || false,
+					minRole: m.min_role || 'participant',
+					hubIds: (m.hub_visibility || []).map(v => v.hub_id),
 					// Mux video fields
 					mux_upload_id: m.mux_upload_id,
 					mux_asset_id: m.mux_asset_id,
@@ -906,6 +907,7 @@
 						sessionNumber={selectedSession}
 						sessionId={currentSession.id}
 						courseId={data.course.id}
+						hubs={data.hubs || []}
 					/>
 
 					<ReflectionEditor

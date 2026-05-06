@@ -220,7 +220,8 @@ export const CourseQueries = {
 					session_number,
 					module_id,
 					title
-				)
+				),
+				hub_visibility:courses_materials_hub_visibility(hub_id)
 			`)
 			.in('session_id', sessionIds)
 			.order('display_order', { ascending: true });
@@ -2607,7 +2608,7 @@ export const CourseMutations = {
 		content: string;
 		description?: string | null;
 		displayOrder?: number;
-		coordinatorOnly?: boolean;
+		minRole?: 'participant' | 'coordinator';
 		muxUploadId?: string;
 		muxAssetId?: string;
 		muxPlaybackId?: string;
@@ -2622,7 +2623,7 @@ export const CourseMutations = {
 				content: params.content,
 				description: params.description || null,
 				display_order: params.displayOrder || 0,
-				coordinator_only: params.coordinatorOnly || false,
+				min_role: params.minRole || 'participant',
 				mux_upload_id: params.muxUploadId || null,
 				mux_asset_id: params.muxAssetId || null,
 				mux_playback_id: params.muxPlaybackId || null,
@@ -2643,7 +2644,7 @@ export const CourseMutations = {
 			content?: string;
 			description?: string | null;
 			displayOrder?: number;
-			coordinatorOnly?: boolean;
+			minRole?: 'participant' | 'coordinator';
 			muxUploadId?: string;
 			muxAssetId?: string;
 			muxPlaybackId?: string;
@@ -2657,7 +2658,7 @@ export const CourseMutations = {
 		if (updates.content) payload.content = updates.content;
 		if (updates.description !== undefined) payload.description = updates.description;
 		if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
-		if (updates.coordinatorOnly !== undefined) payload.coordinator_only = updates.coordinatorOnly;
+		if (updates.minRole !== undefined) payload.min_role = updates.minRole;
 		if (updates.muxUploadId !== undefined) payload.mux_upload_id = updates.muxUploadId;
 		if (updates.muxAssetId !== undefined) payload.mux_asset_id = updates.muxAssetId;
 		if (updates.muxPlaybackId !== undefined) payload.mux_playback_id = updates.muxPlaybackId;
@@ -2676,6 +2677,19 @@ export const CourseMutations = {
 	 */
 	async deleteMaterial(id: string) {
 		return supabaseAdmin.from('courses_materials').delete().eq('id', id);
+	},
+
+	async setMaterialHubVisibility(materialId: string, hubIds: string[]) {
+		await supabaseAdmin
+			.from('courses_materials_hub_visibility')
+			.delete()
+			.eq('material_id', materialId);
+
+		if (hubIds.length === 0) return { error: null };
+
+		return supabaseAdmin.from('courses_materials_hub_visibility').insert(
+			hubIds.map((hub_id) => ({ material_id: materialId, hub_id }))
+		);
 	},
 
 	// ========================================================================

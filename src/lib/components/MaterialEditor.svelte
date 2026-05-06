@@ -32,6 +32,7 @@
 		sessionNumber = 1,
 		sessionId = null,
 		courseId = null,
+		hubs = [],
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -43,7 +44,8 @@
 	 *   content: string,
 	 *   url: string,
 	 *   order: number,
-	 *   coordinatorOnly: boolean,
+	 *   minRole: string,
+	 *   hubIds: string[],
 	 *   description: string,
 	 *   mux_status: string,
 	 *   mux_playback_id: string,
@@ -193,8 +195,12 @@
 	};
 
 	const startEditMaterial = (material) => {
-		editingMaterial = { ...material };
-		expandedMaterialId = material.id; // Ensure material is expanded to show edit form
+		editingMaterial = {
+			...material,
+			minRole: material.minRole || 'participant',
+			hubIds: Array.isArray(material.hubIds) ? [...material.hubIds] : []
+		};
+		expandedMaterialId = material.id;
 	};
 
 	const saveEditMaterial = async () => {
@@ -218,7 +224,8 @@
 					title: editing.title,
 					content: content,
 					display_order: editing.order,
-					coordinator_only: editing.coordinatorOnly
+					min_role: editing.minRole,
+					hub_ids: editing.hubIds
 				})
 			});
 
@@ -233,7 +240,8 @@
 					content: (material.type === 'native' || material.type === 'embed') ? material.content : '',
 					description: editing.description,
 					order: material.display_order,
-					coordinatorOnly: material.coordinator_only || false,
+					minRole: material.min_role || 'participant',
+					hubIds: editing.hubIds,
 					mux_status: editing.mux_status,
 					mux_playback_id: editing.mux_playback_id,
 					mux_asset_id: editing.mux_asset_id
@@ -467,9 +475,14 @@
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full {getTypeBadgeClass()}">
 								{getTypeLabel(material.type)}
 							</span>
-							{#if material.coordinatorOnly}
+							{#if material.minRole === 'coordinator'}
 								<span class="px-2 py-0.5 text-xs font-medium rounded-full coordinator-badge">
 									Coordinator
+								</span>
+							{/if}
+							{#if material.hubIds?.length > 0}
+								<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+									{material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
 								</span>
 							{/if}
 						</div>
@@ -575,15 +588,43 @@
 									{/if}
 								{/if}
 
-								<div>
-									<label class="flex items-center gap-2 cursor-pointer">
-										<input
-											type="checkbox"
-											bind:checked={editingMaterial.coordinatorOnly}
-											class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-										/>
-										<span class="text-sm font-medium text-gray-700">Hub Coordinator Only</span>
-									</label>
+								<div class="space-y-3">
+									<div>
+										<label for="edit-min-role-{material.id}" class="block text-sm font-semibold text-gray-700 mb-1">Visible to</label>
+										<select
+											id="edit-min-role-{material.id}"
+											bind:value={editingMaterial.minRole}
+											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+										>
+											<option value="participant">All participants</option>
+											<option value="coordinator">Coordinators only</option>
+										</select>
+									</div>
+									{#if hubs.length > 0}
+										<div>
+											<p class="text-sm font-semibold text-gray-700 mb-1">Restrict to hubs <span class="font-normal text-gray-500">(none selected = all hubs)</span></p>
+											<div class="space-y-1 max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-2">
+												{#each hubs as hub}
+													<label class="flex items-center gap-2 cursor-pointer">
+														<input
+															type="checkbox"
+															checked={editingMaterial.hubIds.includes(hub.id)}
+															onchange={(e) => {
+																if (!editingMaterial) return;
+																if (e.currentTarget.checked) {
+																	editingMaterial.hubIds = [...editingMaterial.hubIds, hub.id];
+																} else {
+																	editingMaterial.hubIds = editingMaterial.hubIds.filter(id => id !== hub.id);
+																}
+															}}
+															class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+														/>
+														<span class="text-sm text-gray-700">{hub.name}</span>
+													</label>
+												{/each}
+											</div>
+										</div>
+									{/if}
 								</div>
 
 								<div class="flex gap-2 pt-2">
@@ -683,6 +724,7 @@
 	{sessionId}
 	{courseId}
 	{sessionNumber}
+	{hubs}
 	materialsCount={materials.length}
 	onClose={() => showAddModal = false}
 	onMaterialAdded={handleMaterialAdded}

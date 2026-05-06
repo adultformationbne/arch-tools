@@ -15,6 +15,7 @@
 		courseId = null,
 		sessionNumber = 1,
 		materialsCount = 0,
+		hubs = [],
 		onClose = () => {},
 		onMaterialAdded = (material) => {}
 	} = $props();
@@ -32,7 +33,8 @@
 	let url = $state('');
 	let content = $state('');
 	let description = $state('');
-	let coordinatorOnly = $state(false);
+	let minRole = $state(/** @type {'participant' | 'coordinator'} */ ('participant'));
+	let selectedHubIds = $state(/** @type {string[]} */ ([]));
 
 	// YouTube preview
 	let fetchingVideoInfo = $state(false);
@@ -87,7 +89,8 @@
 		url = '';
 		content = '';
 		description = '';
-		coordinatorOnly = false;
+		minRole = 'participant';
+		selectedHubIds = [];
 		videoPreviewId = null;
 		saving = false;
 	}
@@ -226,7 +229,8 @@
 					content: materialContent,
 					description: selectedType === 'link' ? description.trim() : null,
 					display_order: materialsCount + 1,
-					coordinator_only: coordinatorOnly
+					min_role: minRole,
+					hub_ids: selectedHubIds
 				})
 			});
 
@@ -241,7 +245,8 @@
 					content: selectedType === 'native' ? material.content : '',
 					description: material.description || '',
 					order: material.display_order,
-					coordinatorOnly: material.coordinator_only || false
+					minRole: material.min_role || 'participant',
+						hubIds: []
 				};
 
 				onMaterialAdded(newMaterial);
@@ -274,7 +279,8 @@
 						title: materialTitle,
 						content: uploadResult.url,
 						display_order: materialsCount + 1,
-						coordinator_only: coordinatorOnly
+						min_role: minRole,
+						hub_ids: selectedHubIds
 					})
 				});
 
@@ -288,7 +294,8 @@
 						url: material.content,
 						content: '',
 						order: material.display_order,
-						coordinatorOnly: material.coordinator_only || false
+						minRole: material.min_role || 'participant',
+						hubIds: []
 					};
 
 					onMaterialAdded(newMaterial);
@@ -316,7 +323,8 @@
 					title: videoTitle,
 					content: '',
 					display_order: materialsCount + 1,
-					coordinator_only: coordinatorOnly,
+					min_role: minRole,
+						hub_ids: selectedHubIds,
 					mux_upload_id: uploadId,
 					mux_status: 'processing'
 				})
@@ -333,7 +341,8 @@
 					content: '',
 					mux_status: 'processing',
 					mux_playback_id: null,
-					coordinatorOnly: material.coordinator_only || false
+					minRole: material.min_role || 'participant',
+						hubIds: []
 				};
 
 				onMaterialAdded(newMaterial);
@@ -527,18 +536,44 @@
 				</div>
 			{/if}
 
-			<!-- Coordinator Only Checkbox -->
+			<!-- Visibility controls -->
 			{#if selectedType !== 'upload' && selectedType !== 'mux_video'}
-				<div class="pt-2">
-					<label class="flex items-center gap-2 cursor-pointer">
-						<input
-							type="checkbox"
-							bind:checked={coordinatorOnly}
-							class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-						/>
-						<span class="text-sm font-medium text-gray-700">Hub Coordinator Only</span>
-						<span class="text-xs text-gray-500">(Only visible to coordinators and admins)</span>
-					</label>
+				<div class="pt-2 space-y-3">
+					<div>
+						<label for="add-min-role" class="block text-sm font-semibold mb-1 text-gray-700">Visible to</label>
+						<select
+							id="add-min-role"
+							bind:value={minRole}
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 bg-white"
+						>
+							<option value="participant">All participants</option>
+							<option value="coordinator">Coordinators only</option>
+						</select>
+					</div>
+					{#if hubs.length > 0}
+						<div>
+							<p class="text-sm font-semibold text-gray-700 mb-1">Restrict to hubs <span class="font-normal text-gray-500">(none = all hubs)</span></p>
+							<div class="space-y-1 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+								{#each hubs as hub}
+									<label class="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={selectedHubIds.includes(hub.id)}
+											onchange={(e) => {
+												if (e.currentTarget.checked) {
+													selectedHubIds = [...selectedHubIds, hub.id];
+												} else {
+													selectedHubIds = selectedHubIds.filter(id => id !== hub.id);
+												}
+											}}
+											class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+										/>
+										<span class="text-sm text-gray-700">{hub.name}</span>
+									</label>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				</div>
 			{/if}
 
