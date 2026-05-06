@@ -28,9 +28,9 @@
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
 		<div class="flex flex-wrap items-center gap-3 sm:gap-4">
 			<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Community Reflections</h2>
-			<div class="flex items-center gap-2 px-3 py-1 rounded-full" style="background-color: rgba(197, 154, 107, 0.2);">
-				<Globe size="16" style="color: #c59a6b;" />
-				<span class="text-sm font-medium" style="color: #c59a6b;">Public Feed</span>
+			<div class="flex items-center gap-2 px-3 py-1 rounded-full" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, transparent);">
+				<Globe size="16" style="color: var(--course-accent-light, #c59a6b);" />
+				<span class="text-sm font-medium" style="color: var(--course-accent-light, #c59a6b);">Public Feed</span>
 			</div>
 		</div>
 		<span class="text-white/70 text-lg">
@@ -101,7 +101,7 @@
 		<!-- Empty state -->
 		<div class="text-center py-16">
 			<div class="mb-4">
-				<Globe size="48" class="mx-auto opacity-50" style="color: #eae2d9;" />
+				<Globe size="48" class="mx-auto opacity-50" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);" />
 			</div>
 			<h3 class="text-xl font-semibold text-white mb-2">No public reflections yet</h3>
 			<p class="text-white opacity-75 max-w-md mx-auto">

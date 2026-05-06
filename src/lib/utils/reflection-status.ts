@@ -295,7 +295,7 @@ export function getUserReflectionStatus(
  */
 export function formatUserReflectionStatus(status: string, count: { completed: number; total: number }): string {
 	if (status === 'no_questions') return 'N/A';
-	return `${count.completed}/${count.total}`;
+	return `${count.completed} of ${count.total}`;
 }
 
 /**

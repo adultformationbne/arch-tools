@@ -35,7 +35,7 @@
 <!-- Ultra Glassy Header -->
 <nav class="glass-nav backdrop-blur-xl border-b border-white/20 relative overflow-hidden">
 	<!-- Clean Background -->
-	<div class="absolute inset-0" style="background-color: rgba(52, 70, 66, 0.8);"></div>
+	<div class="absolute inset-0" style="background-color: var(--course-nav-bg);"></div>
 
 	<div class="relative flex items-center justify-between px-4 sm:px-6 lg:px-16 py-1.5">
 		<!-- Simple Logo Section -->
@@ -201,7 +201,7 @@
 
 <style>
 	.glass-nav {
-		background: rgba(52, 70, 66, 0.3);
+		background: color-mix(in srgb, var(--course-accent-dark, #334642) 30%, transparent);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -234,10 +234,10 @@
 	}
 
 	.glass-link.active-glass {
-		background: rgba(197, 154, 107, 0.3);
-		border-color: rgba(197, 154, 107, 0.5);
-		color: #c59a6b;
-		box-shadow: 0 0 20px rgba(197, 154, 107, 0.3);
+		background: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 50%, transparent);
+		color: var(--course-accent-light, #c59a6b);
+		box-shadow: 0 0 20px color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
 	}
 
 	.glass-shine {
@@ -268,10 +268,10 @@
 	}
 
 	.glass-profile.profile-active {
-		background: rgba(197, 154, 107, 0.3);
-		border-color: rgba(197, 154, 107, 0.5);
-		color: #c59a6b;
-		box-shadow: 0 0 20px rgba(197, 154, 107, 0.3);
+		background: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 50%, transparent);
+		color: var(--course-accent-light, #c59a6b);
+		box-shadow: 0 0 20px color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, transparent);
 	}
 
 	.glass-avatar {
@@ -292,7 +292,7 @@
 	}
 
 	.mobile-menu-overlay {
-		background: rgba(52, 70, 66, 0.95);
+		background: color-mix(in srgb, var(--course-accent-dark, #334642) 95%, transparent);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -324,9 +324,9 @@
 	}
 
 	.mobile-link.mobile-active {
-		background: rgba(197, 154, 107, 0.2);
-		border-color: rgba(197, 154, 107, 0.4);
-		color: #c59a6b;
+		background: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, transparent);
+		border-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 40%, transparent);
+		color: var(--course-accent-light, #c59a6b);
 	}
 
 	.mobile-logout-btn {

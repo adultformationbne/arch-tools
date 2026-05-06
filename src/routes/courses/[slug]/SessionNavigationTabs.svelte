@@ -58,7 +58,7 @@
 		</div>
 
 		<!-- Main Content Area -->
-		<div class="flex-1 rounded-3xl lg:rounded-l-none lg:rounded-r-3xl" style="background-color: #eae2d9;">
+		<div class="flex-1 rounded-3xl lg:rounded-l-none lg:rounded-r-3xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);">
 			{@render children()}
 		</div>
 </div>
@@ -75,7 +75,7 @@
 
 	/* Current session - matches central area */
 	button.current {
-		background-color: #eae2d9;
+		background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);
 		color: #1e2322;
 		box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.1);
 		z-index: 2;
@@ -83,27 +83,27 @@
 
 	/* Completed sessions - darker brown */
 	button.completed {
-		background-color: #c59a6b;
+		background-color: var(--course-accent-light, #c59a6b);
 		color: #1e2322;
 		box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.2);
 	}
 	button.completed:hover {
-		background-color: #d4a574;
+		background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 80%, white);
 	}
 
 	/* Available sessions - medium brown */
 	button.available {
-		background-color: #d4a574;
+		background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 80%, white);
 		color: #2c3938;
 		box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.15);
 	}
 	button.available:hover {
-		background-color: #c59a6b;
+		background-color: var(--course-accent-light, #c59a6b);
 	}
 
 	/* Locked sessions - lightest brown and disabled */
 	button.locked {
-		background-color: #e8d5c4;
+		background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 40%, white);
 		color: #999;
 		cursor: not-allowed;
 		opacity: 0.7;

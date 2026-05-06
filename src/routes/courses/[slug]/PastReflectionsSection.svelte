@@ -129,7 +129,7 @@
 		<!-- Empty state -->
 		<div class="text-center py-16">
 			<div class="mb-4">
-				<Edit3 size="48" class="mx-auto opacity-50" style="color: #eae2d9;" />
+				<Edit3 size="48" class="mx-auto opacity-50" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);" />
 			</div>
 			<h3 class="text-xl font-semibold text-white mb-2">No reflections yet</h3>
 			<p class="text-white opacity-75 max-w-md mx-auto">

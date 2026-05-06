@@ -508,6 +508,7 @@
 						labelledBy="material-content-label"
 						bind:content={content}
 						placeholder="Enter your content..."
+						stickyTop="0"
 					/>
 				</div>
 

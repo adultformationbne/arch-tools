@@ -363,7 +363,7 @@
 				? getReflectionStatusDisplay(p)
 				: '';
 			const attendance = cohortSession > 0
-				? `${p.attendanceCount || 0}/${cohortSession}`
+				? `${p.attendanceCount || 0} of ${cohortSession}`
 				: '';
 
 			return [
@@ -376,7 +376,7 @@
 				p.courses_hubs?.name || '',
 				p.role || '',
 				statusBadge.label,
-				`${p.current_session}/${totalSessions}`,
+				`${p.current_session} of ${totalSessions}`,
 				attendance,
 				reflectionDisplay,
 				p.payment_status || '',

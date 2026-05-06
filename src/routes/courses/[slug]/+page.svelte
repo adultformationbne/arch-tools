@@ -6,7 +6,6 @@
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
 	import ReflectionModal from './ReflectionModal.svelte';
-	import CourseIntroVideoModal from '$lib/components/CourseIntroVideoModal.svelte';
 	import { isComplete, normalizeStatus } from '$lib/utils/reflection-status';
 
 	let { data } = $props();
@@ -23,33 +22,14 @@
 	const featureSettings = $derived(data.featureSettings);
 	const quizzesBySession = $derived(data.quizzesBySession ?? {});
 
-	// Intro video modal state
-	let showIntroVideo = $state(false);
-
-	// Hardcoded intro video URL for now (will be per-course later)
-	// TODO: Move to course settings
-	// Set to empty string or null to disable intro video
-	const INTRO_VIDEO_URL = 'https://www.loom.com/share/25b3dcaf37c84fb0afacfddf2b209e1a';
-
-	// Check if we have a valid video URL (not empty, not placeholder)
-	const hasValidVideoUrl = INTRO_VIDEO_URL &&
-		!INTRO_VIDEO_URL.includes('placeholder') &&
-		INTRO_VIDEO_URL.includes('loom.com');
-
-	// Track page view and show intro video on first visit
+	// Track page view
 	onMount(async () => {
 		try {
 			const response = await fetch(`/api/courses/${courseSlug}/track-view`, {
 				method: 'POST'
 			});
 
-			if (response.ok) {
-				const result = await response.json();
-				// Show intro video on first visit (only if we have a valid video URL)
-				if (result.isFirstView && hasValidVideoUrl) {
-					showIntroVideo = true;
-				}
-			}
+			// track-view call intentionally fire-and-forget
 		} catch (err) {
 			console.error('Failed to track page view:', err);
 		}
@@ -191,12 +171,3 @@
 	onNavigate={navigateReflection}
 />
 
-<!-- Intro Video Modal (shows on first visit) -->
-{#if courseData}
-<CourseIntroVideoModal
-	show={showIntroVideo}
-	videoUrl={INTRO_VIDEO_URL}
-	courseTitle={courseData.title}
-	onClose={() => showIntroVideo = false}
-/>
-{/if}

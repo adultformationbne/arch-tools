@@ -747,7 +747,7 @@
 </script>
 
 <!-- Sessions Page with Tree Sidebar -->
-<div class="flex min-h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};">
+<div class="flex h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};">
 	<!-- Mobile sidebar overlay -->
 	{#if sidebarOpen}
 		<div
@@ -790,7 +790,7 @@
 	</div>
 
 	<!-- Content Area -->
-	<div class="flex-1 overflow-y-auto w-full lg:w-auto">
+	<div class="flex-1 overflow-y-auto min-h-0 w-full lg:w-auto">
 		<!-- Top Header with Save Status -->
 		<div class="sticky top-0 z-10 backdrop-blur-md border-b px-3 py-3 sm:px-6 sm:py-4 lg:px-8" style="background-color: color-mix(in srgb, var(--course-accent-dark) 95%, transparent); border-color: rgba(255,255,255,0.1);">
 			<div class="flex items-center justify-between gap-3">

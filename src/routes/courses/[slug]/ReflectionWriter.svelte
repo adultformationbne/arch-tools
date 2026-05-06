@@ -159,7 +159,7 @@
 {#if isVisible}
 	<!-- Modal Overlay -->
 	<div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 md:p-8">
-		<div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-full max-h-[95vh] flex flex-col" style="background-color: #f8f4f0;">
+		<div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-full max-h-[95vh] flex flex-col" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 8%, white);">
 
 			<!-- Modal Header -->
 			<div class="flex flex-col gap-4 p-6 border-b border-gray-200 flex-shrink-0">
@@ -175,7 +175,7 @@
 				</div>
 
 				<!-- Question Card -->
-				<div class="bg-white border-2 rounded-2xl p-4" style="border-color: #c59a6b;">
+				<div class="bg-white border-2 rounded-2xl p-4" style="border-color: var(--course-accent-light, #c59a6b);">
 					<p class="text-gray-700 leading-relaxed font-medium">{question}</p>
 				</div>
 
@@ -256,7 +256,7 @@
 					<button
 						onclick={handleSubmit}
 						class="flex items-center gap-2 px-8 py-3 text-white font-semibold rounded-2xl transition-colors hover:opacity-90"
-						style="background-color: #334642;"
+						style="background-color: var(--course-accent-dark, #334642);"
 						disabled={content.trim().length === 0 || isSaving}
 					>
 						<Save size="16" />

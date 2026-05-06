@@ -36,10 +36,13 @@
 
 	// Auto-resize textarea to fit content
 	function autoResize(el) {
-		if (el) {
-			el.style.height = 'auto';
-			el.style.height = el.scrollHeight + 'px';
-		}
+		if (!el) return;
+		// Preserve scroll position — setting height:auto briefly collapses the
+		// element and can cause the browser to scroll the page.
+		const scrollY = window.scrollY;
+		el.style.height = 'auto';
+		el.style.height = el.scrollHeight + 'px';
+		window.scrollTo(window.scrollX, scrollY);
 	}
 
 	// Resize on content change

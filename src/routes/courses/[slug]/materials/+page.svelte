@@ -114,7 +114,7 @@
 
 	// Extract YouTube video ID from URL
 	const getYouTubeId = (url) => {
-		const match = url?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n]+)/);
+		const match = url?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([^&\n?]+)/);
 		return match ? match[1] : null;
 	};
 

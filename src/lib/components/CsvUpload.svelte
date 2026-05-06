@@ -28,6 +28,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 	let dragActive = $state(false);
 	let file = $state(null);
 	let error = $state('');
+	let warning = $state('');
 	let uploading = $state(false);
 	let showPasteMode = $state(false);
 	let pastedText = $state('');
@@ -88,6 +89,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 	async function parseCSVText(text) {
 		uploading = true;
 		error = '';
+		warning = '';
 
 		try {
 			// Handle different line endings (CRLF, LF, CR)
@@ -186,9 +188,9 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 					continue;
 				}
 
-				// Basic validation - need email, some form of name, and cohort_role
-				if (!row.email || !row.full_name || !row.role) {
-					errors.push(`Row ${i + 1}: Missing required fields (email, name, cohort_role)`);
+				// Basic validation - need email and name
+				if (!row.email || !row.full_name) {
+					errors.push(`Row ${i + 1}: Missing required fields (email, name)`);
 					continue;
 				}
 
@@ -216,7 +218,8 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				};
 
 				const roleLower = row.role.toLowerCase().trim();
-				const normalizedRole = roleMap[roleLower] || roleLower;
+				// Default empty cohort_role to 'student'
+				const normalizedRole = roleLower ? (roleMap[roleLower] || roleLower) : 'student';
 
 				if (!['student', 'coordinator'].includes(normalizedRole)) {
 					errors.push(`Row ${i + 1}: Invalid cohort_role "${row.role}". Must be "student" or "coordinator"`);
@@ -244,8 +247,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 				uploading = false;
 				return;
 			} else if (errors.length > 0) {
-				console.warn('Some rows had errors:', errors);
-				// Continue with valid data, but log errors
+				warning = `${errors.length} row${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ''}`;
 			}
 
 			return data;
@@ -301,6 +303,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 	function reset() {
 		file = null;
 		error = '';
+		warning = '';
 		uploading = false;
 		showPasteMode = false;
 		pastedText = '';
@@ -309,6 +312,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,St Patrick's,Downtown Hub,,
 	function togglePasteMode() {
 		showPasteMode = !showPasteMode;
 		error = '';
+		warning = '';
 	}
 </script>
 
@@ -408,6 +412,13 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		<div class="message error">
 			<AlertCircle size={20} />
 			<span>{error}</span>
+		</div>
+	{/if}
+
+	{#if warning}
+		<div class="message warning">
+			<AlertCircle size={20} />
+			<span>{warning}</span>
 		</div>
 	{/if}
 
@@ -681,6 +692,12 @@ Jane	Doe	jane@example.com		Holy Spirit Parish	St Mary's	coordinator"
 		background: #fef2f2;
 		color: #dc2626;
 		border: 1px solid #fecaca;
+	}
+
+	.message.warning {
+		background: #fffbeb;
+		color: #92400e;
+		border: 1px solid #fcd34d;
 	}
 
 	.message.processing {

@@ -1,481 +1,248 @@
 <script>
-	import { Bold, Italic, Underline, List, ListOrdered, Heading2 } from '$lib/icons';
-	import { cleanWordHtml } from '$lib/utils/html-cleaner.js';
+	import { onMount, onDestroy } from 'svelte';
+	import { Editor, Extension } from '@tiptap/core';
+	import StarterKit from '@tiptap/starter-kit';
+	import Underline from '@tiptap/extension-underline';
+	import Placeholder from '@tiptap/extension-placeholder';
+	import Link from '@tiptap/extension-link';
+	import { cleanWordHtml, detectSource } from '$lib/utils/html-cleaner.js';
+	import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Heading1, Heading2, Heading3, Link2, Undo, Redo } from '$lib/icons';
+	import LinkEditorPopover from './LinkEditorPopover.svelte';
 
 	let {
 		content = $bindable(''),
 		placeholder = 'Start writing...',
 		editorId = undefined,
-		labelledBy = undefined
+		labelledBy = undefined,
+		stickyTop = '70px'
 	} = $props();
 
-	/** @type {HTMLDivElement | null} */
+	let editorEl;
 	let editor = $state(null);
-	let isEditing = $state(false);
-	let isInternalUpdate = false; // Flag to prevent effect from re-initing during user input
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let domCleanupTimer = null; // Debounce timer for DOM normalization
+	let lastSetValue = '';
 
-	// Track current formatting state
-	let formatState = $state({
-		bold: false,
-		italic: false,
-		underline: false,
-		heading: false,
-		ul: false,
-		ol: false
-	});
+	// ProseMirror creates a new state object on every transaction, so tracking
+	// editorState (not editor) gives Svelte 5 a genuine reference change to react to.
+	let editorState = $state(null);
 
-	const initEditor = () => {
-		if (!editor) return;
+	const canUndo = $derived(editorState && editor ? editor.can().undo() : false);
+	const canRedo = $derived(editorState && editor ? editor.can().redo() : false);
+	const isBold = $derived(editorState && editor ? editor.isActive('bold') : false);
+	const isItalic = $derived(editorState && editor ? editor.isActive('italic') : false);
+	const isUnderline = $derived(editorState && editor ? editor.isActive('underline') : false);
+	const isH1 = $derived(editorState && editor ? editor.isActive('heading', { level: 1 }) : false);
+	const isH2 = $derived(editorState && editor ? editor.isActive('heading', { level: 2 }) : false);
+	const isH3 = $derived(editorState && editor ? editor.isActive('heading', { level: 3 }) : false);
+	const isLink = $derived(editorState && editor ? editor.isActive('link') : false);
+	const isBulletList = $derived(editorState && editor ? editor.isActive('bulletList') : false);
+	const isOrderedList = $derived(editorState && editor ? editor.isActive('orderedList') : false);
 
-		// If no content, add an empty paragraph to start
-		if (!content || content.trim() === '') {
-			editor.innerHTML = '<p><br></p>';
-		} else {
-			editor.innerHTML = content;
-		}
+	// Link popover state
+	let showLinkPopover = $state(false);
+	let currentLinkUrl = $state('');
+	let isEditingLink = $state(false);
+	let linkAnchorElement = $state(null);
 
-		// Set default format to paragraph mode
-		document.execCommand('defaultParagraphSeparator', false, 'p');
-
-		updateFormatState();
-	};
-
-	const updateFormatState = () => {
-		if (!editor) return;
-
-		const selection = window.getSelection();
-		if (!selection || selection.rangeCount === 0) return;
-
-		// Check current formatting
-		formatState = {
-			bold: document.queryCommandState('bold'),
-			italic: document.queryCommandState('italic'),
-			underline: document.queryCommandState('underline'),
-			heading: !!getParentElement('H2'),
-			ul: !!getParentElement('UL'),
-			ol: !!getParentElement('OL')
-		};
-	};
-
-	const getParentElement = (tagName) => {
-		const selection = window.getSelection();
-		if (!selection || selection.rangeCount === 0) return null;
-
-		let node = selection.anchorNode;
-		while (node && node !== editor) {
-			if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).tagName === tagName) {
-				return node;
-			}
-			node = node.parentNode;
-		}
-		return null;
-	};
-
-	const execCommand = (command, value = undefined) => {
-		document.execCommand(command, false, value);
-		updateFormatState();
-		updateContent();
-	};
-
-	const toggleHeading = () => {
-		const selection = window.getSelection();
-		if (!selection || selection.rangeCount === 0) return;
-
-		// Check if we're already in a heading - if so, convert to paragraph
-		const currentHeading = getParentElement('H2');
-		if (currentHeading) {
-			document.execCommand('formatBlock', false, 'P');
-		} else {
-			// Format as heading
-			document.execCommand('formatBlock', false, 'H2');
-		}
-
-		// Apply styles directly to ensure they show up
-		setTimeout(() => {
-			// Apply paragraph styles to any new paragraphs
-			const paragraphs = editor?.querySelectorAll('p');
-			paragraphs?.forEach(p => applyParagraphStyles(p));
-
-			// Apply heading styles
-			const headings = editor?.querySelectorAll('h2');
-			headings?.forEach(heading => {
-				applyHeadingStyles(heading);
+	// Strip all non-semantic attributes from pasted HTML so inbound styles/colors
+	// don't bleed into the editor — TipTap's schema then normalises the structure.
+	function stripAttributes(html) {
+		if (typeof DOMParser === 'undefined') return html;
+		const doc = new DOMParser().parseFromString(html, 'text/html');
+		const keep = ['href', 'src', 'alt', 'title'];
+		doc.querySelectorAll('*').forEach((el) => {
+			Array.from(el.attributes).forEach((attr) => {
+				if (!keep.includes(attr.name)) el.removeAttribute(attr.name);
 			});
-			updateFormatState();
-			updateContent();
-		}, 0);
-	};
-
-	// NO inline styles - CSS handles all styling
-	const applyParagraphStyles = (element) => {
-		// Clear any Word garbage styles
-		element.removeAttribute('style');
-	};
-
-	const applyHeadingStyles = (element) => {
-		// Clear any Word garbage styles - CSS handles styling
-		element.removeAttribute('style');
-	};
-
-	const insertList = (ordered = false) => {
-		const command = ordered ? 'insertOrderedList' : 'insertUnorderedList';
-		execCommand(command);
-
-		// Apply proper list styling after creation
-		setTimeout(() => {
-			const lists = editor?.querySelectorAll('ul, ol');
-			lists?.forEach(list => {
-				applyListStyles(list);
-			});
-			updateFormatState();
-		}, 0);
-	};
-
-	const applyListStyles = (listElement) => {
-		// Clear any Word garbage styles - CSS handles styling
-		listElement.removeAttribute('style');
-		listElement.querySelectorAll('li').forEach(item => {
-			item.removeAttribute('style');
 		});
-	};
+		return doc.body.innerHTML;
+	}
 
-	const updateContent = () => {
-		if (!editor) return;
-		// Mark as internal update to prevent effect from re-initializing editor
-		isInternalUpdate = true;
-		// Strip any inline styles before saving - store clean semantic HTML only
-		const temp = document.createElement('div');
-		temp.innerHTML = /** @type {HTMLDivElement} */ (editor).innerHTML;
-
-		// Remove all inline styles
-		temp.querySelectorAll('*').forEach(el => el.removeAttribute('style'));
-
-		// Fix invalid nesting: headings containing block elements
-		temp.querySelectorAll('h2').forEach(heading => {
-			const hasBlockChildren = heading.querySelector('p, ul, ol, li, div, blockquote, table');
-			if (hasBlockChildren) {
-				// Unwrap the heading - it's invalid
-				heading.replaceWith(...heading.childNodes);
-			}
-		});
-
-		content = temp.innerHTML
-			.replace(/<p><\/p>/g, '')
-			.replace(/<p><br><\/p>/g, '')
-			.replace(/<strong><\/strong>/g, '')
-			.replace(/<em><\/em>/g, '')
-			.replace(/<h2><\/h2>/g, '')      // Empty headings
-			.replace(/<h2><br><\/h2>/g, ''); // Headings with just br
-	};
-
-	const handleKeyDown = (e) => {
-		// Handle Enter key to ensure proper paragraph creation
-		if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-			// Check if we're in a list item and it's empty - if so, exit the list
-			const listItem = getParentElement('LI');
-			if (listItem) {
-				const li = /** @type {HTMLElement} */ (listItem);
-				const isEmpty = !(li.textContent || '').trim() &&
-					(!li.innerHTML || li.innerHTML === '<br>' || li.innerHTML === '');
-
-				if (isEmpty) {
-					e.preventDefault();
-					e.stopPropagation();
-
-					// Find the parent list (UL or OL)
-					const list = /** @type {Element} */ (listItem).closest('ul, ol');
-					if (list) {
-						// Create a new paragraph after the list
-						const p = document.createElement('p');
-						p.innerHTML = '<br>';
-
-						// Remove the empty list item
-						/** @type {Element} */ (listItem).remove();
-
-						// If the list is now empty, remove it too
-						if (!list.querySelector('li')) {
-							list.parentNode?.insertBefore(p, list);
-							list.remove();
-						} else {
-							// Insert paragraph after the list
-							list.parentNode?.insertBefore(p, list.nextSibling);
+	// Exit an empty list item on Enter (or Backspace at start), matching email editor behaviour.
+	const ListExitExtension = Extension.create({
+		name: 'listExit',
+		addKeyboardShortcuts() {
+			return {
+				Enter: ({ editor }) => {
+					const { state } = editor;
+					if (!state.selection.empty) return false;
+					const selFrom = state.selection.$from;
+					const listItemType = state.schema.nodes.listItem;
+					if (!listItemType) return false;
+					for (let d = selFrom.depth; d > 0; d--) {
+						const node = selFrom.node(d);
+						if (node.type === listItemType && node.textContent.trim().length === 0) {
+							return editor.commands.liftListItem('listItem');
 						}
-
-						// Move cursor to the new paragraph
-						const sel = window.getSelection();
-						const range = document.createRange();
-						range.setStart(p, 0);
-						range.collapse(true);
-						sel?.removeAllRanges();
-						sel?.addRange(range);
-
-						updateFormatState();
-						updateContent();
 					}
-					return;
-				}
-			}
-
-			// Stop propagation to prevent parent handlers from interfering
-			e.stopPropagation();
-			// Let the browser handle it naturally, but ensure it creates paragraphs
-			setTimeout(() => {
-				// Check if we're in a div (browser sometimes creates divs instead of p)
-				const selection = window.getSelection();
-				if (selection && selection.rangeCount > 0) {
-					let node = selection.anchorNode;
-					while (node && node !== editor) {
-						if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).tagName === 'DIV') {
-							// Convert div to paragraph
-							const p = document.createElement('p');
-							p.innerHTML = /** @type {HTMLElement} */ (node).innerHTML;
-							node.parentNode?.replaceChild(p, node);
-							applyParagraphStyles(p);
-
-							// Move cursor to the new paragraph
-							const range = document.createRange();
-							range.setStart(p, 0);
-							range.collapse(true);
-							selection.removeAllRanges();
-							selection.addRange(range);
-							break;
+					return false;
+				},
+				Backspace: ({ editor }) => {
+					const { state } = editor;
+					if (!state.selection.empty) return false;
+					if (state.selection.$from.parentOffset !== 0) return false;
+					const selFrom = state.selection.$from;
+					const listItemType = state.schema.nodes.listItem;
+					if (!listItemType) return false;
+					for (let d = selFrom.depth; d > 0; d--) {
+						const node = selFrom.node(d);
+						if (node.type === listItemType && node.textContent.trim().length === 0) {
+							return editor.commands.liftListItem('listItem');
 						}
-						node = node.parentNode;
 					}
+					return false;
 				}
-				updateFormatState();
-				updateContent();
-			}, 0);
+			};
 		}
-
-		// Handle common shortcuts
-		if (e.ctrlKey || e.metaKey) {
-			switch (e.key) {
-				case 'b':
-					e.preventDefault();
-					execCommand('bold');
-					break;
-				case 'i':
-					e.preventDefault();
-					execCommand('italic');
-					break;
-				case 'u':
-					e.preventDefault();
-					execCommand('underline');
-					break;
-				case 'h':
-					if (e.altKey) {
-						e.preventDefault();
-						toggleHeading();
-					}
-					break;
-				case 'l':
-					if (e.shiftKey) {
-						e.preventDefault();
-						insertList(false); // Ctrl+Shift+L for bullet list
-					}
-					break;
-				case 'o':
-					if (e.shiftKey) {
-						e.preventDefault();
-						insertList(true); // Ctrl+Shift+O for numbered list
-					}
-					break;
-			}
-		}
-	};
-
-	const handleSelectionChange = () => {
-		if (isEditing) {
-			updateFormatState();
-		}
-	};
-
-	// Ensure cursor is inside a paragraph when focusing (Safari fix)
-	const handleFocus = () => {
-		isEditing = true;
-
-		// Give the browser a moment to set up, then check cursor position
-		setTimeout(() => {
-			const selection = window.getSelection();
-			if (!selection || !selection.rangeCount) return;
-
-			const range = selection.getRangeAt(0);
-			let node = range.startContainer;
-
-			// Check if cursor is at root level (directly in editor, not in a child element)
-			if (node === editor || (node.nodeType === Node.TEXT_NODE && node.parentNode === editor)) {
-				// Find the first paragraph or create one
-				let firstP = editor?.querySelector('p');
-				if (!firstP) {
-					firstP = document.createElement('p');
-					firstP.innerHTML = '<br>';
-					editor?.appendChild(firstP);
-				}
-
-				// Place cursor inside the paragraph
-				const newRange = document.createRange();
-				if (firstP.firstChild) {
-					newRange.setStart(firstP.firstChild, 0);
-				} else {
-					newRange.setStart(firstP, 0);
-				}
-				newRange.collapse(true);
-				selection?.removeAllRanges();
-				selection?.addRange(newRange);
-			}
-		}, 0);
-	};
-
-	$effect(() => {
-		document.addEventListener('selectionchange', handleSelectionChange);
-		return () => document.removeEventListener('selectionchange', handleSelectionChange);
 	});
 
-	$effect(() => {
-		// Only re-init for external content changes, not internal user input
-		if (editor && content !== /** @type {HTMLDivElement} */ (editor).innerHTML && !isInternalUpdate) {
-			initEditor();
-		}
-		// Reset the flag after the effect runs
-		isInternalUpdate = false;
+	function toggleLink(anchorEl = null) {
+		if (!editor) return;
+		const { href } = editor.getAttributes('link');
+		currentLinkUrl = href || '';
+		isEditingLink = !!href;
+		linkAnchorElement = anchorEl || editorEl;
+		showLinkPopover = true;
+	}
+
+	function saveLinkUrl(url) {
+		if (url) editor.chain().focus().setLink({ href: url }).run();
+		showLinkPopover = false;
+	}
+
+	function removeLinkUrl() {
+		editor.chain().focus().unsetLink().run();
+		showLinkPopover = false;
+	}
+
+	onMount(() => {
+		lastSetValue = content;
+
+		const instance = new Editor({
+			element: editorEl,
+			extensions: [
+				StarterKit.configure({
+					heading: { levels: [1, 2, 3] }
+				}),
+				Underline,
+				Placeholder.configure({ placeholder }),
+				Link.extend({
+					addKeyboardShortcuts() {
+						return {
+							'Mod-k': () => { toggleLink(); return true; }
+						};
+					}
+				}).configure({ openOnClick: false }),
+				ListExitExtension
+			],
+			content: content || '',
+			onTransaction: ({ editor: e }) => {
+				editorState = e.state;
+			},
+			onUpdate: ({ editor: e }) => {
+				const html = e.getHTML();
+				const normalized = html === '<p></p>' ? '' : html;
+				lastSetValue = normalized;
+				content = normalized;
+			},
+			editorProps: {
+				attributes: {
+					...(editorId ? { id: editorId } : {}),
+					...(labelledBy ? { 'aria-labelledby': labelledBy } : {}),
+					class: 'tiptap-editor-content'
+				},
+				handlePaste: (_view, event) => {
+					const htmlData = event.clipboardData?.getData('text/html');
+					if (!htmlData) return false;
+					if (detectSource(htmlData) !== 'unknown') {
+						event.preventDefault();
+						const clean = cleanWordHtml(htmlData, { debug: false });
+						instance.commands.insertContent(stripAttributes(clean));
+						return true;
+					}
+					return false;
+				},
+				transformPastedHTML: (html) => stripAttributes(html)
+			}
+		});
+
+		editor = instance;
 	});
 
-	// Handle paste - clean up Word/formatting using smart cleaner
-	const handlePaste = (e) => {
-		e.preventDefault();
+	onDestroy(() => {
+		editor?.destroy();
+	});
 
-		const clipboardData = e.clipboardData;
-		const htmlData = clipboardData.getData('text/html');
-		const textData = clipboardData.getData('text/plain');
-
-		if (htmlData) {
-
-			// Use smart cleaner with debug logging
-			const cleanedHtml = cleanWordHtml(htmlData, { debug: true });
-
-
-			document.execCommand('insertHTML', false, cleanedHtml);
-		} else if (textData) {
-			// Plain text - insert as paragraphs
-			const paragraphs = textData.split('\n\n').filter(p => p.trim());
-			const html = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
-			document.execCommand('insertHTML', false, html);
-		}
-
-		setTimeout(() => {
-			updateContent();
-			updateFormatState();
-		}, 0);
-	};
-
-	// Normalize DOM structure (debounced to avoid interfering with Safari input)
-	const normalizeDOM = () => {
-		if (!editor) return;
-
-		// Save cursor position before DOM manipulation
-		const selection = window.getSelection();
-		let cursorNode = null;
-		let cursorOffset = 0;
-
-		if (selection && selection.rangeCount > 0) {
-			const range = selection.getRangeAt(0);
-			cursorNode = range.startContainer;
-			cursorOffset = range.startOffset;
-		}
-
-		// Convert any bare text nodes or divs to paragraphs
-		const textNodes = [];
-		const walker = document.createTreeWalker(
-			editor,
-			NodeFilter.SHOW_TEXT,
-			null
-		);
-
-		let node;
-		while (node = walker.nextNode()) {
-			if (node.parentNode === editor && (node.textContent || '').trim()) {
-				textNodes.push(node);
-			}
-		}
-
-		textNodes.forEach(textNode => {
-			const p = document.createElement('p');
-			textNode.parentNode?.insertBefore(p, textNode);
-			p.appendChild(textNode);
-			applyParagraphStyles(p);
-
-			// If this was the cursor node, restore cursor inside the new paragraph
-			if (textNode === cursorNode) {
-				try {
-					const newRange = document.createRange();
-					newRange.setStart(textNode, Math.min(cursorOffset, /** @type {Text} */ (textNode).length));
-					newRange.collapse(true);
-					selection?.removeAllRanges();
-					selection?.addRange(newRange);
-				} catch (e) {
-					// Cursor restoration failed, browser will handle it
-				}
-			}
-		});
-
-		// Convert any divs to paragraphs
-		const editorEl = /** @type {HTMLDivElement} */ (editor);
-		const divs = editorEl.querySelectorAll('div');
-		divs.forEach(div => {
-			if (div.parentNode === editor) {
-				const p = document.createElement('p');
-				p.innerHTML = div.innerHTML;
-				div.parentNode?.replaceChild(p, div);
-				applyParagraphStyles(p);
-			}
-		});
-
-		// Reapply paragraph styles
-		const paragraphs = editorEl.querySelectorAll('p');
-		paragraphs.forEach(p => applyParagraphStyles(p));
-
-		// Reapply heading styles
-		const headings = editorEl.querySelectorAll('h2');
-		headings.forEach(heading => {
-			applyHeadingStyles(heading);
-		});
-
-		// Reapply list styles
-		const lists = editorEl.querySelectorAll('ul, ol');
-		lists.forEach(list => {
-			applyListStyles(list);
-		});
-
-		updateFormatState();
-		updateContent();
-	};
-
-	// Apply formatting styles after any input
-	const handleInput = () => {
-		updateContent();
-
-		// Debounce DOM normalization to avoid interfering with Safari's input handling
-		// This gives the browser time to handle multiple keystrokes before we manipulate DOM
-		if (domCleanupTimer) clearTimeout(domCleanupTimer);
-		domCleanupTimer = setTimeout(normalizeDOM, 300);
-	};
+	// Sync when content is changed externally (e.g. parent resets the editor)
+	$effect(() => {
+		if (!editor || content === lastSetValue) return;
+		lastSetValue = content;
+		editor.commands.setContent(content || '', false);
+	});
 </script>
 
+<LinkEditorPopover
+	show={showLinkPopover}
+	url={currentLinkUrl}
+	anchorElement={linkAnchorElement}
+	onSave={saveLinkUrl}
+	onCancel={() => (showLinkPopover = false)}
+	onRemove={isEditingLink ? removeLinkUrl : null}
+/>
+
 <div class="rich-text-editor rounded-lg shadow-sm border border-gray-200 bg-white">
-	<!-- Toolbar - sticky below page header -->
-	<div class="editor-toolbar flex items-center gap-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm sticky top-[70px] z-20">
-		<!-- Heading -->
+	<!-- Toolbar – onmousedown preventDefault keeps focus (and selection) in the editor -->
+	<div
+		class="editor-toolbar flex items-center gap-1 px-4 py-2 bg-gray-50 border-b border-gray-200 sticky z-10"
+		style="top: {stickyTop};"
+		onmousedown={(e) => e.preventDefault()}
+	>
+		<!-- Undo / Redo -->
 		<div class="flex border-r border-gray-300 pr-3 mr-3">
 			<button
 				type="button"
-				onclick={toggleHeading}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.heading ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Heading (Ctrl+Alt+H)"
+				onclick={() => editor?.chain().focus().undo().run()}
+				disabled={!canUndo}
+				class="p-2 rounded transition-colors {canUndo ? 'text-gray-700 hover:bg-gray-200' : 'text-gray-300 cursor-not-allowed'}"
+				title="Undo (Ctrl+Z)"
+			>
+				<Undo size="16" />
+			</button>
+			<button
+				type="button"
+				onclick={() => editor?.chain().focus().redo().run()}
+				disabled={!canRedo}
+				class="p-2 rounded transition-colors {canRedo ? 'text-gray-700 hover:bg-gray-200' : 'text-gray-300 cursor-not-allowed'}"
+				title="Redo (Ctrl+Y)"
+			>
+				<Redo size="16" />
+			</button>
+		</div>
+
+		<!-- Headings -->
+		<div class="flex border-r border-gray-300 pr-3 mr-3">
+			<button
+				type="button"
+				onclick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isH1 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Heading 1"
+			>
+				<Heading1 size="18" />
+			</button>
+			<button
+				type="button"
+				onclick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isH2 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Heading 2"
 			>
 				<Heading2 size="18" />
+			</button>
+			<button
+				type="button"
+				onclick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isH3 ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Heading 3"
+			>
+				<Heading3 size="18" />
 			</button>
 		</div>
 
@@ -483,27 +250,39 @@
 		<div class="flex border-r border-gray-300 pr-3 mr-3">
 			<button
 				type="button"
-				onclick={() => execCommand('bold')}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.bold ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				onclick={() => editor?.chain().focus().toggleBold().run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isBold ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
 				title="Bold (Ctrl+B)"
 			>
 				<Bold size="16" />
 			</button>
 			<button
 				type="button"
-				onclick={() => execCommand('italic')}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.italic ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				onclick={() => editor?.chain().focus().toggleItalic().run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isItalic ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
 				title="Italic (Ctrl+I)"
 			>
 				<Italic size="16" />
 			</button>
 			<button
 				type="button"
-				onclick={() => execCommand('underline')}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.underline ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				onclick={() => editor?.chain().focus().toggleUnderline().run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isUnderline ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
 				title="Underline (Ctrl+U)"
 			>
-				<Underline size="16" />
+				<UnderlineIcon size="16" />
+			</button>
+		</div>
+
+		<!-- Link -->
+		<div class="flex border-r border-gray-300 pr-3 mr-3">
+			<button
+				type="button"
+				onclick={(e) => toggleLink(e.currentTarget)}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isLink ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Link (Ctrl+K)"
+			>
+				<Link2 size="16" />
 			</button>
 		</div>
 
@@ -511,130 +290,137 @@
 		<div class="flex">
 			<button
 				type="button"
-				onclick={() => insertList(false)}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.ul ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Bullet List (Ctrl+Shift+L)"
+				onclick={() => editor?.chain().focus().toggleBulletList().run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isBulletList ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Bullet List"
 			>
 				<List size="16" />
 			</button>
 			<button
 				type="button"
-				onclick={() => insertList(true)}
-				class="p-2 rounded hover:bg-gray-200 transition-colors {formatState.ol ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
-				title="Numbered List (Ctrl+Shift+O)"
+				onclick={() => editor?.chain().focus().toggleOrderedList().run()}
+				class="p-2 rounded hover:bg-gray-200 transition-colors {isOrderedList ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}"
+				title="Numbered List"
 			>
 				<ListOrdered size="16" />
 			</button>
 		</div>
 	</div>
 
-	<!-- Editor -->
-	<div
-		bind:this={editor}
-		contenteditable="true"
-		id={editorId}
-		aria-labelledby={labelledBy}
-		role="textbox"
-		aria-multiline="true"
-		tabindex="0"
-		class="editor-area"
-		onkeydown={handleKeyDown}
-		oninput={handleInput}
-		onpaste={handlePaste}
-		onfocus={handleFocus}
-		onblur={() => {
-			isEditing = false;
-			// Normalize DOM immediately on blur (user finished editing)
-			if (domCleanupTimer) clearTimeout(domCleanupTimer);
-			normalizeDOM();
-		}}
-		data-placeholder={placeholder}
-	></div>
+	<!-- TipTap mounts its editor inside this div -->
+	<div bind:this={editorEl}></div>
 </div>
 
 <style>
-	/* Editor area - generous padding */
-	.editor-area {
+	:global(.tiptap-editor-content) {
 		padding: 2rem 3.5rem;
 		min-height: 350px;
 		outline: none;
-		background: white;
-		/* Safari fix: avoid -apple-system font which causes crashes with text-rendering */
-		font-family: system-ui, -apple-system-body, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-		/* Safari fix: avoid optimizeLegibility which causes hangs */
-		text-rendering: auto;
-		/* Safari fix: ensure proper caret behavior */
-		-webkit-user-modify: read-write-plaintext-only;
-		caret-color: currentColor;
+		cursor: text;
+		font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+			Arial, sans-serif;
+		font-size: 1rem;
+		color: #374151;
+		line-height: 1.7;
 	}
 
-	/* Override -webkit-user-modify for rich text (we need formatting) */
-	.editor-area {
-		-webkit-user-modify: read-write;
+	:global(.tiptap-editor-content:focus) {
+		outline: none;
 	}
 
-	/* Placeholder */
-	.editor-area:empty:before {
-		content: attr(data-placeholder);
-		color: #9ca3af;
-		pointer-events: none;
+	:global(.tiptap-editor-content p) {
+		margin-bottom: 0.75rem;
+	}
+
+	:global(.tiptap-editor-content h1) {
+		font-size: 1.75rem;
+		font-weight: 700;
+		line-height: 1.25;
+		margin-top: 1.5rem;
+		margin-bottom: 0.75rem;
+		color: #111827;
+	}
+
+	:global(.tiptap-editor-content h1:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.tiptap-editor-content h2) {
+		font-size: 1.25rem;
+		font-weight: 600;
+		line-height: 1.35;
+		margin-top: 1.25rem;
+		margin-bottom: 0.5rem;
+		color: #1f2937;
+	}
+
+	:global(.tiptap-editor-content h2:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.tiptap-editor-content h3) {
+		font-size: 1.05rem;
+		font-weight: 600;
+		line-height: 1.4;
+		margin-top: 1rem;
+		margin-bottom: 0.4rem;
+		color: #374151;
+	}
+
+	:global(.tiptap-editor-content h3:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.tiptap-editor-content ul),
+	:global(.tiptap-editor-content ol) {
+		padding-left: 1.75rem;
+		margin-bottom: 0.75rem;
+	}
+
+	:global(.tiptap-editor-content ul) {
+		list-style-type: disc;
+	}
+
+	:global(.tiptap-editor-content ol) {
+		list-style-type: decimal;
+	}
+
+	:global(.tiptap-editor-content li) {
+		margin-bottom: 0.35rem;
+		line-height: 1.6;
+	}
+
+	:global(.tiptap-editor-content strong),
+	:global(.tiptap-editor-content b) {
+		font-weight: 700;
+	}
+
+	:global(.tiptap-editor-content em),
+	:global(.tiptap-editor-content i) {
 		font-style: italic;
 	}
 
-	/* Typography */
-	.rich-text-editor :global(.editor-area h2) {
-		font-size: 1.25rem !important;
-		font-weight: 600 !important;
-		line-height: 1.35 !important;
-		margin-bottom: 0.5rem !important;
-		margin-top: 1rem !important;
-		color: #1f2937 !important;
+	:global(.tiptap-editor-content u) {
+		text-decoration: underline;
 	}
 
-	.rich-text-editor :global(.editor-area h2:first-child) {
-		margin-top: 0 !important;
+	:global(.tiptap-editor-content a) {
+		color: #4f46e5;
+		text-decoration: underline;
+		text-underline-offset: 2px;
 	}
 
-	.rich-text-editor :global(.editor-area p) {
-		font-size: 1rem !important;
-		line-height: 1.7 !important;
-		margin-bottom: 0.75rem !important;
-		color: #374151 !important;
+	:global(.tiptap-editor-content a:hover) {
+		color: #4338ca;
 	}
 
-	.rich-text-editor :global(.editor-area ul),
-	.rich-text-editor :global(.editor-area ol) {
-		padding-left: 1.75rem !important;
-		margin-bottom: 0.75rem !important;
-		font-size: 1rem !important;
-		color: #374151 !important;
-	}
-
-	.rich-text-editor :global(.editor-area ul) {
-		list-style-type: disc !important;
-	}
-
-	.rich-text-editor :global(.editor-area ol) {
-		list-style-type: decimal !important;
-	}
-
-	.rich-text-editor :global(.editor-area li) {
-		margin-bottom: 0.35rem !important;
-		line-height: 1.6 !important;
-		font-size: 1rem !important;
-	}
-
-	.rich-text-editor :global(.editor-area strong),
-	.rich-text-editor :global(.editor-area b) {
-		font-weight: 700 !important;
-	}
-
-	.rich-text-editor :global(.editor-area em),
-	.rich-text-editor :global(.editor-area i) {
-		font-style: italic !important;
-	}
-
-	.rich-text-editor :global(.editor-area u) {
-		text-decoration: underline !important;
+	/* TipTap placeholder */
+	:global(.tiptap-editor-content p.is-editor-empty:first-child::before) {
+		content: attr(data-placeholder);
+		float: left;
+		color: #9ca3af;
+		pointer-events: none;
+		height: 0;
+		font-style: italic;
 	}
 </style>

@@ -191,7 +191,7 @@
 
 	.admin-content {
 		flex: 1;
-		overflow-x: hidden;
+		overflow-x: clip;
 		min-height: 0;
 	}
 </style>

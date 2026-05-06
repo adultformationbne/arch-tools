@@ -426,7 +426,8 @@
 			{@const isProcessing = material.type === 'mux_video' && material.mux_status === 'processing'}
 
 			<div
-				class="material-item border border-gray-200 rounded-lg overflow-hidden transition-shadow hover:shadow-sm bg-white"
+				class="material-item border border-gray-200 rounded-lg transition-shadow hover:shadow-sm bg-white"
+				style="overflow: clip;"
 				animate:flip={{ duration: DND_FLIP_DURATION }}
 			>
 				<!-- Material Row (Collapsed) -->

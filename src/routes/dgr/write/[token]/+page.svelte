@@ -66,7 +66,6 @@
 	let savingReadings = $state(false);
 
 	// Onboarding modal for first-time users
-	let showOnboarding = $state(false);
 
 
 	// Help content for contributors
@@ -121,11 +120,7 @@
 		{
 			title: 'Need Help?',
 			content: `
-				<p>If you have any questions or run into issues, contact Liam Desic:</p>
-				<ul class="mt-2">
-					<li><a href="mailto:desicl@bne.catholic.net.au">desicl@bne.catholic.net.au</a></li>
-					<li><a href="tel:+61733243974">+61 7 3324 3974</a></li>
-				</ul>
+				<p>If you have any questions or run into issues, please contact your course administrator.</p>
 			`
 		}
 	];
@@ -179,11 +174,6 @@
 
 			contributor = result.contributor;
 			dates = result.dates;
-
-			// Show onboarding for first-time visitors
-			if (contributor.visit_count === 1) {
-				showOnboarding = true;
-			}
 
 			// Auto-select first date that needs work
 			const firstIncomplete = dates.find(d => !d.status || d.status === 'pending' || !d.has_content);
@@ -956,8 +946,6 @@
 			position="bottom-16 right-4"
 			pageTitle="Writing Guide"
 			buttonLabel="Help"
-			videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
-			videoTitle="Watch Tutorial"
 		/>
 	</div>
 	<div class="md:hidden">
@@ -968,42 +956,7 @@
 			pageTitle="Writing Guide"
 			bind:open={showHelp}
 			showTriggerButton={false}
-			videoUrl="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
-			videoTitle="Watch Tutorial"
 		/>
-	</div>
-{/if}
-
-<!-- Onboarding Modal for First-Time Users -->
-{#if showOnboarding}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-		<div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-			<div class="px-6 py-5 border-b border-gray-200">
-				<h2 class="text-xl font-bold text-gray-900">Welcome to the Daily Gospel Reflection Writer!</h2>
-				<p class="mt-1 text-sm text-gray-600">Watch this quick intro to get started</p>
-			</div>
-
-			<div class="px-6 py-4">
-				<div style="position: relative; padding-bottom: 64.90384615384616%; height: 0;">
-					<iframe
-						src="https://www.loom.com/embed/ce2cfba74f9f496d807d8fec8d5a3663"
-						frameborder="0"
-						allowfullscreen
-						style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
-						title="DGR Writer Introduction"
-					></iframe>
-				</div>
-			</div>
-
-			<div class="flex justify-end px-6 py-4 border-t border-gray-200">
-				<button
-					onclick={() => showOnboarding = false}
-					class="rounded-lg bg-[#009199] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#007580]"
-				>
-					Get Started
-				</button>
-			</div>
-		</div>
 	</div>
 {/if}
 
