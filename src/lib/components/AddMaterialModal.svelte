@@ -35,6 +35,8 @@
 	let description = $state('');
 	let minRole = $state(/** @type {'participant' | 'coordinator'} */ ('participant'));
 	let selectedHubIds = $state(/** @type {string[]} */ ([]));
+	let showRestrictions = $state(false);
+	let showHubList = $state(false);
 
 	// YouTube preview
 	let fetchingVideoInfo = $state(false);
@@ -91,6 +93,8 @@
 		description = '';
 		minRole = 'participant';
 		selectedHubIds = [];
+		showRestrictions = false;
+		showHubList = false;
 		videoPreviewId = null;
 		saving = false;
 	}
@@ -538,40 +542,73 @@
 
 			<!-- Visibility controls -->
 			{#if selectedType !== 'upload' && selectedType !== 'mux_video'}
-				<div class="pt-2 space-y-3">
-					<div>
-						<label for="add-min-role" class="block text-sm font-semibold mb-1 text-gray-700">Visible to</label>
-						<select
-							id="add-min-role"
-							bind:value={minRole}
-							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 bg-white"
-						>
-							<option value="participant">All participants</option>
-							<option value="coordinator">Coordinators only</option>
-						</select>
-					</div>
-					{#if hubs.length > 0}
-						<div>
-							<p class="text-sm font-semibold text-gray-700 mb-1">Restrict to hubs <span class="font-normal text-gray-500">(none = all hubs)</span></p>
-							<div class="space-y-1 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-								{#each hubs as hub}
-									<label class="flex items-center gap-2 cursor-pointer">
-										<input
-											type="checkbox"
-											checked={selectedHubIds.includes(hub.id)}
-											onchange={(e) => {
-												if (e.currentTarget.checked) {
-													selectedHubIds = [...selectedHubIds, hub.id];
-												} else {
-													selectedHubIds = selectedHubIds.filter(id => id !== hub.id);
-												}
-											}}
-											class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-										/>
-										<span class="text-sm text-gray-700">{hub.name}</span>
-									</label>
-								{/each}
-							</div>
+				<div class="pt-2 space-y-2 border-t">
+					<label class="flex items-center gap-2 cursor-pointer">
+						<input
+							type="checkbox"
+							bind:checked={showRestrictions}
+							onchange={(e) => {
+								if (!e.currentTarget.checked) {
+									minRole = 'participant';
+									selectedHubIds = [];
+									showHubList = false;
+								}
+							}}
+							class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+						/>
+						<span class="text-sm font-semibold text-gray-700">Restrict visibility</span>
+						<span class="text-xs text-gray-400">(default: everyone)</span>
+					</label>
+
+					{#if showRestrictions}
+						<div class="ml-5 space-y-2">
+							<label class="flex items-center gap-2 cursor-pointer">
+								<input
+									type="checkbox"
+									checked={minRole === 'coordinator'}
+									onchange={(e) => {
+										minRole = e.currentTarget.checked ? 'coordinator' : 'participant';
+									}}
+									class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+								/>
+								<span class="text-sm text-gray-700">Hub coordinators only</span>
+							</label>
+
+							{#if hubs.length > 0}
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input
+										type="checkbox"
+										bind:checked={showHubList}
+										onchange={(e) => {
+											if (!e.currentTarget.checked) selectedHubIds = [];
+										}}
+										class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+									/>
+									<span class="text-sm text-gray-700">Specific hubs</span>
+								</label>
+
+								{#if showHubList}
+									<div class="ml-5 space-y-1 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+										{#each hubs as hub}
+											<label class="flex items-center gap-2 cursor-pointer">
+												<input
+													type="checkbox"
+													checked={selectedHubIds.includes(hub.id)}
+													onchange={(e) => {
+														if (e.currentTarget.checked) {
+															selectedHubIds = [...selectedHubIds, hub.id];
+														} else {
+															selectedHubIds = selectedHubIds.filter(id => id !== hub.id);
+														}
+													}}
+													class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+												/>
+												<span class="text-sm text-gray-700">{hub.name}</span>
+											</label>
+										{/each}
+									</div>
+								{/if}
+							{/if}
 						</div>
 					{/if}
 				</div>

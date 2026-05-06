@@ -53,6 +53,8 @@
 	 * }} EditingMaterial
 	 */
 	let editingMaterial = $state(/** @type {EditingMaterial | null} */ (null));
+	let showRestrictions = $state(false);
+	let showHubList = $state(false);
 	let showDeleteConfirm = $state(false);
 	let materialToDelete = $state(null);
 	let showAddModal = $state(false);
@@ -195,11 +197,11 @@
 	};
 
 	const startEditMaterial = (material) => {
-		editingMaterial = {
-			...material,
-			minRole: material.minRole || 'participant',
-			hubIds: Array.isArray(material.hubIds) ? [...material.hubIds] : []
-		};
+		const hubIds = Array.isArray(material.hubIds) ? [...material.hubIds] : [];
+		const minRole = material.minRole || 'participant';
+		showRestrictions = minRole === 'coordinator' || hubIds.length > 0;
+		showHubList = hubIds.length > 0;
+		editingMaterial = { ...material, minRole, hubIds };
 		expandedMaterialId = material.id;
 	};
 
@@ -475,14 +477,15 @@
 							<span class="px-2 py-0.5 text-xs font-medium rounded-full {getTypeBadgeClass()}">
 								{getTypeLabel(material.type)}
 							</span>
-							{#if material.minRole === 'coordinator'}
+							{#if material.minRole === 'coordinator' || material.hubIds?.length > 0}
 								<span class="px-2 py-0.5 text-xs font-medium rounded-full coordinator-badge">
-									Coordinator
-								</span>
-							{/if}
-							{#if material.hubIds?.length > 0}
-								<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-									{material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
+									{#if material.minRole === 'coordinator' && material.hubIds?.length > 0}
+										Coordinators · {material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
+									{:else if material.minRole === 'coordinator'}
+										Coordinators only
+									{:else}
+										{material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
+									{/if}
 								</span>
 							{/if}
 						</div>
@@ -588,41 +591,79 @@
 									{/if}
 								{/if}
 
-								<div class="space-y-3">
-									<div>
-										<label for="edit-min-role-{material.id}" class="block text-sm font-semibold text-gray-700 mb-1">Visible to</label>
-										<select
-											id="edit-min-role-{material.id}"
-											bind:value={editingMaterial.minRole}
-											class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-										>
-											<option value="participant">All participants</option>
-											<option value="coordinator">Coordinators only</option>
-										</select>
-									</div>
-									{#if hubs.length > 0}
-										<div>
-											<p class="text-sm font-semibold text-gray-700 mb-1">Restrict to hubs <span class="font-normal text-gray-500">(none selected = all hubs)</span></p>
-											<div class="space-y-1 max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-2">
-												{#each hubs as hub}
-													<label class="flex items-center gap-2 cursor-pointer">
-														<input
-															type="checkbox"
-															checked={editingMaterial.hubIds.includes(hub.id)}
-															onchange={(e) => {
-																if (!editingMaterial) return;
-																if (e.currentTarget.checked) {
-																	editingMaterial.hubIds = [...editingMaterial.hubIds, hub.id];
-																} else {
-																	editingMaterial.hubIds = editingMaterial.hubIds.filter(id => id !== hub.id);
-																}
-															}}
-															class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-														/>
-														<span class="text-sm text-gray-700">{hub.name}</span>
-													</label>
-												{/each}
-											</div>
+								<div class="space-y-2 border-t pt-3">
+									<label class="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={showRestrictions}
+											onchange={(e) => {
+												showRestrictions = e.currentTarget.checked;
+												if (!e.currentTarget.checked && editingMaterial) {
+													editingMaterial.minRole = 'participant';
+													editingMaterial.hubIds = [];
+													showHubList = false;
+												}
+											}}
+											class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+										/>
+										<span class="text-sm font-semibold text-gray-700">Restrict visibility</span>
+										<span class="text-xs text-gray-400">(default: everyone)</span>
+									</label>
+
+									{#if showRestrictions}
+										<div class="ml-5 space-y-2">
+											<label class="flex items-center gap-2 cursor-pointer">
+												<input
+													type="checkbox"
+													checked={editingMaterial.minRole === 'coordinator'}
+													onchange={(e) => {
+														if (!editingMaterial) return;
+														editingMaterial.minRole = e.currentTarget.checked ? 'coordinator' : 'participant';
+													}}
+													class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+												/>
+												<span class="text-sm text-gray-700">Hub coordinators only</span>
+											</label>
+
+											{#if hubs.length > 0}
+												<label class="flex items-center gap-2 cursor-pointer">
+													<input
+														type="checkbox"
+														checked={showHubList}
+														onchange={(e) => {
+															showHubList = e.currentTarget.checked;
+															if (!e.currentTarget.checked && editingMaterial) {
+																editingMaterial.hubIds = [];
+															}
+														}}
+														class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+													/>
+													<span class="text-sm text-gray-700">Specific hubs</span>
+												</label>
+
+												{#if showHubList}
+													<div class="ml-5 space-y-1 max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-2">
+														{#each hubs as hub}
+															<label class="flex items-center gap-2 cursor-pointer">
+																<input
+																	type="checkbox"
+																	checked={editingMaterial.hubIds.includes(hub.id)}
+																	onchange={(e) => {
+																		if (!editingMaterial) return;
+																		if (e.currentTarget.checked) {
+																			editingMaterial.hubIds = [...editingMaterial.hubIds, hub.id];
+																		} else {
+																			editingMaterial.hubIds = editingMaterial.hubIds.filter(id => id !== hub.id);
+																		}
+																	}}
+																	class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+																/>
+																<span class="text-sm text-gray-700">{hub.name}</span>
+															</label>
+														{/each}
+													</div>
+												{/if}
+											{/if}
 										</div>
 									{/if}
 								</div>
