@@ -1,5 +1,5 @@
 <script>
-	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap } from '$lib/icons';
+	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap, Lock } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 
@@ -263,16 +263,14 @@
 										href="/courses/{courseSlug}/materials?material={material.id}"
 										class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer no-underline text-sm font-medium"
 										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
 									>
 										<IconComponent size="14" class={index === 0 ? "text-white" : "text-gray-600"} />
 										<span class:text-white={index === 0} class:text-gray-700={index !== 0}>
 											{material.title}
 										</span>
-										{#if material.coordinatorOnly}
-											<span class="text-xs px-1.5 py-0.5 rounded-full {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600'}">
-												HC
-											</span>
+										{#if material.isRestricted}
+											<Lock size="11" class="{index === 0 ? 'text-white/70' : 'text-gray-400'}" />
 										{/if}
 									</a>
 								{/each}
@@ -346,7 +344,7 @@
 			</SessionNavigationTabs>
 		{:else if currentSession === 0}
 			<!-- Pre-Start: No tabs (for <6 or >12 sessions) -->
-			<div class="rounded-xl" style="background-color: #eae2d9;">
+			<div class="rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);">
 				<!-- Thin Top Navigation Bar -->
 				<div class="px-6 pt-2 pb-2">
 					<div class="flex items-center justify-center gap-3 text-sm">
@@ -463,16 +461,14 @@
 										href="/courses/{courseSlug}/materials?material={material.id}"
 										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
 									>
 										<IconComponent size="16" class={index === 0 ? "text-white" : "text-gray-600"} />
 										<span class="font-medium text-sm" class:text-white={index === 0} class:text-gray-700={index !== 0}>
 											{material.title}
 										</span>
-										{#if material.coordinatorOnly}
-											<span class="ml-auto text-xs font-medium px-2 py-0.5 rounded {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'}">
-												Coordinator
-											</span>
+										{#if material.isRestricted}
+											<Lock size="13" class="ml-auto {index === 0 ? 'text-white/70' : 'text-gray-400'}" />
 										{/if}
 									</a>
 								{/each}
@@ -546,7 +542,7 @@
 			</div>
 		{:else}
 			<!-- Regular sessions without tabs (for <6 or >12 sessions) -->
-			<div class="rounded-xl" style="background-color: #eae2d9;">
+			<div class="rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 20%, white);">
 				<!-- Thin Top Navigation Bar -->
 				<div class="px-6 pt-2 pb-2">
 					<div class="flex items-center justify-center gap-3 text-sm">
@@ -663,16 +659,14 @@
 										href="/courses/{courseSlug}/materials?material={material.id}"
 										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
-										style={index === 0 ? "background-color: var(--course-accent-dark, #c59a6b);" : "background-color: #f5f0e8;"}
+										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
 									>
 										<IconComponent size="16" class={index === 0 ? "text-white" : "text-gray-600"} />
 										<span class="font-medium text-sm" class:text-white={index === 0} class:text-gray-700={index !== 0}>
 											{material.title}
 										</span>
-										{#if material.coordinatorOnly}
-											<span class="ml-auto text-xs font-medium px-2 py-0.5 rounded {index === 0 ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'}">
-												Coordinator
-											</span>
+										{#if material.isRestricted}
+											<Lock size="13" class="ml-auto {index === 0 ? 'text-white/70' : 'text-gray-400'}" />
 										{/if}
 									</a>
 								{/each}

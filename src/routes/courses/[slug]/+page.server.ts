@@ -167,7 +167,8 @@ export const load: PageServerLoad = async (event) => {
 				content: m.content,
 				url: m.content,
 				viewable: true,
-				coordinatorOnly: m.min_role === 'coordinator'
+				coordinatorOnly: m.min_role === 'coordinator',
+				isRestricted: m.min_role === 'coordinator' || (m.hub_visibility || []).length > 0
 			}));
 	};
 

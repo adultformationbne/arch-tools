@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical } from '$lib/icons';
+	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical, Lock } from '$lib/icons';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
@@ -478,15 +478,7 @@
 								{getTypeLabel(material.type)}
 							</span>
 							{#if material.minRole === 'coordinator' || material.hubIds?.length > 0}
-								<span class="px-2 py-0.5 text-xs font-medium rounded-full coordinator-badge">
-									{#if material.minRole === 'coordinator' && material.hubIds?.length > 0}
-										Coordinators · {material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
-									{:else if material.minRole === 'coordinator'}
-										Coordinators only
-									{:else}
-										{material.hubIds.length} hub{material.hubIds.length > 1 ? 's' : ''}
-									{/if}
-								</span>
+								<Lock size="13" class="text-gray-400" />
 							{/if}
 						</div>
 					</div>
