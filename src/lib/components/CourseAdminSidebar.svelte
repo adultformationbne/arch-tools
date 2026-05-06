@@ -118,7 +118,7 @@ const navItems = $derived([
         href: withCohort(`/admin/courses/${courseSlug}/quizzes`),
         icon: Zap,
         description: 'Marking queue & results',
-        visible: canManageCourse
+        visible: canManageCourse && courseFeatures.quizzesEnabled !== false
     },
     {
         label: 'Emails',

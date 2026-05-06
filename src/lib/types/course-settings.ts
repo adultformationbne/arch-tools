@@ -49,6 +49,7 @@ export interface CourseSettings {
 		chatAllowParticipants?: boolean;
 		materialsEnabled?: boolean;
 		hubsEnabled?: boolean;
+		quizzesEnabled?: boolean;
 		maxCapacity?: number | null;
 		requireApproval?: boolean;
 	};
@@ -80,6 +81,7 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		chatAllowParticipants: false,
 		materialsEnabled: true,
 		hubsEnabled: true,
+		quizzesEnabled: true,
 		maxCapacity: null,
 		requireApproval: false
 	}
@@ -136,6 +138,8 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 				settings.features?.materialsEnabled ?? DEFAULT_COURSE_SETTINGS.features.materialsEnabled,
 			hubsEnabled:
 				settings.features?.hubsEnabled ?? DEFAULT_COURSE_SETTINGS.features.hubsEnabled,
+			quizzesEnabled:
+				settings.features?.quizzesEnabled ?? DEFAULT_COURSE_SETTINGS.features.quizzesEnabled,
 			maxCapacity:
 				settings.features?.maxCapacity ?? DEFAULT_COURSE_SETTINGS.features.maxCapacity,
 			requireApproval:

@@ -1,5 +1,5 @@
 <script>
-	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag, UserPlus, Link } from '$lib/icons';
+	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag, UserPlus, Link, Zap } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
@@ -105,6 +105,7 @@
 			settings.features.chatAllowParticipants = parsedSettings.features?.chatAllowParticipants ?? false;
 			settings.features.attendanceEnabled = parsedSettings.features?.attendanceEnabled ?? true;
 			settings.features.materialsEnabled = parsedSettings.features?.materialsEnabled ?? true;
+			settings.features.quizzesEnabled = parsedSettings.features?.quizzesEnabled ?? true;
 			settings.features.hubsEnabled = parsedSettings.features?.hubsEnabled ?? true;
 			const legacyPayments = parsedSettings.features?.['paymentsEnabled'];
 			settings.features.enrollmentEnabled = parsedSettings.features?.enrollmentEnabled ?? legacyPayments ?? false;
@@ -782,6 +783,30 @@
 							</div>
 						</div>
 						<p class="text-xs text-gray-500 leading-relaxed">Share session materials and resources with participants</p>
+					</button>
+
+					<!-- Quizzes -->
+					<button
+						type="button"
+						onclick={() => settings.features.quizzesEnabled = !settings.features.quizzesEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-gray-200={!settings.features.quizzesEnabled}
+						class:bg-gray-50={!settings.features.quizzesEnabled}
+						class:hover:border-gray-300={!settings.features.quizzesEnabled}
+						style={toggleCardStyle(settings.features.quizzesEnabled)}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.quizzesEnabled} class:text-gray-400={!settings.features.quizzesEnabled} style={toggleIconStyle(settings.features.quizzesEnabled)}>
+									<Zap size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Quizzes</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.quizzesEnabled} style={toggleTrackStyle(settings.features.quizzesEnabled)}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.quizzesEnabled} class:translate-x-0.5={!settings.features.quizzesEnabled}></div>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 leading-relaxed">Enable quizzes for session assessments and marking</p>
 					</button>
 
 					<!-- Hub Groups -->

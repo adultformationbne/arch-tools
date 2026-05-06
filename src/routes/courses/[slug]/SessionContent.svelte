@@ -20,6 +20,7 @@
 	// Check if features are enabled (default true for backwards compatibility)
 	const reflectionsEnabled = $derived(featureSettings?.reflectionsEnabled !== false);
 	const materialsEnabled = $derived(featureSettings?.materialsEnabled !== false);
+	const quizzesEnabled = $derived(featureSettings?.quizzesEnabled !== false);
 
 	// Question truncation length
 	const QUESTION_TRUNCATE_LENGTH = 200;
@@ -741,7 +742,7 @@
 		{/if}
 
 		<!-- Quiz Panel (shown below session content if a quiz exists for this session) -->
-		{#if currentQuiz}
+		{#if quizzesEnabled && currentQuiz}
 			<div class="mt-6 mb-2 px-4 sm:px-0">
 				<div class="max-w-7xl mx-auto">
 					<div class="rounded-xl border border-gray-200 bg-white p-5">

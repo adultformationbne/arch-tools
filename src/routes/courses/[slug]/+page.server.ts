@@ -302,7 +302,7 @@ export const load: PageServerLoad = async (event) => {
 	// Load quiz data for all sessions: quizzesBySession[sessionNumber] = { id, mode, title, question_count, latestAttempt }
 	const sessionIds = sessions.map(s => s.id);
 	let quizzesBySession: Record<number, any> = {};
-	if (sessionIds.length > 0) {
+	if (featureSettings?.quizzesEnabled !== false && sessionIds.length > 0) {
 		const { data: quizzes } = await supabaseAdmin
 			.from('courses_quizzes')
 			.select('id, session_id, mode, title, require_pass_to_advance, allow_retakes, max_attempts, pass_threshold')

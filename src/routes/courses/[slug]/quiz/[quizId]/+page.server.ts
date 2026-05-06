@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries } from '$lib/server/course-data.js';
+import { getCourseSettings } from '$lib/types/course-settings.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import type { PageServerLoad } from './$types';
 
@@ -11,6 +12,8 @@ export const load: PageServerLoad = async (event) => {
 	const { user } = await requireCourseAccess(event, courseSlug);
 
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const courseSettings = getCourseSettings(course?.settings);
+	if (courseSettings.features?.quizzesEnabled === false) throw error(404, 'Not found');
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 
 	// Fetch quiz with questions and options
