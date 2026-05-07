@@ -1016,30 +1016,30 @@ export type Database = {
       }
       courses_materials_hub_visibility: {
         Row: {
-          material_id: string
           hub_id: string
+          material_id: string
         }
         Insert: {
-          material_id: string
           hub_id: string
+          material_id: string
         }
         Update: {
-          material_id?: string
           hub_id?: string
+          material_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "courses_materials_hub_visibility_material_id_fkey"
-            columns: ["material_id"]
-            isOneToOne: false
-            referencedRelation: "courses_materials"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "courses_materials_hub_visibility_hub_id_fkey"
             columns: ["hub_id"]
             isOneToOne: false
             referencedRelation: "courses_hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_materials_hub_visibility_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "courses_materials"
             referencedColumns: ["id"]
           },
         ]
@@ -1298,6 +1298,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           order_index: number
           points: number
           question_text: string
@@ -1309,6 +1310,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           order_index?: number
           points?: number
           question_text: string
@@ -1320,6 +1322,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           order_index?: number
           points?: number
           question_text?: string
@@ -1341,6 +1344,7 @@ export type Database = {
       courses_quiz_responses: {
         Row: {
           attempt_id: string
+          correct_option_text: string | null
           created_at: string
           feedback: string | null
           id: string
@@ -1351,10 +1355,12 @@ export type Database = {
           question_id: string
           response_text: string | null
           selected_option_id: string | null
+          selected_option_text: string | null
           updated_at: string
         }
         Insert: {
           attempt_id: string
+          correct_option_text?: string | null
           created_at?: string
           feedback?: string | null
           id?: string
@@ -1365,10 +1371,12 @@ export type Database = {
           question_id: string
           response_text?: string | null
           selected_option_id?: string | null
+          selected_option_text?: string | null
           updated_at?: string
         }
         Update: {
           attempt_id?: string
+          correct_option_text?: string | null
           created_at?: string
           feedback?: string | null
           id?: string
@@ -1379,6 +1387,7 @@ export type Database = {
           question_id?: string
           response_text?: string | null
           selected_option_id?: string | null
+          selected_option_text?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1415,6 +1424,8 @@ export type Database = {
           max_attempts: number | null
           mode: string
           pass_threshold: number | null
+          published: boolean
+          quiz_feedback_snippets: Json
           require_pass_to_advance: boolean
           session_id: string
           show_correct_answers: boolean
@@ -1430,6 +1441,8 @@ export type Database = {
           max_attempts?: number | null
           mode: string
           pass_threshold?: number | null
+          published?: boolean
+          quiz_feedback_snippets?: Json
           require_pass_to_advance?: boolean
           session_id: string
           show_correct_answers?: boolean
@@ -1445,6 +1458,8 @@ export type Database = {
           max_attempts?: number | null
           mode?: string
           pass_threshold?: number | null
+          published?: boolean
+          quiz_feedback_snippets?: Json
           require_pass_to_advance?: boolean
           session_id?: string
           show_correct_answers?: boolean
@@ -1743,6 +1758,7 @@ export type Database = {
         Row: {
           active: boolean | null
           created_at: string | null
+          expires_at: string | null
           id: number
           image_url: string | null
           link_url: string | null
@@ -1753,6 +1769,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           created_at?: string | null
+          expires_at?: string | null
           id?: number
           image_url?: string | null
           link_url?: string | null
@@ -1763,6 +1780,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           created_at?: string | null
+          expires_at?: string | null
           id?: number
           image_url?: string | null
           link_url?: string | null
@@ -2499,7 +2517,6 @@ export type Database = {
           full_name: string | null
           id: string
           last_name: string | null
-          mailing_address: string | null
           modules: string[]
           organization: string | null
           parish_community: string | null
@@ -2525,7 +2542,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_name?: string | null
-          mailing_address?: string | null
           modules?: string[]
           organization?: string | null
           parish_community?: string | null
@@ -2551,7 +2567,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_name?: string | null
-          mailing_address?: string | null
           modules?: string[]
           organization?: string | null
           parish_community?: string | null
@@ -2622,6 +2637,15 @@ export type Database = {
       generate_contributor_access_token: { Args: never; Returns: string }
       generate_invite_code: { Args: never; Returns: string }
       generate_submission_token: { Args: never; Returns: string }
+      get_active_promo_tiles: {
+        Args: never
+        Returns: {
+          image_url: string
+          link_url: string
+          position: number
+          title: string
+        }[]
+      }
       get_book_by_chapters: {
         Args: { book_id_param?: string }
         Returns: {

@@ -10,7 +10,7 @@
 	} = $props();
 
 	function downloadTemplate() {
-		const template = `first_name,last_name,email,phone,address,parish_community,hub,ministry_role,cohort_role,notes
+		const template = `first_name,last_name,email,phone,mailing_address,parish_community,hub,ministry_role,cohort_role,notes
 Jane,Smith,jane.smith@example.com,+61 400 123 456,123 Church St Brisbane QLD 4000,St Mary's Cathedral,St Mary's Parish,Catechist,student,
 John,Doe,john.doe@example.com,+61 400 789 012,45 Faith Ave Sydney NSW 2000,Holy Spirit Parish,Downtown Hub,Parish Council Chair,coordinator,Experienced facilitator
 Mary,Johnson,mary.johnson@example.com,,,Our Lady of Mercy,St Mary's Parish,Reader,student,
@@ -121,7 +121,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 				'full_name': ['full_name', 'fullname', 'name', 'full name', 'student name', 'participant name'],
 				'email': ['email', 'e-mail', 'email address', 'e-mail address', 'mail'],
 				'phone': ['phone', 'phone number', 'telephone', 'mobile', 'cell', 'contact number'],
-				'address': ['address', 'mailing address', 'postal address', 'street address'],
+				'address': ['address', 'mailing_address', 'mailing address', 'postal address', 'street address'],
 				'parish_community': ['parish_community', 'parish', 'community', 'your parish', 'your parish or community', 'parish/community'],
 				'hub': ['hub', 'hub name', 'hub (name)', 'location', 'group', 'site'],
 				// ministry_role = descriptive role in parish (e.g., "Catechist", "Reader")
@@ -353,7 +353,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 				<Upload size={48} />
 				<h3>Upload CSV File</h3>
 				<p>Drag and drop or click to browse</p>
-				<p class="format-hint">Required: first_name, last_name, email, cohort_role (optional: phone, address, parish, hub, ministry_role, notes)</p>
+				<p class="format-hint">Required: first_name, last_name, email, cohort_role (optional: phone, mailing_address, parish, hub, ministry_role, notes)</p>
 			</label>
 		</div>
 
@@ -373,14 +373,14 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 			</h3>
 			<p class="help-text">
 				Copy data directly from Excel/Google Sheets and paste it here. First row should be headers:
-				<strong>first_name, last_name, email, cohort_role</strong> (optional: phone, address, parish_community, hub, ministry_role, notes)
+				<strong>first_name, last_name, email, cohort_role</strong> (optional: phone, mailing_address, parish_community, hub, ministry_role, notes)
 			</p>
 
 			<textarea
 				bind:value={pastedText}
 				placeholder="Paste from Excel/Sheets (tab-separated) or type CSV:
 
-first_name	last_name	email	phone	address	parish_community	hub	cohort_role
+first_name	last_name	email	phone	mailing_address	parish_community	hub	cohort_role
 John	Smith	john@example.com	+61 400 123 456	123 Church St Brisbane	St Mary's Cathedral	Downtown Hub	student
 Jane	Doe	jane@example.com			Holy Spirit Parish	St Mary's	coordinator"
 				rows="10"
