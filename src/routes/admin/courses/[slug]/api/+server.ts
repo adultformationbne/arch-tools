@@ -606,6 +606,17 @@ export const POST: RequestHandler = async (event) => {
 					throw error(403, 'Enrollment does not belong to this course');
 				}
 
+				// Fetch user_profile_id upfront if profile updates are needed
+				let userProfileId: string | null = null;
+				if (data.profileUpdates && Object.keys(data.profileUpdates).length > 0) {
+					const { data: enrollment } = await supabaseAdmin
+						.from('courses_enrollments')
+						.select('user_profile_id')
+						.eq('id', data.userId)
+						.single();
+					userProfileId = enrollment?.user_profile_id || null;
+				}
+
 				// Handle email update separately (requires auth sync)
 				if (data.updates?.email) {
 					const emailResult = await CourseMutations.updateEnrollmentEmail({
@@ -621,7 +632,7 @@ export const POST: RequestHandler = async (event) => {
 					delete data.updates.email;
 				}
 
-				// Process remaining updates (if any)
+				// Process enrollment updates (if any)
 				const { email, ...otherUpdates } = data.updates || {};
 				if (Object.keys(otherUpdates).length > 0) {
 					const result = await CourseMutations.updateEnrollment({
@@ -632,12 +643,26 @@ export const POST: RequestHandler = async (event) => {
 					if (result.error) {
 						throw error(400, result.error.message || 'Failed to update user');
 					}
+				}
 
-					return json({
-						success: true,
-						data: result.data,
-						message: 'User updated successfully'
-					});
+				// Process user_profile updates (phone, parish_community, parish_role, address)
+				if (userProfileId && data.profileUpdates) {
+					const allowedProfileFields = ['phone', 'parish_community', 'parish_role', 'address'];
+					const profileUpdate: Record<string, string | null> = {};
+					for (const field of allowedProfileFields) {
+						if (data.profileUpdates[field] !== undefined) {
+							profileUpdate[field] = data.profileUpdates[field]?.trim() || null;
+						}
+					}
+					if (Object.keys(profileUpdate).length > 0) {
+						const { error: profileError } = await supabaseAdmin
+							.from('user_profiles')
+							.update(profileUpdate)
+							.eq('id', userProfileId);
+						if (profileError) {
+							throw error(500, 'Failed to update profile details');
+						}
+					}
 				}
 
 				return json({

@@ -563,15 +563,21 @@
 						Close
 					</button>
 				{:else}
-					<!-- Active cohort: Archive button instead of Delete -->
-					<button
-						onclick={() => showArchiveConfirm = true}
-						class="px-3 py-2 text-amber-700 hover:bg-amber-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-						disabled={isBusy}
-					>
-						<Archive size={16} />
-						Archive Cohort
-					</button>
+					<!-- Active cohort: Archive button + delete hint -->
+					<div class="flex flex-col items-start gap-1.5">
+						<button
+							onclick={() => showArchiveConfirm = true}
+							class="px-3 py-2 text-amber-700 hover:bg-amber-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+							disabled={isBusy}
+						>
+							<Archive size={16} />
+							Archive Cohort
+						</button>
+						<p class="text-xs text-gray-400 pl-1 flex items-center gap-1">
+							<Trash2 size={11} />
+							To permanently delete, archive first
+						</p>
+					</div>
 
 					<div class="flex gap-3">
 						<button

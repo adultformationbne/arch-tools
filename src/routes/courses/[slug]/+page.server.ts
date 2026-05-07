@@ -168,7 +168,10 @@ export const load: PageServerLoad = async (event) => {
 				url: m.content,
 				viewable: true,
 				coordinatorOnly: m.min_role === 'coordinator',
-				isRestricted: m.min_role === 'coordinator' || (m.hub_visibility || []).length > 0
+				isRestricted: m.min_role === 'coordinator' || (m.hub_visibility || []).length > 0,
+				restrictionLabel: m.min_role === 'coordinator'
+					? 'Coordinator access only'
+					: 'Hub-restricted'
 			}));
 	};
 

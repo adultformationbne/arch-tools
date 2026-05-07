@@ -2,6 +2,7 @@
 	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap, Lock } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
+	import { tooltip } from '$lib/utils/tooltip.js';
 
 	let {
 		currentSession = $bindable(),
@@ -271,7 +272,9 @@
 											{material.title}
 										</span>
 										{#if material.isRestricted}
-											<Lock size="11" class="{index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											<span use:tooltip={material.restrictionLabel}>
+												<Lock size="11" class="{index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											</span>
 										{/if}
 									</a>
 								{/each}
@@ -469,7 +472,9 @@
 											{material.title}
 										</span>
 										{#if material.isRestricted}
-											<Lock size="13" class="ml-auto {index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											<span use:tooltip={material.restrictionLabel} class="ml-auto">
+												<Lock size="13" class="{index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											</span>
 										{/if}
 									</a>
 								{/each}
@@ -667,7 +672,9 @@
 											{material.title}
 										</span>
 										{#if material.isRestricted}
-											<Lock size="13" class="ml-auto {index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											<span use:tooltip={material.restrictionLabel} class="ml-auto">
+												<Lock size="13" class="{index === 0 ? 'text-white/70' : 'text-gray-400'}" />
+											</span>
 										{/if}
 									</a>
 								{/each}

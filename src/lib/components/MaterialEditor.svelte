@@ -8,6 +8,7 @@
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { normalizeUrl } from '$lib/utils/form-validator.js';
 	import { getDndzone, noopDndzone } from '$lib/utils/resilient-dnd.js';
+	import { tooltip } from '$lib/utils/tooltip.js';
 	import { flip } from 'svelte/animate';
 
 	// Dynamic DnD loading - falls back to static list if unavailable
@@ -479,7 +480,13 @@
 								{getTypeLabel(material.type)}
 							</span>
 							{#if material.minRole === 'coordinator' || material.hubIds?.length > 0}
-								<Lock size="13" class="text-gray-400" />
+								{@const label = [
+									material.minRole === 'coordinator' ? 'Coordinator only' : '',
+									material.hubIds?.length > 0 ? hubs.filter(h => material.hubIds.includes(h.id)).map(h => h.name).join(', ') || `${material.hubIds.length} hub${material.hubIds.length !== 1 ? 's' : ''}` : ''
+								].filter(Boolean).join(' · ')}
+								<span use:tooltip={label}>
+									<Lock size="13" class="text-gray-400" />
+								</span>
 							{/if}
 						</div>
 					</div>

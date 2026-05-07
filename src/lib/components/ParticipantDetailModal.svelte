@@ -24,7 +24,12 @@
 		status: 'active',
 		role: 'student',
 		hub_id: '',
-		current_session: 0
+		current_session: 0,
+		phone: '',
+		parish_community: '',
+		parish_role: '',
+		address: '',
+		notes: ''
 	});
 
 	let isLoading = $state(false);
@@ -109,7 +114,12 @@
 					status: np.status,
 					role: np.role,
 					hub_id: np.hub_id || '',
-					current_session: np.current_session
+					current_session: np.current_session,
+					phone: np.phone || '',
+					parish_community: np.parish_community || '',
+					parish_role: np.parish_role || '',
+					address: np.address || '',
+					notes: np.notes || ''
 				};
 				hasChanges = false;
 				// Load history data (only for cohort dashboard view)
@@ -162,7 +172,12 @@
 			formData.status !== np.status ||
 			formData.role !== np.role ||
 			formData.hub_id !== (np.hub_id || '') ||
-			formData.current_session !== np.current_session;
+			formData.current_session !== np.current_session ||
+			formData.phone !== (np.phone || '') ||
+			formData.parish_community !== (np.parish_community || '') ||
+			formData.parish_role !== (np.parish_role || '') ||
+			formData.address !== (np.address || '') ||
+			formData.notes !== (np.notes || '');
 	}
 
 	async function handleSave() {
@@ -173,27 +188,22 @@
 
 		try {
 			const updates = {};
+			const profileUpdates = {};
 
-			if (formData.full_name !== np.full_name) {
-				updates.full_name = formData.full_name;
-			}
-			if (formData.email !== np.email) {
-				updates.email = formData.email;
-			}
-			if (formData.status !== np.status) {
-				updates.status = formData.status;
-			}
-			if (formData.role !== np.role) {
-				updates.role = formData.role;
-			}
-			if (formData.hub_id !== (np.hub_id || '')) {
-				updates.hub_id = formData.hub_id || null;
-			}
-			if (formData.current_session !== np.current_session) {
-				updates.current_session = formData.current_session;
-			}
+			if (formData.full_name !== np.full_name) updates.full_name = formData.full_name;
+			if (formData.email !== np.email) updates.email = formData.email;
+			if (formData.status !== np.status) updates.status = formData.status;
+			if (formData.role !== np.role) updates.role = formData.role;
+			if (formData.hub_id !== (np.hub_id || '')) updates.hub_id = formData.hub_id || null;
+			if (formData.current_session !== np.current_session) updates.current_session = formData.current_session;
+			if (formData.notes !== (np.notes || '')) updates.notes = formData.notes;
 
-			if (Object.keys(updates).length === 0) {
+			if (formData.phone !== (np.phone || '')) profileUpdates.phone = formData.phone;
+			if (formData.parish_community !== (np.parish_community || '')) profileUpdates.parish_community = formData.parish_community;
+			if (formData.parish_role !== (np.parish_role || '')) profileUpdates.parish_role = formData.parish_role;
+			if (formData.address !== (np.address || '')) profileUpdates.address = formData.address;
+
+			if (Object.keys(updates).length === 0 && Object.keys(profileUpdates).length === 0) {
 				toastSuccess('No changes to save');
 				return;
 			}
@@ -204,7 +214,8 @@
 				body: JSON.stringify({
 					action: 'update_enrollment',
 					userId: np.id,
-					updates
+					updates,
+					profileUpdates
 				})
 			});
 
@@ -478,48 +489,69 @@
 					</div>
 				</div>
 
-				<!-- Contact & Parish Information (read-only from user_profile) -->
-				{#if normalizedParticipant?.phone || normalizedParticipant?.parish_community || normalizedParticipant?.parish_role || normalizedParticipant?.address}
-					<div class="mt-6 pt-4 border-t border-gray-200">
-						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Contact & Parish Info</h3>
-						<div class="grid grid-cols-2 gap-4">
-							{#if normalizedParticipant?.phone}
-								<div>
-									<p class="text-xs text-gray-500 mb-1">Phone</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant?.phone}</p>
-								</div>
-							{/if}
-							{#if normalizedParticipant?.parish_community}
-								<div>
-									<p class="text-xs text-gray-500 mb-1">Parish / Community</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant?.parish_community}</p>
-								</div>
-							{/if}
-							{#if normalizedParticipant?.parish_role}
-								<div>
-									<p class="text-xs text-gray-500 mb-1">Parish Role</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant?.parish_role}</p>
-								</div>
-							{/if}
-							{#if normalizedParticipant?.address}
-								<div class="col-span-2">
-									<p class="text-xs text-gray-500 mb-1">Address (for certificates)</p>
-									<p class="text-sm text-gray-900">{normalizedParticipant?.address}</p>
-								</div>
-							{/if}
+				<!-- Contact & Parish Information (editable) -->
+				<div class="mt-6 pt-4 border-t border-gray-200">
+					<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Contact & Parish Info</h3>
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="participant-phone" class="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+							<input
+								id="participant-phone"
+								type="tel"
+								bind:value={formData.phone}
+								oninput={checkChanges}
+								placeholder="e.g. +61 400 123 456"
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+							/>
+						</div>
+						<div>
+							<label for="participant-parish" class="block text-xs font-medium text-gray-500 mb-1">Parish / Community</label>
+							<input
+								id="participant-parish"
+								type="text"
+								bind:value={formData.parish_community}
+								oninput={checkChanges}
+								placeholder="e.g. St Mary's Cathedral"
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+							/>
+						</div>
+						<div>
+							<label for="participant-parish-role" class="block text-xs font-medium text-gray-500 mb-1">Parish Role</label>
+							<input
+								id="participant-parish-role"
+								type="text"
+								bind:value={formData.parish_role}
+								oninput={checkChanges}
+								placeholder="e.g. Catechist, Reader"
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+							/>
+						</div>
+						<div>
+							<label for="participant-address" class="block text-xs font-medium text-gray-500 mb-1">Mailing Address (for certificates)</label>
+							<input
+								id="participant-address"
+								type="text"
+								bind:value={formData.address}
+								oninput={checkChanges}
+								placeholder="e.g. 123 Church St, Brisbane QLD 4000"
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+							/>
 						</div>
 					</div>
-				{/if}
+				</div>
 
-				<!-- Notes (enrollment-specific) -->
-				{#if normalizedParticipant?.notes}
-					<div class="mt-6 pt-4 border-t border-gray-200">
-						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Admin Notes</h3>
-						<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-							<p class="text-sm text-gray-900 whitespace-pre-wrap">{normalizedParticipant?.notes}</p>
-						</div>
-					</div>
-				{/if}
+				<!-- Admin Notes (editable, enrollment-specific) -->
+				<div class="mt-6 pt-4 border-t border-gray-200">
+					<label for="participant-notes" class="block text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Admin Notes</label>
+					<textarea
+						id="participant-notes"
+						bind:value={formData.notes}
+						oninput={checkChanges}
+						rows="3"
+						placeholder="Internal notes visible only to admins..."
+						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm resize-none"
+					></textarea>
+				</div>
 
 				<!-- Progress Stats -->
 				{#if normalizedParticipant?.progress}

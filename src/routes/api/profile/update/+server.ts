@@ -23,10 +23,18 @@ export const POST: RequestHandler = async (event) => {
 		throw error(404, 'Profile not found');
 	}
 
-	// Update user_profiles.full_name — DB trigger syncs to all enrollments
+	const update: Record<string, string | null> = {
+		full_name: name
+	};
+
+	if (body.phone !== undefined) update.phone = body.phone?.trim() || null;
+	if (body.parish_community !== undefined) update.parish_community = body.parish_community?.trim() || null;
+	if (body.parish_role !== undefined) update.parish_role = body.parish_role?.trim() || null;
+	if (body.address !== undefined) update.address = body.address?.trim() || null;
+
 	const { error: updateError } = await supabaseAdmin
 		.from('user_profiles')
-		.update({ full_name: name })
+		.update(update)
 		.eq('id', profile.id);
 
 	if (updateError) {

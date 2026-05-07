@@ -18,7 +18,8 @@ import {
     MessageCircle,
     Link,
     Tag,
-    Zap
+    Zap,
+    Archive
 } from '$lib/icons';
 
 let {
@@ -29,6 +30,7 @@ let {
     archivedCohorts = [],
     selectedCohortId = null,
     onSelectCohort,
+    onArchiveCohort = () => {},
     modules = [],
     enrollmentRole = null,
     isCourseAdmin = false,
@@ -243,7 +245,7 @@ function handleMouseEnter(href) {
 				</div>
 				<ul class="nav-list cohort-list">
 					{#each displayedCohorts as cohort}
-						<li>
+						<li class="cohort-list-item">
 							<button
 								onclick={() => onSelectCohort?.(cohort.id)}
 								class="nav-item cohort-item"
@@ -254,6 +256,13 @@ function handleMouseEnter(href) {
 									<span class="cohort-name">{cohort.name}</span>
 									<span class="cohort-session">Session {cohort.current_session}</span>
 								</div>
+							</button>
+							<button
+								class="cohort-archive-btn"
+								onclick={(e) => { e.stopPropagation(); onArchiveCohort(cohort.id, cohort.name); }}
+								title="Archive cohort"
+							>
+								<Archive size={13} />
 							</button>
 						</li>
 					{/each}
@@ -718,5 +727,40 @@ function handleMouseEnter(href) {
 
 	.archived-item.active {
 		opacity: 1;
+	}
+
+	.cohort-list-item {
+		display: flex;
+		align-items: center;
+		padding-right: 6px;
+		gap: 2px;
+	}
+
+	.cohort-list-item .cohort-item {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.cohort-archive-btn {
+		opacity: 0;
+		display: flex;
+		align-items: center;
+		padding: 4px;
+		border: none;
+		background: transparent;
+		color: rgba(255, 255, 255, 0.5);
+		border-radius: 4px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		flex-shrink: 0;
+	}
+
+	.cohort-list-item:hover .cohort-archive-btn {
+		opacity: 1;
+	}
+
+	.cohort-archive-btn:hover {
+		background: rgba(251, 191, 36, 0.15);
+		color: rgba(251, 191, 36, 0.9);
 	}
 </style>

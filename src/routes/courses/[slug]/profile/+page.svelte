@@ -1,5 +1,5 @@
 <script>
-	import { User, Mail, Lock, Shield, Trash2, Save, Edit3 } from '$lib/icons';
+	import { User, Mail, Lock, Shield, Trash2, Save, Edit3, Phone, MapPin, Building } from '$lib/icons';
 	import { toastWarning, toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
 
@@ -11,6 +11,10 @@
 	let userProfile = $state({
 		name: '',
 		email: '',
+		phone: '',
+		parishCommunity: '',
+		parishRole: '',
+		address: '',
 		cohort: '',
 		hub: '',
 		hubLocation: '',
@@ -25,6 +29,10 @@
 			userProfile = {
 				name: profileData.name,
 				email: profileData.email,
+				phone: profileData.phone || '',
+				parishCommunity: profileData.parishCommunity || '',
+				parishRole: profileData.parishRole || '',
+				address: profileData.address || '',
 				cohort: `${profileData.moduleName} - ${profileData.cohortName}`,
 				hub: profileData.hubName,
 				hubLocation: profileData.hubLocation,
@@ -42,12 +50,20 @@
 
 	// Form data - synced from userProfile via $effect
 	let profileForm = $state({
-		name: ''
+		name: '',
+		phone: '',
+		parishCommunity: '',
+		parishRole: '',
+		address: ''
 	});
 
 	// Sync form data when userProfile updates
 	$effect(() => {
 		profileForm.name = userProfile.name;
+		profileForm.phone = userProfile.phone;
+		profileForm.parishCommunity = userProfile.parishCommunity;
+		profileForm.parishRole = userProfile.parishRole;
+		profileForm.address = userProfile.address;
 	});
 
 	let passwordForm = $state({
@@ -59,22 +75,35 @@
 	// Form handlers
 	const startEditingProfile = () => {
 		profileForm.name = userProfile.name;
+		profileForm.phone = userProfile.phone;
+		profileForm.parishCommunity = userProfile.parishCommunity;
+		profileForm.parishRole = userProfile.parishRole;
+		profileForm.address = userProfile.address;
 		isEditingProfile = true;
 	};
 
 	const cancelEditingProfile = () => {
 		isEditingProfile = false;
-		profileForm.name = userProfile.name;
 	};
 
 	const saveProfile = async () => {
 		try {
 			await apiPost(
 				'/api/profile/update',
-				{ name: profileForm.name },
+				{
+					name: profileForm.name,
+					phone: profileForm.phone,
+					parish_community: profileForm.parishCommunity,
+					parish_role: profileForm.parishRole,
+					address: profileForm.address
+				},
 				{ successMessage: 'Profile updated successfully' }
 			);
 			userProfile.name = profileForm.name;
+			userProfile.phone = profileForm.phone;
+			userProfile.parishCommunity = profileForm.parishCommunity;
+			userProfile.parishRole = profileForm.parishRole;
+			userProfile.address = profileForm.address;
 			isEditingProfile = false;
 		} catch (error) {
 			toastError('Failed to update profile', 'Error');
@@ -167,22 +196,71 @@
 			{#if isEditingProfile}
 				<!-- Edit Mode -->
 				<div class="space-y-6">
-				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-name">Full Name</label>
-					<input
-						id="profile-name"
-						type="text"
-						bind:value={profileForm.name}
-						class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
-					/>
-				</div>
-				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-					<div class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50">
-						{userProfile.email}
+					<div class="grid md:grid-cols-2 gap-6">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-name">Full Name</label>
+							<input
+								id="profile-name"
+								type="text"
+								bind:value={profileForm.name}
+								class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
+							/>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+							<div class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50">
+								{userProfile.email}
+							</div>
+							<p class="mt-1.5 text-xs text-gray-500">Contact your course administrator to update your email address</p>
+						</div>
 					</div>
-					<p class="mt-1.5 text-xs text-gray-500">Contact your course administrator to update your email address</p>
+
+					<div class="grid md:grid-cols-2 gap-6">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-phone">Phone Number</label>
+							<input
+								id="profile-phone"
+								type="tel"
+								bind:value={profileForm.phone}
+								placeholder="e.g. +61 400 123 456"
+								class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
+							/>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-parish">Parish / Community</label>
+							<input
+								id="profile-parish"
+								type="text"
+								bind:value={profileForm.parishCommunity}
+								placeholder="e.g. St Mary's Cathedral"
+								class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
+							/>
+						</div>
 					</div>
+
+					<div class="grid md:grid-cols-2 gap-6">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-parish-role">Parish Role</label>
+							<input
+								id="profile-parish-role"
+								type="text"
+								bind:value={profileForm.parishRole}
+								placeholder="e.g. Catechist, Reader, Parish Council"
+								class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
+							/>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="profile-address">Mailing Address <span class="font-normal text-gray-400">(for certificates)</span></label>
+							<input
+								id="profile-address"
+								type="text"
+								bind:value={profileForm.address}
+								placeholder="e.g. 123 Church St, Brisbane QLD 4000"
+								class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-opacity-20 text-gray-900 bg-white"
+							/>
+						</div>
+					</div>
+
 					<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
 						<button
 							onclick={saveProfile}
@@ -221,6 +299,55 @@
 							<p class="text-lg font-semibold text-gray-800">{userProfile.email}</p>
 						</div>
 					</div>
+					{#if userProfile.phone}
+						<div class="flex items-center gap-4">
+							<div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100">
+								<Phone size="20" class="text-gray-600" />
+							</div>
+							<div>
+								<p class="text-sm text-gray-600">Phone</p>
+								<p class="text-lg font-semibold text-gray-800">{userProfile.phone}</p>
+							</div>
+						</div>
+					{/if}
+					{#if userProfile.parishCommunity}
+						<div class="flex items-center gap-4">
+							<div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100">
+								<Building size="20" class="text-gray-600" />
+							</div>
+							<div>
+								<p class="text-sm text-gray-600">Parish / Community</p>
+								<p class="text-lg font-semibold text-gray-800">{userProfile.parishCommunity}</p>
+							</div>
+						</div>
+					{/if}
+					{#if userProfile.parishRole}
+						<div class="flex items-center gap-4">
+							<div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100">
+								<Shield size="20" class="text-gray-600" />
+							</div>
+							<div>
+								<p class="text-sm text-gray-600">Parish Role</p>
+								<p class="text-lg font-semibold text-gray-800">{userProfile.parishRole}</p>
+							</div>
+						</div>
+					{/if}
+					{#if userProfile.address}
+						<div class="flex items-center gap-4 md:col-span-2">
+							<div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100">
+								<MapPin size="20" class="text-gray-600" />
+							</div>
+							<div>
+								<p class="text-sm text-gray-600">Mailing Address (for certificates)</p>
+								<p class="text-lg font-semibold text-gray-800">{userProfile.address}</p>
+							</div>
+						</div>
+					{/if}
+					{#if !userProfile.phone && !userProfile.parishCommunity && !userProfile.parishRole && !userProfile.address}
+						<div class="md:col-span-2 p-4 bg-gray-50 rounded-xl text-sm text-gray-500">
+							Click Edit to add your phone number, parish, and mailing address for graduation certificates.
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>

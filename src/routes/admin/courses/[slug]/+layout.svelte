@@ -5,6 +5,7 @@
 	import CourseAdminSidebar from '$lib/components/CourseAdminSidebar.svelte';
 	import CourseAdminMobileNav from '$lib/components/CourseAdminMobileNav.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
+	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let { data, children } = $props();
 
@@ -56,6 +57,9 @@
 	// Cohort wizard modal state
 	let showCohortWizard = $state(false);
 
+	let showArchiveConfirm = $state(false);
+	let cohortToArchive = $state(null); // { id, name }
+
 	// Extract cohort selection from URL - works on all admin pages
 	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
 
@@ -84,6 +88,29 @@
 		const newUrl = new URL($page.url);
 		newUrl.searchParams.set('cohort', cohortId);
 		goto(newUrl.toString());
+	}
+
+	function handleArchiveCohort(cohortId, cohortName) {
+		cohortToArchive = { id: cohortId, name: cohortName };
+		showArchiveConfirm = true;
+	}
+
+	async function confirmArchiveCohort() {
+		if (!cohortToArchive) return;
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'archive_cohort', cohortId: cohortToArchive.id })
+			});
+			const result = await response.json();
+			if (!result.success) throw new Error(result.message);
+			showArchiveConfirm = false;
+			cohortToArchive = null;
+			await invalidateAll();
+		} catch (err) {
+			console.error('Archive failed:', err);
+		}
 	}
 
 	function handleSettingsClick() {
@@ -155,6 +182,7 @@
 			selectedCohortId={selectedCohortId}
 			onNewCohort={handleNewCohort}
 			onSelectCohort={handleSelectCohort}
+			onArchiveCohort={handleArchiveCohort}
 			onSettingsClick={handleSettingsClick}
 		/>
 	</div>
@@ -173,6 +201,19 @@
 		onComplete={handleWizardComplete}
 	/>
 </div>
+
+<!-- Archive cohort confirmation -->
+<ConfirmationModal
+	show={showArchiveConfirm}
+	title="Archive Cohort"
+	confirmText="Archive"
+	cancelText="Cancel"
+	onConfirm={confirmArchiveCohort}
+	onCancel={() => { showArchiveConfirm = false; cohortToArchive = null; }}
+>
+	<p>Archive <strong>{cohortToArchive?.name}</strong>?</p>
+	<p class="text-sm text-gray-500 mt-2">The cohort will be hidden from the main list but all data is preserved. You can restore or permanently delete it from Cohort Settings.</p>
+</ConfirmationModal>
 
 <style>
 	.admin-layout {
