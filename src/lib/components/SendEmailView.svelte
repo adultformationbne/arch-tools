@@ -128,7 +128,7 @@
 	// Get selected template
 	const selectedTemplate = $derived(allTemplates.find(t => t.id === selectedTemplateId));
 	const selectedCohort = $derived(cohorts.find(c => c.id === selectedCohortId));
-	const maxSession = $derived(selectedCohort?.current_session || 1);
+	const maxSession = $derived(selectedCohort?.current_session ?? 0);
 
 	// Filter hubs to only show those with enrollments in the selected cohort
 	const filteredHubs = $derived.by(() => {
@@ -563,8 +563,8 @@
 								<div class="relative">
 									<select bind:value={selectedSessionNumber} onchange={handleSubFilterChange} class="email-select pl-3 pr-8 py-2 border border-gray-300 rounded-lg bg-white appearance-none text-sm">
 										<option value="">Session...</option>
-										{#each Array(maxSession) as _, i}
-											<option value={i + 1}>Session {i + 1}</option>
+										{#each Array.from({ length: maxSession + 1 }, (_, i) => i) as session}
+											<option value={session}>Session {session}{session === 0 ? ' (Welcome)' : ''}</option>
 										{/each}
 									</select>
 									<ChevronDown size={14} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />

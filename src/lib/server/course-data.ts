@@ -1429,7 +1429,7 @@ export const CourseMutations = {
 			.eq('id', cohortId)
 			.single();
 
-		const cohortCurrentSession = cohort?.current_session || 1;
+		const cohortCurrentSession = cohort?.current_session ?? 0;
 
 		// Create enrollment
 		return supabaseAdmin
@@ -1921,7 +1921,7 @@ export const CourseMutations = {
 			.single();
 
 		const courseId = cohort?.courses_modules?.course_id;
-		const cohortCurrentSession = cohort?.current_session || 1;
+		const cohortCurrentSession = cohort?.current_session ?? 0;
 		if (!courseId) {
 			return {
 				data: null,

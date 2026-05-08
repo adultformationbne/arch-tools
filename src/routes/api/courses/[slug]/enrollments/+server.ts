@@ -159,7 +159,7 @@ export const GET: RequestHandler = async (event) => {
 					// Filter to students who are missing at least one reflection
 					// that they should have completed (session_number <= their current_session)
 					filteredEnrollments = filteredEnrollments.filter(enrollment => {
-						const studentCurrentSession = enrollment.current_session || 1;
+						const studentCurrentSession = enrollment.current_session ?? 0;
 						const submittedQuestions = submissionsByEnrollment.get(enrollment.id) || new Set();
 
 						// Check each session with a reflection

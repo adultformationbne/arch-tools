@@ -103,7 +103,7 @@
 	$effect(() => {
 		if (show && cohort) {
 			// Default to the cohort's current session (catch people up), not current+1
-			selectedSession = cohort.current_session || 1;
+			selectedSession = cohort.current_session ?? 0;
 
 			// If initialSelectedIds provided, pre-select eligible students from that list
 			if (initialSelectedIds && initialSelectedIds.length > 0) {
@@ -134,8 +134,8 @@
 						class="session-select"
 						disabled={isProcessing}
 					>
-						{#each Array.from({ length: totalSessions }, (_, i) => i + 1) as session}
-							<option value={session}>Session {session}</option>
+						{#each Array.from({ length: totalSessions + 1 }, (_, i) => i) as session}
+							<option value={session}>Session {session}{session === 0 ? ' (Welcome)' : ''}</option>
 						{/each}
 					</select>
 				</div>

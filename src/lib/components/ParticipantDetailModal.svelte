@@ -69,7 +69,12 @@
 				attendanceCount: participant.attendanceCount,
 				reflectionStatus: participant.reflectionStatus,
 				isBehind: participant.isBehind,
-				cohort_id: participant.cohort_id
+				cohort_id: participant.cohort_id,
+				phone: participant.user_profile?.phone || '',
+				parish_community: participant.user_profile?.parish_community || '',
+				parish_role: participant.user_profile?.parish_role || '',
+				address: participant.user_profile?.address || '',
+				notes: participant.notes || ''
 			};
 		}
 

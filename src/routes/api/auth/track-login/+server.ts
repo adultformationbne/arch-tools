@@ -43,8 +43,8 @@ export const POST: RequestHandler = async (event) => {
 			// This ensures users who sign up after cohort has advanced start at the right session
 			// while preserving cases where admin manually set a lower session for remediation
 			const isFirstLogin = (enrollment.login_count || 0) === 0;
-			const cohortSession = enrollment.cohort?.current_session || 1;
-			const userSession = enrollment.current_session || 1;
+			const cohortSession = enrollment.cohort?.current_session ?? 0;
+			const userSession = enrollment.current_session ?? 0;
 
 			// Only update session if first login AND user is behind cohort
 			const shouldSyncSession = isFirstLogin && userSession < cohortSession;

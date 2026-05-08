@@ -38,7 +38,7 @@
 			{#if statusInfo.status === 'completed'}
 				{formatDate(cohort.end_date || cohort.endDate)}
 			{:else if statusInfo.status === 'active'}
-				Session {cohort.current_session || cohort.currentSession || 1}/{getTotalSessions(cohort)}
+				Session {cohort.current_session ?? cohort.currentSession ?? 0}/{getTotalSessions(cohort)}
 			{:else}
 				{formatDate(cohort.start_date || cohort.startDate)}
 			{/if}
