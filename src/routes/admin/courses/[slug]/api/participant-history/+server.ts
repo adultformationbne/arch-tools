@@ -3,21 +3,21 @@ import { requireCourseAdmin } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
 import type { RequestHandler } from './$types';
 
-/**
- * GET handler for fetching participant history (attendance and reflections)
- */
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 
-	// Require admin authentication
 	await requireCourseAdmin(event, courseSlug);
 
 	const { url } = event;
 	const type = url.searchParams.get('type');
 	const cohortId = url.searchParams.get('cohort_id');
 
-	if (!type || !cohortId) {
-		throw error(400, 'type and cohort_id are required');
+	if (!type) {
+		throw error(400, 'type is required');
+	}
+
+	if (type !== 'other_courses' && !cohortId) {
+		throw error(400, 'cohort_id is required');
 	}
 
 	try {
@@ -27,7 +27,6 @@ export const GET: RequestHandler = async (event) => {
 				throw error(400, 'enrollment_id is required for attendance');
 			}
 
-			// Get attendance records with who marked them
 			const { data, error: dbError } = await supabaseAdmin
 				.from('courses_attendance')
 				.select(`
@@ -46,7 +45,6 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			// Get names for marked_by users
 			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter(Boolean))];
 			let markedByNames: Record<string, string> = {};
 
@@ -61,7 +59,6 @@ export const GET: RequestHandler = async (event) => {
 				}
 			}
 
-			// Add marked_by_name to records
 			const enrichedData = (data || []).map(record => ({
 				...record,
 				marked_by_name: record.marked_by ? markedByNames[record.marked_by] || 'Unknown' : null
@@ -76,7 +73,6 @@ export const GET: RequestHandler = async (event) => {
 				throw error(400, 'enrollment_id is required for reflections');
 			}
 
-			// Get reflection responses with session info
 			const { data, error: dbError } = await supabaseAdmin
 				.from('courses_reflection_responses')
 				.select(`
@@ -101,7 +97,6 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			// Get names for marked_by users
 			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter(Boolean))];
 			let markedByNames: Record<string, string> = {};
 
@@ -116,7 +111,6 @@ export const GET: RequestHandler = async (event) => {
 				}
 			}
 
-			// Flatten and enrich the data - compute word count from response_text
 			const enrichedData = (data || []).map(record => ({
 				id: record.id,
 				status: record.status,
@@ -129,13 +123,70 @@ export const GET: RequestHandler = async (event) => {
 				session_number: record.question?.session?.session_number || null
 			}));
 
-			// Sort by session number
 			enrichedData.sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
 
 			return json({ success: true, data: enrichedData });
 		}
 
-		throw error(400, 'Invalid type. Must be "attendance" or "reflections"');
+		if (type === 'other_courses') {
+			const userProfileId = url.searchParams.get('user_profile_id');
+			const enrollmentId = url.searchParams.get('enrollment_id');
+
+			if (!userProfileId) {
+				throw error(400, 'user_profile_id is required for other_courses');
+			}
+
+			let query = supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					id,
+					status,
+					current_session,
+					last_login_at,
+					login_count,
+					welcome_email_sent_at,
+					created_at,
+					cohort:cohort_id (
+						name,
+						module:module_id (
+							name,
+							course:course_id (
+								name,
+								slug
+							)
+						)
+					)
+				`)
+				.eq('user_profile_id', userProfileId)
+				.order('created_at', { ascending: false });
+
+			if (enrollmentId) {
+				query = query.neq('id', enrollmentId);
+			}
+
+			const { data, error: dbError } = await query;
+
+			if (dbError) {
+				throw error(500, dbError.message);
+			}
+
+			const enrichedData = (data || []).map(record => ({
+				course_name: (record.cohort as any)?.module?.course?.name || 'Unknown Course',
+				course_slug: (record.cohort as any)?.module?.course?.slug || '',
+				module_name: (record.cohort as any)?.module?.name || '',
+				cohort_name: (record.cohort as any)?.name || '',
+				status: record.status,
+				current_session: record.current_session,
+				last_login_at: record.last_login_at,
+				login_count: record.login_count || 0,
+				welcome_email_sent_at: record.welcome_email_sent_at,
+				enrolled_at: record.created_at
+			}));
+
+			return json({ success: true, data: enrichedData });
+		}
+
+		throw error(400, 'Invalid type. Must be "attendance", "reflections", or "other_courses"');
 	} catch (err: any) {
 		console.error('Participant history API error:', err);
 

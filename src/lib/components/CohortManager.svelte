@@ -8,6 +8,7 @@
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
+	import { formatRelativeTime } from '$lib/utils/dgr-helpers';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
 	let {
@@ -113,7 +114,7 @@
 				return {
 					...user,
 					// Mark if they can be selected for invitations (pending status only)
-					canInvite: user.status === 'pending',
+					canInvite: !user.welcome_email_sent_at,
 					// Mark if they can be edited/deleted (not yet active)
 					canEdit: !user.auth_user_id,
 					// Add attendance data (use enrollment ID, not auth_user_id)
@@ -428,6 +429,20 @@
 		}
 	});
 
+	function getActivityInfo(student) {
+		if (!student.welcome_email_sent_at) {
+			return { label: 'Not invited', level: 'none' };
+		}
+		if (!student.last_login_at || student.login_count === 0) {
+			return { label: 'Invited · not signed in', level: 'invited' };
+		}
+		const diffDays = (Date.now() - new Date(student.last_login_at).getTime()) / (1000 * 60 * 60 * 24);
+		const time = formatRelativeTime(student.last_login_at);
+		if (diffDays <= 7) return { label: time, level: 'active' };
+		if (diffDays <= 30) return { label: time, level: 'recent' };
+		return { label: time, level: 'stale' };
+	}
+
 	// Helper function for reflection status display
 	function getReflectionStatusDisplay(student) {
 		if (!student.reflectionStatus) return '';
@@ -528,11 +543,13 @@
 							<th>Current Session</th>
 							<th>Attendance</th>
 							<th>Reflection Status</th>
+							<th>Activity</th>
 							<th class="text-right w-12">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each students as student, i}
+							{@const activity = getActivityInfo(student)}
 							<tr class:newly-added={recentlyAddedIds.has(student.id)}>
 								<td>
 									<input
@@ -559,6 +576,9 @@
 													<Home size={12} />
 													<span>Hub Coordinator</span>
 												</div>
+											{/if}
+											{#if student.status === 'pending'}
+												<div class="no-account-badge">No account yet</div>
 											{/if}
 										</div>
 									</div>
@@ -628,6 +648,11 @@
 										<span class="text-gray-400">—</span>
 									{/if}
 								</td>
+								<td>
+									<span class="activity-label activity-{activity.level}" title={student.last_login_at ? `Last login: ${student.last_login_at}` : ''}>
+										{activity.label}
+									</span>
+								</td>
 								<td class="actions-dropdown">
 									<button
 										type="button"
@@ -642,7 +667,7 @@
 							<!-- Editing row (shown below the normal row when editing) -->
 							{#if editingStudent && editingStudent.id === student.id}
 								<tr class="editing-row">
-									<td colspan="7">
+									<td colspan="8">
 										<div class="edit-form">
 											<div class="form-row">
 												<label>
@@ -1050,6 +1075,40 @@
 		0% { background-color: #fef9c3; }
 		70% { background-color: #fefce8; }
 		100% { background-color: transparent; }
+	}
+
+	.no-account-badge {
+		font-size: 0.7rem;
+		color: #9CA3AF;
+		font-weight: 400;
+		font-style: italic;
+	}
+
+	.activity-label {
+		font-size: 0.8rem;
+		font-weight: 500;
+	}
+
+	.activity-none {
+		color: #9CA3AF;
+		font-style: italic;
+		font-weight: 400;
+	}
+
+	.activity-invited {
+		color: #D97706;
+	}
+
+	.activity-active {
+		color: #059669;
+	}
+
+	.activity-recent {
+		color: #6B7280;
+	}
+
+	.activity-stale {
+		color: #D97706;
 	}
 
 	.warning-icon {

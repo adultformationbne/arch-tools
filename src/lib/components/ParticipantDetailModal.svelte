@@ -42,6 +42,8 @@
 	let loadingHistory = $state(false);
 	let showAttendance = $state(true);
 	let showReflections = $state(true);
+	let otherCourses = $state([]);
+	let showPlatformHistory = $state(true);
 
 	// Normalize participant data from different sources
 	const normalizedParticipant = $derived.by(() => {
@@ -140,10 +142,14 @@
 		loadingHistory = true;
 
 		try {
-			const [attendanceRes, reflectionsRes] = await Promise.all([
+			const fetches = [
 				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=attendance&enrollment_id=${np.id}&cohort_id=${cohortId}`),
 				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`)
-			]);
+			];
+			if (np.user_profile_id) {
+				fetches.push(fetch(`/admin/courses/${courseSlug}/api/participant-history?type=other_courses&user_profile_id=${np.user_profile_id}&enrollment_id=${np.id}`));
+			}
+			const [attendanceRes, reflectionsRes, otherCoursesRes] = await Promise.all(fetches);
 
 			if (attendanceRes.ok) {
 				const data = await attendanceRes.json();
@@ -153,6 +159,11 @@
 			if (reflectionsRes.ok) {
 				const data = await reflectionsRes.json();
 				reflectionHistory = data.success ? data.data : [];
+			}
+
+			if (otherCoursesRes?.ok) {
+				const data = await otherCoursesRes.json();
+				otherCourses = data.success ? data.data : [];
 			}
 		} catch (err) {
 			console.error('Error loading participant history:', err);
@@ -266,6 +277,18 @@
 			hour: 'numeric',
 			minute: '2-digit'
 		});
+	}
+
+	function formatRelativeTime(dateString) {
+		if (!dateString) return 'Never signed in';
+		const diffMs = Date.now() - new Date(dateString).getTime();
+		const diffDays = Math.floor(diffMs / 86400000);
+		if (diffDays === 0) return 'today';
+		if (diffDays === 1) return 'yesterday';
+		if (diffDays < 7) return `${diffDays} days ago`;
+		if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+		if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+		return `${Math.floor(diffDays / 365)} years ago`;
 	}
 
 	function getStatusColor(status) {
@@ -701,6 +724,49 @@
 					</div>
 				{/if}
 
+				<!-- Platform History -->
+				{#if otherCourses.length > 0}
+					<div class="mt-6 pt-4 border-t border-gray-200">
+						<button
+							onclick={() => showPlatformHistory = !showPlatformHistory}
+							class="w-full flex items-center justify-between text-left"
+						>
+							<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+								<Hash size={14} />
+								Platform History
+							</h3>
+							{#if showPlatformHistory}
+								<ChevronDown size={16} class="text-gray-400" />
+							{:else}
+								<ChevronRight size={16} class="text-gray-400" />
+							{/if}
+						</button>
+						{#if showPlatformHistory}
+							<div class="mt-3 space-y-2">
+								{#each otherCourses as enrollment}
+									<div class="p-3 bg-gray-50 rounded-lg">
+										<div class="flex items-start justify-between gap-2">
+											<div>
+												<p class="text-sm font-medium text-gray-900">{enrollment.course_name}</p>
+												<p class="text-xs text-gray-500">{enrollment.cohort_name} · {enrollment.module_name}</p>
+											</div>
+											<span class="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full shrink-0 {getStatusColor(enrollment.status)}">
+												{enrollment.status}
+											</span>
+										</div>
+										<p class="text-xs text-gray-400 mt-1">
+											{#if enrollment.last_login_at}
+												Last signed in {formatRelativeTime(enrollment.last_login_at)}
+											{:else}
+												Never signed in
+											{/if}
+										</p>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 				<!-- Cohort Info (for participants page with multiple cohorts) -->
 				{#if normalizedParticipant?.all_cohorts?.length > 0}
 					<div class="mt-6 pt-4 border-t border-gray-200">

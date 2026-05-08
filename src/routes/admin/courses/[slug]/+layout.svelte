@@ -6,6 +6,7 @@
 	import CourseAdminMobileNav from '$lib/components/CourseAdminMobileNav.svelte';
 	import CohortCreationWizard from '$lib/components/CohortCreationWizard.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 
 	let { data, children } = $props();
 
@@ -60,6 +61,14 @@
 	let showArchiveConfirm = $state(false);
 	let cohortToArchive = $state(null); // { id, name }
 
+	let showDeleteCohortConfirm = $state(false);
+	let cohortToDelete = $state(null); // { id, name }
+	let deleteCohortConfirmName = $state('');
+	let deletingCohort = $state(false);
+	const deleteCohortNameMatches = $derived(
+		deleteCohortConfirmName.trim().toLowerCase() === (cohortToDelete?.name || '').trim().toLowerCase()
+	);
+
 	// Extract cohort selection from URL - works on all admin pages
 	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
 
@@ -93,6 +102,35 @@
 	function handleArchiveCohort(cohortId, cohortName) {
 		cohortToArchive = { id: cohortId, name: cohortName };
 		showArchiveConfirm = true;
+	}
+
+	function handleDeleteCohort(cohortId, cohortName) {
+		cohortToDelete = { id: cohortId, name: cohortName };
+		showDeleteCohortConfirm = true;
+	}
+
+	async function confirmDeleteCohort() {
+		if (!cohortToDelete) return;
+		deletingCohort = true;
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'delete_cohort', cohortId: cohortToDelete.id })
+			});
+			const result = await response.json();
+			if (!result.success) throw new Error(result.message);
+			toastSuccess('Cohort permanently deleted');
+			showDeleteCohortConfirm = false;
+			cohortToDelete = null;
+			deleteCohortConfirmName = '';
+			await invalidateAll();
+		} catch (err) {
+			console.error('Delete failed:', err);
+			toastError(err.message || 'Failed to delete cohort');
+		} finally {
+			deletingCohort = false;
+		}
 	}
 
 	async function confirmArchiveCohort() {
@@ -183,6 +221,7 @@
 			onNewCohort={handleNewCohort}
 			onSelectCohort={handleSelectCohort}
 			onArchiveCohort={handleArchiveCohort}
+			onDeleteCohort={handleDeleteCohort}
 			onSettingsClick={handleSettingsClick}
 		/>
 	</div>
@@ -213,6 +252,49 @@
 >
 	<p>Archive <strong>{cohortToArchive?.name}</strong>?</p>
 	<p class="text-sm text-gray-500 mt-2">The cohort will be hidden from the main list but all data is preserved. You can restore or permanently delete it from Cohort Settings.</p>
+</ConfirmationModal>
+
+<!-- Delete cohort confirmation (type-to-confirm) -->
+<ConfirmationModal
+	show={showDeleteCohortConfirm}
+	title="Permanently Delete Cohort"
+	confirmText={deletingCohort ? 'Deleting...' : 'Delete Permanently'}
+	confirmVariant="danger"
+	cancelText="Cancel"
+	confirmDisabled={!deleteCohortNameMatches || deletingCohort}
+	onConfirm={confirmDeleteCohort}
+	onCancel={() => { showDeleteCohortConfirm = false; cohortToDelete = null; deleteCohortConfirmName = ''; }}
+>
+	<div class="flex items-start gap-3">
+		<div class="p-2 bg-red-100 rounded-full flex-shrink-0">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+		</div>
+		<div class="flex-1">
+			<p class="font-medium">Permanently delete "{cohortToDelete?.name}"?</p>
+			<p class="text-sm mt-1">This will permanently delete the cohort and all associated data:</p>
+			<ul class="text-sm mt-1 list-disc list-inside">
+				<li>All enrollments</li>
+				<li>Attendance records</li>
+				<li>Reflection responses</li>
+				<li>Chat messages</li>
+				<li>Activity logs</li>
+			</ul>
+			<p class="text-sm text-red-400 font-semibold mt-2">This action cannot be undone.</p>
+			<div class="mt-3">
+				<label for="layout-delete-confirm-name" class="block text-sm mb-1">
+					Type <strong>{cohortToDelete?.name}</strong> to confirm:
+				</label>
+				<input
+					id="layout-delete-confirm-name"
+					type="text"
+					bind:value={deleteCohortConfirmName}
+					class="w-full px-3 py-2 rounded-lg text-sm"
+					placeholder={cohortToDelete?.name}
+					autocomplete="off"
+				/>
+			</div>
+		</div>
+	</div>
 </ConfirmationModal>
 
 <style>

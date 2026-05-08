@@ -637,8 +637,8 @@
 			<Archive size={20} class="text-amber-600" />
 		</div>
 		<div>
-			<p class="text-gray-900 font-medium">Archive "{cohort?.name}"?</p>
-			<p class="text-sm text-gray-600 mt-1">
+			<p class="font-medium">Archive "{cohort?.name}"?</p>
+			<p class="text-sm mt-1">
 				The cohort will be hidden from the main list but all data (enrollments, attendance, reflections, chat messages) will be preserved. You can restore it at any time.
 			</p>
 		</div>
@@ -650,6 +650,7 @@
 	show={showDeleteConfirm}
 	title="Permanently Delete Cohort"
 	confirmText={deleting ? 'Deleting...' : 'Delete Permanently'}
+	confirmVariant="danger"
 	cancelText="Cancel"
 	confirmDisabled={!deleteNameMatches}
 	onConfirm={handleDelete}
@@ -660,27 +661,27 @@
 			<AlertTriangle size={20} class="text-red-600" />
 		</div>
 		<div class="flex-1">
-			<p class="text-gray-900 font-medium">Permanently delete "{cohort?.name}"?</p>
-			<p class="text-sm text-gray-600 mt-1">
+			<p class="font-medium">Permanently delete "{cohort?.name}"?</p>
+			<p class="text-sm mt-1">
 				This will permanently delete the cohort and all associated data:
 			</p>
-			<ul class="text-sm text-gray-600 mt-1 list-disc list-inside">
+			<ul class="text-sm mt-1 list-disc list-inside">
 				<li>All enrollments</li>
 				<li>Attendance records</li>
 				<li>Reflection responses</li>
 				<li>Chat messages</li>
 				<li>Activity logs</li>
 			</ul>
-			<p class="text-sm text-red-600 font-medium mt-2">This action cannot be undone.</p>
+			<p class="text-sm text-red-400 font-semibold mt-2">This action cannot be undone.</p>
 			<div class="mt-3">
-				<label for="delete-confirm-name" class="block text-sm text-gray-700 mb-1">
+				<label for="delete-confirm-name" class="block text-sm mb-1">
 					Type <strong>{cohort?.name}</strong> to confirm:
 				</label>
 				<input
 					id="delete-confirm-name"
 					type="text"
 					bind:value={deleteConfirmName}
-					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+					class="w-full px-3 py-2 rounded-lg text-sm"
 					placeholder={cohort?.name}
 					autocomplete="off"
 				/>

@@ -19,7 +19,8 @@ import {
     Link,
     Tag,
     Zap,
-    Archive
+    Archive,
+    Trash2
 } from '$lib/icons';
 
 let {
@@ -31,6 +32,7 @@ let {
     selectedCohortId = null,
     onSelectCohort,
     onArchiveCohort = () => {},
+    onDeleteCohort = () => {},
     modules = [],
     enrollmentRole = null,
     isCourseAdmin = false,
@@ -294,7 +296,7 @@ function handleMouseEnter(href) {
 					{#if showArchivedCohorts}
 						<ul class="nav-list cohort-list">
 							{#each archivedCohorts as cohort}
-								<li>
+								<li class="cohort-list-item">
 									<button
 										onclick={() => onSelectCohort?.(cohort.id)}
 										class="nav-item cohort-item archived-item"
@@ -305,6 +307,13 @@ function handleMouseEnter(href) {
 											<span class="cohort-name">{cohort.name}</span>
 											<span class="cohort-session">Archived</span>
 										</div>
+									</button>
+									<button
+										class="cohort-archive-btn cohort-delete-btn"
+										onclick={(e) => { e.stopPropagation(); onDeleteCohort(cohort.id, cohort.name); }}
+										title="Permanently delete cohort"
+									>
+										<Trash2 size={13} />
 									</button>
 								</li>
 							{/each}
@@ -762,5 +771,10 @@ function handleMouseEnter(href) {
 	.cohort-archive-btn:hover {
 		background: rgba(251, 191, 36, 0.15);
 		color: rgba(251, 191, 36, 0.9);
+	}
+
+	.cohort-delete-btn:hover {
+		background: rgba(239, 68, 68, 0.15);
+		color: rgba(239, 68, 68, 0.9);
 	}
 </style>

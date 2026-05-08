@@ -19,6 +19,7 @@
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
+	import { formatRelativeTime } from '$lib/utils/dgr-helpers';
 	import { getTotalSessions } from '$lib/utils/cohort-status';
 
 	let { data } = $props();
@@ -624,7 +625,25 @@
 		showEmailModal = true;
 	}
 
-	// Status badge styling
+	function getActivityInfo(participant) {
+		if (participant.status === 'held') return { label: 'On Hold', sub: null, labelClass: 'text-orange-600', dot: null };
+		if (participant.status === 'withdrawn') return { label: 'Withdrawn', sub: null, labelClass: 'text-red-500', dot: null };
+		if (participant.status === 'completed') return { label: 'Completed', sub: null, labelClass: 'text-purple-600', dot: null };
+
+		if (!participant.welcome_email_sent_at) {
+			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
+		}
+		if (!participant.last_login_at || participant.login_count === 0) {
+			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
+		}
+		const diffDays = (Date.now() - new Date(participant.last_login_at).getTime()) / (1000 * 60 * 60 * 24);
+		const time = formatRelativeTime(participant.last_login_at);
+		if (diffDays <= 7) return { label: time, sub: null, labelClass: 'text-emerald-600', dot: '●' };
+		if (diffDays <= 30) return { label: time, sub: null, labelClass: 'text-gray-500', dot: null };
+		return { label: time, sub: null, labelClass: 'text-amber-600', dot: null };
+	}
+
+	// Keep getStatusBadge for CSV export and getStatusKey sorting
 	function getStatusBadge(participant) {
 		if (!participant.welcome_email_sent_at && !participant.last_login_at) {
 			return { label: 'Not Invited', class: 'bg-gray-100 text-gray-600' };
@@ -967,7 +986,7 @@
 										<button onclick={() => toggleSort('hub')} class="hover:text-gray-900 cursor-pointer">Hub{sortIndicator('hub')}</button>
 									</th>
 									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('status')} class="hover:text-gray-900 cursor-pointer">Status{sortIndicator('status')}</button>
+										<button onclick={() => toggleSort('status')} class="hover:text-gray-900 cursor-pointer">Activity{sortIndicator('status')}</button>
 									</th>
 									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
 										<button onclick={() => toggleSort('session')} class="hover:text-gray-900 cursor-pointer">Sess.{sortIndicator('session')}</button>
@@ -985,6 +1004,7 @@
 									{@const totalSessions = getTotalSessions(selectedCohort)}
 									{@const cohortSession = selectedCohort.current_session || 0}
 									{@const statusBadge = getStatusBadge(participant)}
+									{@const activityInfo = getActivityInfo(participant)}
 									<tr
 										onclick={() => openParticipantDetail(participant)}
 										class="hover:bg-gray-50 transition-colors cursor-pointer"
@@ -1015,7 +1035,9 @@
 												{/if}
 											</div>
 											<span class="text-[11px] sm:text-xs text-gray-500 block truncate max-w-[150px] sm:max-w-none">{participant.email}</span>
-										</td>
+											{#if participant.status === 'pending'}
+												<span class="text-[10px] text-gray-400 italic">No account yet</span>
+											{/if}										</td>
 										<!-- Phone - hidden on mobile -->
 										<td class="hidden sm:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.user_profile?.phone || '-'}</span>
@@ -1024,11 +1046,14 @@
 										<td class="hidden md:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.courses_hubs?.name || '-'}</span>
 										</td>
-										<!-- Status badge -->
+										<!-- Activity -->
 										<td class="px-2 sm:px-3 py-2">
-											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full {statusBadge.class}">
-												{statusBadge.label}
+											<span class="text-[10px] sm:text-xs font-medium {activityInfo.labelClass}">
+												{#if activityInfo.dot}<span class="mr-1">{activityInfo.dot}</span>{/if}{activityInfo.label}
 											</span>
+											{#if activityInfo.sub}
+												<span class="block text-[9px] sm:text-[10px] text-gray-400">{activityInfo.sub}</span>
+											{/if}
 										</td>
 										<!-- Session progress -->
 										<td class="px-2 sm:px-3 py-2">

@@ -7,6 +7,7 @@
 		loading = false,
 		loadingMessage = 'Processing...',
 		confirmText = 'Confirm',
+		confirmVariant = 'primary',
 		confirmIcon = null,
 		confirmDisabled = false,
 		cancelText = 'Cancel',
@@ -103,7 +104,7 @@
 						<button onclick={onCancel} class="btn-secondary">
 							{cancelText}
 						</button>
-						<button onclick={onConfirm} class="btn-primary" disabled={confirmDisabled}>
+						<button onclick={onConfirm} class="btn-primary {confirmVariant === 'danger' ? 'btn-danger-confirm' : ''}" disabled={confirmDisabled}>
 							{#if confirmIcon}
 								{@const Icon = confirmIcon}
 								<Icon size={18} />
@@ -233,6 +234,33 @@
 		margin-bottom: 0;
 	}
 
+	.modal-body :global(li) {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 0.9375rem;
+		line-height: 1.6;
+	}
+
+	.modal-body :global(label) {
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	.modal-body :global(input[type='text']) {
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		color: white;
+		outline: none;
+	}
+
+	.modal-body :global(input[type='text']:focus) {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6);
+		border-color: rgba(239, 68, 68, 0.8);
+	}
+
+	.modal-body :global(input[type='text']::placeholder) {
+		color: rgba(255, 255, 255, 0.35);
+	}
+
 	.modal-body :global(strong) {
 		color: white;
 		font-weight: 600;
@@ -299,6 +327,16 @@
 	.btn-primary:disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
+	}
+
+	.btn-danger-confirm {
+		background: #dc2626;
+		color: white;
+	}
+
+	.btn-danger-confirm:hover:not(:disabled) {
+		background: #b91c1c;
+		box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 	}
 
 	/* Multi-action mode */
