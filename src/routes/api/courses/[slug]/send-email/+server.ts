@@ -246,8 +246,9 @@ export const POST: RequestHandler = async (event) => {
 			}
 		});
 
-		// If this is a welcome email and we sent successfully, update enrollment tracking
-		if (email_type === 'welcome_enrolled' && results.sent > 0) {
+		// If this is any welcome email and we sent successfully, update enrollment tracking
+		const isWelcomeEmail = email_type?.startsWith('welcome');
+		if (isWelcomeEmail && results.sent > 0) {
 			const sentEnrollmentIds = emailsToSend.map((e) => e.referenceId);
 			const now = new Date().toISOString();
 

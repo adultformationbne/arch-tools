@@ -2278,9 +2278,9 @@ export const CourseMutations = {
 				status: isExistingUser ? 'active' : 'pending',
 				// Start new enrollees at the cohort's current session
 				current_session: cohortCurrentSession,
-				// For existing users, they've already "signed up" - set login tracking
-				last_login_at: isExistingUser ? now : null,
-				login_count: isExistingUser ? 1 : 0
+				// last_login_at stays null until they actually visit this course's dashboard
+				last_login_at: null,
+				login_count: 0
 			});
 		}
 
