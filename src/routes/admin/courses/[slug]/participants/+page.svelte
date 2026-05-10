@@ -47,7 +47,7 @@
 				student.hub?.name?.toLowerCase().includes(query) ||
 				student.notes?.toLowerCase().includes(query);
 
-			const matchesHub = selectedHub === 'all' || student.hub_id === selectedHub;
+			const matchesHub = selectedHub === 'all' || (selectedHub === '' ? !student.hub_id : student.hub_id === selectedHub);
 			const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
 			const matchesCohort = selectedCohort === 'all' ||
 				student.cohort_id === selectedCohort ||

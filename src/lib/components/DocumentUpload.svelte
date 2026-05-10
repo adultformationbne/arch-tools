@@ -105,6 +105,11 @@
 		}
 	};
 
+	const handleDragEnter = (e) => {
+		e.preventDefault();
+		isDragOver = true;
+	};
+
 	const handleDragOver = (e) => {
 		e.preventDefault();
 		isDragOver = true;
@@ -159,6 +164,7 @@
 		{isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
 		{uploadStatus === 'uploading' ? 'pointer-events-none' : ''}"
 		ondrop={handleDrop}
+		ondragenter={handleDragEnter}
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
 		onclick={triggerFileSelect}
