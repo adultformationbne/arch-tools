@@ -8,7 +8,8 @@ import {
 	renderTemplateForRecipient,
 	sendBulkEmails,
 	getCourseEmailTemplate,
-	createEmailButton
+	createEmailButton,
+	buildCourseFromEmail
 } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
@@ -939,6 +940,7 @@ export const POST: RequestHandler = async (event) => {
 									// Send emails
 									if (emailsToSend.length > 0) {
 										const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+									const courseFromEmail = await buildCourseFromEmail(course);
 
 										emailResults = await sendBulkEmails({
 											emails: emailsToSend,
@@ -947,7 +949,7 @@ export const POST: RequestHandler = async (event) => {
 											supabase: supabaseAdmin,
 											options: {
 												replyTo: courseReplyTo,
-												fromEmail: data.fromEmail || null,
+												fromEmail: courseFromEmail,
 												commonMetadata: {
 													sentBy: user.id,
 													sentAt: new Date().toISOString()

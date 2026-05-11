@@ -197,8 +197,8 @@ export async function getEmailTemplate(supabase, templateKey, context = 'platfor
  */
 /**
  * Build the "from" address for a course email.
- * Uses email_branding_config.from_email if set, otherwise derives from course slug + platform domain.
- * @param {Object} course Course record with name, slug, email_branding_config
+ * Always derives from course slug + platform domain: "Course Name <slug@app.domain>"
+ * @param {Object} course Course record with name, slug
  * @returns {Promise<string>} Formatted from address
  */
 export async function buildCourseFromEmail(course) {

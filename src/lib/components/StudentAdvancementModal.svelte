@@ -12,7 +12,6 @@
 		courseSlug,
 		// Optional: pre-select specific student IDs when modal opens
 		initialSelectedIds = [],
-		platformFromEmail = ''
 	} = $props();
 
 	// Dynamic total sessions from cohort data
@@ -22,7 +21,6 @@
 	let selectedSession = $state(1);
 	let selectedStudents = $state([]);
 	let sendEmail = $state(true);
-	let customFromEmail = $state('');
 	let isProcessing = $state(false);
 
 	// Filter eligible enrollments by session and status
@@ -73,7 +71,6 @@
 					studentIds: allSelectedIds,
 					targetSession: selectedSession,
 					sendEmail,
-					fromEmail: customFromEmail.trim() || null
 				},
 				{
 					loadingMessage: 'Advancing participants...',
@@ -208,20 +205,6 @@
 						<span>Send "Session {selectedSession} Available" email notification</span>
 					</label>
 					{#if sendEmail}
-						<div class="pl-3 flex flex-col gap-1">
-							<label for="from-email" class="text-xs font-medium text-gray-600">Send from</label>
-							<input
-								id="from-email"
-								type="email"
-								bind:value={customFromEmail}
-								placeholder={platformFromEmail || 'System default'}
-								disabled={isProcessing}
-								class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:border-gray-400"
-							/>
-							{#if !customFromEmail.trim() && platformFromEmail}
-								<p class="text-xs text-gray-400">Default: {platformFromEmail}</p>
-							{/if}
-						</div>
 						<a
 							href="/admin/courses/{courseSlug}/emails?view=session_materials_ready"
 							target="_blank"

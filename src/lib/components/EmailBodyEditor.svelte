@@ -177,7 +177,7 @@
 		<!-- Side Toolbar (only shown when TipTap is available) -->
 		{#if TipTapEmailEditor && !editorLoadError}
 		<div
-			class="flex flex-col items-center gap-1 p-2 rounded-lg w-14 h-fit sticky top-8 transition-all duration-200 {hasTextSelection ? 'scale-105 shadow-xl bg-white border-2' : 'bg-gray-50 border border-gray-200'}"
+			class="flex flex-col items-center gap-1 p-2 rounded-lg w-14 sticky top-8 max-h-[calc(100vh-8rem)] overflow-y-auto transition-all duration-200 {hasTextSelection ? 'scale-105 shadow-xl bg-white border-2' : 'bg-gray-50 border border-gray-200'}"
 			style={hasTextSelection ? `border-color: ${accentDark}` : ''}
 		>
 			<button

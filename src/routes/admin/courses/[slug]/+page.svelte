@@ -1179,7 +1179,6 @@
 	initialSelectedIds={advancementInitialIds}
 	bind:show={showAdvancementModal}
 	onComplete={handleAdvancementComplete}
-	platformFromEmail={data.platformFromEmail || ''}
 />
 
 <ConfirmationModal

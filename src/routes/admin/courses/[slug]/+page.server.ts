@@ -1,4 +1,4 @@
-import { supabaseAdmin, getPlatformSettings } from '$lib/server/supabase.js';
+import { supabaseAdmin } from '$lib/server/supabase.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -20,13 +20,10 @@ export const load: PageServerLoad = async (event) => {
 		throw redirect(303, newUrl.pathname + newUrl.search);
 	}
 
-	const platformSettings = await getPlatformSettings();
-
 	return {
 		modules,
 		cohorts,
 		courseSlug,
 		currentUserEmail: user?.email || '',
-		platformFromEmail: platformSettings.fromEmail || ''
 	};
 };
