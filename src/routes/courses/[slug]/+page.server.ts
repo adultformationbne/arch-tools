@@ -158,11 +158,15 @@ export const load: PageServerLoad = async (event) => {
 	const userHubId = enrollment.hub_id;
 
 	const canSeeMaterial = (m: any) => {
-		if (m.min_role === 'coordinator' && !isStaff) return false;
 		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
-		if (hubRestrictions.length === 0) return true;
-		if (!userHubId) return false;
-		return hubRestrictions.some((h: { hub_id: string }) => h.hub_id === userHubId);
+		const userInHub = hubRestrictions.length > 0 && !!userHubId && hubRestrictions.some((h: { hub_id: string }) => h.hub_id === userHubId);
+		if (hubRestrictions.length > 0 && m.min_role === 'coordinator') {
+			// OR: all coordinators + all hub members
+			return isStaff || userInHub;
+		}
+		if (m.min_role === 'coordinator' && !isStaff) return false;
+		if (hubRestrictions.length > 0 && !userInHub) return false;
+		return true;
 	};
 
 	const filterMaterials = (materialsList: any[]) => {

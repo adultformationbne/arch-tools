@@ -99,10 +99,15 @@ export const load: PageServerLoad = async (event) => {
 	const userHubId = enrollment.hub_id;
 
 	const filteredMaterials = (materials || []).filter((m) => {
-		if (m.min_role === 'coordinator' && !isStaffRole) return false;
 		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
-		if (hubRestrictions.length > 0 && !userHubId) return false;
-		if (hubRestrictions.length > 0 && !hubRestrictions.some((h) => h.hub_id === userHubId)) return false;
+		const userInHub = hubRestrictions.length > 0 && !!userHubId && hubRestrictions.some((h) => h.hub_id === userHubId);
+		if (hubRestrictions.length > 0 && m.min_role === 'coordinator') {
+			// OR: all coordinators + all hub members
+			if (!isStaffRole && !userInHub) return false;
+		} else {
+			if (m.min_role === 'coordinator' && !isStaffRole) return false;
+			if (hubRestrictions.length > 0 && !userInHub) return false;
+		}
 		// For next-session early-access materials, only show if flagged available_early
 		if (earlyAccessSessionNumber !== null && m.session?.session_number === earlyAccessSessionNumber && !m.available_early) return false;
 		return true;
