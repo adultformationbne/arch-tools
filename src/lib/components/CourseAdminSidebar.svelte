@@ -20,7 +20,8 @@ import {
     Tag,
     Zap,
     Archive,
-    Trash2
+    Trash2,
+    Shield
 } from '$lib/icons';
 
 let {
@@ -64,7 +65,7 @@ function hasModule(module) {
     return moduleSet.has(module);
 }
 
-const canManageAllCourses = $derived(hasModule('platform.admin') || hasModule('courses.admin'));
+const canManageAllCourses = $derived(enrollmentRole === 'courses.admin');
 // Course managers can fully manage courses they're enrolled in as admin
 const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
 const canViewHubs = $derived(canManageCourse);
@@ -90,7 +91,7 @@ function withCohort(basePath) {
 
 const navItems = $derived([
     {
-        label: 'Dashboard',
+        label: 'Cohort',
         href: withCohort(`/admin/courses/${courseSlug}`),
         icon: LayoutDashboard,
         description: 'Cohort overview',
@@ -132,7 +133,7 @@ const navItems = $derived([
         visible: canManageCourse
     },
     {
-        label: 'Participants',
+        label: 'Database',
         href: withCohort(`/admin/courses/${courseSlug}/participants`),
         icon: Users,
         description: 'All course participants',
@@ -173,6 +174,13 @@ const navItems = $derived([
         description: 'Cohort chat',
         visible: canManageCourse && courseFeatures.chatEnabled !== false,
         hasUnread: hasUnreadChat
+    },
+    {
+        label: 'Managers',
+        href: `/admin/courses/${courseSlug}/managers`,
+        icon: Shield,
+        description: 'Assign course managers',
+        visible: canManageAllCourses
     }
 ].filter((item) => item.visible));
 
@@ -230,6 +238,21 @@ function handleMouseEnter(href) {
 						</a>
 					</li>
 				{/each}
+				{#if onSettingsClick}
+					<li>
+						<button
+							onclick={onSettingsClick}
+							class="nav-item"
+							type="button"
+							title={isExpanded ? '' : 'Course Settings'}
+						>
+							<span class="nav-icon-wrap">
+								<Settings size={16} class="nav-icon" />
+							</span>
+							<span class="nav-label">Settings</span>
+						</button>
+					</li>
+				{/if}
 			</ul>
 		</div>
 
@@ -335,18 +358,6 @@ function handleMouseEnter(href) {
 			<ArrowLeft size={14} />
 			<span class="footer-label">Back to Courses</span>
 		</a>
-
-		{#if onSettingsClick}
-			<button
-				onclick={onSettingsClick}
-				class="footer-link"
-				type="button"
-				title={isExpanded ? '' : 'Course Settings'}
-			>
-				<Settings size={14} />
-				<span class="footer-label">Settings</span>
-			</button>
-		{/if}
 	</div>
 </aside>
 

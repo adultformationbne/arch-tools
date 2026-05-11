@@ -20,7 +20,8 @@ import {
 	X,
 	Link,
 	Tag,
-	Zap
+	Zap,
+	Shield
 } from '$lib/icons';
 
 let {
@@ -62,7 +63,7 @@ function hasModule(module) {
 	return moduleSet.has(module);
 }
 
-const canManageAllCourses = $derived(hasModule('platform.admin') || hasModule('courses.admin'));
+const canManageAllCourses = $derived(enrollmentRole === 'courses.admin');
 const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
 const canViewHubs = $derived(canManageCourse);
 const canManageAttendance = $derived(canManageCourse);
@@ -87,7 +88,7 @@ function withCohort(basePath) {
 
 const navItems = $derived([
 	{
-		label: 'Dashboard',
+		label: 'Cohort',
 		href: withCohort(`/admin/courses/${courseSlug}`),
 		icon: LayoutDashboard,
 		description: 'Cohort overview',
@@ -129,7 +130,7 @@ const navItems = $derived([
 		visible: canManageCourse
 	},
 	{
-		label: 'Participants',
+		label: 'Database',
 		href: withCohort(`/admin/courses/${courseSlug}/participants`),
 		icon: Users,
 		description: 'All course participants',
@@ -170,6 +171,13 @@ const navItems = $derived([
 		description: 'Cohort chat',
 		visible: canManageCourse && courseFeatures.chatEnabled !== false,
 		hasUnread: hasUnreadChat
+	},
+	{
+		label: 'Managers',
+		href: `/admin/courses/${courseSlug}/managers`,
+		icon: Shield,
+		description: 'Assign course managers',
+		visible: canManageAllCourses
 	}
 ].filter((item) => item.visible));
 
