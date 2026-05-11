@@ -45,6 +45,7 @@
 	// State
 	let recipients = $state(/** @type {any[]} */ ([]));
 	let loading = $state(true);
+	let recipientsError = $state(false);
 	let selectedRecipientId = $state('sample'); // 'sample' or recipient ID
 	let sendToEmail = $state('');
 
@@ -89,13 +90,14 @@
 
 	async function loadRecipients() {
 		loading = true;
+		recipientsError = false;
 		try {
 			const url = contextConfig.getRecipientsUrl(contextId || undefined);
 			const response = await apiGet(url, { showToast: false });
 			recipients = contextConfig.normalizeRecipients(response);
 		} catch (err) {
 			console.error('Failed to load recipients:', err);
-			// Don't show error - sample data still works
+			recipientsError = true;
 		} finally {
 			loading = false;
 		}
@@ -246,10 +248,14 @@
 
 					{#if loading}
 						<Loader2 size={16} class="animate-spin text-gray-400" />
+					{:else if recipientsError}
+						<span class="text-xs text-red-500">Could not load recipients</span>
 					{:else if recipients.length > 0}
 						<span class="text-xs text-gray-500">
 							{recipients.length} recipient{recipients.length !== 1 ? 's' : ''} available
 						</span>
+					{:else}
+						<span class="text-xs text-gray-400">No enrolled participants found</span>
 					{/if}
 				</div>
 

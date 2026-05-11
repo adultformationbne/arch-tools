@@ -202,9 +202,6 @@ export async function getEmailTemplate(supabase, templateKey, context = 'platfor
  * @returns {Promise<string>} Formatted from address
  */
 export async function buildCourseFromEmail(course) {
-	if (course.email_branding_config?.from_email) {
-		return course.email_branding_config.from_email;
-	}
 	const platformSettings = await getPlatformSettings();
 	const domainMatch = platformSettings.fromEmail.match(/@([^>\s]+)/);
 	if (!domainMatch) return platformSettings.fromEmail;

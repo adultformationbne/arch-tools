@@ -221,7 +221,7 @@ export const COURSE_VARIABLES: EmailVariable[] = [
 const courseContext: EmailContextConfig = {
 	label: 'Course',
 
-	getRecipientsUrl: (courseSlug) => `/api/courses/${courseSlug}/enrollments?status=active&limit=100`,
+	getRecipientsUrl: (courseSlug) => `/api/courses/${courseSlug}/enrollments?status=all&limit=100`,
 
 	normalizeRecipients: (apiResponse: unknown) => {
 		const response = apiResponse as { enrollments?: Array<Record<string, unknown>> };
