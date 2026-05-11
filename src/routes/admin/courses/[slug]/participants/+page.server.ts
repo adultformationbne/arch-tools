@@ -124,7 +124,7 @@ export const load: PageServerLoad = async (event) => {
 			const attendance = attendanceMap.get(enrollment.id) || { attended: 0, total: 0 };
 			const reflections = reflectionMap.get(enrollment.id) || { submitted: 0, passed: 0 };
 
-			const everActive = ['active', 'completed'].includes(enrollment.status);
+			const everActive = ['active', 'completed'].includes(enrollment.status) || !!enrollment.last_login_at;
 
 			if (!userMap.has(email)) {
 				userMap.set(email, {

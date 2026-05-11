@@ -402,8 +402,8 @@
 				<div class="space-y-0.5">
 					{#each [
 						{ value: 'all', label: 'All Participants' },
-						{ value: 'pending', label: 'Awaiting Approval' },
-						{ value: 'invited', label: 'Invited' }
+						...(pendingCount > 0 ? [{ value: 'pending', label: 'Awaiting Approval' }] : []),
+						{ value: 'invited', label: 'Invited (not yet active)' }
 					] as option}
 						<button
 							onclick={() => selectedStatus = option.value}
@@ -506,8 +506,8 @@
 							style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
 						>
 							<option value="all" class="text-gray-900">All Participants</option>
-							<option value="pending" class="text-gray-900">Awaiting Approval</option>
-							<option value="invited" class="text-gray-900">Invited</option>
+							{#if pendingCount > 0}<option value="pending" class="text-gray-900">Awaiting Approval</option>{/if}
+							<option value="invited" class="text-gray-900">Invited (not yet active)</option>
 						</select>
 
 						<!-- Hub filter -->
@@ -683,17 +683,15 @@
 										{/if}
 									</td>
 									<td class="w-20 sm:w-24 px-2 sm:px-4 py-2 sm:py-3">
-										{#if student.status === 'pending'}
+										{#if student.ever_active}
+											<!-- no badge — active participants don't need a status label here -->
+										{:else if student.status === 'pending'}
 											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-800">
 												Awaiting Approval
 											</span>
 										{:else if student.status === 'invited' || student.status === 'accepted'}
 											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full bg-blue-100 text-blue-800">
 												Invited
-											</span>
-										{:else}
-											<span class="text-[9px] sm:text-[10px] text-gray-400">
-												{student.all_cohorts?.length || 1} cohort{(student.all_cohorts?.length || 1) !== 1 ? 's' : ''}
 											</span>
 										{/if}
 									</td>
