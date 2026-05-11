@@ -50,7 +50,7 @@ export const GET: RequestHandler = async (event) => {
 
 	const hubId = enrollment.hub_id;
 	const cohortId = enrollment.cohort_id;
-	const currentSession = enrollment.cohort?.current_session ?? 0;
+	const currentSession = enrollment.cohort?.current_session || 1;
 	const moduleId = enrollment.cohort?.module?.id;
 
 	// Get hub info

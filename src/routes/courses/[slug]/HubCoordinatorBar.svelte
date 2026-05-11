@@ -39,7 +39,7 @@
 			liveHubData = data;
 			// Initialize selected session to current
 			if (selectedSession === null) {
-				selectedSession = data.currentSession;
+				selectedSession = Math.max(1, data.currentSession || 1);
 			}
 		} catch (err) {
 			console.error('Error loading hub data:', err);
@@ -50,6 +50,7 @@
 	};
 
 	const markAttendance = async (studentId, present) => {
+		if (!selectedSession || selectedSession < 1) return;
 		// Optimistically update UI
 		const student = liveHubData?.students?.find(s => s.id === studentId);
 		if (student) {
