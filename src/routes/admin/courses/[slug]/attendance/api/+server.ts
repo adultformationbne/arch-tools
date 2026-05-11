@@ -84,6 +84,10 @@ export const POST: RequestHandler = async (event) => {
 		return json({ error: 'Missing required fields' }, { status: 400 });
 	}
 
+	if (sessionNumber < 1) {
+		return json({ error: 'Invalid session number' }, { status: 400 });
+	}
+
 	// Get enrollment and validate it belongs to this course
 	const { data: enrollment } = await supabaseAdmin
 		.from('courses_enrollments')

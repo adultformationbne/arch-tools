@@ -193,6 +193,9 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	if (action === 'mark_attendance') {
+		if (!sessionNumber || sessionNumber < 1) {
+			throw error(400, 'Invalid session number');
+		}
 		// Verify the student is in coordinator's hub
 		const { data: student } = await supabaseAdmin
 			.from('courses_enrollments')
