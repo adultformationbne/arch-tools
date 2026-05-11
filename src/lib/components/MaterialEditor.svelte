@@ -48,6 +48,7 @@
 	 *   minRole: string,
 	 *   hubIds: string[],
 	 *   description: string,
+	 *   availableEarly: boolean,
 	 *   mux_status: string,
 	 *   mux_playback_id: string,
 	 *   mux_asset_id: string
@@ -202,7 +203,7 @@
 		const minRole = material.minRole || 'participant';
 		showRestrictions = minRole === 'coordinator' || hubIds.length > 0;
 		showHubList = hubIds.length > 0;
-		editingMaterial = { ...material, minRole, hubIds };
+		editingMaterial = { ...material, minRole, hubIds, availableEarly: material.availableEarly ?? false };
 		expandedMaterialId = material.id;
 	};
 
@@ -228,7 +229,8 @@
 					content: content,
 					display_order: editing.order,
 					min_role: editing.minRole,
-					hub_ids: editing.hubIds
+					hub_ids: editing.hubIds,
+					available_early: editing.availableEarly ?? false
 				})
 			});
 
@@ -245,6 +247,7 @@
 					order: material.display_order,
 					minRole: material.min_role || 'participant',
 					hubIds: editing.hubIds,
+					availableEarly: material.available_early ?? false,
 					mux_status: editing.mux_status,
 					mux_playback_id: editing.mux_playback_id,
 					mux_asset_id: editing.mux_asset_id
@@ -488,6 +491,9 @@
 									<Lock size="13" class="text-gray-400" />
 								</span>
 							{/if}
+							{#if material.availableEarly}
+								<span use:tooltip={"Shown in previous session"} class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-100 text-blue-700">Early</span>
+							{/if}
 						</div>
 					</div>
 
@@ -667,6 +673,24 @@
 										</div>
 									{/if}
 								</div>
+
+								{#if sessionNumber > 0}
+									<div class="border-t pt-3">
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={editingMaterial.availableEarly}
+												onchange={(e) => {
+													if (!editingMaterial) return;
+													editingMaterial.availableEarly = e.currentTarget.checked;
+												}}
+												class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+											/>
+											<span class="text-sm font-semibold text-gray-700">Show in previous session</span>
+											<span class="text-xs text-gray-400">(appears as "For next session" for participants)</span>
+										</label>
+									</div>
+								{/if}
 
 								<div class="flex gap-2 pt-2">
 									<button

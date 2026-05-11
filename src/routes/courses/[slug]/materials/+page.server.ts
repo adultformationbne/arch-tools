@@ -78,7 +78,15 @@ export const load: PageServerLoad = async (event) => {
 		maxVisibleSession = effectiveSession;
 	}
 
-	const sessions = allSessions.filter((s) => s.session_number <= maxVisibleSession);
+	// For participants (not admin/coordinator), also include the next session
+	// so early-access materials from it can be shown
+	const earlyAccessSessionNumber = (!isAdmin && userRole !== 'coordinator') ? effectiveSession + 1 : null;
+
+	const sessions = allSessions.filter((s) => {
+		if (s.session_number <= maxVisibleSession) return true;
+		if (earlyAccessSessionNumber !== null && s.session_number === earlyAccessSessionNumber) return true;
+		return false;
+	});
 	const sessionIds = sessions.map((s) => s.id);
 
 	// Get materials for the filtered sessions
@@ -93,9 +101,11 @@ export const load: PageServerLoad = async (event) => {
 	const filteredMaterials = (materials || []).filter((m) => {
 		if (m.min_role === 'coordinator' && !isStaffRole) return false;
 		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
-		if (hubRestrictions.length === 0) return true;
-		if (!userHubId) return false;
-		return hubRestrictions.some((h) => h.hub_id === userHubId);
+		if (hubRestrictions.length > 0 && !userHubId) return false;
+		if (hubRestrictions.length > 0 && !hubRestrictions.some((h) => h.hub_id === userHubId)) return false;
+		// For next-session early-access materials, only show if flagged available_early
+		if (earlyAccessSessionNumber !== null && m.session?.session_number === earlyAccessSessionNumber && !m.available_early) return false;
+		return true;
 	});
 
 	// Group filtered materials by session
@@ -105,6 +115,7 @@ export const load: PageServerLoad = async (event) => {
 		materials: filteredMaterials,
 		materialsBySession,
 		currentSession,
+		earlyAccessSessionNumber,
 		courseName: enrollment.cohort.module.name || 'Course Materials'
 	};
 };

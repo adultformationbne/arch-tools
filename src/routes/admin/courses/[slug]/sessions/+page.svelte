@@ -83,6 +83,7 @@
 					order: m.display_order,
 					minRole: m.min_role || 'participant',
 					hubIds: (m.hub_visibility || []).map(v => v.hub_id),
+					availableEarly: m.available_early || false,
 					// Mux video fields
 					mux_upload_id: m.mux_upload_id,
 					mux_asset_id: m.mux_asset_id,
@@ -917,11 +918,13 @@
 						sessionNumber={selectedSession}
 					/>
 
+					{#if data.courseFeatures?.quizzesEnabled !== false}
 					<QuizEditor
 						sessionId={currentSession.id || ''}
 						courseId={data.course?.id || ''}
 						sessionNumber={selectedSession}
 					/>
+					{/if}
 				</div>
 
 				<!-- Student Preview -->

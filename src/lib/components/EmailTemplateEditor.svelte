@@ -62,7 +62,7 @@
 		accentDark: courseColors?.accentDark || branding.accentDark || '#334642',
 		footerText: branding.footerText || "You're receiving this because you're enrolled in this course."
 	});
-	const effectiveContextId = $derived(contextId || courseId);
+	const effectiveContextId = $derived(contextId || courseSlug || courseId);
 
 	// Generate template_key from name (lowercase, underscores, no special chars)
 	function generateTemplateKey(name) {

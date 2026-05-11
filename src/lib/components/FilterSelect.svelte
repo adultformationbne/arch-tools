@@ -2,7 +2,7 @@
 	import { createDropdown } from '$lib/utils/dropdown.js';
 	import { ChevronDown } from '$lib/icons';
 
-	let { value = $bindable('all'), options = [] } = $props();
+	let { value = $bindable('all'), options = [], icon: Icon = null } = $props();
 
 	/** @type {HTMLButtonElement | null} */
 	let buttonEl = $state(null);
@@ -12,7 +12,7 @@
 	let controller = $state(null);
 	let isOpen = $state(false);
 
-	const currentLabel = $derived(options.find(o => o.value === value)?.label ?? '');
+	const currentLabel = $derived(options.find(o => o.value === value)?.label ?? options[0]?.label ?? '');
 	const isActive = $derived(options.length > 0 && value !== options[0].value);
 
 	$effect(() => {
@@ -39,16 +39,20 @@
 		bind:this={buttonEl}
 		type="button"
 		onclick={() => controller?.toggle()}
-		class="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none transition-colors cursor-pointer {isActive ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
+		class="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border shadow-sm transition-colors cursor-pointer {isActive ? 'text-white' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}"
+		style={isActive ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
 	>
+		{#if Icon}
+			<Icon size={13} class="flex-shrink-0 {isActive ? 'opacity-80' : 'text-gray-400'}" />
+		{/if}
 		{currentLabel}
-		<ChevronDown size={12} class="opacity-60 transition-transform {isOpen ? 'rotate-180' : ''}" />
+		<ChevronDown size={12} class="flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''} {isActive ? 'opacity-70' : 'text-gray-400'}" />
 	</button>
 
 	<div
 		bind:this={menuEl}
 		style="display: none;"
-		class="bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[160px]"
+		class="bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[160px] w-max max-w-[280px]"
 	>
 		{#each options as opt}
 			<button

@@ -106,6 +106,50 @@ export const POST: RequestHandler = async (event) => {
 	const body = await event.request.json();
 	const { action, enrollmentId } = body;
 
+	if (action === 'enroll_in_cohort') {
+		const { cohortId } = body;
+		if (!enrollmentId || !cohortId) throw error(400, 'Missing enrollmentId or cohortId');
+
+		const { data: source, error: srcErr } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('user_profile_id, email, full_name, hub_id')
+			.eq('id', enrollmentId)
+			.single();
+
+		if (srcErr || !source) throw error(404, 'Enrollment not found');
+
+		const { data: existing } = await supabaseAdmin
+			.from('courses_enrollments')
+			.select('id')
+			.eq('cohort_id', cohortId)
+			.eq('email', source.email)
+			.neq('status', 'withdrawn')
+			.maybeSingle();
+
+		if (existing) return json({ success: false, message: 'Already enrolled in that cohort' });
+
+		const { error: insertErr } = await supabaseAdmin
+			.from('courses_enrollments')
+			.insert({
+				user_profile_id: source.user_profile_id,
+				email: source.email,
+				full_name: source.full_name,
+				hub_id: source.hub_id,
+				cohort_id: cohortId,
+				role: 'student',
+				status: 'invited',
+				imported_by: (await event.locals.safeGetSession()).user?.id ?? null,
+				login_count: 0
+			});
+
+		if (insertErr) {
+			console.error('Failed to enrol in cohort:', insertErr);
+			throw error(500, 'Failed to enrol');
+		}
+
+		return json({ success: true });
+	}
+
 	if (!enrollmentId) {
 		throw error(400, 'Missing enrollmentId');
 	}

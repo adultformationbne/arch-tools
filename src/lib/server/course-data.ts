@@ -1881,6 +1881,13 @@ export const CourseMutations = {
 			.in('id', studentIds)
 			.eq('cohort_id', cohortId);
 
+		// Bump cohort's current_session if target is ahead of it
+		await supabaseAdmin
+			.from('courses_cohorts')
+			.update({ current_session: targetSession })
+			.eq('id', cohortId)
+			.lt('current_session', targetSession);
+
 		// Log email activity if requested
 		if (sendEmail && actorName) {
 			await supabaseAdmin.from('courses_activity_log').insert({
@@ -2267,9 +2274,6 @@ export const CourseMutations = {
 			// Get hub ID
 			const hubId = row.hub?.trim() ? hubsByName.get(row.hub.trim().toLowerCase()) || null : null;
 
-			// Determine status: existing users (already have account) start as 'active'
-			// New users (just created) start as 'pending' until they set password
-			const isExistingUser = existingAuthUser && !newlyCreatedUserId;
 			const now = new Date().toISOString();
 
 			enrollmentsToInsert.push({
@@ -2281,7 +2285,7 @@ export const CourseMutations = {
 				hub_id: hubId,
 				cohort_id: cohortId,
 				imported_by: importedBy,
-				status: isExistingUser ? 'active' : 'pending',
+				status: 'invited',
 				// Start new enrollees at the cohort's current session
 				current_session: cohortCurrentSession,
 				// last_login_at stays null until they actually visit this course's dashboard
@@ -2619,6 +2623,7 @@ export const CourseMutations = {
 		muxAssetId?: string;
 		muxPlaybackId?: string;
 		muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored';
+		availableEarly?: boolean;
 	}) {
 		return supabaseAdmin
 			.from('courses_materials')
@@ -2633,7 +2638,8 @@ export const CourseMutations = {
 				mux_upload_id: params.muxUploadId || null,
 				mux_asset_id: params.muxAssetId || null,
 				mux_playback_id: params.muxPlaybackId || null,
-				mux_status: params.muxStatus || null
+				mux_status: params.muxStatus || null,
+				available_early: params.availableEarly ?? false
 			})
 			.select()
 			.single();
@@ -2655,6 +2661,7 @@ export const CourseMutations = {
 			muxAssetId?: string;
 			muxPlaybackId?: string;
 			muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored' | null;
+			availableEarly?: boolean;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -2669,6 +2676,7 @@ export const CourseMutations = {
 		if (updates.muxAssetId !== undefined) payload.mux_asset_id = updates.muxAssetId;
 		if (updates.muxPlaybackId !== undefined) payload.mux_playback_id = updates.muxPlaybackId;
 		if (updates.muxStatus !== undefined) payload.mux_status = updates.muxStatus;
+		if (updates.availableEarly !== undefined) payload.available_early = updates.availableEarly;
 
 		return supabaseAdmin
 			.from('courses_materials')

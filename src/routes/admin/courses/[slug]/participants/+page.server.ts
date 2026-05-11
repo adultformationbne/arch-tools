@@ -124,10 +124,13 @@ export const load: PageServerLoad = async (event) => {
 			const attendance = attendanceMap.get(enrollment.id) || { attended: 0, total: 0 };
 			const reflections = reflectionMap.get(enrollment.id) || { submitted: 0, passed: 0 };
 
+			const everActive = ['active', 'completed'].includes(enrollment.status);
+
 			if (!userMap.has(email)) {
 				userMap.set(email, {
 					...enrollment,
 					all_cohorts: [enrollment.cohort],
+					ever_active: everActive,
 					progress: {
 						attendance,
 						reflections
@@ -138,6 +141,7 @@ export const load: PageServerLoad = async (event) => {
 				if (enrollment.cohort && !existing.all_cohorts.some(c => c?.id === enrollment.cohort?.id)) {
 					existing.all_cohorts.push(enrollment.cohort);
 				}
+				if (everActive) existing.ever_active = true;
 				// Merge progress data
 				existing.progress.attendance.attended += attendance.attended;
 				existing.progress.attendance.total += attendance.total;

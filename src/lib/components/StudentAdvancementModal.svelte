@@ -27,7 +27,7 @@
 
 	// Filter eligible enrollments by session and status
 	const eligibleEnrollments = $derived(
-		students?.filter((s) => s.current_session < selectedSession && s.status === 'active') || []
+		students?.filter((s) => s.current_session < selectedSession && ['active', 'invited', 'accepted'].includes(s.status)) || []
 	);
 
 	// Separate coordinators from students - coordinators are always auto-selected
@@ -103,13 +103,12 @@
 	$effect(() => {
 		if (show && cohort) {
 			// Default to the cohort's current session (catch people up), not current+1
-			selectedSession = cohort.current_session ?? 0;
+			selectedSession = Math.max(cohort.current_session ?? 1, 1);
 
-			// If initialSelectedIds provided, pre-select eligible students from that list
+			// If initialSelectedIds provided, pre-select non-coordinator students from that list
 			if (initialSelectedIds && initialSelectedIds.length > 0) {
-				// Filter to only include IDs that are eligible students (not coordinators)
-				const eligibleStudentIds = eligibleStudents.map(s => s.id);
-				selectedStudents = initialSelectedIds.filter(id => eligibleStudentIds.includes(id));
+				const nonCoordinatorIds = new Set(students?.filter(s => s.role !== 'coordinator').map(s => s.id) || []);
+				selectedStudents = initialSelectedIds.filter(id => nonCoordinatorIds.has(id));
 			} else {
 				selectedStudents = [];
 			}

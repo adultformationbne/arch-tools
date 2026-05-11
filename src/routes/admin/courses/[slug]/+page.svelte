@@ -2,12 +2,13 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download, X } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
 	import FilterSelect from '$lib/components/FilterSelect.svelte';
+	import FiltersPanel from '$lib/components/FiltersPanel.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
@@ -58,49 +59,87 @@
 	let filterReflections = $state('all');
 	let filterAttendance = $state('all');
 
+	// Get selected cohort from URL params (must be declared before derived options that use it)
+	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
+	const archivedCohorts = $derived(data.archivedCohorts || []);
+	const allCohorts = $derived([...cohorts, ...archivedCohorts]);
+	const selectedCohort = $derived(allCohorts.find(c => c.id === selectedCohortId));
+
 	const hubOptions = $derived([
 		{ value: 'all', label: 'All Hubs' },
 		{ value: 'none', label: 'No Hub' },
 		...hubs.map(h => ({ value: h.id, label: h.name }))
 	]);
-	const statusOptions = [
-		{ value: 'all', label: 'All Statuses' },
-		{ value: 'not_invited', label: 'Not Invited' },
-		{ value: 'invited', label: 'Invited' },
-		{ value: 'pending', label: 'Pending' },
-		{ value: 'active', label: 'Active' },
-		{ value: 'held', label: 'On Hold' },
-		{ value: 'withdrawn', label: 'Withdrawn' },
-		{ value: 'completed', label: 'Completed' }
-	];
-	const sessionOptions = [
-		{ value: 'all', label: 'All Sessions' },
-		{ value: 'behind', label: 'Behind' },
-		{ value: 'on_track', label: 'On Track' },
-		{ value: 'ahead', label: 'Ahead' }
-	];
-	const attendanceOptions = [
-		{ value: 'all', label: 'All Attendance' },
-		{ value: 'complete', label: 'Perfect' },
-		{ value: 'on_track', label: 'Missed 1' },
-		{ value: 'behind', label: 'Missed 2+' }
-	];
-	const reflectionOptions = [
-		{ value: 'all', label: 'All Reflections' },
-		{ value: 'complete', label: 'Complete' },
-		{ value: 'on_track', label: 'On Track' },
-		{ value: 'behind', label: 'Behind' }
-	];
+	const statusOptions = $derived.by(() => {
+		const all = [{ value: 'all', label: 'All Statuses' }];
+		const opts = [
+			{ value: 'not_invited', label: 'Not Invited' },
+			{ value: 'invited', label: 'Invited' },
+			{ value: 'pending', label: 'Pending' },
+			{ value: 'active', label: 'Active' },
+			{ value: 'held', label: 'On Hold' },
+			{ value: 'withdrawn', label: 'Withdrawn' },
+			{ value: 'completed', label: 'Completed' }
+		];
+		if (!participants.length) return [...all, ...opts];
+		return [...all, ...opts.filter(o => participants.some(p => getStatusKey(p) === o.value))];
+	});
+	const sessionOptions = $derived.by(() => {
+		const all = [{ value: 'all', label: 'All Sessions' }];
+		const cohortSess = selectedCohort?.current_session || 0;
+		if (!participants.length || cohortSess === 0) return all;
+		const opts = [
+			{ value: 'behind', label: 'Behind', fn: p => p.current_session < cohortSess },
+			{ value: 'on_track', label: 'On Track', fn: p => p.current_session === cohortSess },
+			{ value: 'ahead', label: 'Ahead', fn: p => p.current_session > cohortSess }
+		];
+		return [...all, ...opts.filter(o => participants.some(o.fn)).map(({ value, label }) => ({ value, label }))];
+	});
+	const attendanceOptions = $derived.by(() => {
+		const all = [{ value: 'all', label: 'All Attendance' }];
+		const cohortSess = selectedCohort?.current_session || 0;
+		if (!participants.length || cohortSess === 0) return all;
+		const opts = [
+			{ value: 'complete', label: 'Perfect' },
+			{ value: 'on_track', label: 'Missed 1' },
+			{ value: 'behind', label: 'Missed 2+' }
+		];
+		return [...all, ...opts.filter(o => participants.some(p => p.attendanceStatus === o.value))];
+	});
+	const reflectionOptions = $derived.by(() => {
+		const all = [{ value: 'all', label: 'All Reflections' }];
+		const cohortSess = selectedCohort?.current_session || 0;
+		if (!participants.length || cohortSess === 0) return all;
+		const opts = [
+			{ value: 'complete', label: 'Complete' },
+			{ value: 'on_track', label: 'On Track' },
+			{ value: 'behind', label: 'Behind' }
+		];
+		return [...all, ...opts.filter(o => participants.some(p => p.reflectionStatus?.status === o.value))];
+	});
+	const anyFilterActive = $derived(
+		filterHub !== 'all' || filterStatus !== 'all' ||
+		filterSession !== 'all' || filterAttendance !== 'all' || filterReflections !== 'all'
+	);
+
+	// Auto-reset filter when its option no longer exists in the data
+	$effect(() => { if (filterStatus !== 'all' && !statusOptions.some(o => o.value === filterStatus)) filterStatus = 'all'; });
+	$effect(() => { if (filterSession !== 'all' && !sessionOptions.some(o => o.value === filterSession)) filterSession = 'all'; });
+	$effect(() => { if (filterAttendance !== 'all' && !attendanceOptions.some(o => o.value === filterAttendance)) filterAttendance = 'all'; });
+	$effect(() => { if (filterReflections !== 'all' && !reflectionOptions.some(o => o.value === filterReflections)) filterReflections = 'all'; });
+
+	function clearAllFilters() {
+		filterHub = 'all';
+		filterStatus = 'all';
+		filterSession = 'all';
+		filterAttendance = 'all';
+		filterReflections = 'all';
+		searchQuery = '';
+	}
 	let sortColumn = $state('name');
 	let sortDirection = $state('asc');
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
-
-	// Get selected cohort from URL params
-	const selectedCohortId = $derived($page.url.searchParams.get('cohort'));
-	const archivedCohorts = $derived(data.archivedCohorts || []);
-	const allCohorts = $derived([...cohorts, ...archivedCohorts]);
-	const selectedCohort = $derived(allCohorts.find(c => c.id === selectedCohortId));
 
 	// Calculate stats for sidebar
 	const stats = $derived({
@@ -467,11 +506,6 @@
 	}
 
 	function handleAdvanceSelected() {
-		if (participantsBehind.length === 0) {
-			toastWarning('Selected participants are already at current session');
-			return;
-		}
-		// Pre-select the participants that are behind
 		advancementInitialIds = Array.from(selectedParticipants);
 		showAdvancementModal = true;
 	}
@@ -710,9 +744,10 @@
 		if (participant.status === 'withdrawn') return 'withdrawn';
 		if (participant.status === 'completed') return 'completed';
 		if (participant.status === 'pending') return 'pending';
-		// DB status === 'invited'
-		if (!participant.welcome_email_sent_at && !participant.last_login_at) return 'not_invited';
-		return 'active';
+		// DB status === 'invited': split by engagement signals
+		if (participant.last_login_at) return 'active'; // logged in → treat same as DB-active
+		if (!participant.welcome_email_sent_at) return 'not_invited';
+		return 'invited'; // welcome email sent, hasn't signed in yet
 	}
 
 </script>
@@ -842,24 +877,33 @@
 			<div class="p-3 sm:p-4 lg:p-6">
 				<!-- Page Header + Search + Filters -->
 				<div class="flex flex-col gap-2 mb-4">
-					<div class="flex items-center justify-between gap-3">
+					<div class="flex flex-wrap items-center gap-2">
 						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block shrink-0">Participants</h1>
-						<div class="relative w-full lg:w-64">
-							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/50" />
+						<div class="relative">
+							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
 							<input
 								type="text"
 								bind:value={searchQuery}
-								placeholder="Search participants..."
-								class="w-full pl-8 pr-3 py-1.5 text-sm border border-white/20 rounded-lg focus:ring-1 focus:ring-white/30 focus:outline-none bg-white/10 text-white placeholder:text-white/40"
+								placeholder="Search..."
+								class="w-36 sm:w-44 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-300 focus:outline-none bg-white text-gray-800 placeholder:text-gray-400 shadow-sm"
 							/>
 						</div>
-					</div>
-					<div class="flex flex-wrap gap-1.5">
-						<FilterSelect bind:value={filterHub} options={hubOptions} />
-						<FilterSelect bind:value={filterStatus} options={statusOptions} />
-						<FilterSelect bind:value={filterSession} options={sessionOptions} />
-						<FilterSelect bind:value={filterAttendance} options={attendanceOptions} />
-						<FilterSelect bind:value={filterReflections} options={reflectionOptions} />
+						<FilterSelect bind:value={filterHub} options={hubOptions} icon={MapPin} />
+						<FilterSelect bind:value={filterStatus} options={statusOptions} icon={Users} />
+						<FiltersPanel
+							bind:filterSession
+							bind:filterAttendance
+							bind:filterReflections
+							{sessionOptions}
+							{attendanceOptions}
+							{reflectionOptions}
+						/>
+						{#if anyFilterActive}
+							<button type="button" onclick={clearAllFilters} class="flex items-center gap-1 px-2 py-1.5 text-xs text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10">
+								<X size={12} />
+								Clear
+							</button>
+						{/if}
 					</div>
 					{#if !loadingParticipants && participants.length > 0}
 					<div class="flex items-center justify-between text-xs text-white/60 mt-0.5">
@@ -916,21 +960,19 @@
 								<Mail size={12} />
 								Email
 							</button>
-							{#if participantsBehind.length > 0}
-								<button
-									onclick={handleAdvanceSelected}
-									class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
-								>
-									<ArrowRight size={12} />
-									Advance ({participantsBehind.length})
-								</button>
-							{/if}
+							<button
+								onclick={handleAdvanceSelected}
+								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
+							>
+								<ArrowRight size={12} />
+								Advance
+							</button>
 							<button
 								onclick={handleAssignHub}
 								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<MapPin size={12} />
-								Hub
+								Assign to Hub
 							</button>
 							<button
 								onclick={handleRemoveSelected}

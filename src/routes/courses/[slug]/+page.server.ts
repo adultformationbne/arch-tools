@@ -183,6 +183,11 @@ export const load: PageServerLoad = async (event) => {
 			}));
 	};
 
+	// Calculate total sessions (excluding pre-start session 0) - needed before currentSessionData
+	const regularSessions = sessions.filter(s => s.session_number > 0);
+	const totalSessions = regularSessions.length;
+	const maxSessionNumber = Math.max(...regularSessions.map(s => s.session_number), 0);
+
 	let currentSessionData;
 	if (currentSession === 0) {
 		// Week 0 (Pre-start)
@@ -204,6 +209,9 @@ export const load: PageServerLoad = async (event) => {
 			}
 		}
 
+		const nextSessionEarlyMaterials0 = filterMaterials(
+			(materialsBySession[1] || []).filter((m: any) => m.available_early)
+		);
 		currentSessionData = {
 			sessionNumber: 0,
 			sessionTitle: sessionInfo?.title || 'Welcome',
@@ -211,6 +219,7 @@ export const load: PageServerLoad = async (event) => {
 				sessionInfo?.description ||
 				`This course begins on ${new Date(enrollment.cohort.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Review the materials below to prepare for Session 1.`,
 			materials: filterMaterials(sessionMaterials),
+			nextSessionMaterials: nextSessionEarlyMaterials0,
 			reflectionQuestion,
 			reflectionStatus,
 			isUpcoming: true
@@ -233,22 +242,22 @@ export const load: PageServerLoad = async (event) => {
 			}
 		}
 
+		const nextSessionNum = currentSession + 1;
+		const nextSessionEarlyMaterials = nextSessionNum <= maxSessionNumber
+			? filterMaterials((materialsBySession[nextSessionNum] || []).filter((m: any) => m.available_early))
+			: [];
 		currentSessionData = {
 			sessionNumber: currentSession,
 			sessionTitle: currentSessionInfo?.title || `Session ${currentSession}`,
 			sessionOverview:
 				currentSessionInfo?.description || `Session ${currentSession} content and materials`,
 			materials: filterMaterials(currentSessionMaterials),
+			nextSessionMaterials: nextSessionEarlyMaterials,
 			reflectionQuestion,
 			reflectionStatus,
 			isUpcoming: false
 		};
 	}
-
-	// Calculate total sessions (excluding pre-start session 0)
-	const regularSessions = sessions.filter(s => s.session_number > 0);
-	const totalSessions = regularSessions.length;
-	const maxSessionNumber = Math.max(...regularSessions.map(s => s.session_number), 0);
 
 	const courseData = {
 		title: enrollment.cohort.module.name || 'Foundations of Faith',

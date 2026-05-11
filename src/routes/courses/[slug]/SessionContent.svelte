@@ -1,6 +1,7 @@
 <script>
-	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap, Lock } from '$lib/icons';
+	import { Play, FileText, Book, Edit3, Eye, ChevronLeft, ChevronRight, ChevronDown, BookOpen, PenTool, Zap, Lock, ExternalLink } from '$lib/icons';
 	import SessionNavigationTabs from './SessionNavigationTabs.svelte';
+	import ForNextSession from './ForNextSession.svelte';
 	import { getStatusLabel, isComplete } from '$lib/utils/reflection-status.js';
 	import { tooltip } from '$lib/utils/tooltip.js';
 
@@ -95,6 +96,9 @@
 			needsTruncation: true
 		};
 	};
+
+	// Next-session early-access materials
+	const nextSessionMaterials = $derived(currentSessionData?.nextSessionMaterials ?? []);
 
 	// Quiz helpers
 	const currentQuiz = $derived(quizzesBySession[currentSession] ?? null);
@@ -254,15 +258,19 @@
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{currentSession === 0 ? 'Welcome Materials' : 'Materials'}</h3>
 							<div class="flex flex-wrap gap-2">
 								{#if materials.length === 0}
-									<div class="w-full flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-										<BookOpen size={28} class="text-gray-400 mb-2" />
-										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
-									</div>
+									<div class="w-full flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<BookOpen size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No materials required for this session</p>
+					</div>
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
+									{@const direct = material.type === 'link' || material.type === 'document'}
+									{@const materialHref = direct ? (material.url ?? material.content ?? '#') : `/courses/${courseSlug}/materials?material=${material.id}`}
 									<a
-										href="/courses/{courseSlug}/materials?material={material.id}"
+										href={materialHref}
+										target={direct ? '_blank' : undefined}
+										rel={direct ? 'noopener noreferrer' : undefined}
 										class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer no-underline text-sm font-medium"
 										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
@@ -336,10 +344,10 @@
 									</a>
 								</div>
 							{:else}
-								<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-									<PenTool size={28} class="text-gray-400 mb-2" />
-									<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
-								</div>
+								<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<PenTool size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No reflection for this session</p>
+					</div>
 							{/if}
 							</div>
 						{/if}
@@ -454,15 +462,19 @@
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Welcome Materials</h3>
 							<div class="space-y-2">
 								{#if materials.length === 0}
-									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-										<BookOpen size={28} class="text-gray-400 mb-2" />
-										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
-									</div>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<BookOpen size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No materials required for this session</p>
+					</div>
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
+									{@const direct = material.type === 'link' || material.type === 'document'}
+									{@const materialHref = direct ? (material.url ?? material.content ?? '#') : `/courses/${courseSlug}/materials?material=${material.id}`}
 									<a
-										href="/courses/{courseSlug}/materials?material={material.id}"
+										href={materialHref}
+										target={direct ? '_blank' : undefined}
+										rel={direct ? 'noopener noreferrer' : undefined}
 										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
@@ -536,10 +548,10 @@
 										</a>
 									</div>
 								{:else}
-									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-										<PenTool size={28} class="text-gray-400 mb-2" />
-										<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
-									</div>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<PenTool size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No reflection for this session</p>
+					</div>
 								{/if}
 								</div>
 							{/if}
@@ -654,15 +666,19 @@
 							<h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Materials</h3>
 							<div class="space-y-2">
 								{#if materials.length === 0}
-									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-										<BookOpen size={28} class="text-gray-400 mb-2" />
-										<p class="text-gray-500 text-sm text-center">No materials required for this session</p>
-									</div>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<BookOpen size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No materials required for this session</p>
+					</div>
 								{/if}
 								{#each materials as material, index}
 									{@const IconComponent = getIcon(material.type)}
+									{@const direct = material.type === 'link' || material.type === 'document'}
+									{@const materialHref = direct ? (material.url ?? material.content ?? '#') : `/courses/${courseSlug}/materials?material=${material.id}`}
 									<a
-										href="/courses/{courseSlug}/materials?material={material.id}"
+										href={materialHref}
+										target={direct ? '_blank' : undefined}
+										rel={direct ? 'noopener noreferrer' : undefined}
 										class="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer no-underline"
 										class:hover:opacity-90={true}
 										style={index === 0 ? "background-color: var(--course-accent-dark, #334642);" : "background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 12%, white);"}
@@ -736,10 +752,10 @@
 										</a>
 									</div>
 								{:else}
-									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl bg-gray-100/50">
-										<PenTool size={28} class="text-gray-400 mb-2" />
-										<p class="text-gray-500 text-sm text-center">No reflection for this session</p>
-									</div>
+									<div class="flex flex-col items-center justify-center py-6 px-4 rounded-xl" style="background-color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 30%, white);">
+						<PenTool size={28} class="mb-2" style="color: color-mix(in srgb, var(--course-accent-light, #c59a6b) 60%, var(--course-accent-dark, #334642));"/>
+						<p class="text-sm text-center font-medium" style="color: var(--course-accent-dark, #334642);">No reflection for this session</p>
+					</div>
 								{/if}
 								</div>
 							{/if}
@@ -748,6 +764,11 @@
 			</div>
 		{/if}
 
+
+		<!-- For Next Session -->
+		{#if nextSessionMaterials.length > 0}
+			<ForNextSession materials={nextSessionMaterials} {courseSlug} />
+		{/if}
 		<!-- Quiz Panel (shown below session content if a quiz exists for this session) -->
 		{#if quizzesEnabled && currentQuiz}
 			<div class="mt-6 mb-2 px-4 sm:px-0">

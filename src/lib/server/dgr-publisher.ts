@@ -61,7 +61,8 @@ export async function publishDGRToWordPress(params: PublishParams): Promise<Publ
 
 	const excerpt = `${params.title} – ${params.liturgicalDate}<br><br><br>
 <I>${params.gospelQuote}</I><br><br>
-${truncatedText}`;
+${truncatedText}<br><br>
+— ${params.authorName}`;
 
 	// Get the active template
 	const { data: template, error: templateError } = await supabaseAdmin

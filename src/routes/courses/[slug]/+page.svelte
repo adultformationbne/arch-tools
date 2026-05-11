@@ -90,6 +90,11 @@
 			}
 		}
 
+		const nextNum = sessionNum + 1;
+		const nextSessionMaterials = nextNum <= maxSessionNumber
+			? (materialsBySession[nextNum] || []).filter(m => m.available_early)
+			: [];
+
 		courseData = {
 			...courseData,
 			currentSessionData: {
@@ -97,6 +102,7 @@
 				sessionTitle: sessionInfo?.title || `Session ${sessionNum}`,
 				sessionOverview: sessionInfo?.description || `Session ${sessionNum} content and materials`,
 				materials: sessionMaterials,
+				nextSessionMaterials,
 				reflectionQuestion: sessionQuestion,
 				reflectionStatus
 			}

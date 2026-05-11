@@ -48,7 +48,7 @@
 				student.notes?.toLowerCase().includes(query);
 
 			const matchesHub = selectedHub === 'all' || (selectedHub === '' ? !student.hub_id : student.hub_id === selectedHub);
-			const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
+			const matchesStatus = selectedStatus === 'all' || getPersonStatus(student) === selectedStatus;
 			const matchesCohort = selectedCohort === 'all' ||
 				student.cohort_id === selectedCohort ||
 				student.all_cohorts?.some(c => c?.id === selectedCohort);
@@ -158,11 +158,45 @@
 			}))
 	);
 
-	let stats = $derived({
-		total: filteredStudents.length,
-		active: filteredStudents.filter(s => s.status === 'active').length,
-		pending: filteredStudents.filter(s => s.status === 'pending' || s.status === 'invited').length
-	});
+	function getPersonStatus(student) {
+		if (student.ever_active) return 'participant';
+		if (student.status === 'pending') return 'pending';
+		if (student.status === 'invited' || student.status === 'accepted') return 'invited';
+		return 'participant';
+	}
+
+	// Enrol in cohort state
+	let enrollCohortSelections = $state(new Map());
+	let enrollingId = $state(null);
+
+	function getAvailableCohorts(student) {
+		const enrolled = new Set(student.all_cohorts?.map(c => c?.id).filter(Boolean));
+		return cohorts.filter(c => !enrolled.has(c.id));
+	}
+
+	async function handleEnrolInCohort(student, e) {
+		e?.stopPropagation();
+		const cohortId = enrollCohortSelections.get(student.id);
+		if (!cohortId) return;
+		enrollingId = student.id;
+		try {
+			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'enroll_in_cohort', enrollmentId: student.id, cohortId })
+			});
+			const result = await response.json();
+			if (!response.ok || !result.success) throw new Error(result.message || 'Failed to enrol');
+			toastSuccess('Enrolled in cohort');
+			enrollCohortSelections.delete(student.id);
+			enrollCohortSelections = new Map(enrollCohortSelections);
+			await invalidateAll();
+		} catch (err) {
+			toastError(err.message || 'Failed to enrol');
+		} finally {
+			enrollingId = null;
+		}
+	}
 
 	async function handleUpdateHub(studentId, newHubId, e) {
 		e?.stopPropagation();
@@ -188,18 +222,6 @@
 			console.error('Error updating hub:', err);
 			toastError(err.message || 'Failed to update hub', 'Update Failed');
 		}
-	}
-
-	function getStatusBadge(status) {
-		const badges = {
-			active: 'bg-green-100 text-green-800',
-			pending: 'bg-yellow-100 text-yellow-800',
-			invited: 'bg-blue-100 text-blue-800',
-			completed: 'bg-purple-100 text-purple-800',
-			withdrawn: 'bg-red-100 text-red-800',
-			held: 'bg-orange-100 text-orange-800'
-		};
-		return badges[status] || 'bg-gray-100 text-gray-600';
 	}
 
 	function openParticipantDetail(student, e) {
@@ -328,7 +350,7 @@
 		<div class="p-4 border-b" style="border-color: rgba(255,255,255,0.1);">
 			<h2 class="text-sm font-bold text-white/90 uppercase tracking-wide">Participant Database</h2>
 			<p class="text-xs text-white/50 mt-1">
-				<span class="font-semibold text-white">{stats.total}</span> of {students.length} showing
+				<span class="font-semibold text-white">{filteredStudents.length}</span> of {students.length} showing
 			</p>
 		</div>
 
@@ -346,18 +368,7 @@
 				</div>
 			</div>
 
-			<div class="grid grid-cols-2 gap-2">
-				<div class="rounded-lg p-2.5" style="background-color: rgba(255,255,255,0.05);">
-					<p class="text-[10px] text-white/50 uppercase tracking-wider">Active</p>
-					<p class="text-lg font-bold text-white">{stats.active}</p>
-				</div>
-				<div class="rounded-lg p-2.5" style="background-color: rgba(255,255,255,0.05);">
-					<p class="text-[10px] text-white/50 uppercase tracking-wider">Pending</p>
-					<p class="text-lg font-bold text-white/70">{stats.pending}</p>
-				</div>
-			</div>
-
-			{#if cohorts.length > 1}
+{#if cohorts.length > 1}
 				<div>
 					<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="cohort-filter">Cohort</label>
 					<select
@@ -390,12 +401,9 @@
 				<h3 class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 px-1">Status</h3>
 				<div class="space-y-0.5">
 					{#each [
-						{ value: 'all', label: 'All Statuses' },
-						{ value: 'active', label: 'Active' },
-						{ value: 'pending', label: 'Pending Approval' },
-						{ value: 'invited', label: 'Invited' },
-						{ value: 'completed', label: 'Completed' },
-						{ value: 'withdrawn', label: 'Withdrawn' }
+						{ value: 'all', label: 'All Participants' },
+						{ value: 'pending', label: 'Awaiting Approval' },
+						{ value: 'invited', label: 'Invited' }
 					] as option}
 						<button
 							onclick={() => selectedStatus = option.value}
@@ -448,7 +456,7 @@
 				<div>
 					<h2 class="text-sm font-bold text-white/90">Participants</h2>
 					<p class="text-xs text-white/50">
-						<span class="font-semibold text-white">{stats.total}</span> of {students.length} showing
+						<span class="font-semibold text-white">{filteredStudents.length}</span> of {students.length} showing
 					</p>
 				</div>
 				<div class="flex items-center gap-2">
@@ -489,18 +497,6 @@
 			<!-- Collapsible filters -->
 			{#if showMobileFilters}
 				<div class="space-y-3 pt-2 border-t" style="border-color: rgba(255,255,255,0.1);">
-					<!-- Quick stats -->
-					<div class="flex gap-2">
-						<div class="flex-1 rounded-lg p-2" style="background-color: rgba(255,255,255,0.05);">
-							<p class="text-[10px] text-white/50 uppercase tracking-wider">Active</p>
-							<p class="text-base font-bold text-white">{stats.active}</p>
-						</div>
-						<div class="flex-1 rounded-lg p-2" style="background-color: rgba(255,255,255,0.05);">
-							<p class="text-[10px] text-white/50 uppercase tracking-wider">Pending</p>
-							<p class="text-base font-bold text-white/70">{stats.pending}</p>
-						</div>
-					</div>
-
 					<!-- Filter dropdowns in a row -->
 					<div class="flex gap-2 overflow-x-auto scrollbar-hide">
 						<!-- Status filter -->
@@ -509,12 +505,9 @@
 							class="flex-shrink-0 px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
 							style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
 						>
-							<option value="all" class="text-gray-900">All Statuses</option>
-							<option value="active" class="text-gray-900">Active</option>
-							<option value="pending" class="text-gray-900">Pending</option>
+							<option value="all" class="text-gray-900">All Participants</option>
+							<option value="pending" class="text-gray-900">Awaiting Approval</option>
 							<option value="invited" class="text-gray-900">Invited</option>
-							<option value="completed" class="text-gray-900">Completed</option>
-							<option value="withdrawn" class="text-gray-900">Withdrawn</option>
 						</select>
 
 						<!-- Hub filter -->
@@ -690,9 +683,19 @@
 										{/if}
 									</td>
 									<td class="w-20 sm:w-24 px-2 sm:px-4 py-2 sm:py-3">
-										<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full {getStatusBadge(student.status)}">
-											{student.status || 'unknown'}
-										</span>
+										{#if student.status === 'pending'}
+											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full bg-yellow-100 text-yellow-800">
+												Awaiting Approval
+											</span>
+										{:else if student.status === 'invited' || student.status === 'accepted'}
+											<span class="inline-flex px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full bg-blue-100 text-blue-800">
+												Invited
+											</span>
+										{:else}
+											<span class="text-[9px] sm:text-[10px] text-gray-400">
+												{student.all_cohorts?.length || 1} cohort{(student.all_cohorts?.length || 1) !== 1 ? 's' : ''}
+											</span>
+										{/if}
 									</td>
 									<td class="w-8 sm:w-10 px-2 sm:px-3 py-2 sm:py-3 text-center">
 										<ChevronRight size={16} class="inline-block text-gray-400 transition-transform duration-200 {isExpanded ? 'rotate-90' : ''}" />
@@ -798,6 +801,31 @@
 														</button>
 													{/if}
 												</div>
+												{#each [getAvailableCohorts(student)] as availableCohorts}
+												{#if availableCohorts.length > 0}
+													<div class="col-span-full mt-1 pt-3 border-t border-gray-200 flex items-center gap-2 flex-wrap">
+														<span class="text-[10px] font-semibold uppercase text-gray-400">Enrol in cohort</span>
+														<select
+															value={enrollCohortSelections.get(student.id) || ''}
+															onclick={(e) => e.stopPropagation()}
+															onchange={(e) => { enrollCohortSelections.set(student.id, e.target.value); enrollCohortSelections = new Map(enrollCohortSelections); }}
+															class="text-xs px-2 py-1 rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-700 bg-white"
+														>
+															<option value="">Select cohort…</option>
+															{#each availableCohorts as c}
+																<option value={c.id}>{c.name}</option>
+															{/each}
+														</select>
+														<button
+															onclick={(e) => handleEnrolInCohort(student, e)}
+															disabled={!enrollCohortSelections.get(student.id) || enrollingId === student.id}
+															class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40"
+														>
+															{enrollingId === student.id ? 'Enrolling…' : 'Enrol'}
+														</button>
+													</div>
+												{/if}
+												{/each}
 											</div>
 										</td>
 									</tr>

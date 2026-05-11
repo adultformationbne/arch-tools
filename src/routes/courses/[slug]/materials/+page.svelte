@@ -27,6 +27,8 @@
 	const materialsBySession = $derived(data.materialsBySession);
 	/** @type {number} */
 	const currentSession = $derived(data.currentSession);
+	/** @type {number | null} */
+	const earlyAccessSessionNumber = $derived(data.earlyAccessSessionNumber ?? null);
 	/** @type {Material[]} */
 	const materials = $derived(data.materials);
 	const courseName = $derived(data.courseName);
@@ -71,7 +73,12 @@
 
 	$effect(() => {
 		if (initialSession !== undefined) {
-			expandedSessions = new Set([initialSession]);
+			const toExpand = new Set([initialSession]);
+			// Also expand the early-access session so participants see it without having to discover it
+			if (earlyAccessSessionNumber !== null && materialsBySession[earlyAccessSessionNumber]?.length > 0) {
+				toExpand.add(earlyAccessSessionNumber);
+			}
+			expandedSessions = toExpand;
 			mobileSelectedSession = initialSession;
 		}
 	});
@@ -242,7 +249,7 @@
 						class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap {mobileSelectedSession === sessionNum ? 'text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
 						style={mobileSelectedSession === sessionNum ? 'background-color: var(--course-accent-dark, #334642);' : ''}
 					>
-						{sessionNum === 0 ? 'Pre-Start' : `Session ${sessionNum}`}
+						{sessionNum === 0 ? 'Pre-Start' : earlyAccessSessionNumber !== null && sessionNum === earlyAccessSessionNumber ? `Session ${sessionNum} (Next)` : `Session ${sessionNum}`}
 					</button>
 				{/each}
 			</div>
@@ -296,6 +303,9 @@
 						<span class="font-semibold text-white">
 							{parseInt(sessionNum) === 0 ? 'Pre-Start' : `Session ${sessionNum}`}
 						</span>
+						{#if earlyAccessSessionNumber !== null && parseInt(sessionNum) === earlyAccessSessionNumber}
+							<span class="text-xs px-1.5 py-0.5 rounded bg-white/20 text-white/80 font-normal">Next</span>
+						{/if}
 					</button>
 
 					<!-- Material List -->
