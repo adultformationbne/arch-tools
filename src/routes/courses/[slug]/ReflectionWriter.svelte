@@ -16,7 +16,7 @@
 
 	// Writing state
 	let content = $state(existingContent);
-	let isPrivate = $state(!existingIsPublic);
+	let isPrivate = $state(!communityFeedEnabled || !existingIsPublic);
 	let autoSaveStatus = $state('saved'); // 'saving', 'saved', 'error'
 	let wordCount = $derived(content.trim().split(/\s+/).filter(word => word.length > 0).length);
 	let lastSaved = $state(new Date());

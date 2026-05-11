@@ -72,7 +72,7 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 	},
 	features: {
 		reflectionsEnabled: true,
-		communityFeedEnabled: true,
+		communityFeedEnabled: false,
 		attendanceEnabled: true,
 		enrollmentEnabled: false,
 		acceptPayments: false,
