@@ -2,9 +2,11 @@
 	import { X, UserPlus, Upload, Users, AlertTriangle } from '$lib/icons';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { cohort = null, show = false, courseSlug, onClose = () => {}, onComplete = () => {} } = $props();
+	let { cohort = null, show = false, courseSlug, hubs = [], onClose = () => {}, onComplete = () => {} } = $props();
 
 	let mode = $state('choice'); // 'choice', 'single', 'bulk', 'conflicts'
+	let hubMode = $state('select'); // 'select' or 'new'
+	let newHubName = $state('');
 	let isLoading = $state(false);
 	let error = $state('');
 	let uploadResult = $state(null);
@@ -160,6 +162,8 @@
 	function handleClose() {
 		mode = 'choice';
 		participantData = { full_name: '', email: '', role: 'student', hub: '' };
+		hubMode = 'select';
+		newHubName = '';
 		error = '';
 		uploadResult = null;
 		isLoading = false;
@@ -257,12 +261,41 @@
 
 						<div class="form-group">
 							<label for="participant-hub">Hub (Optional)</label>
-							<input
-								id="participant-hub"
-								type="text"
-								bind:value={participantData.hub}
-								placeholder="St. Mary's Parish"
-							/>
+							{#if hubMode === 'new'}
+								<div style="display:flex;gap:0.5rem;align-items:center">
+									<input
+										id="participant-hub"
+										type="text"
+										bind:value={newHubName}
+										oninput={() => participantData.hub = newHubName}
+										placeholder="New hub name"
+										style="flex:1"
+									/>
+									<button
+										type="button"
+										onclick={() => { hubMode = 'select'; newHubName = ''; participantData.hub = ''; }}
+										class="btn-text"
+									>Cancel</button>
+								</div>
+							{:else}
+								<select
+									id="participant-hub"
+									onchange={(e) => {
+										if (e.currentTarget.value === '__new__') {
+											hubMode = 'new';
+											participantData.hub = '';
+										} else {
+											participantData.hub = e.currentTarget.value;
+										}
+									}}
+								>
+									<option value="">No Hub</option>
+									{#each hubs as hub}
+										<option value={hub.name}>{hub.name}</option>
+									{/each}
+									<option value="__new__">+ Add new hub...</option>
+								</select>
+							{/if}
 						</div>
 
 						{#if error}
@@ -659,6 +692,20 @@
 	}
 
 	.btn-primary,
+	.btn-text {
+		background: none;
+		border: none;
+		padding: 0 4px;
+		font-size: 0.85rem;
+		color: #6b7280;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.btn-text:hover {
+		color: #374151;
+	}
+
 	.btn-secondary {
 		display: flex;
 		align-items: center;

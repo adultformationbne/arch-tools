@@ -18,6 +18,14 @@ export const load: PageServerLoad = async (event) => {
 	// Require user to be enrolled in this course (any role)
 	const { user } = await requireCourseAccess(event, courseSlug);
 
+	// Activate any enrollments that haven't been touched by the login flow yet
+	supabaseAdmin
+		.from('courses_enrollments')
+		.update({ status: 'active', last_login_at: new Date().toISOString(), login_count: 1 })
+		.eq('user_profile_id', user.id)
+		.is('last_login_at', null)
+		.then(() => {});
+
 	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;

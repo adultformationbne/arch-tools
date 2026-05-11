@@ -7,6 +7,7 @@
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
 	import CohortAdminSidebar from '$lib/components/CohortAdminSidebar.svelte';
+	import FilterSelect from '$lib/components/FilterSelect.svelte';
 	import CohortSettingsModal from '$lib/components/CohortSettingsModal.svelte';
 	import ParticipantEnrollmentModal from '$lib/components/ParticipantEnrollmentModal.svelte';
 	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
@@ -56,6 +57,40 @@
 	let filterSession = $state('all');
 	let filterReflections = $state('all');
 	let filterAttendance = $state('all');
+
+	const hubOptions = $derived([
+		{ value: 'all', label: 'All Hubs' },
+		{ value: 'none', label: 'No Hub' },
+		...hubs.map(h => ({ value: h.id, label: h.name }))
+	]);
+	const statusOptions = [
+		{ value: 'all', label: 'All Statuses' },
+		{ value: 'not_invited', label: 'Not Invited' },
+		{ value: 'invited', label: 'Invited' },
+		{ value: 'pending', label: 'Pending' },
+		{ value: 'active', label: 'Active' },
+		{ value: 'held', label: 'On Hold' },
+		{ value: 'withdrawn', label: 'Withdrawn' },
+		{ value: 'completed', label: 'Completed' }
+	];
+	const sessionOptions = [
+		{ value: 'all', label: 'All Sessions' },
+		{ value: 'behind', label: 'Behind' },
+		{ value: 'on_track', label: 'On Track' },
+		{ value: 'ahead', label: 'Ahead' }
+	];
+	const attendanceOptions = [
+		{ value: 'all', label: 'All Attendance' },
+		{ value: 'complete', label: 'Perfect' },
+		{ value: 'on_track', label: 'Missed 1' },
+		{ value: 'behind', label: 'Missed 2+' }
+	];
+	const reflectionOptions = [
+		{ value: 'all', label: 'All Reflections' },
+		{ value: 'complete', label: 'Complete' },
+		{ value: 'on_track', label: 'On Track' },
+		{ value: 'behind', label: 'Behind' }
+	];
 	let sortColumn = $state('name');
 	let sortDirection = $state('asc');
 	let reflectionsByUser = $state(new Map());
@@ -625,17 +660,7 @@
 		showEmailModal = true;
 	}
 
-	function getActivityInfo(participant) {
-		if (participant.status === 'held') return { label: 'On Hold', sub: null, labelClass: 'text-orange-600', dot: null };
-		if (participant.status === 'withdrawn') return { label: 'Withdrawn', sub: null, labelClass: 'text-red-500', dot: null };
-		if (participant.status === 'completed') return { label: 'Completed', sub: null, labelClass: 'text-purple-600', dot: null };
-
-		if (!participant.welcome_email_sent_at) {
-			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
-		}
-		if (!participant.last_login_at || participant.login_count === 0) {
-			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
-		}
+	function _loginActivity(participant) {
 		const diffDays = (Date.now() - new Date(participant.last_login_at).getTime()) / (1000 * 60 * 60 * 24);
 		const time = formatRelativeTime(participant.last_login_at);
 		if (diffDays <= 7) return { label: time, sub: null, labelClass: 'text-emerald-600', dot: '●' };
@@ -643,33 +668,50 @@
 		return { label: time, sub: null, labelClass: 'text-amber-600', dot: null };
 	}
 
+	function getActivityInfo(participant) {
+		if (participant.status === 'held') return { label: 'On Hold', sub: null, labelClass: 'text-orange-600', dot: null };
+		if (participant.status === 'withdrawn') return { label: 'Withdrawn', sub: null, labelClass: 'text-red-500', dot: null };
+		if (participant.status === 'completed') return { label: 'Completed', sub: null, labelClass: 'text-purple-600', dot: null };
+
+		if (participant.status === 'active') {
+			if (!participant.last_login_at || participant.login_count === 0) {
+				return { label: 'Active', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
+			}
+			return _loginActivity(participant);
+		}
+
+		// DB status is 'invited' or 'pending' — use communication signals
+		if (!participant.welcome_email_sent_at && (!participant.last_login_at || participant.login_count === 0)) {
+			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
+		}
+		if (!participant.last_login_at || participant.login_count === 0) {
+			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
+		}
+		return _loginActivity(participant);
+	}
+
 	// Keep getStatusBadge for CSV export and getStatusKey sorting
 	function getStatusBadge(participant) {
+		if (participant.status === 'active') return { label: 'Active', class: 'bg-green-100 text-green-700' };
+		if (participant.status === 'held') return { label: 'On Hold', class: 'bg-orange-100 text-orange-700' };
+		if (participant.status === 'withdrawn') return { label: 'Withdrawn', class: 'bg-red-100 text-red-700' };
+		if (participant.status === 'completed') return { label: 'Completed', class: 'bg-purple-100 text-purple-700' };
+		if (participant.status === 'pending') return { label: 'Pending', class: 'bg-yellow-100 text-yellow-700' };
+		// DB status === 'invited'
 		if (!participant.welcome_email_sent_at && !participant.last_login_at) {
 			return { label: 'Not Invited', class: 'bg-gray-100 text-gray-600' };
 		}
-		if (!participant.last_login_at) {
-			return { label: 'Invited', class: 'bg-blue-100 text-blue-700' };
-		}
-		if (participant.status === 'held') {
-			return { label: 'On Hold', class: 'bg-orange-100 text-orange-700' };
-		}
-		if (participant.status === 'withdrawn') {
-			return { label: 'Withdrawn', class: 'bg-red-100 text-red-700' };
-		}
-		if (participant.status === 'completed') {
-			return { label: 'Completed', class: 'bg-purple-100 text-purple-700' };
-		}
-		return { label: 'Active', class: 'bg-green-100 text-green-700' };
+		return { label: 'Invited', class: 'bg-blue-100 text-blue-700' };
 	}
 
 	function getStatusKey(participant) {
-		if (!participant.welcome_email_sent_at && !participant.last_login_at) return 'not_invited';
-		if (!participant.last_login_at) return 'invited';
-		if (participant.status === 'pending') return 'pending';
+		if (participant.status === 'active') return 'active';
 		if (participant.status === 'held') return 'held';
 		if (participant.status === 'withdrawn') return 'withdrawn';
 		if (participant.status === 'completed') return 'completed';
+		if (participant.status === 'pending') return 'pending';
+		// DB status === 'invited'
+		if (!participant.welcome_email_sent_at && !participant.last_login_at) return 'not_invited';
 		return 'active';
 	}
 
@@ -813,57 +855,28 @@
 						</div>
 					</div>
 					<div class="flex flex-wrap gap-1.5">
-						<select
-							bind:value={filterHub}
-							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterHub !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
-						>
-							<option value="all">All Hubs</option>
-							<option value="none">No Hub</option>
-							{#each hubs as hub}
-								<option value={hub.id}>{hub.name}</option>
-							{/each}
-						</select>
-						<select
-							bind:value={filterStatus}
-							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterStatus !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
-						>
-							<option value="all">All Statuses</option>
-							<option value="not_invited">Not Invited</option>
-							<option value="invited">Invited</option>
-							<option value="pending">Pending</option>
-							<option value="active">Active</option>
-							<option value="held">On Hold</option>
-							<option value="withdrawn">Withdrawn</option>
-							<option value="completed">Completed</option>
-						</select>
-						<select
-							bind:value={filterSession}
-							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterSession !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
-						>
-							<option value="all">All Sessions</option>
-							<option value="behind">Behind</option>
-							<option value="on_track">On Track</option>
-							<option value="ahead">Ahead</option>
-						</select>
-						<select
-							bind:value={filterAttendance}
-							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterAttendance !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
-						>
-							<option value="all">All Attendance</option>
-							<option value="complete">Perfect</option>
-							<option value="on_track">Missed 1</option>
-							<option value="behind">Missed 2+</option>
-						</select>
-						<select
-							bind:value={filterReflections}
-							class="px-2.5 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors cursor-pointer {filterReflections !== 'all' ? 'bg-teal-500/25 border-teal-400/50 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/15'}"
-						>
-							<option value="all">All Reflections</option>
-							<option value="complete">Complete</option>
-							<option value="on_track">On Track</option>
-							<option value="behind">Behind</option>
-						</select>
+						<FilterSelect bind:value={filterHub} options={hubOptions} />
+						<FilterSelect bind:value={filterStatus} options={statusOptions} />
+						<FilterSelect bind:value={filterSession} options={sessionOptions} />
+						<FilterSelect bind:value={filterAttendance} options={attendanceOptions} />
+						<FilterSelect bind:value={filterReflections} options={reflectionOptions} />
 					</div>
+					{#if !loadingParticipants && participants.length > 0}
+					<div class="flex items-center justify-between text-xs text-white/60 mt-0.5">
+						<span>
+							{#if filteredParticipants.length !== participants.length}
+								<span class="text-white/90 font-medium">{filteredParticipants.length}</span> of {participants.length} participants
+							{:else}
+								{participants.length} participant{participants.length === 1 ? '' : 's'}
+							{/if}
+						</span>
+						{#if filteredParticipants.length > 0}
+							<button type="button" onclick={toggleSelectAll} class="text-white/60 hover:text-white transition-colors">
+								{selectedParticipants.size === filteredParticipants.length && filteredParticipants.length > 0 ? 'Deselect all' : `Select all ${filteredParticipants.length}`}
+							</button>
+						{/if}
+					</div>
+					{/if}
 				</div>
 				<!-- Compact Bulk Action Bar (shows when participants selected) -->
 				{#if selectedParticipants.size > 0}
@@ -1112,6 +1125,7 @@
 	{courseSlug}
 	cohort={selectedCohort}
 	show={showStudentEnrollment}
+	{hubs}
 	onClose={() => showStudentEnrollment = false}
 	onComplete={handleEnrollmentComplete}
 />

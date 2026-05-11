@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { requireModuleLevel } from '$lib/server/auth';
 import { CourseQueries } from '$lib/server/course-data';
+import { supabaseAdmin } from '$lib/server/supabase';
 
 export const load: PageServerLoad = async (event) => {
 	// Require participant module to access My Courses
@@ -16,6 +17,16 @@ export const load: PageServerLoad = async (event) => {
 
 	const userId = userProfile.id;
 	const userModules: string[] = userProfile.modules ?? [];
+
+	// Activate any enrollments that haven't been touched by the login flow yet.
+	// This covers cases where the user navigates directly (already authenticated as admin, etc.)
+	// without going through the login page where track-login normally fires.
+	supabaseAdmin
+		.from('courses_enrollments')
+		.update({ status: 'active', last_login_at: new Date().toISOString(), login_count: 1 })
+		.eq('user_profile_id', userId)
+		.is('last_login_at', null)
+		.then(() => {});
 
 	const derivedRole = userModules.some(
 		(mod) => mod === 'courses.manager' || mod === 'courses.admin' || mod === 'platform.admin'
@@ -50,6 +61,8 @@ export const load: PageServerLoad = async (event) => {
 					cohortName: enrollment.cohort?.name,
 					moduleName: enrollment.cohort?.module?.name,
 					role: enrollment.role,
+					hubId: enrollment.hub_id,
+					hubName: (enrollment.hub as any)?.name ?? null,
 					status: enrollment.status
 				});
 			}

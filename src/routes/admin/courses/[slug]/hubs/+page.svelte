@@ -1,5 +1,5 @@
 <script>
-	import { Plus, MapPin, Edit, Trash2, ChevronDown, ChevronUp, Shield, UserPlus, X } from '$lib/icons';
+	import { Plus, MapPin, Edit, Trash2, ChevronDown, ChevronUp, Shield, UserPlus, X, Users } from '$lib/icons';
 	import HubModal from '$lib/components/HubModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -96,7 +96,7 @@
 			}
 		} else {
 			// Add new hub
-			hubs = [...hubs, { ...savedHub, enrollmentCount: 0 }];
+			hubs = [...hubs, { ...savedHub, coordinators: [], participants: [] }];
 		}
 	}
 
@@ -143,12 +143,10 @@
 			// Update local state
 			const user = availableUsers.find(u => u.id === selectedUserId);
 			if (user) {
-				// Update user in availableUsers
 				user.role = 'coordinator';
 				user.hub_id = hubId;
 				availableUsers = [...availableUsers];
 
-				// Add to hub's coordinators
 				const hub = hubs.find(h => h.id === hubId);
 				if (hub) {
 					hub.coordinators = [...(hub.coordinators || []), {
@@ -195,7 +193,6 @@
 				availableUsers = [...availableUsers];
 			}
 
-			// Remove from hub's coordinators
 			const hub = hubs.find(h => h.id === hubId);
 			if (hub) {
 				hub.coordinators = hub.coordinators.filter(c => c.id !== coordinator.id);
@@ -208,6 +205,12 @@
 			toastError(err.message || 'Failed to remove coordinator');
 		}
 	}
+
+	const cohortLabel = $derived(() => {
+		const id = data.selectedCohortId;
+		if (!id) return null;
+		return data.cohorts?.find(c => c.id === id)?.name ?? null;
+	});
 </script>
 
 <div class="p-3 sm:p-4 lg:p-6">
@@ -220,6 +223,9 @@
 			<p class="text-white/80 mt-1 sm:mt-2 text-sm sm:text-base">
 				Manage physical locations and groups for participant attendance tracking
 			</p>
+			{#if cohortLabel()}
+				<p class="mt-1 text-xs text-white/60">Showing members for: <span class="font-medium text-white/80">{cohortLabel()}</span></p>
+			{/if}
 		</div>
 		<button
 			onclick={handleCreateHub}
@@ -254,14 +260,15 @@
 		<div class="bg-white rounded-lg border overflow-hidden" style="border-color: var(--course-surface);">
 			<!-- Table Header - Hidden on mobile -->
 			<div class="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b text-sm font-semibold text-gray-600" style="border-color: var(--course-surface);">
-				<div class="col-span-5">Hub</div>
-				<div class="col-span-5">Coordinators</div>
+				<div class="col-span-4">Hub</div>
+				<div class="col-span-3">Coordinators</div>
+				<div class="col-span-3">Participants</div>
 				<div class="col-span-2 text-right">Actions</div>
 			</div>
 
 			<!-- Hub Rows -->
 			{#each hubs as hub}
-				<!-- Main Row - Card layout on mobile, grid on larger screens -->
+				<!-- Main Row -->
 				<div
 					class="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 sm:items-center border-b hover:bg-gray-50 cursor-pointer"
 					style="border-color: var(--course-surface);"
@@ -270,8 +277,8 @@
 					onclick={() => toggleHubExpanded(hub.id)}
 					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleHubExpanded(hub.id)}
 				>
-					<!-- Hub Name & Location + Actions on mobile -->
-					<div class="sm:col-span-5 flex items-center gap-2 sm:gap-3">
+					<!-- Hub Name & Location -->
+					<div class="sm:col-span-4 flex items-center gap-2 sm:gap-3">
 						<button class="p-1 hover:bg-gray-200 rounded transition-colors flex-shrink-0">
 							{#if expandedHubs[hub.id]}
 								<ChevronUp size={18} class="text-gray-500" />
@@ -288,7 +295,7 @@
 								</div>
 							{/if}
 						</div>
-						<!-- Actions - Mobile only, inline with hub name -->
+						<!-- Actions - Mobile only -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="flex sm:hidden gap-1 flex-shrink-0"
@@ -312,7 +319,7 @@
 					</div>
 
 					<!-- Coordinators Preview -->
-					<div class="sm:col-span-5 pl-8 sm:pl-0">
+					<div class="sm:col-span-3 pl-8 sm:pl-0">
 						{#if hub.coordinators?.length > 0}
 							<div class="flex items-center gap-2">
 								<div class="flex -space-x-2">
@@ -327,11 +334,35 @@
 									{/each}
 								</div>
 								<span class="text-xs sm:text-sm text-gray-600">
-									{hub.coordinators.length} coordinator{hub.coordinators.length !== 1 ? 's' : ''}
+									{hub.coordinators.length} HC{hub.coordinators.length !== 1 ? 's' : ''}
 								</span>
 							</div>
 						{:else}
 							<span class="text-xs sm:text-sm text-gray-400 italic">No coordinators</span>
+						{/if}
+					</div>
+
+					<!-- Participants Preview -->
+					<div class="sm:col-span-3 pl-8 sm:pl-0">
+						{#if hub.participants?.length > 0}
+							<div class="flex items-center gap-2">
+								<div class="flex -space-x-2">
+									{#each hub.participants.slice(0, 3) as participant}
+										<div
+											class="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white"
+											style="background-color: #2563eb;"
+											title={participant.full_name}
+										>
+											{getUserInitials(participant.full_name)}
+										</div>
+									{/each}
+								</div>
+								<span class="text-xs sm:text-sm text-gray-600">
+									{hub.participants.length} participant{hub.participants.length !== 1 ? 's' : ''}
+								</span>
+							</div>
+						{:else}
+							<span class="text-xs sm:text-sm text-gray-400 italic">No participants</span>
 						{/if}
 					</div>
 
@@ -361,13 +392,14 @@
 				<!-- Expanded Details -->
 				{#if expandedHubs[hub.id]}
 					<div class="px-3 sm:px-4 py-3 sm:py-4 bg-gray-50 border-b" style="border-color: var(--course-surface);">
-						<div class="ml-6 sm:ml-8">
-							<!-- Coordinators List -->
-							<div class="max-w-full sm:max-w-md">
+						<div class="ml-6 sm:ml-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+							<!-- Coordinators Section -->
+							<div>
 								<div class="flex items-center justify-between mb-2">
 									<h4 class="text-xs sm:text-sm font-semibold text-gray-700 flex items-center gap-2">
 										<Shield size={14} class="text-amber-600" />
-										Coordinators
+										Hub Coordinators
 									</h4>
 									{#if addingCoordinatorToHub !== hub.id}
 										<button
@@ -436,6 +468,36 @@
 									</div>
 								{/if}
 							</div>
+
+							<!-- Participants Section -->
+							<div>
+								<h4 class="text-xs sm:text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+									<Users size={14} class="text-blue-600" />
+									Participants
+									{#if hub.participants?.length > 0}
+										<span class="ml-auto text-xs font-normal text-gray-400">{hub.participants.length} total</span>
+									{/if}
+								</h4>
+
+								{#if hub.participants?.length > 0}
+									<div class="space-y-2 sm:space-y-1 max-h-48 overflow-y-auto pr-1">
+										{#each hub.participants as participant}
+											<div class="flex items-center gap-2 text-sm py-1">
+												<div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background-color: #2563eb;">
+													{getUserInitials(participant.full_name)}
+												</div>
+												<div class="min-w-0">
+													<span class="font-medium text-gray-800 text-sm block truncate">{participant.full_name}</span>
+													<span class="text-gray-500 text-xs truncate block">{participant.email}</span>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<p class="text-xs sm:text-sm text-gray-400 italic">No participants assigned</p>
+								{/if}
+							</div>
+
 						</div>
 					</div>
 				{/if}

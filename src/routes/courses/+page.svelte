@@ -6,11 +6,8 @@
 	const courseData = $derived(data.courseData || []);
 	const noEnrollments = $derived(data.noEnrollments || false);
 
-	function getRoleBadge(role: string) {
-		if (role === 'coordinator') {
-			return { label: 'Coordinator', class: 'bg-purple-100 text-purple-800' };
-		}
-		return { label: 'Student', class: 'bg-blue-100 text-blue-800' };
+	function isCoordinator(role: string) {
+		return role === 'coordinator' || role === 'hub_coordinator';
 	}
 </script>
 
@@ -57,7 +54,6 @@
 						<!-- Cohort Enrollments -->
 						<div class="divide-y divide-gray-100">
 							{#each enrollments as enrollment}
-								{@const roleBadge = getRoleBadge(enrollment.role)}
 								<a
 									href="/courses/select-cohort?course={course.slug}&cohort={enrollment.cohortId}&courseId={course.id}"
 									class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
@@ -67,7 +63,7 @@
 											class="flex h-10 w-10 items-center justify-center rounded-full"
 											style="background-color: {accentLight}30;"
 										>
-											{#if enrollment.role === 'coordinator'}
+											{#if isCoordinator(enrollment.role)}
 												<Users class="h-5 w-5" style="color: {accentDark};" />
 											{:else}
 												<GraduationCap class="h-5 w-5" style="color: {accentDark};" />
@@ -79,9 +75,20 @@
 										</div>
 									</div>
 									<div class="flex items-center gap-3">
-										<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {roleBadge.class}">
-											{roleBadge.label}
-										</span>
+										{#if isCoordinator(enrollment.role)}
+											<div class="flex flex-col items-end gap-0.5">
+												<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800">
+													Hub Coordinator
+												</span>
+												<span class="text-xs text-gray-400">
+													{enrollment.hubName ?? 'No hub assigned'}
+												</span>
+											</div>
+										{:else}
+											<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+												Participant
+											</span>
+										{/if}
 										<ChevronRight class="h-5 w-5 text-gray-400" />
 									</div>
 								</a>

@@ -124,6 +124,12 @@ export const CourseQueries = {
 			.select(`
 				id,
 				cohort_id,
+				role,
+				hub_id,
+				hub:hub_id (
+					id,
+					name
+				),
 				cohort:cohort_id (
 					id,
 					name,
