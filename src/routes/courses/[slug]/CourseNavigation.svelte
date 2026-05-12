@@ -20,11 +20,11 @@
 	};
 
 	// Get current page from URL
-	const currentPage = $derived(() => {
+	const currentPage = $derived.by(() => {
 		const path = $page.url.pathname;
-		if (path.endsWith('/materials')) return 'materials';
-		if (path.endsWith('/reflections')) return 'reflections';
-		if (path.endsWith('/profile')) return 'profile';
+		if (path.includes('/materials')) return 'materials';
+		if (path.includes('/reflections') || path.includes('/write/')) return 'reflections';
+		if (path.includes('/profile')) return 'profile';
 		return 'dashboard';
 	});
 
@@ -51,7 +51,7 @@
 			<a
 				href="/courses/{courseSlug}"
 				class="glass-link group"
-				class:active-glass={currentPage() === 'dashboard'}
+				class:active-glass={currentPage === 'dashboard'}
 			>
 				<Home class="transition-transform group-hover:scale-110" size="14" />
 				<span>Dashboard</span>
@@ -61,7 +61,7 @@
 			<a
 				href="/courses/{courseSlug}/materials"
 				class="glass-link group"
-				class:active-glass={currentPage() === 'materials'}
+				class:active-glass={currentPage === 'materials'}
 			>
 				<BookOpen class="transition-transform group-hover:scale-110" size="14" />
 				<span>Materials</span>
@@ -72,7 +72,7 @@
 			<a
 				href="/courses/{courseSlug}/reflections"
 				class="glass-link group"
-				class:active-glass={currentPage() === 'reflections'}
+				class:active-glass={currentPage === 'reflections'}
 			>
 				<MessageSquare class="transition-transform group-hover:scale-110" size="14" />
 				<span>Reflections</span>
@@ -107,7 +107,7 @@
 			<a
 				href="/courses/{courseSlug}/profile"
 				class="flex items-center justify-center w-8 h-8 glass-avatar rounded-full"
-				class:profile-active={currentPage() === 'profile'}
+				class:profile-active={currentPage === 'profile'}
 			>
 				<User size="16" class="text-white/90" />
 			</a>
@@ -129,7 +129,7 @@
 			<a
 				href="/courses/{courseSlug}/profile"
 				class="flex items-center gap-1.5 px-3 py-1 glass-profile rounded-full transition-all cursor-pointer"
-				class:profile-active={currentPage() === 'profile'}
+				class:profile-active={currentPage === 'profile'}
 			>
 				<span class="text-white/90 font-medium text-xs">Hi, {userName}</span>
 				<User size="14" class="text-white/90" />
@@ -148,7 +148,7 @@
 				<a
 					href="/courses/{courseSlug}"
 					class="mobile-link"
-					class:mobile-active={currentPage() === 'dashboard'}
+					class:mobile-active={currentPage === 'dashboard'}
 					onclick={closeMobileMenu}
 				>
 					<Home size="20" />
@@ -158,7 +158,7 @@
 				<a
 					href="/courses/{courseSlug}/materials"
 					class="mobile-link"
-					class:mobile-active={currentPage() === 'materials'}
+					class:mobile-active={currentPage === 'materials'}
 					onclick={closeMobileMenu}
 				>
 					<BookOpen size="20" />
@@ -169,7 +169,7 @@
 				<a
 					href="/courses/{courseSlug}/reflections"
 					class="mobile-link"
-					class:mobile-active={currentPage() === 'reflections'}
+					class:mobile-active={currentPage === 'reflections'}
 					onclick={closeMobileMenu}
 				>
 					<MessageSquare size="20" />
