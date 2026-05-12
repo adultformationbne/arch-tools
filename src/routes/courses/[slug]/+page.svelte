@@ -126,6 +126,13 @@
 	// Derived values (with null safety)
 	const currentSessionData = $derived(courseData?.currentSessionData ?? null);
 	const materials = $derived(currentSessionData?.materials ?? []);
+
+	// Early-access materials for the next session after the highest available — static regardless of selected session
+	const upcomingSessionMaterials = $derived(
+		availableSessions < maxSessionNumber
+			? (materialsBySession[availableSessions + 1] || []).filter((m) => m.available_early)
+			: []
+	);
 </script>
 
 <!-- Single content wrapper with consistent margins -->
@@ -147,6 +154,7 @@
 		maxSessionNumber={maxSessionNumber}
 		featureSettings={featureSettings}
 		{quizzesBySession}
+		{upcomingSessionMaterials}
 	/>
 
 	<!-- Past Reflections Section (only if reflections enabled) -->

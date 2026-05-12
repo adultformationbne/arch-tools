@@ -16,7 +16,8 @@
 		totalSessions,
 		maxSessionNumber,
 		featureSettings = {},
-		quizzesBySession = {}
+		quizzesBySession = {},
+		upcomingSessionMaterials = []
 	} = $props();
 
 	// Check if features are enabled (default true for backwards compatibility)
@@ -96,9 +97,6 @@
 			needsTruncation: true
 		};
 	};
-
-	// Next-session early-access materials
-	const nextSessionMaterials = $derived(currentSessionData?.nextSessionMaterials ?? []);
 
 	// Quiz helpers
 	const currentQuiz = $derived(quizzesBySession[currentSession] ?? null);
@@ -766,8 +764,8 @@
 
 
 		<!-- For Next Session -->
-		{#if nextSessionMaterials.length > 0}
-			<ForNextSession materials={nextSessionMaterials} {courseSlug} />
+		{#if upcomingSessionMaterials.length > 0}
+			<ForNextSession materials={upcomingSessionMaterials} {courseSlug} />
 		{/if}
 		<!-- Quiz Panel (shown below session content if a quiz exists for this session) -->
 		{#if quizzesEnabled && currentQuiz}
