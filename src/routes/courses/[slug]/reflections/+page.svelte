@@ -60,9 +60,11 @@
 							<p class="text-gray-700 mb-4 text-lg leading-relaxed">
 								{currentReflectionQuestion.question}
 							</p>
+							{#if currentReflectionQuestion.dueDate}
 							<p class="text-sm text-gray-600 mb-4">
 								Due: {formatDate(currentReflectionQuestion.dueDate)}
 							</p>
+							{/if}
 						</div>
 						<a
 							href="/courses/{courseSlug}/write/{currentReflectionQuestion.questionId}"
