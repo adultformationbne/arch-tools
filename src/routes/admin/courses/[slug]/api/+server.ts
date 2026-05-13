@@ -1192,6 +1192,19 @@ export const GET: RequestHandler = async (event) => {
 		}
 
 		// Handle hubs endpoint
+		if (endpoint === 'check_email') {
+			const emailToCheck = url.searchParams.get('email')?.trim().toLowerCase();
+			if (!emailToCheck) return json({ success: true, exists: false });
+
+			const { data: existingProfile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id')
+				.eq('email', emailToCheck)
+				.maybeSingle();
+
+			return json({ success: true, exists: !!existingProfile });
+		}
+
 		if (endpoint === 'hubs') {
 			const { data: course } = await CourseQueries.getCourse(courseSlug);
 			if (!course) {

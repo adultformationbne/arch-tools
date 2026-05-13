@@ -35,6 +35,9 @@
 	let isLoading = $state(false);
 	let hasChanges = $state(false);
 	let showUnsavedWarning = $state(false);
+	let showEmailChangeConfirm = $state(false);
+	let emailMergeNeeded = $state(false);
+	let pendingSave = $state(false);
 
 	// History data
 	let attendanceHistory = $state([]);
@@ -199,6 +202,19 @@
 	async function handleSave() {
 		const np = normalizedParticipant;
 		if (!np) return;
+
+		// If the email is changing, check if a merge will be needed before proceeding
+		if (formData.email !== np.email && !pendingSave) {
+			const res = await fetch(`/admin/courses/${courseSlug}/api?endpoint=check_email&email=${encodeURIComponent(formData.email)}`);
+			const { exists } = await res.json();
+			if (exists) {
+				emailMergeNeeded = true;
+				showEmailChangeConfirm = true;
+				return;
+			}
+			// No conflict — proceed directly, no confirmation needed
+		}
+		pendingSave = false;
 
 		isLoading = true;
 
@@ -833,4 +849,18 @@
 	onCancel={() => showUnsavedWarning = false}
 >
 	<p>You have unsaved changes. Are you sure you want to close without saving?</p>
+</ConfirmationModal>
+
+<!-- Email Change Confirmation (merge only) -->
+<ConfirmationModal
+	show={showEmailChangeConfirm}
+	title="Account Merge Required"
+	confirmText="Yes, Merge Accounts"
+	cancelText="Cancel"
+	onConfirm={() => { showEmailChangeConfirm = false; emailMergeNeeded = false; pendingSave = true; handleSave(); }}
+	onCancel={() => { showEmailChangeConfirm = false; emailMergeNeeded = false; }}
+>
+	<p>An account already exists for <strong>{formData.email}</strong>.</p>
+	<p class="mt-2">Proceeding will <strong>merge both accounts</strong> — all enrollments will be moved to whichever account was most recently active, and the other account will be deleted.</p>
+	<p class="mt-2">The participant should log in using their existing credentials for <strong>{formData.email}</strong>.</p>
 </ConfirmationModal>

@@ -317,7 +317,7 @@
 					</div>
 
 					<!-- User count badge -->
-					<div class="hidden sm:flex items-end pb-3">
+					<div class="hidden sm:flex self-end">
 						<div class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded">
 							<span class="text-xs font-bold text-gray-600 uppercase tracking-wide mr-2">
 								{activeSubSection === 'active' ? 'Active' : 'Pending'}:

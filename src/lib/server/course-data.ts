@@ -1573,9 +1573,55 @@ export const CourseMutations = {
 				.maybeSingle();
 
 			if (existingProfile) {
+				// Determine primary account by last sign-in — whoever logged in most recently
+				// is the "real" account; the other's data gets merged in and deleted.
+				const [{ data: sourceAuth }, { data: targetAuth }] = await Promise.all([
+					supabaseAdmin.auth.admin.getUserById(enrollment.user_profile_id),
+					supabaseAdmin.auth.admin.getUserById(existingProfile.id)
+				]);
+
+				const sourceLastSignIn = sourceAuth?.user?.last_sign_in_at ?? null;
+				const targetLastSignIn = targetAuth?.user?.last_sign_in_at ?? null;
+
+				// Primary = most recently signed in; if neither has signed in, keep the enrolled account
+				const primaryId =
+					targetLastSignIn && (!sourceLastSignIn || targetLastSignIn > sourceLastSignIn)
+						? existingProfile.id
+						: enrollment.user_profile_id;
+				const secondaryId =
+					primaryId === enrollment.user_profile_id ? existingProfile.id : enrollment.user_profile_id;
+
+				// Move all enrollments from secondary to primary
+				const { error: mergeError } = await supabaseAdmin
+					.from('courses_enrollments')
+					.update({ user_profile_id: primaryId, updated_at: new Date().toISOString() })
+					.eq('user_profile_id', secondaryId);
+
+				if (mergeError) {
+					return {
+						data: null,
+						error: { message: 'Failed to merge enrollments' } as any
+					};
+				}
+
+				// Delete the secondary account
+				await supabaseAdmin.auth.admin.deleteUser(secondaryId);
+				await supabaseAdmin.from('user_profiles').delete().eq('id', secondaryId);
+
+				// Update the primary account's email everywhere
+				await supabaseAdmin.auth.admin.updateUserById(primaryId, { email });
+				await supabaseAdmin
+					.from('user_profiles')
+					.update({ email, updated_at: new Date().toISOString() })
+					.eq('id', primaryId);
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.update({ email, updated_at: new Date().toISOString() })
+					.eq('user_profile_id', primaryId);
+
 				return {
-					data: null,
-					error: { message: 'This email is already in use by another account' } as any
+					data: { updated: true, message: 'Accounts merged — data preserved from the most recently active account' },
+					error: null
 				};
 			}
 
@@ -1619,10 +1665,21 @@ export const CourseMutations = {
 				error: null
 			};
 		} else {
-			// User hasn't signed up yet - just update the enrollment record
+			// User hasn't signed up yet — check if the new email already has an account and link it
+			const { data: existingProfile } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id')
+				.eq('email', email)
+				.maybeSingle();
+
+			const pendingUpdates: Record<string, unknown> = { email: email, updated_at: new Date().toISOString() };
+			if (existingProfile) {
+				pendingUpdates.user_profile_id = existingProfile.id;
+			}
+
 			const { error: enrollmentError } = await supabaseAdmin
 				.from('courses_enrollments')
-				.update({ email: email, updated_at: new Date().toISOString() })
+				.update(pendingUpdates)
 				.eq('id', enrollmentId);
 
 			if (enrollmentError) {
@@ -1632,8 +1689,12 @@ export const CourseMutations = {
 				};
 			}
 
+			const message = existingProfile
+				? 'Enrollment linked to existing account with that email'
+				: 'Enrollment email updated (user has not signed up yet)';
+
 			return {
-				data: { updated: true, message: 'Enrollment email updated (user has not signed up yet)' },
+				data: { updated: true, message },
 				error: null
 			};
 		}
