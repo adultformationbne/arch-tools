@@ -12,6 +12,22 @@ export async function GET(event) {
 		// Check if user has platform admin access
 		await requireModule(event, 'platform.admin');
 
+		const { url } = event;
+		const action = url.searchParams.get('action');
+
+		// Email conflict check for the edit modal
+		if (action === 'check_email') {
+			const emailToCheck = url.searchParams.get('email')?.trim().toLowerCase();
+			const excludeId = url.searchParams.get('excludeId');
+			if (!emailToCheck) return json({ exists: false });
+
+			let query = supabaseAdmin.from('user_profiles').select('id').eq('email', emailToCheck);
+			if (excludeId) query = query.neq('id', excludeId);
+			const { data } = await query.maybeSingle();
+
+			return json({ exists: !!data });
+		}
+
 		// Get all user profiles
 		const { data: profiles, error: profilesError } = await supabaseAdmin
 			.from('user_profiles')
@@ -323,6 +339,83 @@ export async function PUT(event) {
 
 		if (!action) {
 			throw error(400, 'Action is required');
+		}
+
+		// Handle updating user details (name, email, phone, org, modules)
+		if (action === 'update_details') {
+			const { full_name, email, phone, organization, modules: newModules } = body;
+
+			const allowedModules = [
+				'platform.admin', 'editor', 'dgr', 'cardpacks',
+				'courses.participant', 'courses.manager', 'courses.admin'
+			];
+
+			// Validate modules if provided
+			if (newModules !== undefined) {
+				if (!Array.isArray(newModules)) throw error(400, 'Modules must be an array');
+				if (newModules.some((m) => !allowedModules.includes(m))) throw error(400, 'Invalid module specified');
+			}
+
+			// Fetch current user state
+			const { data: currentProfile } = await supabaseAdmin
+				.from('user_profiles').select('email').eq('id', userId).single();
+			if (!currentProfile) throw error(404, 'User not found');
+
+			const profileUpdates = { updated_at: new Date().toISOString() };
+			if (full_name !== undefined) profileUpdates.full_name = full_name;
+			if (phone !== undefined) profileUpdates.phone = phone;
+			if (organization !== undefined) profileUpdates.organization = organization;
+			if (newModules !== undefined) profileUpdates.modules = Array.from(new Set(newModules));
+
+			// Handle email change (may involve an account merge)
+			const newEmail = email?.trim().toLowerCase();
+			if (newEmail && newEmail !== currentProfile.email) {
+				// Check if new email belongs to a different account
+				const { data: conflictProfile } = await supabaseAdmin
+					.from('user_profiles').select('id').eq('email', newEmail).neq('id', userId).maybeSingle();
+
+				if (conflictProfile) {
+					// Determine primary account by last sign-in
+					const [{ data: sourceAuth }, { data: targetAuth }] = await Promise.all([
+						supabaseAdmin.auth.admin.getUserById(userId),
+						supabaseAdmin.auth.admin.getUserById(conflictProfile.id)
+					]);
+
+					const sourceLastSignIn = sourceAuth?.user?.last_sign_in_at ?? null;
+					const targetLastSignIn = targetAuth?.user?.last_sign_in_at ?? null;
+
+					const primaryId = targetLastSignIn && (!sourceLastSignIn || targetLastSignIn > sourceLastSignIn)
+						? conflictProfile.id : userId;
+					const secondaryId = primaryId === userId ? conflictProfile.id : userId;
+
+					// Move all enrollments from secondary → primary
+					await supabaseAdmin.from('courses_enrollments')
+						.update({ user_profile_id: primaryId, updated_at: new Date().toISOString() })
+						.eq('user_profile_id', secondaryId);
+
+					// Delete secondary account
+					await supabaseAdmin.auth.admin.deleteUser(secondaryId);
+					await supabaseAdmin.from('user_profiles').delete().eq('id', secondaryId);
+
+					// Update primary email + profile fields
+					await supabaseAdmin.auth.admin.updateUserById(primaryId, { email: newEmail });
+					await supabaseAdmin.from('user_profiles')
+						.update({ ...profileUpdates, email: newEmail })
+						.eq('id', primaryId);
+
+					return json({ success: true, message: 'Accounts merged and details updated', mergedUserId: primaryId });
+				}
+
+				// No conflict — straightforward email update
+				const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(userId, { email: newEmail });
+				if (authErr) throw error(500, `Failed to update login email: ${authErr.message}`);
+				profileUpdates.email = newEmail;
+			}
+
+			// Update profile (non-email fields, or email when no merge needed)
+			await supabaseAdmin.from('user_profiles').update(profileUpdates).eq('id', userId);
+
+			return json({ success: true, message: 'User details updated' });
 		}
 
 		// Handle resend invitation (sends custom welcome email)

@@ -11,6 +11,7 @@
 	import UserEnrollmentsModal from '$lib/components/users/UserEnrollmentsModal.svelte';
 	import UserCardMobile from '$lib/components/users/UserCardMobile.svelte';
 	import UserTableRow from '$lib/components/users/UserTableRow.svelte';
+	import UserEditModal from '$lib/components/users/UserEditModal.svelte';
 	import ModulesInfoAccordion from '$lib/components/users/ModulesInfoAccordion.svelte';
 	import RolesInfoAccordion from '$lib/components/users/RolesInfoAccordion.svelte';
 	import PlatformSettingsSection from '$lib/components/users/PlatformSettingsSection.svelte';
@@ -76,6 +77,8 @@
 	let showEnrollmentsModal = $state(false);
 	let enrollmentsModalUserId = $state(null);
 	let enrollmentsModalUserName = $state('');
+	let showEditModal = $state(false);
+	let editModalUser = $state(null);
 
 	// Edit enrollment state
 	let editingEnrollmentId = $state(null);
@@ -211,6 +214,16 @@
 	}
 
 	function handleUserCreated() {
+		invalidateAll();
+	}
+
+	function openEditModal(user) {
+		editModalUser = user;
+		showEditModal = true;
+	}
+
+	function handleUserUpdated(updatedUser) {
+		users = users.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u));
 		invalidateAll();
 	}
 
@@ -433,6 +446,7 @@
 										onConfirmDelete={confirmDelete}
 										onExpandModules={(userId) => expandedModulesUserId = userId}
 										onCollapseModules={() => expandedModulesUserId = null}
+										onEditDetails={openEditModal}
 									/>
 								{/each}
 							</tbody>
@@ -523,4 +537,16 @@
 		enrollmentUserId = enrollmentsModalUserId;
 		enrollmentUserName = enrollmentsModalUserName;
 	}}
+/>
+
+<UserEditModal
+	show={showEditModal}
+	user={editModalUser}
+	{availableModules}
+	currentUserId={currentUser.id}
+	onClose={() => {
+		showEditModal = false;
+		editModalUser = null;
+	}}
+	onUpdate={handleUserUpdated}
 />

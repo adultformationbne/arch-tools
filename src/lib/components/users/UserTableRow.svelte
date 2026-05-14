@@ -30,7 +30,8 @@
 		onShowPasswordReset,
 		onConfirmDelete,
 		onExpandModules,
-		onCollapseModules
+		onCollapseModules,
+		onEditDetails
 	} = $props();
 
 	let dropdownButton = $state(null);
@@ -209,6 +210,16 @@
 					class="w-48 bg-white rounded-md shadow-lg border border-gray-200"
 				>
 					<div class="py-1">
+						<button
+							onclick={() => {
+								onEditDetails(user);
+								dropdownController?.hide();
+							}}
+							class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+						>
+							<Edit2 class="h-4 w-4" />
+							Edit Details
+						</button>
 						<button
 							onclick={() => {
 								onStartEdit(user.id, user.modules || []);
