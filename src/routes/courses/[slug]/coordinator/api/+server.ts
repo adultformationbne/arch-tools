@@ -261,3 +261,61 @@ export const POST: RequestHandler = async (event) => {
 
 	throw error(400, 'Invalid action');
 };
+
+export const DELETE: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+	const { user } = await requireCourseAccess(event, courseSlug);
+
+	const { studentId, sessionNumber } = await event.request.json();
+
+	if (!studentId || sessionNumber === undefined || sessionNumber < 1) {
+		throw error(400, 'Invalid request');
+	}
+
+	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+
+	let coordinatorQuery = supabaseAdmin
+		.from('courses_enrollments')
+		.select('id, role, hub_id, cohort_id')
+		.eq('user_profile_id', user.id)
+		.eq('role', 'coordinator');
+
+	if (selectedCohortId) {
+		coordinatorQuery = coordinatorQuery.eq('cohort_id', selectedCohortId);
+	}
+
+	const { data: coordinatorArr } = await coordinatorQuery
+		.order('created_at', { ascending: false })
+		.limit(1);
+
+	const coordinator = coordinatorArr?.[0] || null;
+
+	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
+		throw error(403, 'Not authorized as hub coordinator');
+	}
+
+	const { data: student } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select('id, hub_id')
+		.eq('id', studentId)
+		.single();
+
+	if (!student || student.hub_id !== coordinator.hub_id) {
+		throw error(403, 'Student is not in your hub');
+	}
+
+	const { error: deleteError } = await supabaseAdmin
+		.from('courses_attendance')
+		.delete()
+		.eq('enrollment_id', studentId)
+		.eq('cohort_id', coordinator.cohort_id)
+		.eq('session_number', sessionNumber);
+
+	if (deleteError) {
+		console.error('Error clearing attendance:', deleteError);
+		throw error(500, 'Failed to clear attendance');
+	}
+
+	return json({ success: true });
+};

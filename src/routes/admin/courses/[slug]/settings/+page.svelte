@@ -54,6 +54,7 @@
 			enrollmentEnabled: false,
 			acceptPayments: false,
 			discountCodes: false,
+			publicPagesEnabled: false,
 		}
 	});
 
@@ -109,6 +110,7 @@
 			settings.features.enrollmentEnabled = parsedSettings.features?.enrollmentEnabled ?? legacyPayments ?? false;
 			settings.features.acceptPayments = parsedSettings.features?.acceptPayments ?? legacyPayments ?? false;
 			settings.features.discountCodes = parsedSettings.features?.discountCodes ?? legacyPayments ?? false;
+			settings.features.publicPagesEnabled = parsedSettings.features?.publicPagesEnabled ?? false;
 		}
 	});
 
@@ -813,6 +815,45 @@
 							</div>
 						</div>
 						<p class="text-xs text-gray-500 leading-relaxed">Organise participants into hub groups with coordinators</p>
+					</button>
+
+					<!-- Public Pages -->
+					<button
+						type="button"
+						onclick={() => settings.features.publicPagesEnabled = !settings.features.publicPagesEnabled}
+						class="relative flex flex-col p-4 sm:p-5 rounded-xl border-2 transition-all text-left group"
+						class:border-gray-200={!settings.features.publicPagesEnabled}
+						class:bg-gray-50={!settings.features.publicPagesEnabled}
+						class:hover:border-gray-300={!settings.features.publicPagesEnabled}
+						style={toggleCardStyle(settings.features.publicPagesEnabled)}
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2.5">
+								<div class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors" class:bg-gray-200={!settings.features.publicPagesEnabled} class:text-gray-400={!settings.features.publicPagesEnabled} style={toggleIconStyle(settings.features.publicPagesEnabled)}>
+									<Link size={18} />
+								</div>
+								<span class="font-semibold text-gray-900">Public Pages</span>
+							</div>
+							<div class="w-11 h-6 rounded-full transition-colors relative" class:bg-gray-300={!settings.features.publicPagesEnabled} style={toggleTrackStyle(settings.features.publicPagesEnabled)}>
+								<div class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform" class:translate-x-5={settings.features.publicPagesEnabled} class:translate-x-0.5={!settings.features.publicPagesEnabled}></div>
+							</div>
+						</div>
+						<p class="text-xs text-gray-500 leading-relaxed">A public digital companion guide at <strong>/p/{courseSlug}</strong> — no participant login required</p>
+						{#if settings.features.publicPagesEnabled}
+							<div class="mt-3 pt-3 border-t flex items-center gap-2" style={toggleSubBorderStyle()} onclick={(e) => e.stopPropagation()}>
+								<a
+									href="/p/{courseSlug}"
+									target="_blank"
+									class="text-xs underline"
+									style="color: {settings.theme.accentDark};"
+								>/p/{courseSlug}</a>
+								<button
+									onclick={async (e) => { e.stopPropagation(); await navigator.clipboard.writeText(window.location.origin + '/p/' + courseSlug); }}
+									class="text-xs px-2 py-0.5 rounded border"
+									style="border-color: {settings.theme.accentDark}; color: {settings.theme.accentDark};"
+								>Copy URL</button>
+							</div>
+						{/if}
 					</button>
 
 				</div>

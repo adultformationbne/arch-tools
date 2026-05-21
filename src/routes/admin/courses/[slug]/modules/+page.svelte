@@ -1,9 +1,10 @@
 <script>
-	import { Plus, BookOpen, Calendar, Users, Edit, Trash2, MoreVertical } from '$lib/icons';
+	import { Plus, BookOpen, Calendar, Edit, Trash2, MoreVertical, Globe, ExternalLink, Copy, Check } from '$lib/icons';
 	import { navigating } from '$app/stores';
 	import ModuleModal from '$lib/components/ModuleModal.svelte';
+	import PublicPageEditorModal from '$lib/components/PublicPageEditorModal.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
-	import { toastError } from '$lib/utils/toast-helpers.js';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import { getCohortStatus, getTotalSessions } from '$lib/utils/cohort-status';
 
@@ -17,6 +18,18 @@
 	const course = $derived(data.course);
 	const dataModules = $derived(data.modules || []);
 	let modules = $state([]);
+	const publicPagesEnabled = $derived(data.courseFeatures?.publicPagesEnabled ?? false);
+
+	// Public page editor modal state
+	let publicPageModalModule = $state(null);
+
+	// Title page editor state
+	let titlePageJson = $state('');
+	let titlePageOpen = $state(false);
+	let titlePageSaving = $state(false);
+
+	// Copy URL state
+	let urlCopied = $state(false);
 
 	// Sync modules when data changes (e.g., after navigation or modal save)
 	$effect(() => {
@@ -105,6 +118,57 @@
 	function toggleDropdown(moduleId) {
 		openDropdown = openDropdown === moduleId ? null : moduleId;
 	}
+
+	function openPublicPageEditor(module) {
+		openDropdown = null;
+		publicPageModalModule = module;
+	}
+
+	function handlePublicPageSaved(updatedModule) {
+		modules = modules.map(m => m.id === updatedModule.id ? { ...m, ...updatedModule } : m);
+		publicPageModalModule = null;
+	}
+
+	async function copyPublicUrl() {
+		const url = `${window.location.origin}/p/${course.slug}`;
+		await navigator.clipboard.writeText(url);
+		urlCopied = true;
+		setTimeout(() => urlCopied = false, 2000);
+	}
+
+	function openTitlePageEditor() {
+		titlePageJson = data.courseTitlePage ? JSON.stringify(data.courseTitlePage, null, 2) : '';
+		titlePageOpen = true;
+	}
+
+	async function saveTitlePage() {
+		let parsed = null;
+		if (titlePageJson.trim()) {
+			try {
+				parsed = JSON.parse(titlePageJson);
+				if (!Array.isArray(parsed)) throw new Error('Must be a JSON array');
+			} catch (e) {
+				toastError(e.message || 'Invalid JSON', 'JSON Error');
+				return;
+			}
+		}
+		titlePageSaving = true;
+		try {
+			const res = await fetch(`/admin/courses/${course.slug}/modules/api`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ courseTitlePage: parsed })
+			});
+			const result = await res.json();
+			if (!res.ok || !result.success) throw new Error(result.error || 'Save failed');
+			toastSuccess('Course intro page saved');
+			titlePageOpen = false;
+		} catch (e) {
+			toastError(e.message || 'Failed to save', 'Save Failed');
+		} finally {
+			titlePageSaving = false;
+		}
+	}
 </script>
 
 <div class="p-3 sm:p-4 lg:p-6">
@@ -118,15 +182,85 @@
 				Manage course modules, sessions, and curriculum structure
 			</p>
 		</div>
-		<button
-			onclick={handleCreateModule}
-			class="flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold transition-colors"
-			style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
-		>
-			<Plus size={20} />
-			Create Module
-		</button>
+		<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+			{#if publicPagesEnabled}
+				<button
+					onclick={copyPublicUrl}
+					class="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+					style="border-color: var(--course-accent-light); color: var(--course-accent-light);"
+				>
+					{#if urlCopied}
+						<Check size={15} /> Copied!
+					{:else}
+						<Copy size={15} /> Copy public URL
+					{/if}
+				</button>
+				<a
+					href="/p/{course?.slug}"
+					target="_blank"
+					class="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+					style="border-color: var(--course-accent-light); color: var(--course-accent-light);"
+				>
+					<ExternalLink size={15} /> View public guide
+				</a>
+			{/if}
+			<button
+				onclick={handleCreateModule}
+				class="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold transition-colors"
+				style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+			>
+				<Plus size={20} />
+				Create Module
+			</button>
+		</div>
 	</div>
+
+	<!-- Course title / intro page editor (only when public pages enabled) -->
+	{#if publicPagesEnabled}
+		<div class="mb-6 bg-white rounded-xl border" style="border-color: var(--course-surface);">
+			<button
+				type="button"
+				onclick={() => { if (!titlePageOpen) openTitlePageEditor(); else titlePageOpen = false; }}
+				class="w-full flex items-center justify-between px-5 py-4 text-left"
+			>
+				<div class="flex items-center gap-2.5">
+					<Globe size={16} style="color: var(--course-accent-light);" />
+					<span class="font-semibold text-gray-800">Course Introduction Page</span>
+					<span class="text-xs px-1.5 py-0.5 rounded-full {data.courseTitlePage ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+						{data.courseTitlePage ? 'has content' : 'empty'}
+					</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<a href="/p/{course?.slug}" target="_blank" class="text-gray-400 hover:text-gray-600 p-1" onclick={(e) => e.stopPropagation()}>
+						<ExternalLink size={14} />
+					</a>
+					<span class="text-gray-400 text-sm">{titlePageOpen ? '▲' : '▼'}</span>
+				</div>
+			</button>
+			{#if titlePageOpen}
+				<div class="px-5 pb-5 border-t border-gray-100 pt-4">
+					<p class="text-xs text-gray-500 mb-3">Optional blocks shown above the session list on the course home page (<code class="bg-gray-100 px-1 rounded">/p/{course?.slug}</code>). Leave empty to show just the course name and description.</p>
+					<textarea
+						bind:value={titlePageJson}
+						rows="10"
+						class="w-full text-xs font-mono border border-gray-200 rounded-lg p-3 resize-y focus:outline-none focus:border-gray-400 bg-gray-50"
+						placeholder="Paste JSON block array here…"
+						spellcheck="false"
+					></textarea>
+					<div class="flex justify-end mt-2">
+						<button
+							onclick={saveTitlePage}
+							disabled={titlePageSaving}
+							class="text-sm px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
+							style="background-color: var(--course-accent-dark); color: white;"
+						>
+							{titlePageSaving ? 'Saving…' : 'Save intro page'}
+						</button>
+					</div>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Modules Grid -->
 	{#if modules.length === 0}
@@ -254,12 +388,60 @@
 						</div>
 						{/if}
 					{/if}
+
+					<!-- Public Page -->
+					{#if publicPagesEnabled}
+						<div class="mt-3 pt-3 border-t" style="border-color: var(--course-surface);">
+							<div class="flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<Globe size={14} style="color: var(--course-accent-light);" />
+									<span class="text-xs font-semibold text-gray-600">Public Page</span>
+									{#if module.public_page_content}
+										<span class="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">has content</span>
+									{:else}
+										<span class="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">empty</span>
+									{/if}
+									{#if module.section_name}
+										<span class="text-xs text-gray-400 truncate max-w-[100px]" title={module.section_name}>{module.section_name}</span>
+									{/if}
+								</div>
+								<div class="flex items-center gap-1">
+									{#if module.public_page_content}
+										<a
+											href="/p/{course.slug}/{module.order_number}"
+											target="_blank"
+											class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
+											title="Preview public page"
+										>
+											<ExternalLink size={14} />
+										</a>
+									{/if}
+									<button
+										onclick={() => openPublicPageEditor(module)}
+										class="text-xs px-2 py-1 rounded border transition-colors"
+										style="border-color: var(--course-surface); color: var(--course-accent-dark);"
+									>
+										Edit
+									</button>
+								</div>
+							</div>
+						</div>
+					{/if}
 				</div>
 				{/each}
 			{/if}
 		</div>
 	{/if}
 </div>
+
+<!-- Public Page Editor Modal -->
+<PublicPageEditorModal
+	isOpen={!!publicPageModalModule}
+	module={publicPageModalModule}
+	courseSlug={course?.slug}
+	onClose={() => publicPageModalModule = null}
+	onSaved={handlePublicPageSaved}
+/>
 
 <!-- Module Modal -->
 <ModuleModal

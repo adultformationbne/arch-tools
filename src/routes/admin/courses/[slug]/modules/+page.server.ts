@@ -21,6 +21,7 @@ export const load: PageServerLoad = async (event) => {
 	const modules = layoutData?.modules || [];
 	const cohorts = layoutData?.cohorts || [];
 	const courseInfo = layoutData?.courseInfo || {};
+	const course = layoutData?.course || {};
 	const moduleIds = modules?.map(m => m.id) || [];
 
 	try {
@@ -40,11 +41,23 @@ export const load: PageServerLoad = async (event) => {
 				sessionCountMap.set(s.module_id, (sessionCountMap.get(s.module_id) || 0) + 1);
 			});
 
-			// Enrich modules with counts and associated cohorts
+			// Fetch public page content + section name for all modules
+			const { data: publicPageData } = await supabaseAdmin
+				.from('courses_modules')
+				.select('id, public_page_content, section_name')
+				.in('id', moduleIds);
+
+			const publicPageMap = new Map(
+				(publicPageData ?? []).map(m => [m.id, { content: m.public_page_content, sectionName: m.section_name }])
+			);
+
+			// Enrich modules with counts, cohorts, and public page content
 			modulesWithCounts = modules.map(module => ({
 				...module,
 				sessionCount: sessionCountMap.get(module.id) || 0,
-				cohorts: cohorts.filter(c => c.module_id === module.id)
+				cohorts: cohorts.filter(c => c.module_id === module.id),
+				public_page_content: publicPageMap.get(module.id)?.content ?? null,
+				section_name: publicPageMap.get(module.id)?.sectionName ?? null
 			}));
 		}
 
@@ -69,6 +82,7 @@ export const load: PageServerLoad = async (event) => {
 
 		return {
 			course: courseInfo,
+			courseTitlePage: course.public_title_page ?? null,
 			modules: modulesWithCounts,
 			cohorts,
 			totalEnrollments,

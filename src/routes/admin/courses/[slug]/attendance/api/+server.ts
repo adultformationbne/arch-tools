@@ -124,3 +124,48 @@ export const POST: RequestHandler = async (event) => {
 
 	return json({ success: true });
 };
+
+export const DELETE: RequestHandler = async (event) => {
+	const courseSlug = event.params.slug;
+	await requireCourseAdmin(event, courseSlug);
+
+	const { userId, sessionNumber } = await event.request.json();
+
+	if (!userId || sessionNumber === undefined) {
+		return json({ error: 'Missing required fields' }, { status: 400 });
+	}
+
+	const { data: enrollment } = await supabaseAdmin
+		.from('courses_enrollments')
+		.select(`
+			cohort_id,
+			cohort:cohort_id!inner (
+				module:module_id!inner (
+					course:course_id!inner (
+						slug
+					)
+				)
+			)
+		`)
+		.eq('id', userId)
+		.eq('cohort.module.course.slug', courseSlug)
+		.single();
+
+	if (!enrollment) {
+		return json({ error: 'Enrollment not found or does not belong to this course' }, { status: 404 });
+	}
+
+	const { error: deleteError } = await supabaseAdmin
+		.from('courses_attendance')
+		.delete()
+		.eq('enrollment_id', userId)
+		.eq('cohort_id', enrollment.cohort_id)
+		.eq('session_number', sessionNumber);
+
+	if (deleteError) {
+		console.error('Error clearing attendance:', deleteError);
+		return json({ error: 'Failed to clear attendance' }, { status: 500 });
+	}
+
+	return json({ success: true });
+};

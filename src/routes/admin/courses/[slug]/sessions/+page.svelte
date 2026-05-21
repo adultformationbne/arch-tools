@@ -11,6 +11,7 @@
 	import SessionContent from '../../../../courses/[slug]/SessionContent.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
+	import PublicPageEditorModal from '$lib/components/PublicPageEditorModal.svelte';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
@@ -56,6 +57,8 @@
 	let sessionToDelete = $state(null);
 	let showReflectionDeleteConfirm = $state(false);
 	let reflectionDeleteResponseCount = $state(0);
+	let publicPageModalSession = $state(null);
+	let sessionLinkCopied = $state(false);
 
 	// Track the current title for debouncing
 	let pendingTitle = $state('');
@@ -102,7 +105,8 @@
 				description: session.description || '',
 				materials,
 				reflection,
-				reflectionEnabled: hasQuestion ? (session.reflections_enabled ?? true) : false
+				reflectionEnabled: hasQuestion ? (session.reflections_enabled ?? true) : false,
+				publicPageContent: session.public_page_content ?? null
 			};
 		}
 
@@ -296,6 +300,20 @@
 		} catch (error) {
 			toastError(`Failed to delete: ${error.message}`);
 		}
+	};
+
+	const copySessionLink = async () => {
+		const url = `${window.location.origin}/p/${data.courseSlug}/${selectedModule?.order_number}/${selectedSession}`;
+		await navigator.clipboard.writeText(url);
+		sessionLinkCopied = true;
+		setTimeout(() => { sessionLinkCopied = false; }, 2000);
+	};
+
+	const handlePublicPageSaved = (updatedSession) => {
+		if (sessionData[selectedSession]) {
+			sessionData[selectedSession].publicPageContent = updatedSession.publicPageContent;
+		}
+		publicPageModalSession = null;
 	};
 
 	const handleOverviewChange = async (newOverview) => {
@@ -925,6 +943,46 @@
 						sessionNumber={selectedSession}
 					/>
 					{/if}
+
+					{#if data.courseFeatures?.publicPagesEnabled && currentSession?.id}
+					<div class="bg-white/5 rounded-xl p-4 sm:p-6 border border-white/10">
+						<div class="flex items-center justify-between gap-4">
+							<div>
+								<h3 class="text-sm font-semibold text-white/80 uppercase tracking-wider mb-1">Public Page</h3>
+								<p class="text-xs text-white/40">
+									{#if currentSession.publicPageContent?.length > 0}
+										{currentSession.publicPageContent.length} block{currentSession.publicPageContent.length === 1 ? '' : 's'} · /p/{data.courseSlug}/{selectedModule?.order_number}/{selectedSession}
+									{:else}
+										No content yet — click to add
+									{/if}
+								</p>
+							</div>
+							<div class="flex items-center gap-2">
+								{#if currentSession.publicPageContent?.length > 0}
+									<button
+										onclick={copySessionLink}
+										class="px-3 py-2 text-xs font-medium rounded-lg bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
+										title="Copy public link"
+									>
+										{sessionLinkCopied ? '✓ Copied' : 'Copy link'}
+									</button>
+									<a
+										href="/p/{data.courseSlug}/{selectedModule?.order_number}/{selectedSession}"
+										target="_blank"
+										class="px-3 py-2 text-xs font-medium rounded-lg bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
+										title="View live page"
+									>↗ View</a>
+								{/if}
+								<button
+									onclick={() => publicPageModalSession = { id: currentSession.id, sessionNumber: selectedSession, title: currentSession.title, publicPageContent: currentSession.publicPageContent ?? null, materials: currentSession.materials || [] }}
+									class="px-4 py-2 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+								>
+									{currentSession.publicPageContent?.length > 0 ? 'Edit' : 'Add content'}
+								</button>
+							</div>
+						</div>
+					</div>
+					{/if}
 				</div>
 
 				<!-- Student Preview -->
@@ -989,6 +1047,16 @@
 >
 	<p><strong>{reflectionDeleteResponseCount}</strong> participant{reflectionDeleteResponseCount === 1 ? ' has' : 's have'} already responded to this reflection question.</p>
 </ConfirmationModal>
+
+<!-- Public Page Editor Modal -->
+<PublicPageEditorModal
+	isOpen={!!publicPageModalSession}
+	session={publicPageModalSession}
+	moduleOrderNumber={selectedModule?.order_number}
+	courseSlug={data.courseSlug}
+	onClose={() => publicPageModalSession = null}
+	onSaved={handlePublicPageSaved}
+/>
 
 <style>
 	@keyframes fadeIn {

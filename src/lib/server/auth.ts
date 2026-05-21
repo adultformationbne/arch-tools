@@ -231,33 +231,34 @@ async function getUserCourseEnrollment(
 	userId: string,
 	courseSlug: string
 ) {
+	// Avoid unreliable 3-level deep join filter in PostgREST by resolving
+	// course → modules → cohorts in separate simple queries, then filter
+	// enrollments by cohort_id. This correctly scopes multi-course coordinators.
+
+	const { data: course } = await supabase
+		.from('courses')
+		.select('id')
+		.eq('slug', courseSlug)
+		.single();
+	if (!course) return null;
+
+	const { data: modules } = await supabase
+		.from('courses_modules')
+		.select('id')
+		.eq('course_id', course.id);
+	if (!modules?.length) return null;
+
+	const { data: cohorts } = await supabase
+		.from('courses_cohorts')
+		.select('id')
+		.in('module_id', modules.map((m) => m.id));
+	if (!cohorts?.length) return null;
+
 	const { data: enrollments, error: enrollmentError } = await supabase
 		.from('courses_enrollments')
-		.select(`
-			id,
-			role,
-			status,
-			cohort_id,
-			hub_id,
-			full_name,
-			courses_cohorts!inner (
-				id,
-				name,
-				module_id,
-				courses_modules!inner (
-					id,
-					name,
-					course_id,
-					courses!inner (
-						id,
-						name,
-						slug
-					)
-				)
-			)
-		`)
+		.select('id, role, status, cohort_id, hub_id, full_name')
 		.eq('user_profile_id', userId)
-		.eq('courses_cohorts.courses_modules.courses.slug', courseSlug)
+		.in('cohort_id', cohorts.map((c) => c.id))
 		.in('status', ['active', 'invited', 'accepted']);
 
 	if (enrollmentError) {
@@ -265,7 +266,7 @@ async function getUserCourseEnrollment(
 		return null;
 	}
 
-	return enrollments && enrollments.length > 0 ? enrollments[0] : null;
+	return enrollments?.[0] || null;
 }
 
 /**

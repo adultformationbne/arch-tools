@@ -105,59 +105,54 @@
 	// Debounce map to prevent rapid duplicate requests
 	const pendingRequests = new Map();
 
-	/** @param {string} userId @param {number} sessionNumber @param {boolean} present */
+	/** @param {string} userId @param {number} sessionNumber @param {boolean|null} present - null clears the record */
 	const markAttendance = async (userId, sessionNumber, present) => {
 		if (!selectedCohortId) return;
 
-		// Create unique key for this attendance mark
 		const requestKey = `${userId}-${sessionNumber}`;
 
-		// Cancel pending request if exists
 		if (pendingRequests.has(requestKey)) {
 			clearTimeout(pendingRequests.get(requestKey));
 		}
 
-		// Optimistically update the UI immediately
 		/** @param {Student[]} studentList */
 		const updateAttendanceOptimistically = (studentList) => {
 			return studentList.map(student => {
 				if (student.id === userId) {
-					const existingRecord = student.attendance.find(a => a.session_number === sessionNumber);
-					if (existingRecord) {
-						existingRecord.present = present;
+					if (present === null) {
+						student.attendance = student.attendance.filter(a => a.session_number !== sessionNumber);
 					} else {
-						student.attendance.push({ session_number: sessionNumber, present });
+						const existingRecord = student.attendance.find(a => a.session_number === sessionNumber);
+						if (existingRecord) {
+							existingRecord.present = present;
+						} else {
+							student.attendance.push({ session_number: sessionNumber, present });
+						}
 					}
 				}
 				return student;
 			});
 		};
 
-		// Apply optimistic update
 		attendanceData.nonHubStudents = updateAttendanceOptimistically(attendanceData.nonHubStudents || []);
 		attendanceData.hubStudents = updateAttendanceOptimistically(attendanceData.hubStudents || []);
 
-		// Debounce the API call (300ms)
 		const timeoutId = setTimeout(async () => {
 			try {
 				const response = await fetch(`/admin/courses/${courseSlug}/attendance/api`, {
-					method: 'POST',
+					method: present === null ? 'DELETE' : 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						userId,
-						cohortId: selectedCohortId,
-						sessionNumber,
-						present
-					})
+					body: JSON.stringify(present === null
+						? { userId, sessionNumber }
+						: { userId, cohortId: selectedCohortId, sessionNumber, present }
+					)
 				});
 
 				if (!response.ok) {
-					// If failed, reload to get accurate state
 					await loadAttendanceForCohort(selectedCohortId);
 				}
 			} catch (error) {
 				console.error('Error marking attendance:', error);
-				// Reload on error
 				await loadAttendanceForCohort(selectedCohortId);
 			} finally {
 				pendingRequests.delete(requestKey);
@@ -359,7 +354,7 @@
 
 														<div class="flex items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
 															<button
-																onclick={() => markAttendance(student.id, sessionNum, true)}
+																onclick={() => markAttendance(student.id, sessionNum, status === true ? null : true)}
 																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
 																class:bg-green-600={status === true}
 																class:text-white={status === true}
@@ -371,7 +366,7 @@
 																Present
 															</button>
 															<button
-																onclick={() => markAttendance(student.id, sessionNum, false)}
+																onclick={() => markAttendance(student.id, sessionNum, status === false ? null : false)}
 																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
 																class:bg-red-600={status === false}
 																class:text-white={status === false}
@@ -480,17 +475,11 @@
 																	</div>
 
 																	<div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
-																		{#if status !== undefined}
+																		{#if record}
+																			<!-- Coordinator-marked: status pill + subtle override -->
 																			<span class="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium" class:bg-green-100={status} class:text-green-700={status} class:bg-red-100={!status} class:text-red-700={!status}>
 																				{status ? 'Present' : 'Absent'}
 																			</span>
-																		{:else}
-																			<span class="px-2 sm:px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs sm:text-sm font-medium">
-																				Not marked
-																			</span>
-																		{/if}
-
-																		{#if record}
 																			<button
 																				onclick={() => {
 																					overrideState = {
@@ -500,20 +489,21 @@
 																						studentName: student.full_name
 																					};
 																				}}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors border border-gray-300"
+																				class="px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
 																			>
 																				Override
 																			</button>
 																		{:else}
+																			<!-- Not yet marked: coloured action buttons -->
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, true)}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg transition-colors"
 																			>
 																				Mark Present
 																			</button>
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, false)}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-lg transition-colors"
 																			>
 																				Mark Absent
 																			</button>

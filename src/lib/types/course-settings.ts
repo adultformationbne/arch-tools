@@ -52,6 +52,7 @@ export interface CourseSettings {
 		quizzesEnabled?: boolean;
 		maxCapacity?: number | null;
 		requireApproval?: boolean;
+		publicPagesEnabled?: boolean;
 	};
 }
 
@@ -83,7 +84,8 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		hubsEnabled: true,
 		quizzesEnabled: true,
 		maxCapacity: null,
-		requireApproval: false
+		requireApproval: false,
+		publicPagesEnabled: false
 	}
 };
 
@@ -143,7 +145,9 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 			maxCapacity:
 				settings.features?.maxCapacity ?? DEFAULT_COURSE_SETTINGS.features.maxCapacity,
 			requireApproval:
-				settings.features?.requireApproval ?? DEFAULT_COURSE_SETTINGS.features.requireApproval
+				settings.features?.requireApproval ?? DEFAULT_COURSE_SETTINGS.features.requireApproval,
+			publicPagesEnabled:
+				settings.features?.publicPagesEnabled ?? DEFAULT_COURSE_SETTINGS.features.publicPagesEnabled
 		}
 	};
 }

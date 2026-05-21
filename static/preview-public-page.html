@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Living Union — Session 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #faf8f5;
+      --stone-50: #fafaf9;
+      --stone-100: #f5f5f4;
+      --stone-200: #e7e5e4;
+      --stone-300: #d6d3d1;
+      --stone-400: #a8a29e;
+      --stone-500: #78716c;
+      --stone-600: #57534e;
+      --stone-700: #44403c;
+      --stone-800: #292524;
+      --stone-900: #1c1917;
+      --accent: #7c6a52;
+      --accent-light: #a8926e;
+      --accent-dark: #5c4f3a;
+      --gold: #c9a96e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--cream);
+      color: var(--stone-800);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── Top nav ── */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      border-bottom: 1px solid var(--stone-200);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .top-nav-course {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--stone-800);
+      letter-spacing: 0.01em;
+    }
+    .top-nav-section {
+      font-size: 0.75rem;
+      color: var(--stone-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .top-nav-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 56px);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--stone-200);
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+    .sidebar-section {
+      margin-bottom: 1.5rem;
+    }
+    .sidebar-section-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--stone-400);
+      margin-bottom: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--stone-600);
+      text-decoration: none;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .sidebar-item:hover { background: var(--stone-100); color: var(--stone-800); }
+    .sidebar-item.active {
+      background: var(--stone-100);
+      color: var(--stone-900);
+      font-weight: 500;
+    }
+    .sidebar-item .num {
+      font-size: 0.7rem;
+      color: var(--stone-400);
+      min-width: 18px;
+    }
+    .sidebar-item.active .num { color: var(--accent); }
+
+    /* ── Main content ── */
+    .main {
+      padding: 3rem 4rem;
+      max-width: 780px;
+    }
+
+    /* ── Session header ── */
+    .session-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-light);
+      margin-bottom: 0.6rem;
+    }
+    .session-title {
+      font-family: 'Lora', serif;
+      font-size: 2.4rem;
+      font-weight: 500;
+      color: var(--stone-900);
+      line-height: 1.25;
+      margin-bottom: 1rem;
+    }
+    .session-divider {
+      width: 48px;
+      height: 2px;
+      background: var(--gold);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Block: text ── */
+    .block-text {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem;
+      color: var(--stone-700);
+      line-height: 1.85;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Block: section heading ── */
+    .block-heading {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--stone-200);
+    }
+
+    /* ── Block: questions ── */
+    .block-questions {
+      margin-bottom: 2rem;
+    }
+    .question-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: white;
+      border: 1px solid var(--stone-200);
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+    }
+    .question-num {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gold);
+      min-width: 20px;
+      padding-top: 1px;
+    }
+    .question-text {
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      color: var(--stone-700);
+      line-height: 1.65;
+    }
+
+    /* ── Block: accordion ── */
+    .block-accordion {
+      margin-bottom: 2rem;
+    }
+    .accordion-item {
+      border: 1px solid var(--stone-200);
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      background: white;
+    }
+    .accordion-trigger {
+      width: 100%;
+      text-align: left;
+      padding: 1rem 1.25rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--stone-800);
+      transition: background 0.15s;
+    }
+    .accordion-trigger:hover { background: var(--stone-50); }
+    .accordion-trigger.open { color: var(--accent-dark); }
+    .accordion-icon {
+      font-size: 1rem;
+      color: var(--stone-400);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .accordion-trigger.open .accordion-icon { transform: rotate(180deg); color: var(--accent); }
+    .accordion-body {
+      display: none;
+      padding: 0 1.25rem 1.25rem;
+    }
+    .accordion-body.open { display: block; }
+    .accordion-body ul {
+      list-style: none;
+      padding: 0;
+    }
+    .accordion-body ul li {
+      font-family: 'Lora', serif;
+      font-size: 0.9rem;
+      color: var(--stone-600);
+      line-height: 1.7;
+      padding: 0.3rem 0 0.3rem 1.2rem;
+      position: relative;
+    }
+    .accordion-body ul li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+
+    /* ── Block: scripture ── */
+    .block-scripture {
+      background: var(--stone-100);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .scripture-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--stone-400);
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+    .scripture-ref {
+      font-family: 'Lora', serif;
+      font-size: 0.85rem;
+      color: var(--accent-dark);
+      background: white;
+      border: 1px solid var(--stone-200);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+    }
+
+    /* ── Block: practice ── */
+    .block-practice {
+      background: white;
+      border: 1px solid var(--stone-200);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2rem;
+    }
+    .practice-intro {
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      color: var(--stone-700);
+      line-height: 1.8;
+      margin-bottom: 1.25rem;
+    }
+    .practice-steps {
+      list-style: none;
+      padding: 0;
+      counter-reset: steps;
+    }
+    .practice-steps li {
+      counter-increment: steps;
+      display: flex;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-top: 1px solid var(--stone-100);
+      font-family: 'Lora', serif;
+      font-size: 0.9rem;
+      color: var(--stone-600);
+      line-height: 1.7;
+    }
+    .practice-steps li::before {
+      content: counter(steps);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      background: var(--stone-100);
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      margin-top: 2px;
+    }
+    .practice-footer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--stone-200);
+      font-family: 'Lora', serif;
+      font-size: 0.875rem;
+      font-style: italic;
+      color: var(--stone-500);
+      line-height: 1.7;
+    }
+
+    /* ── Summary callout ── */
+    .block-summary {
+      background: linear-gradient(135deg, #f9f6f2 0%, #f3ede5 100%);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2rem;
+      border: 1px solid #e8dfd4;
+    }
+    .block-summary p {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      color: var(--stone-700);
+      line-height: 1.8;
+    }
+
+    /* ── Navigation footer ── */
+    .session-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 0;
+      margin-top: 2rem;
+      border-top: 1px solid var(--stone-200);
+    }
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      border: 1px solid var(--stone-200);
+      border-radius: 8px;
+      background: white;
+      font-size: 0.85rem;
+      color: var(--stone-600);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nav-btn:hover { border-color: var(--stone-300); background: var(--stone-50); color: var(--stone-900); }
+    .nav-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 500;
+    }
+    .nav-btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    .nav-btn-label { font-size: 0.7rem; color: var(--stone-400); display: block; }
+    .nav-btn.primary .nav-btn-label { color: rgba(255,255,255,0.65); }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 2rem 1.25rem; }
+      .session-title { font-size: 1.8rem; }
+    }
+
+    /* ── Scrollbar ── */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--stone-300); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Top nav -->
+<nav class="top-nav">
+  <div>
+    <div class="top-nav-course">A Living Union</div>
+    <div class="top-nav-section">Section 1 — Discovering Yourself in Jesus</div>
+  </div>
+  <div class="top-nav-actions">
+    <!-- placeholder for logo -->
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Section 1</div>
+      <div class="sidebar-section-label" style="font-size:0.75rem;color:var(--stone-600);text-transform:none;letter-spacing:0;font-weight:400;margin-bottom:0.75rem;">Discovering Yourself in Jesus</div>
+      <a class="sidebar-item active" href="#">
+        <span class="num">01</span> Jesus Reveals Your Value
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="num">02</span> Jesus Makes You New
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="num">03</span> Jesus Frees You from Sin
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="num">04</span> Jesus Makes You Holy
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Section 2</div>
+      <div class="sidebar-section-label" style="font-size:0.75rem;color:var(--stone-600);text-transform:none;letter-spacing:0;font-weight:400;margin-bottom:0.75rem;">Discovering God in Jesus</div>
+      <a class="sidebar-item" href="#">
+        <span class="num">05</span> Jesus Reveals the Father
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="num">06</span> Jesus Reveals a Human God
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="num">07</span> Jesus Reveals Trinitarian Intimacy
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Section 3</div>
+      <div class="sidebar-section-label" style="font-size:0.75rem;color:var(--stone-600);text-transform:none;letter-spacing:0;font-weight:400;margin-bottom:0.75rem;">Discovering Yourself in Community</div>
+      <a class="sidebar-item" href="#">
+        <span class="num">08</span> Jesus Reveals Community
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <div class="session-eyebrow">Session 01 &nbsp;·&nbsp; Section 1</div>
+    <h1 class="session-title">Jesus Reveals Your Value</h1>
+    <div class="session-divider"></div>
+
+    <!-- Overview -->
+    <div class="block-heading">Overview</div>
+    <p class="block-text">
+      There are many ways we come into a life of faith. Some encounter Jesus in a deeply experiential way through the witness of someone close to them or in a moment of personal searching. Others come through intellectual reflection, arriving at the conviction that Jesus is who he says he is. Others are formed within a faith tradition and encounter the living Christ through the liturgical and sacramental life of the Church.
+    </p>
+    <p class="block-text">
+      Whichever path has led you to discipleship, it is of immense value to grow deeper in understanding what has actually taken place in our acceptance of Christ. Christianity has always been a radical way of being in the world, often one that stands in tension with the surrounding culture. This is because, at its foundation, Christ redefines who we are, or more precisely, reveals who we have always been from God's perspective.
+    </p>
+    <p class="block-text">
+      Over the next eight sessions, we will explore what it means to be defined in Christ, to see God through the lens of Christ, and how these realities shape a way of life in the world. This journey is about unpacking the gift of salvation, what it means for us, how it forms our reality, and how it opens us to live in the freedom of the Holy Spirit.
+    </p>
+
+    <!-- Opening Questions -->
+    <div class="block-heading">Opening Questions</div>
+    <div class="block-questions">
+      <div class="question-item">
+        <span class="question-num">1</span>
+        <span class="question-text">What led you to do this course?</span>
+      </div>
+      <div class="question-item">
+        <span class="question-num">2</span>
+        <span class="question-text">What is one thing you are hoping to get out of doing this course, and how are you feeling about going on the journey?</span>
+      </div>
+      <div class="question-item">
+        <span class="question-num">3</span>
+        <span class="question-text">In a couple of sentences, describe what identity means to you.</span>
+      </div>
+    </div>
+
+    <!-- Teaching Summary -->
+    <div class="block-heading">Teaching Summary</div>
+    <div class="block-summary">
+      <p>The Gospel is the story of God loving us and restoring us to our created value through union with Christ. God has intervened in our brokenness and drawn us back into relationship with Himself.</p>
+    </div>
+
+    <!-- Key Themes -->
+    <div class="block-heading">Key Themes</div>
+    <div class="block-accordion">
+
+      <div class="accordion-item">
+        <button class="accordion-trigger open" onclick="toggleAccordion(this)">
+          The Gospel as Good News
+          <span class="accordion-icon">▾</span>
+        </button>
+        <div class="accordion-body open">
+          <ul>
+            <li>The Gospel means "good news" — God's announcement that freedom has come through Christ</li>
+            <li>We carry deep questions about identity: Who am I really? How do I know?</li>
+            <li>These arise because we've experienced conditional love and a fractured relationship with God</li>
+            <li>The Gospel speaks to this longing — God has intervened in our alienation to restore us to right relationship with Himself</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger" onclick="toggleAccordion(this)">
+          Your Intrinsic Value Comes from God
+          <span class="accordion-icon">▾</span>
+        </button>
+        <div class="accordion-body">
+          <ul>
+            <li>We were created to receive our sense of worth from the Trinity, not from achievement or approval</li>
+            <li>Our fundamental need is to know we are loved and known</li>
+            <li>When unmet, we seek fulfilment elsewhere: in wealth, status, success — yet every substitute leaves us unsatisfied</li>
+            <li>We become captive to fear rather than grounded in love</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger" onclick="toggleAccordion(this)">
+          What God Sees in Us
+          <span class="accordion-icon">▾</span>
+        </button>
+        <div class="accordion-body">
+          <ul>
+            <li>God was willing to give up His own Son to redeem us — revealing our infinite value to Him</li>
+            <li>He sees us as His sons and daughters in our divine dignity</li>
+            <li>God is not angry with us; He doesn't hold our sins against us. He comes looking for us</li>
+            <li>Our value to Him has never been in question</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger" onclick="toggleAccordion(this)">
+          Redemption as Freedom
+          <span class="accordion-icon">▾</span>
+        </button>
+        <div class="accordion-body">
+          <ul>
+            <li>Redemption means to be bought back or set free from sin, death, and the powers of evil</li>
+            <li>In Christ, false structures fall away and we're invited into the truth</li>
+            <li>God's love is unconditional and freely given — it is grace</li>
+            <li>We are no longer defined by sin or our past; we are sons and daughters of God</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Scripture -->
+    <div class="block-heading">Scripture</div>
+    <div class="block-scripture">
+      <span class="scripture-label">References for this session</span>
+      <span class="scripture-ref">Colossians 1:21–22</span>
+      <span class="scripture-ref">Colossians 2:9</span>
+      <span class="scripture-ref">2 Corinthians 5:19</span>
+      <span class="scripture-ref">Ephesians 2:1–5</span>
+      <span class="scripture-ref">Luke 15:11–32</span>
+      <span class="scripture-ref">Galatians 4:6</span>
+      <span class="scripture-ref">Romans 8:15</span>
+    </div>
+
+    <!-- Discussion Questions -->
+    <div class="block-heading">Discussion Questions</div>
+    <p style="font-size:0.85rem;color:var(--stone-500);font-family:'Lora',serif;font-style:italic;margin-bottom:1rem;">Discuss in groups of 3–4. Feel free to respond to all questions at once or take turns answering each.</p>
+    <div class="block-questions">
+      <div class="question-item">
+        <span class="question-num">1</span>
+        <span class="question-text">How could this fresh understanding of God's love shape your sense of intrinsic value?</span>
+      </div>
+      <div class="question-item">
+        <span class="question-num">2</span>
+        <span class="question-text">How can you respond in your everyday life to the idea that God loves you now as much as ever?</span>
+      </div>
+      <div class="question-item">
+        <span class="question-num">3</span>
+        <span class="question-text">How can we pray with and for one another over the next 7 weeks?</span>
+      </div>
+    </div>
+
+    <!-- Practice -->
+    <div class="block-heading">Practice</div>
+    <div class="block-practice">
+      <p class="practice-intro" style="font-weight:600;font-style:normal;color:var(--stone-800);font-family:'Inter',sans-serif;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">Writing a Prayer Intention</p>
+      <p class="practice-intro">
+        This week your practice is to write a prayer in your journal that puts into words your heart's response to the goodness of the Gospel message. Try and sit with what arises when you think about what Jesus has revealed and write a prayer that responds to that. Include a clear intention for how you wish to grow, learn, and develop your relationship with Jesus over the next 8 sessions.
+      </p>
+      <ol class="practice-steps">
+        <li>Find a time and place where you can be alone with Jesus without distraction.</li>
+        <li>Reflect on what you have learned in Session 1 and identify the specific concepts that particularly stand out to you.</li>
+        <li>Put this into your own words by writing it down in your journal. Allow yourself to flesh it out without trying to formulate it too rigidly.</li>
+        <li>Read back what you have written and try to notice the main themes and how they relate to you personally.</li>
+        <li>Formulate a prayer that puts into language what your intention is for this course — including the way you desire to grow and develop your relationship with Jesus.</li>
+      </ol>
+      <p class="practice-footer">This exercise is not a test or something to be achieved. It is a way for you to put into language the hidden movements of grace already working in your heart. It should take anywhere from 5 to 30 minutes — take as much time as is possible and appropriate to you.</p>
+    </div>
+
+    <!-- Session navigation -->
+    <nav class="session-nav">
+      <a href="#" class="nav-btn">
+        ← <span><span class="nav-btn-label">Course Home</span>A Living Union</span>
+      </a>
+      <a href="#" class="nav-btn primary">
+        <span><span class="nav-btn-label">Next Session</span>Jesus Makes You New</span> →
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script>
+  function toggleAccordion(trigger) {
+    const body = trigger.nextElementSibling;
+    const isOpen = trigger.classList.contains('open');
+    trigger.classList.toggle('open', !isOpen);
+    body.classList.toggle('open', !isOpen);
+  }
+</script>
+</body>
+</html>

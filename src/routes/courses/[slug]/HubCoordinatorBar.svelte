@@ -51,25 +51,42 @@
 
 	const markAttendance = async (studentId, present) => {
 		if (!selectedSession || selectedSession < 1) return;
-		// Optimistically update UI
+
 		const student = liveHubData?.students?.find(s => s.id === studentId);
+		const currentStatus = student?.attendance?.[selectedSession];
+		const shouldClear = (present === true && currentStatus === true) || (present === false && currentStatus === false);
+
+		// Optimistically update UI
 		if (student) {
 			if (!student.attendance) student.attendance = {};
-			if (selectedSession !== null) student.attendance[selectedSession] = present;
+			if (shouldClear) {
+				delete student.attendance[selectedSession];
+			} else {
+				if (selectedSession !== null) student.attendance[selectedSession] = present;
+			}
 			if (liveHubData) liveHubData = { ...liveHubData };
 		}
 
 		try {
-			const response = await fetch(`/courses/${courseSlug}/coordinator/api`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'mark_attendance',
-					studentId,
-					present,
-					sessionNumber: selectedSession
-				})
-			});
+			let response;
+			if (shouldClear) {
+				response = await fetch(`/courses/${courseSlug}/coordinator/api`, {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ studentId, sessionNumber: selectedSession })
+				});
+			} else {
+				response = await fetch(`/courses/${courseSlug}/coordinator/api`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'mark_attendance',
+						studentId,
+						present,
+						sessionNumber: selectedSession
+					})
+				});
+			}
 
 			if (!response.ok) {
 				throw new Error('Failed to mark attendance');
