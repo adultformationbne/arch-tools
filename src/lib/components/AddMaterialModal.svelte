@@ -250,7 +250,7 @@
 					description: material.description || '',
 					order: material.display_order,
 					minRole: material.min_role || 'participant',
-						hubIds: []
+						hubIds: [...selectedHubIds]
 				};
 
 				onMaterialAdded(newMaterial);
@@ -299,7 +299,7 @@
 						content: '',
 						order: material.display_order,
 						minRole: material.min_role || 'participant',
-						hubIds: []
+						hubIds: [...selectedHubIds]
 					};
 
 					onMaterialAdded(newMaterial);
@@ -346,7 +346,7 @@
 					mux_status: 'processing',
 					mux_playback_id: null,
 					minRole: material.min_role || 'participant',
-						hubIds: []
+						hubIds: [...selectedHubIds]
 				};
 
 				onMaterialAdded(newMaterial);
