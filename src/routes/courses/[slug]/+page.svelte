@@ -90,11 +90,6 @@
 			}
 		}
 
-		const nextNum = sessionNum + 1;
-		const nextSessionMaterials = nextNum <= maxSessionNumber
-			? (materialsBySession[nextNum] || []).filter(m => m.available_early)
-			: [];
-
 		courseData = {
 			...courseData,
 			currentSessionData: {
@@ -102,7 +97,6 @@
 				sessionTitle: sessionInfo?.title || `Session ${sessionNum}`,
 				sessionOverview: sessionInfo?.description || `Session ${sessionNum} content and materials`,
 				materials: sessionMaterials,
-				nextSessionMaterials,
 				reflectionQuestion: sessionQuestion,
 				reflectionStatus
 			}
@@ -127,10 +121,14 @@
 	const currentSessionData = $derived(courseData?.currentSessionData ?? null);
 	const materials = $derived(currentSessionData?.materials ?? []);
 
-	// Early-access materials for the next session after the highest available — static regardless of selected session
+	// Early-access ("For next session") materials always preview the cohort's actual next
+	// session (current_session + 1), independent of role-based look-ahead. Anchoring to
+	// availableSessions over-shoots for coordinators/admins (whose look-ahead lets them
+	// already navigate ahead), making the preview skip the genuinely-next session.
+	const nextCohortSession = $derived((data.currentSession ?? 0) + 1);
 	const upcomingSessionMaterials = $derived(
-		availableSessions < maxSessionNumber
-			? (materialsBySession[availableSessions + 1] || []).filter((m) => m.available_early)
+		nextCohortSession <= maxSessionNumber
+			? (materialsBySession[nextCohortSession] || []).filter((m) => m.available_early)
 			: []
 	);
 </script>
