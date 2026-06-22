@@ -141,6 +141,83 @@ export async function createCheckoutSession(params: {
 }
 
 /**
+ * Create a Stripe Embedded Checkout Session (ui_mode: 'embedded')
+ * Returns a client_secret used to mount Stripe's checkout inside our own page.
+ * In mock mode there is no real client_secret, so we return a mockUrl that the
+ * client falls back to (the existing mock-checkout page).
+ */
+export async function createEmbeddedCheckoutSession(params: {
+	priceInCents: number;
+	currency: string;
+	customerEmail: string;
+	customerId?: string;
+	returnUrl: string;
+	metadata: {
+		cohort_id: string;
+		enrollment_link_id: string;
+		user_email: string;
+		user_name: string;
+		hub_id?: string;
+	};
+	allowPromotionCodes?: boolean;
+	couponId?: string;
+}): Promise<{ id: string; client_secret: string | null; mockUrl?: string }> {
+	if (isStripeMockMode()) {
+		const mockSessionId = `mock_cs_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+		const mockData = Buffer.from(
+			JSON.stringify({
+				sessionId: mockSessionId,
+				amount: params.priceInCents,
+				currency: params.currency,
+				email: params.customerEmail,
+				metadata: params.metadata,
+				successUrl: params.returnUrl,
+				cancelUrl: params.returnUrl
+			})
+		).toString('base64url');
+		return {
+			id: mockSessionId,
+			client_secret: null,
+			mockUrl: `/enroll/mock-checkout?data=${mockData}`
+		};
+	}
+
+	const sessionParams: Stripe.Checkout.SessionCreateParams = {
+		ui_mode: 'embedded',
+		mode: 'payment',
+		line_items: [
+			{
+				price_data: {
+					currency: params.currency.toLowerCase(),
+					product_data: {
+						name: 'Course Enrollment'
+					},
+					unit_amount: params.priceInCents
+				},
+				quantity: 1
+			}
+		],
+		customer: params.customerId,
+		customer_email: params.customerId ? undefined : params.customerEmail,
+		return_url: params.returnUrl,
+		metadata: params.metadata,
+		payment_intent_data: {
+			metadata: params.metadata
+		},
+		expires_at: Math.floor(Date.now() / 1000) + 30 * 60
+	};
+
+	if (params.couponId) {
+		sessionParams.discounts = [{ coupon: params.couponId }];
+	} else if (params.allowPromotionCodes !== false) {
+		sessionParams.allow_promotion_codes = true;
+	}
+
+	const session = await getStripe().checkout.sessions.create(sessionParams);
+	return { id: session.id, client_secret: session.client_secret };
+}
+
+/**
  * Retrieve a Checkout Session by ID
  */
 export async function getCheckoutSession(sessionId: string) {

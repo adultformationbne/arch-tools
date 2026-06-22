@@ -5,6 +5,9 @@
 	import { Loader2, ChevronDown } from '$lib/icons';
 	import EnrollmentProgressStepper from '$lib/components/EnrollmentProgressStepper.svelte';
 	import FullPageLoadingOverlay from '$lib/components/FullPageLoadingOverlay.svelte';
+	import { tick, onDestroy } from 'svelte';
+	import { loadStripe } from '@stripe/stripe-js';
+	import { env } from '$env/dynamic/public';
 
 	let { data } = $props();
 
@@ -53,6 +56,10 @@
 	let isSubmitting = $state(false);
 	let parishSearch = $state('');
 	let showPendingApproval = $state(false);
+
+	// Embedded Stripe checkout (mounted in-page on the paid path)
+	let showEmbedded = $state(false);
+	let embeddedCheckout: { mount: (sel: string) => void; destroy: () => void } | null = null;
 
 	// Show warning if payment was cancelled
 	$effect(() => {
@@ -105,6 +112,43 @@
 		step = 1;
 	}
 
+	// Mount Stripe Embedded Checkout into the page (real Stripe only)
+	async function mountEmbeddedCheckout(clientSecret: string) {
+		const pk = env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+		if (!pk) {
+			toastError('Payment is not configured. Please contact support.');
+			isSubmitting = false;
+			return;
+		}
+		showEmbedded = true;
+		await tick();
+		try {
+			const stripe = await loadStripe(pk);
+			if (!stripe) throw new Error('Stripe failed to load');
+			const checkout = await stripe.createEmbeddedCheckoutPage({ clientSecret });
+			embeddedCheckout = checkout;
+			checkout.mount('#embedded-checkout');
+		} catch (err) {
+			console.error('Embedded checkout error:', err);
+			toastError('Could not load the payment form. Please try again.');
+			showEmbedded = false;
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	function cancelEmbedded() {
+		if (embeddedCheckout) {
+			embeddedCheckout.destroy();
+			embeddedCheckout = null;
+		}
+		showEmbedded = false;
+	}
+
+	onDestroy(() => {
+		if (embeddedCheckout) embeddedCheckout.destroy();
+	});
+
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 
@@ -149,7 +193,9 @@
 				throw new Error(result.error || 'Failed to process enrollment');
 			}
 
-			if (result.checkoutUrl) {
+			if (result.clientSecret) {
+				await mountEmbeddedCheckout(result.clientSecret);
+			} else if (result.checkoutUrl) {
 				loadingMessage = 'Redirecting to payment...';
 				loadingSubMessage = 'Please wait while we connect to our secure payment provider.';
 				showLoadingOverlay = true;
@@ -475,7 +521,7 @@
 							<button
 								type="button"
 								class="mb-3 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-800"
-								onclick={backToDetails}
+								onclick={() => (showEmbedded ? cancelEmbedded() : backToDetails())}
 							>
 								<ChevronDown class="h-3.5 w-3.5 rotate-90" /> Back
 							</button>
@@ -523,6 +569,7 @@
 								{/if}
 							</div>
 
+							{#if !showEmbedded}
 							<form onsubmit={handleSubmit} class="mt-5">
 								<button
 									type="submit"
@@ -541,10 +588,14 @@
 								</button>
 								{#if !currentPricing.isFree}
 									<p class="mt-2 text-center text-xs text-gray-400">
-										You'll be redirected to our secure payment provider
+									Secure payment, powered by Stripe.
 									</p>
 								{/if}
 							</form>
+							{:else}
+							<!-- Stripe Embedded Checkout mounts here -->
+							<div id="embedded-checkout" class="mt-5"></div>
+							{/if}
 						</div>
 					{/if}
 

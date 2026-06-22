@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { createCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
+import { createEmbeddedCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
 import { getCourseSettings } from '$lib/types/course-settings';
 import { checkRateLimit } from '$lib/server/rate-limit';
@@ -434,14 +434,13 @@ async function handlePaidEnrollment(params: {
 		throw error(500, 'Failed to initialize payment');
 	}
 
-	// Create Stripe Checkout session - success URL only includes session_id (no sensitive data)
-	const session = await createCheckoutSession({
+	// Create an embedded Stripe Checkout session - mounted in-page; returns to success page
+	const session = await createEmbeddedCheckoutSession({
 		priceInCents: pricing.amount,
 		currency: pricing.currency,
 		customerEmail: email,
 		customerId: stripeCustomerId,
-		successUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}/success?session_id={CHECKOUT_SESSION_ID}`,
-		cancelUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}?cancelled=true`,
+		returnUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}/success?session_id={CHECKOUT_SESSION_ID}`,
 		metadata: {
 			cohort_id: cohort.id,
 			enrollment_link_id: link.id,
@@ -458,8 +457,10 @@ async function handlePaidEnrollment(params: {
 		.update({ stripe_checkout_session_id: session.id })
 		.eq('id', payment.id);
 
-	return json({
-		success: true,
-		checkoutUrl: session.url
-	});
+	// Real Stripe -> client_secret to mount embedded checkout in-page.
+	// Mock mode -> no client_secret; fall back to the mock checkout page.
+	if (session.client_secret) {
+		return json({ success: true, clientSecret: session.client_secret });
+	}
+	return json({ success: true, checkoutUrl: session.mockUrl });
 }

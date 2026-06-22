@@ -24,6 +24,7 @@
     "@mux/mux-node": "^12.8.1",
     "@mux/mux-player": "^3.10.0",
     "@mux/mux-uploader": "^1.4.1",
+    "@stripe/stripe-js": "^9.8.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.0",
     "@tailwindcss/typography": "^0.5.16",
