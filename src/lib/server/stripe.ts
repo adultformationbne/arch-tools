@@ -127,7 +127,7 @@ export async function createCheckoutSession(params: {
 		payment_intent_data: {
 			metadata: params.metadata
 		},
-		expires_after: 1800 // 30 minutes
+		expires_at: Math.floor(Date.now() / 1000) + 30 * 60 // expires 30 minutes from now
 	};
 
 	// Apply discount if provided, otherwise allow promo codes
