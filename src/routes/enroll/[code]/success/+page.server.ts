@@ -70,7 +70,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			email: pendingData.email || payment.email,
 			course: {
 				name: course.name,
-				slug: course.slug
+				slug: course.slug,
+				settings: course.settings
 			},
 			module: {
 				name: module?.name
@@ -100,7 +101,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			fullName: enrollment.full_name,
 			course: {
 				name: course.name,
-				slug: course.slug
+				slug: course.slug,
+				settings: course.settings
 			},
 			module: {
 				name: module?.name

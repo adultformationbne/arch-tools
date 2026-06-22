@@ -13,9 +13,21 @@
 	let accentDarkest = $derived(data.course?.settings?.theme?.accentDarkest || '#1e2322');
 	let accentLight = $derived(data.course?.settings?.theme?.accentLight || '#c59a6b');
 
+	// Two-step flow: 1 = details + hub, 2 = review + price + confirm
+	let step = $state(1);
+
+	// Hub selection — locked links keep their hub; general links let the user choose
+	let selectedHubId = $state(data.lockedHubId || data.preselectedHubId || '');
+	let hubLocked = $derived(!!data.lockedHubId);
+	let hasHubs = $derived((data.hubs?.length || 0) > 0);
+	let selectedHub = $derived(data.hubs?.find((h) => h.id === selectedHubId) || null);
+
+	// Price depends on the selected hub. Computed server-side (authoritative) and chosen here.
+	let currentPricing = $derived(selectedHub ? selectedHub.pricing : data.basePricing);
+
 	// Determine flow type for progress stepper
 	let flowType = $derived(() => {
-		if (!data.pricing.isFree) return 'paid';
+		if (!currentPricing.isFree) return 'paid';
 		if (data.cohort.enrollmentType === 'approval_required') return 'free_approval';
 		return 'free_auto';
 	});
@@ -79,10 +91,31 @@
 		return Object.keys(formErrors).length === 0;
 	}
 
+	// Step 1 → Step 2: validate details, then reveal the price on the review step
+	function goToReview() {
+		if (!validateForm()) {
+			toastError('Please fix the errors below');
+			return;
+		}
+		step = 2;
+		if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	function backToDetails() {
+		step = 1;
+	}
+
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 
+		// Safety: never submit from the details step
+		if (step !== 2) {
+			goToReview();
+			return;
+		}
+
 		if (!validateForm()) {
+			step = 1;
 			toastError('Please fix the errors below');
 			return;
 		}
@@ -100,7 +133,8 @@
 				referralSource: referralSource || null,
 				referralOther: referralOther.trim() || null,
 				enrollmentLinkId: data.enrollmentLink.id,
-				cohortId: data.cohort.id
+				cohortId: data.cohort.id,
+				hubId: selectedHubId || null
 			};
 
 			const response = await fetch(`/api/enroll/${data.enrollmentLink.code}`, {
@@ -174,7 +208,7 @@
 			<div class="flex flex-1 flex-col justify-center">
 				<!-- Progress stepper -->
 				<div class="mb-6">
-					<EnrollmentProgressStepper flow={flowType()} currentStep={1} />
+					<EnrollmentProgressStepper flow={flowType()} currentStep={1} accentColor={accentDark} />
 				</div>
 
 				{#if showPendingApproval}
@@ -214,186 +248,282 @@
 									<span>{data.cohort?.name}</span>
 								</div>
 							</div>
-							<div class="shrink-0">
-								{#if data.pricing.isFree}
-									<span class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold text-white" style="background-color: {accentDark};">Free</span>
-								{:else}
-									<span class="text-base font-bold text-gray-900">{formatPrice(data.pricing.amount, data.pricing.currency)}</span>
-								{/if}
-							</div>
+							{#if step === 2}
+								<div class="shrink-0">
+									{#if currentPricing.isFree}
+										<span class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold text-white" style="background-color: {accentDark};">Free</span>
+									{:else}
+										<span class="text-base font-bold text-gray-900">{formatPrice(currentPricing.amount, currentPricing.currency)}</span>
+									{/if}
+								</div>
+							{/if}
 						</div>
 					</div>
 
-					<!-- Form -->
-					<div class="max-w-sm">
-						<h1 class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-							Register for this course
-						</h1>
-						<p class="mt-1 text-sm text-gray-500">Enter your details below to enroll.</p>
+					{#if step === 1}
+						<!-- STEP 1: Details + hub -->
+						<div class="mx-auto w-full max-w-sm">
+							<h1 class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+								Register for this course
+							</h1>
+							<p class="mt-1 text-sm text-gray-500">Enter your details below to get started.</p>
 
-						<form onsubmit={handleSubmit} class="mt-5 space-y-4">
-							<!-- Name fields -->
-							<div class="grid gap-3 sm:grid-cols-2">
+							<form onsubmit={(e) => { e.preventDefault(); goToReview(); }} class="mt-5 space-y-4">
+								<!-- Name fields -->
+								<div class="grid gap-3 sm:grid-cols-2">
+									<div>
+										<label for="firstName" class="block text-sm font-medium text-gray-900">
+											First Name <span class="text-red-500">*</span>
+										</label>
+										<input
+											type="text"
+											id="firstName"
+											bind:value={firstName}
+											disabled={!!data.existingUser}
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+											class:border-red-500={formErrors.firstName}
+											style="focus:border-color: {accentDark};"
+										/>
+										{#if formErrors.firstName}
+											<p class="mt-1 text-xs text-red-500">{formErrors.firstName}</p>
+										{/if}
+									</div>
+
+									<div>
+										<label for="surname" class="block text-sm font-medium text-gray-900">
+											Surname <span class="text-red-500">*</span>
+										</label>
+										<input
+											type="text"
+											id="surname"
+											bind:value={surname}
+											disabled={!!data.existingUser}
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+											class:border-red-500={formErrors.surname}
+										/>
+										{#if formErrors.surname}
+											<p class="mt-1 text-xs text-red-500">{formErrors.surname}</p>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Email -->
 								<div>
-									<label for="firstName" class="block text-sm font-medium text-gray-900">
-										First Name <span class="text-red-500">*</span>
+									<label for="email" class="block text-sm font-medium text-gray-900">
+										Email <span class="text-red-500">*</span>
 									</label>
 									<input
-										type="text"
-										id="firstName"
-										bind:value={firstName}
+										type="email"
+										id="email"
+										bind:value={email}
 										disabled={!!data.existingUser}
 										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
-										class:border-red-500={formErrors.firstName}
-										style="focus:border-color: {accentDark};"
+										class:border-red-500={formErrors.email}
 									/>
-									{#if formErrors.firstName}
-										<p class="mt-1 text-xs text-red-500">{formErrors.firstName}</p>
+									{#if formErrors.email}
+										<p class="mt-1 text-xs text-red-500">{formErrors.email}</p>
 									{/if}
 								</div>
 
+								<!-- Phone -->
 								<div>
-									<label for="surname" class="block text-sm font-medium text-gray-900">
-										Surname <span class="text-red-500">*</span>
+									<label for="phone" class="block text-sm font-medium text-gray-900">
+										Phone <span class="text-red-500">*</span>
 									</label>
 									<input
-										type="text"
-										id="surname"
-										bind:value={surname}
-										disabled={!!data.existingUser}
-										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
-										class:border-red-500={formErrors.surname}
+										type="tel"
+										id="phone"
+										bind:value={phone}
+										placeholder="04XX XXX XXX"
+										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+										class:border-red-500={formErrors.phone}
 									/>
-									{#if formErrors.surname}
-										<p class="mt-1 text-xs text-red-500">{formErrors.surname}</p>
+									{#if formErrors.phone}
+										<p class="mt-1 text-xs text-red-500">{formErrors.phone}</p>
 									{/if}
 								</div>
-							</div>
 
-							<!-- Email -->
-							<div>
-								<label for="email" class="block text-sm font-medium text-gray-900">
-									Email <span class="text-red-500">*</span>
-								</label>
-								<input
-									type="email"
-									id="email"
-									bind:value={email}
-									disabled={!!data.existingUser}
-									class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
-									class:border-red-500={formErrors.email}
-								/>
-								{#if formErrors.email}
-									<p class="mt-1 text-xs text-red-500">{formErrors.email}</p>
-								{/if}
-							</div>
-
-							<!-- Phone -->
-							<div>
-								<label for="phone" class="block text-sm font-medium text-gray-900">
-									Phone <span class="text-red-500">*</span>
-								</label>
-								<input
-									type="tel"
-									id="phone"
-									bind:value={phone}
-									placeholder="04XX XXX XXX"
-									class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-									class:border-red-500={formErrors.phone}
-								/>
-								{#if formErrors.phone}
-									<p class="mt-1 text-xs text-red-500">{formErrors.phone}</p>
-								{/if}
-							</div>
-
-							<!-- Parish -->
-							<div>
-								<label for="parishSearch" class="block text-sm font-medium text-gray-900">
-									Parish or Community <span class="text-red-500">*</span>
-								</label>
-								<div class="relative mt-1">
-									<input
-										type="text"
-										id="parishSearch"
-										bind:value={parishSearch}
-										placeholder="Search for your parish..."
-										class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-										class:border-red-500={formErrors.parish}
-									/>
-									{#if parishSearch && !parishId}
-										<div class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-											{#each filteredParishes() as parish}
+								<!-- Parish -->
+								<div>
+									<label for="parishSearch" class="block text-sm font-medium text-gray-900">
+										Parish or Community <span class="text-red-500">*</span>
+									</label>
+									<div class="relative mt-1">
+										<input
+											type="text"
+											id="parishSearch"
+											bind:value={parishSearch}
+											placeholder="Search for your parish..."
+											class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+											class:border-red-500={formErrors.parish}
+										/>
+										{#if parishSearch && !parishId}
+											<div class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+												{#each filteredParishes() as parish}
+													<button
+														type="button"
+														class="block w-full min-h-[44px] px-4 py-2.5 text-left text-sm hover:bg-gray-50"
+														onclick={() => {
+															parishId = parish.id;
+															parishSearch = parish.name;
+															parishOther = '';
+														}}
+													>
+														<span class="font-medium text-gray-900">{parish.name}</span>
+														{#if parish.location}
+															<span class="text-gray-500"> — {parish.location}</span>
+														{/if}
+													</button>
+												{/each}
 												<button
 													type="button"
-													class="block w-full min-h-[44px] px-4 py-2.5 text-left text-sm hover:bg-gray-50"
+													class="block w-full min-h-[44px] border-t px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50"
 													onclick={() => {
-														parishId = parish.id;
-														parishSearch = parish.name;
-														parishOther = '';
+														parishId = '';
+														parishOther = parishSearch;
 													}}
 												>
-													<span class="font-medium text-gray-900">{parish.name}</span>
-													{#if parish.location}
-														<span class="text-gray-500"> — {parish.location}</span>
-													{/if}
+													+ Add "{parishSearch}" as other
 												</button>
-											{/each}
-											<button
-												type="button"
-												class="block w-full min-h-[44px] border-t px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50"
-												onclick={() => {
-													parishId = '';
-													parishOther = parishSearch;
-												}}
-											>
-												+ Add "{parishSearch}" as other
-											</button>
-										</div>
+											</div>
+										{/if}
+									</div>
+									{#if parishId}
+										<p class="mt-1 text-xs text-green-600">
+											✓ {data.parishes.find((p) => p.id === parishId)?.name}
+											<button type="button" class="ml-1 underline text-gray-500" onclick={() => { parishId = ''; parishSearch = ''; }}>Change</button>
+										</p>
+									{:else if parishOther}
+										<p class="mt-1 text-xs text-gray-500">
+											Other: {parishOther}
+											<button type="button" class="ml-1 underline" onclick={() => { parishOther = ''; parishSearch = ''; }}>Change</button>
+										</p>
+									{/if}
+									{#if formErrors.parish}
+										<p class="mt-1 text-xs text-red-500">{formErrors.parish}</p>
 									{/if}
 								</div>
-								{#if parishId}
-									<p class="mt-1 text-xs text-green-600">
-										✓ {data.parishes.find((p) => p.id === parishId)?.name}
-										<button type="button" class="ml-1 underline text-gray-500" onclick={() => { parishId = ''; parishSearch = ''; }}>Change</button>
-									</p>
-								{:else if parishOther}
-									<p class="mt-1 text-xs text-gray-500">
-										Other: {parishOther}
-										<button type="button" class="ml-1 underline" onclick={() => { parishOther = ''; parishSearch = ''; }}>Change</button>
-									</p>
+
+								<!-- Hub / Location selection -->
+								{#if hubLocked && data.hub}
+									<div>
+										<span class="block text-sm font-medium text-gray-900">Hub / Location</span>
+										<p class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+											{data.hub.name}{#if data.hub.location} — {data.hub.location}{/if}
+										</p>
+									</div>
+								{:else if hasHubs}
+									<div>
+										<label for="hub" class="block text-sm font-medium text-gray-900">
+											Hub / Location
+										</label>
+										<select
+											id="hub"
+											bind:value={selectedHubId}
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none"
+										>
+											<option value="">No specific hub</option>
+											{#each data.hubs as hub}
+												<option value={hub.id}>{hub.name}{hub.location ? ` — ${hub.location}` : ''}</option>
+											{/each}
+										</select>
+										<p class="mt-1 text-xs text-gray-400">Choose the location where you'll attend, if applicable.</p>
+									</div>
 								{/if}
-								{#if formErrors.parish}
-									<p class="mt-1 text-xs text-red-500">{formErrors.parish}</p>
+
+								<!-- Referral source -->
+								<div>
+									<label for="referralSource" class="block text-sm font-medium text-gray-900">
+										How did you find out about this course?
+									</label>
+									<select
+										id="referralSource"
+										bind:value={referralSource}
+										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none"
+									>
+										<option value="">Select an option (optional)</option>
+										{#each data.referralSources as source}
+											<option value={source.value}>{source.label}</option>
+										{/each}
+									</select>
+									{#if referralSource === 'other'}
+										<input
+											type="text"
+											bind:value={referralOther}
+											placeholder="Please specify..."
+											class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+										/>
+									{/if}
+								</div>
+
+								<!-- Continue to review -->
+								<div class="pt-1">
+									<button
+										type="submit"
+										class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 focus:outline-none"
+										style="background-color: {accentDark};"
+									>
+										Continue
+									</button>
+								</div>
+							</form>
+						</div>
+
+					{:else}
+						<!-- STEP 2: Review + price + confirm -->
+						<div class="mx-auto w-full max-w-sm">
+							<button
+								type="button"
+								class="mb-3 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-800"
+								onclick={backToDetails}
+							>
+								<ChevronDown class="h-3.5 w-3.5 rotate-90" /> Back
+							</button>
+
+							<h1 class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+								Review &amp; confirm
+							</h1>
+							<p class="mt-1 text-sm text-gray-500">Check your details before continuing.</p>
+
+							<!-- Summary -->
+							<dl class="mt-5 divide-y divide-gray-100 rounded-xl border border-gray-200">
+								<div class="flex justify-between gap-4 px-4 py-3">
+									<dt class="text-sm text-gray-500">Name</dt>
+									<dd class="text-sm font-medium text-gray-900">{firstName} {surname}</dd>
+								</div>
+								<div class="flex justify-between gap-4 px-4 py-3">
+									<dt class="text-sm text-gray-500">Email</dt>
+									<dd class="text-sm font-medium text-gray-900 break-all">{email}</dd>
+								</div>
+								<div class="flex justify-between gap-4 px-4 py-3">
+									<dt class="text-sm text-gray-500">Phone</dt>
+									<dd class="text-sm font-medium text-gray-900">{phone}</dd>
+								</div>
+								<div class="flex justify-between gap-4 px-4 py-3">
+									<dt class="text-sm text-gray-500">Parish</dt>
+									<dd class="text-sm font-medium text-gray-900 text-right">
+										{parishId ? data.parishes.find((p) => p.id === parishId)?.name : parishOther}
+									</dd>
+								</div>
+								{#if selectedHub}
+									<div class="flex justify-between gap-4 px-4 py-3">
+										<dt class="text-sm text-gray-500">Hub</dt>
+										<dd class="text-sm font-medium text-gray-900 text-right">{selectedHub.name}</dd>
+									</div>
+								{/if}
+							</dl>
+
+							<!-- Price -->
+							<div class="mt-5 flex items-center justify-between rounded-xl px-4 py-4" style="background-color: {accentDark}14;">
+								<span class="text-sm font-semibold uppercase tracking-wide text-gray-600">Total</span>
+								{#if currentPricing.isFree}
+									<span class="text-2xl font-bold text-gray-900">Free</span>
+								{:else}
+									<span class="text-2xl font-bold text-gray-900">{formatPrice(currentPricing.amount, currentPricing.currency)}</span>
 								{/if}
 							</div>
 
-							<!-- Referral source -->
-							<div>
-								<label for="referralSource" class="block text-sm font-medium text-gray-900">
-									How did you find out about this course?
-								</label>
-								<select
-									id="referralSource"
-									bind:value={referralSource}
-									class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none"
-								>
-									<option value="">Select an option (optional)</option>
-									{#each data.referralSources as source}
-										<option value={source.value}>{source.label}</option>
-									{/each}
-								</select>
-								{#if referralSource === 'other'}
-									<input
-										type="text"
-										bind:value={referralOther}
-										placeholder="Please specify..."
-										class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-									/>
-								{/if}
-							</div>
-
-							<!-- Submit -->
-							<div class="pt-1">
+							<form onsubmit={handleSubmit} class="mt-5">
 								<button
 									type="submit"
 									disabled={isSubmitting}
@@ -403,20 +533,20 @@
 									{#if isSubmitting}
 										<Loader2 class="h-4 w-4 animate-spin" />
 										Processing...
-									{:else if data.pricing.isFree}
+									{:else if currentPricing.isFree}
 										Register Now
 									{:else}
 										Continue to Payment
 									{/if}
 								</button>
-								{#if !data.pricing.isFree}
+								{#if !currentPricing.isFree}
 									<p class="mt-2 text-center text-xs text-gray-400">
 										You'll be redirected to our secure payment provider
 									</p>
 								{/if}
-							</div>
-						</form>
-					</div>
+							</form>
+						</div>
+					{/if}
 
 				{/if}
 			</div>
@@ -496,22 +626,24 @@
 							</p>
 						</div>
 					{/if}
-					{#if data.hub}
+					{#if selectedHub}
 						<div class="rounded-lg px-3.5 py-2.5" style="background-color: rgba(255,255,255,0.1);">
 							<p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Location</p>
-							<p class="mt-0.5 text-sm font-semibold">{data.hub.name}</p>
+							<p class="mt-0.5 text-sm font-semibold">{selectedHub.name}</p>
 						</div>
 					{/if}
 				</div>
 
-				<div class="border-t pt-5" style="border-color: rgba(255,255,255,0.15);">
-					<p class="text-xs font-semibold uppercase tracking-widest text-white/50">Enrollment</p>
-					{#if data.pricing.isFree}
-						<p class="mt-1 text-4xl font-bold">Free</p>
-					{:else}
-						<p class="mt-1 text-4xl font-bold">{formatPrice(data.pricing.amount, data.pricing.currency)}</p>
-					{/if}
-				</div>
+				{#if step === 2}
+					<div class="border-t pt-5" style="border-color: rgba(255,255,255,0.15);">
+						<p class="text-xs font-semibold uppercase tracking-widest text-white/50">Enrollment</p>
+						{#if currentPricing.isFree}
+							<p class="mt-1 text-4xl font-bold">Free</p>
+						{:else}
+							<p class="mt-1 text-4xl font-bold">{formatPrice(currentPricing.amount, currentPricing.currency)}</p>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

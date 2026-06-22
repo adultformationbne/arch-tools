@@ -12,7 +12,8 @@
 	let {
 		flow = 'free_auto' as FlowType,
 		currentStep = 1,
-		compact = false
+		compact = false,
+		accentColor = '#2563eb'
 	} = $props();
 
 	// Define steps based on flow type
@@ -51,7 +52,7 @@
 	}
 </script>
 
-<nav aria-label="Enrollment progress" class="enrollment-stepper" class:compact>
+<nav aria-label="Enrollment progress" class="enrollment-stepper" class:compact style="--stepper-accent: {accentColor};">
 	<ol class="stepper-list">
 		{#each steps() as step, index}
 			{@const status = getStepStatus(index)}
@@ -132,9 +133,9 @@
 	}
 
 	.step-circle.active {
-		background-color: #2563eb;
+		background-color: var(--stepper-accent);
 		color: white;
-		box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--stepper-accent) 20%, transparent);
 	}
 
 	.step-circle.completed {

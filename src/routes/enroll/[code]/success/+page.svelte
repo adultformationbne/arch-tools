@@ -8,6 +8,8 @@
 
 	let { data, form } = $props();
 
+	let accentDark = $derived(data.course?.settings?.theme?.accentDark || '#2563eb');
+
 	let password = $state('');
 	let confirmPassword = $state('');
 	let showPassword = $state(false);
@@ -77,7 +79,7 @@
 <div class="flex min-h-screen flex-col bg-gray-50 px-4 py-8 sm:py-12">
 	<!-- Progress stepper -->
 	<div class="mx-auto w-full max-w-md mb-6">
-		<EnrollmentProgressStepper flow={flowType()} currentStep={currentStep()} />
+		<EnrollmentProgressStepper flow={flowType()} currentStep={currentStep()} accentColor={accentDark} />
 	</div>
 
 	<div class="mx-auto w-full max-w-md flex-1 flex flex-col items-stretch sm:items-center sm:justify-center">

@@ -1276,6 +1276,31 @@ export const CourseMutations = {
 	/**
 	 * Create a new hub
 	 */
+	/**
+	 * Generate a URL-safe slug for a hub, unique within the course
+	 */
+	async generateUniqueHubSlug(courseId: string, name: string): Promise<string> {
+		const base =
+			(name || '')
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-+|-+$/g, '') || 'hub';
+
+		const { data: existing } = await supabaseAdmin
+			.from('courses_hubs')
+			.select('slug')
+			.eq('course_id', courseId)
+			.not('slug', 'is', null);
+
+		const taken = new Set((existing || []).map((h) => h.slug));
+		let slug = base;
+		let n = 2;
+		while (taken.has(slug)) {
+			slug = `${base}-${n++}`;
+		}
+		return slug;
+	},
+
 	async createHub(params: {
 		courseId: string;
 		name: string;
@@ -1283,12 +1308,15 @@ export const CourseMutations = {
 	}) {
 		const { courseId, name, location } = params;
 
+		const slug = await CourseMutations.generateUniqueHubSlug(courseId, name);
+
 		return supabaseAdmin
 			.from('courses_hubs')
 			.insert({
 				course_id: courseId,
 				name: name,
-				location: location || null
+				location: location || null,
+				slug
 			})
 			.select()
 			.single();

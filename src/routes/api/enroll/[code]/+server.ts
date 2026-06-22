@@ -22,8 +22,17 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 
 	// Parse request body
 	const body = await request.json();
-	const { firstName, surname, email, phone, parishId, parishOther, referralSource, referralOther } =
-		body;
+	const {
+		firstName,
+		surname,
+		email,
+		phone,
+		parishId,
+		parishOther,
+		referralSource,
+		referralOther,
+		hubId
+	} = body;
 
 	// Validate required fields
 	if (!firstName || !surname || !email || !phone) {
@@ -152,10 +161,28 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		}
 	}
 
+	// Resolve effective hub: a hub-locked link wins; otherwise the participant's selection (server-validated)
+	const lockedHub = Array.isArray(link.hub) ? link.hub[0] : link.hub;
+	let effectiveHub: { id: string; price_cents: number | null; currency: string | null } | null =
+		link.hub_id ? lockedHub : null;
+	if (!link.hub_id && hubId) {
+		const { data: selectedHub } = await supabaseAdmin
+			.from('courses_hubs')
+			.select('id, price_cents, currency')
+			.eq('id', hubId)
+			.eq('course_id', course.id)
+			.single();
+		if (!selectedHub) {
+			throw error(400, 'Invalid hub selection');
+		}
+		effectiveHub = selectedHub;
+	}
+	const effectiveHubId = effectiveHub?.id || null;
+
 	// Calculate effective price
 	const pricing = getEffectivePrice({
 		enrollmentLink: { price_cents: link.price_cents },
-		hub: link.hub,
+		hub: effectiveHub ? { price_cents: effectiveHub.price_cents, currency: effectiveHub.currency } : undefined,
 		cohort: {
 			price_cents: cohort.price_cents,
 			currency: cohort.currency,
@@ -180,6 +207,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			cohort,
 			course,
 			link,
+			hubId: effectiveHubId,
 			fullName,
 			email: normalizedEmail,
 			phone,
@@ -197,6 +225,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		cohort,
 		course,
 		link,
+		hubId: effectiveHubId,
 		pricing,
 		fullName,
 		email: normalizedEmail,
@@ -213,6 +242,7 @@ async function handleFreeEnrollment(params: {
 	cohort: any;
 	course: any;
 	link: any;
+	hubId: string | null;
 	fullName: string;
 	email: string;
 	phone: string;
@@ -227,6 +257,7 @@ async function handleFreeEnrollment(params: {
 		cohort,
 		course,
 		link,
+		hubId,
 		fullName,
 		email,
 		phone,
@@ -248,7 +279,7 @@ async function handleFreeEnrollment(params: {
 	const { data: result, error: rpcError } = await supabaseAdmin.rpc('safe_create_enrollment', {
 		p_cohort_id: cohort.id,
 		p_user_profile_id: existingUser?.id || null,
-		p_hub_id: link.hub_id || null,
+		p_hub_id: hubId,
 		p_enrollment_link_id: link.id,
 		p_full_name: fullName,
 		p_email: email,
@@ -306,6 +337,7 @@ async function handlePaidEnrollment(params: {
 	cohort: any;
 	course: any;
 	link: any;
+	hubId: string | null;
 	pricing: { amount: number; currency: string };
 	fullName: string;
 	email: string;
@@ -320,6 +352,7 @@ async function handlePaidEnrollment(params: {
 		cohort,
 		course,
 		link,
+		hubId,
 		pricing,
 		fullName,
 		email,
@@ -375,7 +408,7 @@ async function handlePaidEnrollment(params: {
 		parishId,
 		parishOther,
 		referralSource: referralSource === 'other' ? referralOther : referralSource,
-		hubId: link.hub_id
+		hubId
 	};
 
 	// Create payment record with pending data
@@ -414,7 +447,7 @@ async function handlePaidEnrollment(params: {
 			enrollment_link_id: link.id,
 			user_email: email,
 			user_name: fullName,
-			hub_id: link.hub_id || ''
+			hub_id: hubId || ''
 		},
 		allowPromotionCodes: true
 	});

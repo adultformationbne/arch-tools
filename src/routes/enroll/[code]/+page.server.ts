@@ -144,6 +144,41 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		}
 	});
 
+	// Fetch all hubs for this course (for the hub selector on a general link)
+	const { data: courseHubs } = await supabaseAdmin
+		.from('courses_hubs')
+		.select('id, name, slug, location, price_cents, currency')
+		.eq('course_id', course.id)
+		.order('name');
+
+	const priceForHub = (hub: { price_cents: number | null; currency: string | null } | null) =>
+		getEffectivePrice({
+			enrollmentLink: { price_cents: link.price_cents },
+			hub: hub ? { price_cents: hub.price_cents, currency: hub.currency } : undefined,
+			cohort: {
+				price_cents: cohort.price_cents,
+				currency: cohort.currency,
+				is_free: cohort.is_free || false
+			},
+			course: {
+				default_price_cents: course.default_price_cents,
+				default_currency: course.default_currency
+			}
+		});
+
+	const basePricing = priceForHub(null);
+	const hubs = (courseHubs || []).map((h) => ({
+		id: h.id,
+		name: h.name,
+		slug: h.slug,
+		location: h.location,
+		pricing: priceForHub(h)
+	}));
+
+	// Resolve ?hub=<slug> preselect (must belong to this course)
+	const hubParam = url.searchParams.get('hub');
+	const preselectedHub = hubParam ? hubs.find((h) => h.slug === hubParam) : null;
+
 	// Get parishes for dropdown
 	const { data: parishes } = await supabaseAdmin
 		.from('parishes')
@@ -186,6 +221,10 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			hubId: link.hub_id
 		},
 		hub: Array.isArray(link.hub) ? link.hub[0] : link.hub,
+		hubs,
+		lockedHubId: link.hub_id || null,
+		preselectedHubId: preselectedHub?.id || null,
+		basePricing,
 		cohort: {
 			id: cohort.id,
 			name: cohort.name,

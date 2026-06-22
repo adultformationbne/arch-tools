@@ -923,6 +923,7 @@ export type Database = {
           location: string | null
           name: string
           price_cents: number | null
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -933,6 +934,7 @@ export type Database = {
           location?: string | null
           name: string
           price_cents?: number | null
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -943,6 +945,7 @@ export type Database = {
           location?: string | null
           name?: string
           price_cents?: number | null
+          slug?: string | null
           updated_at?: string
         }
         Relationships: [
