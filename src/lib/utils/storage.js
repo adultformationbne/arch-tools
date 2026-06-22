@@ -1,6 +1,8 @@
 const MATERIALS_BUCKET = 'materials';
 const LOGOS_BUCKET = 'course-logos';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+// Filenames are immutable (timestamp + random suffix), so cache aggressively to cut egress.
+const CACHE_CONTROL = '31536000'; // 1 year, in seconds
 const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB for logos
 
 export async function uploadMaterial(supabase, file, cohortId, sessionNumber) {
@@ -20,6 +22,7 @@ export async function uploadMaterial(supabase, file, cohortId, sessionNumber) {
 			.from(MATERIALS_BUCKET)
 			.upload(filePath, file, {
 				contentType: file.type,
+				cacheControl: CACHE_CONTROL,
 				upsert: false
 			});
 
@@ -162,6 +165,7 @@ export async function uploadCourseLogo(supabase, file, courseSlug) {
 			.from(LOGOS_BUCKET)
 			.upload(filePath, file, {
 				contentType: file.type,
+				cacheControl: CACHE_CONTROL,
 				upsert: true
 			});
 

@@ -24,7 +24,9 @@ function buildLogEntry({ to, emailType, subject, body, status, resendId = null, 
 		recipient_email: to,
 		email_type: emailType,
 		subject,
-		body,
+		// Only retain the full HTML for failed sends (useful for debugging).
+		// Successful sends store an empty body — the column is NOT NULL — saving ~85% of log size.
+		body: status === 'failed' ? body : '',
 		status,
 		sent_at: status === 'sent' ? new Date().toISOString() : null,
 		error_message: errorMessage,
@@ -266,6 +268,7 @@ export async function sendEmail({
 		await supabase.from('platform_email_log').insert(
 			buildLogEntry({ to, emailType, subject, body: html, status: 'sent', resendId: data?.id, referenceId, metadata })
 		);
+		pruneOldEmailLogs(supabase); // fire-and-forget retention cleanup
 
 		// Mark any email images as used (async, don't block)
 		markEmailImagesAsUsed(html);
@@ -482,9 +485,27 @@ async function logBatchEmails(supabase, emails, emailType, status, errorMessage 
 			});
 		});
 		await supabase.from('platform_email_log').insert(logs);
+		pruneOldEmailLogs(supabase); // fire-and-forget retention cleanup
 	} catch (logError) {
 		console.error('Failed to log batch emails:', logError);
 	}
+}
+
+/** Delete email logs older than the 4-month retention window.
+ * Fire-and-forget: never awaited, never throws — must not slow or break email sending.
+ * @param {Object} supabase
+ */
+function pruneOldEmailLogs(supabase) {
+	if (!supabase) return;
+	const cutoff = new Date();
+	cutoff.setMonth(cutoff.getMonth() - 4);
+	supabase
+		.from('platform_email_log')
+		.delete()
+		.lt('created_at', cutoff.toISOString())
+		.then(({ error }) => {
+			if (error) console.error('Failed to prune old email logs:', error);
+		});
 }
 
 // =====================================================

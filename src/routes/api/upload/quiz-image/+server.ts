@@ -44,6 +44,7 @@ export const POST = async (event: RequestEvent) => {
 		.from(BUCKET)
 		.upload(filePath, processed, {
 			contentType: 'image/webp',
+			cacheControl: '31536000', // 1 year — filename includes a timestamp
 			upsert: true
 		});
 

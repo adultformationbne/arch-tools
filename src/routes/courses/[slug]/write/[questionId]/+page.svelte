@@ -43,8 +43,12 @@
 
 	// Auto-save functionality
 	let autoSaveTimer;
+	let lastSavedContent = (data?.existingReflection?.response_text ?? '').trim(); // skip no-op saves
+
 	const autoSave = async () => {
-		if (!questionId || content.trim().length === 0 || !isEditable) return;
+		const toSave = content.trim();
+		if (!questionId || toSave.length === 0 || !isEditable) return;
+		if (toSave === lastSavedContent) return; // nothing changed since last save
 
 		if (autoSaveTimer) clearTimeout(autoSaveTimer);
 		autoSaveStatus = 'saving';
@@ -55,7 +59,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					reflection_question_id: questionId,
-					content: content.trim(),
+					content: toSave,
 					is_public: !isPrivate,
 					status: 'draft'
 				})
@@ -63,6 +67,7 @@
 
 			if (!response.ok) throw new Error('Failed to save draft');
 
+			lastSavedContent = toSave;
 			autoSaveStatus = 'saved';
 			lastSaved = new Date();
 		} catch (error) {
@@ -71,11 +76,11 @@
 		}
 	};
 
-	// Watch for content changes (only auto-save if editable)
+	// Watch for content changes (only auto-save if editable and content actually changed)
 	$effect(() => {
-		if (content && content.length > 0 && questionId && isEditable) {
+		if (content && content.length > 0 && questionId && isEditable && content.trim() !== lastSavedContent) {
 			if (autoSaveTimer) clearTimeout(autoSaveTimer);
-			autoSaveTimer = setTimeout(autoSave, 2000);
+			autoSaveTimer = setTimeout(autoSave, 8000);
 		}
 	});
 

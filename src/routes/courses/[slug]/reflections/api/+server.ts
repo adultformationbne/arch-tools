@@ -1,7 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -11,8 +10,12 @@ export const POST: RequestHandler = async (event) => {
 	const { user } = await requireCourseAccess(event, courseSlug);
 	const userId = user.id;
 
-	// Get course ID to read the active cohort cookie
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
+	// Get course ID to read the active cohort cookie (only the id is needed here)
+	const { data: course } = await supabaseAdmin
+		.from('courses')
+		.select('id')
+		.eq('slug', courseSlug)
+		.single();
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
 	try {

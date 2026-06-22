@@ -110,6 +110,7 @@ export const POST = async (event: RequestEvent) => {
 			.from(EMAIL_IMAGES_BUCKET)
 			.upload(filePath, processedBuffer, {
 				contentType: mimeType,
+				cacheControl: '31536000', // 1 year — filename includes a timestamp
 				upsert: false
 			});
 

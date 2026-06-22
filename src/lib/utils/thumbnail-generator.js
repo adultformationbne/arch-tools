@@ -234,6 +234,7 @@ export async function uploadThumbnail(supabase, templateId, dataUrl) {
       .from('dgr-thumbnails')
       .upload(fileName, blob, {
         contentType: 'image/png',
+        cacheControl: '31536000', // 1 year — filename includes a timestamp
         upsert: true
       });
 

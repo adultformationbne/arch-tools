@@ -45,6 +45,7 @@ export const POST: RequestHandler = async (event) => {
 				.from('public-assets')
 				.upload(fileName, buffer, {
 					contentType: file.type,
+					cacheControl: '31536000', // 1 year — filename includes a timestamp
 					upsert: true
 				});
 

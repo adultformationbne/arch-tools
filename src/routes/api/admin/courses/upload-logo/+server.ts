@@ -51,6 +51,7 @@ export const POST = async (event: RequestEvent) => {
 			.from(LOGOS_BUCKET)
 			.upload(filePath, buffer, {
 				contentType: file.type,
+				cacheControl: '31536000', // 1 year — filename includes a timestamp
 				upsert: true
 			});
 
