@@ -16,6 +16,11 @@ import { testHelpers } from './helpers.js';
  */
 
 describe('API Endpoints', () => {
+	// Clear any leftovers from a previously aborted run before starting.
+	beforeAll(async () => {
+		await testHelpers.cleanup();
+	});
+
 	afterEach(async () => {
 		await testHelpers.cleanup();
 	});

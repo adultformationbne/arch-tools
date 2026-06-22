@@ -1,6 +1,7 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { requireModule } from '$lib/server/auth';
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
 	const errorId = crypto.randomUUID().slice(0, 8);
@@ -108,6 +109,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return cachedSession;
 		}
 	};
+
+	// Centralised guard for the DGR API. These endpoints use the service-role client
+	// and were previously either login-only or fully unauthenticated. Require the `dgr`
+	// module for all of them, except the genuinely public ones:
+	//   - /api/dgr/readings* — consumed by the public token-based contributor write page
+	//   - /api/dgr/contributor/[token], /api/dgr/schedule/[token] — token-authenticated
+	const path = event.url.pathname;
+	if (path.startsWith('/api/dgr-admin/') || path.startsWith('/api/dgr/')) {
+		const isPublicDgrApi =
+			path.startsWith('/api/dgr/readings') ||
+			path.startsWith('/api/dgr/contributor/') ||
+			path.startsWith('/api/dgr/schedule/');
+		if (!isPublicDgrApi) {
+			await requireModule(event, 'dgr');
+		}
+	}
 
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {

@@ -48,13 +48,11 @@
 	let surname = $state(data.existingUser?.full_name?.split(' ').slice(1).join(' ') || '');
 	let email = $state(data.existingUser?.email || '');
 	let phone = $state(data.existingUser?.phone || '');
-	let parishId = $state(data.existingUser?.parish_id || '');
 	let parishOther = $state('');
 	let referralSource = $state('');
 	let referralOther = $state('');
 
 	let isSubmitting = $state(false);
-	let parishSearch = $state('');
 	let showPendingApproval = $state(false);
 
 	// Embedded Stripe checkout (mounted in-page on the paid path)
@@ -68,20 +66,6 @@
 		}
 	});
 
-	// Filter parishes based on search
-	let filteredParishes = $derived(() => {
-		if (!parishSearch) return data.parishes.slice(0, 20);
-		const search = parishSearch.toLowerCase();
-		return data.parishes
-			.filter(
-				(p) =>
-					p.name.toLowerCase().includes(search) ||
-					p.location?.toLowerCase().includes(search) ||
-					p.diocese?.toLowerCase().includes(search)
-			)
-			.slice(0, 20);
-	});
-
 	// Form validation
 	let formErrors = $state<Record<string, string>>({});
 
@@ -93,7 +77,6 @@
 		if (!email.trim()) formErrors.email = 'Email is required';
 		else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) formErrors.email = 'Invalid email address';
 		if (!phone.trim()) formErrors.phone = 'Phone number is required';
-		if (!parishId && !parishOther.trim()) formErrors.parish = 'Please select or enter your parish';
 
 		return Object.keys(formErrors).length === 0;
 	}
@@ -172,7 +155,7 @@
 				surname: surname.trim(),
 				email: email.trim().toLowerCase(),
 				phone: phone.trim(),
-				parishId: parishId || null,
+				parishId: null,
 				parishOther: parishOther.trim() || null,
 				referralSource: referralSource || null,
 				referralOther: referralOther.trim() || null,
@@ -391,63 +374,16 @@
 
 								<!-- Parish -->
 								<div>
-									<label for="parishSearch" class="block text-sm font-medium text-gray-900">
-										Parish or Community <span class="text-red-500">*</span>
+									<label for="parishOther" class="block text-sm font-medium text-gray-900">
+										Parish or Community
 									</label>
-									<div class="relative mt-1">
-										<input
-											type="text"
-											id="parishSearch"
-											bind:value={parishSearch}
-											placeholder="Search for your parish..."
-											class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-											class:border-red-500={formErrors.parish}
-										/>
-										{#if parishSearch && !parishId}
-											<div class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-												{#each filteredParishes() as parish}
-													<button
-														type="button"
-														class="block w-full min-h-[44px] px-4 py-2.5 text-left text-sm hover:bg-gray-50"
-														onclick={() => {
-															parishId = parish.id;
-															parishSearch = parish.name;
-															parishOther = '';
-														}}
-													>
-														<span class="font-medium text-gray-900">{parish.name}</span>
-														{#if parish.location}
-															<span class="text-gray-500"> — {parish.location}</span>
-														{/if}
-													</button>
-												{/each}
-												<button
-													type="button"
-													class="block w-full min-h-[44px] border-t px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50"
-													onclick={() => {
-														parishId = '';
-														parishOther = parishSearch;
-													}}
-												>
-													+ Add "{parishSearch}" as other
-												</button>
-											</div>
-										{/if}
-									</div>
-									{#if parishId}
-										<p class="mt-1 text-xs text-green-600">
-											✓ {data.parishes.find((p) => p.id === parishId)?.name}
-											<button type="button" class="ml-1 underline text-gray-500" onclick={() => { parishId = ''; parishSearch = ''; }}>Change</button>
-										</p>
-									{:else if parishOther}
-										<p class="mt-1 text-xs text-gray-500">
-											Other: {parishOther}
-											<button type="button" class="ml-1 underline" onclick={() => { parishOther = ''; parishSearch = ''; }}>Change</button>
-										</p>
-									{/if}
-									{#if formErrors.parish}
-										<p class="mt-1 text-xs text-red-500">{formErrors.parish}</p>
-									{/if}
+									<input
+										type="text"
+										id="parishOther"
+										bind:value={parishOther}
+										placeholder="Your parish or community (optional)"
+										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+									/>
 								</div>
 
 								<!-- Hub / Location selection -->
@@ -545,12 +481,14 @@
 									<dt class="text-sm text-gray-500">Phone</dt>
 									<dd class="text-sm font-medium text-gray-900">{phone}</dd>
 								</div>
-								<div class="flex justify-between gap-4 px-4 py-3">
-									<dt class="text-sm text-gray-500">Parish</dt>
-									<dd class="text-sm font-medium text-gray-900 text-right">
-										{parishId ? data.parishes.find((p) => p.id === parishId)?.name : parishOther}
-									</dd>
-								</div>
+								{#if parishOther.trim()}
+									<div class="flex justify-between gap-4 px-4 py-3">
+										<dt class="text-sm text-gray-500">Parish</dt>
+										<dd class="text-sm font-medium text-gray-900 text-right">
+											{parishOther}
+										</dd>
+									</div>
+								{/if}
 								{#if selectedHub}
 									<div class="flex justify-between gap-4 px-4 py-3">
 										<dt class="text-sm text-gray-500">Hub</dt>

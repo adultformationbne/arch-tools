@@ -313,7 +313,7 @@ export async function POST({ request, locals, url }) {
 			case 'clear_reflection':
 				return await clearReflection(data);
 			case 'send_to_wordpress':
-				return await sendToWordPress({ ...data, origin: url.origin });
+				return await sendToWordPress({ ...data, origin: url.origin, cookie: request.headers.get('cookie') });
 			case 'save_reflection':
 				return await saveReflection(data);
 			default:
@@ -774,7 +774,7 @@ async function clearReflection({ scheduleId }) {
 	}
 }
 
-async function sendToWordPress({ scheduleId, origin }) {
+async function sendToWordPress({ scheduleId, origin, cookie }) {
 	try {
 		// Get the schedule entry with all data
 		const { data: schedule, error: scheduleError } = await supabaseAdmin
@@ -866,7 +866,9 @@ async function sendToWordPress({ scheduleId, origin }) {
 		// Call the WordPress publish API
 		const publishResponse = await fetch(`${origin}/api/dgr/publish`, {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			// Forward the caller's auth cookie so the now-guarded publish route accepts
+			// this internal server-to-server request.
+			headers: { 'Content-Type': 'application/json', cookie: cookie || '' },
 			body: JSON.stringify(publishData)
 		});
 

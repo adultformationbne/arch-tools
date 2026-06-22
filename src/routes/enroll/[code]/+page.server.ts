@@ -179,13 +179,6 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const hubParam = url.searchParams.get('hub');
 	const preselectedHub = hubParam ? hubs.find((h) => h.slug === hubParam) : null;
 
-	// Get parishes for dropdown
-	const { data: parishes } = await supabaseAdmin
-		.from('parishes')
-		.select('id, name, location, diocese')
-		.eq('is_active', true)
-		.order('name');
-
 	// Check if user is already logged in
 	const session = await locals.safeGetSession?.();
 	let existingUser: { id: string; full_name: string | null; email: string; phone: string | null; parish_id: string | null } | null = null;
@@ -244,7 +237,6 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			settings: course.settings
 		},
 		pricing,
-		parishes: parishes || [],
 		referralSources,
 		existingUser,
 		paymentCancelled

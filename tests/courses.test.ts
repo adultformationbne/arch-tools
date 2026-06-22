@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { testHelpers } from './helpers.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 
@@ -10,6 +10,11 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
  */
 
 describe('Course Management', () => {
+	// Clear any leftovers from a previously aborted run before starting.
+	beforeAll(async () => {
+		await testHelpers.cleanup();
+	});
+
 	afterEach(async () => {
 		await testHelpers.cleanup();
 	});
@@ -93,8 +98,7 @@ describe('Course Management', () => {
 			const course = await testHelpers.createCourse();
 			const module = await testHelpers.createModule(course.id, {
 				name: 'Foundations of Faith',
-				description: 'Learn the basics',
-				order_number: 1
+				description: 'Learn the basics'
 			});
 
 			expect(module).toBeDefined();
@@ -104,8 +108,11 @@ describe('Course Management', () => {
 
 		it('should retrieve modules for a course in order', async () => {
 			const course = await testHelpers.createCourse();
-			await testHelpers.createModule(course.id, { name: 'Module 2', order_number: 2 });
-			await testHelpers.createModule(course.id, { name: 'Module 1', order_number: 1 });
+			// order_number is globally unique, so use high, relative values (base+1 < base+2)
+			// to assert ordering without colliding with real modules.
+			const base = 1_000_000 + Math.floor(Math.random() * 1_000_000);
+			await testHelpers.createModule(course.id, { name: 'Module 2', order_number: base + 2 });
+			await testHelpers.createModule(course.id, { name: 'Module 1', order_number: base + 1 });
 
 			const { data: modules } = await supabaseAdmin
 				.from('courses_modules')

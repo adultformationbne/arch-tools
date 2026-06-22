@@ -39,10 +39,6 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		throw error(400, 'Missing required fields');
 	}
 
-	if (!parishId && !parishOther) {
-		throw error(400, 'Parish is required');
-	}
-
 	const normalizedEmail = email.trim().toLowerCase();
 
 	// Validate email format

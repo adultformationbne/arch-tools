@@ -95,7 +95,7 @@ export const testHelpers = {
 	 * Create a test course
 	 */
 	async createCourse(data?: Partial<{ name: string; slug: string; description: string }>) {
-		const slug = data?.slug || `test-course-${Date.now()}`;
+		const slug = data?.slug || `test-course-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 		const { data: course, error } = await supabaseAdmin
 			.from('courses')
@@ -122,8 +122,9 @@ export const testHelpers = {
 	 * Create a test module
 	 */
 	async createModule(courseId: string, data?: Partial<{ name: string; description: string; order_number: number }>) {
-		// Use timestamp + random to ensure unique order_number
-		const uniqueOrder = data?.order_number ?? (Date.now() % 1000000 + Math.floor(Math.random() * 1000));
+		// order_number is globally UNIQUE across all modules, so default to a high,
+		// randomised value that won't collide with real or concurrently-created rows.
+		const uniqueOrder = data?.order_number ?? (1_000_000 + Math.floor(Math.random() * 1_000_000));
 
 		const { data: module, error} = await supabaseAdmin
 			.from('courses_modules')
@@ -188,7 +189,7 @@ export const testHelpers = {
 	 * Create a test user
 	 */
 	async createUser(data?: Partial<{ email: string; full_name: string; modules: string[] }>) {
-		const email = data?.email || `test-user-${Date.now()}@example.com`;
+		const email = data?.email || `test-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 
 		const { data: user, error } = await supabaseAdmin
 			.from('user_profiles')
@@ -219,14 +220,22 @@ export const testHelpers = {
 			currentSession = cohort?.current_session || 1;
 		}
 
+		// enrollments have a UNIQUE(cohort_id, email) constraint, so the snapshot email
+		// must be the user's (unique) email rather than a shared hardcoded value.
+		const { data: user } = await supabaseAdmin
+			.from('user_profiles')
+			.select('email, full_name')
+			.eq('id', userId)
+			.single();
+
 		const { data: enrollment, error } = await supabaseAdmin
 			.from('courses_enrollments')
 			.insert({
 				user_profile_id: userId,
 				cohort_id: cohortId,
 				role: data?.role || 'student',
-				email: 'test@example.com',
-				full_name: 'Test User',
+				email: user?.email || `test-${userId}@example.com`,
+				full_name: user?.full_name || 'Test User',
 				status: data?.status || 'active',
 				current_session: currentSession
 			})

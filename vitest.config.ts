@@ -7,6 +7,10 @@ export default defineConfig({
 		globals: true,
 		environment: 'node',
 		include: ['tests/**/*.test.ts'],
-		setupFiles: ['tests/setup.ts']
+		setupFiles: ['tests/setup.ts'],
+		// These are integration tests against a single shared Supabase database, and
+		// each file's cleanup() deletes all `test-%` rows. Running files in parallel
+		// lets one file wipe another's in-flight data, so force serial execution.
+		fileParallelism: false
 	}
 });
