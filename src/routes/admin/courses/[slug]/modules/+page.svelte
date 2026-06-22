@@ -1,6 +1,7 @@
 <script>
 	import { Plus, BookOpen, Calendar, Edit, Trash2, MoreVertical, Globe, ExternalLink, Copy, Check } from '$lib/icons';
 	import { navigating } from '$app/stores';
+	import { invalidateAll } from '$app/navigation';
 	import ModuleModal from '$lib/components/ModuleModal.svelte';
 	import PublicPageEditorModal from '$lib/components/PublicPageEditorModal.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
@@ -57,6 +58,40 @@
 		editingModule = module;
 		showModuleModal = true;
 		openDropdown = null;
+	}
+
+	let duplicatingModuleId = $state(null);
+
+	async function handleDuplicateModule(module) {
+		openDropdown = null;
+		if (duplicatingModuleId) return;
+		duplicatingModuleId = module.id;
+
+		try {
+			const response = await fetch(`/admin/courses/${course.slug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'duplicate_module',
+					moduleId: module.id
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to duplicate module');
+			}
+
+			// Reload so the new module shows accurate session/cohort counts
+			await invalidateAll();
+			toastSuccess(`"${module.name}" duplicated`);
+		} catch (err) {
+			console.error('Error duplicating module:', err);
+			toastError(err.message || 'Failed to duplicate module', 'Duplicate Failed');
+		} finally {
+			duplicatingModuleId = null;
+		}
 	}
 
 	function confirmDeleteModule(module) {
@@ -328,6 +363,14 @@
 										<BookOpen size={16} />
 										Edit Sessions
 									</a>
+									<button
+										onclick={() => handleDuplicateModule(module)}
+										disabled={duplicatingModuleId === module.id}
+										class="w-full text-left px-4 py-3 sm:py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 disabled:opacity-50"
+									>
+										<Copy size={16} />
+										{duplicatingModuleId === module.id ? 'Duplicating…' : 'Duplicate Module'}
+									</button>
 									<button
 										onclick={() => confirmDeleteModule(module)}
 										class="w-full text-left px-4 py-3 sm:py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 border-t border-gray-100"

@@ -1100,6 +1100,154 @@ export const CourseMutations = {
 	},
 
 	/**
+	 * Duplicate a module: deep-copies the module, its sessions (incl. Pre-Start),
+	 * each session's reflection questions, and its materials. Cohorts, enrollments
+	 * and attendance are intentionally NOT copied.
+	 */
+	async duplicateModule(moduleId: string) {
+		// Load the source module
+		const { data: source, error: sourceError } = await supabaseAdmin
+			.from('courses_modules')
+			.select('*')
+			.eq('id', moduleId)
+			.single();
+
+		if (sourceError || !source) {
+			return { data: null, error: sourceError || ({ message: 'Module not found' } as any) };
+		}
+
+		// Pick the next order_number for this course
+		const { data: siblings } = await supabaseAdmin
+			.from('courses_modules')
+			.select('order_number')
+			.eq('course_id', source.course_id);
+		const nextOrder =
+			(siblings || []).reduce((max, m) => Math.max(max, m.order_number || 0), 0) + 1;
+
+		// Create the new module
+		const { data: newModule, error: moduleError } = await supabaseAdmin
+			.from('courses_modules')
+			.insert({
+				course_id: source.course_id,
+				name: `${source.name} (Copy)`,
+				description: source.description || '',
+				order_number: nextOrder
+			})
+			.select()
+			.single();
+
+		if (moduleError || !newModule) {
+			return { data: null, error: moduleError };
+		}
+
+		// Load source sessions
+		const { data: sourceSessions, error: sessionsError } = await supabaseAdmin
+			.from('courses_sessions')
+			.select('*')
+			.eq('module_id', moduleId)
+			.order('session_number', { ascending: true });
+
+		if (sessionsError) {
+			return { data: null, error: sessionsError };
+		}
+
+		if (sourceSessions && sourceSessions.length > 0) {
+			// Insert copied sessions
+			const { data: newSessions, error: insertSessionsError } = await supabaseAdmin
+				.from('courses_sessions')
+				.insert(
+					sourceSessions.map((s) => ({
+						module_id: newModule.id,
+						session_number: s.session_number,
+						title: s.title,
+						description: s.description,
+						learning_objectives: s.learning_objectives,
+						reflections_enabled: s.reflections_enabled
+					}))
+				)
+				.select('id, session_number');
+
+			if (insertSessionsError) {
+				return { data: null, error: insertSessionsError };
+			}
+
+			// Map old session id -> new session id (by session_number)
+			const numberToNewId = new Map(
+				(newSessions || []).map((s) => [s.session_number, s.id])
+			);
+			const oldToNewSession = new Map<string, string>();
+			for (const s of sourceSessions) {
+				const newId = numberToNewId.get(s.session_number);
+				if (newId) oldToNewSession.set(s.id, newId);
+			}
+
+			const sourceSessionIds = sourceSessions.map((s) => s.id);
+
+			// Copy reflection questions
+			const { data: questions } = await supabaseAdmin
+				.from('courses_reflection_questions')
+				.select('session_id, question_text')
+				.in('session_id', sourceSessionIds);
+
+			const questionsToInsert = (questions || [])
+				.map((q) => {
+					const newSessionId = oldToNewSession.get(q.session_id);
+					return newSessionId
+						? { session_id: newSessionId, question_text: q.question_text }
+						: null;
+				})
+				.filter(Boolean) as { session_id: string; question_text: string }[];
+
+			if (questionsToInsert.length > 0) {
+				const { error: questionsError } = await supabaseAdmin
+					.from('courses_reflection_questions')
+					.insert(questionsToInsert);
+				if (questionsError) {
+					return { data: null, error: questionsError };
+				}
+			}
+
+			// Copy materials (re-uses the same storage/Mux references)
+			const { data: materials } = await supabaseAdmin
+				.from('courses_materials')
+				.select('*')
+				.in('session_id', sourceSessionIds);
+
+			const materialsToInsert = (materials || [])
+				.map((m) => {
+					const newSessionId = oldToNewSession.get(m.session_id);
+					return newSessionId
+						? {
+								session_id: newSessionId,
+								title: m.title,
+								type: m.type,
+								content: m.content,
+								description: m.description,
+								display_order: m.display_order,
+								min_role: m.min_role,
+								mux_asset_id: m.mux_asset_id,
+								mux_playback_id: m.mux_playback_id,
+								mux_status: m.mux_status,
+								mux_upload_id: m.mux_upload_id
+							}
+						: null;
+				})
+				.filter(Boolean) as any[];
+
+			if (materialsToInsert.length > 0) {
+				const { error: materialsError } = await supabaseAdmin
+					.from('courses_materials')
+					.insert(materialsToInsert);
+				if (materialsError) {
+					return { data: null, error: materialsError };
+				}
+			}
+		}
+
+		return { data: newModule, error: null };
+	},
+
+	/**
 	 * Delete a module (checks for cohorts first)
 	 */
 	async deleteModule(moduleId: string) {

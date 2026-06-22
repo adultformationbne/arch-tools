@@ -198,6 +198,26 @@ export const POST: RequestHandler = async (event) => {
 				});
 			}
 
+			case 'duplicate_module': {
+				// Validate module belongs to this course
+				if (!await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
+					throw error(403, 'Module does not belong to this course');
+				}
+
+				const result = await CourseMutations.duplicateModule(data.moduleId);
+
+				if (result.error) {
+					throw error(500, result.error.message || 'Failed to duplicate module');
+				}
+
+				invalidateCourseCache(courseSlug);
+				return json({
+					success: true,
+					data: result.data,
+					message: 'Module duplicated successfully'
+				});
+			}
+
 			case 'delete_module': {
 				// Validate module belongs to this course
 				if (!await validateModuleBelongsToCourse(data.moduleId, courseSlug)) {
