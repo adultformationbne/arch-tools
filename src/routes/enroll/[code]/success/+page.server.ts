@@ -59,6 +59,15 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			throw error(404, 'Payment record not found. Please contact support.');
 		}
 
+		// Capture the Stripe tax-invoice URL for the participant's billing list
+		const invoice = session.invoice as { hosted_invoice_url?: string | null } | null;
+		if (invoice?.hosted_invoice_url) {
+			await supabaseAdmin
+				.from('courses_payments')
+				.update({ stripe_invoice_url: invoice.hosted_invoice_url })
+				.eq('id', payment.id);
+		}
+
 		const pendingData = payment.pending_data || {};
 
 		return {

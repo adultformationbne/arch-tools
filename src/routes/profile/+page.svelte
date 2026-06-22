@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon, LogOut } from '$lib/icons';
+	import { Save, Lock, Eye, EyeOff, Shield, User, Users, BookOpen, Edit3, GraduationCap, Briefcase, Settings as SettingsIcon, LogOut, FileText, ExternalLink } from '$lib/icons';
 	import { supabaseRequest, createFormSubmitHandler } from '$lib/utils/api-handler.js';
 	import { toastMultiStep, toastNextStep, dismissToast, toastValidationError, updateToastStatus } from '$lib/utils/toast-helpers.js';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import FormField from '$lib/components/FormField.svelte';
+	import { formatPrice } from '$lib/utils/enrollment-links';
 	import { validators, commonRules, passwordConfirmation, createValidationToastHelper } from '$lib/utils/form-validator.js';
 
 	let { data } = $props();
@@ -11,6 +12,14 @@
 	let supabase = $derived(data.supabase);
 	let profile = $derived(data.profile);
 	let loading = $state(false);
+	let payments = $derived(data.payments || []);
+
+	function statusClass(status) {
+		if (status === 'completed' || status === 'paid') return 'bg-green-100 text-green-800';
+		if (status === 'pending') return 'bg-amber-100 text-amber-800';
+		if (status === 'failed' || status === 'abandoned') return 'bg-red-100 text-red-800';
+		return 'bg-gray-100 text-gray-700';
+	}
 
 let formData = $state({
     full_name: ''
@@ -329,6 +338,41 @@ async function handlePasswordChange(event?: Event) {
 				</div>
 			</form>
 		</div>
+
+		{#if payments.length > 0}
+		<!-- Billing & Invoices -->
+		<div class="bg-white shadow-sm rounded-lg border border-gray-200">
+			<div class="px-6 py-4 border-b border-gray-200">
+				<h2 class="text-lg font-semibold text-gray-900 flex items-center">
+					<FileText class="h-5 w-5 mr-2 text-gray-600" />
+					Billing &amp; Invoices
+				</h2>
+			</div>
+			<div class="divide-y divide-gray-100">
+				{#each payments as p}
+					<div class="flex items-center justify-between gap-4 px-6 py-4">
+						<div class="min-w-0">
+							<div class="text-sm font-medium text-gray-900 truncate">
+								{p.cohort?.module?.course?.name || 'Course enrollment'}{p.cohort?.name ? ` — ${p.cohort.name}` : ''}
+							</div>
+							<div class="text-xs text-gray-500 mt-0.5">
+								{new Date(p.paid_at || p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+							</div>
+						</div>
+						<div class="flex items-center gap-3 shrink-0">
+							<span class="text-sm font-semibold text-gray-900">{formatPrice(p.amount_cents, p.currency)}</span>
+							<span class="rounded-full px-2 py-0.5 text-xs font-medium {statusClass(p.status)}">{p.status}</span>
+							{#if p.stripe_invoice_url}
+								<a href={p.stripe_invoice_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700">
+									Invoice <ExternalLink class="h-3.5 w-3.5" />
+								</a>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+		{/if}
 
 		<!-- Password Change Section -->
 		<div class="bg-white shadow-sm rounded-lg border border-gray-200">

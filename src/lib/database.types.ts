@@ -1098,6 +1098,7 @@ export type Database = {
           status: string
           stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
+          stripe_invoice_url: string | null
           stripe_payment_intent_id: string | null
           updated_at: string | null
           user_profile_id: string | null
@@ -1120,6 +1121,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
+          stripe_invoice_url?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
@@ -1142,6 +1144,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
+          stripe_invoice_url?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null

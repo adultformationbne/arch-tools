@@ -204,7 +204,14 @@ export async function createEmbeddedCheckoutSession(params: {
 		payment_intent_data: {
 			metadata: params.metadata
 		},
-		expires_at: Math.floor(Date.now() / 1000) + 30 * 60
+		expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+		invoice_creation: {
+			enabled: true,
+			invoice_data: {
+				description: 'Course enrollment',
+				metadata: params.metadata
+			}
+		}
 	};
 
 	if (params.couponId) {
@@ -232,7 +239,7 @@ export async function getCheckoutSession(sessionId: string) {
 		} as unknown as Stripe.Checkout.Session;
 	}
 	return getStripe().checkout.sessions.retrieve(sessionId, {
-		expand: ['customer', 'payment_intent', 'total_details.breakdown']
+		expand: ['customer', 'payment_intent', 'total_details.breakdown', 'invoice']
 	});
 }
 
