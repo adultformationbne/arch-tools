@@ -46,6 +46,9 @@
 	let hubLocked = $derived(!!data.lockedHubId);
 	let hasHubs = $derived((data.hubs?.length || 0) > 0);
 	let selectedHub = $derived(data.hubs?.find((h) => h.id === selectedHubId) || null);
+	// The hub to surface in the summary panel / review: a chosen hub, or the
+	// link's locked hub (which isn't in the selectable `hubs` list).
+	let displayHub = $derived(selectedHub || (hubLocked ? data.hub : null));
 
 	// Price depends on the selected hub. Computed server-side (authoritative) and chosen here.
 	let currentPricing = $derived(selectedHub ? selectedHub.pricing : data.basePricing);
@@ -444,6 +447,10 @@
 										<span>·</span>
 									{/if}
 									<span>{data.cohort?.name}</span>
+									{#if displayHub}
+										<span>·</span>
+										<span>{displayHub.name}</span>
+									{/if}
 								</div>
 							</div>
 							{#if step === 3}
@@ -599,50 +606,9 @@
 									></textarea>
 								</div>
 
-								<!-- Referral source -->
-								<div>
-									<label for="referralSource" class="block text-sm font-medium text-gray-900">
-										How did you find out about this course?
-									</label>
-									<select
-										id="referralSource"
-										bind:value={referralSource}
-										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none"
-									>
-										<option value="">Select an option (optional)</option>
-										{#each data.referralSources as source}
-											<option value={source.value}>{source.label}</option>
-										{/each}
-									</select>
-									{#if referralSource === 'other'}
-										<input
-											type="text"
-											bind:value={referralOther}
-											placeholder="Please specify..."
-											class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-										/>
-									{/if}
-								</div>
-
-								<!-- Add another person -->
-								<button
-									type="button"
-									onclick={addAnotherPerson}
-									class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50"
-									style="border-color: {accentDark}; color: {accentDark};"
-								>
-									{editingIndex !== null ? 'Save participant' : '+ Add another person'}
-								</button>
-
-								<!-- Hub / Location selection (applies to the whole group) -->
-								{#if hubLocked && data.hub}
-									<div>
-										<span class="block text-sm font-medium text-gray-900">Hub / Location</span>
-										<p class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-											{data.hub.name}{#if data.hub.location} — {data.hub.location}{/if}
-										</p>
-									</div>
-								{:else if hasHubs}
+								<!-- Hub / Location selection (only when participants choose; a
+								     locked/preselected hub shows in the summary panel instead). -->
+								{#if !hubLocked && hasHubs}
 									<div>
 										<label for="hub" class="block text-sm font-medium text-gray-900">
 											Hub / Location
@@ -660,6 +626,16 @@
 										<p class="mt-1 text-xs text-gray-400">The whole group attends the same location.</p>
 									</div>
 								{/if}
+
+								<!-- Add another person -->
+								<button
+									type="button"
+									onclick={addAnotherPerson}
+									class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50"
+									style="border-color: {accentDark}; color: {accentDark};"
+								>
+									{editingIndex !== null ? 'Save participant' : '+ Add another person'}
+								</button>
 
 								<!-- Continue -->
 								<div class="pt-1">
@@ -808,10 +784,10 @@
 
 							<!-- Hub + billing summary -->
 							<dl class="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-200">
-								{#if selectedHub}
+								{#if displayHub}
 									<div class="flex justify-between gap-4 px-4 py-3">
 										<dt class="text-sm text-gray-500">Hub</dt>
-										<dd class="text-sm font-medium text-gray-900 text-right">{selectedHub.name}</dd>
+										<dd class="text-sm font-medium text-gray-900 text-right">{displayHub.name}</dd>
 									</div>
 								{/if}
 								<div class="flex justify-between gap-4 px-4 py-3">
@@ -948,10 +924,10 @@
 							</p>
 						</div>
 					{/if}
-					{#if selectedHub}
+					{#if displayHub}
 						<div class="rounded-lg px-3.5 py-2.5" style="background-color: rgba(255,255,255,0.1);">
 							<p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Location</p>
-							<p class="mt-0.5 text-sm font-semibold">{selectedHub.name}</p>
+							<p class="mt-0.5 text-sm font-semibold">{displayHub.name}</p>
 						</div>
 					{/if}
 				</div>
