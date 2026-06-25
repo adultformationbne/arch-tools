@@ -250,10 +250,12 @@ async function handleBatchCheckoutCompleted(
 		)
 	);
 
-	// Email a smart-login link to every participant who is NOT the billing contact.
-	const invitees = enrollments.filter((e) => !e.is_billing_contact);
+	// Email the course-branded "you've been enrolled" link to EVERY enrolled
+	// participant — including the billing contact, who gets it alongside the
+	// receipt/invoice below. (A non-attending organiser isn't enrolled, so they
+	// stay receipt-only.)
 	await Promise.allSettled(
-		invitees.map((e) =>
+		enrollments.map((e) =>
 			CourseMutations.sendBatchEnrollmentInvitation({
 				enrollmentId: e.enrollment_id,
 				siteUrl: PUBLIC_SITE_URL
@@ -278,7 +280,7 @@ async function handleBatchCheckoutCompleted(
 	}).catch((err) => console.error('Failed to send payment receipt:', err));
 
 	console.log(
-		`Batch checkout completed for session ${sessionId}: ${enrollments.length} enrolled, ${invitees.length} invited`
+		`Batch checkout completed for session ${sessionId}: ${enrollments.length} enrolled (all emailed)`
 	);
 }
 
