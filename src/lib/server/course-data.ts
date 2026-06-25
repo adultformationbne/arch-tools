@@ -2841,6 +2841,269 @@ export const CourseMutations = {
 		}
 	},
 
+	/**
+	 * Send a course-branded "claim your account" invitation to a participant who
+	 * was enrolled as part of a group (someone else paid / registered them).
+	 * The link carries the enrollment id + claim token so the recipient can set
+	 * their own password on the success page.
+	 */
+	async sendBatchEnrollmentInvitation(params: {
+		enrollmentId: string;
+		claimToken: string;
+		siteUrl: string;
+	}) {
+		const { enrollmentId, claimToken, siteUrl } = params;
+
+		try {
+			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					id, email, full_name, enrollment_link_id,
+					cohort:cohort_id!inner (
+						name, start_date,
+						module:module_id!inner (
+							name,
+							course:course_id!inner (
+								id, name, slug, settings, email_branding_config
+							)
+						)
+					)
+				`)
+				.eq('id', enrollmentId)
+				.single();
+
+			if (enrollmentError || !enrollment) {
+				console.error('Failed to fetch enrollment for invitation email:', enrollmentError);
+				return { success: false, error: 'Enrollment not found' };
+			}
+
+			const cohort = enrollment.cohort as any;
+			const module = cohort?.module as any;
+			const course = module?.course as any;
+
+			if (!course) {
+				return { success: false, error: 'Course not found' };
+			}
+
+			// Resolve the enrollment-link code for the claim URL
+			const { data: linkRow } = await supabaseAdmin
+				.from('courses_enrollment_links')
+				.select('code')
+				.eq('id', enrollment.enrollment_link_id)
+				.single();
+
+			if (!linkRow?.code) {
+				return { success: false, error: 'Enrollment link not found' };
+			}
+
+			const {
+				buildVariableContext,
+				sendEmail,
+				buildCourseFromEmail,
+				createEmailButton
+			} = await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			// Course branding
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+
+			const variables = buildVariableContext({
+				enrollment: { full_name: enrollment.full_name, email: enrollment.email },
+				course: {
+					name: course.name,
+					slug: course.slug,
+					settings: course.settings,
+					email_branding_config: course.email_branding_config
+				},
+				cohort: cohort ? { name: cohort.name, start_date: cohort.start_date } : null,
+				siteUrl
+			});
+
+			const claimUrl = `${siteUrl}/enroll/${linkRow.code}/success?enrollment_id=${enrollmentId}&token=${claimToken}`;
+			const claimButton = createEmailButton('Set Up My Account', claimUrl, courseColors.accentDark);
+
+			const startDateLine = variables.startDate
+				? `<p>The course begins on <strong>${variables.startDate}</strong>.</p>`
+				: '';
+
+			const bodyContent = `
+				<h2>You're enrolled in ${variables.courseName}</h2>
+				<p>Hi ${variables.firstName || 'there'},</p>
+				<p>You have been registered as a participant in <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}. To get started, set up your account and choose a password using the button below.</p>
+				${startDateLine}
+				${claimButton}
+				<p>If the button doesn't work, copy and paste this link into your browser:</p>
+				<p><a href="${claimUrl}">${claimUrl}</a></p>
+				<p>If you weren't expecting this invitation, you can safely ignore this email.</p>
+			`;
+
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors,
+				previewText: `Set up your account for ${course.name}`
+			});
+
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const result = await sendEmail({
+				to: enrollment.email,
+				subject: `You're enrolled in ${course.name} — set up your account`,
+				html: compiledHtml,
+				emailType: 'batch_enrollment_invitation',
+				fromEmail: courseFromEmail,
+				replyTo: course.email_branding_config?.reply_to_email,
+				metadata: {
+					context: 'course',
+					course_id: course.id,
+					enrollment_id: enrollmentId
+				},
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			return { success: result.success, error: result.success ? null : 'Failed to send email' };
+		} catch (err) {
+			console.error('Error sending batch enrollment invitation email:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
+	/**
+	 * Send a course-branded payment receipt (via Resend) to the payer after a
+	 * successful Stripe checkout. We send this ourselves instead of enabling
+	 * Stripe's account-wide receipt emails, so they don't collide with the
+	 * Shopify store on the same Stripe account. Includes a link to the Stripe
+	 * hosted tax invoice when available.
+	 */
+	async sendPaymentReceipt(params: {
+		stripeSessionId: string;
+		invoiceUrl?: string | null;
+		siteUrl: string;
+	}) {
+		const { stripeSessionId, siteUrl } = params;
+
+		try {
+			const { data: payment, error: paymentError } = await supabaseAdmin
+				.from('courses_payments')
+				.select(`
+					id, email, full_name, amount_cents, currency, stripe_invoice_url,
+					cohort:cohort_id (
+						name,
+						module:module_id (
+							name,
+							course:course_id ( id, name, slug, settings, email_branding_config )
+						)
+					)
+				`)
+				.eq('stripe_checkout_session_id', stripeSessionId)
+				.single();
+
+			if (paymentError || !payment) {
+				console.error('Failed to fetch payment for receipt email:', paymentError);
+				return { success: false, error: 'Payment not found' };
+			}
+
+			const cohort = payment.cohort as any;
+			const module = cohort?.module as any;
+			const course = module?.course as any;
+			if (!course) {
+				return { success: false, error: 'Course not found' };
+			}
+
+			const invoiceUrl = params.invoiceUrl || payment.stripe_invoice_url || null;
+
+			const {
+				buildVariableContext,
+				sendEmail,
+				buildCourseFromEmail,
+				createEmailButton
+			} = await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+
+			const variables = buildVariableContext({
+				enrollment: { full_name: payment.full_name, email: payment.email },
+				course: {
+					name: course.name,
+					slug: course.slug,
+					settings: course.settings,
+					email_branding_config: course.email_branding_config
+				},
+				cohort: cohort ? { name: cohort.name } : null,
+				siteUrl
+			});
+
+			const amount = new Intl.NumberFormat('en-AU', {
+				style: 'currency',
+				currency: (payment.currency || 'AUD').toUpperCase()
+			}).format((payment.amount_cents || 0) / 100);
+
+			const invoiceBlock = invoiceUrl
+				? `${createEmailButton('View Tax Invoice', invoiceUrl, courseColors.accentDark)}
+					<p>If the button doesn't work, copy and paste this link into your browser:</p>
+					<p><a href="${invoiceUrl}">${invoiceUrl}</a></p>`
+				: `<p>Your tax invoice will be available shortly in your profile under <strong>Billing &amp; Invoices</strong>.</p>`;
+
+			const bodyContent = `
+				<h2>Payment received</h2>
+				<p>Hi ${variables.firstName || 'there'},</p>
+				<p>Thank you — we've received your payment of <strong>${amount}</strong> for <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}.</p>
+				${invoiceBlock}
+				<p>You can view your billing history any time from your profile.</p>
+			`;
+
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors,
+				previewText: `Your receipt for ${course.name}`
+			});
+
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const result = await sendEmail({
+				to: payment.email,
+				subject: `Payment receipt — ${course.name}`,
+				html: compiledHtml,
+				emailType: 'payment_receipt',
+				fromEmail: courseFromEmail,
+				replyTo: course.email_branding_config?.reply_to_email,
+				metadata: {
+					context: 'course',
+					course_id: course.id,
+					payment_id: payment.id
+				},
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			return { success: result.success, error: result.success ? null : 'Failed to send email' };
+		} catch (err) {
+			console.error('Error sending payment receipt email:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
 	// ========================================================================
 	// MATERIALS MANAGEMENT
 	// ========================================================================

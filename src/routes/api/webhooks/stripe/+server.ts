@@ -1,8 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { env } from '$env/dynamic/private';
-import { constructWebhookEvent, getCheckoutSession } from '$lib/server/stripe';
+import { constructWebhookEvent, getCheckoutSession, getStripeWebhookSecret } from '$lib/server/stripe';
 import { supabaseAdmin } from '$lib/server/supabase';
+import { CourseMutations } from '$lib/server/course-data';
+import { PUBLIC_SITE_URL } from '$env/static/public';
 import type Stripe from 'stripe';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -16,10 +17,11 @@ export const POST: RequestHandler = async ({ request }) => {
 	// Verify webhook signature
 	let event: Stripe.Event;
 	try {
-		if (!env.STRIPE_WEBHOOK_SECRET) {
-			throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+		const webhookSecret = getStripeWebhookSecret();
+		if (!webhookSecret) {
+			throw new Error('Stripe webhook secret is not set (STRIPE_WEBHOOK_SECRET[_TEST|_LIVE])');
 		}
-		event = constructWebhookEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
+		event = constructWebhookEvent(body, signature, webhookSecret);
 	} catch (error) {
 		console.error('Stripe webhook signature verification failed:', error);
 		return json({ error: 'Invalid signature' }, { status: 401 });
@@ -41,7 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const { error: insertError } = await supabaseAdmin.from('stripe_events').insert({
 		stripe_event_id: event.id,
 		event_type: event.type,
-		payload: event.data.object as Record<string, unknown>
+		payload: event.data.object as unknown as Record<string, unknown>
 	});
 
 	if (insertError) {
@@ -109,6 +111,30 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 		}
 	}
 
+	// Persist the Stripe hosted invoice URL for the participant's billing list.
+	// Captured here (server-to-server) so the link lands even if the payer never
+	// revisits the success page or the invoice finalised after that page loaded.
+	const invoice = fullSession.invoice as { hosted_invoice_url?: string | null } | string | null;
+	const invoiceUrl = invoice && typeof invoice !== 'string' ? invoice.hosted_invoice_url : null;
+	if (invoiceUrl) {
+		await supabaseAdmin
+			.from('courses_payments')
+			.update({ stripe_invoice_url: invoiceUrl })
+			.eq('stripe_checkout_session_id', session.id);
+	}
+
+	// Multi-person (batch) checkout: one payment -> N enrollments
+	if (metadata.batch === 'true') {
+		await handleBatchCheckoutCompleted(
+			session.id,
+			paymentIntentId,
+			customerId,
+			discountCode,
+			discountAmountCents
+		);
+		return;
+	}
+
 	// Use atomic DB function to complete payment + create enrollment
 	const { data: result, error: rpcError } = await supabaseAdmin.rpc(
 		'complete_checkout_and_enroll',
@@ -155,6 +181,83 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 	console.log(
 		`Checkout completed for session: ${session.id}`,
 		result?.created_enrollment ? '(enrollment created)' : '(enrollment existed or deferred)'
+	);
+
+	// Send our own branded receipt via Resend (Stripe's account-wide receipt
+	// emails stay off so they don't double-send alongside the Shopify store).
+	await CourseMutations.sendPaymentReceipt({
+		stripeSessionId: session.id,
+		invoiceUrl,
+		siteUrl: PUBLIC_SITE_URL
+	}).catch((err) => console.error('Failed to send payment receipt:', err));
+}
+
+/**
+ * Handle a completed multi-person checkout: complete the single payment and
+ * create one enrollment per participant, then email claim links to everyone
+ * except the billing contact (who sets their password on the success page).
+ */
+async function handleBatchCheckoutCompleted(
+	sessionId: string,
+	paymentIntentId: string | undefined,
+	customerId: string | undefined,
+	discountCode: string | null,
+	discountAmountCents: number | null
+) {
+	const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+		'complete_checkout_and_enroll_batch',
+		{
+			p_stripe_session_id: sessionId,
+			p_stripe_payment_intent_id: paymentIntentId || null,
+			p_stripe_customer_id: customerId || null,
+			p_discount_code: discountCode,
+			p_discount_amount_cents: discountAmountCents
+		}
+	);
+
+	if (rpcError) {
+		console.error('complete_checkout_and_enroll_batch failed:', rpcError);
+		return;
+	}
+
+	if (result?.already_completed) {
+		console.log(`Batch payment already completed for session: ${sessionId}`);
+		return;
+	}
+
+	if (result?.error) {
+		console.error(`Batch enrollment error for session ${sessionId}:`, result.error);
+		return;
+	}
+
+	const enrollments: Array<{
+		enrollment_id: string;
+		email: string;
+		full_name: string;
+		claim_token: string;
+		is_billing_contact: boolean;
+	}> = result?.enrollments || [];
+
+	// Email a claim link to every participant who is NOT the billing contact.
+	const invitees = enrollments.filter((e) => !e.is_billing_contact);
+	await Promise.allSettled(
+		invitees.map((e) =>
+			CourseMutations.sendBatchEnrollmentInvitation({
+				enrollmentId: e.enrollment_id,
+				claimToken: e.claim_token,
+				siteUrl: PUBLIC_SITE_URL
+			})
+		)
+	);
+
+	// Branded receipt to the billing contact (the payer) via Resend.
+	await CourseMutations.sendPaymentReceipt({
+		stripeSessionId: sessionId,
+		siteUrl: PUBLIC_SITE_URL
+	}).catch((err) => console.error('Failed to send payment receipt:', err));
+
+	console.log(
+		`Batch checkout completed for session ${sessionId}: ${enrollments.length} enrolled, ${invitees.length} invited`
 	);
 }
 

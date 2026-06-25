@@ -70,18 +70,46 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 		const pendingData = payment.pending_data || {};
 
+		const courseInfo = {
+			name: course.name,
+			slug: course.slug,
+			settings: course.settings
+		};
+
+		// Multi-person (batch) checkout
+		if (Array.isArray(pendingData.participants)) {
+			const billing = pendingData.billingContact || {};
+			const billingIsParticipant =
+				billing.participantIndex !== null && billing.participantIndex !== undefined;
+
+			return {
+				type: 'paid',
+				isBatch: true,
+				billingIsParticipant,
+				// Organiser (non-attending payer) -> show a confirmation, not a password form
+				organizerConfirmation: !billingIsParticipant,
+				participantCount: pendingData.participants.length,
+				sessionId,
+				paymentId: payment.id,
+				enrollmentId: payment.enrollment_id, // billing contact's enrollment (may lag webhook)
+				email: billing.email || payment.email,
+				course: courseInfo,
+				module: { name: module?.name },
+				cohort: { name: cohort?.name }
+			};
+		}
+
 		return {
 			type: 'paid',
+			isBatch: false,
+			billingIsParticipant: true,
+			organizerConfirmation: false,
 			sessionId,
 			paymentId: payment.id,
 			enrollmentId: payment.enrollment_id, // may already exist from webhook
 			pendingData,
 			email: pendingData.email || payment.email,
-			course: {
-				name: course.name,
-				slug: course.slug,
-				settings: course.settings
-			},
+			course: courseInfo,
 			module: {
 				name: module?.name
 			},
@@ -91,11 +119,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		};
 	}
 
-	// Handle free enrollment
+	// Handle invited / free enrollment (claim-link flow)
 	if (enrollmentId) {
+		const token = url.searchParams.get('token');
 		const { data: enrollment } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('id, email, full_name, status')
+			.select('id, email, full_name, status, claim_token')
 			.eq('id', enrollmentId)
 			.single();
 
@@ -103,8 +132,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			throw error(404, 'Enrollment not found');
 		}
 
+		// If the enrollment is gated by a claim token, the link must carry the right one.
+		if (enrollment.claim_token && enrollment.claim_token !== token) {
+			throw error(403, 'This account-setup link is invalid or has expired.');
+		}
+
 		return {
 			type: 'free',
+			isBatch: false,
+			billingIsParticipant: true,
+			organizerConfirmation: false,
 			enrollmentId,
 			email: enrollment.email,
 			fullName: enrollment.full_name,
@@ -126,12 +163,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, params, url }) => {
+	default: async ({ request, params, url, locals }) => {
 		const formData = await request.formData();
 		const password = formData.get('password') as string;
 		const confirmPassword = formData.get('confirmPassword') as string;
 		const sessionId = url.searchParams.get('session_id');
 		const enrollmentId = url.searchParams.get('enrollment_id');
+		const token = url.searchParams.get('token');
 
 		// Validate passwords
 		if (!password || password.length < 8) {
@@ -179,25 +217,51 @@ export const actions: Actions = {
 			}
 
 			const pd = payment.pending_data || {};
-			email = pd.email || payment.email;
-			fullName = pd.fullName || payment.full_name || email.split('@')[0];
-			phone = pd.phone || null;
-			parishId = pd.parishId || null;
-			parishOther = pd.parishOther || null;
-			referralSource = pd.referralSource || null;
-			hubId = pd.hubId || null;
+
+			if (Array.isArray(pd.participants)) {
+				// Multi-person checkout: only the billing-contact participant sets a
+				// password here. Non-attending organisers never see this form.
+				const billing = pd.billingContact || {};
+				if (billing.participantIndex === null || billing.participantIndex === undefined) {
+					return { error: 'No password setup is required for this payment.' };
+				}
+				const payer = pd.participants[billing.participantIndex];
+				if (!payer) {
+					return { error: 'Billing participant not found. Please contact support.' };
+				}
+				email = (payer.email || billing.email || payment.email).toLowerCase();
+				fullName = payer.fullName || payment.full_name || email.split('@')[0];
+				phone = payer.phone || null;
+				parishId = payer.parishId || null;
+				parishOther = payer.parishOther || null;
+				referralSource = payer.referralSource || null;
+				hubId = pd.hubId || null;
+			} else {
+				email = pd.email || payment.email;
+				fullName = pd.fullName || payment.full_name || email.split('@')[0];
+				phone = pd.phone || null;
+				parishId = pd.parishId || null;
+				parishOther = pd.parishOther || null;
+				referralSource = pd.referralSource || null;
+				hubId = pd.hubId || null;
+			}
 			paymentId = payment.id;
 			webhookCreatedEnrollmentId = payment.enrollment_id || null;
 		} else if (enrollmentId) {
-			// Free enrollment - get data from enrollment record
+			// Invited / free enrollment - get data from enrollment record
 			const { data: enrollment } = await supabaseAdmin
 				.from('courses_enrollments')
-				.select('email, full_name, hub_id')
+				.select('email, full_name, hub_id, claim_token')
 				.eq('id', enrollmentId)
 				.single();
 
 			if (!enrollment) {
 				return { error: 'Enrollment not found' };
+			}
+
+			// Gate the claim by the token embedded in the emailed link.
+			if (enrollment.claim_token && enrollment.claim_token !== token) {
+				return { error: 'This account-setup link is invalid or has expired.' };
 			}
 
 			email = enrollment.email;
@@ -263,21 +327,24 @@ export const actions: Actions = {
 
 			// Handle enrollment creation/linking
 			if (enrollmentId) {
-				// Free enrollment - update existing enrollment with user profile
+				// Invited / free enrollment - link user, activate, and burn the claim token
 				await supabaseAdmin
 					.from('courses_enrollments')
 					.update({
 						user_profile_id: userId,
-						status: 'active'
+						status: 'active',
+						claim_token: null
 					})
 					.eq('id', enrollmentId);
 			} else if (webhookCreatedEnrollmentId) {
-				// Paid enrollment where webhook already created the enrollment
-				// Just link the user profile
+				// Paid enrollment where webhook already created the enrollment.
+				// Link the user, activate it (batch rows start as 'invited'), burn the token.
 				await supabaseAdmin
 					.from('courses_enrollments')
 					.update({
-						user_profile_id: userId
+						user_profile_id: userId,
+						status: 'active',
+						claim_token: null
 					})
 					.eq('id', webhookCreatedEnrollmentId);
 			} else {
@@ -299,27 +366,48 @@ export const actions: Actions = {
 					}
 				);
 
+				// The webhook may create this enrollment concurrently. safe_create_enrollment
+				// returns 'already_enrolled' if it lost the existence check, but a truly
+				// simultaneous insert surfaces as a unique-violation (unique_cohort_email).
+				// In every case the participant HAS paid and IS enrolled — recover by
+				// linking the winning row, never show them a failure.
+				let resolvedEnrollmentId: string | null = null;
+
 				if (rpcError) {
-					console.error('safe_create_enrollment failed:', rpcError);
-					return { error: 'Failed to complete enrollment. Please contact support.' };
+					const { data: existing } = await supabaseAdmin
+						.from('courses_enrollments')
+						.select('id')
+						.eq('email', email)
+						.eq('cohort_id', cohortId)
+						.neq('status', 'withdrawn')
+						.single();
+					if (!existing) {
+						console.error('safe_create_enrollment failed and no enrollment found:', rpcError);
+						return { error: 'Failed to complete enrollment. Please contact support.' };
+					}
+					console.warn('safe_create_enrollment race recovered via existing enrollment:', rpcError);
+					resolvedEnrollmentId = existing.id;
+				} else if (result?.error === 'already_enrolled') {
+					// Enrollment was created between our check and now (race with webhook)
+					resolvedEnrollmentId = result.enrollment_id;
+				} else {
+					resolvedEnrollmentId = result?.enrollment_id ?? null;
 				}
 
-				if (result?.error === 'already_enrolled') {
-					// Enrollment was created between our check and now (race with webhook)
-					// Link the user profile to the existing enrollment
+				// Link the user profile to whichever enrollment won (idempotent for the
+				// freshly-created row, which already carries this user_profile_id).
+				if (resolvedEnrollmentId) {
 					await supabaseAdmin
 						.from('courses_enrollments')
 						.update({ user_profile_id: userId })
-						.eq('id', result.enrollment_id);
-				}
+						.eq('id', resolvedEnrollmentId);
 
-				// Link enrollment to payment
-				const newEnrollmentId = result?.enrollment_id;
-				if (paymentId && newEnrollmentId) {
-					await supabaseAdmin
-						.from('courses_payments')
-						.update({ enrollment_id: newEnrollmentId })
-						.eq('id', paymentId);
+					if (paymentId) {
+						await supabaseAdmin
+							.from('courses_payments')
+							.update({ enrollment_id: resolvedEnrollmentId })
+							.eq('id', paymentId);
+					}
 				}
 			}
 
@@ -353,6 +441,12 @@ export const actions: Actions = {
 				}).catch((err) => {
 					console.error('Failed to send welcome email:', err);
 				});
+			}
+
+			// Sign the participant in so they land on the course already authenticated
+			const { error: signInError } = await locals.supabase.auth.signInWithPassword({ email, password });
+			if (signInError) {
+				console.error('Auto sign-in after enrollment failed:', signInError);
 			}
 
 			// Return success with redirect URL

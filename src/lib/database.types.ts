@@ -202,6 +202,7 @@ export type Database = {
           is_active: boolean | null
           metadata: Json | null
           name: string
+          public_title_page: Json | null
           settings: Json | null
           short_name: string | null
           slug: string
@@ -219,6 +220,7 @@ export type Database = {
           is_active?: boolean | null
           metadata?: Json | null
           name: string
+          public_title_page?: Json | null
           settings?: Json | null
           short_name?: string | null
           slug: string
@@ -236,6 +238,7 @@ export type Database = {
           is_active?: boolean | null
           metadata?: Json | null
           name?: string
+          public_title_page?: Json | null
           settings?: Json | null
           short_name?: string | null
           slug?: string
@@ -770,6 +773,7 @@ export type Database = {
       courses_enrollments: {
         Row: {
           assigned_admin_id: string | null
+          claim_token: string | null
           cohort_id: string
           created_at: string | null
           current_session: number | null
@@ -799,6 +803,7 @@ export type Database = {
         }
         Insert: {
           assigned_admin_id?: string | null
+          claim_token?: string | null
           cohort_id: string
           created_at?: string | null
           current_session?: number | null
@@ -828,6 +833,7 @@ export type Database = {
         }
         Update: {
           assigned_admin_id?: string | null
+          claim_token?: string | null
           cohort_id?: string
           created_at?: string | null
           current_session?: number | null
@@ -960,6 +966,7 @@ export type Database = {
       }
       courses_materials: {
         Row: {
+          available_early: boolean
           content: string
           created_at: string | null
           description: string | null
@@ -976,6 +983,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          available_early?: boolean
           content: string
           created_at?: string | null
           description?: string | null
@@ -992,6 +1000,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          available_early?: boolean
           content?: string
           created_at?: string | null
           description?: string | null
@@ -1054,6 +1063,8 @@ export type Database = {
           id: string
           name: string
           order_number: number
+          public_page_content: Json | null
+          section_name: string | null
         }
         Insert: {
           course_id?: string | null
@@ -1061,6 +1072,8 @@ export type Database = {
           id?: string
           name: string
           order_number: number
+          public_page_content?: Json | null
+          section_name?: string | null
         }
         Update: {
           course_id?: string | null
@@ -1068,6 +1081,8 @@ export type Database = {
           id?: string
           name?: string
           order_number?: number
+          public_page_content?: Json | null
+          section_name?: string | null
         }
         Relationships: [
           {
@@ -1531,7 +1546,7 @@ export type Database = {
           is_public: boolean | null
           marked_at: string | null
           marked_by: string | null
-          question_id: string | null
+          question_id: string
           response_text: string
           reviewing_by: string | null
           reviewing_started_at: string | null
@@ -1547,7 +1562,7 @@ export type Database = {
           is_public?: boolean | null
           marked_at?: string | null
           marked_by?: string | null
-          question_id?: string | null
+          question_id: string
           response_text: string
           reviewing_by?: string | null
           reviewing_started_at?: string | null
@@ -1563,7 +1578,7 @@ export type Database = {
           is_public?: boolean | null
           marked_at?: string | null
           marked_by?: string | null
-          question_id?: string | null
+          question_id?: string
           response_text?: string
           reviewing_by?: string | null
           reviewing_started_at?: string | null
@@ -1615,6 +1630,7 @@ export type Database = {
           id: string
           learning_objectives: string[] | null
           module_id: string
+          public_page_content: Json | null
           reflections_enabled: boolean
           session_number: number
           title: string
@@ -1626,6 +1642,7 @@ export type Database = {
           id?: string
           learning_objectives?: string[] | null
           module_id: string
+          public_page_content?: Json | null
           reflections_enabled?: boolean
           session_number: number
           title: string
@@ -1637,6 +1654,7 @@ export type Database = {
           id?: string
           learning_objectives?: string[] | null
           module_id?: string
+          public_page_content?: Json | null
           reflections_enabled?: boolean
           session_number?: number
           title?: string
@@ -2628,6 +2646,16 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_checkout_and_enroll_batch: {
+        Args: {
+          p_discount_amount_cents?: number
+          p_discount_code?: string
+          p_stripe_customer_id?: string
+          p_stripe_payment_intent_id?: string
+          p_stripe_session_id: string
+        }
+        Returns: Json
+      }
       detect_chapter_sections: {
         Args: { p_book_id?: string }
         Returns: {
@@ -2750,21 +2778,38 @@ export type Database = {
       }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
-      safe_create_enrollment: {
-        Args: {
-          p_cohort_id: string
-          p_email?: string
-          p_enrollment_link_id?: string
-          p_full_name?: string
-          p_hub_id?: string
-          p_payment_id?: string
-          p_payment_status?: string
-          p_role?: string
-          p_status?: string
-          p_user_profile_id?: string
-        }
-        Returns: Json
-      }
+      safe_create_enrollment:
+        | {
+            Args: {
+              p_cohort_id: string
+              p_email?: string
+              p_enrollment_link_id?: string
+              p_full_name?: string
+              p_hub_id?: string
+              p_payment_id?: string
+              p_payment_status?: string
+              p_role?: string
+              p_status?: string
+              p_user_profile_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_claim_token?: string
+              p_cohort_id: string
+              p_email?: string
+              p_enrollment_link_id?: string
+              p_full_name?: string
+              p_hub_id?: string
+              p_payment_id?: string
+              p_payment_status?: string
+              p_role?: string
+              p_status?: string
+              p_user_profile_id?: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       dgr_status: "pending" | "submitted" | "approved" | "published"

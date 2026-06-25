@@ -1,6 +1,44 @@
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { dev } from '$app/environment';
+
+/**
+ * Key switching: we keep BOTH test and live Stripe keys in the environment and
+ * flip between them with a single server-side STRIPE_MODE flag, so going live (or
+ * dropping back to test to debug) never means swapping key VALUES around and
+ * losing track of them.
+ *
+ * For each key we prefer the mode-suffixed var (e.g. STRIPE_SECRET_KEY_LIVE),
+ * then fall back to the legacy unsuffixed var so existing setups keep working.
+ * Live is opt-in and never implicit — STRIPE_MODE must be exactly "live".
+ */
+export type StripeMode = 'test' | 'live';
+
+export function getStripeMode(): StripeMode {
+	return env.STRIPE_MODE === 'live' ? 'live' : 'test';
+}
+
+function resolveStripeKey(
+	base: string,
+	source: Record<string, string | undefined>
+): string | undefined {
+	const suffix = getStripeMode() === 'live' ? '_LIVE' : '_TEST';
+	return source[base + suffix] || source[base];
+}
+
+export function getStripeSecretKey(): string | undefined {
+	return resolveStripeKey('STRIPE_SECRET_KEY', env);
+}
+
+export function getStripeWebhookSecret(): string | undefined {
+	return resolveStripeKey('STRIPE_WEBHOOK_SECRET', env);
+}
+
+export function getStripePublishableKey(): string | undefined {
+	// Publishable keys are PUBLIC_-prefixed, so they live in $env/dynamic/public.
+	return resolveStripeKey('PUBLIC_STRIPE_PUBLISHABLE_KEY', publicEnv);
+}
 
 // Check if we're in mock mode (for development/testing)
 // Hard-guarded: mock mode is ONLY allowed in dev builds
@@ -23,11 +61,12 @@ function getStripe(): Stripe {
 		throw new Error('Stripe is in mock mode - real Stripe calls should not be made');
 	}
 	if (!_stripe) {
-		if (!env.STRIPE_SECRET_KEY) {
-			throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+		const secretKey = getStripeSecretKey();
+		if (!secretKey) {
+			throw new Error('Stripe secret key is not set (STRIPE_SECRET_KEY[_TEST|_LIVE])');
 		}
-		_stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-			apiVersion: '2024-12-18.acacia'
+		_stripe = new Stripe(secretKey, {
+			apiVersion: '2026-06-24.dahlia'
 		});
 	}
 	return _stripe;
@@ -105,7 +144,8 @@ export async function createCheckoutSession(params: {
 
 	const sessionParams: Stripe.Checkout.SessionCreateParams = {
 		mode: 'payment',
-		payment_method_types: ['card'],
+		// Omit payment_method_types so Stripe serves dynamic payment methods
+		// (configured from the Dashboard) instead of hardcoding card-only.
 		line_items: [
 			{
 				price_data: {
@@ -141,7 +181,7 @@ export async function createCheckoutSession(params: {
 }
 
 /**
- * Create a Stripe Embedded Checkout Session (ui_mode: 'embedded')
+ * Create a Stripe Embedded Checkout Session (ui_mode: 'embedded_page')
  * Returns a client_secret used to mount Stripe's checkout inside our own page.
  * In mock mode there is no real client_secret, so we return a mockUrl that the
  * client falls back to (the existing mock-checkout page).
@@ -152,22 +192,28 @@ export async function createEmbeddedCheckoutSession(params: {
 	customerEmail: string;
 	customerId?: string;
 	returnUrl: string;
+	quantity?: number;
+	productName?: string;
 	metadata: {
 		cohort_id: string;
 		enrollment_link_id: string;
 		user_email: string;
 		user_name: string;
 		hub_id?: string;
+		batch?: string;
 	};
 	allowPromotionCodes?: boolean;
 	couponId?: string;
 }): Promise<{ id: string; client_secret: string | null; mockUrl?: string }> {
+	const quantity = params.quantity && params.quantity > 0 ? params.quantity : 1;
+	const productName = params.productName || 'Course Enrollment';
+
 	if (isStripeMockMode()) {
 		const mockSessionId = `mock_cs_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 		const mockData = Buffer.from(
 			JSON.stringify({
 				sessionId: mockSessionId,
-				amount: params.priceInCents,
+				amount: params.priceInCents * quantity,
 				currency: params.currency,
 				email: params.customerEmail,
 				metadata: params.metadata,
@@ -183,18 +229,18 @@ export async function createEmbeddedCheckoutSession(params: {
 	}
 
 	const sessionParams: Stripe.Checkout.SessionCreateParams = {
-		ui_mode: 'embedded',
+		ui_mode: 'embedded_page',
 		mode: 'payment',
 		line_items: [
 			{
 				price_data: {
 					currency: params.currency.toLowerCase(),
 					product_data: {
-						name: 'Course Enrollment'
+						name: productName
 					},
 					unit_amount: params.priceInCents
 				},
-				quantity: 1
+				quantity
 			}
 		],
 		customer: params.customerId,
@@ -303,7 +349,8 @@ export async function createStripePromotionCode(params: {
 		} as unknown as Stripe.PromotionCode;
 	}
 	return getStripe().promotionCodes.create({
-		coupon: params.couponId,
+		// Dahlia moved the coupon under a `promotion` discriminated object.
+		promotion: { type: 'coupon', coupon: params.couponId },
 		code: params.code.toUpperCase(),
 		max_redemptions: params.maxRedemptions,
 		expires_at: params.expiresAt ? Math.floor(params.expiresAt.getTime() / 1000) : undefined

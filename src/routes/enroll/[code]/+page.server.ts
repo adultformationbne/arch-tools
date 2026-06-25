@@ -3,6 +3,7 @@ import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
 import { getCourseSettings } from '$lib/types/course-settings';
+import { getStripePublishableKey } from '$lib/server/stripe';
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const { code } = params;
@@ -239,6 +240,9 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		pricing,
 		referralSources,
 		existingUser,
-		paymentCancelled
+		paymentCancelled,
+		// Resolved server-side from STRIPE_MODE so the embedded checkout always
+		// mounts with the publishable key that matches the active secret key.
+		stripePublishableKey: getStripePublishableKey() ?? null
 	};
 };

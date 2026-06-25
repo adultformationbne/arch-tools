@@ -99,7 +99,11 @@
 					{/if}
 				</h1>
 				<p class="mt-2 text-gray-600">
-					You're enrolled in <span class="font-medium">{data.module.name}</span>
+					{#if data.organizerConfirmation}
+						Your group is enrolled in <span class="font-medium">{data.module.name}</span>
+					{:else}
+						You're enrolled in <span class="font-medium">{data.module.name}</span>
+					{/if}
 				</p>
 			</div>
 
@@ -125,6 +129,24 @@
 				</div>
 			</div>
 
+			{#if data.organizerConfirmation}
+				<!-- Non-attending organiser paid for the group: no password to set -->
+				<div class="border-t pt-6 text-center">
+					<h2 class="mb-2 text-lg font-semibold text-gray-900">Invitations sent</h2>
+					<p class="text-sm text-gray-600">
+						We've emailed an account-setup link to
+						{#if data.participantCount}
+							all {data.participantCount} participants.
+						{:else}
+							each participant.
+						{/if}
+						They can set their own password and access the course from that link.
+					</p>
+					<p class="mt-3 text-sm text-gray-500">
+						A receipt has been sent to <span class="font-medium">{data.email}</span>.
+					</p>
+				</div>
+			{:else}
 			<!-- Password setup form -->
 			<div class="border-t pt-6">
 				<h2 class="mb-4 text-lg font-semibold text-gray-900">Set Your Password</h2>
@@ -235,6 +257,7 @@
 					</button>
 				</form>
 			</div>
+			{/if}
 		</div>
 
 		<!-- Help text -->
