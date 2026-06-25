@@ -823,7 +823,14 @@ export const POST: RequestHandler = async (event) => {
 					throw error(500, result.error.message || 'Failed to delete user accounts');
 				}
 
-				const { deleted, accountsDeleted = 0, enrollmentsDeleted = 0, errors = [] } = result.data!;
+				const {
+					deleted,
+					accountsDeleted = 0,
+					enrollmentsDeleted = 0,
+					skipped = 0,
+					skippedNames = [],
+					errors = []
+				} = result.data!;
 
 				let message = '';
 				if (accountsDeleted > 0 && errors.length === 0) {
@@ -835,13 +842,21 @@ export const POST: RequestHandler = async (event) => {
 					message = `Deleted ${accountsDeleted} account(s), but ${errors.length} failed`;
 				} else if (enrollmentsDeleted > 0) {
 					message = `Removed ${enrollmentsDeleted} pending enrollment(s) (no accounts to delete)`;
+				} else if (skipped > 0) {
+					message = 'No accounts deleted';
 				} else {
 					message = 'No accounts or enrollments to delete';
 				}
 
+				// Staff/admin accounts are protected and never permanently deleted
+				if (skipped > 0) {
+					const names = skippedNames.filter(Boolean).join(', ');
+					message += ` — skipped ${skipped} staff/admin account(s) (protected)${names ? `: ${names}` : ''}`;
+				}
+
 				return json({
 					success: true,
-					data: { deleted, accountsDeleted, enrollmentsDeleted, errors },
+					data: { deleted, accountsDeleted, enrollmentsDeleted, skipped, skippedNames, errors },
 					message
 				});
 			}

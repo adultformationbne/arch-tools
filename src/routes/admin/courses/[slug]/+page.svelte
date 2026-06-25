@@ -233,6 +233,21 @@
 		})
 	);
 
+	// "More than a course participant": admin/coordinator role, or any platform module
+	// beyond courses.participant. These accounts can be removed from a cohort but never
+	// permanently deleted (deleting them orphans profiles / breaks re-enrolment).
+	const isStaffParticipant = (p) =>
+		p?.role === 'admin' ||
+		p?.role === 'coordinator' ||
+		(Array.isArray(p?.user_profile?.modules) &&
+			p.user_profile.modules.some(m => m && m !== 'courses.participant'));
+
+	const selectedHasStaff = $derived(
+		Array.from(selectedParticipants).some(id =>
+			isStaffParticipant(participants.find(s => s.id === id))
+		)
+	);
+
 	// Participants who can be advanced
 	const participantsBehind = $derived(
 		selectedCohort?.current_session > 0
@@ -1199,16 +1214,19 @@
 			variant: 'secondary',
 			onClick: confirmRemoveEnrollment
 		},
-		{
+		...(selectedHasStaff ? [] : [{
 			label: 'Permanently delete account',
 			description: 'Completely removes their user account, all enrollments, and associated data. This cannot be undone.',
 			icon: Trash2,
 			variant: 'danger',
 			onClick: confirmDeleteAccounts
-		}
+		}])
 	]}
 >
 	<p>You are about to remove <strong>{selectedParticipants.size} participant(s)</strong>.</p>
+	{#if selectedHasStaff}
+		<p class="text-sm text-amber-300 mt-2">Your selection includes a staff/admin account, so permanent deletion isn't available. You can still remove them from this cohort.</p>
+	{/if}
 	<p class="text-sm text-white/70">Choose an action:</p>
 </ConfirmationModal>
 

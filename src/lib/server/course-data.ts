@@ -1974,16 +1974,28 @@ export const CourseMutations = {
 		// Get enrollments with their user_profile_ids
 		const { data: enrollments, error: fetchError } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('id, user_profile_id, full_name')
+			.select('id, user_profile_id, full_name, role, user_profile:user_profile_id ( modules )')
 			.in('id', enrollmentIds);
 
 		if (fetchError) {
 			return { data: null, error: fetchError };
 		}
 
+		// Never permanently delete staff accounts — anyone who is "more than a course
+		// participant": an admin/coordinator enrollment, or any platform module beyond
+		// courses.participant. These are skipped (reported back), never destroyed.
+		const isStaff = (e: any) =>
+			e.role === 'admin' ||
+			e.role === 'coordinator' ||
+			(Array.isArray(e.user_profile?.modules) &&
+				e.user_profile.modules.some((m: string) => m && m !== 'courses.participant'));
+
+		const staff = enrollments?.filter(isStaff) || [];
+		const deletable = enrollments?.filter((e) => !isStaff(e)) || [];
+
 		// Separate users with accounts from those without
-		const withAccounts = enrollments?.filter((e) => e.user_profile_id) || [];
-		const withoutAccounts = enrollments?.filter((e) => !e.user_profile_id) || [];
+		const withAccounts = deletable.filter((e) => e.user_profile_id);
+		const withoutAccounts = deletable.filter((e) => !e.user_profile_id);
 
 		// Get unique user_profile_ids (a user might have multiple enrollments)
 		const userProfileIds = [...new Set(withAccounts.map((e) => e.user_profile_id))];
@@ -1999,8 +2011,8 @@ export const CourseMutations = {
 			return {
 				data: {
 					deleted: withoutAccounts.length,
-					skipped: 0,
-					skippedNames: []
+					skipped: staff.length,
+					skippedNames: staff.map((e) => e.full_name)
 				},
 				error: null
 			};
@@ -2083,6 +2095,8 @@ export const CourseMutations = {
 				deleted: deletedCount.accounts + deletedCount.enrollments,
 				accountsDeleted: deletedCount.accounts,
 				enrollmentsDeleted: deletedCount.enrollments,
+				skipped: staff.length,
+				skippedNames: staff.map((e) => e.full_name),
 				errors
 			},
 			error: errors.length > 0 ? { message: `Failed to delete some users: ${errors.join(', ')}` } : null
