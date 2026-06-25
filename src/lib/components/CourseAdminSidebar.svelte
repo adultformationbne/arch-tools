@@ -17,7 +17,6 @@ import {
     Mail,
     MessageCircle,
     Link,
-    Tag,
     Zap,
     Archive,
     Trash2,
@@ -145,13 +144,6 @@ const navItems = $derived([
         icon: Link,
         description: 'Public sign-up links',
         visible: canManageCourse && courseFeatures.enrollmentEnabled
-    },
-    {
-        label: 'Discounts',
-        href: `/admin/courses/${courseSlug}/discounts`,
-        icon: Tag,
-        description: 'Discount codes',
-        visible: canManageCourse && courseFeatures.enrollmentEnabled && courseFeatures.discountCodes !== false
     },
     {
         label: 'Hubs',

@@ -48,23 +48,10 @@ export function isEnrollmentLinkValid(link: {
  * Model: the cohort carries the default price; an enrollment link MAY override
  * it. A price of 0 (or null/unset) means free — including a link that overrides
  * a paid cohort down to 0 (e.g. a scholarship link).
- *
- * NOTE: the legacy `cohort.is_free` flag, per-hub price and per-course default
- * price are intentionally no longer consulted. The `hub`/`course`/`is_free`
- * fields remain accepted (and ignored) only so existing call-sites keep
- * compiling; they will be removed from callers and then dropped.
  */
 export function getEffectivePrice(params: {
 	enrollmentLink?: { price_cents: number | null } | null;
-	cohort: {
-		price_cents: number | null;
-		currency: string | null;
-		is_free?: boolean | null;
-	};
-	/** @deprecated ignored — kept for back-compat with existing callers */
-	hub?: { price_cents: number | null; currency: string | null } | null;
-	/** @deprecated ignored — kept for back-compat with existing callers */
-	course?: { default_price_cents: number | null; default_currency: string | null } | null;
+	cohort: { price_cents: number | null; currency: string | null };
 }): { amount: number; currency: string; isFree: boolean } {
 	const { enrollmentLink, cohort } = params;
 

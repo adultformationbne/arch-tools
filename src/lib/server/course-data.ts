@@ -1374,12 +1374,11 @@ export const CourseMutations = {
 		startDate: string;
 		endDate?: string;
 		// Pricing fields
-		isFree?: boolean;
 		priceCents?: number | null;
 		currency?: string;
 		enrollmentType?: 'admin_only' | 'open' | 'auto_approve' | 'approval_required';
 	}) {
-		const { name, moduleId, startDate, endDate, isFree, priceCents, currency, enrollmentType } = params;
+		const { name, moduleId, startDate, endDate, priceCents, currency, enrollmentType } = params;
 
 		// Calculate end date if not provided (assume 8 weeks)
 		const calculatedEndDate =
@@ -1398,8 +1397,8 @@ export const CourseMutations = {
 				end_date: calculatedEndDate,
 				current_session: 0,
 				status: 'draft',
-				// Pricing fields (is_free column is retired — do not write it)
-				price_cents: isFree ? null : (priceCents ?? null),
+				// Pricing (price 0/null = free)
+				price_cents: priceCents ?? null,
 				currency: currency ?? 'AUD',
 				enrollment_type: enrollmentType ?? 'admin_only',
 				created_at: new Date().toISOString(),
@@ -1428,12 +1427,11 @@ export const CourseMutations = {
 		currentSession?: number;
 		actorName?: string;
 		// Pricing fields
-		isFree?: boolean;
 		priceCents?: number | null;
 		currency?: string;
 		enrollmentType?: 'admin_only' | 'open' | 'auto_approve' | 'approval_required';
 	}) {
-		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName, isFree, priceCents, currency, enrollmentType } =
+		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName, priceCents, currency, enrollmentType } =
 			params;
 
 		// Get current cohort state to detect session changes
@@ -1453,10 +1451,6 @@ export const CourseMutations = {
 		if (endDate !== undefined) updateData.end_date = endDate;
 		if (currentSession !== undefined) updateData.current_session = currentSession;
 		// Pricing fields
-		if (isFree !== undefined) {
-			// is_free column retired — never written (price 0/null = free)
-			if (isFree) updateData.price_cents = null; // Clear price if free
-		}
 		if (priceCents !== undefined) updateData.price_cents = priceCents;
 		if (currency !== undefined) updateData.currency = currency;
 		if (enrollmentType !== undefined) updateData.enrollment_type = enrollmentType;
@@ -2841,6 +2835,35 @@ export const CourseMutations = {
 	},
 
 	/**
+	 * Link any email-only enrollments (user_profile_id IS NULL) to a profile.
+	 *
+	 * Self-serve enrollments are created by email + claim_token BEFORE the
+	 * participant's account id is known (the account is provisioned afterwards,
+	 * or by the Stripe webhook/success page). Without this step the rows are only
+	 * matchable by email — they show in the admin cohort list but never in the
+	 * participant's My Courses, which queries by user_profile_id.
+	 *
+	 * Idempotent and safe to call on every login. Returns the number linked.
+	 */
+	async linkEnrollmentsToProfile(params: { userId: string; email: string | null | undefined }): Promise<number> {
+		const email = (params.email || '').trim().toLowerCase();
+		if (!email || !params.userId) return 0;
+
+		const { data, error } = await supabaseAdmin
+			.from('courses_enrollments')
+			.update({ user_profile_id: params.userId, updated_at: new Date().toISOString() })
+			.is('user_profile_id', null)
+			.eq('email', email)
+			.select('id');
+
+		if (error) {
+			console.error('linkEnrollmentsToProfile failed:', error);
+			return 0;
+		}
+		return data?.length ?? 0;
+	},
+
+	/**
 	 * Idempotently ensure an auth.users + user_profiles row exists for this email
 	 * as a PENDING participant (no password, password_setup_completed:false).
 	 * Mirrors the bulk-CSV-import approach: the account is created up-front so the
@@ -2867,6 +2890,7 @@ export const CourseMutations = {
 					.update({ modules: [...mods, 'courses.participant'] })
 					.eq('id', existingProfile.id);
 			}
+			await CourseMutations.linkEnrollmentsToProfile({ userId: existingProfile.id, email });
 			return existingProfile.id;
 		}
 
@@ -2913,6 +2937,7 @@ export const CourseMutations = {
 			{ onConflict: 'id' }
 		);
 
+		await CourseMutations.linkEnrollmentsToProfile({ userId, email });
 		return userId;
 	},
 

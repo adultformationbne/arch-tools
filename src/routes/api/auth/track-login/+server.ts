@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
+import { CourseMutations } from '$lib/server/course-data';
 
 /**
  * POST /api/auth/track-login
@@ -17,6 +18,11 @@ export const POST: RequestHandler = async (event) => {
 
 		const userId = session.user.id;
 		const now = new Date().toISOString();
+
+		// Claim any email-only enrollments (self-serve sign-ups are created by email
+		// before the account exists) so they appear in My Courses, which queries by
+		// user_profile_id. Idempotent — only touches rows with user_profile_id = null.
+		await CourseMutations.linkEnrollmentsToProfile({ userId, email: session.user.email });
 
 		// Get current enrollments with cohort info to increment login_count and sync session
 		const { data: enrollments } = await supabaseAdmin

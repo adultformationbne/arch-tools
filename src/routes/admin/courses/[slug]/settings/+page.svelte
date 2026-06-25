@@ -1,5 +1,5 @@
 <script>
-	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, Tag, UserPlus, Link, Zap } from '$lib/icons';
+	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, UserPlus, Link, Zap } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
@@ -53,7 +53,6 @@
 			hubsEnabled: true,
 			enrollmentEnabled: false,
 			acceptPayments: false,
-			discountCodes: false,
 			publicPagesEnabled: false,
 		}
 	});
@@ -109,7 +108,6 @@
 			const legacyPayments = parsedSettings.features?.['paymentsEnabled'];
 			settings.features.enrollmentEnabled = parsedSettings.features?.enrollmentEnabled ?? legacyPayments ?? false;
 			settings.features.acceptPayments = parsedSettings.features?.acceptPayments ?? legacyPayments ?? false;
-			settings.features.discountCodes = parsedSettings.features?.discountCodes ?? legacyPayments ?? false;
 			settings.features.publicPagesEnabled = parsedSettings.features?.publicPagesEnabled ?? false;
 		}
 	});
@@ -876,7 +874,7 @@
 								</div>
 								<div>
 									<span class="font-semibold text-gray-900">Enrollment</span>
-									<p class="text-xs text-gray-500 leading-relaxed">Self-service signup via enrollment links, payments, and discount codes</p>
+									<p class="text-xs text-gray-500 leading-relaxed">Self-service signup via enrollment links and payments</p>
 								</div>
 							</div>
 							<div class="w-11 h-6 rounded-full transition-colors relative shrink-0" class:bg-gray-300={!settings.features.enrollmentEnabled} style={toggleTrackStyle(settings.features.enrollmentEnabled)}>
@@ -903,20 +901,6 @@
 										</div>
 									</label>
 
-									<!-- Discount Codes -->
-										<label class="flex items-start gap-2.5 rounded-lg border border-gray-200 p-3 transition-colors {settings.features.acceptPayments ? 'cursor-pointer hover:bg-white/50' : 'opacity-50 pointer-events-none'}">
-										<input
-											type="checkbox"
-											bind:checked={settings.features.discountCodes}
-											disabled={!settings.features.acceptPayments}
-											class="w-4 h-4 mt-0.5 rounded border-gray-300"
-											style="accent-color: {settings.theme.accentDark};"
-										/>
-										<div>
-											<span class="text-sm font-medium text-gray-700">Discount codes</span>
-											<p class="text-xs text-gray-500">Create and manage discount codes for enrollment</p>
-										</div>
-									</label>
 								</div>
 
 								<!-- Max Capacity + Require Approval -->

@@ -44,7 +44,6 @@ export interface CourseSettings {
 		attendanceEnabled?: boolean;
 		enrollmentEnabled?: boolean;
 		acceptPayments?: boolean;
-		discountCodes?: boolean;
 		chatEnabled?: boolean;
 		chatAllowParticipants?: boolean;
 		materialsEnabled?: boolean;
@@ -77,7 +76,6 @@ export const DEFAULT_COURSE_SETTINGS: Required<
 		attendanceEnabled: true,
 		enrollmentEnabled: false,
 		acceptPayments: false,
-		discountCodes: false,
 		chatEnabled: true,
 		chatAllowParticipants: false,
 		materialsEnabled: true,
@@ -130,8 +128,6 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 				settings.features?.enrollmentEnabled ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.enrollmentEnabled,
 			acceptPayments:
 				settings.features?.acceptPayments ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.acceptPayments,
-			discountCodes:
-				settings.features?.discountCodes ?? (settings.features as any)?.paymentsEnabled ?? DEFAULT_COURSE_SETTINGS.features.discountCodes,
 			chatEnabled:
 				settings.features?.chatEnabled ?? DEFAULT_COURSE_SETTINGS.features.chatEnabled,
 			chatAllowParticipants:

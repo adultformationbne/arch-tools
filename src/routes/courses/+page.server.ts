@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { requireModuleLevel } from '$lib/server/auth';
-import { CourseQueries } from '$lib/server/course-data';
+import { CourseQueries, CourseMutations } from '$lib/server/course-data';
 import { supabaseAdmin } from '$lib/server/supabase';
 
 export const load: PageServerLoad = async (event) => {
@@ -17,6 +17,11 @@ export const load: PageServerLoad = async (event) => {
 
 	const userId = userProfile.id;
 	const userModules: string[] = userProfile.modules ?? [];
+
+	// Safety net for the login-time claim: link any email-only enrollments to this
+	// profile so self-serve sign-ups show up here even if track-login didn't fire
+	// (e.g. arriving via auto-sign-in or direct navigation). Idempotent.
+	await CourseMutations.linkEnrollmentsToProfile({ userId, email: userProfile.email });
 
 	// Activate any enrollments that haven't been touched by the login flow yet.
 	// This covers cases where the user navigates directly (already authenticated as admin, etc.)
