@@ -384,11 +384,12 @@ async function handleFreeBatch(params: {
 		)
 	);
 
-	// Email a smart-login link to everyone except the participant who is the billing
-	// contact (that person is signed in directly via the success redirect).
-	const invitees = created.filter((c) => c.index !== billingContact.participantIndex);
+	// Email the course-branded "you've been enrolled" link to EVERY attending
+	// participant — including the billing participant, who gets it alongside their
+	// receipt. (A non-attending organiser isn't in `created`, so they stay
+	// receipt-only.)
 	await Promise.allSettled(
-		invitees.map((c) =>
+		created.map((c) =>
 			CourseMutations.sendBatchEnrollmentInvitation({
 				enrollmentId: c.enrollmentId,
 				siteUrl: PUBLIC_SITE_URL
@@ -491,11 +492,18 @@ async function handlePaidBatch(params: {
 
 	// One embedded checkout for the whole group: a single line item with quantity = N
 	// at the unit price, so the Stripe receipt itemises the group.
+	// Human-readable enrolment summary for the Stripe payment + invoice (avoids the bare PI id).
+	const moduleName = cohort.module?.name || cohort.name;
+	const peopleLabel = `${count} ${count === 1 ? 'participant' : 'participants'}`;
+	const payerName = billingContact.name || billingContact.email;
+	const paymentDescription = `${moduleName} — ${peopleLabel} — ${payerName}`;
+
 	const session = await createEmbeddedCheckoutSession({
 		priceInCents: pricing.amount,
 		currency: pricing.currency,
 		quantity: count,
-		productName: count > 1 ? `Course Enrollment (${count} participants)` : 'Course Enrollment',
+		productName: moduleName,
+		description: paymentDescription,
 		customerEmail: billingContact.email,
 		customerId: stripeCustomerId,
 		returnUrl: `${PUBLIC_SITE_URL}/enroll/${link.code}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -505,7 +513,11 @@ async function handlePaidBatch(params: {
 			user_email: billingContact.email,
 			user_name: billingContact.name,
 			hub_id: hubId || '',
-			batch: 'true'
+			batch: 'true',
+			course_name: course.name,
+			module_name: moduleName,
+			cohort_name: cohort.name,
+			participant_count: String(count)
 		},
 		allowPromotionCodes: true
 	});

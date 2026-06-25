@@ -194,6 +194,8 @@ export async function createEmbeddedCheckoutSession(params: {
 	returnUrl: string;
 	quantity?: number;
 	productName?: string;
+	/** Human-readable description shown on the Stripe payment + invoice (falls back to PI id if unset). */
+	description?: string;
 	metadata: {
 		cohort_id: string;
 		enrollment_link_id: string;
@@ -201,6 +203,11 @@ export async function createEmbeddedCheckoutSession(params: {
 		user_name: string;
 		hub_id?: string;
 		batch?: string;
+		// Optional human-readable fields surfaced on the Stripe payment detail page.
+		course_name?: string;
+		module_name?: string;
+		cohort_name?: string;
+		participant_count?: string;
 	};
 	allowPromotionCodes?: boolean;
 	couponId?: string;
@@ -248,13 +255,14 @@ export async function createEmbeddedCheckoutSession(params: {
 		return_url: params.returnUrl,
 		metadata: params.metadata,
 		payment_intent_data: {
+			description: params.description,
 			metadata: params.metadata
 		},
 		expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
 		invoice_creation: {
 			enabled: true,
 			invoice_data: {
-				description: 'Course enrollment',
+				description: params.description || 'Course enrollment',
 				metadata: params.metadata
 			}
 		}
