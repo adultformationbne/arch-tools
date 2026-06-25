@@ -176,3 +176,4 @@ npm run validate-api  # Check API endpoint/frontend parameter mismatches
 - **DGR.md** - Daily Gospel Reflections system
 - **LITURGICAL_SYSTEM.md** - Liturgical calendar and readings
 - **UNIFIED_EMAIL_SYSTEM.md** - Email templates, sending, and branding (courses, DGR, platform)
+- **Enrolment system** - the `enroll-system` skill (`.claude/skills/enroll-system/SKILL.md`) is the deep reference for enrolment links, cohorts, hubs, pricing, free/paid signup, Stripe checkout + webhook, account provisioning, smart-login/OTP, and emails. Invoke it (or read it) before working on anything in the signup/checkout/payment/claim flow.
