@@ -11,8 +11,6 @@
 		Link,
 		ExternalLink,
 		Trash2,
-		Check,
-		X,
 		MapPin,
 		Tag,
 		Clock,
@@ -178,6 +176,14 @@
 		return cohort ? `${cohort.module.name} - ${cohort.name}` : 'Unknown';
 	}
 
+	// Only show a link title when it's a meaningful custom name — not "Main link"
+	// and not the auto-generated cohort name (which is already the card header).
+	function customName(link: any): string | null {
+		const n = (link.name || '').trim();
+		if (!n || n === MAIN_LINK_NAME || n === getCohortName(link.cohort_id)) return null;
+		return n;
+	}
+
 	// Human-readable description of the cohort's default price
 	function cohortPriceLabel(cohort: any): string {
 		if (!cohort) return 'Not set';
@@ -265,16 +271,14 @@
 							{#if mainLink}
 								<div>
 									<div class="mb-2 flex items-center gap-2">
-										<Star class="h-4 w-4 text-amber-500" />
+										<Star class="h-4 w-4" style="color: var(--course-accent-dark);" />
 										<h3 class="text-sm font-semibold text-gray-900">Main link</h3>
 										<span class="text-xs text-gray-500">— the one to hand out</span>
 									</div>
 									<div
-										class="rounded-lg border-2 p-4"
-										class:border-amber-200={mainLink.is_active}
-										class:bg-amber-50={mainLink.is_active}
-										class:border-red-200={!mainLink.is_active}
-										class:bg-red-50={!mainLink.is_active}
+										class="rounded-lg border p-4"
+										class:opacity-60={!mainLink.is_active}
+										style="border-color: color-mix(in srgb, var(--course-accent-dark) 25%, white); background-color: color-mix(in srgb, var(--course-accent-dark) 5%, white);"
 									>
 										{@render linkBody(mainLink, cohort)}
 									</div>
@@ -288,11 +292,8 @@
 									<div class="space-y-3">
 										{#each additional as link (link.id)}
 											<div
-												class="rounded-lg border p-4 transition-shadow hover:shadow-md"
-												class:border-gray-200={link.is_active}
-												class:bg-white={link.is_active}
-												class:border-red-200={!link.is_active}
-												class:bg-red-50={!link.is_active}
+												class="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm"
+												class:opacity-60={!link.is_active}
 											>
 												{@render linkBody(link, cohort)}
 											</div>
@@ -316,45 +317,45 @@
 	<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 		<!-- Link info -->
 		<div class="min-w-0 flex-1">
-			<div class="flex flex-wrap items-center gap-2">
-				<h4 class="font-medium text-gray-900">
-					{link.name || getCohortName(link.cohort_id)}
-				</h4>
-				<!-- Override badges -->
-				{#if link.hub}
-					<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-						<MapPin class="h-3 w-3" />
-						Hub: {link.hub.name}
-					</span>
-				{/if}
-				{#if link.show_hub_selector}
-					<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-						<MapPin class="h-3 w-3" />
-						Hub choice
-					</span>
-				{/if}
-				{#if link.price_cents !== null}
-					<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-						<Tag class="h-3 w-3" />
-						{#if link.price_cents <= 0}
-							Price: Free
-						{:else}
-							Price: {formatPrice(link.price_cents, cohort?.currency || 'AUD')}
-						{/if}
-					</span>
-				{/if}
-				{#if link.bypass_enrollment_window}
-					<span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-						<Clock class="h-3 w-3" />
-						Late access
-					</span>
-				{/if}
-				{#if !link.is_active}
-					<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-						Inactive
-					</span>
-				{/if}
-			</div>
+			{#if customName(link) || link.hub || link.show_hub_selector || link.price_cents !== null || link.bypass_enrollment_window}
+				<div class="flex flex-wrap items-center gap-1.5">
+					{#if customName(link)}
+						<h4 class="mr-1 font-medium text-gray-900">{customName(link)}</h4>
+					{/if}
+					<!-- Override badges — neutral by default, with a light brand tint on price -->
+					{#if link.hub}
+						<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+							<MapPin class="h-3 w-3 text-gray-400" />
+							{link.hub.name}
+						</span>
+					{/if}
+					{#if link.show_hub_selector}
+						<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+							<MapPin class="h-3 w-3 text-gray-400" />
+							Hub choice
+						</span>
+					{/if}
+					{#if link.price_cents !== null}
+						<span
+							class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+							style="background-color: color-mix(in srgb, var(--course-accent-dark) 10%, white); color: color-mix(in srgb, var(--course-accent-dark) 78%, black);"
+						>
+							<Tag class="h-3 w-3" />
+							{#if link.price_cents <= 0}
+								Free
+							{:else}
+								{formatPrice(link.price_cents, cohort?.currency || 'AUD')}
+							{/if}
+						</span>
+					{/if}
+					{#if link.bypass_enrollment_window}
+						<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+							<Clock class="h-3 w-3 text-gray-400" />
+							Late access
+						</span>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- URL -->
 			<div class="mt-2 flex flex-wrap items-center gap-2">
@@ -391,29 +392,42 @@
 		</div>
 
 		<!-- Actions -->
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-3 self-start lg:self-center">
+			<!-- Active toggle: labelled switch so its purpose is unmistakable -->
 			<button
+				type="button"
+				role="switch"
+				aria-checked={link.is_active}
 				onclick={() => toggleLinkActive(link.id, link.is_active)}
-				class="rounded p-2 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
-				class:text-green-600={link.is_active}
-				class:text-gray-400={!link.is_active}
-				title={link.is_active ? 'Deactivate' : 'Activate'}
+				class="inline-flex items-center gap-2"
+				title={link.is_active ? 'Active — click to deactivate' : 'Inactive — click to activate'}
 			>
-				{#if link.is_active}
-					<Check class="h-5 w-5" />
-				{:else}
-					<X class="h-5 w-5" />
-				{/if}
+				<span
+					class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+					style={link.is_active ? 'background-color: var(--course-accent-dark);' : 'background-color: #d1d5db;'}
+				>
+					<span
+						class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+						style={link.is_active ? 'transform: translateX(18px);' : 'transform: translateX(3px);'}
+					></span>
+				</span>
+				<span
+					class="text-xs font-medium"
+					class:text-gray-700={link.is_active}
+					class:text-gray-400={!link.is_active}
+				>
+					{link.is_active ? 'Active' : 'Inactive'}
+				</span>
 			</button>
 			<button
 				onclick={() => {
 					linkToDelete = link.id;
 					showDeleteConfirm = true;
 				}}
-				class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+				class="flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-red-50 hover:text-red-600"
 				title="Delete"
 			>
-				<Trash2 class="h-5 w-5" />
+				<Trash2 class="h-4 w-4" />
 			</button>
 		</div>
 	</div>
