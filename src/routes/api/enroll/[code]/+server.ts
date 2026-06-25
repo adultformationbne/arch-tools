@@ -74,6 +74,39 @@ function normalizeParticipant(raw: RawParticipant, label: string): Participant {
 	};
 }
 
+/**
+ * Resolve a submitted participant against any existing profile.
+ *
+ * If the email already has an account, that profile is AUTHORITATIVE: we use its
+ * name / phone / parish and ignore whatever was typed (so a stranger can neither
+ * overwrite nor spoof an existing participant's details, and no PII is required
+ * from the form). Otherwise we fall back to the normal full-detail validation.
+ */
+function resolveParticipant(
+	raw: RawParticipant,
+	profileMap: Map<string, { full_name: string | null; phone: string | null; parish_id: string | null }>,
+	label: string
+): Participant {
+	const email = (raw.email || '').trim().toLowerCase();
+	if (!email) throw error(400, `Email is required for ${label}`);
+	if (!isValidEmail(email)) throw error(400, `Invalid email address for ${label}`);
+
+	const profile = profileMap.get(email);
+	if (profile) {
+		const typedName = `${(raw.firstName || '').trim()} ${(raw.surname || '').trim()}`.trim();
+		return {
+			fullName: (profile.full_name || '').trim() || typedName || email.split('@')[0],
+			email,
+			phone: (profile.phone || '').trim() || (raw.phone || '').trim() || '',
+			parishId: profile.parish_id || null,
+			parishOther: null,
+			referralSource: null,
+			mailingAddress: null
+		};
+	}
+	return normalizeParticipant(raw, label);
+}
+
 export const POST: RequestHandler = async ({ params, request, getClientAddress }) => {
 	const { code } = params;
 
@@ -97,9 +130,26 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		throw error(400, 'Too many participants in a single submission');
 	}
 
-	// Validate + normalise every participant
+	// Resolve each participant against any existing profile (authoritative for a
+	// registered email). One lookup covers the whole batch.
+	const lowerEmails = rawParticipants
+		.map((p) => (p.email || '').trim().toLowerCase())
+		.filter(Boolean);
+	const { data: profileRows } = lowerEmails.length
+		? await supabaseAdmin
+				.from('user_profiles')
+				.select('email, full_name, phone, parish_id')
+				.in('email', lowerEmails)
+		: { data: [] as Array<{ email: string; full_name: string | null; phone: string | null; parish_id: string | null }> };
+	const profileMap = new Map(
+		(profileRows || []).map((pr) => [
+			pr.email.toLowerCase(),
+			{ full_name: pr.full_name, phone: pr.phone, parish_id: pr.parish_id }
+		])
+	);
+
 	const participants: Participant[] = rawParticipants.map((p, i) =>
-		normalizeParticipant(p, `participant ${i + 1}`)
+		resolveParticipant(p, profileMap, `participant ${i + 1}`)
 	);
 
 	// Dedupe emails within the batch

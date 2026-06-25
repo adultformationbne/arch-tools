@@ -19,6 +19,7 @@
 		referralSource: string;
 		referralOther: string;
 		mailingAddress: string;
+		isExisting: boolean;
 	};
 
 	// Course accent colors from settings
@@ -80,6 +81,44 @@
 	let referralOther = $state('');
 	let mailingAddress = $state('');
 
+	// Email-first: detect whether the typed email already has an account so we can
+	// skip collecting (and never echo) their details. The lookup returns a boolean only;
+	// the server treats an existing profile as authoritative and ignores typed details.
+	let emailStatus = $state<'idle' | 'checking' | 'registered' | 'new'>(data.existingUser ? 'registered' : 'idle');
+	let emailToken = 0;
+	let emailDebounce: ReturnType<typeof setTimeout> | null = null;
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+	async function runEmailCheck() {
+		const e = email.trim().toLowerCase();
+		if (!emailRegex.test(e)) { emailStatus = 'idle'; return; }
+		const token = ++emailToken;
+		emailStatus = 'checking';
+		try {
+			const res = await fetch('/api/enroll/check-email', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: e })
+			});
+			const d = await res.json();
+			if (token !== emailToken) return; // a newer check superseded this one
+			emailStatus = d.registered ? 'registered' : 'new';
+		} catch {
+			if (token === emailToken) emailStatus = 'new'; // fail-open: collect details
+		}
+	}
+
+	function onEmailInput() {
+		emailStatus = 'idle';
+		if (emailDebounce) clearTimeout(emailDebounce);
+		emailDebounce = setTimeout(runEmailCheck, 450);
+	}
+
+	function displayName(p: Participant): string {
+		const n = `${p.firstName} ${p.surname}`.trim();
+		return n || p.email;
+	}
+
 	let isSubmitting = $state(false);
 	let showPendingApproval = $state(false);
 	let showInvitationsSent = $state(false);
@@ -122,6 +161,8 @@
 		referralSource = '';
 		referralOther = '';
 		mailingAddress = '';
+		emailStatus = 'idle';
+		if (emailDebounce) clearTimeout(emailDebounce);
 		formErrors = {};
 	}
 
@@ -129,13 +170,34 @@
 		if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
-	// Validate the current entry and drop it into the participants list
-	function addCurrentEntry(): boolean {
-		if (!validateForm()) {
+	// Validate the current entry and drop it into the participants list. For an email
+	// that already has an account, the existing profile is authoritative server-side,
+	// so we only require the email and store the entry as "existing".
+	async function addCurrentEntry(): Promise<boolean> {
+		formErrors = {};
+		const normalizedEmail = email.trim().toLowerCase();
+		if (!normalizedEmail) {
+			formErrors.email = 'Email is required';
+			toastError('Please enter an email');
+			return false;
+		}
+		if (!emailRegex.test(normalizedEmail)) {
+			formErrors.email = 'Invalid email address';
 			toastError('Please fix the errors below');
 			return false;
 		}
-		const normalizedEmail = email.trim().toLowerCase();
+		// Resolve the account-exists status if the debounce hasn't settled yet.
+		if (emailStatus === 'idle' || emailStatus === 'checking') await runEmailCheck();
+		const existing = emailStatus === 'registered';
+		if (!existing) {
+			if (!firstName.trim()) formErrors.firstName = 'First name is required';
+			if (!surname.trim()) formErrors.surname = 'Surname is required';
+			if (!phone.trim()) formErrors.phone = 'Phone number is required';
+			if (Object.keys(formErrors).length > 0) {
+				toastError('Please fix the errors below');
+				return false;
+			}
+		}
 		const dupe = participants.some((x, i) => x.email === normalizedEmail && i !== editingIndex);
 		if (dupe) {
 			formErrors = { ...formErrors, email: 'This email is already in the group' };
@@ -143,14 +205,15 @@
 			return false;
 		}
 		const entry: Participant = {
-			firstName: firstName.trim(),
-			surname: surname.trim(),
+			firstName: existing ? '' : firstName.trim(),
+			surname: existing ? '' : surname.trim(),
 			email: normalizedEmail,
-			phone: phone.trim(),
-			parishOther: parishOther.trim(),
-			referralSource,
-			referralOther: referralOther.trim(),
-			mailingAddress: mailingAddress.trim()
+			phone: existing ? '' : phone.trim(),
+			parishOther: existing ? '' : parishOther.trim(),
+			referralSource: existing ? '' : referralSource,
+			referralOther: existing ? '' : referralOther.trim(),
+			mailingAddress: existing ? '' : mailingAddress.trim(),
+			isExisting: existing
 		};
 		if (editingIndex !== null) {
 			participants = participants.map((x, i) => (i === editingIndex ? entry : x));
@@ -163,8 +226,8 @@
 		return true;
 	}
 
-	function addAnotherPerson() {
-		if (addCurrentEntry()) {
+	async function addAnotherPerson() {
+		if (await addCurrentEntry()) {
 			toastSuccess('Added — enter the next person');
 		}
 	}
@@ -179,6 +242,7 @@
 		referralSource = p.referralSource;
 		referralOther = p.referralOther;
 		mailingAddress = p.mailingAddress;
+		emailStatus = p.isExisting ? 'registered' : 'new';
 		editingIndex = i;
 		formErrors = {};
 		scrollTop();
@@ -196,9 +260,9 @@
 	}
 
 	// Step 1 -> billing (or straight to review for a single participant)
-	function proceedFromPeople() {
+	async function proceedFromPeople() {
 		if (entryHasInput()) {
-			if (!addCurrentEntry()) return;
+			if (!(await addCurrentEntry())) return;
 		}
 		if (participants.length === 0) {
 			toastError('Please add at least one participant');
@@ -247,7 +311,7 @@
 			return { name: organizerName.trim(), email: organizerEmail.trim().toLowerCase() };
 		}
 		const p = participants[billingParticipantIndex];
-		return p ? { name: `${p.firstName} ${p.surname}`, email: p.email } : { name: '', email: '' };
+		return p ? { name: displayName(p), email: p.email } : { name: '', email: '' };
 	});
 
 	// Mount Stripe Embedded Checkout into the page (real Stripe only)
@@ -472,7 +536,7 @@
 								Register for this course
 							</h1>
 							<p class="mt-1 text-sm text-gray-500">
-								Enter a participant's details. Enrolling a group? Add each person below.
+								Start with the participant's email — if they already have an account we'll just add them. Enrolling a group? Add each person below.
 							</p>
 
 							<!-- Participants already added -->
@@ -483,8 +547,9 @@
 											class:ring-2={editingIndex === i}
 											style={editingIndex === i ? `--tw-ring-color: ${accentDark};` : ''}>
 											<div class="min-w-0">
-												<p class="truncate text-sm font-medium text-gray-900">{p.firstName} {p.surname}</p>
-												<p class="truncate text-xs text-gray-500">{p.email}</p>
+												<p class="truncate text-sm font-medium text-gray-900">{displayName(p)}</p>
+												{#if !p.isExisting}<p class="truncate text-xs text-gray-500">{p.email}</p>{/if}
+												{#if p.isExisting}<p class="text-xs font-medium text-green-600">Has an account — they'll sign in</p>{/if}
 											</div>
 											<div class="flex shrink-0 items-center gap-2">
 												<button type="button" class="text-xs font-medium text-gray-500 hover:text-gray-800" onclick={() => editParticipant(i)}>
@@ -508,42 +573,7 @@
 										Editing participant {editingIndex + 1}
 									</p>
 								{/if}
-								<!-- Name fields -->
-								<div class="grid gap-3 sm:grid-cols-2">
-									<div>
-										<label for="firstName" class="block text-sm font-medium text-gray-900">
-											First Name <span class="text-red-500">*</span>
-										</label>
-										<input
-											type="text"
-											id="firstName"
-											bind:value={firstName}
-											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-											class:border-red-500={formErrors.firstName}
-										/>
-										{#if formErrors.firstName}
-											<p class="mt-1 text-xs text-red-500">{formErrors.firstName}</p>
-										{/if}
-									</div>
-
-									<div>
-										<label for="surname" class="block text-sm font-medium text-gray-900">
-											Surname <span class="text-red-500">*</span>
-										</label>
-										<input
-											type="text"
-											id="surname"
-											bind:value={surname}
-											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-											class:border-red-500={formErrors.surname}
-										/>
-										{#if formErrors.surname}
-											<p class="mt-1 text-xs text-red-500">{formErrors.surname}</p>
-										{/if}
-									</div>
-								</div>
-
-								<!-- Email -->
+								<!-- Email (first) -->
 								<div>
 									<label for="email" class="block text-sm font-medium text-gray-900">
 										Email <span class="text-red-500">*</span>
@@ -552,59 +582,76 @@
 										type="email"
 										id="email"
 										bind:value={email}
+										oninput={onEmailInput}
+										onblur={runEmailCheck}
 										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
 										class:border-red-500={formErrors.email}
 									/>
 									{#if formErrors.email}
 										<p class="mt-1 text-xs text-red-500">{formErrors.email}</p>
 									{/if}
-								</div>
-
-								<!-- Phone -->
-								<div>
-									<label for="phone" class="block text-sm font-medium text-gray-900">
-										Phone <span class="text-red-500">*</span>
-									</label>
-									<input
-										type="tel"
-										id="phone"
-										bind:value={phone}
-										placeholder="04XX XXX XXX"
-										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-										class:border-red-500={formErrors.phone}
-									/>
-									{#if formErrors.phone}
-										<p class="mt-1 text-xs text-red-500">{formErrors.phone}</p>
+									{#if emailStatus === 'checking'}
+										<p class="mt-1 text-xs text-gray-400">Checking…</p>
+									{:else if emailStatus === 'registered'}
+										<p class="mt-1 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
+											✓ We found an account for this email. We'll add them — no other details needed; they'll sign in with their existing account.
+										</p>
 									{/if}
 								</div>
 
-								<!-- Parish -->
-								<div>
-									<label for="parishOther" class="block text-sm font-medium text-gray-900">
-										Parish or Community
-									</label>
-									<input
-										type="text"
-										id="parishOther"
-										bind:value={parishOther}
-										placeholder="Parish or community (optional)"
-										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-									/>
-								</div>
+								<!-- Details only needed for a new account -->
+								{#if emailStatus !== 'registered'}
+									<!-- Name fields -->
+									<div class="grid gap-3 sm:grid-cols-2">
+										<div>
+											<label for="firstName" class="block text-sm font-medium text-gray-900">
+												First Name <span class="text-red-500">*</span>
+											</label>
+											<input type="text" id="firstName" bind:value={firstName}
+												class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+												class:border-red-500={formErrors.firstName} />
+											{#if formErrors.firstName}<p class="mt-1 text-xs text-red-500">{formErrors.firstName}</p>{/if}
+										</div>
+										<div>
+											<label for="surname" class="block text-sm font-medium text-gray-900">
+												Surname <span class="text-red-500">*</span>
+											</label>
+											<input type="text" id="surname" bind:value={surname}
+												class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+												class:border-red-500={formErrors.surname} />
+											{#if formErrors.surname}<p class="mt-1 text-xs text-red-500">{formErrors.surname}</p>{/if}
+										</div>
+									</div>
 
-								<!-- Mailing address -->
-								<div>
-									<label for="mailingAddress" class="block text-sm font-medium text-gray-900">
-										Mailing Address
-									</label>
-									<textarea
-										id="mailingAddress"
-										bind:value={mailingAddress}
-										rows="2"
-										placeholder="Postal address (optional)"
-										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
-									></textarea>
-								</div>
+									<!-- Phone -->
+									<div>
+										<label for="phone" class="block text-sm font-medium text-gray-900">
+											Phone <span class="text-red-500">*</span>
+										</label>
+										<input type="tel" id="phone" bind:value={phone} placeholder="04XX XXX XXX"
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+											class:border-red-500={formErrors.phone} />
+										{#if formErrors.phone}<p class="mt-1 text-xs text-red-500">{formErrors.phone}</p>{/if}
+									</div>
+
+									<!-- Parish -->
+									<div>
+										<label for="parishOther" class="block text-sm font-medium text-gray-900">
+											Parish or Community
+										</label>
+										<input type="text" id="parishOther" bind:value={parishOther} placeholder="Parish or community (optional)"
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none" />
+									</div>
+
+									<!-- Mailing address -->
+									<div>
+										<label for="mailingAddress" class="block text-sm font-medium text-gray-900">
+											Mailing Address
+										</label>
+										<textarea id="mailingAddress" bind:value={mailingAddress} rows="2" placeholder="Postal address (optional)"
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"></textarea>
+									</div>
+								{/if}
 
 								<!-- Hub / Location selection (only when participants choose; a
 								     locked/preselected hub shows in the summary panel instead). -->
@@ -678,7 +725,7 @@
 											onchange={() => { billingMode = 'participant'; billingParticipantIndex = i; }}
 										/>
 										<span class="min-w-0">
-											<span class="block truncate text-sm font-medium text-gray-900">{p.firstName} {p.surname}</span>
+											<span class="block truncate text-sm font-medium text-gray-900">{displayName(p)}</span>
 											<span class="block truncate text-xs text-gray-500">{p.email}</span>
 										</span>
 									</label>
@@ -774,7 +821,7 @@
 									{#each participants as p}
 										<li class="flex items-center justify-between gap-3 px-4 py-2.5">
 											<span class="min-w-0">
-												<span class="block truncate text-sm font-medium text-gray-900">{p.firstName} {p.surname}</span>
+												<span class="block truncate text-sm font-medium text-gray-900">{displayName(p)}</span>
 												<span class="block truncate text-xs text-gray-500">{p.email}</span>
 											</span>
 										</li>
