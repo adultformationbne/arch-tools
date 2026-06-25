@@ -3,9 +3,12 @@
 
 	/**
 	 * Flow types determine the steps shown:
-	 * - free_auto: Register → Set Password (2 steps)
-	 * - free_approval: Register → Awaiting Approval → Set Password (3 steps)
-	 * - paid: Register → Payment → Set Password (3 steps)
+	 * - free_auto: Register → Done (2 steps)
+	 * - free_approval: Register → Awaiting Approval → Done (3 steps)
+	 * - paid: Register → Payment → Done (3 steps)
+	 *
+	 * The final step is "Done" (order complete / enrolled), NOT "Set Password":
+	 * the registrant is auto-signed-in, and password setup is optional/deferred.
 	 */
 	type FlowType = 'free_auto' | 'free_approval' | 'paid';
 
@@ -22,24 +25,24 @@
 			case 'free_auto':
 				return [
 					{ label: 'Register', shortLabel: 'Register' },
-					{ label: 'Set Password', shortLabel: 'Password' }
+					{ label: 'Done', shortLabel: 'Done' }
 				];
 			case 'free_approval':
 				return [
 					{ label: 'Register', shortLabel: 'Register' },
 					{ label: 'Awaiting Approval', shortLabel: 'Approval' },
-					{ label: 'Set Password', shortLabel: 'Password' }
+					{ label: 'Done', shortLabel: 'Done' }
 				];
 			case 'paid':
 				return [
 					{ label: 'Register', shortLabel: 'Register' },
 					{ label: 'Payment', shortLabel: 'Payment' },
-					{ label: 'Set Password', shortLabel: 'Password' }
+					{ label: 'Done', shortLabel: 'Done' }
 				];
 			default:
 				return [
 					{ label: 'Register', shortLabel: 'Register' },
-					{ label: 'Set Password', shortLabel: 'Password' }
+					{ label: 'Done', shortLabel: 'Done' }
 				];
 		}
 	});

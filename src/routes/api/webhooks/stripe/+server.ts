@@ -261,6 +261,16 @@ async function handleBatchCheckoutCompleted(
 		)
 	);
 
+	// Notify hub coordinators of each new hub enrolment (no-op for non-hub rows).
+	await Promise.allSettled(
+		enrollments.map((e) =>
+			CourseMutations.notifyHubCoordinatorsOfEnrollment({
+				enrollmentId: e.enrollment_id,
+				siteUrl: PUBLIC_SITE_URL
+			})
+		)
+	);
+
 	// Branded receipt to the billing contact (the payer) via Resend.
 	await CourseMutations.sendPaymentReceipt({
 		stripeSessionId: sessionId,

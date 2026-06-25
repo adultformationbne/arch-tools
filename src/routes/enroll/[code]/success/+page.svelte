@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckCircle, Loader2 } from '$lib/icons';
+	import { CheckCircle, Loader2, ArrowRight, FileText, Mail } from '$lib/icons';
 
 	let { data } = $props();
 
@@ -22,9 +22,9 @@
 				</div>
 				<h1 class="text-2xl font-bold text-gray-900">
 					{#if data.type === 'paid'}
-						Payment Successful!
+						Order complete
 					{:else}
-						You're Enrolled!
+						You're enrolled!
 					{/if}
 				</h1>
 				<p class="mt-2 text-gray-600">
@@ -58,25 +58,48 @@
 				</div>
 			</div>
 
-			{#if data.organizerConfirmation}
-				<!-- Non-attending organiser paid for the group -->
-				<div class="border-t pt-6 text-center">
-					<h2 class="mb-2 text-lg font-semibold text-gray-900">Invitations sent</h2>
-					<p class="text-sm text-gray-600">
+			<!-- "Everyone has been emailed" — only when there are other participants -->
+			{#if data.invitedCount > 0}
+				<div class="mb-4 flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+					<Mail class="mt-0.5 h-4 w-4 flex-shrink-0" />
+					<span>
 						We've emailed a sign-in link to
-						{#if data.participantCount}
-							all {data.participantCount} participants.
-						{:else}
-							each participant.
-						{/if}
+						{data.invitedCount === 1 ? 'the other participant' : `all ${data.invitedCount} other participants`}.
 						They can sign in or set up their account from that link.
-					</p>
-					<p class="mt-3 text-sm text-gray-500">
-						A receipt has been sent to <span class="font-medium">{data.email}</span>.
-					</p>
+					</span>
 				</div>
+			{/if}
+
+			<!-- Invoice link (paid only) -->
+			{#if data.invoiceUrl}
+				<a
+					href={data.invoiceUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="mb-4 flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+				>
+					<FileText class="h-4 w-4" />
+					View invoice / receipt
+				</a>
+			{/if}
+
+			{#if data.organizerConfirmation}
+				<!-- Non-attending organiser paid for the group: no course to continue to -->
+				<div class="border-t pt-4 text-center text-sm text-gray-500">
+					A receipt has been sent to <span class="font-medium">{data.email}</span>.
+				</div>
+			{:else if data.orderComplete}
+				<!-- Attending billing participant: continue into their course -->
+				<a
+					href="/courses/{data.courseSlug}"
+					class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:opacity-90"
+					style="background-color: {accentDark}"
+				>
+					Continue to Course
+					<ArrowRight class="h-5 w-5" />
+				</a>
 			{:else}
-				<!-- Payer interstitial: the load function signs them in and redirects. -->
+				<!-- Fallback interstitial (sign-in being established) -->
 				<div class="border-t pt-6 text-center">
 					<div class="flex items-center justify-center gap-2 text-gray-600">
 						<Loader2 class="h-5 w-5 animate-spin" style="color: {accentDark}" />

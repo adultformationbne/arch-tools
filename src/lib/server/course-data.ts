@@ -3072,6 +3072,132 @@ export const CourseMutations = {
 		}
 	},
 
+
+	/**
+	 * Notify a hub's coordinator(s) when a new participant enrols into that hub.
+	 * No-op for enrollments without a hub (in-person / main link). Sends one email
+	 * per coordinator: who just enrolled + the hub's current headcount (incl. coords).
+	 */
+	async notifyHubCoordinatorsOfEnrollment(params: { enrollmentId: string; siteUrl: string }) {
+		const { enrollmentId, siteUrl } = params;
+
+		try {
+			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					id, email, full_name, hub_id, cohort_id,
+					hub:hub_id ( name ),
+					cohort:cohort_id!inner (
+						name,
+						module:module_id!inner (
+							name,
+							course:course_id!inner ( id, name, slug, settings, email_branding_config )
+						)
+					)
+				`)
+				.eq('id', enrollmentId)
+				.single();
+
+			if (enrollmentError || !enrollment) {
+				console.error('notifyHubCoordinators: enrollment not found', enrollmentError);
+				return { success: false, error: 'Enrollment not found' };
+			}
+
+			// Only hub enrollments trigger this notification.
+			if (!enrollment.hub_id) return { success: true, skipped: 'no_hub' };
+
+			const hub = enrollment.hub as any;
+			const cohort = enrollment.cohort as any;
+			const module = cohort?.module as any;
+			const course = module?.course as any;
+			if (!course) return { success: false, error: 'Course not found' };
+
+			// Coordinators for this hub in this cohort (exclude the person who just enrolled).
+			const { data: coordinators } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('email, full_name')
+				.eq('cohort_id', enrollment.cohort_id)
+				.eq('hub_id', enrollment.hub_id)
+				.eq('role', 'coordinator')
+				.neq('status', 'withdrawn')
+				.neq('id', enrollment.id);
+
+			if (!coordinators || coordinators.length === 0) return { success: true, skipped: 'no_coordinators' };
+
+			// Current hub headcount (everyone, including coordinators), excluding withdrawn.
+			const { count: hubCount } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('id', { count: 'exact', head: true })
+				.eq('cohort_id', enrollment.cohort_id)
+				.eq('hub_id', enrollment.hub_id)
+				.neq('status', 'withdrawn');
+
+			const total = hubCount ?? 0;
+			const hubName = hub?.name || 'your hub';
+			const newName = enrollment.full_name || 'A new participant';
+
+			const { buildVariableContext, sendEmail, buildCourseFromEmail, createEmailButton } =
+				await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const hubUrl = course.slug ? `${siteUrl}/admin/courses/${course.slug}/hubs` : siteUrl;
+
+			const results = await Promise.allSettled(
+				coordinators.map(async (coord) => {
+					const variables = buildVariableContext({
+						enrollment: { full_name: coord.full_name, email: coord.email },
+						course: { name: course.name, slug: course.slug, settings: course.settings, email_branding_config: course.email_branding_config },
+						cohort: cohort ? { name: cohort.name } : null,
+						siteUrl
+					});
+					const viewButton = createEmailButton('View Hub', hubUrl, courseColors.accentDark);
+					const bodyContent = `
+						<h2>New enrolment in ${hubName}</h2>
+						<p>Hi ${variables.firstName || 'there'},</p>
+						<p><strong>${newName}</strong> has enrolled in <strong>${hubName}</strong>${cohort?.name ? ` (${cohort.name})` : ''}.</p>
+						<p>You now have <strong>${total}</strong> ${total === 1 ? 'person' : 'people'} enrolled in this hub (including hub coordinators).</p>
+						${viewButton}
+					`;
+					const compiledHtml = generateEmailFromMjml({
+						bodyContent,
+						courseName: course.name,
+						logoUrl: courseLogoUrl,
+						colors: courseColors,
+						previewText: `${newName} enrolled in ${hubName}`
+					});
+					return sendEmail({
+						to: coord.email,
+						subject: `New enrolment in ${hubName} — ${newName}`,
+						html: compiledHtml,
+						emailType: 'hub_enrollment_notification',
+						fromEmail: courseFromEmail,
+						replyTo: course.email_branding_config?.reply_to_email,
+						metadata: { context: 'course', course_id: course.id, enrollment_id: enrollmentId, hub_id: enrollment.hub_id },
+						resendApiKey: RESEND_API_KEY,
+						supabase: supabaseAdmin
+					});
+				})
+			);
+
+			const sent = results.filter((r) => r.status === 'fulfilled').length;
+			return { success: true, notified: sent };
+		} catch (err) {
+			console.error('Error notifying hub coordinators:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
 	/**
 	 * Send a course-branded payment receipt (via Resend) to the payer after a
 	 * successful Stripe checkout. We send this ourselves instead of enabling

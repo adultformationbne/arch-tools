@@ -396,11 +396,21 @@ async function handleFreeBatch(params: {
 		)
 	);
 
+	// Notify hub coordinators of each new hub enrolment (no-op for non-hub rows).
+	await Promise.allSettled(
+		created.map((c) =>
+			CourseMutations.notifyHubCoordinatorsOfEnrollment({
+				enrollmentId: c.enrollmentId,
+				siteUrl: PUBLIC_SITE_URL
+			})
+		)
+	);
+
 	if (billingIsParticipant) {
 		const payer = created[billingContact.participantIndex as number];
 		return json({
 			success: true,
-			successUrl: `/enroll/${link.code}/success?enrollment_id=${payer.enrollmentId}`
+			successUrl: `/enroll/${link.code}/success?enrollment_id=${payer.enrollmentId}&group=${participants.length}`
 		});
 	}
 
