@@ -18,6 +18,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			code,
 			is_active,
 			bypass_enrollment_window,
+			show_hub_selector,
 			max_uses,
 			uses_count,
 			price_cents,
@@ -134,12 +135,16 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 	});
 	const basePricing = pricing;
 
-	// Hubs offered for THIS cohort (admins opt hubs in per cohort via cohorts_hubs).
-	// No rows = in-person only, so no hub selector is shown.
-	const { data: cohortHubs } = await supabaseAdmin
-		.from('cohorts_hubs')
-		.select('hub:courses_hubs(id, name, slug, location)')
-		.eq('cohort_id', cohort.id);
+	// Hub selector only appears on a dedicated "hub link" (show_hub_selector). The
+	// main link — and any other link — never shows it, even if the cohort has hubs.
+	// A hub-locked link (hub_id) shows its single hub via `lockedHubId` instead.
+	const { data: cohortHubs } =
+		link.show_hub_selector && !link.hub_id
+			? await supabaseAdmin
+					.from('cohorts_hubs')
+					.select('hub:courses_hubs(id, name, slug, location)')
+					.eq('cohort_id', cohort.id)
+			: { data: [] as { hub: unknown }[] };
 
 	// Hub no longer affects price, so every hub shares the cohort/link price.
 	const hubs = (cohortHubs || [])

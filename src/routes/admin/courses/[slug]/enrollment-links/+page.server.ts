@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 				uses_count,
 				price_cents,
 				bypass_enrollment_window,
+				show_hub_selector,
 				cohort_id,
 				hub_id,
 				created_at,

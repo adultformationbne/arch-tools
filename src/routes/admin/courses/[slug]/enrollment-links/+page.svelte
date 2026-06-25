@@ -33,6 +33,7 @@
 	// Create form state
 	let selectedCohortId = $state('');
 	let selectedHubId = $state('');
+	let showHubSelector = $state(false);
 	let linkName = $state('');
 	let customPrice = $state('');
 	let maxUses = $state('');
@@ -50,7 +51,8 @@
 			link.name === MAIN_LINK_NAME &&
 			link.hub_id === null &&
 			link.price_cents === null &&
-			link.bypass_enrollment_window === false
+			link.bypass_enrollment_window === false &&
+			link.show_hub_selector !== true
 		);
 	}
 
@@ -90,6 +92,7 @@
 
 	function resetCreateForm() {
 		selectedHubId = '';
+		showHubSelector = false;
 		linkName = '';
 		customPrice = '';
 		maxUses = '';
@@ -119,7 +122,8 @@
 			await apiPost(`/admin/courses/${$page.params.slug}/enrollment-links/api`, {
 				action: 'create',
 				cohortId: selectedCohortId,
-				hubId: selectedHubId || null,
+				hubId: showHubSelector ? null : selectedHubId || null,
+				showHubSelector,
 				name: linkName || null,
 				priceCents: hasPriceOverride ? Math.round(parseFloat(customPrice) * 100) : null,
 				maxUses: maxUses ? parseInt(maxUses) : null,
@@ -323,6 +327,12 @@
 						Hub: {link.hub.name}
 					</span>
 				{/if}
+				{#if link.show_hub_selector}
+					<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+						<MapPin class="h-3 w-3" />
+						Hub choice
+					</span>
+				{/if}
 				{#if link.price_cents !== null}
 					<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
 						<Tag class="h-3 w-3" />
@@ -443,24 +453,42 @@
 					</select>
 				</div>
 
-				<!-- Hub override (optional) -->
-				{#if data.hubs.length > 0}
+				<!-- Hub handling -->
+				<div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+					<label class="flex items-start gap-2 text-sm font-medium text-gray-700">
+						<input
+							type="checkbox"
+							bind:checked={showHubSelector}
+							class="mt-0.5 h-4 w-4 rounded border-gray-300"
+						/>
+						<span>
+							Show a hub dropdown — let participants pick their hub
+						</span>
+					</label>
+					<p class="mt-1 pl-6 text-xs text-gray-500">
+						The dropdown lists the hubs assigned to this cohort (set them in Cohort Settings).
+						Pair this with a price override below for a discounted hub rate.
+					</p>
+				</div>
+
+				<!-- Single-hub lock (only when not showing a dropdown) -->
+				{#if !showHubSelector && data.hubs.length > 0}
 					<div>
 						<label for="hub" class="mb-1 block text-sm font-medium text-gray-700">
-							Hub override (optional)
+							Lock to one hub (optional)
 						</label>
 						<select
 							id="hub"
 							bind:value={selectedHubId}
 							class="block w-full rounded-lg border border-gray-300 px-3 py-2"
 						>
-							<option value="">Use cohort hubs (no override)</option>
+							<option value="">No hub (in-person / cohort default)</option>
 							{#each data.hubs as hub}
 								<option value={hub.id}>{hub.name}</option>
 							{/each}
 						</select>
 						<p class="mt-1 text-xs text-gray-500">
-							Locks this link to a specific hub and auto-assigns enrollees to it.
+							Locks this link to a single hub and auto-assigns every enrollee to it.
 						</p>
 					</div>
 				{/if}

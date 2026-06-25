@@ -737,6 +737,7 @@ export type Database = {
           max_uses: number | null
           name: string | null
           price_cents: number | null
+          show_hub_selector: boolean
           updated_at: string | null
           uses_count: number | null
         }
@@ -752,6 +753,7 @@ export type Database = {
           max_uses?: number | null
           name?: string | null
           price_cents?: number | null
+          show_hub_selector?: boolean
           updated_at?: string | null
           uses_count?: number | null
         }
@@ -767,6 +769,7 @@ export type Database = {
           max_uses?: number | null
           name?: string | null
           price_cents?: number | null
+          show_hub_selector?: boolean
           updated_at?: string | null
           uses_count?: number | null
         }

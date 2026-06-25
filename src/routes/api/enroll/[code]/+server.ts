@@ -147,6 +147,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			code,
 			is_active,
 			bypass_enrollment_window,
+			show_hub_selector,
 			max_uses,
 			uses_count,
 			price_cents,
@@ -248,10 +249,11 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		}
 	}
 
-	// Resolve effective hub: a hub-locked link wins; otherwise the group's selection,
-	// which must be a hub that's been offered for this cohort (cohorts_hubs).
+	// Resolve effective hub: a hub-locked link wins; otherwise — only on a hub link
+	// (show_hub_selector) — the group's selection, which must be a hub offered for
+	// this cohort (cohorts_hubs). On the main link a submitted hubId is ignored.
 	let effectiveHubId: string | null = link.hub_id || null;
-	if (!link.hub_id && body.hubId) {
+	if (!link.hub_id && link.show_hub_selector && body.hubId) {
 		const { data: offered } = await supabaseAdmin
 			.from('cohorts_hubs')
 			.select('hub_id')

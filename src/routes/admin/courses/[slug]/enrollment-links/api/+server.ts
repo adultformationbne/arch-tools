@@ -63,8 +63,14 @@ async function handleCreate(body: {
 	priceCents?: number | null;
 	maxUses?: number | null;
 	bypassEnrollmentWindow?: boolean;
+	showHubSelector?: boolean;
 }, courseSettings: ReturnType<typeof getCourseSettings>) {
-	const { cohortId, hubId, name, priceCents, maxUses, bypassEnrollmentWindow } = body;
+	const { cohortId, name, priceCents, maxUses, bypassEnrollmentWindow } = body;
+
+	// A "hub link" shows a dropdown of the cohort's hubs; it can't also lock to a
+	// single hub, so the dropdown wins and any single-hub override is dropped.
+	const showHubSelector = body.showHubSelector === true;
+	const hubId = showHubSelector ? null : body.hubId;
 
 	if (!cohortId) {
 		throw error(400, 'Cohort ID is required');
@@ -117,6 +123,7 @@ async function handleCreate(body: {
 			price_cents: priceOverride,
 			max_uses: maxUses || null,
 			bypass_enrollment_window: bypassEnrollmentWindow === true,
+			show_hub_selector: showHubSelector,
 			is_active: true
 		})
 		.select('id, code')
