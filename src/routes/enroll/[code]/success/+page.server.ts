@@ -3,7 +3,6 @@ import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { getCheckoutSession } from '$lib/server/stripe';
 import { CourseMutations } from '$lib/server/course-data';
-import { autoSignInByEmail } from '$lib/server/auto-signin';
 
 /**
  * Build the smart-login URL used as a fallback when programmatic sign-in fails.
@@ -182,10 +181,10 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 };
 
 /**
- * Ensure the payer's account exists, sign them in, and return the data for the
- * order-complete confirmation page (which carries a "Continue to Course" button).
- * Falls back to the smart-login flow only if programmatic sign-in can't be
- * established (e.g. an existing account that requires a password / OTP).
+ * Ensure the payer's account exists, then either show the order-complete page
+ * (only if the visitor is ALREADY signed in as this email) or route them to the
+ * smart-login / OTP flow to verify ownership of the email before granting access.
+ * We never mint a session from an email alone here — see the SECURITY note below.
  */
 async function completeForPayer(params: {
 	locals: App.Locals;
@@ -206,11 +205,17 @@ async function completeForPayer(params: {
 
 	await CourseMutations.ensureParticipantAccount({ email, fullName: name });
 
-	const signedIn = await autoSignInByEmail(locals.supabase, email);
+	// SECURITY: never auto-sign-in by email on this public, unauthenticated page.
+	// Doing so would let anyone who types another person's email take over that
+	// account with no email verification. Only show the signed-in "order complete"
+	// view if the CURRENT session already belongs to this email (ownership already
+	// proven). Everyone else is routed to the smart-login / OTP flow to verify the
+	// email before they get any account access.
+	const session = await locals.safeGetSession?.();
+	const alreadyThisUser =
+		!!session?.user?.email && session.user.email.toLowerCase() === email;
 
-	// Couldn't establish a session (e.g. existing account with a password) — route
-	// them through the normal smart-login flow, which lands them in the course.
-	if (!signedIn) {
+	if (!alreadyThisUser) {
 		throw redirect(303, smartLoginUrl(origin, slug, email));
 	}
 

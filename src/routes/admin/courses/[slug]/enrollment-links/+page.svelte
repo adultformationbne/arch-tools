@@ -117,23 +117,26 @@
 			const hasPriceOverride =
 				courseFeatures.acceptPayments && customPrice !== '' && customPrice !== null;
 
-			await apiPost(`/admin/courses/${$page.params.slug}/enrollment-links/api`, {
-				action: 'create',
-				cohortId: selectedCohortId,
-				hubId: showHubSelector ? null : selectedHubId || null,
-				showHubSelector,
-				name: linkName || null,
-				priceCents: hasPriceOverride ? Math.round(parseFloat(customPrice) * 100) : null,
-				maxUses: maxUses ? parseInt(maxUses) : null,
-				bypassEnrollmentWindow
-			});
+			await apiPost(
+				`/admin/courses/${$page.params.slug}/enrollment-links/api`,
+				{
+					action: 'create',
+					cohortId: selectedCohortId,
+					hubId: showHubSelector ? null : selectedHubId || null,
+					showHubSelector,
+					name: linkName || null,
+					priceCents: hasPriceOverride ? Math.round(parseFloat(customPrice) * 100) : null,
+					maxUses: maxUses ? parseInt(maxUses) : null,
+					bypassEnrollmentWindow
+				},
+				{ successMessage: 'Enrollment link created' }
+			);
 
-			toastSuccess('Enrollment link created');
 			showCreateModal = false;
 			resetCreateForm();
 			invalidateAll();
-		} catch (err) {
-			toastError(err instanceof Error ? err.message : 'Failed to create link');
+		} catch {
+			// apiPost already surfaces the error toast.
 		} finally {
 			isCreating = false;
 		}
@@ -141,16 +144,19 @@
 
 	async function toggleLinkActive(linkId: string, currentActive: boolean) {
 		try {
-			await apiPost(`/admin/courses/${$page.params.slug}/enrollment-links/api`, {
-				action: 'toggle',
-				linkId,
-				isActive: !currentActive
-			});
+			await apiPost(
+				`/admin/courses/${$page.params.slug}/enrollment-links/api`,
+				{
+					action: 'toggle',
+					linkId,
+					isActive: !currentActive
+				},
+				{ successMessage: currentActive ? 'Link deactivated' : 'Link activated' }
+			);
 
-			toastSuccess(currentActive ? 'Link deactivated' : 'Link activated');
 			invalidateAll();
-		} catch (err) {
-			toastError(err instanceof Error ? err.message : 'Failed to update link');
+		} catch {
+			// apiPost already surfaces the error toast.
 		}
 	}
 
@@ -159,15 +165,16 @@
 
 		try {
 			await apiDelete(
-				`/admin/courses/${$page.params.slug}/enrollment-links/api?linkId=${linkToDelete}`
+				`/admin/courses/${$page.params.slug}/enrollment-links/api?linkId=${linkToDelete}`,
+				null,
+				{ successMessage: 'Link deleted' }
 			);
 
-			toastSuccess('Link deleted');
 			showDeleteConfirm = false;
 			linkToDelete = null;
 			invalidateAll();
-		} catch (err) {
-			toastError(err instanceof Error ? err.message : 'Failed to delete link');
+		} catch {
+			// apiDelete already surfaces the error toast.
 		}
 	}
 
