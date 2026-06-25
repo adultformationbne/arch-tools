@@ -1377,7 +1377,7 @@ export const CourseMutations = {
 		isFree?: boolean;
 		priceCents?: number | null;
 		currency?: string;
-		enrollmentType?: 'admin_only' | 'open' | 'approval_required';
+		enrollmentType?: 'admin_only' | 'open' | 'auto_approve' | 'approval_required';
 	}) {
 		const { name, moduleId, startDate, endDate, isFree, priceCents, currency, enrollmentType } = params;
 
@@ -1398,8 +1398,7 @@ export const CourseMutations = {
 				end_date: calculatedEndDate,
 				current_session: 0,
 				status: 'draft',
-				// Pricing fields
-				is_free: isFree ?? false,
+				// Pricing fields (is_free column is retired — do not write it)
 				price_cents: isFree ? null : (priceCents ?? null),
 				currency: currency ?? 'AUD',
 				enrollment_type: enrollmentType ?? 'admin_only',
@@ -1432,7 +1431,7 @@ export const CourseMutations = {
 		isFree?: boolean;
 		priceCents?: number | null;
 		currency?: string;
-		enrollmentType?: 'admin_only' | 'open' | 'approval_required';
+		enrollmentType?: 'admin_only' | 'open' | 'auto_approve' | 'approval_required';
 	}) {
 		const { cohortId, name, moduleId, startDate, endDate, currentSession, actorName, isFree, priceCents, currency, enrollmentType } =
 			params;
@@ -1455,7 +1454,7 @@ export const CourseMutations = {
 		if (currentSession !== undefined) updateData.current_session = currentSession;
 		// Pricing fields
 		if (isFree !== undefined) {
-			updateData.is_free = isFree;
+			// is_free column retired — never written (price 0/null = free)
 			if (isFree) updateData.price_cents = null; // Clear price if free
 		}
 		if (priceCents !== undefined) updateData.price_cents = priceCents;
@@ -2842,17 +2841,93 @@ export const CourseMutations = {
 	},
 
 	/**
-	 * Send a course-branded "claim your account" invitation to a participant who
+	 * Idempotently ensure an auth.users + user_profiles row exists for this email
+	 * as a PENDING participant (no password, password_setup_completed:false).
+	 * Mirrors the bulk-CSV-import approach: the account is created up-front so the
+	 * normal smart-login / OTP flow recognises the person. If the user already
+	 * exists, this is a no-op. Returns the auth user id (or null on failure).
+	 */
+	async ensureParticipantAccount(params: { email: string; fullName?: string | null }): Promise<string | null> {
+		const email = params.email.trim().toLowerCase();
+		const fullName = (params.fullName || '').trim() || null;
+
+		// Already have a profile? Just make sure it carries the participant module
+		// (idempotent — handles people who already had an account for another reason).
+		const { data: existingProfile } = await supabaseAdmin
+			.from('user_profiles')
+			.select('id, modules')
+			.eq('email', email)
+			.maybeSingle();
+
+		if (existingProfile?.id) {
+			const mods: string[] = existingProfile.modules || [];
+			if (!mods.includes('courses.participant')) {
+				await supabaseAdmin
+					.from('user_profiles')
+					.update({ modules: [...mods, 'courses.participant'] })
+					.eq('id', existingProfile.id);
+			}
+			return existingProfile.id;
+		}
+
+		// Create the pending account the SAME way the CSV bulk import does:
+		// generateLink(type:'invite') provisions the auth user WITHOUT sending
+		// Supabase's own email (we send our own transactional invite). We add
+		// password_setup_completed:false so a participant who is auto-signed-in (the
+		// payer) but never sets a password is still routed through OTP next login.
+		const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+			type: 'invite',
+			email,
+			options: {
+				data: {
+					full_name: fullName,
+					password_setup_completed: false
+				}
+			}
+		});
+
+		if (linkError || !linkData?.user) {
+			// A concurrent create (webhook + success page) can race us. Recover by
+			// looking the profile up again rather than surfacing a hard failure.
+			const { data: recovered } = await supabaseAdmin
+				.from('user_profiles')
+				.select('id')
+				.eq('email', email)
+				.maybeSingle();
+			if (recovered?.id) return recovered.id;
+			console.error('ensureParticipantAccount: failed to create auth user:', linkError);
+			return null;
+		}
+
+		const userId = linkData.user.id;
+
+		// Ensure the profile (a DB trigger may have created it on insert). Matches the
+		// bulk-import profile shape — user_profiles has no `status` column.
+		await supabaseAdmin.from('user_profiles').upsert(
+			{
+				id: userId,
+				email,
+				full_name: fullName,
+				modules: ['courses.participant']
+			},
+			{ onConflict: 'id' }
+		);
+
+		return userId;
+	},
+
+	/**
+	 * Send a course-branded "you've been enrolled" invitation to a participant who
 	 * was enrolled as part of a group (someone else paid / registered them).
-	 * The link carries the enrollment id + claim token so the recipient can set
-	 * their own password on the success page.
+	 * The button links to the normal smart-login URL so the recipient signs in or
+	 * sets up their account via the standard OTP flow (their pending account must
+	 * already exist — see ensureParticipantAccount).
 	 */
 	async sendBatchEnrollmentInvitation(params: {
 		enrollmentId: string;
-		claimToken: string;
 		siteUrl: string;
 	}) {
-		const { enrollmentId, claimToken, siteUrl } = params;
+		const { enrollmentId, siteUrl } = params;
 
 		try {
 			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
@@ -2883,17 +2958,6 @@ export const CourseMutations = {
 
 			if (!course) {
 				return { success: false, error: 'Course not found' };
-			}
-
-			// Resolve the enrollment-link code for the claim URL
-			const { data: linkRow } = await supabaseAdmin
-				.from('courses_enrollment_links')
-				.select('code')
-				.eq('id', enrollment.enrollment_link_id)
-				.single();
-
-			if (!linkRow?.code) {
-				return { success: false, error: 'Enrollment link not found' };
 			}
 
 			const {
@@ -2928,21 +2992,26 @@ export const CourseMutations = {
 				siteUrl
 			});
 
-			const claimUrl = `${siteUrl}/enroll/${linkRow.code}/success?enrollment_id=${enrollmentId}&token=${claimToken}`;
-			const claimButton = createEmailButton('Set Up My Account', claimUrl, courseColors.accentDark);
+			// Route the recipient into the normal smart-login flow: pre-fills their
+			// email and (for a pending account) auto-sends an OTP so they can sign in
+			// or finish setting up their account. No bespoke claim token needed.
+			const loginUrl = course.slug
+				? `${siteUrl}/login?course=${course.slug}&email=${encodeURIComponent(enrollment.email)}&send=true`
+				: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email)}&send=true`;
+			const loginButton = createEmailButton('Sign In / Set Up My Account', loginUrl, courseColors.accentDark);
 
 			const startDateLine = variables.startDate
 				? `<p>The course begins on <strong>${variables.startDate}</strong>.</p>`
 				: '';
 
 			const bodyContent = `
-				<h2>You're enrolled in ${variables.courseName}</h2>
+				<h2>You've been enrolled in ${variables.courseName}</h2>
 				<p>Hi ${variables.firstName || 'there'},</p>
-				<p>You have been registered as a participant in <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}. To get started, set up your account and choose a password using the button below.</p>
+				<p>You have been enrolled as a participant in <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}. Click below to sign in or set up your account.</p>
 				${startDateLine}
-				${claimButton}
+				${loginButton}
 				<p>If the button doesn't work, copy and paste this link into your browser:</p>
-				<p><a href="${claimUrl}">${claimUrl}</a></p>
+				<p><a href="${loginUrl}">${loginUrl}</a></p>
 				<p>If you weren't expecting this invitation, you can safely ignore this email.</p>
 			`;
 

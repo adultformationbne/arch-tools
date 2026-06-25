@@ -18,6 +18,7 @@
 		parishOther: string;
 		referralSource: string;
 		referralOther: string;
+		mailingAddress: string;
 	};
 
 	// Course accent colors from settings
@@ -74,6 +75,7 @@
 	let parishOther = $state('');
 	let referralSource = $state('');
 	let referralOther = $state('');
+	let mailingAddress = $state('');
 
 	let isSubmitting = $state(false);
 	let showPendingApproval = $state(false);
@@ -116,6 +118,7 @@
 		parishOther = '';
 		referralSource = '';
 		referralOther = '';
+		mailingAddress = '';
 		formErrors = {};
 	}
 
@@ -143,7 +146,8 @@
 			phone: phone.trim(),
 			parishOther: parishOther.trim(),
 			referralSource,
-			referralOther: referralOther.trim()
+			referralOther: referralOther.trim(),
+			mailingAddress: mailingAddress.trim()
 		};
 		if (editingIndex !== null) {
 			participants = participants.map((x, i) => (i === editingIndex ? entry : x));
@@ -171,6 +175,7 @@
 		parishOther = p.parishOther;
 		referralSource = p.referralSource;
 		referralOther = p.referralOther;
+		mailingAddress = p.mailingAddress;
 		editingIndex = i;
 		formErrors = {};
 		scrollTop();
@@ -300,7 +305,8 @@
 					parishId: null,
 					parishOther: p.parishOther || null,
 					referralSource: p.referralSource || null,
-					referralOther: p.referralOther || null
+					referralOther: p.referralOther || null,
+					mailingAddress: p.mailingAddress || null
 				})),
 				billingContact:
 					billingMode === 'organizer'
@@ -577,6 +583,20 @@
 										placeholder="Parish or community (optional)"
 										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
 									/>
+								</div>
+
+								<!-- Mailing address -->
+								<div>
+									<label for="mailingAddress" class="block text-sm font-medium text-gray-900">
+										Mailing Address
+									</label>
+									<textarea
+										id="mailingAddress"
+										bind:value={mailingAddress}
+										rows="2"
+										placeholder="Postal address (optional)"
+										class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+									></textarea>
 								</div>
 
 								<!-- Referral source -->

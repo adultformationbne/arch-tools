@@ -375,8 +375,7 @@ export const POST: RequestHandler = async (event) => {
 					moduleId: data.moduleId,
 					startDate: data.startDate,
 					endDate: data.endDate,
-					// Pricing fields
-					isFree: data.isFree,
+					// Pricing fields (is_free retired: price 0/null = free)
 					priceCents: data.priceCents,
 					currency: data.currency,
 					enrollmentType: data.enrollmentType
@@ -413,8 +412,7 @@ export const POST: RequestHandler = async (event) => {
 					endDate: data.endDate,
 					currentSession: data.currentSession,
 					actorName,
-					// Pricing fields
-					isFree: data.isFree,
+					// Pricing fields (is_free retired: price 0/null = free)
 					priceCents: data.priceCents,
 					currency: data.currency,
 					enrollmentType: data.enrollmentType
@@ -528,10 +526,11 @@ export const POST: RequestHandler = async (event) => {
 					throw error(403, 'Cohort does not belong to this course');
 				}
 
+				// Price model: price_cents is the default; 0 (or null) = FREE.
+				// The legacy is_free flag is retired and no longer written.
 				const updateFields: Record<string, any> = {
 					enrollment_type: data.enrollmentType || null,
-					is_free: data.isFree ?? true,
-					price_cents: data.priceCents || null,
+					price_cents: data.priceCents ?? null,
 					currency: data.currency || 'AUD',
 					enrollment_opens_at: data.enrollmentOpensAt ? new Date(data.enrollmentOpensAt).toISOString() : null,
 					enrollment_closes_at: data.enrollmentClosesAt ? new Date(data.enrollmentClosesAt).toISOString() : null,
@@ -552,6 +551,67 @@ export const POST: RequestHandler = async (event) => {
 				return json({
 					success: true,
 					message: 'Enrollment settings updated successfully'
+				});
+			}
+
+			case 'update_cohort_hubs': {
+				// Validate cohort belongs to this course
+				if (!await validateCohortBelongsToCourse(data.cohortId, courseSlug)) {
+					throw error(403, 'Cohort does not belong to this course');
+				}
+
+				const courseId = await getCourseIdFromSlug(courseSlug);
+				if (!courseId) {
+					throw error(404, 'Course not found');
+				}
+
+				const rawHubIds: string[] = Array.isArray(data.hubIds)
+					? (data.hubIds as unknown[]).filter((id): id is string => typeof id === 'string')
+					: [];
+				const requestedHubIds: string[] = [...new Set(rawHubIds)];
+
+				// Validate every requested hub belongs to this cohort's course
+				if (requestedHubIds.length > 0) {
+					const { data: validHubs } = await supabaseAdmin
+						.from('courses_hubs')
+						.select('id')
+						.eq('course_id', courseId)
+						.in('id', requestedHubIds);
+
+					if ((validHubs?.length || 0) !== requestedHubIds.length) {
+						throw error(403, 'One or more hubs do not belong to this course');
+					}
+				}
+
+				// Replace the cohort's hub set: delete existing, insert chosen
+				const { error: deleteError } = await supabaseAdmin
+					.from('cohorts_hubs')
+					.delete()
+					.eq('cohort_id', data.cohortId);
+
+				if (deleteError) {
+					console.error('Failed to clear cohort hubs:', deleteError);
+					throw error(500, 'Failed to update cohort hubs');
+				}
+
+				if (requestedHubIds.length > 0) {
+					const { error: insertError } = await supabaseAdmin
+						.from('cohorts_hubs')
+						.insert(requestedHubIds.map((hubId) => ({
+							cohort_id: data.cohortId,
+							hub_id: hubId
+						})));
+
+					if (insertError) {
+						console.error('Failed to assign cohort hubs:', insertError);
+						throw error(500, 'Failed to update cohort hubs');
+					}
+				}
+
+				invalidateCourseCache(courseSlug);
+				return json({
+					success: true,
+					message: 'Cohort hubs updated successfully'
 				});
 			}
 

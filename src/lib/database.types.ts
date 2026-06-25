@@ -190,11 +190,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cohorts_hubs: {
+        Row: {
+          cohort_id: string
+          created_at: string
+          hub_id: string
+        }
+        Insert: {
+          cohort_id: string
+          created_at?: string
+          hub_id: string
+        }
+        Update: {
+          cohort_id?: string
+          created_at?: string
+          hub_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohorts_hubs_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohorts_hubs_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "courses_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string | null
-          default_currency: string | null
-          default_price_cents: number | null
           description: string | null
           duration_weeks: number | null
           email_branding_config: Json | null
@@ -211,8 +242,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          default_currency?: string | null
-          default_price_cents?: number | null
           description?: string | null
           duration_weeks?: number | null
           email_branding_config?: Json | null
@@ -229,8 +258,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          default_currency?: string | null
-          default_price_cents?: number | null
           description?: string | null
           duration_weeks?: number | null
           email_branding_config?: Json | null
@@ -447,7 +474,6 @@ export type Database = {
           enrollment_opens_at: string | null
           enrollment_type: string | null
           id: string
-          is_free: boolean | null
           max_enrollments: number | null
           module_id: string
           name: string
@@ -468,7 +494,6 @@ export type Database = {
           enrollment_opens_at?: string | null
           enrollment_type?: string | null
           id?: string
-          is_free?: boolean | null
           max_enrollments?: number | null
           module_id: string
           name: string
@@ -489,7 +514,6 @@ export type Database = {
           enrollment_opens_at?: string | null
           enrollment_type?: string | null
           id?: string
-          is_free?: boolean | null
           max_enrollments?: number | null
           module_id?: string
           name?: string
@@ -702,11 +726,11 @@ export type Database = {
       }
       courses_enrollment_links: {
         Row: {
+          bypass_enrollment_window: boolean
           code: string
           cohort_id: string
           created_at: string | null
           created_by: string | null
-          expires_at: string | null
           hub_id: string | null
           id: string
           is_active: boolean | null
@@ -717,11 +741,11 @@ export type Database = {
           uses_count: number | null
         }
         Insert: {
+          bypass_enrollment_window?: boolean
           code: string
           cohort_id: string
           created_at?: string | null
           created_by?: string | null
-          expires_at?: string | null
           hub_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -732,11 +756,11 @@ export type Database = {
           uses_count?: number | null
         }
         Update: {
+          bypass_enrollment_window?: boolean
           code?: string
           cohort_id?: string
           created_at?: string | null
           created_by?: string | null
-          expires_at?: string | null
           hub_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -789,9 +813,14 @@ export type Database = {
           last_login_at: string | null
           last_viewed_at: string | null
           login_count: number | null
+          mailing_address: string | null
           notes: string | null
+          parish_id: string | null
+          parish_other: string | null
           payment_id: string | null
           payment_status: string | null
+          phone: string | null
+          referral_source: string | null
           role: string
           status: string
           stripe_customer_id: string | null
@@ -819,9 +848,14 @@ export type Database = {
           last_login_at?: string | null
           last_viewed_at?: string | null
           login_count?: number | null
+          mailing_address?: string | null
           notes?: string | null
+          parish_id?: string | null
+          parish_other?: string | null
           payment_id?: string | null
           payment_status?: string | null
+          phone?: string | null
+          referral_source?: string | null
           role: string
           status?: string
           stripe_customer_id?: string | null
@@ -849,9 +883,14 @@ export type Database = {
           last_login_at?: string | null
           last_viewed_at?: string | null
           login_count?: number | null
+          mailing_address?: string | null
           notes?: string | null
+          parish_id?: string | null
+          parish_other?: string | null
           payment_id?: string | null
           payment_status?: string | null
+          phone?: string | null
+          referral_source?: string | null
           role?: string
           status?: string
           stripe_customer_id?: string | null
@@ -905,6 +944,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "courses_enrollments_parish_id_fkey"
+            columns: ["parish_id"]
+            isOneToOne: false
+            referencedRelation: "parishes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "courses_enrollments_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
@@ -928,7 +974,6 @@ export type Database = {
           id: string
           location: string | null
           name: string
-          price_cents: number | null
           slug: string | null
           updated_at: string
         }
@@ -939,7 +984,6 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
-          price_cents?: number | null
           slug?: string | null
           updated_at?: string
         }
@@ -950,7 +994,6 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
-          price_cents?: number | null
           slug?: string | null
           updated_at?: string
         }
@@ -2778,38 +2821,27 @@ export type Database = {
       }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
-      safe_create_enrollment:
-        | {
-            Args: {
-              p_cohort_id: string
-              p_email?: string
-              p_enrollment_link_id?: string
-              p_full_name?: string
-              p_hub_id?: string
-              p_payment_id?: string
-              p_payment_status?: string
-              p_role?: string
-              p_status?: string
-              p_user_profile_id?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_claim_token?: string
-              p_cohort_id: string
-              p_email?: string
-              p_enrollment_link_id?: string
-              p_full_name?: string
-              p_hub_id?: string
-              p_payment_id?: string
-              p_payment_status?: string
-              p_role?: string
-              p_status?: string
-              p_user_profile_id?: string
-            }
-            Returns: Json
-          }
+      safe_create_enrollment: {
+        Args: {
+          p_claim_token?: string
+          p_cohort_id: string
+          p_email?: string
+          p_enrollment_link_id?: string
+          p_full_name?: string
+          p_hub_id?: string
+          p_mailing_address?: string
+          p_parish_id?: string
+          p_parish_other?: string
+          p_payment_id?: string
+          p_payment_status?: string
+          p_phone?: string
+          p_referral_source?: string
+          p_role?: string
+          p_status?: string
+          p_user_profile_id?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       dgr_status: "pending" | "submitted" | "approved" | "published"

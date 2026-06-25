@@ -1,87 +1,16 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
-	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
-	import { Loader2, CheckCircle, Eye, EyeOff } from '$lib/icons';
-	import EnrollmentProgressStepper from '$lib/components/EnrollmentProgressStepper.svelte';
-	import FullPageLoadingOverlay from '$lib/components/FullPageLoadingOverlay.svelte';
+	import { CheckCircle, Loader2 } from '$lib/icons';
 
-	let { data, form } = $props();
+	let { data } = $props();
 
 	let accentDark = $derived(data.course?.settings?.theme?.accentDark || '#2563eb');
-
-	let password = $state('');
-	let confirmPassword = $state('');
-	let showPassword = $state(false);
-	let showConfirmPassword = $state(false);
-	let isSubmitting = $state(false);
-	let showLoadingOverlay = $state(false);
-
-	// Determine flow type and current step for progress stepper
-	// Success page is the last step (Password setup)
-	let flowType = $derived(() => {
-		if (data.type === 'paid') return 'paid';
-		// For free enrollments, we're at the final step
-		return 'free_auto';
-	});
-
-	// Current step is the last one (2 for free_auto, 3 for paid)
-	let currentStep = $derived(() => {
-		return data.type === 'paid' ? 3 : 2;
-	});
-
-	// Total steps for display
-	let totalSteps = $derived(() => {
-		return data.type === 'paid' ? 3 : 2;
-	});
-
-	// Password validation
-	let passwordErrors = $derived(() => {
-		const errors: string[] = [];
-		if (password.length > 0 && password.length < 8) {
-			errors.push('At least 8 characters');
-		}
-		if (confirmPassword.length > 0 && password !== confirmPassword) {
-			errors.push('Passwords must match');
-		}
-		return errors;
-	});
-
-	let isValid = $derived(password.length >= 8 && password === confirmPassword);
-
-	// Handle form result
-	$effect(() => {
-		if (form?.success && form?.redirectUrl) {
-			toastSuccess('Account created! Redirecting to your course...');
-			showLoadingOverlay = true;
-			setTimeout(() => {
-				goto(form.redirectUrl);
-			}, 1500);
-		} else if (form?.error) {
-			toastError(form.error);
-			isSubmitting = false;
-			showLoadingOverlay = false;
-		}
-	});
 </script>
 
 <svelte:head>
-	<title>Complete Your Registration | {data.course.name}</title>
+	<title>You're Enrolled | {data.course.name}</title>
 </svelte:head>
 
-<!-- Full page loading overlay -->
-<FullPageLoadingOverlay
-	show={showLoadingOverlay}
-	message="Setting up your account..."
-	subMessage="Redirecting to your course dashboard"
-/>
-
 <div class="flex min-h-screen flex-col bg-gray-50 px-4 py-8 sm:py-12">
-	<!-- Progress stepper -->
-	<div class="mx-auto w-full max-w-md mb-6">
-		<EnrollmentProgressStepper flow={flowType()} currentStep={currentStep()} accentColor={accentDark} />
-	</div>
-
 	<div class="mx-auto w-full max-w-md flex-1 flex flex-col items-stretch sm:items-center sm:justify-center">
 		<div class="w-full rounded-2xl bg-white p-8 shadow-xl">
 			<!-- Success indicator -->
@@ -95,7 +24,7 @@
 					{#if data.type === 'paid'}
 						Payment Successful!
 					{:else}
-						Registration Received!
+						You're Enrolled!
 					{/if}
 				</h1>
 				<p class="mt-2 text-gray-600">
@@ -130,133 +59,33 @@
 			</div>
 
 			{#if data.organizerConfirmation}
-				<!-- Non-attending organiser paid for the group: no password to set -->
+				<!-- Non-attending organiser paid for the group -->
 				<div class="border-t pt-6 text-center">
 					<h2 class="mb-2 text-lg font-semibold text-gray-900">Invitations sent</h2>
 					<p class="text-sm text-gray-600">
-						We've emailed an account-setup link to
+						We've emailed a sign-in link to
 						{#if data.participantCount}
 							all {data.participantCount} participants.
 						{:else}
 							each participant.
 						{/if}
-						They can set their own password and access the course from that link.
+						They can sign in or set up their account from that link.
 					</p>
 					<p class="mt-3 text-sm text-gray-500">
 						A receipt has been sent to <span class="font-medium">{data.email}</span>.
 					</p>
 				</div>
 			{:else}
-			<!-- Password setup form -->
-			<div class="border-t pt-6">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900">Set Your Password</h2>
-				<p class="mb-4 text-sm text-gray-600">
-					Create a password to access your course. You'll use your email and this password to log
-					in.
-				</p>
-
-				<form
-					method="POST"
-					use:enhance={() => {
-						isSubmitting = true;
-						return async ({ update }) => {
-							await update();
-						};
-					}}
-					class="space-y-4"
-				>
-					<!-- Password field -->
-					<div>
-						<label for="password" class="mb-1 block text-sm font-medium text-gray-700">
-							Password
-						</label>
-						<div class="relative">
-							<input
-								type={showPassword ? 'text' : 'password'}
-								id="password"
-								name="password"
-								bind:value={password}
-								minlength="8"
-								required
-								class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-								placeholder="At least 8 characters"
-							/>
-							<button
-								type="button"
-								class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-								onclick={() => (showPassword = !showPassword)}
-							>
-								{#if showPassword}
-									<EyeOff class="h-5 w-5" />
-								{:else}
-									<Eye class="h-5 w-5" />
-								{/if}
-							</button>
-						</div>
+				<!-- Payer interstitial: the load function signs them in and redirects. -->
+				<div class="border-t pt-6 text-center">
+					<div class="flex items-center justify-center gap-2 text-gray-600">
+						<Loader2 class="h-5 w-5 animate-spin" style="color: {accentDark}" />
+						<span>Signing you in…</span>
 					</div>
-
-					<!-- Confirm password field -->
-					<div>
-						<label for="confirmPassword" class="mb-1 block text-sm font-medium text-gray-700">
-							Confirm Password
-						</label>
-						<div class="relative">
-							<input
-								type={showConfirmPassword ? 'text' : 'password'}
-								id="confirmPassword"
-								name="confirmPassword"
-								bind:value={confirmPassword}
-								minlength="8"
-								required
-								class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-								class:border-red-300={confirmPassword && password !== confirmPassword}
-								placeholder="Re-enter your password"
-							/>
-							<button
-								type="button"
-								class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-								onclick={() => (showConfirmPassword = !showConfirmPassword)}
-							>
-								{#if showConfirmPassword}
-									<EyeOff class="h-5 w-5" />
-								{:else}
-									<Eye class="h-5 w-5" />
-								{/if}
-							</button>
-						</div>
-					</div>
-
-					<!-- Validation messages -->
-					{#if passwordErrors().length > 0}
-						<ul class="space-y-1 text-sm text-red-500">
-							{#each passwordErrors() as err}
-								<li>• {err}</li>
-							{/each}
-						</ul>
-					{/if}
-
-					<!-- Error message -->
-					{#if form?.error}
-						<div class="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-							{form.error}
-						</div>
-					{/if}
-
-					<!-- Submit button -->
-					<button
-						type="submit"
-						disabled={!isValid || isSubmitting}
-						class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						{#if isSubmitting}
-							<Loader2 class="h-5 w-5 animate-spin" />
-							Creating account...
-						{:else}
-							Complete Registration
-						{/if}
-					</button>
-				</form>
-			</div>
+					<p class="mt-3 text-sm text-gray-500">
+						Taking you to your course dashboard.
+					</p>
+				</div>
 			{/if}
 		</div>
 

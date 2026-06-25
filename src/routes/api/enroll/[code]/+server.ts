@@ -21,6 +21,7 @@ type RawParticipant = {
 	parishOther?: string | null;
 	referralSource?: string | null;
 	referralOther?: string | null;
+	mailingAddress?: string | null;
 };
 
 type Participant = {
@@ -30,6 +31,7 @@ type Participant = {
 	parishId: string | null;
 	parishOther: string | null;
 	referralSource: string | null;
+	mailingAddress: string | null;
 };
 
 type BillingContact = {
@@ -67,7 +69,8 @@ function normalizeParticipant(raw: RawParticipant, label: string): Participant {
 		phone,
 		parishId: raw.parishId || null,
 		parishOther: (raw.parishOther || '').trim() || null,
-		referralSource: raw.referralSource === 'other' ? (raw.referralOther || '').trim() || null : raw.referralSource || null
+		referralSource: raw.referralSource === 'other' ? (raw.referralOther || '').trim() || null : raw.referralSource || null,
+		mailingAddress: (raw.mailingAddress || '').trim() || null
 	};
 }
 
@@ -143,7 +146,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			id,
 			code,
 			is_active,
-			expires_at,
+			bypass_enrollment_window,
 			max_uses,
 			uses_count,
 			price_cents,
@@ -151,16 +154,13 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			cohort_id,
 			hub:courses_hubs(
 				id,
-				name,
-				price_cents,
-				currency
+				name
 			),
 			cohort:courses_cohorts(
 				id,
 				name,
 				price_cents,
 				currency,
-				is_free,
 				enrollment_type,
 				max_enrollments,
 				enrollment_opens_at,
@@ -172,8 +172,6 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 						id,
 						name,
 						slug,
-						default_price_cents,
-						default_currency,
 						settings
 					)
 				)
@@ -205,12 +203,14 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		throw error(400, 'This enrollment link does not have enough remaining uses for this group');
 	}
 
-	// Check enrollment window (also checked in page load, but must enforce server-side)
-	if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
-		throw error(400, 'Enrollment has not opened yet');
-	}
-	if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
-		throw error(400, 'Enrollment for this cohort has closed');
+	// Enforce the cohort enrollment window unless this link bypasses it (late access)
+	if (!link.bypass_enrollment_window) {
+		if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
+			throw error(400, 'Enrollment has not opened yet');
+		}
+		if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
+			throw error(400, 'Enrollment for this cohort has closed');
+		}
 	}
 
 	// Check cohort capacity up front for the whole group (atomic check still happens later)
@@ -248,37 +248,26 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		}
 	}
 
-	// Resolve effective hub: a hub-locked link wins; otherwise the group's selection (server-validated)
-	const lockedHub = Array.isArray(link.hub) ? link.hub[0] : link.hub;
-	let effectiveHub: { id: string; price_cents: number | null; currency: string | null } | null =
-		link.hub_id ? lockedHub : null;
+	// Resolve effective hub: a hub-locked link wins; otherwise the group's selection,
+	// which must be a hub that's been offered for this cohort (cohorts_hubs).
+	let effectiveHubId: string | null = link.hub_id || null;
 	if (!link.hub_id && body.hubId) {
-		const { data: selectedHub } = await supabaseAdmin
-			.from('courses_hubs')
-			.select('id, price_cents, currency')
-			.eq('id', body.hubId)
-			.eq('course_id', course.id)
-			.single();
-		if (!selectedHub) {
+		const { data: offered } = await supabaseAdmin
+			.from('cohorts_hubs')
+			.select('hub_id')
+			.eq('cohort_id', cohort.id)
+			.eq('hub_id', body.hubId)
+			.maybeSingle();
+		if (!offered) {
 			throw error(400, 'Invalid hub selection');
 		}
-		effectiveHub = selectedHub;
+		effectiveHubId = body.hubId;
 	}
-	const effectiveHubId = effectiveHub?.id || null;
 
-	// Calculate effective unit price
+	// Effective unit price: cohort default, optionally overridden by the link. 0 = free.
 	const pricing = getEffectivePrice({
 		enrollmentLink: { price_cents: link.price_cents },
-		hub: effectiveHub ? { price_cents: effectiveHub.price_cents, currency: effectiveHub.currency } : undefined,
-		cohort: {
-			price_cents: cohort.price_cents,
-			currency: cohort.currency,
-			is_free: cohort.is_free || false
-		},
-		course: {
-			default_price_cents: course.default_price_cents,
-			default_currency: course.default_currency
-		}
+		cohort: { price_cents: cohort.price_cents, currency: cohort.currency }
 	});
 
 	// Reject any participant who is already enrolled in this cohort
@@ -349,7 +338,12 @@ async function handleFreeBatch(params: {
 			p_status: enrollmentStatus,
 			p_payment_status: 'not_required',
 			p_payment_id: null,
-			p_claim_token: claimToken
+			p_claim_token: claimToken,
+			p_phone: p.phone,
+			p_parish_id: p.parishId,
+			p_parish_other: p.parishOther,
+			p_referral_source: p.referralSource,
+			p_mailing_address: p.mailingAddress
 		});
 
 		if (rpcError) {
@@ -376,14 +370,25 @@ async function handleFreeBatch(params: {
 
 	const billingIsParticipant = billingContact.participantIndex !== null;
 
-	// Email a claim link to everyone except the participant who is the billing contact
-	// (that person sets their password directly via the success redirect).
+	// Ensure every participant has a (pending) auth account so the smart-login flow
+	// recognises them. The billing participant is auto-signed-in later on the success
+	// page; invitees follow the emailed smart-login link.
+	await Promise.allSettled(
+		created.map((c) =>
+			CourseMutations.ensureParticipantAccount({
+				email: c.participant.email,
+				fullName: c.participant.fullName
+			})
+		)
+	);
+
+	// Email a smart-login link to everyone except the participant who is the billing
+	// contact (that person is signed in directly via the success redirect).
 	const invitees = created.filter((c) => c.index !== billingContact.participantIndex);
 	await Promise.allSettled(
 		invitees.map((c) =>
 			CourseMutations.sendBatchEnrollmentInvitation({
 				enrollmentId: c.enrollmentId,
-				claimToken: c.claimToken,
 				siteUrl: PUBLIC_SITE_URL
 			})
 		)
@@ -393,7 +398,7 @@ async function handleFreeBatch(params: {
 		const payer = created[billingContact.participantIndex as number];
 		return json({
 			success: true,
-			successUrl: `/enroll/${link.code}/success?enrollment_id=${payer.enrollmentId}&token=${payer.claimToken}`
+			successUrl: `/enroll/${link.code}/success?enrollment_id=${payer.enrollmentId}`
 		});
 	}
 

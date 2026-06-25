@@ -14,7 +14,9 @@
 		Check,
 		X,
 		MapPin,
-		Calendar,
+		Tag,
+		Clock,
+		Star,
 		Users
 	} from '$lib/icons';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -34,20 +36,44 @@
 	let linkName = $state('');
 	let customPrice = $state('');
 	let maxUses = $state('');
-	let expiresAt = $state('');
+	let bypassEnrollmentWindow = $state(false);
 	let isCreating = $state(false);
 
 	// Filter state
 	let filterCohortId = $state('');
 
-	// Computed
+	const MAIN_LINK_NAME = 'Main link';
+
+	// A "main link" is the canonical, override-free link for a cohort.
+	function isMainLink(link: any): boolean {
+		return (
+			link.name === MAIN_LINK_NAME &&
+			link.hub_id === null &&
+			link.price_cents === null &&
+			link.bypass_enrollment_window === false
+		);
+	}
+
 	let filteredLinks = $derived(
 		filterCohortId
 			? data.enrollmentLinks.filter((l) => l.cohort_id === filterCohortId)
 			: data.enrollmentLinks
 	);
 
+	// Cohorts to show, respecting the filter
+	let visibleCohorts = $derived(
+		filterCohortId ? data.cohorts.filter((c) => c.id === filterCohortId) : data.cohorts
+	);
+
 	let selectedCohort = $derived(data.cohorts.find((c) => c.id === selectedCohortId));
+
+	function mainLinkFor(cohortId: string) {
+		return filteredLinks.find((l) => l.cohort_id === cohortId && isMainLink(l));
+	}
+
+	function additionalLinksFor(cohortId: string) {
+		return filteredLinks.filter((l) => l.cohort_id === cohortId && !isMainLink(l));
+	}
 
 	function getEnrollmentUrl(code: string): string {
 		return `${PUBLIC_SITE_URL}/enroll/${code}`;
@@ -63,12 +89,17 @@
 	}
 
 	function resetCreateForm() {
-		selectedCohortId = '';
 		selectedHubId = '';
 		linkName = '';
 		customPrice = '';
 		maxUses = '';
-		expiresAt = '';
+		bypassEnrollmentWindow = false;
+	}
+
+	function openCreateModal(cohortId?: string) {
+		selectedCohortId = cohortId || filterCohortId || '';
+		resetCreateForm();
+		showCreateModal = true;
 	}
 
 	async function handleCreate() {
@@ -80,14 +111,19 @@
 		isCreating = true;
 
 		try {
+			// Price override: an entered value (incl. 0 for scholarships) overrides the
+			// cohort price; empty inherits the cohort price (null).
+			const hasPriceOverride =
+				courseFeatures.acceptPayments && customPrice !== '' && customPrice !== null;
+
 			await apiPost(`/admin/courses/${$page.params.slug}/enrollment-links/api`, {
 				action: 'create',
 				cohortId: selectedCohortId,
 				hubId: selectedHubId || null,
 				name: linkName || null,
-				priceCents: courseFeatures.acceptPayments && customPrice ? Math.round(parseFloat(customPrice) * 100) : null,
+				priceCents: hasPriceOverride ? Math.round(parseFloat(customPrice) * 100) : null,
 				maxUses: maxUses ? parseInt(maxUses) : null,
-				expiresAt: expiresAt || null
+				bypassEnrollmentWindow
 			});
 
 			toastSuccess('Enrollment link created');
@@ -138,13 +174,11 @@
 		return cohort ? `${cohort.module.name} - ${cohort.name}` : 'Unknown';
 	}
 
-	function formatDate(dateString: string | null): string {
-		if (!dateString) return 'Never';
-		return new Date(dateString).toLocaleDateString('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+	// Human-readable description of the cohort's default price
+	function cohortPriceLabel(cohort: any): string {
+		if (!cohort) return 'Not set';
+		if (!cohort.price_cents || cohort.price_cents <= 0) return 'Free';
+		return formatPrice(cohort.price_cents, cohort.currency || 'AUD');
 	}
 </script>
 
@@ -159,11 +193,11 @@
 			<div>
 				<h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Enrollment Links</h1>
 				<p class="text-sm sm:text-base text-white/70">
-					Create and manage public sign-up links for your courses
+					Each cohort has one main link to hand out. Create additional links to override the hub, price, or enrollment window.
 				</p>
 			</div>
 			<button
-				onclick={() => (showCreateModal = true)}
+				onclick={() => openCreateModal()}
 				class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white min-h-[44px]"
 				style="background-color: var(--course-accent-light);"
 			>
@@ -172,172 +206,217 @@
 			</button>
 		</div>
 
-		<!-- Content Card -->
-		<div class="bg-white rounded-lg shadow-lg">
-			<!-- Filters -->
-			{#if data.cohorts.length > 1}
-				<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
-					<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-						<label for="filterCohort" class="text-sm font-medium text-gray-700">Filter by cohort:</label>
-						<select
-							id="filterCohort"
-							bind:value={filterCohortId}
-							class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-						>
-							<option value="">All cohorts</option>
-							{#each data.cohorts as cohort}
-								<option value={cohort.id}>{cohort.module.name} - {cohort.name}</option>
-							{/each}
-						</select>
-					</div>
+		<!-- Filters -->
+		{#if data.cohorts.length > 1}
+			<div class="mb-4 rounded-lg bg-white/10 p-3 sm:p-4">
+				<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+					<label for="filterCohort" class="text-sm font-medium text-white">Filter by cohort:</label>
+					<select
+						id="filterCohort"
+						bind:value={filterCohortId}
+						class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+					>
+						<option value="">All cohorts</option>
+						{#each data.cohorts as cohort}
+							<option value={cohort.id}>{cohort.module.name} - {cohort.name}</option>
+						{/each}
+					</select>
 				</div>
-			{/if}
+			</div>
+		{/if}
 
-			<!-- Links list -->
-			<div class="p-4 sm:p-5 lg:p-6">
-				{#if filteredLinks.length === 0}
-					<div class="rounded-lg border border-dashed border-gray-300 p-8 sm:p-12 text-center">
-						<Link class="mx-auto h-12 w-12 text-gray-400" />
-						<h3 class="mt-4 text-lg font-medium text-gray-900">No enrollment links</h3>
-						<p class="mt-2 text-sm text-gray-500">
-							Create a link to allow people to self-enroll in your courses.
-						</p>
-						<button
-							onclick={() => (showCreateModal = true)}
-							class="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white min-h-[44px] hover:opacity-90"
-							style="background-color: var(--course-accent-light);"
-						>
-							<Plus class="h-4 w-4" />
-							Create Link
-						</button>
-					</div>
-				{:else}
-					<div class="space-y-4">
-						{#each filteredLinks as link}
-							{@const cohort = data.cohorts.find((c) => c.id === link.cohort_id)}
-							<div
-								class="rounded-lg border p-4 transition-shadow hover:shadow-md"
-								class:border-gray-200={link.is_active}
-								class:bg-white={link.is_active}
-								class:border-red-200={!link.is_active}
-								class:bg-red-50={!link.is_active}
+		{#if visibleCohorts.length === 0}
+			<div class="rounded-lg bg-white p-8 sm:p-12 text-center shadow-lg">
+				<Link class="mx-auto h-12 w-12 text-gray-400" />
+				<h3 class="mt-4 text-lg font-medium text-gray-900">No cohorts yet</h3>
+				<p class="mt-2 text-sm text-gray-500">Create a cohort first to manage its enrollment links.</p>
+			</div>
+		{:else}
+			<div class="space-y-6">
+				{#each visibleCohorts as cohort (cohort.id)}
+					{@const mainLink = mainLinkFor(cohort.id)}
+					{@const additional = additionalLinksFor(cohort.id)}
+					<div class="rounded-lg bg-white shadow-lg">
+						<!-- Cohort header -->
+						<div class="flex flex-col gap-2 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+							<div>
+								<h2 class="text-base font-semibold text-gray-900 sm:text-lg">
+									{cohort.module.name} - {cohort.name}
+								</h2>
+								<p class="text-xs text-gray-500">
+									Cohort price: {cohortPriceLabel(cohort)}
+								</p>
+							</div>
+							<button
+								onclick={() => openCreateModal(cohort.id)}
+								class="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:self-auto"
 							>
-								<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-									<!-- Link info -->
-									<div class="min-w-0 flex-1">
-										<div class="flex flex-wrap items-center gap-2">
-											<h3 class="font-medium text-gray-900">
-												{link.name || getCohortName(link.cohort_id)}
-											</h3>
-											{#if link.hub}
-												<span
-													class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700"
-												>
-													<MapPin class="h-3 w-3" />
-													{link.hub.name}
-												</span>
-											{/if}
-											{#if !link.is_active}
-												<span
-													class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
-												>
-													Inactive
-												</span>
-											{/if}
-										</div>
+								<Plus class="h-4 w-4" />
+								Add link
+							</button>
+						</div>
 
-										<!-- URL -->
-										<div class="mt-2 flex flex-wrap items-center gap-2">
-											<code class="rounded bg-gray-100 px-2 py-1 text-xs sm:text-sm text-gray-700 break-all">
-												{getEnrollmentUrl(link.code)}
-											</code>
-											<div class="flex items-center gap-1">
-												<button
-													onclick={() => copyToClipboard(getEnrollmentUrl(link.code))}
-													class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-													title="Copy link"
-												>
-													<Copy class="h-4 w-4" />
-												</button>
-												<a
-													href={getEnrollmentUrl(link.code)}
-													target="_blank"
-													rel="noopener noreferrer"
-													class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-													title="Open link"
-												>
-													<ExternalLink class="h-4 w-4" />
-												</a>
-											</div>
-										</div>
-
-										<!-- Stats -->
-										<div class="mt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-500">
-											<span class="flex items-center gap-1">
-												<Users class="h-4 w-4" />
-												{link.uses_count}{link.max_uses ? ` / ${link.max_uses}` : ''} uses
-											</span>
-											{#if link.expires_at}
-												<span class="flex items-center gap-1">
-													<Calendar class="h-4 w-4" />
-													Expires: {formatDate(link.expires_at)}
-												</span>
-											{/if}
-											{#if link.price_cents !== null}
-												<span class="font-medium text-green-600">
-													{formatPrice(link.price_cents, cohort?.currency || 'AUD')}
-												</span>
-											{:else if cohort?.is_free}
-												<span class="font-medium text-green-600">Free</span>
-											{:else if cohort?.price_cents}
-												<span class="text-gray-600">
-													{formatPrice(cohort.price_cents, cohort.currency || 'AUD')}
-												</span>
-											{/if}
-										</div>
+						<div class="space-y-4 p-4 sm:p-5">
+							<!-- Main link -->
+							{#if mainLink}
+								<div>
+									<div class="mb-2 flex items-center gap-2">
+										<Star class="h-4 w-4 text-amber-500" />
+										<h3 class="text-sm font-semibold text-gray-900">Main link</h3>
+										<span class="text-xs text-gray-500">— the one to hand out</span>
 									</div>
-
-									<!-- Actions -->
-									<div class="flex items-center gap-2">
-										<button
-											onclick={() => toggleLinkActive(link.id, link.is_active)}
-											class="rounded p-2 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
-											class:text-green-600={link.is_active}
-											class:text-gray-400={!link.is_active}
-											title={link.is_active ? 'Deactivate' : 'Activate'}
-										>
-											{#if link.is_active}
-												<Check class="h-5 w-5" />
-											{:else}
-												<X class="h-5 w-5" />
-											{/if}
-										</button>
-										<button
-											onclick={() => {
-												linkToDelete = link.id;
-												showDeleteConfirm = true;
-											}}
-											class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-											title="Delete"
-										>
-											<Trash2 class="h-5 w-5" />
-										</button>
+									<div
+										class="rounded-lg border-2 p-4"
+										class:border-amber-200={mainLink.is_active}
+										class:bg-amber-50={mainLink.is_active}
+										class:border-red-200={!mainLink.is_active}
+										class:bg-red-50={!mainLink.is_active}
+									>
+										{@render linkBody(mainLink, cohort)}
 									</div>
 								</div>
-							</div>
-						{/each}
+							{/if}
+
+							<!-- Additional links -->
+							{#if additional.length > 0}
+								<div>
+									<h3 class="mb-2 text-sm font-semibold text-gray-900">Additional links</h3>
+									<div class="space-y-3">
+										{#each additional as link (link.id)}
+											<div
+												class="rounded-lg border p-4 transition-shadow hover:shadow-md"
+												class:border-gray-200={link.is_active}
+												class:bg-white={link.is_active}
+												class:border-red-200={!link.is_active}
+												class:bg-red-50={!link.is_active}
+											>
+												{@render linkBody(link, cohort)}
+											</div>
+										{/each}
+									</div>
+								</div>
+							{:else if mainLink}
+								<p class="text-xs text-gray-400">
+									No additional links. Use “Add link” to override hub, price, or late access.
+								</p>
+							{/if}
+						</div>
 					</div>
-				{/if}
+				{/each}
 			</div>
-		</div>
+		{/if}
 	</div>
 </div>
+
+{#snippet linkBody(link: any, cohort: any)}
+	<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+		<!-- Link info -->
+		<div class="min-w-0 flex-1">
+			<div class="flex flex-wrap items-center gap-2">
+				<h4 class="font-medium text-gray-900">
+					{link.name || getCohortName(link.cohort_id)}
+				</h4>
+				<!-- Override badges -->
+				{#if link.hub}
+					<span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+						<MapPin class="h-3 w-3" />
+						Hub: {link.hub.name}
+					</span>
+				{/if}
+				{#if link.price_cents !== null}
+					<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+						<Tag class="h-3 w-3" />
+						{#if link.price_cents <= 0}
+							Price: Free
+						{:else}
+							Price: {formatPrice(link.price_cents, cohort?.currency || 'AUD')}
+						{/if}
+					</span>
+				{/if}
+				{#if link.bypass_enrollment_window}
+					<span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+						<Clock class="h-3 w-3" />
+						Late access
+					</span>
+				{/if}
+				{#if !link.is_active}
+					<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+						Inactive
+					</span>
+				{/if}
+			</div>
+
+			<!-- URL -->
+			<div class="mt-2 flex flex-wrap items-center gap-2">
+				<code class="rounded bg-gray-100 px-2 py-1 text-xs sm:text-sm text-gray-700 break-all">
+					{getEnrollmentUrl(link.code)}
+				</code>
+				<div class="flex items-center gap-1">
+					<button
+						onclick={() => copyToClipboard(getEnrollmentUrl(link.code))}
+						class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+						title="Copy link"
+					>
+						<Copy class="h-4 w-4" />
+					</button>
+					<a
+						href={getEnrollmentUrl(link.code)}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="rounded p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+						title="Open link"
+					>
+						<ExternalLink class="h-4 w-4" />
+					</a>
+				</div>
+			</div>
+
+			<!-- Stats -->
+			<div class="mt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-500">
+				<span class="flex items-center gap-1">
+					<Users class="h-4 w-4" />
+					{link.uses_count}{link.max_uses ? ` / ${link.max_uses}` : ''} uses
+				</span>
+			</div>
+		</div>
+
+		<!-- Actions -->
+		<div class="flex items-center gap-2">
+			<button
+				onclick={() => toggleLinkActive(link.id, link.is_active)}
+				class="rounded p-2 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+				class:text-green-600={link.is_active}
+				class:text-gray-400={!link.is_active}
+				title={link.is_active ? 'Deactivate' : 'Activate'}
+			>
+				{#if link.is_active}
+					<Check class="h-5 w-5" />
+				{:else}
+					<X class="h-5 w-5" />
+				{/if}
+			</button>
+			<button
+				onclick={() => {
+					linkToDelete = link.id;
+					showDeleteConfirm = true;
+				}}
+				class="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+				title="Delete"
+			>
+				<Trash2 class="h-5 w-5" />
+			</button>
+		</div>
+	</div>
+{/snippet}
 
 <!-- Create Modal -->
 {#if showCreateModal}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 		<div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-			<h2 class="mb-4 text-xl font-bold text-gray-900">Create Enrollment Link</h2>
+			<h2 class="mb-1 text-xl font-bold text-gray-900">Create Additional Link</h2>
+			<p class="mb-4 text-sm text-gray-500">
+				Override one or more of the cohort defaults. Leave an option untouched to inherit the cohort setting.
+			</p>
 
 			<form
 				onsubmit={(e) => {
@@ -364,24 +443,24 @@
 					</select>
 				</div>
 
-				<!-- Hub selection (optional) -->
+				<!-- Hub override (optional) -->
 				{#if data.hubs.length > 0}
 					<div>
 						<label for="hub" class="mb-1 block text-sm font-medium text-gray-700">
-							Hub (optional)
+							Hub override (optional)
 						</label>
 						<select
 							id="hub"
 							bind:value={selectedHubId}
 							class="block w-full rounded-lg border border-gray-300 px-3 py-2"
 						>
-							<option value="">General link (no hub)</option>
+							<option value="">Use cohort hubs (no override)</option>
 							{#each data.hubs as hub}
 								<option value={hub.id}>{hub.name}</option>
 							{/each}
 						</select>
 						<p class="mt-1 text-xs text-gray-500">
-							Hub-specific links auto-assign enrollees to that hub
+							Locks this link to a specific hub and auto-assigns enrollees to it.
 						</p>
 					</div>
 				{/if}
@@ -389,52 +468,49 @@
 				<!-- Link name (optional) -->
 				<div>
 					<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-						Link Name (optional)
+						Link name (optional)
 					</label>
 					<input
 						type="text"
 						id="name"
 						bind:value={linkName}
-						placeholder="e.g., Early Bird Special"
+						placeholder="e.g., Scholarship, Late enrolments"
 						class="block w-full rounded-lg border border-gray-300 px-3 py-2"
 					/>
-					<p class="mt-1 text-xs text-gray-500">A friendly name to identify this link</p>
+					<p class="mt-1 text-xs text-gray-500">A friendly name to identify this link.</p>
 				</div>
 
-				<!-- Custom price (optional) - only when payments enabled -->
+				<!-- Price override (optional) - only when payments enabled -->
 				{#if courseFeatures.acceptPayments}
-				<div>
-					<label for="price" class="mb-1 block text-sm font-medium text-gray-700">
-						Custom Price (optional)
-					</label>
-					<div class="relative">
-						<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-						<input
-							type="number"
-							id="price"
-							bind:value={customPrice}
-							step="0.01"
-							min="0"
-							placeholder={selectedCohort?.price_cents
-								? (selectedCohort.price_cents / 100).toFixed(2)
-								: '0.00'}
-							class="block w-full rounded-lg border border-gray-300 py-2 pl-8 pr-3"
-						/>
+					<div>
+						<label for="price" class="mb-1 block text-sm font-medium text-gray-700">
+							Price override (optional)
+						</label>
+						<div class="relative">
+							<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+							<input
+								type="number"
+								id="price"
+								bind:value={customPrice}
+								step="0.01"
+								min="0"
+								placeholder={selectedCohort?.price_cents
+									? (selectedCohort.price_cents / 100).toFixed(2)
+									: '0.00'}
+								class="block w-full rounded-lg border border-gray-300 py-2 pl-8 pr-3"
+							/>
+						</div>
+						<p class="mt-1 text-xs text-gray-500">
+							Overrides the cohort price. Enter 0 for a free (e.g. scholarship) link. Leave empty to use
+							the cohort price ({cohortPriceLabel(selectedCohort)}).
+						</p>
 					</div>
-					<p class="mt-1 text-xs text-gray-500">
-						Leave empty to use cohort price ({selectedCohort?.is_free
-							? 'Free'
-							: selectedCohort?.price_cents
-								? formatPrice(selectedCohort.price_cents, selectedCohort.currency || 'AUD')
-								: 'Not set'})
-					</p>
-				</div>
 				{/if}
 
 				<!-- Max uses (optional) -->
 				<div>
 					<label for="maxUses" class="mb-1 block text-sm font-medium text-gray-700">
-						Max Uses (optional)
+						Max uses (optional)
 					</label>
 					<input
 						type="number"
@@ -446,18 +522,18 @@
 					/>
 				</div>
 
-				<!-- Expiry date (optional) -->
-				<div>
-					<label for="expires" class="mb-1 block text-sm font-medium text-gray-700">
-						Expires On (optional)
+				<!-- Late access (optional) -->
+				<div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+					<label class="flex items-start gap-2 text-sm font-medium text-gray-700">
+						<input
+							type="checkbox"
+							bind:checked={bypassEnrollmentWindow}
+							class="mt-0.5 h-4 w-4 rounded border-gray-300"
+						/>
+						<span>
+							Allow enrolling after the cohort's enrollment window closes (late access)
+						</span>
 					</label>
-					<input
-						type="date"
-						id="expires"
-						bind:value={expiresAt}
-						min={new Date().toISOString().split('T')[0]}
-						class="block w-full rounded-lg border border-gray-300 px-3 py-2"
-					/>
 				</div>
 
 				<!-- Actions -->

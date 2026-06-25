@@ -1,6 +1,7 @@
 <script>
 	import { X, Trash2, AlertTriangle, CheckCircle, Archive, RotateCcw } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { apiPost } from '$lib/utils/api-handler.js';
 	import { getCohortStatusFromObject, getTotalSessions } from '$lib/utils/cohort-status';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
@@ -9,6 +10,8 @@
 		cohort = null,
 		courseSlug = '',
 		courseFeatures = {},
+		courseHubs = [],
+		assignedHubIds = [],
 		onClose = () => {},
 		onUpdate = () => {},
 		onDelete = () => {},
@@ -22,12 +25,12 @@
 
 	// Enrollment settings state
 	let enrollmentType = $state('');
-	let isFree = $state(true);
 	let priceCents = $state('');
 	let currency = $state('AUD');
 	let enrollmentOpensAt = $state('');
 	let enrollmentClosesAt = $state('');
 	let maxEnrollments = $state('');
+	let selectedHubIds = $state([]);
 	let saving = $state(false);
 	let deleting = $state(false);
 	let completing = $state(false);
@@ -65,16 +68,26 @@
 
 			// Enrollment settings
 			enrollmentType = cohort.enrollment_type || '';
-			isFree = cohort.is_free ?? true;
 			priceCents = cohort.price_cents ? (cohort.price_cents / 100).toFixed(2) : '';
 			currency = cohort.currency || 'AUD';
 			enrollmentOpensAt = cohort.enrollment_opens_at ? cohort.enrollment_opens_at.slice(0, 16) : '';
 			enrollmentClosesAt = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 16) : '';
 			maxEnrollments = cohort.max_enrollments ? String(cohort.max_enrollments) : '';
+
+			// Hub assignments (empty = in-person / no hub)
+			selectedHubIds = [...assignedHubIds];
 		}
 	});
 
 	let savingEnrollment = $state(false);
+
+	function toggleHub(hubId) {
+		if (selectedHubIds.includes(hubId)) {
+			selectedHubIds = selectedHubIds.filter((id) => id !== hubId);
+		} else {
+			selectedHubIds = [...selectedHubIds, hubId];
+		}
+	}
 
 	async function handleSaveEnrollment() {
 		savingEnrollment = true;
@@ -86,8 +99,8 @@
 					action: 'update_cohort_enrollment',
 					cohortId: cohort.id,
 					enrollmentType: enrollmentType || null,
-					isFree,
-					priceCents: !isFree && priceCents ? Math.round(parseFloat(priceCents) * 100) : null,
+					// Price 0 (or empty) = free; is_free flag retired
+					priceCents: priceCents ? Math.round(parseFloat(priceCents) * 100) : 0,
 					currency,
 					enrollmentOpensAt: enrollmentOpensAt || null,
 					enrollmentClosesAt: enrollmentClosesAt || null,
@@ -100,6 +113,13 @@
 			if (!response.ok || !result.success) {
 				throw new Error(result.message || 'Failed to update enrollment settings');
 			}
+
+			// Persist hub assignments alongside enrollment settings
+			await apiPost(`/admin/courses/${courseSlug}/api`, {
+				action: 'update_cohort_hubs',
+				cohortId: cohort.id,
+				hubIds: [...selectedHubIds]
+			});
 
 			toastSuccess('Enrollment settings updated');
 			onUpdate();
@@ -431,52 +451,40 @@
 
 						<!-- Pricing (only when acceptPayments enabled) -->
 						{#if courseFeatures.acceptPayments}
-							<div class="mb-3">
-								<label class="flex items-center gap-2 cursor-pointer">
-									<input
-										type="checkbox"
-										bind:checked={isFree}
-										class="w-4 h-4 rounded border-gray-300"
-									/>
-									<span class="text-sm font-medium text-gray-700">Free enrollment</span>
-								</label>
-							</div>
-
-							{#if !isFree}
-								<div class="grid grid-cols-2 gap-3 mb-3">
-									<div>
-										<label for="cohort-price" class="block text-sm font-medium text-gray-700 mb-1">
-											Price
-										</label>
-										<div class="relative">
-											<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-											<input
-												id="cohort-price"
-												type="number"
-												bind:value={priceCents}
-												step="0.01"
-												min="0"
-												placeholder="0.00"
-												class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-											/>
-										</div>
-									</div>
-									<div>
-										<label for="cohort-currency" class="block text-sm font-medium text-gray-700 mb-1">
-											Currency
-										</label>
-										<select
-											id="cohort-currency"
-											bind:value={currency}
-											class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-										>
-											<option value="AUD">AUD</option>
-											<option value="USD">USD</option>
-											<option value="NZD">NZD</option>
-										</select>
+							<div class="grid grid-cols-2 gap-3 mb-1">
+								<div>
+									<label for="cohort-price" class="block text-sm font-medium text-gray-700 mb-1">
+										Price
+									</label>
+									<div class="relative">
+										<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+										<input
+											id="cohort-price"
+											type="number"
+											bind:value={priceCents}
+											step="0.01"
+											min="0"
+											placeholder="0.00"
+											class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										/>
 									</div>
 								</div>
-							{/if}
+								<div>
+									<label for="cohort-currency" class="block text-sm font-medium text-gray-700 mb-1">
+										Currency
+									</label>
+									<select
+										id="cohort-currency"
+										bind:value={currency}
+										class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+									>
+										<option value="AUD">AUD</option>
+										<option value="USD">USD</option>
+										<option value="NZD">NZD</option>
+									</select>
+								</div>
+							</div>
+							<p class="text-xs text-gray-500 mb-3">Set to 0 for a free cohort.</p>
 						{/if}
 
 						<!-- Enrollment Window -->
@@ -520,6 +528,35 @@
 								class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
 							<p class="text-xs text-gray-500 mt-1">Cohort-level cap. Leave empty for unlimited.</p>
+						</div>
+
+						<!-- Hubs -->
+						<div class="mb-3">
+							<h4 class="block text-sm font-medium text-gray-700 mb-1">Hubs</h4>
+							{#if courseHubs.length === 0}
+								<p class="text-xs text-gray-500">
+									No hubs for this course yet — participants enroll as in-person.
+								</p>
+							{:else}
+								<div class="space-y-1.5">
+									{#each courseHubs as hub (hub.id)}
+										<label class="flex items-start gap-2 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={selectedHubIds.includes(hub.id)}
+												onchange={() => toggleHub(hub.id)}
+												class="w-4 h-4 mt-0.5 rounded border-gray-300"
+											/>
+											<span class="text-sm text-gray-700">
+												{hub.name}{#if hub.location}<span class="text-gray-400"> — {hub.location}</span>{/if}
+											</span>
+										</label>
+									{/each}
+								</div>
+								<p class="text-xs text-gray-500 mt-1">
+									Leave all unchecked for an in-person only cohort (no hub).
+								</p>
+							{/if}
 						</div>
 
 						<button

@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			id,
 			code,
 			is_active,
-			expires_at,
+			bypass_enrollment_window,
 			max_uses,
 			uses_count,
 			price_cents,
@@ -27,9 +27,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			hub:courses_hubs(
 				id,
 				name,
-				location,
-				price_cents,
-				currency
+				location
 			),
 			cohort:courses_cohorts(
 				id,
@@ -39,7 +37,6 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 				status,
 				price_cents,
 				currency,
-				is_free,
 				enrollment_type,
 				enrollment_opens_at,
 				enrollment_closes_at,
@@ -52,8 +49,6 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 						id,
 						name,
 						slug,
-						default_price_cents,
-						default_currency,
 						settings
 					)
 				)
@@ -81,18 +76,20 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		throw error(404, 'Course information not found');
 	}
 
-	// Check enrollment window
-	if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
-		throw error(
-			400,
-			`Enrollment opens on ${new Date(cohort.enrollment_opens_at).toLocaleDateString()}`
-		);
-	}
+	// Check the cohort enrollment window — unless this link is allowed to bypass it
+	// (a "late access" link for people enrolling after the window closes).
+	if (!link.bypass_enrollment_window) {
+		if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
+			throw error(
+				400,
+				`Enrollment opens on ${new Date(cohort.enrollment_opens_at).toLocaleDateString()}`
+			);
+		}
 
-	if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
-		throw error(400, 'Enrollment for this cohort has closed');
+		if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
+			throw error(400, 'Enrollment for this cohort has closed');
+		}
 	}
-
 
 	// Check cohort max enrollments
 	if (cohort.max_enrollments) {
@@ -130,53 +127,30 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		}
 	}
 
-	// Calculate effective price
+	// Effective price: cohort default, optionally overridden by the link. 0 = free.
 	const pricing = getEffectivePrice({
 		enrollmentLink: { price_cents: link.price_cents },
-		hub: Array.isArray(link.hub) ? link.hub[0] : link.hub,
-		cohort: {
-			price_cents: cohort.price_cents,
-			currency: cohort.currency,
-			is_free: cohort.is_free || false
-		},
-		course: {
-			default_price_cents: course.default_price_cents,
-			default_currency: course.default_currency
-		}
+		cohort: { price_cents: cohort.price_cents, currency: cohort.currency }
 	});
+	const basePricing = pricing;
 
-	// Fetch all hubs for this course (for the hub selector on a general link)
-	const { data: courseHubs } = await supabaseAdmin
-		.from('courses_hubs')
-		.select('id, name, slug, location, price_cents, currency')
-		.eq('course_id', course.id)
-		.order('name');
+	// Hubs offered for THIS cohort (admins opt hubs in per cohort via cohorts_hubs).
+	// No rows = in-person only, so no hub selector is shown.
+	const { data: cohortHubs } = await supabaseAdmin
+		.from('cohorts_hubs')
+		.select('hub:courses_hubs(id, name, slug, location)')
+		.eq('cohort_id', cohort.id);
 
-	const priceForHub = (hub: { price_cents: number | null; currency: string | null } | null) =>
-		getEffectivePrice({
-			enrollmentLink: { price_cents: link.price_cents },
-			hub: hub ? { price_cents: hub.price_cents, currency: hub.currency } : undefined,
-			cohort: {
-				price_cents: cohort.price_cents,
-				currency: cohort.currency,
-				is_free: cohort.is_free || false
-			},
-			course: {
-				default_price_cents: course.default_price_cents,
-				default_currency: course.default_currency
-			}
-		});
+	// Hub no longer affects price, so every hub shares the cohort/link price.
+	const hubs = (cohortHubs || [])
+		.map((row) => {
+			const h = Array.isArray(row.hub) ? row.hub[0] : row.hub;
+			return h ? { id: h.id, name: h.name, slug: h.slug, location: h.location, pricing } : null;
+		})
+		.filter((h): h is { id: string; name: string; slug: string | null; location: string | null; pricing: typeof pricing } => h !== null)
+		.sort((a, b) => a.name.localeCompare(b.name));
 
-	const basePricing = priceForHub(null);
-	const hubs = (courseHubs || []).map((h) => ({
-		id: h.id,
-		name: h.name,
-		slug: h.slug,
-		location: h.location,
-		pricing: priceForHub(h)
-	}));
-
-	// Resolve ?hub=<slug> preselect (must belong to this course)
+	// Resolve ?hub=<slug> preselect (must be offered for this cohort)
 	const hubParam = url.searchParams.get('hub');
 	const preselectedHub = hubParam ? hubs.find((h) => h.slug === hubParam) : null;
 

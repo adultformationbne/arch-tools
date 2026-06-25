@@ -26,7 +26,6 @@
 	let enrollment = $state({
 		enrollmentType: null, // null = auto_approve (default open), 'approval_required', or keep null for admin-managed
 		isAdminOnly: true,
-		isFree: true,
 		priceCents: null,
 		currency: 'AUD',
 		maxEnrollments: null,
@@ -84,8 +83,8 @@
 					action: 'update_cohort_enrollment',
 					cohortId: createdCohortId,
 					enrollmentType,
-					isFree: enrollment.isFree,
-					priceCents: enrollment.isFree ? null : enrollment.priceCents,
+					// Price 0/null = free; is_free flag retired
+					priceCents: enrollment.priceCents ?? 0,
 					currency: enrollment.currency,
 					maxEnrollments: enrollment.maxEnrollments || null,
 					enrollmentOpensAt: enrollment.enrollmentOpensAt || null,
@@ -112,7 +111,6 @@
 		enrollment = {
 			enrollmentType: null,
 			isAdminOnly: true,
-			isFree: true,
 			priceCents: null,
 			currency: 'AUD',
 			maxEnrollments: null,
@@ -276,47 +274,31 @@
 						<!-- Pricing -->
 						<div class="pricing-section">
 							<label class="label-text">Pricing</label>
-							<div class="toggle-options">
-								<button
-									type="button"
-									class="toggle-btn"
-									class:active={enrollment.isFree}
-									onclick={() => { enrollment.isFree = true; enrollment.priceCents = null; }}
-								>Free</button>
-								<button
-									type="button"
-									class="toggle-btn"
-									class:active={!enrollment.isFree}
-									onclick={() => enrollment.isFree = false}
-								>Paid</button>
-							</div>
-
-							{#if !enrollment.isFree}
-								<div class="form-row mt-4">
-									<div class="form-group flex-1">
-										<label for="cohort-price">Price <span class="required">*</span></label>
-										<div class="price-input">
-											<span class="currency-symbol">$</span>
-											<input
-												id="cohort-price"
-												type="number"
-												min="0"
-												step="0.01"
-												placeholder="0.00"
-												value={enrollment.priceCents ? enrollment.priceCents / 100 : ''}
-												oninput={(e) => enrollment.priceCents = Math.round(parseFloat(e.target.value || '0') * 100)}
-											/>
-										</div>
+							<div class="form-row mt-4">
+								<div class="form-group flex-1">
+									<label for="cohort-price">Price</label>
+									<div class="price-input">
+										<span class="currency-symbol">$</span>
+										<input
+											id="cohort-price"
+											type="number"
+											min="0"
+											step="0.01"
+											placeholder="0.00"
+											value={enrollment.priceCents ? enrollment.priceCents / 100 : ''}
+											oninput={(e) => enrollment.priceCents = Math.round(parseFloat(e.target.value || '0') * 100)}
+										/>
 									</div>
-									<div class="form-group">
-										<label for="cohort-currency">Currency</label>
-										<select id="cohort-currency" bind:value={enrollment.currency}>
-											<option value="AUD">AUD</option>
-											<option value="USD">USD</option>
-										</select>
-									</div>
+									<p class="help-text">Set to 0 for a free cohort.</p>
 								</div>
-							{/if}
+								<div class="form-group">
+									<label for="cohort-currency">Currency</label>
+									<select id="cohort-currency" bind:value={enrollment.currency}>
+										<option value="AUD">AUD</option>
+										<option value="USD">USD</option>
+									</select>
+								</div>
+							</div>
 						</div>
 					{/if}
 
@@ -515,39 +497,6 @@
 		margin-top: 8px;
 		padding-top: 20px;
 		border-top: 1px solid #e5e7eb;
-	}
-
-	.toggle-options {
-		display: flex;
-		border: 1.5px solid #d1d5db;
-		border-radius: 8px;
-		overflow: hidden;
-		width: fit-content;
-		margin-top: 8px;
-	}
-
-	.toggle-btn {
-		padding: 8px 20px;
-		border: none;
-		background: white;
-		color: #6b7280;
-		font-weight: 500;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.toggle-btn:first-child {
-		border-right: 1px solid #d1d5db;
-	}
-
-	.toggle-btn.active {
-		background: var(--course-accent-dark, #334642);
-		color: white;
-	}
-
-	.toggle-btn:hover:not(.active) {
-		background: #f3f4f6;
 	}
 
 	.mt-4 { margin-top: 16px; }

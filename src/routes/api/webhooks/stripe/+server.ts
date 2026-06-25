@@ -238,13 +238,24 @@ async function handleBatchCheckoutCompleted(
 		is_billing_contact: boolean;
 	}> = result?.enrollments || [];
 
-	// Email a claim link to every participant who is NOT the billing contact.
+	// Ensure every participant (payer + invitees) has a pending auth account so the
+	// smart-login flow recognises them. The payer is auto-signed-in on the success
+	// page; invitees follow the emailed smart-login link.
+	await Promise.allSettled(
+		enrollments.map((e) =>
+			CourseMutations.ensureParticipantAccount({
+				email: e.email,
+				fullName: e.full_name
+			})
+		)
+	);
+
+	// Email a smart-login link to every participant who is NOT the billing contact.
 	const invitees = enrollments.filter((e) => !e.is_billing_contact);
 	await Promise.allSettled(
 		invitees.map((e) =>
 			CourseMutations.sendBatchEnrollmentInvitation({
 				enrollmentId: e.enrollment_id,
-				claimToken: e.claim_token,
 				siteUrl: PUBLIC_SITE_URL
 			})
 		)

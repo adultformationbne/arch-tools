@@ -30,6 +30,8 @@
 	let modules = $derived(data.modules || []);
 	let cohorts = $derived(data.cohorts || []);
 	const courseFeatures = $derived(data.courseFeatures || {});
+	const courseHubs = $derived(data.courseHubs || []);
+	const cohortHubMap = $derived(data.cohortHubMap || {});
 
 	// Modal state
 	let showCohortSettings = $state(false);
@@ -1158,6 +1160,8 @@
 	cohort={selectedCohort}
 	{courseSlug}
 	{courseFeatures}
+	{courseHubs}
+	assignedHubIds={selectedCohort ? (cohortHubMap[selectedCohort.id] || []) : []}
 	onClose={() => showCohortSettings = false}
 	onUpdate={handleCohortUpdate}
 	onDelete={handleCohortDelete}

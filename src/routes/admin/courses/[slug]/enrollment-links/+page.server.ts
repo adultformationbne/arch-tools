@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
+import { ensureMainLink } from '$lib/server/enrollment-main-link';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
@@ -16,6 +17,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	const cohortIds = layoutCohorts.map((c) => c.id);
 
+	// Ensure every cohort has exactly one canonical "main link" before loading.
+	if (cohortIds.length > 0) {
+		await Promise.all(cohortIds.map((id) => ensureMainLink(id)));
+	}
+
 	// Only page-specific query needed: enrollment links
 	let enrollmentLinks: any[] = [];
 	if (cohortIds.length > 0) {
@@ -27,10 +33,10 @@ export const load: PageServerLoad = async ({ parent }) => {
 				code,
 				name,
 				is_active,
-				expires_at,
 				max_uses,
 				uses_count,
 				price_cents,
+				bypass_enrollment_window,
 				cohort_id,
 				hub_id,
 				created_at,

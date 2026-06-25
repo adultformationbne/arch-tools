@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireCourseAdmin } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { generateEnrollmentCode } from '$lib/utils/enrollment-links';
+import { ensureMainLink, generateUniqueCode } from '$lib/server/enrollment-main-link';
 import { getCourseSettings } from '$lib/types/course-settings';
 
 export const POST: RequestHandler = async (event) => {
@@ -24,6 +24,8 @@ export const POST: RequestHandler = async (event) => {
 	switch (action) {
 		case 'create':
 			return handleCreate(body, courseSettings);
+		case 'ensure_main_link':
+			return handleEnsureMainLink(body.cohortId);
 		case 'toggle':
 			return handleToggle(body);
 		default:
@@ -60,16 +62,20 @@ async function handleCreate(body: {
 	name?: string | null;
 	priceCents?: number | null;
 	maxUses?: number | null;
-	expiresAt?: string | null;
+	bypassEnrollmentWindow?: boolean;
 }, courseSettings: ReturnType<typeof getCourseSettings>) {
-	const { cohortId, hubId, name, priceCents, maxUses, expiresAt } = body;
+	const { cohortId, hubId, name, priceCents, maxUses, bypassEnrollmentWindow } = body;
 
 	if (!cohortId) {
 		throw error(400, 'Cohort ID is required');
 	}
 
-	// Enforce acceptPayments flag
-	if (!courseSettings.features?.acceptPayments && priceCents) {
+	// Normalise the price override: 0 is a real free override; null/undefined inherits the cohort price.
+	const priceOverride =
+		priceCents === null || priceCents === undefined ? null : priceCents;
+
+	// Enforce acceptPayments flag (a price override of any value requires payments enabled)
+	if (!courseSettings.features?.acceptPayments && priceOverride !== null) {
 		throw error(400, 'Payments are not enabled for this course. Cannot set a price on enrollment links.');
 	}
 
@@ -98,26 +104,7 @@ async function handleCreate(body: {
 	}
 
 	// Generate unique code
-	let code = generateEnrollmentCode();
-	let attempts = 0;
-	const maxAttempts = 10;
-
-	while (attempts < maxAttempts) {
-		const { data: existing } = await supabaseAdmin
-			.from('courses_enrollment_links')
-			.select('id')
-			.eq('code', code)
-			.single();
-
-		if (!existing) break;
-
-		code = generateEnrollmentCode();
-		attempts++;
-	}
-
-	if (attempts >= maxAttempts) {
-		throw error(500, 'Failed to generate unique code');
-	}
+	const code = await generateUniqueCode();
 
 	// Create the link
 	const { data: link, error: createError } = await supabaseAdmin
@@ -127,9 +114,9 @@ async function handleCreate(body: {
 			hub_id: hubId || null,
 			code,
 			name: name || null,
-			price_cents: priceCents || null,
+			price_cents: priceOverride,
 			max_uses: maxUses || null,
-			expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+			bypass_enrollment_window: bypassEnrollmentWindow === true,
 			is_active: true
 		})
 		.select('id, code')
@@ -140,6 +127,20 @@ async function handleCreate(body: {
 		throw error(500, 'Failed to create enrollment link');
 	}
 
+	return json({ success: true, link });
+}
+
+/**
+ * Guarantee that a cohort has exactly one canonical "main link":
+ * no hub override, no price override, bypass disabled, name = 'Main link'.
+ * Idempotent — returns the existing main link if one is already present.
+ */
+async function handleEnsureMainLink(cohortId: string) {
+	if (!cohortId) {
+		throw error(400, 'Cohort ID is required');
+	}
+
+	const link = await ensureMainLink(cohortId);
 	return json({ success: true, link });
 }
 
