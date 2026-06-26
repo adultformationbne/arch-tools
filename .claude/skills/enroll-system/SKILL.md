@@ -10,6 +10,8 @@ tags: [enrolment, enrollment, signup, stripe, payments, cohorts, hubs, auth, otp
 
 End-to-end map of how someone goes from an enrolment link to an active course participant. Stack: **SvelteKit (Svelte 5 runes) + Supabase (Postgres/Auth) + Stripe (embedded checkout) + Resend (email)**.
 
+> **Future direction:** making the signup form + flow decisions configurable per-course from the dashboard (field schema with per-field collection stage — signup / post-signup onboarding / off — plus a post-signup onboarding flow) is fully spec'd in **[CONFIGURABLE-ENROLMENT-SPEC.md](./CONFIGURABLE-ENROLMENT-SPEC.md)**. Read it before touching the signup form, the participant field set, or anything described there as "hardcoded for ACCF."
+
 > **Line numbers are hints** (as of 2026-06-26); files move. Anchor on file + symbol name, then grep. After schema changes run `npm run update-types`. Follow the repo conventions in `CLAUDE.md` (tabs for indentation; `toast*` not `alert/confirm`; say **"participant"** not "student" in UI).
 
 ---
@@ -136,6 +138,7 @@ Sent from `CourseMutations` via `src/lib/utils/email-service.js` (`sendEmail`, `
 - **`sendBatchEnrollmentInvitation`** → "you've been enrolled / sign in" to every enrolled participant. Button → the **smart-login URL** (below).
 - **`sendPaymentReceipt`** → branded receipt + tax-invoice link to the payer (we send our own; Stripe's account-wide receipts stay OFF — shared Shopify account).
 - **`notifyHubCoordinatorsOfEnrollment`** → tells the hub's coordinator(s) "X enrolled — you now have N (incl. coordinators)". No-op without a hub.
+- **`notifyAdminOfEnrollment`** → internal "new enrolment" alert to the course support inbox (`email_branding_config.reply_to_email`, falling back to `platform_settings.reply_to_email` — never hardcoded). Fires once per enrolment from both the free path (`handleFreeBatch`, *including* pending-approval signups) and the paid webhook (`handleBatchCheckoutCompleted`). `replyTo` is set to the new participant so support can reply directly. `emailType:'enrollment_admin_notification'`.
 - **To send a course email:** mirror `sendBatchEnrollmentInvitation` — build branding from `course.settings`, `createEmailButton(...)`, `generateEmailFromMjml(...)`, `sendEmail({emailType:'...', ...})`. `emailType` is a free string used for logging in `platform_email_log`.
 
 **Smart-login URL** (the only link we put in enrolment emails): `"{siteUrl}/login?course={slug}&email={enc(email)}&send=true"`. `send=true` auto-sends an OTP for a pending account. Built by `buildCourseVariablesFromEnrollment` (`context-config.ts`) when `options.smartLogin`.
@@ -155,7 +158,7 @@ Sent from `CourseMutations` via `src/lib/utils/email-service.js` (`sendEmail`, `
 
 - **Mode switching:** one flag `STRIPE_MODE` (`'live'` is opt-in; anything else = test). Keys are mode-suffixed: `STRIPE_SECRET_KEY_{TEST,LIVE}`, `PUBLIC_STRIPE_PUBLISHABLE_KEY_{TEST,LIVE}`, `STRIPE_WEBHOOK_SECRET_{TEST,LIVE}` (falls back to unsuffixed). `getStripeMode/resolveStripeKey/getStripe{Secret,Publishable,Webhook}Key`. `isStripeMockMode()` is dev-only (ignored in prod). API pinned to `2026-06-24.dahlia`.
 - **Checkout:** `createEmbeddedCheckoutSession` (the one in use) sets `payment_intent_data.description`+`metadata`, `invoice_creation`, 30-min expiry, `allow_promotion_codes`. `createCheckoutSession` (redirect) is **dead** — don't wire new things to it.
-- **Webhook** `POST /api/webhooks/stripe`: verifies signature with `getStripeWebhookSecret()`, **idempotency via `stripe_events`** (record before processing, 200 on dup), handles `checkout.session.completed` (→ `complete_checkout_and_enroll` or `_batch` by `metadata.batch`) and `checkout.session.expired` (→ mark `abandoned`). Captures discount + invoice URL server-side. Fires `ensureParticipantAccount` → `sendBatchEnrollmentInvitation` (all) → `notifyHubCoordinatorsOfEnrollment` → `sendPaymentReceipt` (payer).
+- **Webhook** `POST /api/webhooks/stripe`: verifies signature with `getStripeWebhookSecret()`, **idempotency via `stripe_events`** (record before processing, 200 on dup), handles `checkout.session.completed` (→ `complete_checkout_and_enroll` or `_batch` by `metadata.batch`) and `checkout.session.expired` (→ mark `abandoned`). Captures discount + invoice URL server-side. Fires `ensureParticipantAccount` → `sendBatchEnrollmentInvitation` (all) → `notifyHubCoordinatorsOfEnrollment` → `notifyAdminOfEnrollment` (support inbox) → `sendPaymentReceipt` (payer).
 
 ### Go-live (config, not code)
 1. Stripe (Live): get `pk_live`/`sk_live`; add a webhook at `https://<prod-domain>/api/webhooks/stripe` subscribed to **`checkout.session.completed` + `checkout.session.expired`**; copy its signing secret. Keep account-wide "Successful payments"/"Refunds" customer emails **OFF**.

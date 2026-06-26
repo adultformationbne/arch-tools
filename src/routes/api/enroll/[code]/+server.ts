@@ -411,6 +411,17 @@ async function handleFreeBatch(params: {
 		created.push({ participant: p, index: i, enrollmentId: result.enrollment_id, claimToken });
 	}
 
+	// Notify the course/platform support inbox of every new enrolment
+	// (fires for pending-approval signups too — that's when an admin needs to act).
+	await Promise.allSettled(
+		created.map((c) =>
+			CourseMutations.notifyAdminOfEnrollment({
+				enrollmentId: c.enrollmentId,
+				siteUrl: PUBLIC_SITE_URL
+			})
+		)
+	);
+
 	// Approval-required groups wait for an admin; no claim links go out yet.
 	if (isApprovalRequired) {
 		return json({

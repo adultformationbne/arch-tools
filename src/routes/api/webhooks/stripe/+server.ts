@@ -273,6 +273,16 @@ async function handleBatchCheckoutCompleted(
 		)
 	);
 
+	// Notify the course/platform support inbox of every new enrolment.
+	await Promise.allSettled(
+		enrollments.map((e) =>
+			CourseMutations.notifyAdminOfEnrollment({
+				enrollmentId: e.enrollment_id,
+				siteUrl: PUBLIC_SITE_URL
+			})
+		)
+	);
+
 	// Branded receipt to the billing contact (the payer) via Resend.
 	await CourseMutations.sendPaymentReceipt({
 		stripeSessionId: sessionId,

@@ -3213,6 +3213,137 @@ export const CourseMutations = {
 	},
 
 	/**
+	 * Notify the course/platform support inbox that a new enrolment was created.
+	 * Fires for both free and paid signups (one email per enrolment, mirroring the
+	 * hub-coordinator notification). The recipient is the course's reply-to/support
+	 * address, falling back to the platform default — never a hardcoded address.
+	 */
+	async notifyAdminOfEnrollment(params: { enrollmentId: string; siteUrl: string }) {
+		const { enrollmentId, siteUrl } = params;
+
+		try {
+			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select(`
+					id, email, full_name, phone, parish_other, referral_source,
+					status, payment_status, role, hub_id,
+					hub:hub_id ( name ),
+					parish:parish_id ( name ),
+					payment:payment_id ( amount_cents, currency ),
+					cohort:cohort_id!inner (
+						name,
+						module:module_id!inner (
+							name,
+							course:course_id!inner ( id, name, slug, settings, email_branding_config )
+						)
+					)
+				`)
+				.eq('id', enrollmentId)
+				.single();
+
+			if (enrollmentError || !enrollment) {
+				console.error('notifyAdminOfEnrollment: enrollment not found', enrollmentError);
+				return { success: false, error: 'Enrollment not found' };
+			}
+
+			const hub = enrollment.hub as any;
+			const parish = enrollment.parish as any;
+			const payment = enrollment.payment as any;
+			const cohort = enrollment.cohort as any;
+			const module = cohort?.module as any;
+			const course = module?.course as any;
+			if (!course) return { success: false, error: 'Course not found' };
+
+			// Recipient: the course support inbox, else the platform default. Never hardcoded.
+			const { getPlatformSettings } = await import('$lib/server/supabase.js');
+			const platformSettings = await getPlatformSettings();
+			const recipient = course.email_branding_config?.reply_to_email || platformSettings.replyToEmail;
+			if (!recipient) return { success: true, skipped: 'no_recipient' };
+
+			const { sendEmail, buildCourseFromEmail, createEmailButton } =
+				await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const adminUrl = course.slug ? `${siteUrl}/admin/courses/${course.slug}` : siteUrl;
+
+			const name = enrollment.full_name || enrollment.email;
+			const statusLabel = enrollment.status === 'pending' ? 'Pending approval' : 'Enrolled';
+			const formatMoney = (cents: number | null | undefined, currency: string | null | undefined) =>
+				cents == null
+					? null
+					: new Intl.NumberFormat('en-AU', { style: 'currency', currency: (currency || 'AUD').toUpperCase() }).format(cents / 100);
+			const amount = payment ? formatMoney(payment.amount_cents, payment.currency) : null;
+			const paymentLine =
+				enrollment.payment_status === 'paid'
+					? `Paid${amount ? ` — ${amount}` : ''}`
+					: enrollment.payment_status === 'not_required'
+						? 'Free'
+						: enrollment.payment_status || 'Unknown';
+
+			const row = (label: string, value: string | null | undefined) =>
+				value
+					? `<tr><td style="padding:4px 16px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:4px 0;"><strong>${value}</strong></td></tr>`
+					: '';
+			const rowsHtml = [
+				row('Name', name),
+				row('Email', enrollment.email),
+				row('Phone', enrollment.phone),
+				row('Parish', parish?.name || enrollment.parish_other),
+				row('Hub', hub?.name),
+				row('Module', module?.name),
+				row('Cohort', cohort?.name),
+				row('Role', enrollment.role),
+				row('Status', statusLabel),
+				row('Payment', paymentLine),
+				row('How they heard', enrollment.referral_source)
+			].join('');
+
+			const viewButton = createEmailButton('View in dashboard', adminUrl, courseColors.accentDark);
+			const bodyContent = `
+				<h2>New enrolment — ${course.name}</h2>
+				<p><strong>${name}</strong> has just enrolled${cohort?.name ? ` in ${cohort.name}` : ''}.</p>
+				<table style="border-collapse:collapse;margin:16px 0;font-size:15px;">${rowsHtml}</table>
+				${viewButton}
+			`;
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors,
+				previewText: `${name} enrolled in ${course.name}`
+			});
+
+			const result = await sendEmail({
+				to: recipient,
+				subject: `New enrolment: ${name} — ${course.name}`,
+				html: compiledHtml,
+				emailType: 'enrollment_admin_notification',
+				fromEmail: courseFromEmail,
+				replyTo: enrollment.email,
+				metadata: { context: 'course', course_id: course.id, enrollment_id: enrollmentId },
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			return { success: true, sent: result?.success, recipient };
+		} catch (err) {
+			console.error('Error notifying admin of enrollment:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
+	/**
 	 * Send a course-branded payment receipt (via Resend) to the payer after a
 	 * successful Stripe checkout. We send this ourselves instead of enabling
 	 * Stripe's account-wide receipt emails, so they don't collide with the
