@@ -49,8 +49,9 @@ function normalizeParticipant(raw: RawParticipant, label: string): Participant {
 	const surname = (raw.surname || '').trim();
 	const email = (raw.email || '').trim().toLowerCase();
 	const phone = (raw.phone || '').trim();
+	const mailingAddress = (raw.mailingAddress || '').trim();
 
-	if (!firstName || !surname || !email || !phone) {
+	if (!firstName || !surname || !email || !phone || !mailingAddress) {
 		throw error(400, `Missing required fields for ${label}`);
 	}
 	if (firstName.length > 100 || surname.length > 100) {
@@ -70,7 +71,7 @@ function normalizeParticipant(raw: RawParticipant, label: string): Participant {
 		parishId: raw.parishId || null,
 		parishOther: (raw.parishOther || '').trim() || null,
 		referralSource: raw.referralSource === 'other' ? (raw.referralOther || '').trim() || null : raw.referralSource || null,
-		mailingAddress: (raw.mailingAddress || '').trim() || null
+		mailingAddress
 	};
 }
 

@@ -145,6 +145,7 @@
 		if (!email.trim()) formErrors.email = 'Email is required';
 		else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) formErrors.email = 'Invalid email address';
 		if (!phone.trim()) formErrors.phone = 'Phone number is required';
+		if (!mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
 		return Object.keys(formErrors).length === 0;
 	}
 
@@ -193,6 +194,7 @@
 			if (!firstName.trim()) formErrors.firstName = 'First name is required';
 			if (!surname.trim()) formErrors.surname = 'Surname is required';
 			if (!phone.trim()) formErrors.phone = 'Phone number is required';
+			if (!mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
 			if (Object.keys(formErrors).length > 0) {
 				toastError('Please fix the errors below');
 				return false;
@@ -646,10 +648,12 @@
 									<!-- Mailing address -->
 									<div>
 										<label for="mailingAddress" class="block text-sm font-medium text-gray-900">
-											Mailing Address
+											Mailing Address <span class="text-red-500">*</span>
 										</label>
-										<textarea id="mailingAddress" bind:value={mailingAddress} rows="2" placeholder="Postal address (optional)"
-											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"></textarea>
+										<textarea id="mailingAddress" bind:value={mailingAddress} rows="2" placeholder="Postal address"
+											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
+											class:border-red-500={formErrors.mailingAddress}></textarea>
+										{#if formErrors.mailingAddress}<p class="mt-1 text-xs text-red-500">{formErrors.mailingAddress}</p>{/if}
 									</div>
 								{/if}
 

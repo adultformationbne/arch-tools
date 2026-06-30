@@ -9,6 +9,9 @@
 	import PageTransition from '$lib/components/PageTransition.svelte';
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+
+	injectAnalytics();
 
 	export let data;
 
