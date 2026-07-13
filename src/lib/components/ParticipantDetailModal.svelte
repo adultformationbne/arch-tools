@@ -1,6 +1,7 @@
 <script>
-	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight } from '$lib/icons';
+	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight, ExternalLink } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { formatPrice } from '$lib/utils/enrollment-links';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -47,6 +48,10 @@
 	let showReflections = $state(true);
 	let otherCourses = $state([]);
 	let showPlatformHistory = $state(true);
+
+	// Billing (payments for this participant, scoped to the course)
+	let payments = $state([]);
+	let loadingPayments = $state(false);
 
 	// Normalize participant data from different sources
 	const normalizedParticipant = $derived.by(() => {
@@ -136,6 +141,9 @@
 				if (showCohortHistory) {
 					loadParticipantHistory(np);
 				}
+				// Load billing (self-gates on the acceptPayments feature + email)
+				payments = [];
+				loadParticipantPayments(np);
 			}
 		}
 	});
@@ -178,6 +186,32 @@
 		} finally {
 			loadingHistory = false;
 		}
+	}
+
+	// Fetch this participant's payments for the course (billing section)
+	async function loadParticipantPayments(np) {
+		if (!np?.email || !courseSlug || !courseFeatures.acceptPayments) return;
+		loadingPayments = true;
+		try {
+			const res = await fetch(
+				`/admin/courses/${courseSlug}/api?endpoint=payments&email=${encodeURIComponent(np.email)}`
+			);
+			if (res.ok) {
+				const data = await res.json();
+				payments = data.success ? data.data : [];
+			}
+		} catch (err) {
+			console.error('Error loading participant payments:', err);
+		} finally {
+			loadingPayments = false;
+		}
+	}
+
+	function getPaymentStatusColor(status) {
+		if (status === 'completed' || status === 'paid') return 'bg-green-100 text-green-700';
+		if (status === 'pending') return 'bg-amber-100 text-amber-700';
+		if (status === 'failed' || status === 'abandoned') return 'bg-red-100 text-red-700';
+		return 'bg-gray-100 text-gray-600';
 	}
 
 	// Track changes
@@ -596,6 +630,48 @@
 						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm resize-none"
 					></textarea>
 				</div>
+
+				<!-- Billing & Invoices -->
+				{#if courseFeatures.acceptPayments}
+					<div class="mt-6 pt-4 border-t border-gray-200">
+						<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+							<FileText size={14} />
+							Billing & Invoices
+						</h3>
+						{#if loadingPayments}
+							<p class="text-sm text-gray-500 text-center py-4">Loading...</p>
+						{:else if payments.length === 0}
+							<p class="text-sm text-gray-500 text-center py-4">No payments recorded</p>
+						{:else}
+							<div class="space-y-2">
+								{#each payments as p}
+									<div class="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+										<div class="min-w-0">
+											<p class="text-sm font-medium text-gray-900 truncate">
+												{p.cohort?.module?.name || 'Course enrollment'}{p.cohort?.name ? ` — ${p.cohort.name}` : ''}
+											</p>
+											<p class="text-xs text-gray-500 mt-0.5">
+												{formatDate(p.paid_at || p.created_at)}
+												{#if p.discount_code}
+													· <span class="text-green-700">{p.discount_code}{p.discount_amount_cents ? ` (−${formatPrice(p.discount_amount_cents, p.currency)})` : ''}</span>
+												{/if}
+											</p>
+										</div>
+										<div class="flex items-center gap-3 shrink-0">
+											<span class="text-sm font-semibold text-gray-900">{formatPrice(p.amount_cents, p.currency)}</span>
+											<span class="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full {getPaymentStatusColor(p.status)}">{p.status}</span>
+											{#if p.stripe_invoice_url}
+												<a href={p.stripe_invoice_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
+													Invoice <ExternalLink size={12} />
+												</a>
+											{/if}
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 				<!-- Progress Stats -->
 				{#if normalizedParticipant?.progress}

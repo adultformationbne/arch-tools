@@ -27,6 +27,11 @@
 	let accentDarkest = $derived(data.course?.settings?.theme?.accentDarkest || '#1e2322');
 	let accentLight = $derived(data.course?.settings?.theme?.accentLight || '#c59a6b');
 
+	// Per-course legal/consent text, configured in admin course settings
+	let legal = $derived(data.course?.settings?.legal || {});
+	let hasLegalText = $derived(!!(legal.text || '').trim());
+	let legalAccepted = $state(false);
+
 	// Multi-step flow: 1 = add people + hub, 2 = billing contact, 3 = review + confirm
 	let step = $state(1);
 
@@ -362,6 +367,11 @@
 			return;
 		}
 
+		if (legal.requireAcknowledgement && !legalAccepted) {
+			toastError('Please tick the checkbox to continue');
+			return;
+		}
+
 		isSubmitting = true;
 
 		try {
@@ -383,7 +393,8 @@
 						: { participantIndex: billingParticipantIndex, name: '', email: '' },
 				enrollmentLinkId: data.enrollmentLink.id,
 				cohortId: data.cohort.id,
-				hubId: selectedHubId || null
+				hubId: selectedHubId || null,
+				legalAccepted
 			};
 
 			const response = await fetch(`/api/enroll/${data.enrollmentLink.code}`, {
@@ -867,11 +878,32 @@
 								{/if}
 							</div>
 
+							{#if hasLegalText}
+								<div class="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+									<p class="whitespace-pre-line">{legal.text}</p>
+									{#if legal.linkUrl}
+										<a href={legal.linkUrl} target="_blank" rel="noopener noreferrer" class="mt-2 inline-block underline" style="color: {accentDark};">
+											{legal.linkLabel || 'Read more'}
+										</a>
+									{/if}
+									{#if legal.requireAcknowledgement}
+										<label class="mt-3 flex items-start gap-2.5 cursor-pointer">
+											<input
+												type="checkbox"
+												bind:checked={legalAccepted}
+												class="mt-0.5 h-4 w-4 rounded border-gray-300"
+											/>
+											<span class="text-sm text-gray-700">{legal.checkboxLabel || 'I agree to the above'}</span>
+										</label>
+									{/if}
+								</div>
+							{/if}
+
 							{#if !showEmbedded}
 							<form onsubmit={handleSubmit} class="mt-5">
 								<button
 									type="submit"
-									disabled={isSubmitting}
+									disabled={isSubmitting || (legal.requireAcknowledgement && !legalAccepted)}
 									class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 									style="background-color: {accentDark};"
 								>
@@ -903,7 +935,7 @@
 			<!-- Footer pinned to bottom -->
 			<p class="mt-6 text-xs text-gray-400">
 				© {new Date().getFullYear()} Archdiocesan Ministries ·
-				<a href="/privacy-policy" class="underline hover:text-gray-600">Data Policy</a>
+				<a href="/data-policy" class="underline hover:text-gray-600">Privacy Policy</a>
 			</p>
 		</div>
 	</div>

@@ -351,7 +351,7 @@
 							<span class="text-sm font-medium" style="color: {accentDark};">
 								{course.moduleCount || 0} {course.moduleCount === 1 ? 'module' : 'modules'}
 							</span>
-							{#if userRole === 'admin'}
+							{#if userRole === 'admin' || userRole === 'manager'}
 								<button
 									onclick={(e) => {
 										e.preventDefault();

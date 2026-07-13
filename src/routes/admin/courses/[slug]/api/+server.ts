@@ -1300,6 +1300,35 @@ export const GET: RequestHandler = async (event) => {
 			return json({ success: true, exists: !!existingProfile });
 		}
 
+		if (endpoint === 'payments') {
+			// A participant's payments for THIS course (scoped by course slug so a
+			// course admin never sees another course's billing). Matched by email,
+			// mirroring the participant profile page.
+			const emailParam = url.searchParams.get('email')?.trim().toLowerCase();
+			if (!emailParam) return json({ success: true, data: [] });
+
+			const { data, error: payErr } = await supabaseAdmin
+				.from('courses_payments')
+				.select(`
+					id, amount_cents, currency, status, created_at, paid_at,
+					stripe_invoice_url, discount_code, discount_amount_cents,
+					cohort:courses_cohorts!inner (
+						name,
+						module:courses_modules!inner (
+							name,
+							course:courses!inner ( slug )
+						)
+					)
+				`)
+				.eq('email', emailParam)
+				.eq('cohort.module.course.slug', courseSlug)
+				.order('created_at', { ascending: false });
+
+			if (payErr) throw error(500, payErr.message || 'Failed to fetch payments');
+
+			return json({ success: true, data: data || [] });
+		}
+
 		if (endpoint === 'hubs') {
 			const { data: course } = await CourseQueries.getCourse(courseSlug);
 			if (!course) {

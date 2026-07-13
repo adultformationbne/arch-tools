@@ -102,8 +102,12 @@
 		expandedSession = expandedSession === sessionNum ? null : sessionNum;
 	};
 
-	// Debounce map to prevent rapid duplicate requests
-	const pendingRequests = new Map();
+	// Tracks in-flight requests so a duplicate/double-tap click can't re-read
+	// state that this same click already optimistically mutated (which was
+	// flipping Present marks back to unmarked - see markAttendance below).
+	const pendingTimeouts = new Map();
+	/** @type {Set<string>} */
+	let pendingKeys = $state(new Set());
 
 	/** @param {string} userId @param {number} sessionNumber @param {boolean|null} present - null clears the record */
 	const markAttendance = async (userId, sessionNumber, present) => {
@@ -111,9 +115,10 @@
 
 		const requestKey = `${userId}-${sessionNumber}`;
 
-		if (pendingRequests.has(requestKey)) {
-			clearTimeout(pendingRequests.get(requestKey));
-		}
+		// Ignore re-entrant clicks (duplicate events, double-taps) until the
+		// current mark for this student/session has settled.
+		if (pendingKeys.has(requestKey)) return;
+		pendingKeys = new Set(pendingKeys).add(requestKey);
 
 		/** @param {Student[]} studentList */
 		const updateAttendanceOptimistically = (studentList) => {
@@ -155,11 +160,14 @@
 				console.error('Error marking attendance:', error);
 				await loadAttendanceForCohort(selectedCohortId);
 			} finally {
-				pendingRequests.delete(requestKey);
+				pendingTimeouts.delete(requestKey);
+				const remaining = new Set(pendingKeys);
+				remaining.delete(requestKey);
+				pendingKeys = remaining;
 			}
 		}, 300);
 
-		pendingRequests.set(requestKey, timeoutId);
+		pendingTimeouts.set(requestKey, timeoutId);
 	};
 
 	/** @param {number} sessionNum */
@@ -340,6 +348,8 @@
 											<div class="space-y-2 sm:space-y-3">
 												{#each filteredNonHub as student}
 													{@const status = getAttendanceStatus(student, sessionNum)}
+													{@const requestKey = `${student.id}-${sessionNum}`}
+													{@const isPending = pendingKeys.has(requestKey)}
 
 													<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-gray-50 rounded-lg">
 														<div class="flex items-center gap-2 sm:gap-3">
@@ -355,7 +365,8 @@
 														<div class="flex items-center gap-2 sm:gap-3 ml-10 sm:ml-0">
 															<button
 																onclick={() => markAttendance(student.id, sessionNum, status === true ? null : true)}
-																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
+																disabled={isPending}
+																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
 																class:bg-green-600={status === true}
 																class:text-white={status === true}
 																class:bg-gray-200={status !== true}
@@ -367,7 +378,8 @@
 															</button>
 															<button
 																onclick={() => markAttendance(student.id, sessionNum, status === false ? null : false)}
-																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0"
+																disabled={isPending}
+																class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors text-sm min-w-[80px] sm:min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
 																class:bg-red-600={status === false}
 																class:text-white={status === false}
 																class:bg-gray-200={status !== false}
@@ -456,6 +468,7 @@
 															{#each /** @type {Student[]} */ (students) as student}
 																{@const status = getAttendanceStatus(student, sessionNum)}
 																{@const record = student.attendance?.find(/** @param {{ session_number: number }} a */ (a) => a.session_number === sessionNum)}
+																{@const isPending = pendingKeys.has(`${student.id}-${sessionNum}`)}
 
 																<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-3 sm:px-4 bg-gray-50 rounded-lg border border-gray-200">
 																	<div class="flex items-center gap-2 sm:gap-3">
@@ -497,13 +510,15 @@
 																			<!-- Not yet marked: coloured action buttons -->
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, true)}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg transition-colors"
+																				disabled={isPending}
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 																			>
 																				Mark Present
 																			</button>
 																			<button
 																				onclick={() => markAttendance(student.id, sessionNum, false)}
-																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-lg transition-colors"
+																				disabled={isPending}
+																				class="px-3 py-1.5 sm:py-1 text-sm font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 																			>
 																				Mark Absent
 																			</button>

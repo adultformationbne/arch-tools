@@ -3344,6 +3344,149 @@ export const CourseMutations = {
 	},
 
 	/**
+	 * Notify the course/platform support inbox that a payment attempt FAILED
+	 * (declined card or Radar fraud block). Mirrors notifyAdminOfEnrollment, but
+	 * is keyed on the cohort (no enrolment exists for a failed payment). Tailors
+	 * the suggested action to the failure reason so staff know whether it's the
+	 * customer's bank (their problem) or our fraud filter (likely a false
+	 * positive worth following up). Fired by the Stripe webhook, throttled to one
+	 * email per PaymentIntent. Returns { sent } so the caller can mark it logged.
+	 */
+	async notifyAdminOfPaymentFailure(params: {
+		cohortId: string | null;
+		email?: string | null;
+		fullName?: string | null;
+		amountCents?: number | null;
+		currency?: string | null;
+		reasonCategory?: string | null;
+		failureCode?: string | null;
+		declineCode?: string | null;
+		sellerMessage?: string | null;
+		riskLevel?: string | null;
+		paymentIntentId?: string | null;
+		siteUrl: string;
+	}) {
+		const { cohortId, siteUrl } = params;
+
+		try {
+			if (!cohortId) return { success: false, error: 'No cohort' };
+
+			const { data: cohort, error: cohortError } = await supabaseAdmin
+				.from('courses_cohorts')
+				.select(`
+					name,
+					module:module_id!inner (
+						name,
+						course:course_id!inner ( id, name, slug, settings, email_branding_config )
+					)
+				`)
+				.eq('id', cohortId)
+				.single();
+
+			if (cohortError || !cohort) {
+				console.error('notifyAdminOfPaymentFailure: cohort not found', cohortError);
+				return { success: false, error: 'Cohort not found' };
+			}
+
+			const module = (cohort as any).module;
+			const course = module?.course;
+			if (!course) return { success: false, error: 'Course not found' };
+
+			// Recipient: the course support inbox, else the platform default. Never hardcoded.
+			const { getPlatformSettings } = await import('$lib/server/supabase.js');
+			const platformSettings = await getPlatformSettings();
+			const recipient = course.email_branding_config?.reply_to_email || platformSettings.replyToEmail;
+			if (!recipient) return { success: true, skipped: 'no_recipient' };
+
+			const { sendEmail, buildCourseFromEmail, createEmailButton } =
+				await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const adminUrl = course.slug ? `${siteUrl}/admin/courses/${course.slug}` : siteUrl;
+
+			const name = params.fullName || params.email || 'Someone';
+			const formatMoney = (cents: number | null | undefined, currency: string | null | undefined) =>
+				cents == null
+					? null
+					: new Intl.NumberFormat('en-AU', { style: 'currency', currency: (currency || 'AUD').toUpperCase() }).format(cents / 100);
+			const amount = formatMoney(params.amountCents, params.currency);
+
+			const reasonText: Record<string, string> = {
+				fraud_blocked:
+					"Blocked by our fraud filter (Stripe Radar) — not their bank. This is often a false positive; consider reaching out to help them complete enrolment.",
+				bank_declined:
+					"Their bank declined the card. They'll need to contact their bank or try a different card.",
+				card_error:
+					"Looks like a card-entry error (number, CVC or expiry). Ask them to double-check their card details and try again.",
+				other: "The payment didn't go through."
+			};
+			const reasonCategory = params.reasonCategory || 'other';
+			const whyFailed = reasonText[reasonCategory] || reasonText.other;
+			const stripeCode = [params.failureCode, params.declineCode].filter(Boolean).join(' / ') || null;
+
+			const row = (label: string, value: string | null | undefined) =>
+				value
+					? `<tr><td style="padding:4px 16px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:4px 0;"><strong>${value}</strong></td></tr>`
+					: '';
+			const rowsHtml = [
+				row('Name', name),
+				row('Email', params.email),
+				row('Amount', amount),
+				row('Module', module?.name),
+				row('Cohort', cohort.name),
+				row('Why it failed', whyFailed),
+				row('Stripe says', params.sellerMessage),
+				row('Code', stripeCode),
+				row('Risk level', params.riskLevel),
+				row('Reference', params.paymentIntentId)
+			].join('');
+
+			const viewButton = createEmailButton('View in dashboard', adminUrl, courseColors.accentDark);
+			const bodyContent = `
+				<h2>Payment failed — ${course.name}</h2>
+				<p><strong>${name}</strong> tried to pay${amount ? ` ${amount}` : ''}${cohort.name ? ` for ${cohort.name}` : ''} but the payment didn't go through. No enrolment was created.</p>
+				<table style="border-collapse:collapse;margin:16px 0;font-size:15px;">${rowsHtml}</table>
+				${viewButton}
+			`;
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors,
+				previewText: `${name}'s payment failed — ${course.name}`
+			});
+
+			const result = await sendEmail({
+				to: recipient,
+				subject: `⚠️ Payment failed: ${name} — ${course.name}`,
+				html: compiledHtml,
+				emailType: 'payment_failure_admin_notification',
+				fromEmail: courseFromEmail,
+				replyTo: params.email || undefined,
+				metadata: { context: 'course', course_id: course.id, payment_intent_id: params.paymentIntentId },
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			return { success: true, sent: result?.success, recipient };
+		} catch (err) {
+			console.error('Error notifying admin of payment failure:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
+
+	/**
 	 * Send a course-branded payment receipt (via Resend) to the payer after a
 	 * successful Stripe checkout. We send this ourselves instead of enabling
 	 * Stripe's account-wide receipt emails, so they don't collide with the

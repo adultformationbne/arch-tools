@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { constructWebhookEvent, getCheckoutSession, getStripeWebhookSecret } from '$lib/server/stripe';
+import { constructWebhookEvent, getCharge, getCheckoutSession, getStripeWebhookSecret } from '$lib/server/stripe';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { CourseMutations } from '$lib/server/course-data';
 import { PUBLIC_SITE_URL } from '$env/static/public';
@@ -61,6 +61,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			case 'checkout.session.expired':
 				await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session);
+				break;
+
+			case 'payment_intent.payment_failed':
+				await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
 				break;
 
 			default:
@@ -314,5 +318,153 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 			.eq('id', payment.id);
 
 		console.log(`Checkout expired for session: ${session.id}`);
+	}
+}
+
+/**
+ * Handle a failed / blocked payment attempt (declined card, Radar fraud block).
+ *
+ * These never reach checkout.session.completed, so without this they leave no
+ * trace in our system (only the Stripe Dashboard). We log every attempt that
+ * carries our enrolment metadata to courses_payment_failures — ignoring Shopify
+ * and card-testing noise on the shared Stripe account, which has no cohort_id —
+ * and email the course support inbox once per PaymentIntent so staff can follow
+ * up. We deliberately do NOT touch the courses_payments row: its checkout session
+ * can still succeed on retry within the 30-minute window, so its
+ * pending -> completed/abandoned lifecycle is left to run on its own.
+ */
+async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
+	const metadata = pi.metadata || {};
+
+	// Noise filter: only our enrolment checkouts set cohort_id in PI metadata.
+	if (!metadata.cohort_id) {
+		return;
+	}
+
+	const lastErr: any = pi.last_payment_error;
+	const chargeId =
+		(lastErr && typeof lastErr.charge === 'string' ? lastErr.charge : null) ||
+		(typeof pi.latest_charge === 'string' ? pi.latest_charge : null);
+
+	// The richest decline/fraud detail (outcome.*) lives on the charge, not the PI.
+	const charge = chargeId ? await getCharge(chargeId).catch(() => null) : null;
+	const outcome = charge?.outcome ?? null;
+	const card = charge?.payment_method_details?.card ?? null;
+
+	const failureCode = charge?.failure_code || lastErr?.code || null;
+	const declineCode = lastErr?.decline_code || null;
+	const riskLevel = outcome?.risk_level || null;
+	const outcomeType = outcome?.type || null;
+	const sellerMessage =
+		outcome?.seller_message || charge?.failure_message || lastErr?.message || null;
+
+	// Bucket the failure so the notification can give the right advice.
+	const cardErrorCodes = [
+		'incorrect_number',
+		'invalid_number',
+		'incorrect_cvc',
+		'invalid_cvc',
+		'incorrect_zip',
+		'invalid_expiry_month',
+		'invalid_expiry_year',
+		'expired_card'
+	];
+	let reasonCategory = 'other';
+	if (outcomeType === 'blocked' || riskLevel === 'highest') {
+		reasonCategory = 'fraud_blocked';
+	} else if (outcomeType === 'issuer_declined') {
+		reasonCategory = 'bank_declined';
+	} else if (failureCode && cardErrorCodes.includes(failureCode)) {
+		reasonCategory = 'card_error';
+	}
+
+	// Resolve course_id for the log row (metadata carries cohort_id + names only).
+	const { data: cohortRow } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select('module:module_id ( course_id )')
+		.eq('id', metadata.cohort_id)
+		.single();
+	const courseId = (cohortRow?.module as any)?.course_id ?? null;
+
+	const email =
+		metadata.user_email || charge?.billing_details?.email || pi.receipt_email || null;
+	const fullName = metadata.user_name || charge?.billing_details?.name || null;
+	const currency = (pi.currency || 'aud').toUpperCase();
+
+	const { data: inserted, error: insertError } = await supabaseAdmin
+		.from('courses_payment_failures')
+		.insert({
+			cohort_id: metadata.cohort_id,
+			course_id: courseId,
+			enrollment_link_id: metadata.enrollment_link_id || null,
+			hub_id: metadata.hub_id || null,
+			email,
+			full_name: fullName,
+			amount_cents: pi.amount ?? null,
+			currency,
+			stripe_payment_intent_id: pi.id,
+			stripe_charge_id: chargeId,
+			failure_code: failureCode,
+			decline_code: declineCode,
+			network_status: outcome?.network_status || null,
+			risk_level: riskLevel,
+			outcome_type: outcomeType,
+			seller_message: sellerMessage,
+			reason_category: reasonCategory,
+			card_brand: card?.brand || null,
+			card_last4: card?.last4 || null,
+			card_country: card?.country || null,
+			course_name: metadata.course_name || null,
+			module_name: metadata.module_name || null,
+			cohort_name: metadata.cohort_name || null,
+			raw: { last_payment_error: lastErr ?? null, outcome }
+		})
+		.select('id')
+		.single();
+
+	if (insertError) {
+		console.error('Failed to log payment failure:', insertError);
+		return;
+	}
+
+	console.log(
+		`Payment failed for PI ${pi.id} (${reasonCategory}) — ${email || 'unknown'} — logged`
+	);
+
+	// Throttle the support alert: one email per PaymentIntent. A checkout reuses the
+	// same PI across retries, so several rapid declines = one alert, not several.
+	const { count: alreadyNotified } = await supabaseAdmin
+		.from('courses_payment_failures')
+		.select('id', { count: 'exact', head: true })
+		.eq('stripe_payment_intent_id', pi.id)
+		.eq('notified', true);
+
+	if (alreadyNotified && alreadyNotified > 0) {
+		return;
+	}
+
+	const notifyResult: any = await CourseMutations.notifyAdminOfPaymentFailure({
+		cohortId: metadata.cohort_id,
+		email,
+		fullName,
+		amountCents: pi.amount ?? null,
+		currency,
+		reasonCategory,
+		failureCode,
+		declineCode,
+		sellerMessage,
+		riskLevel,
+		paymentIntentId: pi.id,
+		siteUrl: PUBLIC_SITE_URL
+	}).catch((err) => {
+		console.error('Failed to send payment-failure notification:', err);
+		return null;
+	});
+
+	if (notifyResult?.sent) {
+		await supabaseAdmin
+			.from('courses_payment_failures')
+			.update({ notified: true })
+			.eq('id', inserted.id);
 	}
 }

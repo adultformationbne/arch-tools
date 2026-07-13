@@ -20,7 +20,8 @@ import {
     Zap,
     Archive,
     Trash2,
-    Shield
+    Shield,
+    Tag
 } from '$lib/icons';
 
 let {
@@ -64,7 +65,6 @@ function hasModule(module) {
     return moduleSet.has(module);
 }
 
-const canManageAllCourses = $derived(enrollmentRole === 'courses.admin');
 // Course managers can fully manage courses they're enrolled in as admin
 const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
 const canViewHubs = $derived(canManageCourse);
@@ -146,6 +146,13 @@ const navItems = $derived([
         visible: canManageCourse && courseFeatures.enrollmentEnabled
     },
     {
+        label: 'Payments',
+        href: `/admin/courses/${courseSlug}/payments`,
+        icon: Tag,
+        description: 'Billing & payments',
+        visible: canManageCourse && courseFeatures.acceptPayments
+    },
+    {
         label: 'Hubs',
         href: withCohort(`/admin/courses/${courseSlug}/hubs`),
         icon: MapPin,
@@ -172,7 +179,7 @@ const navItems = $derived([
         href: `/admin/courses/${courseSlug}/managers`,
         icon: Shield,
         description: 'Assign course managers',
-        visible: canManageAllCourses
+        visible: canManageCourse
     }
 ].filter((item) => item.visible));
 

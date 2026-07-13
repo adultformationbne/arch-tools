@@ -279,6 +279,11 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 
 	// Check course-wide max capacity for the whole group
 	const courseSettings = getCourseSettings(course.settings);
+
+	// Enforce the course's required legal/consent acknowledgement, if configured
+	if (courseSettings.legal?.requireAcknowledgement && body.legalAccepted !== true) {
+		throw error(400, 'Please tick the checkbox to agree to the terms before continuing');
+	}
 	if (courseSettings.features?.maxCapacity) {
 		const { data: courseModules } = await supabaseAdmin
 			.from('courses_modules')

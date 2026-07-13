@@ -62,7 +62,6 @@ function hasModule(module) {
 	return moduleSet.has(module);
 }
 
-const canManageAllCourses = $derived(enrollmentRole === 'courses.admin');
 const canManageCourse = $derived(isCourseAdmin || hasModule('courses.manager'));
 const canViewHubs = $derived(canManageCourse);
 const canManageAttendance = $derived(canManageCourse);
@@ -169,7 +168,7 @@ const navItems = $derived([
 		href: `/admin/courses/${courseSlug}/managers`,
 		icon: Shield,
 		description: 'Assign course managers',
-		visible: canManageAllCourses
+		visible: canManageCourse
 	}
 ].filter((item) => item.visible));
 

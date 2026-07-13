@@ -37,6 +37,15 @@ export interface CourseSettings {
 		};
 	};
 
+	// Per-course legal/consent text shown on the enrolment signup page
+	legal?: {
+		text?: string;
+		linkUrl?: string;
+		linkLabel?: string;
+		requireAcknowledgement?: boolean;
+		checkboxLabel?: string;
+	};
+
 	// Feature Toggles
 	features?: {
 		reflectionsEnabled?: boolean;
@@ -98,6 +107,7 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 		// Preserve existing settings as-is
 		theme: settings.theme,
 		branding: settings.branding,
+		legal: settings.legal,
 
 		// Apply defaults for new settings
 		coordinatorAccess: {

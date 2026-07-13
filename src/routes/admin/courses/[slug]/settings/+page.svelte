@@ -32,6 +32,13 @@
 		emailBranding: {
 			replyToEmail: ''
 		},
+		legal: {
+			text: '',
+			linkUrl: '',
+			linkLabel: '',
+			requireAcknowledgement: false,
+			checkboxLabel: ''
+		},
 		coordinatorAccess: {
 			sessionsAhead: /** @type {'all' | number} */ ('all')
 		},
@@ -83,6 +90,13 @@
 
 			// Use getCourseSettings to get defaults for advanced settings
 			const parsedSettings = getCourseSettings(course.settings);
+
+			// Legal / consent
+			settings.legal.text = parsedSettings.legal?.text || '';
+			settings.legal.linkUrl = parsedSettings.legal?.linkUrl || '';
+			settings.legal.linkLabel = parsedSettings.legal?.linkLabel || '';
+			settings.legal.requireAcknowledgement = parsedSettings.legal?.requireAcknowledgement ?? false;
+			settings.legal.checkboxLabel = parsedSettings.legal?.checkboxLabel || '';
 
 			// Coordinator access
 			settings.coordinatorAccess.sessionsAhead = parsedSettings.coordinatorAccess?.sessionsAhead ?? 'all';
@@ -200,6 +214,7 @@
 						settings: {
 							theme: settings.theme,
 							branding: settings.branding,
+							legal: settings.legal,
 							coordinatorAccess: settings.coordinatorAccess,
 							sessionProgression: settings.sessionProgression,
 							features: settings.features
@@ -473,6 +488,84 @@
 							Leave blank to use the platform default.
 						</p>
 					</div>
+				</div>
+			</div>
+
+			<!-- Legal & Consent Section -->
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-1">Legal &amp; Consent</h2>
+				<p class="text-sm text-gray-500 mb-3 sm:mb-4">
+					Optional course-specific text (e.g. a code of conduct or waiver) shown on the enrolment signup page.
+				</p>
+
+				<div class="space-y-4">
+					<div>
+						<label for="legalText" class="block text-sm font-medium text-gray-700 mb-1">
+							Text shown at signup
+						</label>
+						<textarea
+							id="legalText"
+							bind:value={settings.legal.text}
+							rows="4"
+							class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							placeholder="e.g. By enrolling, you agree to attend all sessions and abide by the course code of conduct..."
+						></textarea>
+						<p class="mt-1 text-sm text-gray-500">Leave blank to hide this section on the signup page.</p>
+					</div>
+
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div>
+							<label for="legalLinkUrl" class="block text-sm font-medium text-gray-700 mb-1">
+								Link URL (optional)
+							</label>
+							<input
+								id="legalLinkUrl"
+								type="url"
+								bind:value={settings.legal.linkUrl}
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								placeholder="https://example.com/terms.pdf"
+							/>
+						</div>
+						<div>
+							<label for="legalLinkLabel" class="block text-sm font-medium text-gray-700 mb-1">
+								Link label
+							</label>
+							<input
+								id="legalLinkLabel"
+								type="text"
+								bind:value={settings.legal.linkLabel}
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								placeholder="Read the full terms"
+							/>
+						</div>
+					</div>
+
+					<label class="flex items-start gap-2.5 cursor-pointer rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+						<input
+							type="checkbox"
+							bind:checked={settings.legal.requireAcknowledgement}
+							class="w-4 h-4 mt-0.5 rounded border-gray-300"
+						/>
+						<div>
+							<span class="text-sm font-medium text-gray-700">Require participants to tick a checkbox before signing up</span>
+							<p class="text-xs text-gray-500">If off, the text above is shown for information only.</p>
+						</div>
+					</label>
+
+					{#if settings.legal.requireAcknowledgement}
+						<div>
+							<label for="legalCheckboxLabel" class="block text-sm font-medium text-gray-700 mb-1">
+								Checkbox label
+							</label>
+							<input
+								id="legalCheckboxLabel"
+								type="text"
+								bind:value={settings.legal.checkboxLabel}
+								class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								placeholder="I agree to the above"
+							/>
+						</div>
+					{/if}
 				</div>
 			</div>
 

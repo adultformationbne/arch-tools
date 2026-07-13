@@ -298,6 +298,18 @@ export async function getCheckoutSession(sessionId: string) {
 }
 
 /**
+ * Retrieve a single charge — used by the webhook to read the decline/fraud
+ * outcome detail on a failed payment (outcome.risk_level, outcome.type,
+ * outcome.network_status, seller_message), which lives on the charge, not the PI.
+ */
+export async function getCharge(chargeId: string): Promise<Stripe.Charge | null> {
+	if (isStripeMockMode()) {
+		return null;
+	}
+	return getStripe().charges.retrieve(chargeId);
+}
+
+/**
  * Create a Stripe Customer Portal session
  */
 export async function createPortalSession(customerId: string, returnUrl: string) {

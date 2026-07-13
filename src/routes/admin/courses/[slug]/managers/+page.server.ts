@@ -1,11 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { requireModuleLevel } from '$lib/server/auth';
+import { requireCourseAdmin } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		await requireModuleLevel(event, 'courses.admin');
+		await requireCourseAdmin(event, event.params.slug);
 	} catch {
 		throw redirect(303, `/admin/courses/${event.params.slug}`);
 	}

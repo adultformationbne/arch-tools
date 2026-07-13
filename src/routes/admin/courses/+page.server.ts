@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { hasModule, hasModuleLevel, requireAnyModule, requireModuleLevel } from '$lib/server/auth';
+import { hasModule, hasModuleLevel, requireAnyModule } from '$lib/server/auth';
 import { generateSystemTemplatesForCourse } from '$lib/server/course-email-templates';
 
 const STATUS_OPTIONS = ['draft', 'active', 'archived'] as const;
@@ -333,12 +333,16 @@ export const actions: Actions = {
 		};
 	},
 	update: async (event) => {
+		let userProfile;
+		let isAdmin;
 		try {
-			await requireModuleLevel(event, 'courses.admin');
+			const result = await requireAnyModule(event, ['courses.admin', 'courses.manager']);
+			userProfile = result.profile;
+			isAdmin = hasModuleLevel(userProfile.modules, 'courses.admin');
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: 'Only platform admins can update courses.'
+				message: 'Requires courses.admin or courses.manager module to update courses.'
 			});
 		}
 
@@ -352,6 +356,17 @@ export const actions: Actions = {
 				message: 'Missing course identifier.',
 				context: { action: 'update' }
 			});
+		}
+
+		if (!isAdmin) {
+			const assignedCourseIds = userProfile.assigned_course_ids || [];
+			if (!Array.isArray(assignedCourseIds) || !assignedCourseIds.includes(courseId)) {
+				return fail(403, {
+					type: 'error',
+					message: 'You can only edit courses you manage.',
+					context: { action: 'update', courseId }
+				});
+			}
 		}
 
 		const name = formData.get('name')?.toString().trim() ?? '';
@@ -449,13 +464,17 @@ export const actions: Actions = {
 		}
 
 		// Handle manager assignments (manager_ids from hidden inputs)
+		// Scoped managers don't see the full manager list, so this bulk reassignment
+		// is admin-only; managers invite/remove co-managers via the Managers page instead.
 		const managerIds = formData.getAll('manager_ids').map(id => id.toString());
-		const { data: allManagers } = await supabaseAdmin
-			.from('user_profiles')
-			.select('id, assigned_course_ids')
-			.contains('modules', ['courses.manager']);
+		const { data: allManagers } = isAdmin
+			? await supabaseAdmin
+				.from('user_profiles')
+				.select('id, assigned_course_ids')
+				.contains('modules', ['courses.manager'])
+			: { data: null };
 
-		if (allManagers) {
+		if (isAdmin && allManagers) {
 			for (const manager of allManagers) {
 				const currentAssignments = manager.assigned_course_ids || [];
 				const shouldBeAssigned = managerIds.includes(manager.id);
@@ -573,12 +592,16 @@ export const actions: Actions = {
 		};
 	},
 	updateManagers: async (event) => {
+		let userProfile;
+		let isAdmin;
 		try {
-			await requireModuleLevel(event, 'courses.admin');
+			const result = await requireAnyModule(event, ['courses.admin', 'courses.manager']);
+			userProfile = result.profile;
+			isAdmin = hasModuleLevel(userProfile.modules, 'courses.admin');
 		} catch (err) {
 			return fail(403, {
 				type: 'error',
-				message: 'Only platform admins can assign managers.'
+				message: 'Requires courses.admin or courses.manager module to assign managers.'
 			});
 		}
 
@@ -594,10 +617,20 @@ export const actions: Actions = {
 			});
 		}
 
+		if (!isAdmin) {
+			const assignedCourseIds = userProfile.assigned_course_ids || [];
+			if (!Array.isArray(assignedCourseIds) || !assignedCourseIds.includes(courseId)) {
+				return fail(403, {
+					type: 'error',
+					message: 'You can only manage managers for courses you manage.'
+				});
+			}
+		}
+
 		// Get all users with courses.manager module
 		const { data: allManagers } = await supabaseAdmin
 			.from('user_profiles')
-			.select('id, assigned_course_ids')
+			.select('id, assigned_course_ids, modules')
 			.contains('modules', ['courses.manager']);
 
 		if (!allManagers) {
@@ -609,6 +642,7 @@ export const actions: Actions = {
 
 		// Update each manager's assigned_course_ids
 		for (const manager of allManagers) {
+			if (!isAdmin && hasModuleLevel(manager.modules, 'courses.admin')) continue;
 			const currentAssignments = manager.assigned_course_ids || [];
 			const shouldBeAssigned = managerIds.includes(manager.id);
 			const isCurrentlyAssigned = currentAssignments.includes(courseId);

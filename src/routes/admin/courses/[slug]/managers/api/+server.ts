@@ -1,12 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { requireModuleLevel } from '$lib/server/auth';
+import { requireCourseAdmin, hasModuleLevel } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
-	await requireModuleLevel(event, 'courses.admin');
-
 	const courseSlug = event.params.slug;
+	const { viaModule } = await requireCourseAdmin(event, courseSlug);
 	const { action, userId } = await event.request.json();
 
 	if (!userId || !['add_manager', 'remove_manager'].includes(action)) {
@@ -31,6 +30,14 @@ export const POST: RequestHandler = async (event) => {
 
 	if (!profile) {
 		return json({ success: false, error: 'User not found' }, { status: 404 });
+	}
+
+	// Scoped managers can invite/remove other managers, but never touch platform admins
+	if (viaModule === 'courses.manager' && hasModuleLevel(profile.modules, 'courses.admin')) {
+		return json(
+			{ success: false, error: 'Only platform admins can modify platform admins.' },
+			{ status: 403 }
+		);
 	}
 
 	const currentModules: string[] = profile.modules || [];
