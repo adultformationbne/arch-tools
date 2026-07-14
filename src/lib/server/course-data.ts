@@ -405,13 +405,32 @@ export const CourseQueries = {
 
 	/**
 	 * Get attendance records for a cohort
+	 * Pages through results - a cohort's full attendance history (students x
+	 * sessions) can exceed PostgREST's default 1000-row cap, which would
+	 * otherwise silently truncate later sessions out of the result.
 	 */
 	async getAttendanceRecords(cohortId: string) {
-		return supabaseAdmin
-			.from('courses_attendance')
-			.select('enrollment_id, session_number, present')
-			.eq('cohort_id', cohortId)
-			.order('session_number', { ascending: true });
+		const pageSize = 1000;
+		let from = 0;
+		let allRows: any[] = [];
+
+		while (true) {
+			const { data, error } = await supabaseAdmin
+				.from('courses_attendance')
+				.select('enrollment_id, session_number, present')
+				.eq('cohort_id', cohortId)
+				.order('session_number', { ascending: true })
+				.order('enrollment_id', { ascending: true })
+				.range(from, from + pageSize - 1);
+
+			if (error) return { data: null, error };
+
+			allRows = allRows.concat(data || []);
+			if (!data || data.length < pageSize) break;
+			from += pageSize;
+		}
+
+		return { data: allRows, error: null };
 	},
 
 	/**
@@ -482,6 +501,35 @@ export const CourseQueries = {
 // ============================================================================
 // LAYER 2: AGGREGATES (Business Logic)
 // ============================================================================
+
+/**
+ * PostgREST caps unpaginated selects at 1000 rows by default. A cohort's full
+ * attendance history (students x sessions) can exceed that, silently
+ * truncating later sessions out of the result - page through until exhausted.
+ */
+async function fetchAllAttendanceForCohort(cohortId: string) {
+	const pageSize = 1000;
+	let from = 0;
+	let allRows: any[] = [];
+
+	while (true) {
+		const { data, error } = await supabaseAdmin
+			.from('courses_attendance')
+			.select('*')
+			.eq('cohort_id', cohortId)
+			.order('session_number', { ascending: true })
+			.order('id', { ascending: true })
+			.range(from, from + pageSize - 1);
+
+		if (error) return { data: null, error };
+
+		allRows = allRows.concat(data || []);
+		if (!data || data.length < pageSize) break;
+		from += pageSize;
+	}
+
+	return { data: allRows, error: null };
+}
 
 /**
  * Higher-level functions that combine multiple queries
@@ -814,11 +862,7 @@ export const CourseAggregates = {
 
 			CourseQueries.getSessions(moduleId),
 
-			supabaseAdmin
-				.from('courses_attendance')
-				.select('*')
-				.eq('cohort_id', cohortId)
-				.order('session_number', { ascending: true }),
+			fetchAllAttendanceForCohort(cohortId),
 
 			supabaseAdmin.from('courses_hubs').select('id, name, location').eq('course_id', courseId)
 		]);
