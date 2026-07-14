@@ -27,6 +27,32 @@ export const load: PageServerLoad = async (event) => {
 			};
 		}
 
+		// Pages through - across every cohort in a course, attendance rows
+		// (enrollments x sessions) can exceed PostgREST's default 1000-row cap,
+		// which would otherwise silently truncate later cohorts/sessions out of
+		// the result and understate attendance stats.
+		const fetchAllAttendance = async () => {
+			const pageSize = 1000;
+			let from = 0;
+			let allRows: Array<{ enrollment_id: string; session_number: number; present: boolean }> = [];
+			while (true) {
+				const { data, error: err } = await supabaseAdmin
+					.from('courses_attendance')
+					.select('enrollment_id, session_number, present')
+					.in('cohort_id', cohortIds)
+					.order('cohort_id', { ascending: true })
+					.order('session_number', { ascending: true })
+					.order('enrollment_id', { ascending: true })
+					.range(from, from + pageSize - 1);
+
+				if (err) return { data: null, error: err };
+				allRows = allRows.concat(data || []);
+				if (!data || data.length < pageSize) break;
+				from += pageSize;
+			}
+			return { data: allRows, error: null };
+		};
+
 		// Run ALL queries in parallel - including reflections using cohort IDs
 		const [enrollmentsResult, attendanceResult, sessionsResult, reflectionsResult] = await Promise.all([
 			// Enrollments with full profile data
@@ -63,10 +89,7 @@ export const load: PageServerLoad = async (event) => {
 				.order('created_at', { ascending: false }),
 
 			// Attendance records for all cohorts
-			supabaseAdmin
-				.from('courses_attendance')
-				.select('enrollment_id, session_number, present')
-				.in('cohort_id', cohortIds),
+			fetchAllAttendance(),
 
 			// Session count from first module
 			modules.length > 0

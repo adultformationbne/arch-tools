@@ -101,13 +101,28 @@ export const GET: RequestHandler = async (event) => {
 	let attendanceMap: Record<string, Record<number, boolean>> = {};
 
 	if (memberIds.length > 0) {
-		const { data: attendance } = await supabaseAdmin
-			.from('courses_attendance')
-			.select('enrollment_id, session_number, present')
-			.in('enrollment_id', memberIds)
-			.eq('cohort_id', cohortId);
+		// Page through - a hub's full attendance history (members x sessions) can
+		// exceed PostgREST's default 1000-row cap, which would otherwise silently
+		// truncate later sessions out of the result.
+		const pageSize = 1000;
+		let from = 0;
+		let attendance: Array<{ enrollment_id: string; session_number: number; present: boolean }> = [];
+		while (true) {
+			const { data } = await supabaseAdmin
+				.from('courses_attendance')
+				.select('enrollment_id, session_number, present')
+				.in('enrollment_id', memberIds)
+				.eq('cohort_id', cohortId)
+				.order('session_number', { ascending: true })
+				.order('enrollment_id', { ascending: true })
+				.range(from, from + pageSize - 1);
 
-		attendance?.forEach(a => {
+			attendance = attendance.concat(data || []);
+			if (!data || data.length < pageSize) break;
+			from += pageSize;
+		}
+
+		attendance.forEach(a => {
 			if (!attendanceMap[a.enrollment_id]) {
 				attendanceMap[a.enrollment_id] = {};
 			}
