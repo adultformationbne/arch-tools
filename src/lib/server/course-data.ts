@@ -1070,6 +1070,15 @@ export const CourseMutations = {
 		const { courseId, name, description, orderNumber, sessionCount } = params;
 		const numSessions = sessionCount || 8;
 
+		let finalOrderNumber = orderNumber;
+		if (finalOrderNumber === undefined) {
+			const { data: siblings } = await supabaseAdmin
+				.from('courses_modules')
+				.select('order_number')
+				.eq('course_id', courseId);
+			finalOrderNumber = (siblings || []).reduce((max, m) => Math.max(max, m.order_number || 0), 0) + 1;
+		}
+
 		// Create the module
 		const { data: newModule, error: moduleError } = await supabaseAdmin
 			.from('courses_modules')
@@ -1077,7 +1086,7 @@ export const CourseMutations = {
 				course_id: courseId,
 				name: name,
 				description: description || '',
-				order_number: orderNumber || 1
+				order_number: finalOrderNumber
 			})
 			.select()
 			.single();
