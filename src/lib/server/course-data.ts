@@ -12,6 +12,7 @@
 
 import { supabaseAdmin } from './supabase.js';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { getCachedPublicReflections, setCachedPublicReflections } from './public-reflections-cache.js';
 
 /**
  * Helper type for query results
@@ -292,23 +293,29 @@ export const CourseQueries = {
 	},
 
 	/**
-	 * Get public reflections for a cohort
+	 * Get public reflections for a cohort.
+	 * This feed is identical for every participant in the cohort (same 20 rows),
+	 * so it's cached briefly instead of re-querying on every dashboard visit.
 	 */
 	async getPublicReflections(cohortId: string) {
-		return supabaseAdmin
+		const cached = getCachedPublicReflections(cohortId);
+		if (cached) {
+			return { data: cached, error: null };
+		}
+
+		const result = await supabaseAdmin
 			.from('courses_reflection_responses')
 			.select(`
-				*,
+				id,
+				created_at,
+				response_text,
 				question:question_id (
-					id,
 					question_text,
 					session:session_id (
-						id,
 						session_number
 					)
 				),
 				enrollment:enrollment_id (
-					id,
 					user_profile:user_profile_id (
 						full_name
 					)
@@ -319,6 +326,12 @@ export const CourseQueries = {
 			.eq('status', 'passed')
 			.order('created_at', { ascending: false })
 			.limit(20);
+
+		if (result.data) {
+			setCachedPublicReflections(cohortId, result.data);
+		}
+
+		return result;
 	},
 
 	/**
@@ -540,7 +553,15 @@ export const CourseAggregates = {
 	 * Optimized with parallel queries
 	 * @param cohortId - Optional cohort ID to select a specific enrollment
 	 */
-	async getStudentDashboard(userId: string, courseSlug: string, selectedCohortId?: string) {
+	async getStudentDashboard(
+		userId: string,
+		courseSlug: string,
+		selectedCohortId?: string,
+		communityFeedEnabled = true,
+		reflectionsEnabled = true,
+		materialsEnabled = true,
+		hubsEnabled = true
+	) {
 		// Step 1: Get enrollment (must be first to get cohort/module info)
 		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
 			userId,
@@ -568,11 +589,19 @@ export const CourseAggregates = {
 		// Step 3: Parallel fetch all session-related data
 		const [materials, questions, responses, publicReflections, hubDataResult] =
 			await Promise.all([
-				CourseQueries.getMaterials(sessionIds),
-				CourseQueries.getReflectionQuestions(sessionIds),
-				CourseQueries.getReflectionResponses(enrollmentId),
-				CourseQueries.getPublicReflections(cohortId),
-				enrollment.role === 'coordinator' && enrollment.hub_id
+				materialsEnabled
+					? CourseQueries.getMaterials(sessionIds)
+					: Promise.resolve({ data: [], error: null }),
+				reflectionsEnabled
+					? CourseQueries.getReflectionQuestions(sessionIds)
+					: Promise.resolve({ data: [], error: null }),
+				reflectionsEnabled
+					? CourseQueries.getReflectionResponses(enrollmentId)
+					: Promise.resolve({ data: [], error: null }),
+				communityFeedEnabled
+					? CourseQueries.getPublicReflections(cohortId)
+					: Promise.resolve({ data: [], error: null }),
+				hubsEnabled && enrollment.role === 'coordinator' && enrollment.hub_id
 					? CourseQueries.getHubData(enrollment.hub_id, cohortId)
 					: Promise.resolve({ hub: null, students: [], error: null })
 			]);
@@ -690,7 +719,12 @@ export const CourseAggregates = {
 	 * Optimized for reflections view with all necessary data
 	 * @param selectedCohortId - Optional cohort ID to select a specific enrollment
 	 */
-	async getReflectionsPage(userId: string, courseSlug: string, selectedCohortId?: string) {
+	async getReflectionsPage(
+		userId: string,
+		courseSlug: string,
+		selectedCohortId?: string,
+		communityFeedEnabled = true
+	) {
 		// Step 1: Get enrollment
 		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
 			userId,
@@ -719,7 +753,9 @@ export const CourseAggregates = {
 		const [questions, responses, publicReflections] = await Promise.all([
 			CourseQueries.getReflectionQuestions(sessionIds),
 			CourseQueries.getReflectionResponses(enrollmentId),
-			CourseQueries.getPublicReflections(cohortId, enrollmentId)
+			communityFeedEnabled
+				? CourseQueries.getPublicReflections(cohortId)
+				: Promise.resolve({ data: [], error: null })
 		]);
 
 		return {
@@ -3131,6 +3167,17 @@ export const CourseMutations = {
 				resendApiKey: RESEND_API_KEY,
 				supabase: supabaseAdmin
 			});
+
+			if (result.success) {
+				// Stamp the same field sendWelcomeEmails uses, so the participants
+				// dashboard's "invited" signal is accurate regardless of which flow
+				// enrolled this person (self-serve link vs admin-triggered welcome email).
+				await supabaseAdmin
+					.from('courses_enrollments')
+					.update({ welcome_email_sent_at: new Date().toISOString() })
+					.eq('id', enrollmentId)
+					.is('welcome_email_sent_at', null);
+			}
 
 			return { success: result.success, error: result.success ? null : 'Failed to send email' };
 		} catch (err) {

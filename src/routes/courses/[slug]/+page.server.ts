@@ -36,7 +36,15 @@ export const load: PageServerLoad = async (event) => {
 	const coordinatorAccessAhead = courseSettings.coordinatorAccess?.sessionsAhead ?? 'all';
 
 	// Get all dashboard data in one optimized call
-	const result = await CourseAggregates.getStudentDashboard(user.id, courseSlug, cohortId);
+	const result = await CourseAggregates.getStudentDashboard(
+		user.id,
+		courseSlug,
+		cohortId,
+		featureSettings?.communityFeedEnabled !== false,
+		featureSettings?.reflectionsEnabled !== false,
+		featureSettings?.materialsEnabled !== false,
+		featureSettings?.hubsEnabled !== false
+	);
 
 	if (result.error || !result.data) {
 		throw error(500, 'Failed to load dashboard data');

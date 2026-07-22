@@ -75,7 +75,12 @@
 	const hasQualitative = $derived(qualitativeQuizIds.size > 0);
 	const hasInstant = $derived(instantQuizIds.size > 0);
 
-	// Poll for updates every 30s (only while modal is closed)
+	// Poll for updates every 30s (only while modal is closed).
+	// NOTE: can't switch this to a Realtime subscription like the reflections
+	// page until courses_quiz_attempts has an authenticated-role SELECT policy —
+	// right now only a service_role policy exists, so a browser-side subscription
+	// would receive zero events. Low priority since no quizzes are live yet
+	// (0 rows), but fix RLS first if this page starts seeing real traffic.
 	$effect(() => {
 		const interval = setInterval(() => {
 			if (!showMarkingModal) invalidateAll();

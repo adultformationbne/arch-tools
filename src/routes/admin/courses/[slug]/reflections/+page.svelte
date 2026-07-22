@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MessageSquare, CheckCircle, XCircle, Clock, User, Calendar, Filter, Search, Star, X, Eye } from '$lib/icons';
 	import { toastSuccess, toastError, toastWarning } from '$lib/utils/toast-helpers.js';
+	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 	import ReflectionStatusBadge from '$lib/components/ReflectionStatusBadge.svelte';
@@ -101,15 +102,39 @@
 		return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 	});
 
-	// Poll for updates every 30 seconds to see claim changes from other users
-	$effect(() => {
-		const interval = setInterval(() => {
-			// Only refresh if modal is closed (don't interrupt active marking)
-			if (!showMarkingModal) {
-				invalidateAll();
-			}
-		}, 30000);
-		return () => clearInterval(interval);
+	// Refresh only when a reflection actually changes (claimed/marked/submitted),
+	// instead of blindly polling on a timer. Debounced so a burst of changes
+	// (e.g. submit + claim-next) triggers one reload, not several.
+	onMount(() => {
+		const supabase = data.supabase;
+		const cohortIds = (data.cohorts || []).map((c) => c.id);
+		if (!supabase || cohortIds.length === 0) return;
+
+		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+		const scheduleRefresh = () => {
+			if (showMarkingModal) return; // don't interrupt active marking
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => invalidateAll(), 2000);
+		};
+
+		const channel = supabase
+			.channel(`admin-reflections:${courseSlug}`)
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'courses_reflection_responses',
+					filter: `cohort_id=in.(${cohortIds.join(',')})`
+				},
+				scheduleRefresh
+			)
+			.subscribe();
+
+		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+			supabase.removeChannel(channel);
+		};
 	});
 
 	let markingForm = $state({
@@ -382,8 +407,9 @@
 				markingForm = { feedback: '', passStatus: 'pass', isPublic: false };
 			}
 
-			// Sync with server in background (non-blocking)
-			invalidateAll();
+			// No manual refetch needed here: the optimistic update above already
+			// reflects the change locally, and the Realtime subscription picks up
+			// this write (and any from other admins) to keep counts in sync.
 
 		} catch (error) {
 			console.error('Marking error:', error);

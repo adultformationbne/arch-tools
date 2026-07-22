@@ -21,9 +21,15 @@ export const load: PageServerLoad = async (event) => {
 	if (courseSettings.features?.reflectionsEnabled === false) {
 		throw redirect(302, `/courses/${courseSlug}`);
 	}
+	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
 	// Get all reflections page data in one optimized call
-	const result = await CourseAggregates.getReflectionsPage(user.id, courseSlug, cohortId);
+	const result = await CourseAggregates.getReflectionsPage(
+		user.id,
+		courseSlug,
+		cohortId,
+		communityFeedEnabled
+	);
 
 	if (result.error || !result.data) {
 		throw error(500, 'Failed to load reflections');
@@ -118,8 +124,6 @@ export const load: PageServerLoad = async (event) => {
 				hasSubmitted: !!hasCurrentSubmission
 			}
 		: null;
-
-	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
 	return {
 		myReflections: processedMyReflections,
