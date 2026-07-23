@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
+import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -51,11 +52,21 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get student's courses_enrollments record (need id and cohort_id)
+		// Scope to this course's cohorts so a user enrolled in multiple courses
+		// can't have their reflection saved against the wrong course's enrollment.
 		// Use the cohort cookie if available to select the correct enrollment
+		const courseCohortIds = await CourseQueries.getCohortIdsForCourse(courseSlug);
+
+		if (!courseCohortIds.length) {
+			console.error('Course lookup error: no cohorts found for course', courseSlug);
+			throw error(400, 'Course not found');
+		}
+
 		let enrollmentQuery = supabaseAdmin
 			.from('courses_enrollments')
 			.select('id, cohort_id')
 			.eq('user_profile_id', userId)
+			.in('cohort_id', courseCohortIds)
 			.in('status', ['active', 'invited', 'accepted']);
 
 		if (cohortId) {

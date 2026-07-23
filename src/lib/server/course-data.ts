@@ -42,11 +42,45 @@ export const CourseQueries = {
 	},
 
 	/**
+	 * Get cohort IDs belonging to a course, resolved via course → modules → cohorts
+	 * in separate simple queries. Avoids PostgREST's unreliable multi-level embedded
+	 * filters (e.g. `.eq('cohort.module.course.slug', ...)`), which can silently fail
+	 * to scope results and return an enrollment from an unrelated course for users
+	 * enrolled in more than one course.
+	 */
+	async getCohortIdsForCourse(courseSlug: string): Promise<string[]> {
+		const { data: course } = await supabaseAdmin
+			.from('courses')
+			.select('id')
+			.eq('slug', courseSlug)
+			.single();
+		if (!course) return [];
+
+		const { data: modules } = await supabaseAdmin
+			.from('courses_modules')
+			.select('id')
+			.eq('course_id', course.id);
+		if (!modules?.length) return [];
+
+		const { data: cohorts } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('id')
+			.in('module_id', modules.map((m) => m.id));
+
+		return (cohorts || []).map((c) => c.id);
+	},
+
+	/**
 	 * Get user enrollment for a specific course (via cohort join)
 	 * If cohortId is provided, returns that specific enrollment
 	 * Otherwise, if user has multiple enrollments (different cohorts), returns the most recent one
 	 */
 	async getEnrollment(userId: string, courseSlug: string, cohortId?: string) {
+		const cohortIds = await CourseQueries.getCohortIdsForCourse(courseSlug);
+		if (!cohortIds.length) {
+			return { data: null, error: null };
+		}
+
 		const baseQuery = () => supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
@@ -65,7 +99,7 @@ export const CourseQueries = {
 				user_profile:user_profile_id (*)
 			`)
 			.eq('user_profile_id', userId)
-			.eq('cohort.module.course.slug', courseSlug)
+			.in('cohort_id', cohortIds)
 			.in('status', ['active', 'invited', 'accepted']);
 
 		// If specific cohort requested, try that first
