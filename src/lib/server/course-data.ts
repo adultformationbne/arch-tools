@@ -482,9 +482,18 @@ export const CourseQueries = {
 
 	/**
 	 * Get reflection responses for a cohort
+	 *
+	 * Pages through results - participants x sessions exceeds PostgREST's 1000-row
+	 * cap on a long-running course, which would silently under-report each
+	 * participant's reflection counts.
 	 */
 	async getReflectionResponsesForCohort(cohortId: string) {
-		return supabaseAdmin
+		const pageSize = 1000;
+		let from = 0;
+		let allRows: any[] = [];
+
+		while (true) {
+			const { data, error } = await supabaseAdmin
 			.from('courses_reflection_responses')
 			.select(`
 				enrollment_id,
@@ -504,7 +513,18 @@ export const CourseQueries = {
 				)
 			`)
 			.eq('cohort_id', cohortId)
-			.order('created_at', { ascending: true });
+			.order('created_at', { ascending: true })
+			.order('id', { ascending: true })
+			.range(from, from + pageSize - 1);
+
+			if (error) return { data: null, error };
+
+			allRows = allRows.concat(data || []);
+			if (!data || data.length < pageSize) break;
+			from += pageSize;
+		}
+
+		return { data: allRows, error: null };
 	},
 
 	/**
