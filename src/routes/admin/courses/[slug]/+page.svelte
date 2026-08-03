@@ -494,7 +494,7 @@
 			'Name', 'Email', 'Phone', 'Parish/Community', 'Parish Role', 'Address',
 			'Hub', 'Role', 'Status', 'Session', 'Attendance',
 			'Reflections Completed', 'Reflections Submitted', 'Reflections Returned', 'Reflections Draft',
-			'Payment Status', 'Last Login', 'Enrolled Date'
+			'Payment Status', 'Last Seen', 'Enrolled Date'
 		];
 
 		const rows = filteredParticipants.map(p => {
@@ -522,7 +522,7 @@
 				showReflections ? refCount.returned : '',
 				showReflections ? refCount.draft : '',
 				p.payment_status || '',
-				p.last_login_at ? new Date(p.last_login_at).toLocaleDateString() : '',
+				lastSeenAt(p) ? new Date(lastSeenAt(p)).toLocaleDateString() : '',
 				p.created_at ? new Date(p.created_at).toLocaleDateString() : ''
 			];
 		});
@@ -756,9 +756,23 @@
 		showEmailModal = true;
 	}
 
-	function _loginActivity(participant) {
-		const diffDays = (Date.now() - new Date(participant.last_login_at).getTime()) / (1000 * 60 * 60 * 24);
-		const time = formatRelativeTime(participant.last_login_at);
+	// Last time we have any evidence the participant was in the course.
+	// last_login_at only moves when they authenticate again, and a session that
+	// keeps refreshing never does - so someone who never signs out reads as
+	// dormant no matter how much work they hand in. last_viewed_at moves every
+	// time they open the course dashboard, so the later of the two is the honest
+	// answer.
+	function lastSeenAt(participant) {
+		const stamps = [participant.last_login_at, participant.last_viewed_at]
+			.filter(Boolean)
+			.map(t => new Date(t).getTime())
+			.filter(t => !isNaN(t));
+		return stamps.length ? Math.max(...stamps) : null;
+	}
+
+	function _lastSeenActivity(seen) {
+		const diffDays = (Date.now() - seen) / (1000 * 60 * 60 * 24);
+		const time = formatRelativeTime(new Date(seen).toISOString());
 		if (diffDays <= 7) return { label: time, sub: null, labelClass: 'text-emerald-600', dot: '●' };
 		if (diffDays <= 30) return { label: time, sub: null, labelClass: 'text-gray-500', dot: null };
 		return { label: time, sub: null, labelClass: 'text-amber-600', dot: null };
@@ -769,21 +783,23 @@
 		if (participant.status === 'withdrawn') return { label: 'Withdrawn', sub: null, labelClass: 'text-red-500', dot: null };
 		if (participant.status === 'completed') return { label: 'Completed', sub: null, labelClass: 'text-purple-600', dot: null };
 
+		const seen = lastSeenAt(participant);
+
 		if (participant.status === 'active') {
-			if (!participant.last_login_at || participant.login_count === 0) {
+			if (!seen) {
 				return { label: 'Active', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
 			}
-			return _loginActivity(participant);
+			return _lastSeenActivity(seen);
 		}
 
 		// DB status is 'invited' or 'pending' — use communication signals
-		if (!participant.welcome_email_sent_at && (!participant.last_login_at || participant.login_count === 0)) {
+		if (!participant.welcome_email_sent_at && !seen) {
 			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
 		}
-		if (!participant.last_login_at || participant.login_count === 0) {
+		if (!seen) {
 			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
 		}
-		return _loginActivity(participant);
+		return _lastSeenActivity(seen);
 	}
 
 	// Keep getStatusBadge for CSV export and getStatusKey sorting
