@@ -6,14 +6,14 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 export const POST: RequestHandler = async (event) => {
 	const { user } = await requireAuth(event);
 
-	const body = await event.request.json();
-	const name = body.name?.trim();
+	const { name, phone, parish_community, parish_role, address } = await event.request.json();
+	const trimmedName = name?.trim();
 
-	if (!name || name.length === 0) {
+	if (!trimmedName || trimmedName.length === 0) {
 		throw error(400, 'Name is required');
 	}
 
-	if (name.length > 200) {
+	if (trimmedName.length > 200) {
 		throw error(400, 'Name is too long');
 	}
 
@@ -24,13 +24,13 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	const update: Record<string, string | null> = {
-		full_name: name
+		full_name: trimmedName
 	};
 
-	if (body.phone !== undefined) update.phone = body.phone?.trim() || null;
-	if (body.parish_community !== undefined) update.parish_community = body.parish_community?.trim() || null;
-	if (body.parish_role !== undefined) update.parish_role = body.parish_role?.trim() || null;
-	if (body.address !== undefined) update.address = body.address?.trim() || null;
+	if (phone !== undefined) update.phone = phone?.trim() || null;
+	if (parish_community !== undefined) update.parish_community = parish_community?.trim() || null;
+	if (parish_role !== undefined) update.parish_role = parish_role?.trim() || null;
+	if (address !== undefined) update.address = address?.trim() || null;
 
 	const { error: updateError } = await supabaseAdmin
 		.from('user_profiles')
