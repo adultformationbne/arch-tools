@@ -52,6 +52,33 @@ export function getInitialDGRFormData() {
 }
 
 /**
+ * Normalise a lectionary reference into something oremus can parse.
+ *
+ * The lectionary writes a passage with skipped verses using dots between the
+ * verse groups — "Matthew 15:1-2.10-14". Oremus does not accept that: it echoes
+ * back `invalid bible reference: 15.1-2.10-14` in a normal HTTP 200 page. It
+ * does accept commas, so the groups are rejoined with those.
+ *
+ * Only the verse part is touched. Some sources use a dot as the chapter/verse
+ * separator ("1 John 3.1-3"), and rewriting that would break the reference, so
+ * the substitution starts after the first colon and does nothing without one.
+ *
+ * @param {string} reference - e.g. "Matthew 15:1-2.10-14"
+ * @returns {string} e.g. "Matthew 15:1-2,10-14"
+ */
+export function normalizeScriptureReference(reference) {
+	if (!reference) return '';
+
+	const colon = reference.indexOf(':');
+	if (colon === -1) return reference.trim();
+
+	const book = reference.slice(0, colon + 1);
+	const verses = reference.slice(colon + 1).replace(/\.(?=\d)/g, ',');
+
+	return `${book}${verses}`.trim();
+}
+
+/**
  * Clean gospel text by removing scripture headings, verse numbers, and footnotes
  * Works with both processed HTML (with classes) and raw oremus HTML
  * @param {string} html - Raw gospel HTML
@@ -63,6 +90,12 @@ export function cleanGospelText(html) {
 	let cleaned = html;
 
 	// === PHASE 1: Remove HTML elements that contain verse numbers ===
+
+	// Drop script and style blocks BEFORE tags are stripped. Stripping tags on
+	// its own leaves the code between them, which is how a page of JavaScript
+	// once reached a published reflection.
+	cleaned = cleaned.replace(/<script[\s\S]*?<\/script>/gi, '');
+	cleaned = cleaned.replace(/<style[\s\S]*?<\/style>/gi, '');
 
 	// Remove HTML comments and their remnants
 	cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');

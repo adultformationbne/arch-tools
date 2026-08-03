@@ -1,4 +1,39 @@
 import { json, error } from '@sveltejs/kit';
+import { normalizeScriptureReference } from '$lib/utils/dgr-common.js';
+
+/**
+ * Pull the scripture out of an oremus page, or return null.
+ *
+ * Returning null matters more than the extraction does. Oremus answers an
+ * unparseable reference with a normal 200 whose body is its own error page, so
+ * "we got HTML back" is not evidence of scripture. This used to fall back to
+ * returning the whole page with success: true, and the publisher wrote that
+ * page — inline JavaScript and all — into the reflection for 4 August 2026.
+ *
+ * @param {string} html
+ * @returns {string | null}
+ */
+function extractScripture(html) {
+	if (html.includes('<blockquote>')) {
+		const start = html.indexOf('<blockquote>');
+		const end = html.indexOf('</blockquote>');
+		if (start !== -1 && end > start) return html.substring(start, end + 13);
+	}
+
+	if (html.includes('class="bibletext"')) {
+		const start = html.indexOf('<div class="bibletext"');
+		const end = html.indexOf('</div>', start);
+		if (start !== -1 && end > start) return html.substring(start, end + 6);
+	}
+
+	if (html.includes('<div class="passage">')) {
+		const start = html.indexOf('<div class="passage">');
+		const end = html.indexOf('</div>', start);
+		if (start !== -1 && end > start) return html.substring(start, end + 6);
+	}
+
+	return null;
+}
 
 export async function GET({ url }) {
 
@@ -15,7 +50,10 @@ export async function GET({ url }) {
 			throw error(400, 'Passage parameter is required');
 		}
 
-		const encodedPassage = encodeURIComponent(passage);
+		// Lectionary references such as "Matthew 15:1-2.10-14" separate verse
+		// groups with dots, which oremus rejects. Normalise before asking.
+		const normalizedPassage = normalizeScriptureReference(passage);
+		const encodedPassage = encodeURIComponent(normalizedPassage);
 		const bibleUrl = `https://bible.oremus.org/?version=${version}&passage=${encodedPassage}&vnum=${vnum}&fnote=${fnote}&show_ref=${show_ref}&headings=${headings}`;
 
 
@@ -36,77 +74,28 @@ export async function GET({ url }) {
 
 		const html = await response.text();
 
-		// Extract the main content from the HTML
-		// The oremus API returns full HTML pages, we need to extract just the scripture content
-		let scriptureContent = html;
+		const scriptureContent = extractScripture(html);
 
-		// Try different methods to extract scripture content
-
-		// Method 1: Look for blockquote
-		if (html.includes('<blockquote>')) {
-			const blockquoteStart = html.indexOf('<blockquote>');
-			const blockquoteEnd = html.indexOf('</blockquote>') + 13;
-			if (blockquoteStart !== -1 && blockquoteEnd !== -1) {
-				scriptureContent = html.substring(blockquoteStart, blockquoteEnd);
-			}
-		}
-		// Method 2: Look for div with class="bibletext" or similar
-		else if (html.includes('class="bibletext"')) {
-			const start = html.indexOf('<div class="bibletext"');
-			const end = html.indexOf('</div>', start) + 6;
-			if (start !== -1 && end !== -1) {
-				scriptureContent = html.substring(start, end);
-			}
-		}
-		// Method 3: Look for content between specific markers
-		else if (html.includes('<div class="passage">')) {
-			const start = html.indexOf('<div class="passage">');
-			const end = html.indexOf('</div>', start) + 6;
-			if (start !== -1 && end !== -1) {
-				scriptureContent = html.substring(start, end);
-			}
-		}
-		// Method 4: Try to find content after a common pattern
-		else {
-
-			// Look for verse numbers which indicate scripture content
-			const versePattern = /<sup class="verse">/i;
-			if (versePattern.test(html)) {
-				// Find a section that contains verse numbers
-				const lines = html.split('\n');
-				let contentLines = [];
-				let foundVerseContent = false;
-
-				for (let line of lines) {
-					if (versePattern.test(line) || foundVerseContent) {
-						contentLines.push(line);
-						foundVerseContent = true;
-					}
-					// Stop if we hit footer or navigation
-					if (line.includes('</body>') || line.includes('<div class="nav">')) {
-						break;
-					}
-				}
-
-				if (contentLines.length > 0) {
-					scriptureContent = contentLines.join('\n');
-				}
-			} else {
-				// As fallback, try to remove obvious page elements
-				let cleaned = html;
-				// Remove head section
-				cleaned = cleaned.replace(/<head>[\s\S]*?<\/head>/i, '');
-				// Remove navigation
-				cleaned = cleaned.replace(/<div[^>]*nav[^>]*>[\s\S]*?<\/div>/gi, '');
-				// Remove footer
-				cleaned = cleaned.replace(/<div[^>]*footer[^>]*>[\s\S]*?<\/div>/gi, '');
-
-				scriptureContent = cleaned;
-			}
+		// No container means oremus did not return a passage — most often because
+		// it could not parse the reference, which it reports in a 200. Failing here
+		// is the whole point: callers treat success as publishable scripture.
+		if (!scriptureContent) {
+			const reason = html.match(/invalid bible reference:\s*([^<]+)/i);
+			console.error(
+				`[scripture] no passage returned for "${normalizedPassage}"` +
+					(reason ? ` — oremus: invalid bible reference: ${reason[1].trim()}` : '')
+			);
+			throw error(
+				502,
+				reason
+					? `Bible reference not recognised: ${normalizedPassage}`
+					: `No scripture text returned for: ${normalizedPassage}`
+			);
 		}
 
 		const result = {
 			passage,
+			normalizedPassage,
 			version,
 			content: scriptureContent,
 			success: true

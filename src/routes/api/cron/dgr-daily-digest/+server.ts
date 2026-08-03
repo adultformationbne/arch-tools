@@ -5,7 +5,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { Resend } from 'resend';
 import { getReadingsForEntries } from '$lib/server/dgr-readings.js';
 import { publishDGRToWordPress, type PublishResult } from '$lib/server/dgr-publisher.js';
-import { findGospelReference, cleanGospelText } from '$lib/utils/dgr-common.js';
+import { findGospelReference, cleanGospelText, normalizeScriptureReference } from '$lib/utils/dgr-common.js';
 
 const TASK_TYPE = 'dgr_digest';
 
@@ -305,7 +305,9 @@ async function autoPublishApprovedReflections(
 				// Fetch directly from Oremus (avoids serverless function-to-function hop on Vercel)
 				const maxRetries = 3;
 				const retryDelayMs = 1000;
-				const encodedPassage = encodeURIComponent(gospelReference);
+				// Dot-separated verse groups ("Matthew 15:1-2.10-14") are an invalid
+				// reference to oremus, which reports that in a 200 — see the scripture route.
+				const encodedPassage = encodeURIComponent(normalizeScriptureReference(gospelReference));
 				const oremusUrl = `https://bible.oremus.org/?version=NRSVAE&passage=${encodedPassage}&vnum=yes&fnote=no&show_ref=no&headings=no`;
 
 				for (let attempt = 1; attempt <= maxRetries; attempt++) {
