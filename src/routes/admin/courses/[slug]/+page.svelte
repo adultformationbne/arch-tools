@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download, X } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download, X, ChevronDown } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
@@ -139,6 +139,9 @@
 	}
 	let sortColumn = $state('name');
 	let sortDirection = $state('asc');
+	// Collapsed by default: the four reflection columns are detail most of the
+	// time, so they start folded into "marked • everything else".
+	let reflectionsExpanded = $state(false);
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
 
@@ -223,6 +226,9 @@
 				case 'refDraft':
 					cmp = (a.reflectionStatus?.count?.draft || 0) - (b.reflectionStatus?.count?.draft || 0);
 					break;
+				case 'refOther':
+					cmp = otherReflections(a.reflectionStatus?.count) - otherReflections(b.reflectionStatus?.count);
+					break;
 			}
 			return cmp * dir;
 		})
@@ -234,6 +240,30 @@
 		} else {
 			sortColumn = column;
 			sortDirection = 'asc';
+		}
+	}
+
+	// Collapsed column: everything handed in or started that is not yet marked.
+	const otherReflections = (c) => (c?.pending || 0) + (c?.returned || 0) + (c?.draft || 0);
+
+	// The whole point of collapsing is that the breakdown stays one hover away.
+	function reflectionBreakdown(c) {
+		const marked = `${c.completed} marked of ${c.total}`;
+		const parts = [];
+		if (c.pending) parts.push(`${c.pending} pending review`);
+		if (c.returned) parts.push(`${c.returned} returned to revise`);
+		if (c.draft) parts.push(`${c.draft} draft`);
+		return parts.length ? `${marked} · ${parts.join(', ')}` : marked;
+	}
+
+	function toggleReflectionColumns() {
+		reflectionsExpanded = !reflectionsExpanded;
+		// Never leave the table sorted by a column that is no longer on screen -
+		// fold the sort into (or out of) the combined column instead.
+		if (!reflectionsExpanded && ['refPending', 'refReturned', 'refDraft'].includes(sortColumn)) {
+			sortColumn = 'refOther';
+		} else if (reflectionsExpanded && sortColumn === 'refOther') {
+			sortColumn = 'refMarked';
 		}
 	}
 
@@ -1057,11 +1087,19 @@
 						<table class="w-full min-w-[540px] sm:min-w-[700px] lg:min-w-[900px]">
 							<thead>
 								<!-- Grouped header. lg-only: below lg the reflection columns are
-								     hidden and the colspans would not line up. -->
+										hidden and the colspans would not line up. The label doubles as the
+										expand/collapse control for the group beneath it. -->
 								<tr class="hidden lg:table-row bg-gray-100">
 									<th colspan="7"></th>
-									<th colspan="4" class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-										Reflections{reflectionTotal ? ` — of ${reflectionTotal}` : ''}
+									<th colspan={reflectionsExpanded ? 4 : 1} class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+										<button
+											onclick={toggleReflectionColumns}
+											title={reflectionsExpanded ? 'Collapse to a single column' : 'Expand into marked / pending / returned / draft columns'}
+											class="inline-flex items-center gap-1 whitespace-nowrap hover:text-gray-600 cursor-pointer"
+										>
+											Reflections{reflectionTotal ? ` — of ${reflectionTotal}` : ''}
+											<ChevronDown size={11} class="transition-transform {reflectionsExpanded ? '' : '-rotate-90'}" />
+										</button>
 									</th>
 								</tr>
 								<tr class="border-b border-gray-200 bg-gray-100">
@@ -1089,18 +1127,26 @@
 									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
 										<button onclick={() => toggleSort('attendance')} class="hover:text-gray-900 cursor-pointer">Attend.{sortIndicator('attendance')}</button>
 									</th>
-									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
-									</th>
-									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Pending{sortIndicator('refPending')}</button>
-									</th>
-									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('refReturned')} title="Sent back to the participant to revise" class="hover:text-gray-900 cursor-pointer">Returned{sortIndicator('refReturned')}</button>
-									</th>
-									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('refDraft')} title="Written but never submitted - no reviewer can see it" class="hover:text-gray-900 cursor-pointer">Draft{sortIndicator('refDraft')}</button>
-									</th>
+									{#if reflectionsExpanded}
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+											<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
+										</th>
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+											<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Pending{sortIndicator('refPending')}</button>
+										</th>
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+											<button onclick={() => toggleSort('refReturned')} title="Sent back to the participant to revise" class="hover:text-gray-900 cursor-pointer">Returned{sortIndicator('refReturned')}</button>
+										</th>
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+											<button onclick={() => toggleSort('refDraft')} title="Written but never submitted - no reviewer can see it" class="hover:text-gray-900 cursor-pointer">Draft{sortIndicator('refDraft')}</button>
+										</th>
+									{:else}
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+											<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
+											<span class="mx-1 text-gray-300">•</span>
+											<button onclick={() => toggleSort('refOther')} title="Pending, returned and draft added together - expand for a column each" class="hover:text-gray-900 cursor-pointer">Other{sortIndicator('refOther')}</button>
+										</th>
+									{/if}
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
@@ -1175,17 +1221,28 @@
 												{/if}
 											</span>
 										</td>
-										<!-- Reflections: marked / pending / returned / draft (lg only) -->
+										<!-- Reflections (lg only): one combined column, or four when expanded -->
 										{#if participant.reflectionStatus && (selectedCohort?.current_session || 0) > 0}
-											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.completed ? 'text-green-700 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.completed}</td>
-											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.pending ? 'text-blue-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.pending}</td>
-											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.returned ? 'text-rose-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.returned}</td>
-											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.draft ? 'text-amber-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.draft}</td>
-										{:else}
+											{@const rc = participant.reflectionStatus.count}
+											{#if reflectionsExpanded}
+												<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {rc.completed ? 'text-green-700 font-medium' : 'text-gray-300'}">{rc.completed}</td>
+												<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {rc.pending ? 'text-blue-600 font-medium' : 'text-gray-300'}">{rc.pending}</td>
+												<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {rc.returned ? 'text-rose-600 font-medium' : 'text-gray-300'}">{rc.returned}</td>
+												<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {rc.draft ? 'text-amber-600 font-medium' : 'text-gray-300'}">{rc.draft}</td>
+											{:else}
+												<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums" title={reflectionBreakdown(rc)}>
+													<span class={rc.completed ? 'text-green-700 font-medium' : 'text-gray-300'}>{rc.completed}</span>
+													<span class="mx-1 text-gray-300">•</span>
+													<span class={otherReflections(rc) ? 'text-gray-700 font-medium' : 'text-gray-300'}>{otherReflections(rc)}</span>
+												</td>
+											{/if}
+										{:else if reflectionsExpanded}
 											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs text-gray-400">-</td>
 											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
 											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
 											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
+										{:else}
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs text-gray-400">-</td>
 										{/if}
 									</tr>
 								{/each}
