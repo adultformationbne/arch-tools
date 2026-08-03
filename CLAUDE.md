@@ -89,6 +89,10 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 const { data } = await supabaseAdmin.from('table').select('*').eq('id', id);
 ```
 
+**NEVER call a session-returning auth method on `supabaseAdmin`.** `signInWithPassword()`, `verifyOtp()`, `setSession()` and `exchangeCodeForSession()` make the shared client *adopt* that user's token, so every later query on the instance runs as them — silently, since `auth_otp_tracker` and `courses_payment_failures` have RLS on with no policies. `persistSession: false` does not help. To check a password use `verifyPassword()` from the same module; for anything session-bound use `event.locals.supabase`. (`signInWithOtp()` is safe — it only sends the email.)
+
+**Changing a password: act as the user, not as an admin.** `admin.updateUserById({ password })` revokes *every* session on the account including the caller's own, so they get a 200 and are signed out by the next request. Use `event.locals.supabase.auth.updateUser({ password })`, which leaves the caller's session intact and still invalidates the others. `admin.updateUserById` remains correct for an admin resetting *someone else's* password.
+
 **Client:** Access via `event.locals.supabase` in load functions
 
 ### Email Template Variables
