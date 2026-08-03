@@ -770,12 +770,17 @@
 		return stamps.length ? Math.max(...stamps) : null;
 	}
 
+	// Deliberately uncoloured. Traffic-lighting the date turned an arbitrary
+	// threshold into a verdict - someone at 31 days went orange while someone at
+	// 29 did not, and neither number means anything on its own. The date is the
+	// information; the reader decides what is late.
 	function _lastSeenActivity(seen) {
-		const diffDays = (Date.now() - seen) / (1000 * 60 * 60 * 24);
-		const time = formatRelativeTime(new Date(seen).toISOString());
-		if (diffDays <= 7) return { label: time, sub: null, labelClass: 'text-emerald-600', dot: '●' };
-		if (diffDays <= 30) return { label: time, sub: null, labelClass: 'text-gray-500', dot: null };
-		return { label: time, sub: null, labelClass: 'text-amber-600', dot: null };
+		return {
+			label: formatRelativeTime(new Date(seen).toISOString()),
+			sub: null,
+			labelClass: 'text-gray-700',
+			dot: null
+		};
 	}
 
 	function getActivityInfo(participant) {
@@ -787,7 +792,7 @@
 
 		if (participant.status === 'active') {
 			if (!seen) {
-				return { label: 'Active', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
+				return { label: 'Active', sub: 'not signed in', labelClass: 'text-gray-700', dot: null };
 			}
 			return _lastSeenActivity(seen);
 		}
@@ -797,7 +802,7 @@
 			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
 		}
 		if (!seen) {
-			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-amber-600', dot: null };
+			return { label: 'Invited', sub: 'not signed in', labelClass: 'text-gray-700', dot: null };
 		}
 		return _lastSeenActivity(seen);
 	}
