@@ -142,14 +142,17 @@
 					currentPassword: passwordForm.currentPassword,
 					newPassword: passwordForm.newPassword
 				},
-				{ successMessage: 'Password updated successfully' }
+				{ successMessage: 'Password updated successfully', errorTitle: 'Password Not Changed' }
 			);
 			isChangingPassword = false;
 			passwordForm.currentPassword = '';
 			passwordForm.newPassword = '';
 			passwordForm.confirmPassword = '';
-		} catch (error) {
-			toastError('Failed to update password', 'Error');
+		} catch {
+			// apiPost has already toasted the server's own message - "Current password
+			// is incorrect", or GoTrue's reason for rejecting the new one (leaked,
+			// too weak, same as the old one). Re-toasting here would replace that
+			// with something generic, so the form is simply left open to correct.
 		}
 	};
 
