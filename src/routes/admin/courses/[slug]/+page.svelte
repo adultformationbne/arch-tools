@@ -17,7 +17,6 @@
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 	import {
 		getUserReflectionStatus,
-		formatUserReflectionStatus,
 		fetchReflectionsByCohort
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
@@ -149,11 +148,17 @@
 		avgAttendance: participants.length > 0
 			? Math.round(participants.reduce((sum, s) => sum + (s.attendanceCount || 0), 0) / participants.length / (selectedCohort?.current_session || 1) * 100)
 			: 0,
-		pendingReflections: participants.reduce((sum, s) => {
-			if (!s.reflectionStatus) return sum;
-			return sum + (s.reflectionStatus.status === 'submitted' ? s.reflectionStatus.count : 0);
-		}, 0)
+		pendingReflections: participants.reduce(
+			(sum, s) => sum + (s.reflectionStatus?.count?.pending || 0),
+			0
+		)
 	});
+
+	// Uniform across the cohort - every participant is measured against the
+	// same cohort current_session, so this belongs in the group header.
+	const reflectionTotal = $derived(
+		participants.find(p => p.reflectionStatus?.count?.total)?.reflectionStatus?.count?.total || 0
+	);
 
 	// Recent activity
 	let recentActivity = $state([]);
@@ -204,7 +209,19 @@
 					break;
 				case 'reflections':
 					cmp = (reflectionOrder[a.reflectionStatus?.status] ?? 99) - (reflectionOrder[b.reflectionStatus?.status] ?? 99);
-					if (cmp === 0) cmp = (a.reflectionStatus?.count || 0) - (b.reflectionStatus?.count || 0);
+					if (cmp === 0) cmp = (a.reflectionStatus?.count?.submitted || 0) - (b.reflectionStatus?.count?.submitted || 0);
+					break;
+				case 'refMarked':
+					cmp = (a.reflectionStatus?.count?.completed || 0) - (b.reflectionStatus?.count?.completed || 0);
+					break;
+				case 'refPending':
+					cmp = (a.reflectionStatus?.count?.pending || 0) - (b.reflectionStatus?.count?.pending || 0);
+					break;
+				case 'refReturned':
+					cmp = (a.reflectionStatus?.count?.returned || 0) - (b.reflectionStatus?.count?.returned || 0);
+					break;
+				case 'refDraft':
+					cmp = (a.reflectionStatus?.count?.draft || 0) - (b.reflectionStatus?.count?.draft || 0);
 					break;
 			}
 			return cmp * dir;
@@ -445,15 +462,15 @@
 
 		const headers = [
 			'Name', 'Email', 'Phone', 'Parish/Community', 'Parish Role', 'Address',
-			'Hub', 'Role', 'Status', 'Session', 'Attendance', 'Reflections',
+			'Hub', 'Role', 'Status', 'Session', 'Attendance',
+			'Reflections Marked', 'Reflections Pending', 'Reflections Returned', 'Reflections Draft',
 			'Payment Status', 'Last Login', 'Enrolled Date'
 		];
 
 		const rows = filteredParticipants.map(p => {
 			const statusBadge = getStatusBadge(p);
-			const reflectionDisplay = p.reflectionStatus && (selectedCohort?.current_session || 0) > 0
-				? getReflectionStatusDisplay(p)
-				: '';
+			const showReflections = p.reflectionStatus && (selectedCohort?.current_session || 0) > 0;
+			const refCount = p.reflectionStatus?.count;
 			const attendance = cohortSession > 0
 				? `${p.attendanceCount || 0} of ${cohortSession}`
 				: '';
@@ -470,7 +487,10 @@
 				statusBadge.label,
 				`${p.current_session} of ${totalSessions}`,
 				attendance,
-				reflectionDisplay,
+				showReflections ? refCount.completed : '',
+				showReflections ? refCount.pending : '',
+				showReflections ? refCount.returned : '',
+				showReflections ? refCount.draft : '',
 				p.payment_status || '',
 				p.last_login_at ? new Date(p.last_login_at).toLocaleDateString() : '',
 				p.created_at ? new Date(p.created_at).toLocaleDateString() : ''
@@ -687,11 +707,6 @@
 		advancementInitialIds = [];
 		await loadParticipants();
 		await invalidateAll();
-	}
-
-	function getReflectionStatusDisplay(participant) {
-		if (!participant.reflectionStatus) return '';
-		return formatUserReflectionStatus(participant.reflectionStatus.status, participant.reflectionStatus.count);
 	}
 
 	// Participant detail modal handlers
@@ -1041,6 +1056,14 @@
 					<div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
 						<table class="w-full min-w-[540px] sm:min-w-[700px] lg:min-w-[900px]">
 							<thead>
+								<!-- Grouped header. lg-only: below lg the reflection columns are
+								     hidden and the colspans would not line up. -->
+								<tr class="hidden lg:table-row bg-gray-100">
+									<th colspan="7"></th>
+									<th colspan="4" class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+										Reflections{reflectionTotal ? ` — of ${reflectionTotal}` : ''}
+									</th>
+								</tr>
 								<tr class="border-b border-gray-200 bg-gray-100">
 									<th class="w-8 px-2 sm:px-3 py-2.5">
 										<input
@@ -1067,7 +1090,16 @@
 										<button onclick={() => toggleSort('attendance')} class="hover:text-gray-900 cursor-pointer">Attend.{sortIndicator('attendance')}</button>
 									</th>
 									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-										<button onclick={() => toggleSort('reflections')} class="hover:text-gray-900 cursor-pointer">Reflect.{sortIndicator('reflections')}</button>
+										<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
+									</th>
+									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Pending{sortIndicator('refPending')}</button>
+									</th>
+									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('refReturned')} title="Sent back to the participant to revise" class="hover:text-gray-900 cursor-pointer">Returned{sortIndicator('refReturned')}</button>
+									</th>
+									<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<button onclick={() => toggleSort('refDraft')} title="Written but never submitted - no reviewer can see it" class="hover:text-gray-900 cursor-pointer">Draft{sortIndicator('refDraft')}</button>
 									</th>
 								</tr>
 							</thead>
@@ -1143,16 +1175,18 @@
 												{/if}
 											</span>
 										</td>
-										<!-- Reflections - hidden on mobile/tablet -->
-										<td class="hidden lg:table-cell px-2 sm:px-3 py-2">
-											{#if participant.reflectionStatus && (selectedCohort?.current_session || 0) > 0}
-												<span class="text-xs tabular-nums text-gray-700">
-													{getReflectionStatusDisplay(participant)}
-												</span>
-											{:else}
-												<span class="text-xs text-gray-400">-</span>
-											{/if}
-										</td>
+										<!-- Reflections: marked / pending / returned / draft (lg only) -->
+										{#if participant.reflectionStatus && (selectedCohort?.current_session || 0) > 0}
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.completed ? 'text-green-700 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.completed}</td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.pending ? 'text-blue-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.pending}</td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.returned ? 'text-rose-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.returned}</td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs tabular-nums {participant.reflectionStatus.count.draft ? 'text-amber-600 font-medium' : 'text-gray-300'}">{participant.reflectionStatus.count.draft}</td>
+										{:else}
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs text-gray-400">-</td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
+											<td class="hidden lg:table-cell px-2 sm:px-3 py-2"></td>
+										{/if}
 									</tr>
 								{/each}
 							</tbody>

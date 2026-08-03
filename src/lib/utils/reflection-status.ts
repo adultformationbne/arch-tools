@@ -226,7 +226,19 @@ interface SessionWithQuestion {
 
 interface UserReflectionStatus {
 	status: 'complete' | 'behind' | 'on_track' | 'no_questions';
-	count: { completed: number; total: number };
+	count: {
+		/** Marked as passed. */
+		completed: number;
+		/** Handed in and awaiting review (submitted / under_review / resubmitted). */
+		pending: number;
+		/** Sent back to the participant to revise (needs_revision). */
+		returned: number;
+		/** Started but never handed in - invisible to reviewers. */
+		draft: number;
+		/** Everything they have actually handed in: completed + pending. */
+		submitted: number;
+		total: number;
+	};
 }
 
 /**
@@ -269,14 +281,27 @@ export function getUserReflectionStatus(
 	const totalQuestions = relevantSessions.length;
 
 	if (totalQuestions === 0) {
-		return { status: 'no_questions', count: { completed: 0, total: 0 } };
+		return {
+			status: 'no_questions',
+			count: { completed: 0, pending: 0, returned: 0, draft: 0, submitted: 0, total: 0 }
+		};
 	}
 
-	// Count completed reflections (passed status)
-	const completedReflections = userReflections.filter(r => {
+	// Reflections for sessions the participant has actually reached
+	const relevant = userReflections.filter(r => {
 		const sessionNum = r.session_number || r.question?.session?.session_number;
-		return sessionNum && sessionNum <= currentSession && isComplete(r.status);
-	}).length;
+		return sessionNum && sessionNum <= currentSession;
+	});
+
+	// Marked as passed
+	const completedReflections = relevant.filter(r => isComplete(r.status)).length;
+	// Handed in but not yet reviewed - these are invisible in a passed-only count,
+	// so a participant who is up to date can look "behind" until someone marks them.
+	const pendingReflections = relevant.filter(r => needsReview(r.status)).length;
+	// Sent back for revision - the ball is in the participant's court
+	const returnedReflections = relevant.filter(r => normalizeStatus(r.status) === 'needs_revision').length;
+	// Written but never submitted, so no reviewer can see it
+	const draftReflections = relevant.filter(r => normalizeStatus(r.status) === 'draft').length;
 
 	const status = completedReflections >= totalQuestions
 		? 'complete'
@@ -286,16 +311,29 @@ export function getUserReflectionStatus(
 
 	return {
 		status,
-		count: { completed: completedReflections, total: totalQuestions }
+		count: {
+			completed: completedReflections,
+			pending: pendingReflections,
+			returned: returnedReflections,
+			draft: draftReflections,
+			submitted: completedReflections + pendingReflections,
+			total: totalQuestions
+		}
 	};
 }
 
 /**
  * Format user reflection status for display
  */
-export function formatUserReflectionStatus(status: string, count: { completed: number; total: number }): string {
+export function formatUserReflectionStatus(
+	status: string,
+	count: { completed: number; pending?: number; total: number }
+): string {
 	if (status === 'no_questions') return 'N/A';
-	return `${count.completed} of ${count.total}`;
+	const base = `${count.completed} of ${count.total}`;
+	// Surface work that is handed in but not yet marked, so it isn't mistaken
+	// for work never submitted.
+	return count.pending ? `${base} (+${count.pending} pending)` : base;
 }
 
 /**
