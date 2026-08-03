@@ -44,9 +44,20 @@ export const load: PageServerLoad = async (event) => {
 		}
 
 		// Query reflections directly using cohort IDs from layout (avoids re-fetching cohorts)
-		const { data: allReflections, error: reflectionsError } = await supabaseAdmin
-			.from('courses_reflection_responses')
-			.select(
+		//
+		// Pages through results: PostgREST caps an unpaginated select at 1000 rows,
+		// and a long-running course (participants x sessions) exceeds that. Without
+		// paging, the oldest reflections would silently drop out of the review list
+		// while still sitting in the database - looking exactly like a lost submission.
+		const pageSize = 1000;
+		let pageFrom = 0;
+		let allReflections: any[] = [];
+		let reflectionsError: any = null;
+
+		while (true) {
+			const { data, error: pageError } = await supabaseAdmin
+				.from('courses_reflection_responses')
+				.select(
 				`
 				*,
 				question:question_id (
@@ -73,9 +84,21 @@ export const load: PageServerLoad = async (event) => {
 					full_name
 				)
 			`
-			)
-			.in('cohort_id', cohortIds)
-			.order('created_at', { ascending: false });
+				)
+				.in('cohort_id', cohortIds)
+				.order('created_at', { ascending: false })
+				.order('id', { ascending: true })
+				.range(pageFrom, pageFrom + pageSize - 1);
+
+			if (pageError) {
+				reflectionsError = pageError;
+				break;
+			}
+
+			allReflections = allReflections.concat(data || []);
+			if (!data || data.length < pageSize) break;
+			pageFrom += pageSize;
+		}
 
 		if (reflectionsError) {
 			console.error('Error fetching reflections:', reflectionsError);
@@ -126,7 +149,9 @@ export const load: PageServerLoad = async (event) => {
 				question: r.question?.question_text || '',
 				content: r.response_text || '',
 				isPublic: r.is_public || false,
-				submittedAt: r.created_at,
+				// submitted_at is when they actually submitted; created_at is only when
+				// the draft row was first written. Falls back for pre-backfill rows.
+				submittedAt: r.submitted_at || r.created_at,
 				status: displayStatus,
 				dbStatus: dbStatus,
 				grade: grade,

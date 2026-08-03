@@ -1062,7 +1062,14 @@ export const CourseMutations = {
 					response_text: params.content,
 					is_public: params.isPublic || false,
 					status: params.status || 'submitted',
-					updated_at: new Date().toISOString()
+					updated_at: new Date().toISOString(),
+					// Canonical submit path is /courses/[slug]/reflections/api, which
+					// only stamps submitted_at on a real draft -> submitted transition.
+					// This helper has no existing-row context, so it stamps whenever a
+					// submitted status is written.
+					...((params.status || 'submitted') !== 'draft'
+						? { submitted_at: new Date().toISOString() }
+						: {})
 				},
 				{
 					onConflict: 'enrollment_id,question_id'

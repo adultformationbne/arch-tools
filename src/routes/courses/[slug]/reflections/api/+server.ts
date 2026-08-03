@@ -124,6 +124,16 @@ export const POST: RequestHandler = async (event) => {
 			}
 		}
 
+		// Stamp submitted_at only on a genuine transition INTO a submitted state.
+		// An auto-save on an already-submitted reflection must not move the
+		// submission time. created_at is when the draft row was first written, not
+		// a submission - conflating the two made a reflection drafted in May but
+		// submitted in August display as "Submitted 2 months ago".
+		const isSubmitting = finalStatus === 'submitted' || finalStatus === 'resubmitted';
+		const wasAlreadySubmitted = ['submitted', 'resubmitted'].includes(
+			existingReflection?.status ?? ''
+		);
+
 		const responseData = {
 			enrollment_id: studentData.id,
 			cohort_id: studentData.cohort_id,
@@ -132,7 +142,10 @@ export const POST: RequestHandler = async (event) => {
 			response_text: content.trim(),
 			is_public: is_public || false,
 			status: finalStatus,
-			updated_at: new Date().toISOString()
+			updated_at: new Date().toISOString(),
+			...(isSubmitting && !wasAlreadySubmitted
+				? { submitted_at: new Date().toISOString() }
+				: {})
 		};
 
 
@@ -153,8 +166,15 @@ export const POST: RequestHandler = async (event) => {
 			throw error(500, 'Failed to save reflection');
 		}
 
-		// Log activity for submissions (not drafts)
-		if (finalStatus === 'submitted' || finalStatus === 'resubmitted') {
+		// Log activity only on a genuine transition INTO a submitted state.
+		//
+		// An auto-save posts status 'draft'; the transition rules above rewrite that
+		// back to 'submitted' so an already-submitted reflection can't be downgraded.
+		// Checking finalStatus alone therefore treated every auto-save as a fresh
+		// submission - one reflection accumulated 11 "submitted" entries minutes
+		// apart. An auto-save on an already-submitted reflection is just an edit:
+		// it bumps updated_at and writes no activity entry.
+		if (isSubmitting && !wasAlreadySubmitted) {
 			// Get student name for activity log
 			const { data: profile } = await supabaseAdmin
 				.from('user_profiles')
