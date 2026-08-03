@@ -140,7 +140,7 @@
 	let sortColumn = $state('name');
 	let sortDirection = $state('asc');
 	// Collapsed by default: the four reflection columns are detail most of the
-	// time, so they start folded into "marked • everything else".
+	// time, so they start folded into "completed • everything else".
 	let reflectionsExpanded = $state(false);
 	let reflectionsByUser = $state(new Map());
 	let sessionsWithQuestions = $state([]);
@@ -248,12 +248,12 @@
 
 	// The whole point of collapsing is that the breakdown stays one hover away.
 	function reflectionBreakdown(c) {
-		const marked = `${c.completed} marked of ${c.total}`;
+		const done = `${c.completed} completed of ${c.total}`;
 		const parts = [];
-		if (c.pending) parts.push(`${c.pending} pending review`);
+		if (c.pending) parts.push(`${c.pending} submitted, not yet marked`);
 		if (c.returned) parts.push(`${c.returned} returned to revise`);
 		if (c.draft) parts.push(`${c.draft} draft`);
-		return parts.length ? `${marked} · ${parts.join(', ')}` : marked;
+		return parts.length ? `${done} · ${parts.join(', ')}` : done;
 	}
 
 	function toggleReflectionColumns() {
@@ -493,7 +493,7 @@
 		const headers = [
 			'Name', 'Email', 'Phone', 'Parish/Community', 'Parish Role', 'Address',
 			'Hub', 'Role', 'Status', 'Session', 'Attendance',
-			'Reflections Marked', 'Reflections Pending', 'Reflections Returned', 'Reflections Draft',
+			'Reflections Completed', 'Reflections Submitted', 'Reflections Returned', 'Reflections Draft',
 			'Payment Status', 'Last Login', 'Enrolled Date'
 		];
 
@@ -1094,7 +1094,7 @@
 									<th colspan={reflectionsExpanded ? 4 : 1} class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
 										<button
 											onclick={toggleReflectionColumns}
-											title={reflectionsExpanded ? 'Collapse to a single column' : 'Expand into marked / pending / returned / draft columns'}
+											title={reflectionsExpanded ? 'Collapse to a single column' : 'Expand into completed / submitted / returned / draft columns'}
 											class="inline-flex items-center gap-1 whitespace-nowrap hover:text-gray-600 cursor-pointer"
 										>
 											Reflections{reflectionTotal ? ` — of ${reflectionTotal}` : ''}
@@ -1129,10 +1129,10 @@
 									</th>
 									{#if reflectionsExpanded}
 										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-											<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
+											<button onclick={() => toggleSort('refMarked')} title="Marked as passed - the reflection is done" class="hover:text-gray-900 cursor-pointer">Completed{sortIndicator('refMarked')}</button>
 										</th>
 										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-											<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Pending{sortIndicator('refPending')}</button>
+											<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Submitted{sortIndicator('refPending')}</button>
 										</th>
 										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
 											<button onclick={() => toggleSort('refReturned')} title="Sent back to the participant to revise" class="hover:text-gray-900 cursor-pointer">Returned{sortIndicator('refReturned')}</button>
@@ -1142,9 +1142,9 @@
 										</th>
 									{:else}
 										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-											<button onclick={() => toggleSort('refMarked')} title="Marked as passed" class="hover:text-gray-900 cursor-pointer">Marked{sortIndicator('refMarked')}</button>
+											<button onclick={() => toggleSort('refMarked')} title="Marked as passed - the reflection is done" class="hover:text-gray-900 cursor-pointer">Completed{sortIndicator('refMarked')}</button>
 											<span class="mx-1 text-gray-300">•</span>
-											<button onclick={() => toggleSort('refOther')} title="Pending, returned and draft added together - expand for a column each" class="hover:text-gray-900 cursor-pointer">Other{sortIndicator('refOther')}</button>
+											<button onclick={() => toggleSort('refOther')} title="Submitted, returned and draft added together - expand for a column each" class="hover:text-gray-900 cursor-pointer">Other{sortIndicator('refOther')}</button>
 										</th>
 									{/if}
 								</tr>
