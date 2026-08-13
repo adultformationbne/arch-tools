@@ -287,10 +287,12 @@ async function handleBatchCheckoutCompleted(
 		)
 	);
 
-	// Branded receipt to the billing contact (the payer) via Resend.
+	// Branded receipt to the billing contact (the payer) via Resend — includes the
+	// full participant list so the payer has a record of who they registered.
 	await CourseMutations.sendPaymentReceipt({
 		stripeSessionId: sessionId,
-		siteUrl: PUBLIC_SITE_URL
+		siteUrl: PUBLIC_SITE_URL,
+		participants: enrollments.map((e) => ({ fullName: e.full_name, email: e.email }))
 	}).catch((err) => console.error('Failed to send payment receipt:', err));
 
 	console.log(

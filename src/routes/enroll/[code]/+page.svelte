@@ -266,7 +266,7 @@
 		if (billingParticipantIndex >= participants.length) billingParticipantIndex = 0;
 	}
 
-	// Step 1 -> billing (or straight to review for a single participant)
+	// Step 1 -> billing
 	async function proceedFromPeople() {
 		if (entryHasInput()) {
 			if (!(await addCurrentEntry())) return;
@@ -276,13 +276,7 @@
 			return;
 		}
 		if (billingParticipantIndex >= participants.length) billingParticipantIndex = 0;
-		if (participants.length === 1) {
-			billingMode = 'participant';
-			billingParticipantIndex = 0;
-			step = 3;
-		} else {
-			step = 2;
-		}
+		step = 2;
 		scrollTop();
 	}
 
@@ -310,7 +304,7 @@
 			cancelEmbedded();
 			return;
 		}
-		step = participants.length > 1 ? 2 : 1;
+		step = 2;
 	}
 
 	let billingDisplay = $derived(() => {

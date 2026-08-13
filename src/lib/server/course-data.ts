@@ -3254,6 +3254,115 @@ export const CourseMutations = {
 		}
 	},
 
+	/**
+	 * Send the person who registered a free group a summary of who they just
+	 * enrolled. Mirrors sendPaymentReceipt's participant list, but for the free
+	 * path where there's no receipt email to piggyback on.
+	 */
+	async sendGroupRegistrationConfirmation(params: {
+		billingEmail: string;
+		billingName: string;
+		cohortId: string;
+		participants: { fullName: string; email: string }[];
+		siteUrl: string;
+	}) {
+		const { billingEmail, billingName, cohortId, participants, siteUrl } = params;
+
+		try {
+			const { data: cohort, error: cohortError } = await supabaseAdmin
+				.from('courses_cohorts')
+				.select(`
+					name,
+					module:module_id!inner (
+						name,
+						course:course_id!inner ( id, name, slug, settings, email_branding_config )
+					)
+				`)
+				.eq('id', cohortId)
+				.single();
+
+			if (cohortError || !cohort) {
+				console.error('Failed to fetch cohort for group confirmation email:', cohortError);
+				return { success: false, error: 'Cohort not found' };
+			}
+
+			const module = cohort.module as any;
+			const course = module?.course as any;
+			if (!course) {
+				return { success: false, error: 'Course not found' };
+			}
+
+			const {
+				buildVariableContext,
+				sendEmail,
+				buildCourseFromEmail
+			} = await import('$lib/utils/email-service.js');
+			const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+			const { RESEND_API_KEY } = await import('$env/static/private');
+
+			const courseSettings = course.settings || {};
+			const themeSettings = courseSettings.theme || {};
+			const brandingSettings = courseSettings.branding || {};
+			const courseColors = {
+				accentDark: themeSettings.accentDark || '#334642',
+				accentLight: themeSettings.accentLight || '#eae2d9',
+				accentDarkest: themeSettings.accentDarkest || '#1e2322'
+			};
+			const courseLogoUrl = brandingSettings.logoUrl || null;
+
+			const variables = buildVariableContext({
+				enrollment: { full_name: billingName, email: billingEmail },
+				course: {
+					name: course.name,
+					slug: course.slug,
+					settings: course.settings,
+					email_branding_config: course.email_branding_config
+				},
+				cohort: { name: cohort.name },
+				siteUrl
+			});
+
+			const groupList = `<ul>${participants.map((p) => `<li>${p.fullName} — ${p.email}</li>`).join('')}</ul>`;
+
+			const bodyContent = `
+				<h2>Registration confirmed</h2>
+				<p>Hi ${variables.firstName || 'there'},</p>
+				<p>You've registered ${participants.length} ${participants.length === 1 ? 'participant' : 'participants'} for <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}:</p>
+				${groupList}
+				<p>Each participant will receive their own email with sign-in instructions.</p>
+			`;
+
+			const compiledHtml = generateEmailFromMjml({
+				bodyContent,
+				courseName: course.name,
+				logoUrl: courseLogoUrl,
+				colors: courseColors,
+				previewText: `Your registration confirmation for ${course.name}`
+			});
+
+			const courseFromEmail = await buildCourseFromEmail(course);
+			const result = await sendEmail({
+				to: billingEmail,
+				subject: `Registration confirmed — ${course.name}`,
+				html: compiledHtml,
+				emailType: 'group_registration_confirmation',
+				fromEmail: courseFromEmail,
+				replyTo: course.email_branding_config?.reply_to_email,
+				metadata: {
+					context: 'course',
+					course_id: course.id,
+					cohort_id: cohortId
+				},
+				resendApiKey: RESEND_API_KEY,
+				supabase: supabaseAdmin
+			});
+
+			return { success: result.success, error: result.success ? null : 'Failed to send email' };
+		} catch (err) {
+			console.error('Error sending group registration confirmation email:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+		}
+	},
 
 	/**
 	 * Notify a hub's coordinator(s) when a new participant enrols into that hub.
@@ -3665,8 +3774,9 @@ export const CourseMutations = {
 		stripeSessionId: string;
 		invoiceUrl?: string | null;
 		siteUrl: string;
+		participants?: { fullName: string; email: string }[];
 	}) {
-		const { stripeSessionId, siteUrl } = params;
+		const { stripeSessionId, siteUrl, participants } = params;
 
 		try {
 			const { data: payment, error: paymentError } = await supabaseAdmin
@@ -3740,10 +3850,17 @@ export const CourseMutations = {
 					<p><a href="${invoiceUrl}">${invoiceUrl}</a></p>`
 				: `<p>Your tax invoice will be available shortly in your profile under <strong>Billing &amp; Invoices</strong>.</p>`;
 
+			const groupBlock =
+				participants && participants.length > 1
+					? `<p><strong>Registered participants:</strong></p>
+					<ul>${participants.map((p) => `<li>${p.fullName} — ${p.email}</li>`).join('')}</ul>`
+					: '';
+
 			const bodyContent = `
 				<h2>Payment received</h2>
 				<p>Hi ${variables.firstName || 'there'},</p>
 				<p>Thank you — we've received your payment of <strong>${amount}</strong> for <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}.</p>
+				${groupBlock}
 				${invoiceBlock}
 				<p>You can view your billing history any time from your profile.</p>
 			`;

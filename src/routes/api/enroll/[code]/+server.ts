@@ -472,6 +472,19 @@ async function handleFreeBatch(params: {
 		)
 	);
 
+	// For a group registration, send the billing contact a summary of who they
+	// just registered (they otherwise only get their own "you're enrolled" email,
+	// if they're attending at all).
+	if (participants.length > 1) {
+		await CourseMutations.sendGroupRegistrationConfirmation({
+			billingEmail: billingContact.email,
+			billingName: billingContact.name,
+			cohortId: cohort.id,
+			participants: participants.map((p) => ({ fullName: p.fullName, email: p.email })),
+			siteUrl: PUBLIC_SITE_URL
+		}).catch((err) => console.error('Failed to send group registration confirmation:', err));
+	}
+
 	if (billingIsParticipant) {
 		const payer = created[billingContact.participantIndex as number];
 		return json({
