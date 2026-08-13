@@ -17,6 +17,11 @@
 			description: 'You don\'t have permission to access this page.',
 			icon: Lock
 		},
+		400: {
+			title: 'Unable to Continue',
+			description: '',
+			icon: AlertCircle
+		},
 		500: {
 			title: 'Server Error',
 			description: 'Something went wrong on our end. We\'re working to fix it.',
@@ -58,15 +63,17 @@
 			</div>
 
 			<!-- Description -->
-			<div class="border-b-2 border-black px-12 py-12 bg-white text-center">
-				<p class="text-gray-900 text-lg font-medium">
-					{config.description}
-				</p>
-			</div>
+			{#if config.description}
+				<div class="border-b-2 border-black px-12 py-12 bg-white text-center">
+					<p class="text-gray-900 text-lg font-medium">
+						{config.description}
+					</p>
+				</div>
+			{/if}
 
-			{#if message && status >= 500}
-				<div class="border-b-2 border-black px-12 py-8 bg-gray-50">
-					<p class="text-sm text-gray-900 font-mono text-center">{message}</p>
+			{#if message && (status >= 500 || status === 400)}
+				<div class="border-b-2 border-black px-12 py-8 bg-white text-center">
+					<p class="text-gray-900 text-lg font-medium">{message}</p>
 				</div>
 			{/if}
 

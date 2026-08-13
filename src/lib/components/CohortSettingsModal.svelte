@@ -70,8 +70,8 @@
 			enrollmentType = cohort.enrollment_type || '';
 			priceCents = cohort.price_cents ? (cohort.price_cents / 100).toFixed(2) : '';
 			currency = cohort.currency || 'AUD';
-			enrollmentOpensAt = cohort.enrollment_opens_at ? cohort.enrollment_opens_at.slice(0, 16) : '';
-			enrollmentClosesAt = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 16) : '';
+			enrollmentOpensAt = cohort.enrollment_opens_at ? cohort.enrollment_opens_at.slice(0, 10) : '';
+			enrollmentClosesAt = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 10) : '';
 			maxEnrollments = cohort.max_enrollments ? String(cohort.max_enrollments) : '';
 
 			// Hub assignments (empty = in-person / no hub)
@@ -102,8 +102,9 @@
 					// Price 0 (or empty) = free; is_free flag retired
 					priceCents: priceCents ? Math.round(parseFloat(priceCents) * 100) : 0,
 					currency,
-					enrollmentOpensAt: enrollmentOpensAt || null,
-					enrollmentClosesAt: enrollmentClosesAt || null,
+					// Dates only: open at the start of the day, close at the end of it (11:59:59pm).
+					enrollmentOpensAt: enrollmentOpensAt ? `${enrollmentOpensAt}T00:00:00` : null,
+					enrollmentClosesAt: enrollmentClosesAt ? `${enrollmentClosesAt}T23:59:59` : null,
 					maxEnrollments: maxEnrollments ? parseInt(maxEnrollments) : null
 				})
 			});
@@ -495,7 +496,7 @@
 								</label>
 								<input
 									id="enrollment-opens"
-									type="datetime-local"
+									type="date"
 									bind:value={enrollmentOpensAt}
 									class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 								/>
@@ -506,13 +507,15 @@
 								</label>
 								<input
 									id="enrollment-closes"
-									type="datetime-local"
+									type="date"
 									bind:value={enrollmentClosesAt}
 									class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 								/>
 							</div>
 						</div>
-						<p class="text-xs text-gray-500 mb-3">Leave empty for no enrollment window restrictions</p>
+						<p class="text-xs text-gray-500 mb-3">
+							Leave empty for no enrollment window restrictions. Closes at 11:59pm on the selected date.
+						</p>
 
 						<!-- Max Enrollments -->
 						<div class="mb-3">

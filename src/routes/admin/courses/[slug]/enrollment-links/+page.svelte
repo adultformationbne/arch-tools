@@ -15,7 +15,8 @@
 		Tag,
 		Clock,
 		Star,
-		Users
+		Users,
+		Pencil
 	} from '$lib/icons';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
 
@@ -40,6 +41,61 @@
 
 	// Filter state
 	let filterCohortId = $state('');
+
+	// Inline "enrollment closes" cutoff editing (per cohort)
+	let editingCutoffCohortId = $state<string | null>(null);
+	let cutoffDraft = $state('');
+	let savingCutoff = $state(false);
+
+	function startEditCutoff(cohort: any) {
+		editingCutoffCohortId = cohort.id;
+		cutoffDraft = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 10) : '';
+	}
+
+	function cancelEditCutoff() {
+		editingCutoffCohortId = null;
+		cutoffDraft = '';
+	}
+
+	async function saveCutoff(cohort: any) {
+		savingCutoff = true;
+		try {
+			await apiPost(
+				`/admin/courses/${$page.params.slug}/api`,
+				{
+					action: 'update_cohort_enrollment',
+					cohortId: cohort.id,
+					// Pass through the rest of the cohort's enrollment settings unchanged —
+					// this endpoint replaces the full set of fields.
+					enrollmentType: cohort.enrollment_type || null,
+					priceCents: cohort.price_cents ?? 0,
+					currency: cohort.currency || 'AUD',
+					enrollmentOpensAt: cohort.enrollment_opens_at || null,
+					// Date only: closes at 11:59:59pm that night.
+					enrollmentClosesAt: cutoffDraft ? `${cutoffDraft}T23:59:59` : null,
+					maxEnrollments: cohort.max_enrollments ?? null
+				},
+				{ successMessage: 'Enrollment cutoff updated' }
+			);
+
+			editingCutoffCohortId = null;
+			cutoffDraft = '';
+			invalidateAll();
+		} catch {
+			// apiPost already surfaces the error toast.
+		} finally {
+			savingCutoff = false;
+		}
+	}
+
+	function formatCutoff(closesAt: string | null): string {
+		if (!closesAt) return 'No cutoff';
+		return new Date(closesAt).toLocaleDateString('en-AU', {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric'
+		});
+	}
 
 	const MAIN_LINK_NAME = 'Main link';
 
@@ -263,6 +319,40 @@
 								<p class="text-xs text-gray-500">
 									Cohort price: {cohortPriceLabel(cohort)}
 								</p>
+								{#if editingCutoffCohortId === cohort.id}
+									<div class="mt-1.5 flex flex-wrap items-center gap-2">
+										<span class="text-xs text-gray-500">Enrollment closes</span>
+										<input
+											type="date"
+											bind:value={cutoffDraft}
+											class="rounded border border-gray-300 px-2 py-1 text-xs"
+										/>
+										<span class="text-xs text-gray-400">(11:59pm that night; leave blank for no cutoff)</span>
+										<button
+											onclick={() => saveCutoff(cohort)}
+											disabled={savingCutoff}
+											class="rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+										>
+											{savingCutoff ? 'Saving...' : 'Save'}
+										</button>
+										<button
+											onclick={cancelEditCutoff}
+											disabled={savingCutoff}
+											class="rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+										>
+											Cancel
+										</button>
+									</div>
+								{:else}
+									<button
+										onclick={() => startEditCutoff(cohort)}
+										class="mt-1 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900"
+									>
+										<Clock class="h-3 w-3" />
+										Enrollment closes: {formatCutoff(cohort.enrollment_closes_at)}
+										<Pencil class="h-3 w-3" />
+									</button>
+								{/if}
 							</div>
 							<button
 								onclick={() => openCreateModal(cohort.id)}
