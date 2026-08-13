@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { Search, Mail, Download, ChevronDown, ChevronRight, Phone, MapPin, User, FileText, Calendar, Eye, Filter, X } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { createDropdown } from '$lib/utils/dropdown.js';
 	import EmailSenderModal from '$lib/components/EmailSenderModal.svelte';
 	import ParticipantDetailModal from '$lib/components/ParticipantDetailModal.svelte';
 	import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -18,7 +19,34 @@
 
 	// Filter state
 	let searchQuery = $state('');
-	let selectedHub = $state('all');
+	let selectedHubs = $state(new Set());
+	let showHubDropdown = $state(false);
+	/** @type {HTMLButtonElement | null} */
+	let hubDropdownButton = $state(null);
+	/** @type {HTMLDivElement | null} */
+	let hubDropdownPanel = $state(null);
+	/** @type {{ show(): void; hide(): void; toggle(): void; destroy(): void; isOpen: boolean } | null} */
+	let hubDropdown = $state(null);
+
+	function toggleHubFilter(value) {
+		const next = new Set(selectedHubs);
+		if (next.has(value)) {
+			next.delete(value);
+		} else {
+			next.add(value);
+		}
+		selectedHubs = next;
+	}
+
+	$effect(() => {
+		if (!hubDropdownButton || !hubDropdownPanel) return;
+		hubDropdown = createDropdown(hubDropdownButton, hubDropdownPanel, {
+			placement: 'bottom-start',
+			onShow: () => showHubDropdown = true,
+			onHide: () => showHubDropdown = false
+		});
+		return () => hubDropdown?.destroy();
+	});
 	let selectedStatus = $state('all');
 	let selectedCohort = $state('all');
 
@@ -47,7 +75,7 @@
 				student.hub?.name?.toLowerCase().includes(query) ||
 				student.notes?.toLowerCase().includes(query);
 
-			const matchesHub = selectedHub === 'all' || (selectedHub === '' ? !student.hub_id : student.hub_id === selectedHub);
+			const matchesHub = selectedHubs.size === 0 || selectedHubs.has(student.hub_id || '');
 			const matchesStatus = selectedStatus === 'all' || getPersonStatus(student) === selectedStatus;
 			const matchesCohort = selectedCohort === 'all' ||
 				student.cohort_id === selectedCohort ||
@@ -418,19 +446,38 @@
 
 			{#if courseFeatures.hubsEnabled !== false}
 			<div>
-				<label class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 block px-1" for="hub-filter">Hub</label>
-				<select
-					id="hub-filter"
-					bind:value={selectedHub}
-					class="w-full px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
-					style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
-				>
-					<option value="all" class="text-gray-900">All Hubs</option>
-					<option value="" class="text-gray-900">No Hub</option>
+				<h3 class="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 px-1">Hub</h3>
+				<div class="space-y-0.5">
+					<label class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer text-white/60 hover:bg-white/5 hover:text-white">
+						<input
+							type="checkbox"
+							checked={selectedHubs.size === 0}
+							onchange={() => selectedHubs = new Set()}
+							class="rounded"
+						/>
+						All Hubs
+					</label>
+					<label class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer text-white/60 hover:bg-white/5 hover:text-white">
+						<input
+							type="checkbox"
+							checked={selectedHubs.has('')}
+							onchange={() => toggleHubFilter('')}
+							class="rounded"
+						/>
+						No Hub
+					</label>
 					{#each hubs as hub}
-						<option value={hub.id} class="text-gray-900">{hub.name}</option>
+						<label class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer text-white/60 hover:bg-white/5 hover:text-white">
+							<input
+								type="checkbox"
+								checked={selectedHubs.has(hub.id)}
+								onchange={() => toggleHubFilter(hub.id)}
+								class="rounded"
+							/>
+							{hub.name}
+						</label>
 					{/each}
-				</select>
+				</div>
 			</div>
 			{/if}
 		</div>
@@ -512,17 +559,37 @@
 
 						<!-- Hub filter -->
 						{#if courseFeatures.hubsEnabled !== false}
-						<select
-							bind:value={selectedHub}
-							class="flex-shrink-0 px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none"
-							style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
-						>
-							<option value="all" class="text-gray-900">All Hubs</option>
-							<option value="" class="text-gray-900">No Hub</option>
-							{#each hubs as hub}
-								<option value={hub.id} class="text-gray-900">{hub.name}</option>
-							{/each}
-						</select>
+						<div class="relative flex-shrink-0">
+							<button
+								type="button"
+								bind:this={hubDropdownButton}
+								onclick={() => hubDropdown?.toggle()}
+								class="flex-shrink-0 px-3 py-1.5 text-xs rounded-lg text-white focus:outline-none whitespace-nowrap"
+								style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+							>
+								{selectedHubs.size === 0 ? 'All Hubs' : `Hub (${selectedHubs.size})`}
+							</button>
+							<div
+								bind:this={hubDropdownPanel}
+								style="display: none;"
+								class="bg-white rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-y-auto"
+							>
+								<label class="w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer text-gray-700 hover:bg-gray-50">
+									<input type="checkbox" checked={selectedHubs.size === 0} onchange={() => selectedHubs = new Set()} />
+									All Hubs
+								</label>
+								<label class="w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer text-gray-700 hover:bg-gray-50">
+									<input type="checkbox" checked={selectedHubs.has('')} onchange={() => toggleHubFilter('')} />
+									No Hub
+								</label>
+								{#each hubs as hub}
+									<label class="w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer text-gray-700 hover:bg-gray-50">
+										<input type="checkbox" checked={selectedHubs.has(hub.id)} onchange={() => toggleHubFilter(hub.id)} />
+										{hub.name}
+									</label>
+								{/each}
+							</div>
+						</div>
 						{/if}
 
 						<!-- Cohort filter (if multiple cohorts) -->
