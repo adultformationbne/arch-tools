@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { createEmbeddedCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
-import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
+import { isEnrollmentLinkValid, checkEnrollmentWindow, getEffectivePrice } from '$lib/utils/enrollment-links';
 import { getCourseSettings } from '$lib/types/course-settings';
 import { checkRateLimit } from '$lib/server/rate-limit';
 import { CourseMutations } from '$lib/server/course-data';
@@ -198,6 +198,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 			code,
 			is_active,
 			bypass_enrollment_window,
+			enrollment_closes_at,
 			show_hub_selector,
 			max_uses,
 			uses_count,
@@ -255,14 +256,11 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 		throw error(400, 'This enrollment link does not have enough remaining uses for this group');
 	}
 
-	// Enforce the cohort enrollment window unless this link bypasses it (late access)
-	if (!link.bypass_enrollment_window) {
-		if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
-			throw error(400, 'Enrollment has not opened yet');
-		}
-		if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
-			throw error(400, 'Enrollment for this cohort has closed');
-		}
+	// Enforce the enrollment window — a link's own cutoff (if set) overrides the
+	// cohort's, and "late access" links bypass any cutoff entirely.
+	const windowCheck = checkEnrollmentWindow({ link, cohort });
+	if (!windowCheck.valid) {
+		throw error(400, windowCheck.reason || 'Enrollment is not currently open');
 	}
 
 	// Check cohort capacity up front for the whole group (atomic check still happens later)

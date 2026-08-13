@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { isEnrollmentLinkValid, getEffectivePrice } from '$lib/utils/enrollment-links';
+import { isEnrollmentLinkValid, checkEnrollmentWindow, getEffectivePrice } from '$lib/utils/enrollment-links';
 import { getCourseSettings } from '$lib/types/course-settings';
 import { getStripePublishableKey } from '$lib/server/stripe';
 
@@ -18,6 +18,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			code,
 			is_active,
 			bypass_enrollment_window,
+			enrollment_closes_at,
 			show_hub_selector,
 			max_uses,
 			uses_count,
@@ -77,19 +78,11 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		throw error(404, 'Course information not found');
 	}
 
-	// Check the cohort enrollment window — unless this link is allowed to bypass it
-	// (a "late access" link for people enrolling after the window closes).
-	if (!link.bypass_enrollment_window) {
-		if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
-			throw error(
-				400,
-				`Enrollment opens on ${new Date(cohort.enrollment_opens_at).toLocaleDateString()}`
-			);
-		}
-
-		if (cohort.enrollment_closes_at && new Date(cohort.enrollment_closes_at) < new Date()) {
-			throw error(400, 'Enrollment for this cohort has closed');
-		}
+	// Check the enrollment window — a link's own cutoff (if set) overrides the
+	// cohort's, and "late access" links bypass any cutoff entirely.
+	const windowCheck = checkEnrollmentWindow({ link, cohort });
+	if (!windowCheck.valid) {
+		throw error(400, windowCheck.reason || 'Enrollment is not currently open');
 	}
 
 	// Check cohort max enrollments

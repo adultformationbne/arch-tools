@@ -28,6 +28,8 @@ export const POST: RequestHandler = async (event) => {
 			return handleEnsureMainLink(body.cohortId);
 		case 'toggle':
 			return handleToggle(body);
+		case 'update_cutoff':
+			return handleUpdateCutoff(body);
 		default:
 			throw error(400, 'Invalid action');
 	}
@@ -64,8 +66,9 @@ async function handleCreate(body: {
 	maxUses?: number | null;
 	bypassEnrollmentWindow?: boolean;
 	showHubSelector?: boolean;
+	enrollmentClosesAt?: string | null;
 }, courseSettings: ReturnType<typeof getCourseSettings>) {
-	const { cohortId, name, priceCents, maxUses, bypassEnrollmentWindow } = body;
+	const { cohortId, name, priceCents, maxUses, bypassEnrollmentWindow, enrollmentClosesAt } = body;
 
 	// A "hub link" shows a dropdown of the cohort's hubs; it can't also lock to a
 	// single hub, so the dropdown wins and any single-hub override is dropped.
@@ -123,6 +126,7 @@ async function handleCreate(body: {
 			price_cents: priceOverride,
 			max_uses: maxUses || null,
 			bypass_enrollment_window: bypassEnrollmentWindow === true,
+			enrollment_closes_at: enrollmentClosesAt || null,
 			show_hub_selector: showHubSelector,
 			is_active: true
 		})
@@ -169,6 +173,34 @@ async function handleToggle(body: { linkId: string; isActive: boolean }) {
 	if (updateError) {
 		console.error('Failed to update enrollment link:', updateError);
 		throw error(500, 'Failed to update enrollment link');
+	}
+
+	return json({ success: true });
+}
+
+async function handleUpdateCutoff(body: {
+	linkId: string;
+	enrollmentClosesAt?: string | null;
+	bypassEnrollmentWindow?: boolean;
+}) {
+	const { linkId, enrollmentClosesAt, bypassEnrollmentWindow } = body;
+
+	if (!linkId) {
+		throw error(400, 'Link ID is required');
+	}
+
+	const { error: updateError } = await supabaseAdmin
+		.from('courses_enrollment_links')
+		.update({
+			bypass_enrollment_window: bypassEnrollmentWindow === true,
+			enrollment_closes_at: bypassEnrollmentWindow === true ? null : enrollmentClosesAt || null,
+			updated_at: new Date().toISOString()
+		})
+		.eq('id', linkId);
+
+	if (updateError) {
+		console.error('Failed to update enrollment link cutoff:', updateError);
+		throw error(500, 'Failed to update enrollment link cutoff');
 	}
 
 	return json({ success: true });

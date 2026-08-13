@@ -43,6 +43,41 @@ export function isEnrollmentLinkValid(link: {
 }
 
 /**
+ * Check the enrollment window for a link + its cohort.
+ *
+ * A link's own `enrollment_closes_at` (when set) overrides the cohort's —
+ * this lets one link stay open longer (or close sooner) than the rest.
+ * `bypass_enrollment_window` ignores any cutoff entirely (late access).
+ */
+export function checkEnrollmentWindow(params: {
+	link: {
+		bypass_enrollment_window: boolean;
+		enrollment_closes_at?: string | null;
+	};
+	cohort: {
+		enrollment_opens_at: string | null;
+		enrollment_closes_at: string | null;
+	};
+}): { valid: boolean; reason?: string } {
+	const { link, cohort } = params;
+
+	if (link.bypass_enrollment_window) {
+		return { valid: true };
+	}
+
+	if (cohort.enrollment_opens_at && new Date(cohort.enrollment_opens_at) > new Date()) {
+		return { valid: false, reason: 'Enrollment has not opened yet' };
+	}
+
+	const effectiveClosesAt = link.enrollment_closes_at ?? cohort.enrollment_closes_at;
+	if (effectiveClosesAt && new Date(effectiveClosesAt) < new Date()) {
+		return { valid: false, reason: 'Enrollment for this cohort has closed' };
+	}
+
+	return { valid: true };
+}
+
+/**
  * Resolve the effective enrollment price.
  *
  * Model: the cohort carries the default price; an enrollment link MAY override

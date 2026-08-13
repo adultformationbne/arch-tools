@@ -36,24 +36,26 @@
 	let linkName = $state('');
 	let customPrice = $state('');
 	let maxUses = $state('');
-	let bypassEnrollmentWindow = $state(false);
+	// One control, three states: inherit the cohort's cutoff, a custom date, or no cutoff at all.
+	let cutoffMode = $state<'default' | 'custom' | 'none'>('default');
+	let cutoffOverride = $state('');
 	let isCreating = $state(false);
 
 	// Filter state
 	let filterCohortId = $state('');
 
 	// Inline "enrollment closes" cutoff editing (per cohort)
-	let editingCutoffCohortId = $state<string | null>(null);
+	let editingCohortCutoffId = $state<string | null>(null);
 	let cutoffDraft = $state('');
 	let savingCutoff = $state(false);
 
 	function startEditCutoff(cohort: any) {
-		editingCutoffCohortId = cohort.id;
+		editingCohortCutoffId = cohort.id;
 		cutoffDraft = cohort.enrollment_closes_at ? cohort.enrollment_closes_at.slice(0, 10) : '';
 	}
 
 	function cancelEditCutoff() {
-		editingCutoffCohortId = null;
+		editingCohortCutoffId = null;
 		cutoffDraft = '';
 	}
 
@@ -78,13 +80,65 @@
 				{ successMessage: 'Enrollment cutoff updated' }
 			);
 
-			editingCutoffCohortId = null;
+			editingCohortCutoffId = null;
 			cutoffDraft = '';
 			invalidateAll();
 		} catch {
 			// apiPost already surfaces the error toast.
 		} finally {
 			savingCutoff = false;
+		}
+	}
+
+	// Inline enrollment-cutoff editing (per link — overrides the cohort's).
+	// Same three states as the create form: default / custom date / no cutoff.
+	let editingLinkCutoffId = $state<string | null>(null);
+	let linkCutoffMode = $state<'default' | 'custom' | 'none'>('default');
+	let linkCutoffDraft = $state('');
+	let savingLinkCutoff = $state(false);
+
+	function startEditLinkCutoff(link: any) {
+		editingLinkCutoffId = link.id;
+		if (link.bypass_enrollment_window) {
+			linkCutoffMode = 'none';
+			linkCutoffDraft = '';
+		} else if (link.enrollment_closes_at) {
+			linkCutoffMode = 'custom';
+			linkCutoffDraft = link.enrollment_closes_at.slice(0, 10);
+		} else {
+			linkCutoffMode = 'default';
+			linkCutoffDraft = '';
+		}
+	}
+
+	function cancelEditLinkCutoff() {
+		editingLinkCutoffId = null;
+		linkCutoffDraft = '';
+	}
+
+	async function saveLinkCutoff(link: any) {
+		savingLinkCutoff = true;
+		try {
+			await apiPost(
+				`/admin/courses/${$page.params.slug}/enrollment-links/api`,
+				{
+					action: 'update_cutoff',
+					linkId: link.id,
+					bypassEnrollmentWindow: linkCutoffMode === 'none',
+					// Date only: closes at 11:59:59pm that night.
+					enrollmentClosesAt:
+						linkCutoffMode === 'custom' && linkCutoffDraft ? `${linkCutoffDraft}T23:59:59` : null
+				},
+				{ successMessage: 'Link cutoff updated' }
+			);
+
+			editingLinkCutoffId = null;
+			linkCutoffDraft = '';
+			invalidateAll();
+		} catch {
+			// apiPost already surfaces the error toast.
+		} finally {
+			savingLinkCutoff = false;
 		}
 	}
 
@@ -106,6 +160,7 @@
 			link.hub_id === null &&
 			link.price_cents === null &&
 			link.bypass_enrollment_window === false &&
+			link.enrollment_closes_at === null &&
 			link.show_hub_selector !== true
 		);
 	}
@@ -150,7 +205,8 @@
 		linkName = '';
 		customPrice = '';
 		maxUses = '';
-		bypassEnrollmentWindow = false;
+		cutoffMode = 'default';
+		cutoffOverride = '';
 	}
 
 	function openCreateModal(cohortId?: string) {
@@ -183,7 +239,10 @@
 					name: linkName || null,
 					priceCents: hasPriceOverride ? Math.round(parseFloat(customPrice) * 100) : null,
 					maxUses: maxUses ? parseInt(maxUses) : null,
-					bypassEnrollmentWindow
+					bypassEnrollmentWindow: cutoffMode === 'none',
+					// Date only: closes at 11:59:59pm that night. Overrides the cohort's cutoff.
+					enrollmentClosesAt:
+						cutoffMode === 'custom' && cutoffOverride ? `${cutoffOverride}T23:59:59` : null
 				},
 				{ successMessage: 'Enrollment link created' }
 			);
@@ -319,7 +378,7 @@
 								<p class="text-xs text-gray-500">
 									Cohort price: {cohortPriceLabel(cohort)}
 								</p>
-								{#if editingCutoffCohortId === cohort.id}
+								{#if editingCohortCutoffId === cohort.id}
 									<div class="mt-1.5 flex flex-wrap items-center gap-2">
 										<span class="text-xs text-gray-500">Enrollment closes</span>
 										<input
@@ -414,7 +473,7 @@
 	<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 		<!-- Link info -->
 		<div class="min-w-0 flex-1">
-			{#if customName(link) || link.hub || link.show_hub_selector || link.price_cents !== null || link.bypass_enrollment_window}
+			{#if customName(link) || link.hub || link.show_hub_selector || link.price_cents !== null || link.bypass_enrollment_window || link.enrollment_closes_at}
 				<div class="flex flex-wrap items-center gap-1.5">
 					{#if customName(link)}
 						<h4 class="mr-1 font-medium text-gray-900">{customName(link)}</h4>
@@ -448,11 +507,69 @@
 					{#if link.bypass_enrollment_window}
 						<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
 							<Clock class="h-3 w-3 text-gray-400" />
-							Late access
+							No cutoff
+						</span>
+					{:else if link.enrollment_closes_at}
+						<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+							<Clock class="h-3 w-3 text-gray-400" />
+							Closes {formatCutoff(link.enrollment_closes_at)}
 						</span>
 					{/if}
 				</div>
 			{/if}
+
+			<!-- Cutoff editor (own cutoff, independent of the cohort's) -->
+			<div class="mt-2">
+				{#if editingLinkCutoffId === link.id}
+					<div class="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2">
+						<label class="flex items-center gap-2 text-xs text-gray-700">
+							<input type="radio" bind:group={linkCutoffMode} value="default" class="h-3.5 w-3.5 border-gray-300" />
+							Use the cohort's cutoff ({formatCutoff(cohort?.enrollment_closes_at ?? null)})
+						</label>
+						<label class="flex items-center gap-2 text-xs text-gray-700">
+							<input type="radio" bind:group={linkCutoffMode} value="custom" class="h-3.5 w-3.5 border-gray-300" />
+							Custom date
+						</label>
+						{#if linkCutoffMode === 'custom'}
+							<input
+								type="date"
+								bind:value={linkCutoffDraft}
+								class="ml-5 rounded border border-gray-300 px-2 py-1 text-xs"
+							/>
+						{/if}
+						<label class="flex items-center gap-2 text-xs text-gray-700">
+							<input type="radio" bind:group={linkCutoffMode} value="none" class="h-3.5 w-3.5 border-gray-300" />
+							No cutoff (late access)
+						</label>
+						<div class="flex items-center gap-2 pt-1">
+							<button
+								onclick={() => saveLinkCutoff(link)}
+								disabled={savingLinkCutoff}
+								class="rounded bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+							>
+								{savingLinkCutoff ? 'Saving...' : 'Save'}
+							</button>
+							<button
+								onclick={cancelEditLinkCutoff}
+								disabled={savingLinkCutoff}
+								class="rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				{:else}
+					<button
+						onclick={() => startEditLinkCutoff(link)}
+						class="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700"
+					>
+						<Pencil class="h-3 w-3" />
+						{link.bypass_enrollment_window || link.enrollment_closes_at
+							? "Edit this link's cutoff"
+							: "Override this link's cutoff"}
+					</button>
+				{/if}
+			</div>
 
 			<!-- URL -->
 			<div class="mt-2 flex flex-wrap items-center gap-2">
@@ -661,18 +778,30 @@
 					/>
 				</div>
 
-				<!-- Late access (optional) -->
+				<!-- Enrollment cutoff -->
 				<div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-					<label class="flex items-start gap-2 text-sm font-medium text-gray-700">
-						<input
-							type="checkbox"
-							bind:checked={bypassEnrollmentWindow}
-							class="mt-0.5 h-4 w-4 rounded border-gray-300"
-						/>
-						<span>
-							Allow enrolling after the cohort's enrollment window closes (late access)
-						</span>
-					</label>
+					<p class="mb-2 text-sm font-medium text-gray-700">Enrollment cutoff</p>
+					<div class="space-y-2">
+						<label class="flex items-center gap-2 text-sm text-gray-700">
+							<input type="radio" bind:group={cutoffMode} value="default" class="h-4 w-4 border-gray-300" />
+							Use the cohort's cutoff ({formatCutoff(selectedCohort?.enrollment_closes_at ?? null)})
+						</label>
+						<label class="flex items-center gap-2 text-sm text-gray-700">
+							<input type="radio" bind:group={cutoffMode} value="custom" class="h-4 w-4 border-gray-300" />
+							Custom date
+						</label>
+						{#if cutoffMode === 'custom'}
+							<input
+								type="date"
+								bind:value={cutoffOverride}
+								class="ml-6 block rounded-lg border border-gray-300 px-3 py-2"
+							/>
+						{/if}
+						<label class="flex items-center gap-2 text-sm text-gray-700">
+							<input type="radio" bind:group={cutoffMode} value="none" class="h-4 w-4 border-gray-300" />
+							No cutoff (allow enrolling any time — "late access")
+						</label>
+					</div>
 				</div>
 
 				<!-- Actions -->

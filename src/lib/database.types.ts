@@ -651,6 +651,7 @@ export type Database = {
           cohort_id: string
           created_at: string | null
           created_by: string | null
+          enrollment_closes_at: string | null
           hub_id: string | null
           id: string
           is_active: boolean | null
@@ -667,6 +668,7 @@ export type Database = {
           cohort_id: string
           created_at?: string | null
           created_by?: string | null
+          enrollment_closes_at?: string | null
           hub_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -683,6 +685,7 @@ export type Database = {
           cohort_id?: string
           created_at?: string | null
           created_by?: string | null
+          enrollment_closes_at?: string | null
           hub_id?: string | null
           id?: string
           is_active?: boolean | null
