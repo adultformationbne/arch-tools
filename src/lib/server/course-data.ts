@@ -725,9 +725,16 @@ export const CourseAggregates = {
 		const allCohorts = (allCohortsResult.data || []).map(enrichCohort);
 		const archivedCohorts = allCohorts.filter((c: any) => c.status === 'archived');
 
+		// Enrich modules with their session count so UI (e.g. the sidebar module list)
+		// can show accurate counts without loading every module's full session data.
+		const modulesWithSessionCount = modules.map((m: any) => ({
+			...m,
+			session_count: sessionCountMap.get(m.id) || 0
+		}));
+
 		return {
 			data: {
-				modules: modules,
+				modules: modulesWithSessionCount,
 				cohorts: cohorts,
 				archivedCohorts: archivedCohorts
 			},

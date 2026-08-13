@@ -29,14 +29,6 @@
 		onSessionReorder = () => {}
 	} = $props();
 
-	let expandedModules = $state(/** @type {Set<string>} */ (new Set()));
-
-	// Sync expanded modules when selection changes
-	$effect(() => {
-		if (selectedModuleId && !expandedModules.has(selectedModuleId)) {
-			expandedModules = new Set([...expandedModules, selectedModuleId]);
-		}
-	});
 	let editingSessionId = $state(null);
 	let editingTitle = $state('');
 	let savingTitle = $state(false);  // Track if we're saving
@@ -70,18 +62,18 @@
 		}, {})
 	);
 
-	const toggleModule = (moduleId) => {
-		if (expandedModules.has(moduleId)) {
-			expandedModules.delete(moduleId);
-		} else {
-			expandedModules.add(moduleId);
-		}
-		expandedModules = new Set(expandedModules); // Trigger reactivity
+	// Only the currently-loaded module's sessions are ever fetched (see +page.server.ts),
+	// so the tree is a strict single-expand accordion tied to selection rather than
+	// independent expand/collapse state - anything else leaves a stale, empty section open.
+	const handleModuleClick = (moduleId) => {
+		if (moduleId !== selectedModuleId) onModuleChange(moduleId);
 	};
 
-	const handleModuleClick = (moduleId) => {
-		toggleModule(moduleId);
-		onModuleChange(moduleId);
+	// Real session count for a module - the live local list when it's the loaded module,
+	// otherwise the count precomputed server-side (module.session_count).
+	const getModuleSessionCount = (module) => {
+		if (module.id === selectedModuleId) return (sessionsByModule[module.id] || []).length;
+		return module.session_count ?? 0;
 	};
 
 	const handleSessionClick = (moduleId, sessionNumber) => {
@@ -183,8 +175,8 @@
 	<!-- Tree Navigation -->
 	<div class="flex-1 overflow-y-auto p-2">
 		{#each modules as module}
-			{@const isExpanded = expandedModules.has(module.id)}
 			{@const isSelected = selectedModuleId === module.id}
+			{@const isExpanded = isSelected}
 			{@const moduleSessions = sessionsByModule[module.id] || []}
 
 			<!-- Module -->
@@ -201,7 +193,7 @@
 						{/if}
 					</div>
 					<span class="font-semibold text-sm truncate flex-1">{module.name}</span>
-					<span class="text-xs text-white/40">{moduleSessions.length}</span>
+					<span class="text-xs text-white/40">{getModuleSessionCount(module)}</span>
 				</button>
 
 				<!-- Sessions (shown when module is expanded) -->

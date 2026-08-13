@@ -67,7 +67,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
 		onmousedown={handleBackdropMouseDown}
 		onclick={handleBackdropClick}
-		onkeydown={(e) => e.key === 'Enter' && closeOnBackdrop && onClose()}
+		onkeydown={(e) => e.key === 'Enter' && e.target === e.currentTarget && closeOnBackdrop && onClose()}
 		role="presentation"
 	>
 		<!-- Modal Content -->
