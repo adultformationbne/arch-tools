@@ -85,6 +85,24 @@ export interface BuildCourseVariablesOptions {
 	hubNameFallback?: string;
 }
 
+const EMAIL_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+	weekday: 'long',
+	year: 'numeric',
+	month: 'long',
+	day: 'numeric'
+};
+
+/** Formats a date the same way emails do everywhere (e.g. "Monday, 1 January 2025"). Returns '' for empty/invalid input. */
+export function formatEmailDate(raw: unknown): string {
+	if (!raw) return '';
+	try {
+		const d = new Date(raw as string);
+		return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-AU', EMAIL_DATE_FORMAT);
+	} catch {
+		return '';
+	}
+}
+
 export function buildCourseVariablesFromEnrollment(
 	enrollment: Record<string, unknown>,
 	courseData: Record<string, unknown> | undefined,
@@ -112,25 +130,8 @@ export function buildCourseVariablesFromEnrollment(
 	const replyToEmail =
 		(emailBrandingConfig?.reply_to_email as string) || 'accf@archdiocesanministries.org.au';
 
-	const dateOptions: Intl.DateTimeFormatOptions = {
-		weekday: 'long',
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric'
-	};
-
-	function safeFormatDate(raw: unknown): string {
-		if (!raw) return '';
-		try {
-			const d = new Date(raw as string);
-			return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-AU', dateOptions);
-		} catch {
-			return '';
-		}
-	}
-
-	const startDate = safeFormatDate(cohortData.start_date);
-	const endDate = safeFormatDate(cohortData.end_date);
+	const startDate = formatEmailDate(cohortData.start_date);
+	const endDate = formatEmailDate(cohortData.end_date);
 
 	let hubName =
 		((enrollment.courses_hubs as Record<string, unknown>)?.name as string) ||

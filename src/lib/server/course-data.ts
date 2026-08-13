@@ -2759,8 +2759,9 @@ export const CourseMutations = {
 		cohortId: string;
 		sentBy: string;
 		courseSlug: string;
+		siteUrl: string;
 	}) {
-		const { enrollmentIds, cohortId, sentBy, courseSlug } = params;
+		const { enrollmentIds, cohortId, sentBy, courseSlug, siteUrl } = params;
 
 		if (!enrollmentIds || enrollmentIds.length === 0) {
 			return { data: { sent: 0, failed: 0 }, error: null };
@@ -2771,11 +2772,12 @@ export const CourseMutations = {
 			.from('courses_enrollments')
 			.select(`
 				id, email, full_name, user_profile_id,
+				courses_hubs(name),
 				courses_cohorts(
-					name, start_date,
+					name, start_date, end_date, current_session,
 					courses_modules(
 						name,
-						courses(name, slug)
+						courses(id, name, slug, settings, email_branding_config)
 					)
 				)
 			`)
@@ -2790,7 +2792,15 @@ export const CourseMutations = {
 		let failedCount = 0;
 
 		// Import email service
-		const { sendCourseEmail } = await import('$lib/utils/email-service.js');
+		const {
+			getCourseEmailTemplate,
+			buildVariableContext,
+			renderTemplateForRecipient,
+			sendCourseEmail,
+			createEmailButton
+		} = await import('$lib/utils/email-service.js');
+		const { generateEmailFromMjml } = await import('$lib/email/compiler.js');
+		const { RESEND_API_KEY } = await import('$env/static/private');
 
 		for (const enrollment of enrollments || []) {
 			try {
@@ -2798,7 +2808,13 @@ export const CourseMutations = {
 				const moduleData = cohortData?.courses_modules as any;
 				const courseData = moduleData?.courses as any;
 
-				// Generate magic link for the user
+				if (!courseData) {
+					console.error(`Course not found for enrollment ${enrollment.id}`);
+					failedCount++;
+					continue;
+				}
+
+				// Generate magic link so imported participants (no password yet) can sign in
 				const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
 					type: 'magiclink',
 					email: enrollment.email,
@@ -2813,21 +2829,83 @@ export const CourseMutations = {
 					continue;
 				}
 
-				// Send welcome email
-				await sendCourseEmail({
-					to: enrollment.email,
-					templateSlug: 'welcome',
-					courseSlug: courseSlug,
-					context: {
-						recipientName: enrollment.full_name,
-						recipientEmail: enrollment.email,
-						cohortName: cohortData?.name || 'Your Cohort',
-						courseName: courseData?.name || 'Course',
-						moduleName: moduleData?.name || 'Module',
-						startDate: cohortData?.start_date,
-						magicLink: linkData.properties?.action_link || '#'
-					}
+				const template = await getCourseEmailTemplate(supabaseAdmin, courseData.id, 'welcome_enrolled');
+				if (!template) {
+					console.error(`welcome_enrolled email template not found for course ${courseData.id}`);
+					failedCount++;
+					continue;
+				}
+
+				const courseSettings = courseData.settings || {};
+				const courseColors = {
+					accentDark: courseSettings.theme?.accentDark || '#334642',
+					accentLight: courseSettings.theme?.accentLight || '#eae2d9',
+					accentDarkest: courseSettings.theme?.accentDarkest || '#1e2322'
+				};
+				const courseLogoUrl = courseSettings.branding?.logoUrl || null;
+
+				const variables = buildVariableContext({
+					enrollment: {
+						full_name: enrollment.full_name,
+						email: enrollment.email,
+						hub_name: (enrollment.courses_hubs as any)?.name || null
+					},
+					course: {
+						name: courseData.name,
+						slug: courseData.slug,
+						settings: courseData.settings,
+						email_branding_config: courseData.email_branding_config
+					},
+					cohort: cohortData
+						? {
+								name: cohortData.name,
+								start_date: cohortData.start_date,
+								end_date: cohortData.end_date,
+								current_session: cohortData.current_session
+							}
+						: null,
+					siteUrl
 				});
+
+				// The magic link (not the smart-login link) is the entry point here,
+				// since these participants don't have a password set yet
+				variables.loginButton = createEmailButton(
+					'Go to My Course',
+					linkData.properties?.action_link || variables.dashboardLink,
+					courseColors.accentDark
+				);
+
+				const rendered = renderTemplateForRecipient({
+					subjectTemplate: template.subject_template,
+					bodyTemplate: template.body_template,
+					variables
+				});
+
+				const compiledHtml = generateEmailFromMjml({
+					bodyContent: rendered.body,
+					courseName: courseData.name,
+					logoUrl: courseLogoUrl,
+					colors: courseColors
+				});
+
+				const result = await sendCourseEmail({
+					to: enrollment.email,
+					subject: rendered.subject,
+					bodyHtml: compiledHtml,
+					emailType: 'welcome_enrolled',
+					course: courseData,
+					cohortId,
+					enrollmentId: enrollment.id,
+					templateId: template.id,
+					resendApiKey: RESEND_API_KEY,
+					supabase: supabaseAdmin
+				});
+
+				if (!result.success) {
+					console.error(`Failed to send welcome email to ${enrollment.email}:`, result.error);
+					failedCount++;
+					continue;
+				}
 
 				// Update enrollment with sent timestamp
 				await supabaseAdmin

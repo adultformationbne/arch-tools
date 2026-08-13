@@ -667,7 +667,8 @@ export const POST: RequestHandler = async (event) => {
 					enrollmentIds: data.enrollmentIds,
 					cohortId: data.cohortId,
 					sentBy: user.id,
-					courseSlug
+					courseSlug,
+					siteUrl: event.url.origin
 				});
 
 				if (result.error) {
@@ -915,7 +916,7 @@ export const POST: RequestHandler = async (event) => {
 							// Get cohort info
 							const { data: cohort } = await supabaseAdmin
 								.from('courses_cohorts')
-								.select('id, name, module_id')
+								.select('id, name, module_id, start_date, end_date')
 								.eq('id', data.cohortId)
 								.single();
 
@@ -984,7 +985,8 @@ export const POST: RequestHandler = async (event) => {
 											},
 											cohort: cohort ? {
 												name: cohort.name,
-												start_date: null,
+												start_date: cohort.start_date,
+												end_date: cohort.end_date,
 												current_session: data.targetSession
 											} : null,
 											session: session ? {
@@ -1181,6 +1183,47 @@ export const GET: RequestHandler = async (event) => {
 				success: true,
 				data: result.data
 			});
+		}
+
+		// Handle email_history endpoint - last few emails logged per enrollment in a cohort
+		if (endpoint === 'email_history' && cohortId) {
+			if (!await validateCohortBelongsToCourse(cohortId, courseSlug)) {
+				throw error(403, 'Cohort does not belong to this course');
+			}
+
+			const { data: enrollments, error: enrollmentsError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('id')
+				.eq('cohort_id', cohortId);
+
+			if (enrollmentsError) {
+				throw error(500, enrollmentsError.message || 'Failed to fetch enrollments');
+			}
+
+			const enrollmentIds = (enrollments || []).map((e) => e.id);
+			if (enrollmentIds.length === 0) {
+				return json({ success: true, data: {} });
+			}
+
+			const { data: logs, error: logsError } = await supabaseAdmin
+				.from('platform_email_log')
+				.select('enrollment_id, email_type, subject, sent_at, status, email_templates(name)')
+				.in('enrollment_id', enrollmentIds)
+				.order('sent_at', { ascending: false });
+
+			if (logsError) {
+				throw error(500, logsError.message || 'Failed to fetch email history');
+			}
+
+			// Group by enrollment, keeping only the most recent 5 per participant
+			const byEnrollment: Record<string, typeof logs> = {};
+			for (const log of logs || []) {
+				if (!log.enrollment_id) continue;
+				const bucket = (byEnrollment[log.enrollment_id] ??= []);
+				if (bucket.length < 5) bucket.push(log);
+			}
+
+			return json({ success: true, data: byEnrollment });
 		}
 
 		// Handle attendance endpoint

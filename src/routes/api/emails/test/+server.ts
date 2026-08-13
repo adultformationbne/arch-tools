@@ -23,7 +23,11 @@ import { createEmailButton } from '$lib/email/email-button';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { RESEND_API_KEY } from '$env/static/private';
-import { buildCourseVariablesFromEnrollment, type EmailContext } from '$lib/email/context-config';
+import {
+	buildCourseVariablesFromEnrollment,
+	formatEmailDate,
+	type EmailContext
+} from '$lib/email/context-config';
 
 // Sample data for each context (matches context-config.ts)
 const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
@@ -135,6 +139,17 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 				if (courseRow?.name) {
 					variables.courseName = courseRow.name;
 					variables.courseSlug = context_id;
+				}
+
+				// Use a real cohort's schedule so the dates in a sample-data test aren't
+				// disconnected from the (already real) course name and links above.
+				const cohort = await getRepresentativeCohortForCourse(context_id);
+				if (cohort) {
+					variables.cohortName = cohort.name || variables.cohortName;
+					variables.startDate = formatEmailDate(cohort.start_date) || variables.startDate;
+					variables.endDate = formatEmailDate(cohort.end_date) || variables.endDate;
+					variables.currentSession = String(cohort.current_session ?? variables.currentSession);
+					variables.sessionNumber = String(cohort.current_session ?? variables.sessionNumber);
 				}
 			} else if (context === 'dgr') {
 				variables.write_url = `${origin}/dgr/write/sample123`;
@@ -346,6 +361,42 @@ async function fetchPlatformRecipientVariables(userId: string): Promise<Record<s
 		platformName: 'Archdiocesan Ministries',
 		supportEmail: 'accf@archdiocesanministries.org.au'
 	};
+}
+
+/**
+ * Picks a cohort to represent a course in sample-data test emails: the soonest
+ * upcoming cohort if one exists, otherwise the most recently started one.
+ */
+async function getRepresentativeCohortForCourse(courseSlug: string) {
+	const { data: course } = await supabaseAdmin
+		.from('courses')
+		.select('id')
+		.eq('slug', courseSlug)
+		.single();
+	if (!course) return null;
+
+	const { data: modules } = await supabaseAdmin
+		.from('courses_modules')
+		.select('id')
+		.eq('course_id', course.id);
+	if (!modules?.length) return null;
+
+	const { data: cohorts } = await supabaseAdmin
+		.from('courses_cohorts')
+		.select('name, start_date, end_date, current_session')
+		.in(
+			'module_id',
+			modules.map((m) => m.id)
+		)
+		.order('start_date', { ascending: true });
+	if (!cohorts?.length) return null;
+
+	const now = Date.now();
+	const upcoming = cohorts.find((c) => c.start_date && new Date(c.start_date).getTime() >= now);
+	if (upcoming) return upcoming;
+
+	// No upcoming cohort - fall back to the most recently started one
+	return cohorts[cohorts.length - 1];
 }
 
 function getDefaultBrandName(context: string): string {

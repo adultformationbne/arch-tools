@@ -166,6 +166,9 @@
 	// Recent activity
 	let recentActivity = $state([]);
 
+	// Last few emails logged per enrollment (id -> array of {email_type, subject, sent_at, status, email_templates})
+	let emailHistory = $state({});
+
 	// Status sort order for consistent grouping
 	const statusOrder = { not_invited: 0, invited: 1, pending: 2, active: 3, held: 4, completed: 5, withdrawn: 6 };
 	const reflectionOrder = { behind: 0, on_track: 1, complete: 2 };
@@ -334,18 +337,20 @@
 			// Get module ID for fetching sessions with questions
 			const moduleId = currentCohort.module?.id || currentCohort.module_id;
 
-			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse, activityResponse] = await Promise.all([
+			const [enrollmentResponse, attendanceResponse, reflectionsData, sessionsResponse, activityResponse, emailHistoryResponse] = await Promise.all([
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=courses_enrollments&cohort_id=${selectedCohortId}`).then(r => r.json()),
 				fetch(`/admin/courses/${courseSlug}/api?endpoint=attendance&cohort_id=${selectedCohortId}`).then(r => r.json()),
 				fetchReflectionsByCohort(selectedCohortId, courseSlug),
 				moduleId
 					? fetch(`/admin/courses/${courseSlug}/api?endpoint=sessions_with_questions&module_id=${moduleId}`).then(r => r.json())
 					: Promise.resolve({ success: true, data: [] }),
-				fetch(`/admin/courses/${courseSlug}/api?endpoint=recent_activity&cohort_id=${selectedCohortId}`).then(r => r.json())
+				fetch(`/admin/courses/${courseSlug}/api?endpoint=recent_activity&cohort_id=${selectedCohortId}`).then(r => r.json()),
+				fetch(`/admin/courses/${courseSlug}/api?endpoint=email_history&cohort_id=${selectedCohortId}`).then(r => r.json())
 			]);
 
 			// Update activity
 			recentActivity = activityResponse.success ? activityResponse.data : [];
+			emailHistory = emailHistoryResponse.success ? emailHistoryResponse.data : {};
 
 			reflectionsByUser = reflectionsData;
 			sessionsWithQuestions = sessionsResponse.success ? sessionsResponse.data : [];
@@ -689,17 +694,17 @@
 	function handleSendWelcome() {
 		if (selectedParticipants.size === 0) return;
 
-		// Get selected participants who haven't received welcome email
+		// Get selected participants who haven't received any first-contact email yet
 		const pendingParticipants = participants.filter(
 			p => selectedParticipants.has(p.id) && !p.welcome_email_sent_at
 		);
 
 		if (pendingParticipants.length === 0) {
-			toastWarning('All selected participants have already received welcome emails');
+			toastWarning('All selected participants have already been emailed');
 			return;
 		}
 
-		// Open email modal with welcome template pre-selected
+		// Open email modal with a default template pre-selected - admin can swap it
 		emailRecipients = pendingParticipants;
 		initialTemplateSlug = 'welcome_enrolled';
 		showEmailModal = true;
@@ -708,13 +713,13 @@
 	function handleResendWelcome() {
 		if (selectedParticipants.size === 0) return;
 
-		// Get selected participants who HAVE already received welcome email
+		// Get selected participants who HAVE already been emailed
 		const alreadySentParticipants = participants.filter(
 			p => selectedParticipants.has(p.id) && p.welcome_email_sent_at
 		);
 
 		if (alreadySentParticipants.length === 0) {
-			toastWarning('None of the selected participants have received welcome emails yet. Use "Welcome" instead.');
+			toastWarning('None of the selected participants have been emailed yet. Use "First Email" instead.');
 			return;
 		}
 
@@ -754,6 +759,49 @@
 		emailRecipients = [participant];
 		initialTemplateSlug = '';
 		showEmailModal = true;
+	}
+
+	// Friendly labels for the system email_type strings that never go through a
+	// DB template (and so have no email_templates.name to fall back on).
+	const EMAIL_TYPE_LABELS = {
+		welcome_enrolled: 'Welcome',
+		self_enrollment_welcome: 'Welcome',
+		batch_enrollment_invitation: 'Enrollment Invitation',
+		group_registration_confirmation: 'Group Registration Confirmation',
+		hub_enrollment_notification: 'Hub Enrollment Notification',
+		enrollment_admin_notification: 'Admin Notification',
+		payment_failure_admin_notification: 'Payment Failure Notification',
+		payment_receipt: 'Payment Receipt',
+		reflection_marked: 'Reflection Feedback',
+		quiz_marked: 'Quiz Feedback',
+		session_advance: 'Session Materials Ready',
+		custom: 'Custom Email'
+	};
+
+	function emailDisplayName(log) {
+		return (
+			log.email_templates?.name ||
+			EMAIL_TYPE_LABELS[log.email_type] ||
+			log.email_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+		);
+	}
+
+	// Most recent email logged for a participant, plus a tooltip listing the
+	// last few - so "Invited" doesn't have to mean one specific template.
+	function getLastEmailInfo(participant) {
+		const logs = emailHistory[participant.id];
+		if (!logs || logs.length === 0) return null;
+
+		const [latest, ...rest] = logs;
+		const tooltip = [latest, ...rest]
+			.map((log) => `${emailDisplayName(log)} — ${formatRelativeTime(log.sent_at)}`)
+			.join('\n');
+
+		return {
+			label: emailDisplayName(latest),
+			relative: formatRelativeTime(latest.sent_at),
+			tooltip
+		};
 	}
 
 	// Last time we have any evidence the participant was in the course.
@@ -1022,18 +1070,20 @@
 						<div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
 							<button
 								onclick={handleSendWelcome}
+								title="Opens the email composer with a default template pre-selected - pick any template"
 								class="px-2 py-1.5 rounded text-xs font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<Send size={12} />
-								Welcome
+								First Email
 							</button>
 							{#if anySelectedWelcomed}
 							<button
 								onclick={handleResendWelcome}
+								title="Opens the email composer with a default template pre-selected - pick any template"
 								class="px-2 py-1.5 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
 								<MailCheck size={12} />
-								Resend
+								Resend Email
 							</button>
 							{/if}
 							<button
@@ -1176,6 +1226,7 @@
 									{@const cohortSession = selectedCohort.current_session || 0}
 									{@const statusBadge = getStatusBadge(participant)}
 									{@const activityInfo = getActivityInfo(participant)}
+									{@const lastEmailInfo = getLastEmailInfo(participant)}
 									<tr
 										onclick={() => openParticipantDetail(participant)}
 										class="hover:bg-gray-50 transition-colors cursor-pointer"
@@ -1224,6 +1275,14 @@
 											</span>
 											{#if activityInfo.sub}
 												<span class="block text-[9px] sm:text-[10px] text-gray-400">{activityInfo.sub}</span>
+											{/if}
+											{#if lastEmailInfo}
+												<span
+													class="block text-[9px] sm:text-[10px] text-gray-400 truncate max-w-[110px] sm:max-w-none"
+													title={lastEmailInfo.tooltip}
+												>
+													✉ {lastEmailInfo.label} · {lastEmailInfo.relative}
+												</span>
 											{/if}
 										</td>
 										<!-- Session progress -->
