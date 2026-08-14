@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { requireAuth, hasAnyModule } from '$lib/server/auth';
+import { requireAuth, getUserProfile, hasAnyModule } from '$lib/server/auth';
 
 const ACTIVE_ENROLLMENT_STATUSES = ['active', 'invited', 'accepted'];
 
@@ -42,7 +42,8 @@ async function canManageCohort(userId: string, cohortId: string, userProfile: an
  * Requires: User must be enrolled in cohort OR be a global course admin
  */
 export const GET: RequestHandler = async (event) => {
-	const { user, profile } = await requireAuth(event);
+	const { user } = await requireAuth(event);
+	const profile = await getUserProfile(event, user.id);
 
 	try {
 		const cohortId = event.url.searchParams.get('cohort_id');
@@ -110,7 +111,8 @@ export const GET: RequestHandler = async (event) => {
  * Requires: User must be able to manage the cohort (admin/manager)
  */
 export const POST: RequestHandler = async (event) => {
-	const { user, profile } = await requireAuth(event);
+	const { user } = await requireAuth(event);
+	const profile = await getUserProfile(event, user.id);
 
 	try {
 		const body = await event.request.json();
@@ -174,7 +176,8 @@ export const POST: RequestHandler = async (event) => {
  * Requires: User must be the original author AND have cohort management permissions
  */
 export const PATCH: RequestHandler = async (event) => {
-	const { user, profile } = await requireAuth(event);
+	const { user } = await requireAuth(event);
+	const profile = await getUserProfile(event, user.id);
 
 	try {
 		const body = await event.request.json();
@@ -246,7 +249,8 @@ export const PATCH: RequestHandler = async (event) => {
  * Requires: User must be the original author AND have cohort management permissions
  */
 export const DELETE: RequestHandler = async (event) => {
-	const { user, profile } = await requireAuth(event);
+	const { user } = await requireAuth(event);
+	const profile = await getUserProfile(event, user.id);
 
 	try {
 		const body = await event.request.json();

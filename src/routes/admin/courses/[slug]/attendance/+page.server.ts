@@ -14,7 +14,5 @@ export const load: PageServerLoad = async (event) => {
 		throw redirect(302, `/admin/courses/${event.params.slug}`);
 	}
 
-	return {
-		totalSessions: courseInfo.total_sessions || 0
-	};
+	return {};
 };

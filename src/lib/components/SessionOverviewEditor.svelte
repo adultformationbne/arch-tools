@@ -9,6 +9,7 @@
 	// Local state to avoid two-way binding issues with props
 	let textareaValue = $state('');
 	let previousSessionNumber = $state(0);
+	/** @type {HTMLTextAreaElement | null} */
 	let textareaEl = $state(null);
 
 	// Initialize from props

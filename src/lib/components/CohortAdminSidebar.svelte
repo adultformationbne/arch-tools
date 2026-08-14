@@ -25,7 +25,7 @@
 		if (!dateStr) return '';
 		const date = new Date(dateStr);
 		const now = new Date();
-		const diff = now - date;
+		const diff = now.getTime() - date.getTime();
 		const hours = Math.floor(diff / (1000 * 60 * 60));
 		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
@@ -81,7 +81,7 @@
 			<div class="px-3 py-3 border-b" style="border-color: rgba(255,255,255,0.1);">
 				<div class="space-y-1">
 					<button
-						onclick={onAdvanceSession}
+						onclick={() => onAdvanceSession()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<ArrowUp size={14} />
@@ -89,7 +89,7 @@
 					</button>
 
 					<button
-						onclick={onEmailAll}
+						onclick={() => onEmailAll()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<Mail size={14} />
@@ -97,7 +97,7 @@
 					</button>
 
 					<button
-						onclick={onAddParticipant}
+						onclick={() => onAddParticipant()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<UserPlus size={14} />
@@ -105,7 +105,7 @@
 					</button>
 
 					<button
-						onclick={onCohortSettings}
+						onclick={() => onCohortSettings()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<Settings size={14} />
@@ -113,7 +113,7 @@
 					</button>
 
 					<button
-						onclick={onExport}
+						onclick={() => onExport()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<Download size={14} />

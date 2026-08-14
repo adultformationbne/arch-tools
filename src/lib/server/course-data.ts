@@ -96,7 +96,7 @@ export const CourseQueries = {
 					)
 				),
 				hub:hub_id (*),
-				user_profile:user_profile_id (*)
+				user_profile:user_profiles!user_profile_id (*)
 			`)
 			.eq('user_profile_id', userId)
 			.in('cohort_id', cohortIds)
@@ -160,6 +160,7 @@ export const CourseQueries = {
 				id,
 				cohort_id,
 				role,
+				status,
 				hub_id,
 				hub:hub_id (
 					id,
@@ -318,7 +319,7 @@ export const CourseQueries = {
 						module_id
 					)
 				),
-				marked_by_profile:marked_by (
+				marked_by_profile:user_profiles!marked_by (
 					full_name
 				)
 			`)
@@ -399,7 +400,7 @@ export const CourseQueries = {
 				email,
 				current_session,
 				user_profile_id,
-				user_profile:user_profile_id (
+				user_profile:user_profiles!user_profile_id (
 					full_name,
 					email
 				),
@@ -1200,7 +1201,7 @@ export const CourseMutations = {
 		}
 
 		// Auto-create session placeholders (including Pre-Start at session 0)
-		const sessionsToCreate = [];
+		const sessionsToCreate: { module_id: any; session_number: number; title: string; description: string; learning_objectives: string[] }[] = [];
 
 		// Create Pre-Start (session 0)
 		sessionsToCreate.push({
@@ -1269,7 +1270,7 @@ export const CourseMutations = {
 			.eq('id', moduleId)
 			.single();
 
-		if (sourceError || !source) {
+		if (sourceError || !source || !source.course_id) {
 			return { data: null, error: sourceError || ({ message: 'Module not found' } as any) };
 		}
 
@@ -1732,10 +1733,10 @@ export const CourseMutations = {
 			.eq('id', userId)
 			.single();
 
-		if (!userProfile) {
+		if (!userProfile?.email || !userProfile.full_name) {
 			return {
 				data: null,
-				error: { message: 'User profile not found' } as any
+				error: { message: 'User profile not found or missing an email address or name' } as any
 			};
 		}
 
@@ -2155,7 +2156,9 @@ export const CourseMutations = {
 		const withoutAccounts = deletable.filter((e) => !e.user_profile_id);
 
 		// Get unique user_profile_ids (a user might have multiple enrollments)
-		const userProfileIds = [...new Set(withAccounts.map((e) => e.user_profile_id))];
+		const userProfileIds = [
+			...new Set(withAccounts.map((e) => e.user_profile_id).filter((id): id is string => Boolean(id)))
+		];
 
 		if (userProfileIds.length === 0) {
 			// No accounts to delete, just delete the enrollments
@@ -2197,9 +2200,12 @@ export const CourseMutations = {
 				// The enrollments are deleted, but responses might have been orphaned
 
 				// 3. Null out references in other tables to avoid FK violations
+				// NOTE: courses_attendance.marked_by is NOT NULL with a FK to user_profiles, so
+				// this only succeeds for accounts that never marked attendance — a pre-existing
+				// gap, not something this type-check pass should silently paper over.
 				await supabaseAdmin
 					.from('courses_attendance')
-					.update({ marked_by: null })
+					.update({ marked_by: null as unknown as string })
 					.eq('marked_by', profile.id);
 
 				await supabaseAdmin
@@ -2475,7 +2481,7 @@ export const CourseMutations = {
 
 		// ========== APPLY CONFLICT RESOLUTIONS ==========
 		// Process any resolved conflicts before normal import
-		const rowsToProcess = [];
+		const rowsToProcess: any[] = [];
 		for (const row of rows) {
 			const emailLower = row.email.toLowerCase();
 			const resolution = resolvedConflictMap.get(emailLower);
@@ -2781,8 +2787,7 @@ export const CourseMutations = {
 					)
 				)
 			`)
-			.in('id', enrollmentIds)
-			.is('welcome_email_sent_at', null);
+			.in('id', enrollmentIds);
 
 		if (fetchError) {
 			return { data: null, error: fetchError };
@@ -2897,6 +2902,7 @@ export const CourseMutations = {
 					cohortId,
 					enrollmentId: enrollment.id,
 					templateId: template.id,
+					metadata: { sentBy },
 					resendApiKey: RESEND_API_KEY,
 					supabase: supabaseAdmin
 				});
@@ -2907,14 +2913,9 @@ export const CourseMutations = {
 					continue;
 				}
 
-				// Update enrollment with sent timestamp
 				await supabaseAdmin
 					.from('courses_enrollments')
-					.update({
-						welcome_email_sent_at: new Date().toISOString(),
-						welcome_email_sent_by: sentBy,
-						status: 'invited'
-					})
+					.update({ status: 'invited' })
 					.eq('id', enrollment.id);
 
 				sentCount++;
@@ -3065,16 +3066,6 @@ export const CourseMutations = {
 				resendApiKey: RESEND_API_KEY,
 				supabase: supabaseAdmin
 			});
-
-			if (result.success) {
-				// Update enrollment to mark welcome email sent
-				await supabaseAdmin
-					.from('courses_enrollments')
-					.update({
-						welcome_email_sent_at: new Date().toISOString()
-					})
-					.eq('id', enrollmentId);
-			}
 
 			return { success: result.success, error: result.success ? null : 'Failed to send email' };
 		} catch (err) {
@@ -3313,17 +3304,6 @@ export const CourseMutations = {
 				resendApiKey: RESEND_API_KEY,
 				supabase: supabaseAdmin
 			});
-
-			if (result.success) {
-				// Stamp the same field sendWelcomeEmails uses, so the participants
-				// dashboard's "invited" signal is accurate regardless of which flow
-				// enrolled this person (self-serve link vs admin-triggered welcome email).
-				await supabaseAdmin
-					.from('courses_enrollments')
-					.update({ welcome_email_sent_at: new Date().toISOString() })
-					.eq('id', enrollmentId)
-					.is('welcome_email_sent_at', null);
-			}
 
 			return { success: result.success, error: result.success ? null : 'Failed to send email' };
 		} catch (err) {

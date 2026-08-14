@@ -2,6 +2,7 @@
 	import { Calendar, Users, BookOpen, PenTool, ChevronDown, FileEdit } from '$lib/icons';
 
 	let { activeSection = 'schedule', activeSubSection = 'schedule', contributorToken = null } = $props();
+	/** @type {HTMLElement | null} */
 	let navRoot = $state(null);
 
 	// Define the navigation structure with subsections and routes
@@ -56,7 +57,7 @@
 		const menu = document.getElementById(menuId);
 		if (!menu) return;
 		const focusableItem = menu.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
-		if (focusableItem) {
+		if (focusableItem instanceof HTMLElement) {
 			focusableItem.focus();
 		}
 	}

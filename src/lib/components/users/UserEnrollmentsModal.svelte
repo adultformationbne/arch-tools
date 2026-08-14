@@ -15,6 +15,7 @@
 	let editingEnrollmentId = $state(null);
 	let editingEnrollmentRole = $state('');
 	let showRemoveConfirm = $state(false);
+	/** @type {{ enrollmentId: string; courseName: string } | null} */
 	let enrollmentToRemove = $state(null);
 
 	function getCourseRoleBadgeColor(role) {
@@ -65,6 +66,7 @@
 	}
 
 	async function removeEnrollment() {
+		if (!enrollmentToRemove) return;
 		const { enrollmentId, courseName } = enrollmentToRemove;
 		showRemoveConfirm = false;
 		enrollmentToRemove = null;

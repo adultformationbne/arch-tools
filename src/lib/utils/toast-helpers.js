@@ -64,8 +64,8 @@ export function toastLoading(message, title = 'Loading...') {
  * @param {number} toastId - The ID of the toast to update
  * @param {string} status - The new status type ('success', 'error', 'warning', 'info')
  * @param {string} message - The new message
- * @param {string} [title] - The new title (optional)
- * @param {number} [duration] - Duration for auto-dismiss (optional)
+ * @param {string | null} [title] - The new title (optional)
+ * @param {number | null} [duration] - Duration for auto-dismiss (optional)
  */
 export function updateToastStatus(toastId, status, message, title = null, duration = null) {
 	const updates = {

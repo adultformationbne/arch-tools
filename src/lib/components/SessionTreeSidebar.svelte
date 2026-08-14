@@ -318,7 +318,7 @@
 
 						<!-- Add Session Button (inline after last session) -->
 						<button
-							onclick={onAddSession}
+							onclick={() => onAddSession()}
 							class="w-full mt-1 px-3 py-1.5 rounded-lg text-left transition-colors text-white/50 hover:bg-white/5 hover:text-white/70 text-xs flex items-center gap-2"
 						>
 							<div class="w-5 h-5 flex items-center justify-center flex-shrink-0 rounded-full bg-white/5 text-white/40">

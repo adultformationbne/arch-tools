@@ -23,6 +23,17 @@
 	});
 
 	// Step 2: Enrollment
+	/**
+	 * @type {{
+	 *   enrollmentType: 'auto_approve' | 'approval_required' | null,
+	 *   isAdminOnly: boolean,
+	 *   priceCents: number | null,
+	 *   currency: string,
+	 *   maxEnrollments: number | null,
+	 *   enrollmentOpensAt: string,
+	 *   enrollmentClosesAt: string
+	 * }}
+	 */
 	let enrollment = $state({
 		enrollmentType: null, // null = auto_approve (default open), 'approval_required', or keep null for admin-managed
 		isAdminOnly: true,
@@ -286,7 +297,7 @@
 											step="0.01"
 											placeholder="0.00"
 											value={enrollment.priceCents ? enrollment.priceCents / 100 : ''}
-											oninput={(e) => enrollment.priceCents = Math.round(parseFloat(e.target.value || '0') * 100)}
+											oninput={(e) => enrollment.priceCents = Math.round(parseFloat(e.currentTarget.value || '0') * 100)}
 										/>
 									</div>
 									<p class="help-text">Set to 0 for a free cohort.</p>

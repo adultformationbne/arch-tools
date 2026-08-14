@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async (event) => {
 		const { user } = await event.locals.safeGetSession();
 
 		// If authenticated, also get their contributor token for the nav
-		let contributorToken = null;
+		let contributorToken: string | null = null;
 		if (user?.email) {
 			const { data: contributor } = await supabaseAdmin
 				.from('dgr_contributors')
@@ -31,7 +31,7 @@ export const load: LayoutServerLoad = async (event) => {
 	});
 
 	// Check if authenticated user is also a DGR contributor
-	let contributorToken = null;
+	let contributorToken: string | null = null;
 	if (user?.email) {
 		const { data: contributor } = await supabaseAdmin
 			.from('dgr_contributors')

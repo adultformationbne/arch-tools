@@ -26,7 +26,7 @@ export const load: PageServerLoad = async (event) => {
 
 	try {
 		// Fetch page-specific data: session counts and enrollment counts
-		let modulesWithCounts = [];
+		let modulesWithCounts: any[] = [];
 
 		if (moduleIds.length > 0) {
 			// Get session counts for each module

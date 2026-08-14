@@ -47,6 +47,7 @@
 
 	// Delete confirmation state
 	let showDeleteConfirm = $state(false);
+	/** @type {any} */
 	let moduleToDelete = $state(null);
 
 	function handleCreateModule() {

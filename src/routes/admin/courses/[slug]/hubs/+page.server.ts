@@ -47,7 +47,7 @@ export const load: PageServerLoad = async (event) => {
 						hub_id,
 						full_name,
 						email,
-						user_profile:user_profile_id (
+						user_profile:user_profiles!user_profile_id (
 							id,
 							full_name,
 							email
@@ -67,7 +67,7 @@ export const load: PageServerLoad = async (event) => {
 						hub_id,
 						full_name,
 						email,
-						user_profile:user_profile_id (
+						user_profile:user_profiles!user_profile_id (
 							id,
 							full_name,
 							email
@@ -88,7 +88,7 @@ export const load: PageServerLoad = async (event) => {
 						email,
 						role,
 						hub_id,
-						user_profile:user_profile_id (
+						user_profile:user_profiles!user_profile_id (
 							id,
 							full_name,
 							email
@@ -139,7 +139,7 @@ export const load: PageServerLoad = async (event) => {
 					email,
 					role,
 					hub_id,
-					user_profile:user_profile_id (
+					user_profile:user_profiles!user_profile_id (
 						id,
 						full_name,
 						email

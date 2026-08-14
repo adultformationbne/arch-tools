@@ -132,7 +132,7 @@
 		</div>
 	{:else}
 		<DGRPromoTilesEditor
-			bind:tiles={promoTiles}
+			tiles={promoTiles}
 			savingState={savingTiles}
 			onSave={savePromoTiles}
 			onAddTile={addTile}

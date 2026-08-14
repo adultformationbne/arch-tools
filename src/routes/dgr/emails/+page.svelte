@@ -173,13 +173,15 @@
 									{#each data.emailLogs || [] as log}
 										<tr class="hover:bg-gray-50 transition-colors">
 											<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{new Date(log.sent_at).toLocaleString('en-US', {
-													month: 'short',
-													day: 'numeric',
-													year: 'numeric',
-													hour: 'numeric',
-													minute: '2-digit'
-												})}
+												{log.sent_at
+													? new Date(log.sent_at).toLocaleString('en-US', {
+															month: 'short',
+															day: 'numeric',
+															year: 'numeric',
+															hour: 'numeric',
+															minute: '2-digit'
+														})
+													: '—'}
 											</td>
 											<td class="px-6 py-4 text-sm text-gray-900">
 												{log.recipient_email}
@@ -268,7 +270,7 @@
 					{#each data.templates as template}
 						{@const info = getTemplateInfo(template.template_key)}
 						<button
-							onclick={() => selectTemplate(template.id)}
+							onclick={() => selectView(template.id)}
 							class="bg-white rounded-xl p-6 text-left hover:shadow-lg transition-shadow"
 						>
 							<div class="flex items-start justify-between">

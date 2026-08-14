@@ -85,7 +85,7 @@ export const GET: RequestHandler = async (event) => {
 			email,
 			current_session,
 			role,
-			user_profile:user_profile_id (
+			user_profile:user_profiles!user_profile_id (
 				full_name,
 				email
 			)
@@ -245,7 +245,7 @@ export const POST: RequestHandler = async (event) => {
 		// Get student and coordinator names
 		const { data: studentEnrollment } = await supabaseAdmin
 			.from('courses_enrollments')
-			.select('full_name, user_profile:user_profile_id(full_name)')
+			.select('full_name, user_profile:user_profiles!user_profile_id(full_name)')
 			.eq('id', studentId)
 			.single();
 

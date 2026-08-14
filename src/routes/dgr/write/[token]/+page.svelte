@@ -527,8 +527,8 @@
 	/** @type {string} */
 	let liturgicalLabel = $derived(/** @type {any} */(readings)?.liturgical_day || /** @type {any} */(selectedDate)?.liturgical_date || '');
 
-	let isSubmittedStatus = $derived(
-		justSubmitted || ['submitted', 'approved', 'published'].includes(selectedDate?.status || '')
+	let isSubmittedStatus = $derived.by(
+		() => justSubmitted || ['submitted', 'approved', 'published'].includes(selectedDate?.status || '')
 	);
 </script>
 

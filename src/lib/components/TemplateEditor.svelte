@@ -94,7 +94,6 @@
 
     <TemplateCodeEditor
       bind:html={editingHtml}
-      {selectedTemplate}
       onFormat={(message, type = 'success') => {
         // This could trigger a toast notification if needed
       }}

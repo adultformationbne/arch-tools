@@ -193,7 +193,7 @@ function convertToMjmlComponents(html, accentDark) {
  * @param {Object} options
  * @param {string} options.bodyContent - HTML content for email body
  * @param {string} options.courseName - Course name
- * @param {string} [options.logoUrl] - Optional logo URL
+ * @param {string | null} [options.logoUrl] - Optional logo URL
  * @param {Object} options.colors - Course colors
  * @param {string} options.colors.accentDark - Dark accent color
  * @param {string} options.colors.accentLight - Light accent color

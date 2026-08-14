@@ -55,11 +55,13 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	// Process my reflections to match component format
-	const processedMyReflections = [];
+	const processedMyReflections: Record<string, any>[] = [];
 
 	// Create entries for all sessions (1 through currentSession)
 	// Only include sessions where reflections are enabled
-	for (let session = 1; session <= enrollment.current_session; session++) {
+	const currentSession = enrollment.current_session ?? 0;
+
+	for (let session = 1; session <= currentSession; session++) {
 		const question = questionsBySession[session];
 		const response = responsesBySession[session];
 
@@ -110,7 +112,6 @@ export const load: PageServerLoad = async (event) => {
 		}) || [];
 
 	// Get current reflection question (if there's one due and reflections are enabled)
-	const currentSession = enrollment.current_session;
 	const currentReflectionQuestion = questionsBySession[currentSession];
 	const hasCurrentSubmission = responsesBySession[currentSession];
 

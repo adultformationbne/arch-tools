@@ -407,6 +407,7 @@
 
 			// Check if user needs to set up password
 			const user = authData.user;
+			if (!user) throw new Error('No user returned from OTP verification');
 
 			if (isPendingUser || isForgotPasswordFlow) {
 				// New/pending user OR forgot password flow - needs to set/reset password

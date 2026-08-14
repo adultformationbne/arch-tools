@@ -26,6 +26,7 @@
 
 	let formData = $state(initializeFormData());
 	let publishing = $state(false);
+	/** @type {{ success?: boolean, error?: string } | null} */
 	let result = $state(null);
 	let useNewDesign = $state(true);
 	let fetchingGospel = $state(false);
@@ -114,7 +115,7 @@
 
 			result = await response.json();
 
-			if (result.success) {
+			if (result?.success) {
 				// Step 4: Success
 				toast.nextStep(toastId);
 				setTimeout(() => {
@@ -135,7 +136,7 @@
 			} else {
 				toast.updateToast(toastId, {
 					title: 'Publishing failed',
-					message: result.error || 'An error occurred',
+					message: result?.error || 'An error occurred',
 					type: 'error',
 					closeable: true,
 					duration: 5000

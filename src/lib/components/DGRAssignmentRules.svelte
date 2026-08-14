@@ -20,6 +20,7 @@
 	let showAddForm = $state(false);
 	let saving = $state(false);
 	let showDeleteConfirm = $state(false);
+	/** @type {any} */
 	let ruleToDelete = $state(null);
 
 	// Options populated from database

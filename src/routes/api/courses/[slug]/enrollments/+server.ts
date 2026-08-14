@@ -120,7 +120,7 @@ export const GET: RequestHandler = async (event) => {
 
 			if (cohort) {
 				// Get ALL sessions with reflection questions for this module
-				const { data: sessionsWithQuestions } = await supabaseAdmin
+				const { data: sessionsWithQuestionsRaw } = await supabaseAdmin
 					.from('courses_sessions')
 					.select(`
 						id,
@@ -130,6 +130,15 @@ export const GET: RequestHandler = async (event) => {
 					.eq('module_id', cohort.module_id)
 					.not('courses_reflection_questions', 'is', null);
 
+				// The DB schema doesn't declare a FK from courses_reflection_questions to
+				// courses_sessions, so supabase-js can't infer this embed is to-many — it
+				// actually returns an array at runtime.
+				const sessionsWithQuestions = sessionsWithQuestionsRaw as unknown as Array<{
+					id: string;
+					session_number: number;
+					courses_reflection_questions: Array<{ id: string }> | null;
+				}> | null;
+
 				// Filter to only sessions that actually have questions
 				const sessionsWithReflections = (sessionsWithQuestions || []).filter(
 					s => s.courses_reflection_questions && s.courses_reflection_questions.length > 0
@@ -138,7 +147,7 @@ export const GET: RequestHandler = async (event) => {
 				if (sessionsWithReflections.length > 0) {
 					// Get all question IDs
 					const questionIds = sessionsWithReflections.flatMap(
-						s => s.courses_reflection_questions.map((q: { id: string }) => q.id)
+						s => (s.courses_reflection_questions ?? []).map((q) => q.id)
 					);
 
 					// Get all submitted responses for these questions
@@ -167,7 +176,7 @@ export const GET: RequestHandler = async (event) => {
 							// Only check sessions up to student's current session
 							if (session.session_number <= studentCurrentSession) {
 								// Check if they've submitted for this session's question(s)
-								for (const question of session.courses_reflection_questions) {
+								for (const question of session.courses_reflection_questions ?? []) {
 									if (!submittedQuestions.has(question.id)) {
 										// Missing at least one reflection
 										return true;

@@ -839,7 +839,6 @@
 		linkToDelete = null;
 	}}
 	confirmText="Delete"
-	confirmClass="bg-red-600 hover:bg-red-700"
 >
 	<p>Are you sure you want to delete this enrollment link?</p>
 	<p class="mt-2 text-sm text-gray-500">

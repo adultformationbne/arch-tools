@@ -26,6 +26,9 @@ export const GET: RequestHandler = async (event) => {
 			if (!enrollmentId) {
 				throw error(400, 'enrollment_id is required for attendance');
 			}
+			if (!cohortId) {
+				throw error(400, 'cohort_id is required');
+			}
 
 			const { data, error: dbError } = await supabaseAdmin
 				.from('courses_attendance')
@@ -45,7 +48,7 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter(Boolean))];
+			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter((id): id is string => Boolean(id)))];
 			let markedByNames: Record<string, string> = {};
 
 			if (markedByIds.length > 0) {
@@ -55,7 +58,7 @@ export const GET: RequestHandler = async (event) => {
 					.in('id', markedByIds);
 
 				if (profiles) {
-					markedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name]));
+					markedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name ?? '']));
 				}
 			}
 
@@ -71,6 +74,9 @@ export const GET: RequestHandler = async (event) => {
 			const enrollmentId = url.searchParams.get('enrollment_id');
 			if (!enrollmentId) {
 				throw error(400, 'enrollment_id is required for reflections');
+			}
+			if (!cohortId) {
+				throw error(400, 'cohort_id is required');
 			}
 
 			const { data, error: dbError } = await supabaseAdmin
@@ -97,7 +103,7 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter(Boolean))];
+			const markedByIds = [...new Set((data || []).map(r => r.marked_by).filter((id): id is string => Boolean(id)))];
 			let markedByNames: Record<string, string> = {};
 
 			if (markedByIds.length > 0) {
@@ -107,7 +113,7 @@ export const GET: RequestHandler = async (event) => {
 					.in('id', markedByIds);
 
 				if (profiles) {
-					markedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name]));
+					markedByNames = Object.fromEntries(profiles.map(p => [p.id, p.full_name ?? '']));
 				}
 			}
 
@@ -151,7 +157,7 @@ export const GET: RequestHandler = async (event) => {
 
 			const { data, error: dbError } = await supabaseAdmin
 				.from('platform_email_log')
-				.select('id, email_type, subject, status, sent_at, error_message, email_templates(name)')
+				.select('id, email_type, subject, status, sent_at, error_message, metadata, email_templates(name)')
 				.eq('enrollment_id', enrollmentId)
 				.ilike('recipient_email', enrollment.email)
 				.order('sent_at', { ascending: false })
@@ -161,7 +167,25 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, dbError.message);
 			}
 
-			return json({ success: true, data: data || [] });
+			// A log row is "system" (no admin in the loop) unless its metadata
+			// carries who triggered it - the general email composer stamps this on
+			// every send, automatic enrolment/payment/reflection emails never do.
+			const sentByIds = [...new Set((data || []).map((l) => (l.metadata as any)?.sentBy).filter((id: unknown): id is string => Boolean(id)))];
+			let sentByName: Record<string, string> = {};
+			if (sentByIds.length > 0) {
+				const { data: senders } = await supabaseAdmin
+					.from('user_profiles')
+					.select('id, full_name')
+					.in('id', sentByIds);
+				sentByName = Object.fromEntries((senders || []).map((s) => [s.id, s.full_name ?? '']));
+			}
+
+			const enrichedData = (data || []).map((log) => {
+				const sentBy = (log.metadata as any)?.sentBy;
+				return { ...log, sent_by_name: sentBy ? sentByName[sentBy] || 'Admin' : null };
+			});
+
+			return json({ success: true, data: enrichedData });
 		}
 
 		if (type === 'other_courses') {
@@ -180,7 +204,6 @@ export const GET: RequestHandler = async (event) => {
 					current_session,
 					last_login_at,
 					login_count,
-					welcome_email_sent_at,
 					created_at,
 					cohort:cohort_id (
 						name,
@@ -215,7 +238,6 @@ export const GET: RequestHandler = async (event) => {
 				current_session: record.current_session,
 				last_login_at: record.last_login_at,
 				login_count: record.login_count || 0,
-				welcome_email_sent_at: record.welcome_email_sent_at,
 				enrolled_at: record.created_at
 			}));
 

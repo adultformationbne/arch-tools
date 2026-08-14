@@ -45,6 +45,7 @@
 	});
 
 	let showDeleteConfirm = $state(false);
+	/** @type {any} */
 	let templateToDelete = $state(null);
 
 	function handleViewChange(view) {
@@ -168,7 +169,7 @@
 									</div>
 									<div class="flex items-center justify-between text-xs text-gray-500">
 										<span>
-											{new Date(log.sent_at).toLocaleString('en-US', {
+											{new Date(log.sent_at ?? 0).toLocaleString('en-US', {
 												month: 'short',
 												day: 'numeric',
 												year: 'numeric',
@@ -227,7 +228,7 @@
 									{#each data.emailLogs || [] as log}
 										<tr class="hover:bg-gray-50 transition-colors">
 											<td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
-												{new Date(log.sent_at).toLocaleString('en-US', {
+												{new Date(log.sent_at ?? 0).toLocaleString('en-US', {
 													month: 'short',
 													day: 'numeric',
 													year: 'numeric',

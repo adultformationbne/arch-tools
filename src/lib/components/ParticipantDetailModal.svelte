@@ -72,7 +72,6 @@
 				hub_name: participant.courses_hubs?.name || null,
 				current_session: participant.current_session || 0,
 				user_profile_id: participant.user_profile_id,
-				welcome_email_sent_at: participant.welcome_email_sent_at,
 				last_login_at: participant.last_login_at,
 				login_count: participant.login_count || 0,
 				last_viewed_at: participant.last_viewed_at,
@@ -106,7 +105,6 @@
 			hub_name: participant.hub?.name || participant.courses_hubs?.name || null,
 			current_session: participant.current_session || 0,
 			user_profile_id: participant.user_profile_id,
-			welcome_email_sent_at: participant.welcome_email_sent_at,
 			last_login_at: participant.last_login_at,
 			login_count: participant.login_count || 0,
 			last_viewed_at: participant.last_viewed_at,
@@ -144,6 +142,9 @@
 				if (showCohortHistory) {
 					loadParticipantHistory(np);
 				}
+				// Email history isn't cohort-dashboard-specific - load it everywhere
+				emailLog = [];
+				loadEmailLog(np);
 				// Load billing (self-gates on the acceptPayments feature + email)
 				payments = [];
 				loadParticipantPayments(np);
@@ -163,13 +164,12 @@
 		try {
 			const fetches = [
 				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=attendance&enrollment_id=${np.id}&cohort_id=${cohortId}`),
-				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`),
-				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=emails&enrollment_id=${np.id}`)
+				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`)
 			];
 			if (np.user_profile_id) {
 				fetches.push(fetch(`/admin/courses/${courseSlug}/api/participant-history?type=other_courses&user_profile_id=${np.user_profile_id}&enrollment_id=${np.id}`));
 			}
-			const [attendanceRes, reflectionsRes, emailLogRes, otherCoursesRes] = await Promise.all(fetches);
+			const [attendanceRes, reflectionsRes, otherCoursesRes] = await Promise.all(fetches);
 
 			if (attendanceRes.ok) {
 				const data = await attendanceRes.json();
@@ -181,11 +181,6 @@
 				reflectionHistory = data.success ? data.data : [];
 			}
 
-			if (emailLogRes.ok) {
-				const data = await emailLogRes.json();
-				emailLog = data.success ? data.data : [];
-			}
-
 			if (otherCoursesRes?.ok) {
 				const data = await otherCoursesRes.json();
 				otherCourses = data.success ? data.data : [];
@@ -194,6 +189,26 @@
 			console.error('Error loading participant history:', err);
 		} finally {
 			loadingHistory = false;
+		}
+	}
+
+	// Fetch what we've actually emailed this participant - not gated on
+	// showCohortHistory since "what did we send them" matters everywhere,
+	// not just the cohort dashboard's fuller history view.
+	let loadingEmailLog = $state(false);
+	async function loadEmailLog(np) {
+		if (!np?.id || !courseSlug) return;
+		loadingEmailLog = true;
+		try {
+			const res = await fetch(`/admin/courses/${courseSlug}/api/participant-history?type=emails&enrollment_id=${np.id}`);
+			if (res.ok) {
+				const data = await res.json();
+				emailLog = data.success ? data.data : [];
+			}
+		} catch (err) {
+			console.error('Error loading email history:', err);
+		} finally {
+			loadingEmailLog = false;
 		}
 	}
 
@@ -439,13 +454,13 @@
 
 				<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
-						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">First Email</p>
+						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Last Email</p>
 						<p class="text-sm font-medium text-gray-900">
-							{normalizedParticipant?.welcome_email_sent_at ? 'Sent' : 'Not sent'}
+							{emailLog.length > 0 ? emailDisplayName(emailLog[0]) : 'None sent'}
 						</p>
-						{#if normalizedParticipant?.welcome_email_sent_at}
+						{#if emailLog.length > 0}
 							<p class="text-[10px] text-gray-400 mt-0.5">
-								{formatDate(normalizedParticipant?.welcome_email_sent_at)}
+								{formatDate(emailLog[0].sent_at)}
 							</p>
 						{/if}
 					</div>
@@ -831,8 +846,7 @@
 				{/if}
 
 				<!-- Email History -->
-				{#if showCohortHistory}
-					<div class="mt-6 pt-4 border-t border-gray-200">
+				<div class="mt-6 pt-4 border-t border-gray-200">
 						<button
 							onclick={() => showEmailHistory = !showEmailHistory}
 							class="w-full flex items-center justify-between text-left"
@@ -849,7 +863,7 @@
 						</button>
 						{#if showEmailHistory}
 							<div class="mt-3">
-								{#if loadingHistory}
+								{#if loadingEmailLog}
 									<p class="text-sm text-gray-500 text-center py-4">Loading...</p>
 								{:else if emailLog.length === 0}
 									<p class="text-sm text-gray-500 text-center py-4">No emails sent</p>
@@ -868,9 +882,9 @@
 													<tr>
 														<td class="px-3 py-2 text-gray-900">
 															{emailDisplayName(log)}
-															{#if log.subject}
-																<span class="block text-[10px] text-gray-400 truncate max-w-[220px]">{log.subject}</span>
-															{/if}
+															<span class="block text-[10px] text-gray-400 truncate max-w-[220px]">
+																{log.sent_by_name ? `Sent by ${log.sent_by_name}` : 'System'}{log.subject ? ` · ${log.subject}` : ''}
+															</span>
 														</td>
 														<td class="px-3 py-2 text-gray-500">{formatDateTime(log.sent_at)}</td>
 														<td class="px-3 py-2">
@@ -893,7 +907,6 @@
 							</div>
 						{/if}
 					</div>
-				{/if}
 
 				<!-- Platform History -->
 				{#if otherCourses.length > 0}

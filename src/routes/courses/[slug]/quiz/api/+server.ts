@@ -257,7 +257,7 @@ export const PUT: RequestHandler = async (event) => {
 		await supabaseAdmin.from('courses_quiz_responses').insert(responseInserts);
 
 		// Build result with per-question detail
-		const questionDetails = [];
+		const questionDetails: Record<string, unknown>[] = [];
 		for (const r of responses) {
 			const qInfo = questionMap.get(r.question_id);
 			const isCorrect = qInfo ? r.selected_option_id === qInfo.correctOptionId : false;

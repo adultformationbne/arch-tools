@@ -1060,6 +1060,125 @@ export type Database = {
           },
         ]
       }
+      courses_payment_failures: {
+        Row: {
+          amount_cents: number | null
+          card_brand: string | null
+          card_country: string | null
+          card_last4: string | null
+          cohort_id: string | null
+          cohort_name: string | null
+          course_id: string | null
+          course_name: string | null
+          created_at: string
+          currency: string | null
+          decline_code: string | null
+          email: string | null
+          enrollment_link_id: string | null
+          failure_code: string | null
+          full_name: string | null
+          hub_id: string | null
+          id: string
+          module_name: string | null
+          network_status: string | null
+          notified: boolean
+          outcome_type: string | null
+          raw: Json | null
+          reason_category: string | null
+          risk_level: string | null
+          seller_message: string | null
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          card_brand?: string | null
+          card_country?: string | null
+          card_last4?: string | null
+          cohort_id?: string | null
+          cohort_name?: string | null
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string
+          currency?: string | null
+          decline_code?: string | null
+          email?: string | null
+          enrollment_link_id?: string | null
+          failure_code?: string | null
+          full_name?: string | null
+          hub_id?: string | null
+          id?: string
+          module_name?: string | null
+          network_status?: string | null
+          notified?: boolean
+          outcome_type?: string | null
+          raw?: Json | null
+          reason_category?: string | null
+          risk_level?: string | null
+          seller_message?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          card_brand?: string | null
+          card_country?: string | null
+          card_last4?: string | null
+          cohort_id?: string | null
+          cohort_name?: string | null
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string
+          currency?: string | null
+          decline_code?: string | null
+          email?: string | null
+          enrollment_link_id?: string | null
+          failure_code?: string | null
+          full_name?: string | null
+          hub_id?: string | null
+          id?: string
+          module_name?: string | null
+          network_status?: string | null
+          notified?: boolean
+          outcome_type?: string | null
+          raw?: Json | null
+          reason_category?: string | null
+          risk_level?: string | null
+          seller_message?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_payment_failures_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "courses_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payment_failures_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payment_failures_enrollment_link_id_fkey"
+            columns: ["enrollment_link_id"]
+            isOneToOne: false
+            referencedRelation: "courses_enrollment_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payment_failures_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "courses_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses_payments: {
         Row: {
           amount_cents: number

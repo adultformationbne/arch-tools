@@ -11,9 +11,13 @@
 		class: className = ''
 	} = $props();
 
+	/** @type {HTMLInputElement | null} */
 	let inputEl = $state(null);
+	/** @type {HTMLButtonElement | null} */
 	let varButtonEl = $state(null);
+	/** @type {HTMLDivElement | null} */
 	let varMenuEl = $state(null);
+	/** @type {{ show: () => void, hide: () => void, toggle: () => void, destroy: () => void, isOpen: boolean } | null} */
 	let dropdown = $state(null);
 
 	// Initialize dropdown when elements are ready
@@ -33,8 +37,9 @@
 	function insertVariable(variableName) {
 		if (!inputEl) return;
 
-		const start = inputEl.selectionStart || 0;
-		const end = inputEl.selectionEnd || 0;
+		const el = inputEl;
+		const start = el.selectionStart || 0;
+		const end = el.selectionEnd || 0;
 		const varText = `{{${variableName}}}`;
 
 		// Insert at cursor position
@@ -46,9 +51,9 @@
 
 		// Restore focus and set cursor after inserted variable
 		setTimeout(() => {
-			inputEl.focus();
+			el.focus();
 			const newPos = start + varText.length;
-			inputEl.setSelectionRange(newPos, newPos);
+			el.setSelectionRange(newPos, newPos);
 		}, 0);
 	}
 

@@ -180,6 +180,7 @@
 	);
 
 	function getBlockTypeCategory(tag) {
+		/** @type {Record<string, string[]>} */
 		const categories = {
 			'Content': ['paragraph', 'quote', 'callout', 'note'],
 			'Lists': ['ul', 'ol'],

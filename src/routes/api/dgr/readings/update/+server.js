@@ -29,7 +29,8 @@ export async function POST({ request }) {
 
 		if (fetchError) throw fetchError;
 
-		const current = existing?.readings_data || {};
+		/** @type {{ first_reading?: any, psalm?: any, second_reading?: any, gospel?: any }} */
+		const current = /** @type {any} */ (existing?.readings_data) || {};
 
 		// Build a reading object from a posted value, falling back to the existing
 		// object (preserving any stored text/heading) when the posted value is blank.

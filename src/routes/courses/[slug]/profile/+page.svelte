@@ -27,15 +27,15 @@
 	$effect(() => {
 		if (profileData) {
 			userProfile = {
-				name: profileData.name,
-				email: profileData.email,
+				name: profileData.name || '',
+				email: profileData.email || '',
 				phone: profileData.phone || '',
 				parishCommunity: profileData.parishCommunity || '',
 				parishRole: profileData.parishRole || '',
 				address: profileData.address || '',
 				cohort: `${profileData.moduleName} - ${profileData.cohortName}`,
 				hub: profileData.hubName,
-				hubLocation: profileData.hubLocation,
+				hubLocation: profileData.hubLocation || '',
 				joinDate: profileData.joinDate,
 				currentSession: profileData.currentSession,
 				role: profileData.role

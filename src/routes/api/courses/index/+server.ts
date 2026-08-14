@@ -90,10 +90,10 @@ export const POST: RequestHandler = async (event) => {
 		await requireAnyModule(event, ['courses.admin', 'platform.admin']);
 
 		const body = await event.request.json();
-		const { name, short_name, description, duration_weeks, is_active, status, settings } = body;
+		const { name, short_name, slug, description, duration_weeks, is_active, status, settings } = body;
 
-		if (!name || !short_name) {
-			throw error(400, 'Name and short_name are required');
+		if (!name || !short_name || !slug) {
+			throw error(400, 'Name, short_name, and slug are required');
 		}
 
 		const { data: course, error: createError } = await supabaseAdmin
@@ -101,6 +101,7 @@ export const POST: RequestHandler = async (event) => {
 			.insert({
 				name,
 				short_name,
+				slug,
 				description,
 				duration_weeks,
 				is_active: is_active !== undefined ? is_active : true,

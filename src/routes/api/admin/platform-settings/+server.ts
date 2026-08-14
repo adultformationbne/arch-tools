@@ -43,7 +43,7 @@ export const PUT: RequestHandler = async (event) => {
 			updated_at: new Date().toISOString(),
 			updated_by: user.id
 		})
-		.eq('id', (await supabaseAdmin.from('platform_settings').select('id').single()).data?.id)
+		.eq('id', (await supabaseAdmin.from('platform_settings').select('id').single()).data?.id ?? '')
 		.select()
 		.single();
 

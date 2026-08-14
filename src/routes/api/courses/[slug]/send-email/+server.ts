@@ -58,7 +58,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get cohort if provided - validate it belongs to this course
-		let cohort = null;
+		let cohort: { id: string; name: string; start_date: string | null; end_date: string | null; current_session: number | null } | null = null;
 		if (cohort_id) {
 			const { data: cohortData } = await supabaseAdmin
 				.from('courses_cohorts')
@@ -80,7 +80,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get template if template_id provided
-		let template = null;
+		let template: Awaited<ReturnType<typeof getCourseEmailTemplate>> = null;
 		if (template_id) {
 			template = await getCourseEmailTemplate(supabaseAdmin, course.id, null, template_id);
 
@@ -130,7 +130,10 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		// Get course branding for MJML compilation
-		const courseSettings = course.settings || {};
+		const courseSettings = (course.settings || {}) as {
+			theme?: Record<string, string>;
+			branding?: Record<string, string>;
+		};
 		const themeSettings = courseSettings.theme || {};
 		const brandingSettings = courseSettings.branding || {};
 		const courseColors = {
@@ -228,7 +231,9 @@ export const POST: RequestHandler = async (event) => {
 
 		// Send all emails using batch API (up to 100 per request)
 		const courseFromEmail = await buildCourseFromEmail(course);
-		const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+		const courseReplyTo =
+			(course.email_branding_config as { reply_to_email?: string } | null)?.reply_to_email ||
+			undefined;
 
 		const results = await sendBulkEmails({
 			emails: emailsToSend,
@@ -245,26 +250,6 @@ export const POST: RequestHandler = async (event) => {
 				}
 			}
 		});
-
-		// If this is any welcome email and we sent successfully, update enrollment tracking
-		const isWelcomeEmail = email_type?.startsWith('welcome');
-		if (isWelcomeEmail && results.sent > 0) {
-			const sentEnrollmentIds = emailsToSend.map((e) => e.referenceId);
-			const now = new Date().toISOString();
-
-			const { error: updateError } = await supabaseAdmin
-				.from('courses_enrollments')
-				.update({
-					welcome_email_sent_at: now,
-					welcome_email_sent_by: user.id
-				})
-				.in('id', sentEnrollmentIds);
-
-			if (updateError) {
-				console.error('Failed to update welcome_email_sent_at:', updateError);
-				// Don't fail the request - emails were still sent
-			}
-		}
 
 		// Return results
 		return json({

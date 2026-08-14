@@ -7,7 +7,9 @@
 	import { toastError } from '$lib/utils/toast-helpers.js';
 
 	// Dynamic import for TipTap - allows graceful fallback
+	/** @type {typeof import('./TipTapEmailEditor.svelte').default | null} */
 	let TipTapEmailEditor = $state(null);
+	/** @type {any} */
 	let editorLoadError = $state(null);
 	let editorLoading = $state(true);
 

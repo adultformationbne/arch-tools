@@ -21,7 +21,7 @@
 </script>
 
 <button
-	onclick={onClick}
+	onclick={() => onClick()}
 	class="cohort-pill"
 	class:active={isActive}
 >

@@ -14,6 +14,7 @@
 	} = $props();
 
 	let createUserLoading = $state(false);
+	/** @type {{ email: string; full_name: string; role?: string; modules: string[]; sendWelcomeEmail: boolean }} */
 	let newUser = $state({
 		email: '',
 		full_name: '',

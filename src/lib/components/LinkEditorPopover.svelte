@@ -14,8 +14,11 @@
 	} = $props();
 
 	let editUrl = $state('');
+	/** @type {HTMLDivElement | null} */
 	let popoverElement = $state(null);
+	/** @type {HTMLInputElement | null} */
 	let urlInput = $state(null);
+	/** @type {HTMLDivElement | null} */
 	let arrowElement = $state(null);
 
 	// Reset when modal opens
@@ -31,7 +34,7 @@
 	});
 
 	async function updatePosition() {
-		if (!popoverElement || !anchorElement) return;
+		if (!popoverElement || !anchorElement || !arrowElement) return;
 
 		const { x, y, placement, middlewareData } = await computePosition(anchorElement, popoverElement, {
 			placement: 'bottom',
@@ -92,7 +95,7 @@
 	<!-- Backdrop -->
 	<div
 		class="fixed inset-0 z-40"
-		onclick={onCancel}
+		onclick={() => onCancel()}
 		onkeydown={(e) => e.key === 'Enter' && onCancel()}
 		role="presentation"
 	></div>
@@ -116,7 +119,7 @@
 			<h3 id="link-popover-title" class="popover-title">
 				{url ? 'Edit Link' : 'Add Link'}
 			</h3>
-			<button onclick={onCancel} class="popover-close" aria-label="Close">
+			<button onclick={() => onCancel()} class="popover-close" aria-label="Close">
 				<X size={16} />
 			</button>
 		</div>
@@ -137,10 +140,10 @@
 		<!-- Footer -->
 		<div class="popover-footer">
 			{#if onRemove}
-				<button onclick={onRemove} class="btn-remove">Remove</button>
+				<button onclick={() => onRemove()} class="btn-remove">Remove</button>
 			{/if}
 			<div class="flex-1"></div>
-			<button onclick={onCancel} class="btn-secondary-sm">Cancel</button>
+			<button onclick={() => onCancel()} class="btn-secondary-sm">Cancel</button>
 			<button onclick={handleSave} class="btn-primary-sm">
 				{url ? 'Update' : 'Add'}
 			</button>

@@ -18,29 +18,32 @@
 	} = $props();
 
 	let editorEl;
+	/** @type {Editor | null} */
 	let editor = $state(null);
 	let lastSetValue = '';
 
 	// ProseMirror creates a new state object on every transaction, so tracking
 	// editorState (not editor) gives Svelte 5 a genuine reference change to react to.
+	/** @type {Editor['state'] | null} */
 	let editorState = $state(null);
 
-	const canUndo = $derived(editorState && editor ? editor.can().undo() : false);
-	const canRedo = $derived(editorState && editor ? editor.can().redo() : false);
-	const isBold = $derived(editorState && editor ? editor.isActive('bold') : false);
-	const isItalic = $derived(editorState && editor ? editor.isActive('italic') : false);
-	const isUnderline = $derived(editorState && editor ? editor.isActive('underline') : false);
-	const isH1 = $derived(editorState && editor ? editor.isActive('heading', { level: 1 }) : false);
-	const isH2 = $derived(editorState && editor ? editor.isActive('heading', { level: 2 }) : false);
-	const isH3 = $derived(editorState && editor ? editor.isActive('heading', { level: 3 }) : false);
-	const isLink = $derived(editorState && editor ? editor.isActive('link') : false);
-	const isBulletList = $derived(editorState && editor ? editor.isActive('bulletList') : false);
-	const isOrderedList = $derived(editorState && editor ? editor.isActive('orderedList') : false);
+	const canUndo = $derived.by(() => (editorState && editor ? editor.can().undo() : false));
+	const canRedo = $derived.by(() => (editorState && editor ? editor.can().redo() : false));
+	const isBold = $derived.by(() => (editorState && editor ? editor.isActive('bold') : false));
+	const isItalic = $derived.by(() => (editorState && editor ? editor.isActive('italic') : false));
+	const isUnderline = $derived.by(() => (editorState && editor ? editor.isActive('underline') : false));
+	const isH1 = $derived.by(() => (editorState && editor ? editor.isActive('heading', { level: 1 }) : false));
+	const isH2 = $derived.by(() => (editorState && editor ? editor.isActive('heading', { level: 2 }) : false));
+	const isH3 = $derived.by(() => (editorState && editor ? editor.isActive('heading', { level: 3 }) : false));
+	const isLink = $derived.by(() => (editorState && editor ? editor.isActive('link') : false));
+	const isBulletList = $derived.by(() => (editorState && editor ? editor.isActive('bulletList') : false));
+	const isOrderedList = $derived.by(() => (editorState && editor ? editor.isActive('orderedList') : false));
 
 	// Link popover state
 	let showLinkPopover = $state(false);
 	let currentLinkUrl = $state('');
 	let isEditingLink = $state(false);
+	/** @type {HTMLElement | null} */
 	let linkAnchorElement = $state(null);
 
 	// Strip all non-semantic attributes from pasted HTML so inbound styles/colors
@@ -95,6 +98,7 @@
 		}
 	});
 
+	/** @param {HTMLElement | null} [anchorEl] */
 	function toggleLink(anchorEl = null) {
 		if (!editor) return;
 		const { href } = editor.getAttributes('link');
@@ -105,12 +109,12 @@
 	}
 
 	function saveLinkUrl(url) {
-		if (url) editor.chain().focus().setLink({ href: url }).run();
+		if (url) editor?.chain().focus().setLink({ href: url }).run();
 		showLinkPopover = false;
 	}
 
 	function removeLinkUrl() {
-		editor.chain().focus().unsetLink().run();
+		editor?.chain().focus().unsetLink().run();
 		showLinkPopover = false;
 	}
 
@@ -176,7 +180,7 @@
 	$effect(() => {
 		if (!editor || content === lastSetValue) return;
 		lastSetValue = content;
-		editor.commands.setContent(content || '', false);
+		editor?.commands.setContent(content || '');
 	});
 </script>
 

@@ -68,7 +68,7 @@ async function sendQuizMarkedEmail({
 			.single();
 
 		const course = cohort?.module?.course;
-		if (!course) return;
+		if (!cohort || !course) return;
 
 		const template = await getCourseEmailTemplate(supabaseAdmin, course.id, 'quiz_marked');
 		if (!template) {
@@ -102,7 +102,8 @@ async function sendQuizMarkedEmail({
 		variables.result = result === 'passed' ? 'Passed' : 'Failed';
 		variables.overallFeedback = overallFeedback || '';
 
-		const accentDark = course.settings?.theme?.accentDark || '#334642';
+		const courseTheme = (course.settings as { theme?: Record<string, string> } | null)?.theme;
+		const accentDark = courseTheme?.accentDark || '#334642';
 		variables.courseButton = createEmailButton('View Your Feedback', variables.loginLink, accentDark);
 
 		const renderedSubject = renderTemplate(template.subject_template, variables);

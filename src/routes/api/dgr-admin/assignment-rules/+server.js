@@ -48,7 +48,7 @@ export async function POST({ request, locals }) {
 
 				const { data, error } = await supabaseAdmin
 					.from('dgr_assignment_rules')
-					.insert(cleanedRule)
+					.insert(/** @type {any} */ (cleanedRule))
 					.select()
 					.single();
 

@@ -11,7 +11,7 @@
 import { json } from '@sveltejs/kit';
 import { MUX_WEBHOOK_SECRET } from '$env/static/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import Mux from '@mux/mux-node';
+import { muxClient } from '$lib/server/mux';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -21,7 +21,7 @@ export const POST: RequestHandler = async (event) => {
 	// Verify webhook signature if secret is configured
 	if (MUX_WEBHOOK_SECRET) {
 		try {
-			Mux.webhooks.verifySignature(body, {
+			muxClient.webhooks.verifySignature(body, {
 				'mux-signature': signature || ''
 			}, MUX_WEBHOOK_SECRET);
 		} catch (error) {

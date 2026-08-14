@@ -27,15 +27,15 @@ export function isValidEnrollmentCode(code: string): boolean {
  * Check if an enrollment link is currently valid
  */
 export function isEnrollmentLinkValid(link: {
-	is_active: boolean;
+	is_active: boolean | null;
 	max_uses: number | null;
-	uses_count: number;
+	uses_count: number | null;
 }): { valid: boolean; reason?: string } {
 	if (!link.is_active) {
 		return { valid: false, reason: 'This enrollment link is no longer active.' };
 	}
 
-	if (link.max_uses !== null && link.uses_count >= link.max_uses) {
+	if (link.max_uses !== null && (link.uses_count ?? 0) >= link.max_uses) {
 		return { valid: false, reason: 'This enrollment link has reached its maximum uses.' };
 	}
 

@@ -3,15 +3,23 @@
 	import { apiGet, apiPut } from '$lib/utils/api-handler.js';
 	import { onMount } from 'svelte';
 
+	type PlatformSettings = {
+		platform_name: string;
+		logo_path: string;
+		from_email: string;
+		reply_to_email: string;
+		organization: string;
+	};
+
 	let loading = $state(false);
-	let settings = $state({
+	let settings: PlatformSettings = $state({
 		platform_name: '',
 		logo_path: '',
 		from_email: '',
 		reply_to_email: '',
 		organization: ''
 	});
-	let originalSettings = $state(null);
+	let originalSettings: PlatformSettings | null = $state(null);
 
 	onMount(async () => {
 		await loadSettings();
@@ -61,14 +69,17 @@
 		}
 	}
 
-	let hasChanges = $derived(
-		originalSettings &&
-		(settings.platform_name !== originalSettings.platform_name ||
-			settings.logo_path !== originalSettings.logo_path ||
-			settings.from_email !== originalSettings.from_email ||
-			settings.reply_to_email !== originalSettings.reply_to_email ||
-			settings.organization !== originalSettings.organization)
-	);
+	let hasChanges = $derived.by(() => {
+		const original = originalSettings;
+		if (!original) return false;
+		return (
+			settings.platform_name !== original.platform_name ||
+			settings.logo_path !== original.logo_path ||
+			settings.from_email !== original.from_email ||
+			settings.reply_to_email !== original.reply_to_email ||
+			settings.organization !== original.organization
+		);
+	});
 
 	function resetChanges() {
 		if (originalSettings) {
@@ -131,7 +142,7 @@
 							alt="Logo preview"
 							class="h-20 w-20 object-contain"
 							onerror={(e) => {
-								e.target.style.display = 'none';
+								if (e.currentTarget instanceof HTMLElement) e.currentTarget.style.display = 'none';
 							}}
 						/>
 					</div>

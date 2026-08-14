@@ -84,7 +84,9 @@ function withCohort(basePath) {
 	return basePath;
 }
 
-const navItems = $derived([
+// Cohort-scoped items act on whichever cohort is currently selected.
+// Course items are the same regardless of which cohort is selected.
+const cohortNavItems = $derived([
 	{
 		label: 'Cohort',
 		href: withCohort(`/admin/courses/${courseSlug}`),
@@ -93,45 +95,70 @@ const navItems = $derived([
 		visible: true
 	},
 	{
+		label: 'Attendance',
+		href: withCohort(`/admin/courses/${courseSlug}/attendance`),
+		icon: Calendar,
+		description: 'Track attendance',
+		visible: canManageAttendance && courseFeatures.attendanceEnabled !== false
+	},
+	{
+		label: 'Hubs',
+		href: withCohort(`/admin/courses/${courseSlug}/hubs`),
+		icon: MapPin,
+		description: 'Hub management',
+		visible: canViewHubs && courseFeatures.hubsEnabled !== false
+	},
+	{
+		label: 'Chat',
+		href: withCohort(`/admin/courses/${courseSlug}/chat`),
+		icon: MessageCircle,
+		description: 'Cohort chat',
+		visible: canManageCourse && courseFeatures.chatEnabled !== false,
+		hasUnread: hasUnreadChat
+	}
+].filter((item) => item.visible));
+
+const courseNavItems = $derived([
+	{
 		label: 'Modules',
-		href: withCohort(`/admin/courses/${courseSlug}/modules`),
+		href: `/admin/courses/${courseSlug}/modules`,
 		icon: BookOpen,
 		description: 'Manage modules',
 		visible: canManageCourse
 	},
 	{
 		label: 'Sessions',
-		href: withCohort(`/admin/courses/${courseSlug}/sessions`),
+		href: `/admin/courses/${courseSlug}/sessions`,
 		icon: FileText,
 		description: 'Edit session content',
 		visible: canManageCourse
 	},
 	{
 		label: 'Reflections',
-		href: withCohort(`/admin/courses/${courseSlug}/reflections`),
+		href: `/admin/courses/${courseSlug}/reflections`,
 		icon: PenSquare,
 		description: 'Review submissions',
 		visible: canManageCourse && courseFeatures.reflectionsEnabled !== false
 	},
 	{
 		label: 'Quizzes',
-		href: withCohort(`/admin/courses/${courseSlug}/quizzes`),
+		href: `/admin/courses/${courseSlug}/quizzes`,
 		icon: Zap,
 		description: 'Marking queue & results',
 		visible: canManageCourse && courseFeatures.quizzesEnabled !== false
+	},
+	{
+		label: 'Directory',
+		href: `/admin/courses/${courseSlug}/directory`,
+		icon: Users,
+		description: 'All course participants',
+		visible: canManageCourse
 	},
 	{
 		label: 'Emails',
 		href: `/admin/courses/${courseSlug}/emails`,
 		icon: Mail,
 		description: 'Email templates',
-		visible: canManageCourse
-	},
-	{
-		label: 'Database',
-		href: withCohort(`/admin/courses/${courseSlug}/participants`),
-		icon: Users,
-		description: 'All course participants',
 		visible: canManageCourse
 	},
 	{
@@ -142,28 +169,6 @@ const navItems = $derived([
 		visible: canManageCourse && courseFeatures.enrollmentEnabled
 	},
 	{
-		label: 'Hubs',
-		href: withCohort(`/admin/courses/${courseSlug}/hubs`),
-		icon: MapPin,
-		description: 'Hub management',
-		visible: canViewHubs && courseFeatures.hubsEnabled !== false
-	},
-	{
-		label: 'Attendance',
-		href: withCohort(`/admin/courses/${courseSlug}/attendance`),
-		icon: Calendar,
-		description: 'Track attendance',
-		visible: canManageAttendance && courseFeatures.attendanceEnabled !== false
-	},
-	{
-		label: 'Chat',
-		href: withCohort(`/admin/courses/${courseSlug}/chat`),
-		icon: MessageCircle,
-		description: 'Cohort chat',
-		visible: canManageCourse && courseFeatures.chatEnabled !== false,
-		hasUnread: hasUnreadChat
-	},
-	{
 		label: 'Managers',
 		href: `/admin/courses/${courseSlug}/managers`,
 		icon: Shield,
@@ -171,6 +176,8 @@ const navItems = $derived([
 		visible: canManageCourse
 	}
 ].filter((item) => item.visible));
+
+const navItems = $derived([...cohortNavItems, ...courseNavItems]);
 
 function isActive(href) {
 	const hrefPath = href.split('?')[0];
@@ -279,9 +286,35 @@ const selectedCohortName = $derived(() => {
 	<div class="mobile-menu-panel lg:hidden">
 		<!-- Navigation Section -->
 		<div class="nav-section">
-			<h3 class="section-title">Course Management</h3>
+			<h3 class="section-title">{selectedCohortName() ? `This Cohort — ${selectedCohortName()}` : 'This Cohort'}</h3>
 			<nav class="nav-list">
-				{#each navItems as item}
+				{#each cohortNavItems as item}
+					<a
+						href={item.href}
+						class="nav-item"
+						class:active={isActive(item.href)}
+						onclick={handleNavClick}
+						onmouseenter={() => handleMouseEnter(item.href)}
+					>
+						<span class="nav-icon-wrap">
+							<item.icon size={18} class="nav-icon flex-shrink-0" />
+							{#if item.hasUnread}
+								<span class="unread-dot"></span>
+							{/if}
+						</span>
+						<div class="nav-text min-w-0">
+							<span class="nav-label">{item.label}</span>
+							<span class="nav-description">{item.description}</span>
+						</div>
+					</a>
+				{/each}
+			</nav>
+		</div>
+
+		<div class="nav-section">
+			<h3 class="section-title">Course</h3>
+			<nav class="nav-list">
+				{#each courseNavItems as item}
 					<a
 						href={item.href}
 						class="nav-item"
@@ -491,6 +524,9 @@ const selectedCohortName = $derived(() => {
 		letter-spacing: 0.05em;
 		color: rgba(255, 255, 255, 0.5);
 		margin-bottom: 12px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.section-header {

@@ -56,7 +56,7 @@ export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) =
 			const materials = (data || []).sort((a, b) => {
 				const sessionDiff = (a.session?.session_number || 0) - (b.session?.session_number || 0);
 				if (sessionDiff !== 0) return sessionDiff;
-				return a.display_order - b.display_order;
+				return (a.display_order ?? 0) - (b.display_order ?? 0);
 			});
 
 			return json({ materials });

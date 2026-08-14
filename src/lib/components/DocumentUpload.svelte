@@ -13,6 +13,7 @@
 		sessionNumber = 1
 	} = $props();
 
+	/** @type {HTMLInputElement | null} */
 	let fileInput = $state(null);
 	let isDragOver = $state(false);
 	let uploadStatus = $state('idle'); // idle, uploading, success, error

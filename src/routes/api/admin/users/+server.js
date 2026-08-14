@@ -48,7 +48,7 @@ export async function GET(event) {
 		}
 
 		// Merge auth data with profiles
-		const authMap = new Map(authUsers?.map(u => [u.id, u]) || []);
+		const authMap = new Map(authUsers?.map(u => /** @type {[string, typeof u]} */ ([u.id, u])) || []);
 
 		const users = profiles.map(profile => {
 			const authUser = authMap.get(profile.id);
@@ -423,9 +423,10 @@ export async function PUT(event) {
 			// Get user profile and auth data
 			const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
-			if (getUserError || !authUser) {
+			if (getUserError || !authUser?.user?.email) {
 				throw error(400, 'User not found');
 			}
+			const authEmail = authUser.user.email;
 
 			// Get user profile for modules
 			const { data: userProfile, error: profileError } = await supabaseAdmin
@@ -443,14 +444,14 @@ export async function PUT(event) {
 			try {
 				const siteUrl = PUBLIC_SITE_URL || 'https://app.archdiocesanministries.org.au';
 				const { subject, html } = generateInvitationEmail({
-					recipientName: userProfile.full_name,
-					recipientEmail: authUser.user.email,
+					recipientName: userProfile.full_name || '',
+					recipientEmail: authEmail,
 					siteUrl: siteUrl,
 					modules: userProfile.modules || []
 				});
 
 				const result = await sendEmail({
-					to: authUser.user.email,
+					to: authEmail,
 					subject,
 					html,
 					emailType: 'user_invitation',

@@ -12,6 +12,7 @@
 		onUpdate = () => {}
 	} = $props();
 
+	/** @type {{ full_name: string, email: string, phone: string, organization: string, modules: string[] }} */
 	let formData = $state({ full_name: '', email: '', phone: '', organization: '', modules: [] });
 	let isLoading = $state(false);
 	let showMergeConfirm = $state(false);
@@ -87,7 +88,7 @@
 		class="fixed inset-0 bg-black/50 z-40"
 		role="button"
 		tabindex="-1"
-		onclick={onClose}
+		onclick={() => onClose()}
 		onkeydown={(e) => e.key === 'Escape' && onClose()}
 		aria-label="Close modal"
 	></div>
@@ -98,7 +99,7 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
 				<h2 class="text-lg font-semibold text-gray-900">Edit User</h2>
-				<button onclick={onClose} class="p-1 rounded hover:bg-gray-100 transition-colors">
+				<button onclick={() => onClose()} class="p-1 rounded hover:bg-gray-100 transition-colors">
 					<X class="h-5 w-5 text-gray-500" />
 				</button>
 			</div>
@@ -205,7 +206,7 @@
 			<!-- Footer -->
 			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
 				<button
-					onclick={onClose}
+					onclick={() => onClose()}
 					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
 				>
 					Cancel

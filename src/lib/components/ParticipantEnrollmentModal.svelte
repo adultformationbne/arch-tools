@@ -9,6 +9,7 @@
 	let newHubName = $state('');
 	let isLoading = $state(false);
 	let error = $state('');
+	/** @type {{ successful: number; errors: number; errorDetails?: string[] } | null} */
 	let uploadResult = $state(null);
 
 	// Single participant form
@@ -20,8 +21,11 @@
 	});
 
 	// Conflict resolution state
+	/** @type {{ email: string; csvName?: string; existingName?: string }[]} */
 	let conflicts = $state([]);
+	/** @type {Record<string, { action: string; newEmail: string }>} */
 	let conflictResolutions = $state({});
+	/** @type {any} */
 	let pendingCsvData = $state(null);
 
 	function selectMode(selectedMode) {
@@ -76,6 +80,10 @@
 		}
 	}
 
+	/**
+	 * @param {any} csvData
+	 * @param {{ email: string; action: string; newEmail?: string }[] | null} [resolvedConflicts]
+	 */
 	async function handleCsvUpload(csvData, resolvedConflicts = null) {
 		isLoading = true;
 		error = '';
@@ -419,7 +427,7 @@
 											class="new-email-input"
 											placeholder="Enter new email address"
 											value={conflictResolutions[conflict.email]?.newEmail || ''}
-											oninput={(e) => updateResolution(conflict.email, 'newEmail', e.target.value)}
+											oninput={(e) => updateResolution(conflict.email, 'newEmail', e.currentTarget.value)}
 										/>
 									{/if}
 								</div>

@@ -48,7 +48,10 @@ export async function GET({ url, locals }) {
 			.lte('date', endDate);
 
 		if (status) {
-			scheduleQuery = scheduleQuery.eq('status', status);
+			scheduleQuery = scheduleQuery.eq(
+				'status',
+				/** @type {'submitted' | 'pending' | 'approved' | 'published'} */ (status)
+			);
 		}
 
 		const { data: scheduleEntries, error: scheduleError } = await scheduleQuery;
@@ -126,9 +129,9 @@ export async function GET({ url, locals }) {
 		// Build pattern lookup: date -> contributor (respecting rules)
 		const patternMap = new Map();
 		contributors.forEach((contrib) => {
-			if (!contrib.schedule_pattern || !contrib.schedule_pattern.type) return;
-
-			const pattern = contrib.schedule_pattern;
+			/** @type {{ type: string, value: any } | null} */
+			const pattern = /** @type {any} */ (contrib.schedule_pattern) || null;
+			if (!pattern || !pattern.type) return;
 			const dates = calculatePatternDates(pattern, startDate, endDate);
 
 			dates.forEach((date) => {
@@ -367,6 +370,7 @@ async function assignContributor({ date, contributorId }) {
 		// and snapshotted only on submit
 
 		// Create schedule entry (readings_data stays NULL for pending)
+		/** @type {{ date: any, contributor_id: any, contributor_email: string | null, submission_token: string | null, status: 'pending' }} */
 		const scheduleEntry = {
 			date,
 			contributor_id: contributorId,
@@ -574,6 +578,7 @@ async function createWithStatus({ date, contributorId, status }) {
 async function updateReadings({ scheduleId, readings }) {
 	try {
 		// Build the readings_data JSONB object
+		/** @type {Record<string, any>} */
 		const readingsData = {};
 
 		if (readings.firstReading) {
@@ -793,8 +798,11 @@ async function sendToWordPress({ scheduleId, origin, cookie }) {
 			throw new Error('Missing required fields: title, gospel quote, and content are required');
 		}
 
+		/** @type {{ first_reading?: { source?: string }, psalm?: { source?: string }, second_reading?: { source?: string }, gospel?: { source?: string }, combined_sources?: string } | null} */
+		const readingsData = /** @type {any} */ (schedule.readings_data);
+
 		// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
-		const gospelReference = findGospelReference(schedule.readings_data, schedule.gospel_reference);
+		const gospelReference = findGospelReference(readingsData, schedule.gospel_reference);
 
 		// Track warnings to return to UI
 		const warnings = [];
@@ -840,17 +848,17 @@ async function sendToWordPress({ scheduleId, origin, cookie }) {
 
 		// Build readings array from individual sources (each = one pill)
 		const readingsArray = [
-			schedule.readings_data?.first_reading?.source,
-			schedule.readings_data?.psalm?.source,
-			schedule.readings_data?.second_reading?.source,
-			schedule.readings_data?.gospel?.source
+			readingsData?.first_reading?.source,
+			readingsData?.psalm?.source,
+			readingsData?.second_reading?.source,
+			readingsData?.gospel?.source
 		].filter(Boolean);
 
 		// Prepare data for WordPress publish API
 		const publishData = {
 			date: schedule.date,
 			liturgicalDate: schedule.liturgical_date || '',
-			readings: schedule.readings_data?.combined_sources || '',
+			readings: readingsData?.combined_sources || '',
 			readingsArray,
 			title: schedule.reflection_title,
 			gospelQuote: schedule.gospel_quote,

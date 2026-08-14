@@ -124,7 +124,7 @@ export async function POST({ request, locals }) {
 		const dueDate = new Date(date + 'T00:00:00');
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+		const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
 		// Format the due date message
 		let dueDateText = '';
@@ -186,6 +186,9 @@ export async function POST({ request, locals }) {
 
 		// Send email with DGR branding
 		const emailTo = contributor.email;
+		if (!emailTo) {
+			return json({ error: 'Contributor has no email address' }, { status: 400 });
+		}
 
 		const result = await sendDgrEmail({
 			to: emailTo,
@@ -209,7 +212,9 @@ export async function POST({ request, locals }) {
 		}
 
 		// Log reminder in reminder_history
-		const reminderHistory = scheduleEntry?.reminder_history || [];
+		const reminderHistory = Array.isArray(scheduleEntry?.reminder_history)
+			? scheduleEntry.reminder_history
+			: [];
 		reminderHistory.push({
 			sent_at: new Date().toISOString(),
 			sent_by: user.id,
@@ -268,6 +273,7 @@ async function handleBulkReminders(reminders, user) {
 
 	const contributorMap = new Map(contributors.map((c) => [c.id, c]));
 
+	/** @type {{ sent: number; skipped: number; failed: number; details: Record<string, any>[]; quotaWarning?: any }} */
 	const results = {
 		sent: 0,
 		skipped: 0,
@@ -303,11 +309,23 @@ async function handleBulkReminders(reminders, user) {
 			continue;
 		}
 
+		if (!contributor.email) {
+			results.skipped++;
+			results.details.push({
+				contributorId: reminder.contributorId,
+				name: contributor.name,
+				date: reminder.date,
+				status: 'skipped',
+				reason: 'No email address'
+			});
+			continue;
+		}
+
 		// Calculate days until due
 		const dueDate = new Date(reminder.date + 'T00:00:00');
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+		const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
 		// Format the due date message
 		let dueDateText = '';
@@ -364,7 +382,6 @@ async function handleBulkReminders(reminders, user) {
 		const compiledHtml = generateEmailFromMjml({
 			bodyContent: htmlBody,
 			courseName: 'Daily Gospel Reflection',
-			logoUrl: null,
 			colors: DGR_COLORS
 		});
 
@@ -421,7 +438,9 @@ async function handleBulkReminders(reminders, user) {
 					.eq('id', meta.scheduleId)
 					.single();
 
-				const reminderHistory = scheduleEntry?.reminder_history || [];
+				const reminderHistory = Array.isArray(scheduleEntry?.reminder_history)
+					? scheduleEntry.reminder_history
+					: [];
 				reminderHistory.push({
 					sent_at: new Date().toISOString(),
 					sent_by: user.id,

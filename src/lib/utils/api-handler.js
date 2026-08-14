@@ -56,6 +56,7 @@ export async function apiRequest(url, options = {}, config = {}) {
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), finalConfig.timeout);
 
+		/** @type {RequestInit} */
 		const fetchOptions = {
 			...options,
 			headers,
@@ -242,7 +243,12 @@ export async function supabaseRequest(operation, config = {}) {
 	}
 }
 
-/** Form submission handler with validation and toast feedback */
+/**
+ * Form submission handler with validation and toast feedback
+ * @param {Function} submitFunction
+ * @param {((formData: any) => any) | null} [validateFunction]
+ * @param {Object} [config]
+ */
 export function createFormSubmitHandler(submitFunction, validateFunction = null, config = {}) {
 	const finalConfig = {
 		showToast: true,

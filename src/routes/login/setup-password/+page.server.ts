@@ -23,7 +23,14 @@ export const load: PageServerLoad = async ({ locals: { safeGetSession }, url }) 
 	const explicitCourse = url.searchParams.get('course');
 	const next = url.searchParams.get('next');
 	const courseSlug = explicitCourse || (next ? extractCourseSlugFromPath(next) : null);
-	let courseBranding = null;
+	let courseBranding: {
+		name: string;
+		slug: string;
+		logoUrl: string | null;
+		showLogo: boolean;
+		accentDark: string | null;
+		accentLight: string | null;
+	} | null = null;
 
 	if (courseSlug) {
 		const { data: course } = await supabaseAdmin

@@ -12,7 +12,7 @@
 
 <div class="flex gap-3 flex-wrap">
 	<button
-		onclick={onToggleForm}
+		onclick={() => onToggleForm()}
 		class="flex flex-1 min-w-[200px] items-center gap-3 rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50 transition-colors"
 	>
 		<div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
@@ -25,7 +25,7 @@
 	</button>
 
 	<button
-		onclick={onShowImport}
+		onclick={() => onShowImport()}
 		class="flex flex-1 min-w-[200px] items-center gap-3 rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50 transition-colors"
 	>
 		<div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
@@ -38,7 +38,7 @@
 	</button>
 
 	<button
-		onclick={onBulkWelcome}
+		onclick={() => onBulkWelcome()}
 		disabled={isSending || unwelcomedCount === 0}
 		class="flex flex-1 min-w-[200px] items-center gap-3 rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 	>

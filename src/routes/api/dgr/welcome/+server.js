@@ -59,6 +59,7 @@ export async function POST({ request, locals }) {
 			sent: 0,
 			skipped: 0,
 			failed: 0,
+			/** @type {any[]} */
 			details: []
 		};
 
@@ -119,11 +120,21 @@ export async function POST({ request, locals }) {
 			const compiledHtml = generateEmailFromMjml({
 				bodyContent: htmlBody,
 				courseName: 'Daily Gospel Reflection',
-				logoUrl: null,
+				logoUrl: undefined,
 				colors: DGR_COLORS
 			});
 
 			const emailTo = contributor.email;
+			if (!emailTo) {
+				results.skipped++;
+				results.details.push({
+					id: contributor.id,
+					name: contributor.name,
+					status: 'skipped',
+					reason: 'No email address'
+				});
+				continue;
+			}
 
 			emailsToSend.push({
 				to: emailTo,

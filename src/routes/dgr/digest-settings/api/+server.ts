@@ -20,7 +20,7 @@ export async function POST(event) {
 			.single();
 
 		const updatedConfig = {
-			...(currentTask?.config || {}),
+			...((currentTask?.config as Record<string, unknown>) || {}),
 			recipients
 		};
 

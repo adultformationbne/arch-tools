@@ -186,7 +186,7 @@
 									<select
 										value={editingEnrollmentRole}
 										onchange={(e) => {
-											editingEnrollmentRole = e.target.value;
+											editingEnrollmentRole = e.currentTarget.value;
 										}}
 										class="text-xs rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
 									>

@@ -5,6 +5,7 @@ import { supabaseAdmin } from '$lib/server/supabase';
 import { CourseMutations } from '$lib/server/course-data';
 import { PUBLIC_SITE_URL } from '$env/static/public';
 import type Stripe from 'stripe';
+import type { Json } from '$lib/database.types';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const signature = request.headers.get('stripe-signature');
@@ -43,7 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const { error: insertError } = await supabaseAdmin.from('stripe_events').insert({
 		stripe_event_id: event.id,
 		event_type: event.type,
-		payload: event.data.object as unknown as Record<string, unknown>
+		payload: event.data.object as unknown as Json
 	});
 
 	if (insertError) {
@@ -140,16 +141,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 	}
 
 	// Use atomic DB function to complete payment + create enrollment
-	const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+	const { data: rawResult, error: rpcError } = await supabaseAdmin.rpc(
 		'complete_checkout_and_enroll',
 		{
 			p_stripe_session_id: session.id,
-			p_stripe_payment_intent_id: paymentIntentId || null,
-			p_stripe_customer_id: customerId || null,
-			p_discount_code: discountCode,
-			p_discount_amount_cents: discountAmountCents
+			p_stripe_payment_intent_id: paymentIntentId ?? undefined,
+			p_stripe_customer_id: customerId ?? undefined,
+			p_discount_code: discountCode ?? undefined,
+			p_discount_amount_cents: discountAmountCents ?? undefined
 		}
 	);
+	const result = rawResult as {
+		error?: string;
+		already_completed?: boolean;
+		created_enrollment?: boolean;
+	} | null;
 
 	if (rpcError) {
 		console.error('complete_checkout_and_enroll failed:', rpcError);
@@ -208,16 +214,27 @@ async function handleBatchCheckoutCompleted(
 	discountCode: string | null,
 	discountAmountCents: number | null
 ) {
-	const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+	const { data: rawResult, error: rpcError } = await supabaseAdmin.rpc(
 		'complete_checkout_and_enroll_batch',
 		{
 			p_stripe_session_id: sessionId,
-			p_stripe_payment_intent_id: paymentIntentId || null,
-			p_stripe_customer_id: customerId || null,
-			p_discount_code: discountCode,
-			p_discount_amount_cents: discountAmountCents
+			p_stripe_payment_intent_id: paymentIntentId ?? undefined,
+			p_stripe_customer_id: customerId ?? undefined,
+			p_discount_code: discountCode ?? undefined,
+			p_discount_amount_cents: discountAmountCents ?? undefined
 		}
 	);
+	const result = rawResult as {
+		error?: string;
+		already_completed?: boolean;
+		enrollments?: Array<{
+			enrollment_id: string;
+			email: string;
+			full_name: string;
+			claim_token: string;
+			is_billing_contact: boolean;
+		}>;
+	} | null;
 
 	if (rpcError) {
 		console.error('complete_checkout_and_enroll_batch failed:', rpcError);
@@ -419,7 +436,7 @@ async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
 			course_name: metadata.course_name || null,
 			module_name: metadata.module_name || null,
 			cohort_name: metadata.cohort_name || null,
-			raw: { last_payment_error: lastErr ?? null, outcome }
+			raw: { last_payment_error: lastErr ?? null, outcome } as unknown as Json
 		})
 		.select('id')
 		.single();

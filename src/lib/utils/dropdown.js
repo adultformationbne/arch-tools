@@ -26,14 +26,14 @@ import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/d
  * @param {HTMLElement} referenceElement - The button/trigger element
  * @param {HTMLElement} floatingElement - The dropdown menu element
  * @param {Object} options - Configuration options
- * @param {string} [options.placement='bottom-start'] - Preferred placement
+ * @param {import('@floating-ui/dom').Placement} [options.placement='bottom-start'] - Preferred placement
  * @param {number} [options.offset=4] - Gap between trigger and menu (px)
  * @param {number} [options.padding=8] - Minimum distance from viewport edge (px)
  * @param {boolean} [options.autoClose=true] - Close on click outside
  * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
  * @param {Function} [options.onShow] - Callback when dropdown opens
  * @param {Function} [options.onHide] - Callback when dropdown closes
- * @returns {Object} Dropdown controller with show(), hide(), toggle(), destroy()
+ * @returns Dropdown controller with show(), hide(), toggle(), destroy()
  */
 export function createDropdown(referenceElement, floatingElement, options = {}) {
 	const {

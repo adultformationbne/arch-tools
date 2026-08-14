@@ -121,14 +121,16 @@
 	});
 
 	// Generate preview HTML using centralized function - make it reactive
-	$effect(async () => {
+	$effect(() => {
 		if (showPreview && formData.title && formData.reflectionText) {
-			previewHtml = await generateDGRHTML(formData, {
+			generateDGRHTML(formData, {
 				useNewDesign,
 				gospelFullText,
 				gospelReference,
 				includeWordPressCSS: false,
 				promoTiles
+			}).then((html) => {
+				previewHtml = html;
 			});
 		} else {
 			previewHtml = '';
@@ -150,7 +152,7 @@
 		try {
 			// Check for clipboard permission first
 			if (navigator.permissions) {
-				const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+				const permission = await navigator.permissions.query({ name: /** @type {PermissionName} */ ('clipboard-read') });
 				if (permission.state === 'denied') {
 					toast.dismiss(loadingId);
 					toast.error({
@@ -321,7 +323,7 @@
 				const dateStr = `${month} ${day}, ${year}`;
 				// Parse in UTC to avoid timezone issues
 				const dateObj = new Date(dateStr + ' UTC');
-				if (!isNaN(dateObj)) {
+				if (!isNaN(dateObj.getTime())) {
 					// Format as YYYY-MM-DD using UTC values
 					const utcYear = dateObj.getUTCFullYear();
 					const utcMonth = String(dateObj.getUTCMonth() + 1).padStart(2, '0');

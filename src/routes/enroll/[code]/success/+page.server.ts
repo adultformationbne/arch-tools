@@ -90,18 +90,22 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		}
 		const invoiceUrl = payment.stripe_invoice_url || invoice?.hosted_invoice_url || null;
 
-		const pendingData = payment.pending_data || {};
+		const pendingData = (payment.pending_data || {}) as {
+			participants?: { email?: string; fullName?: string }[];
+			billingContact?: { participantIndex?: number | null; email?: string };
+			email?: string;
+			fullName?: string;
+		};
 
 		// Multi-person (batch) checkout
 		if (Array.isArray(pendingData.participants)) {
-			const billing = pendingData.billingContact || {};
-			const billingIsParticipant =
-				billing.participantIndex !== null && billing.participantIndex !== undefined;
+			const billing = pendingData.billingContact ?? {};
+			const participantIndex = billing.participantIndex;
 			const groupSize = pendingData.participants.length;
 
 			// Non-attending organiser paid for the group: there's no attending payer
 			// to sign in. Show a confirmation; invitees received smart-login emails.
-			if (!billingIsParticipant) {
+			if (participantIndex === null || participantIndex === undefined) {
 				return {
 					...base,
 					type: 'paid' as const,
@@ -114,7 +118,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			}
 
 			// The billing contact attends: sign them in and show the order-complete page.
-			const payer = pendingData.participants[billing.participantIndex] || {};
+			const payer = pendingData.participants[participantIndex] ?? {};
 			const payerEmail = (payer.email || billing.email || payment.email || '').toLowerCase();
 			const payerName = payer.fullName || payment.full_name || payerEmail.split('@')[0];
 

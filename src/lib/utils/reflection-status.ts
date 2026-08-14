@@ -5,7 +5,7 @@
  * Database values: draft, submitted, under_review, passed, needs_revision, resubmitted
  */
 
-import type { ComponentType } from 'svelte';
+import type { Component } from 'svelte';
 import { Clock, CheckCircle, AlertCircle, FileEdit, Send, Eye, RotateCcw } from '$lib/icons';
 
 // =============================================================================
@@ -25,7 +25,7 @@ export interface StatusConfig {
 	color: string;        // Tailwind text color
 	bg: string;           // Tailwind bg color
 	badge: string;        // Combined badge classes
-	icon: ComponentType;
+	icon: Component<Record<string, any>>;
 	editable: boolean;
 	complete: boolean;
 	needsReview: boolean;
@@ -137,7 +137,7 @@ export function getStatusBadge(status: string | null | undefined): string {
 /**
  * Get icon component
  */
-export function getStatusIcon(status: string | null | undefined): ComponentType {
+export function getStatusIcon(status: string | null | undefined): Component<Record<string, any>> {
 	return getStatus(status).icon;
 }
 

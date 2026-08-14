@@ -9,6 +9,10 @@
 	import DGRContributorTable from './DGRContributorTable.svelte';
 	import DGREditContributorModal from './DGREditContributorModal.svelte';
 
+	/**
+	 * @typedef {{ id: string; name: string; email: string; is_guest?: boolean; active?: boolean; access_token?: string | null; welcome_email_sent_at?: string | null; last_visited_at?: string | null }} Contributor
+	 */
+
 	let {
 		contributors = [],
 		onAddContributor = () => {},
@@ -28,13 +32,16 @@
 	let showBulkWelcomeConfirm = $state(false);
 	let selectedForWelcome = $state([]);
 	let showSingleWelcomeConfirm = $state(false);
+	/** @type {Contributor | null} */
 	let singleWelcomeTarget = $state(null);
 	let isResend = $state(false);
 
 	// Edit/Delete state
 	let showEditModal = $state(false);
+	/** @type {Contributor | null} */
 	let editingContributor = $state(null);
 	let showDeleteConfirm = $state(false);
+	/** @type {Contributor | null} */
 	let deletingContributor = $state(null);
 	let isDeleting = $state(false);
 
@@ -104,6 +111,10 @@
 	}
 
 	// Welcome email handlers
+	/**
+	 * @param {string[]} contributorIds
+	 * @param {string | null} [contributorName]
+	 */
 	async function sendWelcomeEmail(contributorIds, contributorName = null) {
 		contributorIds.forEach(id => {
 			sendingWelcomeIds = new Set([...sendingWelcomeIds, id]);
@@ -346,7 +357,6 @@
 	confirmText={isDeleting ? 'Deleting...' : 'Delete'}
 	confirmDisabled={isDeleting}
 	title="Delete Contributor"
-	danger={true}
 >
 	{#if deletingContributor}
 		<p class="text-gray-600">

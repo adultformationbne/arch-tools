@@ -125,7 +125,12 @@ async function sendReflectionMarkedEmail({
 			.eq('id', cohortId)
 			.single();
 
-		const course = cohort?.module?.course;
+		if (!cohort) {
+			console.error('Cohort not found:', cohortId);
+			return;
+		}
+
+		const course = cohort.module?.course;
 		if (!course) {
 			console.error('Course not found for cohort:', cohortId);
 			return;
@@ -164,8 +169,8 @@ async function sendReflectionMarkedEmail({
 		variables.sessionNumber = String(sessionNumber);
 
 		// Create login button
-		const courseSettings = course.settings || {};
-		const accentDark = courseSettings.theme?.accentDark || '#334642';
+		const courseSettings = course.settings as { theme?: { accentDark?: string } } | null;
+		const accentDark = courseSettings?.theme?.accentDark || '#334642';
 		variables.loginButton = createEmailButton('View Your Feedback', variables.loginLink, accentDark);
 
 		// Render template
@@ -318,11 +323,13 @@ export const PUT: RequestHandler = async (event) => {
 		if (current.status === 'passed' || current.status === 'needs_revision') {
 			// Already marked - check if by same user (allowing re-edit)
 			if (current.marked_by !== user.id) {
-				const { data: marker } = await supabaseAdmin
-					.from('user_profiles')
-					.select('full_name')
-					.eq('id', current.marked_by)
-					.single();
+				const { data: marker } = current.marked_by
+					? await supabaseAdmin
+							.from('user_profiles')
+							.select('full_name')
+							.eq('id', current.marked_by)
+							.single()
+					: { data: null };
 
 				return json({
 					success: false,
@@ -346,7 +353,7 @@ export const PUT: RequestHandler = async (event) => {
 				),
 				enrollment:enrollment_id (
 					full_name,
-					user_profile:user_profile_id (
+					user_profile:user_profiles!user_profile_id (
 						full_name
 					)
 				)

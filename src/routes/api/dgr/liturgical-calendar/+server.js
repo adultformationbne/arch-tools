@@ -7,7 +7,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
  */
 export async function GET({ url }) {
 	try {
-		const year = parseInt(url.searchParams.get('year') || new Date().getFullYear());
+		const year = parseInt(url.searchParams.get('year') || String(new Date().getFullYear()));
 
 		const { data: calendar, error } = await supabaseAdmin
 			.from('ordo_calendar')

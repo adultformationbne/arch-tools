@@ -47,7 +47,7 @@
 {#if show}
 	<div
 		class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-		onclick={onClose}
+		onclick={() => onClose()}
 		role="presentation"
 	>
 		<div
@@ -68,7 +68,7 @@
 					<p class="text-sm text-gray-500">A quick introduction to get you started</p>
 				</div>
 				<button
-					onclick={onClose}
+					onclick={() => onClose()}
 					class="p-2 rounded-full hover:bg-gray-100 transition-colors"
 					aria-label="Close video"
 				>
@@ -100,7 +100,7 @@
 					You can always find help in the course materials
 				</p>
 				<button
-					onclick={onClose}
+					onclick={() => onClose()}
 					class="px-6 py-2 text-white font-medium rounded-lg transition-colors hover:opacity-90"
 					style="background-color: var(--course-accent-dark, #334642);"
 				>

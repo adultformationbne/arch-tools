@@ -157,7 +157,7 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	// Build current session data
-	const currentSession = enrollment.current_session;
+	const currentSession = enrollment.current_session ?? 0;
 	const currentSessionMaterials = materialsBySession[currentSession] || [];
 	const currentSessionInfo = sessionsByNumber[currentSession];
 
@@ -208,7 +208,7 @@ export const load: PageServerLoad = async (event) => {
 		const reflectionQuestion = questionsBySession[0] || null;
 
 		// Get reflection status for session 0 (same logic as other sessions)
-		let reflectionStatus = null;
+		let reflectionStatus: string | null = null;
 		if (reflectionQuestion) {
 			const existingResponse = responses.find(
 				(r) => r.question?.session?.session_number === 0
@@ -237,7 +237,7 @@ export const load: PageServerLoad = async (event) => {
 		const reflectionQuestion = questionsBySession[currentSession] || null;
 
 		// Get reflection status for current session (raw database status)
-		let reflectionStatus = null;
+		let reflectionStatus: string | null = null;
 		if (reflectionQuestion) {
 			const existingResponse = responses.find(
 				(r) => r.question?.session?.session_number === currentSession
@@ -275,7 +275,7 @@ export const load: PageServerLoad = async (event) => {
 	};
 
 	// Format hub data if available
-	const cohortCurrentSession = enrollment.cohort.current_session;
+	const cohortCurrentSession = enrollment.cohort.current_session ?? 0;
 	// Check if current session has a reflection question
 	const currentSessionHasQuestion = !!questionsBySession[cohortCurrentSession];
 

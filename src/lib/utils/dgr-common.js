@@ -174,8 +174,8 @@ export function cleanGospelText(html) {
  * Format gospel text for better visual display
  * Returns the cleaned text - formatting options can be applied separately
  * @param {string} text - Cleaned plain text
- * @param {Object} options - Formatting options
- * @param {boolean} options.addLineBreaks - Add line breaks after sentences (default: false)
+ * @param {Object} [options] - Formatting options
+ * @param {boolean} [options.addLineBreaks] - Add line breaks after sentences (default: false)
  * @returns {string} Formatted text
  */
 export function formatGospelForDisplay(text, options = {}) {
@@ -195,9 +195,9 @@ export function formatGospelForDisplay(text, options = {}) {
 /**
  * Format gospel text as HTML for email/display
  * @param {string} text - Cleaned plain text
- * @param {Object} options - Formatting options
- * @param {string} options.wrapper - Wrapper element ('p', 'div', 'span', 'none')
- * @param {string} options.style - Inline CSS style
+ * @param {Object} [options] - Formatting options
+ * @param {string} [options.wrapper] - Wrapper element ('p', 'div', 'span', 'none')
+ * @param {string} [options.style] - Inline CSS style
  * @returns {string} HTML formatted text
  */
 export function formatGospelAsHtml(text, options = {}) {
@@ -240,7 +240,7 @@ function isGospelReference(ref) {
  * Find gospel reference from readings_data, checking multiple places
  * Some liturgical days store the gospel in different fields (e.g., second_reading)
  * @param {object} readingsData - The readings_data object from dgr_schedule
- * @param {string} gospelReferenceField - The gospel_reference field value
+ * @param {string | null} [gospelReferenceField] - The gospel_reference field value
  * @returns {string} The expanded gospel reference, or empty string
  */
 export function findGospelReference(readingsData, gospelReferenceField) {
@@ -299,6 +299,8 @@ export function parseReadingsString(readingsString) {
 	if (!readingsString) return null;
 
 	const parts = readingsString.split(';').map(r => r.trim()).filter(Boolean);
+	/** @typedef {{ source: string; text: string; heading?: string }} Reading */
+	/** @type {{ combined_sources: string; first_reading: Reading | null; psalm: Reading | null; second_reading: Reading | null; gospel: Reading | null }} */
 	const readingsData = {
 		combined_sources: readingsString,
 		first_reading: null,

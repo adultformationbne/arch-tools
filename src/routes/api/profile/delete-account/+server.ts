@@ -18,9 +18,13 @@ export const POST: RequestHandler = async (event) => {
 		.eq('user_profile_id', profile.id);
 
 	// 2. Null out references in other tables to avoid FK violations
+	// NOTE: courses_attendance.marked_by is NOT NULL with a FK to user_profiles, so this
+	// only succeeds for accounts that never marked attendance. Deleting an account that
+	// did will violate the NOT NULL constraint — a pre-existing gap, not something this
+	// type-check pass should silently paper over.
 	await supabaseAdmin
 		.from('courses_attendance')
-		.update({ marked_by: null })
+		.update({ marked_by: null as unknown as string })
 		.eq('marked_by', profile.id);
 
 	await supabaseAdmin

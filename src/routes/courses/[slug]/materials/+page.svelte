@@ -25,7 +25,7 @@
 	// Extract data from server load using $derived for reactivity
 	/** @type {Record<number, Material[]>} */
 	const materialsBySession = $derived(data.materialsBySession);
-	/** @type {number} */
+	/** @type {number | null} */
 	const currentSession = $derived(data.currentSession);
 	/** @type {number | null} */
 	const earlyAccessSessionNumber = $derived(data.earlyAccessSessionNumber ?? null);
@@ -46,7 +46,7 @@
 	});
 
 	// Find default material using $derived
-	const defaultMaterial = $derived(urlMaterial || materialsBySession[currentSession]?.[0] || null);
+	const defaultMaterial = $derived(urlMaterial || (currentSession !== null ? materialsBySession[currentSession]?.[0] : null) || null);
 
 	// Find which session the URL material belongs to using $derived
 	const initialSession = $derived.by(() => {
@@ -79,7 +79,7 @@
 				toExpand.add(earlyAccessSessionNumber);
 			}
 			expandedSessions = toExpand;
-			mobileSelectedSession = initialSession;
+			mobileSelectedSession = initialSession ?? 0;
 		}
 	});
 

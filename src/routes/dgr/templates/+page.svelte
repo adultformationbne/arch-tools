@@ -12,8 +12,10 @@
 
   let { data } = $props();
 
+  /** @typedef {Record<string, any> & { id: string; name: string }} DgrTemplate */
+
   // Template manager initialized lazily to capture current supabase client
-  let templateManager = $state(null);
+  let templateManager = $state(new TemplateManager(data.supabase));
 
   $effect(() => {
     templateManager = new TemplateManager(data.supabase);
@@ -21,6 +23,7 @@
 
   // State
   let templates = $state([]);
+  /** @type {DgrTemplate | null} */
   let selectedTemplate = $state(null);
   let editingHtml = $state('');
   let previewHtml = $state('');
@@ -31,6 +34,7 @@
   let editingMode = $state(false);
   let showVersions = $state({});
   let generatingThumbnail = $state({});
+  /** @type {{ open: boolean; template: DgrTemplate | null }} */
   let deleteConfirmModal = $state({ open: false, template: null });
 
   // Sample data for preview
@@ -45,7 +49,7 @@
     authorName: 'Loading...',
     gospelFullText: '<p>Loading...</p>',
     gospelReference: 'Loading...',
-    promoTiles: [] // Add promo tiles array
+    promoTiles: /** @type {any[]} */ ([]) // Add promo tiles array
   });
 
   // Debounced preview update

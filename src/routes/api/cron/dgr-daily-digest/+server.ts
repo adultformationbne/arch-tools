@@ -58,7 +58,8 @@ export async function GET({ request, url }: RequestEvent) {
 		}
 
 		// Get recipients from task config (or fall back to all DGR admins)
-		let recipients = task.config?.recipients || [];
+		const taskConfig = task.config as { recipients?: any[] } | null;
+		let recipients = taskConfig?.recipients || [];
 
 		if (recipients.length === 0) {
 			// Fallback: get all DGR admins
@@ -295,7 +296,7 @@ async function autoPublishApprovedReflections(
 
 		try {
 			// Get gospel reference from readings_data (checks gospel, second_reading, combined_sources)
-			const gospelReference = findGospelReference(entry.readings_data, entry.gospel_reference);
+			const gospelReference = findGospelReference(entry.readings_data, entry.gospel_reference || '');
 
 			// Track if gospel text fetch fails
 			let gospelFullText = '';
@@ -360,18 +361,25 @@ async function autoPublishApprovedReflections(
 				: (contributor?.name || 'Unknown');
 
 			// Build readings array from individual sources (each = one pill)
+			const readingsData = entry.readings_data as {
+				first_reading?: { source?: string };
+				psalm?: { source?: string };
+				second_reading?: { source?: string };
+				gospel?: { source?: string };
+				combined_sources?: string;
+			} | null;
 			const readingsArray = [
-				entry.readings_data?.first_reading?.source,
-				entry.readings_data?.psalm?.source,
-				entry.readings_data?.second_reading?.source,
-				entry.readings_data?.gospel?.source
+				readingsData?.first_reading?.source,
+				readingsData?.psalm?.source,
+				readingsData?.second_reading?.source,
+				readingsData?.gospel?.source
 			].filter(Boolean) as string[];
 
 			// Call the publisher
 			const publishResult = await publishDGRToWordPress({
 				date: entry.date,
 				liturgicalDate: entry.liturgical_date || '',
-				readings: entry.readings_data?.combined_sources || '',
+				readings: readingsData?.combined_sources || '',
 				readingsArray,
 				title: entry.reflection_title,
 				gospelQuote: entry.gospel_quote,
@@ -477,7 +485,7 @@ function buildDigestEmail({
 	// Format readings from readings_data (single source of truth)
 	const formatReadings = (readingsData: any) => {
 		if (!readingsData) return '';
-		const parts = [];
+		const parts: string[] = [];
 		if (readingsData.first_reading?.source) parts.push(readingsData.first_reading.source);
 		if (readingsData.psalm?.source) parts.push(`Ps ${readingsData.psalm.source}`);
 		if (readingsData.gospel?.source) parts.push(readingsData.gospel.source);

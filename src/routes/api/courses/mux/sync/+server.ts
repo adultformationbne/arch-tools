@@ -34,14 +34,14 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		let assetId = material.mux_asset_id;
-		let playbackId = null;
+		let playbackId: string | null = null;
 		let status = 'processing';
 
 		// If we don't have an asset_id yet, check the upload
 		if (!assetId && material.mux_upload_id) {
 			try {
 				const upload = await video.uploads.retrieve(material.mux_upload_id);
-				assetId = upload.asset_id;
+				assetId = upload.asset_id ?? null;
 			} catch (e) {
 				console.error('Failed to retrieve upload:', e);
 			}

@@ -24,7 +24,7 @@
 		template = null,
 		duplicateFrom = null,
 		// Context configuration
-		context = 'course',
+		context = /** @type {import('$lib/email/context-config').EmailContext} */ ('course'),
 		contextId = null,
 		apiBaseUrl = null,
 		// Branding
@@ -114,9 +114,13 @@
 	let isRestoring = $state(false);
 
 	// Subject variable picker
+	/** @type {HTMLInputElement | null} */
 	let subjectInputEl = $state(null);
+	/** @type {HTMLButtonElement | null} */
 	let subjectVarButtonEl = $state(null);
+	/** @type {HTMLDivElement | null} */
 	let subjectVarMenuEl = $state(null);
+	/** @type {ReturnType<typeof createDropdown> | null} */
 	let subjectDropdown = $state(null);
 
 	// Initialize subject dropdown when elements are ready

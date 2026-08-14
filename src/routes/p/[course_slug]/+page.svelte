@@ -6,10 +6,12 @@
 
 	// Group modules by section_name for sidebar
 	const sidebarGroups = $derived(() => {
+		/** @type {{ label: string | null, items: typeof modules }[]} */
 		const groups = [];
+		/** @type {{ label: string | null, items: typeof modules } | null} */
 		let currentGroup = null;
 		for (const mod of modules) {
-			if (mod.sectionName !== currentGroup?.label) {
+			if (!currentGroup || mod.sectionName !== currentGroup.label) {
 				currentGroup = { label: mod.sectionName, items: [] };
 				groups.push(currentGroup);
 			}
@@ -69,7 +71,7 @@
 
 			{#if course.titlePage}
 				<div class="title-page-blocks">
-					<PublicPageBlockRenderer blocks={course.titlePage} />
+					<PublicPageBlockRenderer blocks={Array.isArray(course.titlePage) ? course.titlePage : []} />
 				</div>
 			{/if}
 

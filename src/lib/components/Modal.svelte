@@ -13,6 +13,7 @@
 		footer = undefined
 	} = $props();
 
+	/** @type {HTMLDivElement | null} */
 	let modalElement = $state(null);
 
 	// Size configurations
@@ -94,7 +95,7 @@
 
 					{#if showCloseButton}
 						<button
-							onclick={onClose}
+							onclick={() => onClose()}
 							class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
 							aria-label="Close modal"
 						>

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import type { Database } from '$lib/database.types';
 
 /**
  * Test helper utilities for course integration tests
@@ -145,7 +146,7 @@ export const testHelpers = {
 	 * Create test sessions for a module
 	 */
 	async createSessions(moduleId: string, count: number = 8) {
-		const sessions = [];
+		const sessions: Database['public']['Tables']['courses_sessions']['Row'][] = [];
 		for (let i = 1; i <= count; i++) {
 			const { data: session, error } = await supabaseAdmin
 				.from('courses_sessions')

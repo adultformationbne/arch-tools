@@ -23,8 +23,8 @@
 	let currentUserProfile = $derived(data.currentUserProfile);
 	let cohorts = $derived(data.cohorts);
 
-	let editingUserId = $state(null);
-	let editingModules = $state([]);
+	let editingUserId = $state<string | null>(null);
+	let editingModules = $state<string[]>([]);
 	let loading = $state(false);
 
 	// Navigation state
@@ -69,19 +69,19 @@
 	let showPasswordResetModal = $state(false);
 	let resetPasswordUserId = $state(null);
 	let showDeleteModal = $state(false);
-	let deleteUserId = $state(null);
+	let deleteUserId = $state<string | null>(null);
 	let deleteUserEmail = $state('');
 	let showAddEnrollmentModal = $state(false);
-	let enrollmentUserId = $state(null);
+	let enrollmentUserId = $state<string | null>(null);
 	let enrollmentUserName = $state('');
 	let showEnrollmentsModal = $state(false);
-	let enrollmentsModalUserId = $state(null);
+	let enrollmentsModalUserId = $state<string | null>(null);
 	let enrollmentsModalUserName = $state('');
 	let showEditModal = $state(false);
 	let editModalUser = $state(null);
 
 	// Edit enrollment state
-	let editingEnrollmentId = $state(null);
+	let editingEnrollmentId = $state<string | null>(null);
 	let editingEnrollmentRole = $state('');
 
 	// Mobile card expanded states

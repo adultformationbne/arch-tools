@@ -34,6 +34,7 @@ export async function POST({ request, locals }) {
 		// Check if this is a bulk import
 		if (body.action === 'bulk_import' && Array.isArray(body.contributors)) {
 			const contributors = body.contributors;
+			/** @type {{ successful: number, failed: number, errors: string[] }} */
 			const results = { successful: 0, failed: 0, errors: [] };
 
 			// Get existing emails to check for duplicates
@@ -42,7 +43,7 @@ export async function POST({ request, locals }) {
 				.select('email');
 
 			const existingEmails = new Set(
-				(existingContributors || []).map((c) => c.email.toLowerCase())
+				(existingContributors || []).map((c) => (c.email || '').toLowerCase())
 			);
 
 			for (const contributor of contributors) {

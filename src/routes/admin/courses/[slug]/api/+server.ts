@@ -924,7 +924,7 @@ export const POST: RequestHandler = async (event) => {
 							const { data: session } = await supabaseAdmin
 								.from('courses_sessions')
 								.select('id, title, session_number')
-								.eq('module_id', cohort?.module_id)
+								.eq('module_id', cohort?.module_id ?? '')
 								.eq('session_number', data.targetSession)
 								.single();
 
@@ -949,7 +949,7 @@ export const POST: RequestHandler = async (event) => {
 									.in('id', data.studentIds);
 
 								if (enrollments && enrollments.length > 0) {
-									const courseSettings = course.settings || {};
+									const courseSettings = (course.settings as { theme?: Record<string, string>; branding?: { logoUrl?: string } } | null) || {};
 									const themeSettings = courseSettings.theme || {};
 									const brandingSettings = courseSettings.branding || {};
 									const courseColors = {
@@ -1036,7 +1036,7 @@ export const POST: RequestHandler = async (event) => {
 
 									// Send emails
 									if (emailsToSend.length > 0) {
-										const courseReplyTo = course.email_branding_config?.reply_to_email || null;
+										const courseReplyTo = (course.email_branding_config as { reply_to_email?: string } | null)?.reply_to_email || null;
 									const courseFromEmail = await buildCourseFromEmail(course);
 
 										emailResults = await sendBulkEmails({
@@ -1045,7 +1045,7 @@ export const POST: RequestHandler = async (event) => {
 											resendApiKey: RESEND_API_KEY,
 											supabase: supabaseAdmin,
 											options: {
-												replyTo: courseReplyTo,
+												replyTo: courseReplyTo ?? undefined,
 												fromEmail: courseFromEmail,
 												commonMetadata: {
 													sentBy: user.id,
@@ -1208,7 +1208,7 @@ export const GET: RequestHandler = async (event) => {
 
 			const { data: logs, error: logsError } = await supabaseAdmin
 				.from('platform_email_log')
-				.select('enrollment_id, recipient_email, email_type, subject, sent_at, status, email_templates(name)')
+				.select('enrollment_id, recipient_email, email_type, subject, sent_at, status, metadata, email_templates(name)')
 				.in('enrollment_id', enrollmentIds)
 				.order('sent_at', { ascending: false });
 
@@ -1216,17 +1216,33 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, logsError.message || 'Failed to fetch email history');
 			}
 
+			// A log row is "system" (no admin in the loop) unless its metadata
+			// carries who triggered it - the general email composer stamps this on
+			// every send, automatic enrolment/payment/reflection emails never do.
+			const sentByIds = [...new Set((logs || []).map((l) => (l.metadata as any)?.sentBy).filter(Boolean))];
+			let sentByName: Record<string, string> = {};
+			if (sentByIds.length > 0) {
+				const { data: senders } = await supabaseAdmin
+					.from('user_profiles')
+					.select('id, full_name')
+					.in('id', sentByIds);
+				sentByName = Object.fromEntries((senders || []).map((s) => [s.id, s.full_name || '']));
+			}
+
 			// Group by enrollment, keeping only the most recent 5 per participant.
 			// enrollment_id means "this email is about this enrollment" - admin/hub
 			// notifications about a new signup carry it too, even though they went
 			// to someone else. recipient_email is who actually got it, so that's
 			// what scopes this to "emails we sent them."
-			const byEnrollment: Record<string, typeof logs> = {};
+			const byEnrollment: Record<string, any[]> = {};
 			for (const log of logs || []) {
 				if (!log.enrollment_id) continue;
 				if ((log.recipient_email || '').toLowerCase() !== emailByEnrollmentId.get(log.enrollment_id)) continue;
 				const bucket = (byEnrollment[log.enrollment_id] ??= []);
-				if (bucket.length < 5) bucket.push(log);
+				if (bucket.length < 5) {
+					const sentBy = (log.metadata as any)?.sentBy;
+					bucket.push({ ...log, sent_by_name: sentBy ? sentByName[sentBy] || 'Admin' : null });
+				}
 			}
 
 			return json({ success: true, data: byEnrollment });

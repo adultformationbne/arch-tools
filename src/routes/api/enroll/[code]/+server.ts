@@ -239,7 +239,11 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 	}
 
 	// Validate link
-	const linkValidation = isEnrollmentLinkValid(link);
+	const linkValidation = isEnrollmentLinkValid({
+		is_active: link.is_active ?? false,
+		max_uses: link.max_uses,
+		uses_count: link.uses_count ?? 0
+	});
 	if (!linkValidation.valid) {
 		throw error(400, linkValidation.reason || 'Invalid enrollment link');
 	}
@@ -252,7 +256,7 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 	}
 
 	// Enforce the link's remaining uses against the headcount
-	if (link.max_uses !== null && link.uses_count + participants.length > link.max_uses) {
+	if (link.max_uses !== null && (link.uses_count ?? 0) + participants.length > link.max_uses) {
 		throw error(400, 'This enrollment link does not have enough remaining uses for this group');
 	}
 
@@ -383,29 +387,30 @@ async function handleFreeBatch(params: {
 	for (let i = 0; i < participants.length; i++) {
 		const p = participants[i];
 		const claimToken = crypto.randomUUID().replace(/-/g, '');
-		const { data: result, error: rpcError } = await supabaseAdmin.rpc('safe_create_enrollment', {
+		const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('safe_create_enrollment', {
 			p_cohort_id: cohort.id,
-			p_user_profile_id: null,
-			p_hub_id: hubId,
+			p_user_profile_id: undefined,
+			p_hub_id: hubId ?? undefined,
 			p_enrollment_link_id: link.id,
 			p_full_name: p.fullName,
 			p_email: p.email,
 			p_role: 'student',
 			p_status: enrollmentStatus,
 			p_payment_status: 'not_required',
-			p_payment_id: null,
+			p_payment_id: undefined,
 			p_claim_token: claimToken,
 			p_phone: p.phone,
-			p_parish_id: p.parishId,
-			p_parish_other: p.parishOther,
-			p_referral_source: p.referralSource,
-			p_mailing_address: p.mailingAddress
+			p_parish_id: p.parishId ?? undefined,
+			p_parish_other: p.parishOther ?? undefined,
+			p_referral_source: p.referralSource ?? undefined,
+			p_mailing_address: p.mailingAddress ?? undefined
 		});
 
 		if (rpcError) {
 			console.error('safe_create_enrollment failed:', rpcError);
 			throw error(500, 'Failed to create enrollment');
 		}
+		const result = rpcData as { error?: string; enrollment_id: string };
 		if (result?.error === 'already_enrolled') {
 			throw error(400, `${p.email} is already enrolled in this cohort`);
 		}

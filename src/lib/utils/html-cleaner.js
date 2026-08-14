@@ -55,6 +55,7 @@ function convertInlineStylesToTags(container) {
 			const text = el.textContent.trim();
 			if (text && el.children.length === 0) {
 				// Leaf node with text - wrap appropriately
+				/** @type {Node} */
 				let content = document.createTextNode(text);
 
 				if (hasItalic) {
@@ -467,12 +468,13 @@ export function cleanWordHtml(html, options = {}) {
 		if (headings.length > 0) {
 			// Split paragraph around headings
 			const fragment = document.createDocumentFragment();
+			/** @type {HTMLParagraphElement | null} */
 			let currentP = null;
 
-			Array.from(p.childNodes).forEach(node => {
-				if (node.nodeType === Node.ELEMENT_NODE && ['H1', 'H2', 'H3'].includes(node.tagName)) {
+			for (const node of Array.from(p.childNodes)) {
+				if (node instanceof Element && ['H1', 'H2', 'H3'].includes(node.tagName)) {
 					// Close current paragraph, add heading
-					if (currentP && currentP.textContent.trim()) {
+					if (currentP && currentP.textContent?.trim()) {
 						fragment.appendChild(currentP);
 					}
 					fragment.appendChild(node.cloneNode(true));
@@ -484,9 +486,9 @@ export function cleanWordHtml(html, options = {}) {
 					}
 					currentP.appendChild(node.cloneNode(true));
 				}
-			});
+			}
 
-			if (currentP && currentP.textContent.trim()) {
+			if (currentP && currentP.textContent?.trim()) {
 				fragment.appendChild(currentP);
 			}
 

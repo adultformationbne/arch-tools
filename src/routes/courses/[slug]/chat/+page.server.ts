@@ -37,7 +37,7 @@ export const load: PageServerLoad = async (event) => {
 		);
 
 	// Get hub name for coordinator
-	let hubName = null;
+	let hubName: string | null = null;
 	if (enrollment.role === 'coordinator' && enrollment.hub_id) {
 		const { data: hub } = await supabaseAdmin
 			.from('courses_hubs')

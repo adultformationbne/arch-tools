@@ -23,6 +23,18 @@
 	 * @prop testApiUrl - API endpoint for sending test emails
 	 * @prop onClose - Called when panel should close
 	 */
+	/**
+	 * @type {{
+	 *   context?: import('$lib/email/context-config').EmailContext,
+	 *   contextId?: string | null,
+	 *   contextData?: Record<string, any>,
+	 *   template?: { subject_template: string, body_template: string },
+	 *   branding?: { name: string, logoUrl: string | null, accentDark: string, footerText: string },
+	 *   currentUserEmail?: string,
+	 *   testApiUrl?: string,
+	 *   onClose?: () => void
+	 * }}
+	 */
 	let {
 		context = 'course',
 		contextId = null,
@@ -205,7 +217,7 @@
 				</p>
 			</div>
 			<button
-				onclick={onClose}
+				onclick={() => onClose()}
 				class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
 				aria-label="Close"
 			>
@@ -322,7 +334,7 @@
 
 				<div class="flex items-center gap-2 pt-5">
 					<button
-						onclick={onClose}
+						onclick={() => onClose()}
 						class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-200 transition-colors"
 					>
 						Cancel

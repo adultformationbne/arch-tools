@@ -23,16 +23,11 @@
 	const quizzesBySession = $derived(data.quizzesBySession ?? {});
 
 	// Track page view
-	onMount(async () => {
-		try {
-			const response = await fetch(`/api/courses/${courseSlug}/track-view`, {
-				method: 'POST'
-			});
-
-			// track-view call intentionally fire-and-forget
-		} catch (err) {
+	onMount(() => {
+		// track-view call intentionally fire-and-forget
+		fetch(`/api/courses/${courseSlug}/track-view`, { method: 'POST' }).catch((err) => {
 			console.error('Failed to track page view:', err);
-		}
+		});
 
 		// Re-fetch session data when returning to tab (e.g. after qualitative quiz gets marked)
 		let lastInvalidate = 0;
@@ -55,16 +50,17 @@
 	// - Students: only up to their current_session
 	// - Coordinators: based on course settings (all or N sessions ahead)
 	// - Admins: all sessions
-	let availableSessions = $state([]);
+	let availableSessions = $state(0);
 	let showReflectionModal = $state(false);
 	let selectedReflection = $state(null);
 
 	// Real data from database
+	/** @type {Record<string, any> | null} */
 	let courseData = $state(null);
 
 	// Initialize state from server data
 	$effect(() => {
-		if (data.currentSession !== undefined) currentSession = data.currentSession;
+		if (data.currentSession != null) currentSession = data.currentSession;
 		if (data.availableSessions) availableSessions = data.availableSessions;
 		if (data.courseData) courseData = data.courseData;
 	});
@@ -91,7 +87,7 @@
 		}
 
 		courseData = {
-			...courseData,
+			...(courseData ?? {}),
 			currentSessionData: {
 				sessionNumber: sessionNum,
 				sessionTitle: sessionInfo?.title || `Session ${sessionNum}`,
@@ -118,7 +114,7 @@
 	};
 
 	// Derived values (with null safety)
-	const currentSessionData = $derived(courseData?.currentSessionData ?? null);
+	const currentSessionData = $derived.by(() => courseData?.currentSessionData ?? null);
 	const materials = $derived(currentSessionData?.materials ?? []);
 
 	// Early-access ("For next session") materials always preview the cohort's actual next
@@ -137,7 +133,7 @@
 {#if courseData && currentSessionData}
 <div class="px-4 sm:px-8 lg:px-16" class:pt-6={!hubData}>
 	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
-	<HubCoordinatorBar {hubData} {courseSlug} />
+	<HubCoordinatorBar hubData={hubData ? { ...hubData, totalSessions } : null} {courseSlug} />
 
 	<!-- Main Content with Session Navigation -->
 	<SessionContent

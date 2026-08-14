@@ -18,6 +18,13 @@
 	import { invalidateAll } from '$app/navigation';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
 
+	function courseSettingsOf(course: { settings: unknown }) {
+		return course.settings as {
+			theme?: { accentDark?: string; accentLight?: string };
+			branding?: { logoUrl?: string };
+		} | null;
+	}
+
 	let { data } = $props();
 	const courses = $derived(data.courses || []);
 	const managers = $derived(data.managers || []);
@@ -200,7 +207,7 @@
 		logoPath = '';
 		// Find which managers are assigned to this course
 		selectedManagerIds = managers
-			.filter(m => m.assigned_course_ids?.includes(course.id))
+			.filter(m => (m.assigned_course_ids as string[] | null)?.includes(course.id))
 			.map(m => m.id);
 		showEditModal = true;
 	}
@@ -303,9 +310,10 @@
 		{#if courses.length > 0}
 			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{#each courses as course}
-					{@const accentDark = course.settings?.theme?.accentDark || '#334642'}
-					{@const accentLight = course.settings?.theme?.accentLight || '#c59a6b'}
-					{@const logoUrl = course.settings?.branding?.logoUrl}
+					{@const courseSettings = courseSettingsOf(course)}
+					{@const accentDark = courseSettings?.theme?.accentDark || '#334642'}
+					{@const accentLight = courseSettings?.theme?.accentLight || '#c59a6b'}
+					{@const logoUrl = courseSettings?.branding?.logoUrl}
 					<Card padding="none" shadow="md" class="flex h-full flex-col overflow-hidden transition-all hover:shadow-lg">
 						<a
 							href="/admin/courses/{course.slug}"

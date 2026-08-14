@@ -61,7 +61,7 @@ export async function GET({ url }) {
 		return json({
 			success: true,
 			date: targetDate,
-			liturgical_day: reading.liturgical_day || reading.liturgical_name,
+			liturgical_day: reading.liturgical_day,
 			liturgical_rank: reading.liturgical_rank,
 			liturgical_season: reading.liturgical_season,
 			liturgical_week: reading.liturgical_week,

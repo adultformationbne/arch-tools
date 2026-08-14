@@ -7,6 +7,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// Auth is already done in layout - no need to check again!
 	const { user } = await event.locals.safeGetSession();
+	if (!user) throw error(401, 'Unauthorized');
 
 	// Get current user's display name for the marking modal
 	const { data: currentUserProfile } = await supabaseAdmin

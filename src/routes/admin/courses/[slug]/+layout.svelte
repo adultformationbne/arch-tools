@@ -59,14 +59,16 @@
 	let showCohortWizard = $state(false);
 
 	let showArchiveConfirm = $state(false);
-	let cohortToArchive = $state(null); // { id, name }
+	/** @type {{ id: string; name: string } | null} */
+	let cohortToArchive = $state(null);
 
 	let showDeleteCohortConfirm = $state(false);
-	let cohortToDelete = $state(null); // { id, name }
+	/** @type {{ id: string; name: string } | null} */
+	let cohortToDelete = $state(null);
 	let deleteCohortConfirmName = $state('');
 	let deletingCohort = $state(false);
-	const deleteCohortNameMatches = $derived(
-		deleteCohortConfirmName.trim().toLowerCase() === (cohortToDelete?.name || '').trim().toLowerCase()
+	const deleteCohortNameMatches = $derived.by(
+		() => deleteCohortConfirmName.trim().toLowerCase() === (cohortToDelete?.name || '').trim().toLowerCase()
 	);
 
 	// Extract cohort selection from URL - works on all admin pages

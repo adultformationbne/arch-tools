@@ -24,9 +24,9 @@ export async function POST({ request }) {
 	try {
 		const formData = await request.formData();
 		const file = formData.get('file');
-		const year = parseInt(formData.get('year'));
+		const year = parseInt(String(formData.get('year')), 10);
 
-		if (!file) {
+		if (!(file instanceof File)) {
 			return json({ success: false, error: 'No file provided' }, { status: 400 });
 		}
 

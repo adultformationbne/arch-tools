@@ -188,14 +188,16 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		}
 
 		// Get reply-to email for course context
-		let replyTo: string | null = null;
+		let replyTo: string | undefined = undefined;
 		if (context === 'course' && context_id) {
 			const { data: course } = await supabaseAdmin
 				.from('courses')
 				.select('email_branding_config')
 				.eq('slug', context_id)
 				.single();
-			replyTo = course?.email_branding_config?.reply_to_email || null;
+			replyTo =
+				(course?.email_branding_config as { reply_to_email?: string } | null)?.reply_to_email ||
+				undefined;
 		}
 
 		// Send test email
@@ -286,7 +288,8 @@ async function fetchCourseRecipientVariables(
 	}
 
 	const course = enrollment.courses_cohorts?.courses_modules?.courses;
-	const accentDark = course?.settings?.theme?.accentDark || '#334642';
+	const courseTheme = (course?.settings as { theme?: Record<string, string> } | null)?.theme;
+	const accentDark = courseTheme?.accentDark || '#334642';
 
 	return buildCourseVariablesFromEnrollment(
 		enrollment,

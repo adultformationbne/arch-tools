@@ -8,7 +8,7 @@ export async function POST({ request, locals }) {
 		// Check if user is authenticated and is admin
 		const { session, user } = await locals.safeGetSession();
 
-		if (!session) {
+		if (!session || !user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 

@@ -42,6 +42,7 @@
 
 	let editorElement;
 	let showVariableMenu = $state(false);
+	/** @type {HTMLElement | undefined} */
 	let variableMenuButton;
 	// hasSelection removed — using hasSelection (bindable prop) as single source of truth
 
@@ -53,13 +54,16 @@
 	let showLinkPopover = $state(false);
 	let currentLinkUrl = $state('');
 	let isEditingLink = $state(false);
+	/** @type {HTMLElement | null} */
 	let linkAnchorElement = $state(null);
 
 	// Popover state for button editing
 	let showButtonPopover = $state(false);
 	let currentButtonText = $state('');
 	let currentButtonUrl = $state('');
+	/** @type {number | null} */
 	let editingButtonPos = $state(null);
+	/** @type {HTMLElement | null} */
 	let buttonAnchorElement = $state(null);
 
 	// Track the last value we set to avoid unnecessary updates
@@ -96,13 +100,17 @@
 			const doc = parser.parseFromString(content, 'text/html');
 
 			const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+			/** @type {Text[]} */
 			const textNodes = [];
-			while (walker.nextNode()) textNodes.push(walker.currentNode);
+			while (walker.nextNode()) {
+				const current = walker.currentNode;
+				if (current instanceof Text) textNodes.push(current);
+			}
 
 			for (const textNode of textNodes) {
-				if (/\{\{\w+\}\}/.test(textNode.textContent)) {
+				if (/\{\{\w+\}\}/.test(textNode.textContent ?? '')) {
 					const frag = doc.createDocumentFragment();
-					const parts = textNode.textContent.split(/(\{\{\w+\}\})/g);
+					const parts = (textNode.textContent ?? '').split(/(\{\{\w+\}\})/g);
 					for (const part of parts) {
 						const varMatch = part.match(/^\{\{(\w+)\}\}$/);
 						if (varMatch) {
@@ -582,6 +590,7 @@
 		editor.chain().focus().toggleHeading({ level }).run();
 	}
 
+	/** @param {HTMLElement | null} anchorEl */
 	function toggleLink(anchorEl = null) {
 		if (!editor) return;
 		// Check if there's already a link at the current selection
@@ -629,6 +638,7 @@
 		showVariableMenu = false;
 	}
 
+	/** @param {HTMLElement | null} anchorEl */
 	function insertButton(anchorEl = null) {
 		if (!editor) return;
 
@@ -766,21 +776,26 @@
 	}
 
 	// Public methods that parent components can call
+	/** @param {HTMLElement | null} anchorEl */
 	export function openLinkModal(anchorEl = null) {
 		toggleLink(anchorEl);
 	}
 
+	/** @param {HTMLElement | null} anchorEl */
 	export function openButtonModal(anchorEl = null) {
 		insertButton(anchorEl);
 	}
 
 	// Close menu when clicking outside
+	/** @param {MouseEvent} event */
 	function handleClickOutside(event) {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
 		if (
 			showVariableMenu &&
 			variableMenuButton &&
-			!variableMenuButton.contains(event.target) &&
-			!event.target.closest('.variable-dropdown')
+			!variableMenuButton.contains(target) &&
+			!target.closest('.variable-dropdown')
 		) {
 			showVariableMenu = false;
 		}

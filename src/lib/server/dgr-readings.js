@@ -41,7 +41,7 @@ export function buildReadingsData(reading) {
 /**
  * Convert readings_data to flat reading format (for API responses)
  * @param {Object} readingsData - readings_data JSONB
- * @param {string} liturgicalDate - liturgical_date field
+ * @param {string | null} [liturgicalDate] - liturgical_date field
  * @returns {Object} Flat reading object
  */
 export function flattenReadingsData(readingsData, liturgicalDate = null) {
@@ -88,8 +88,8 @@ export async function fetchFromLectionary(date) {
  * - Non-pending without readings_data: fetch from lectionary as fallback
  *
  * @param {Object} entry - Schedule entry with at least: date, status, readings_data, liturgical_date
- * @param {Object} options
- * @param {boolean} options.forceFresh - Always fetch from lectionary (for preview/debug)
+ * @param {Object} [options]
+ * @param {boolean} [options.forceFresh] - Always fetch from lectionary (for preview/debug)
  * @returns {Promise<{readingsData: Object|null, reading: Object|null, source: 'snapshot'|'lectionary'}>}
  */
 export async function getReadingsForEntry(entry, options = {}) {

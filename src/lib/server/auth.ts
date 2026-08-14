@@ -39,7 +39,7 @@ export async function requireAuth(
 ) {
 	const { session, user } = await event.locals.safeGetSession();
 
-	if (!session) {
+	if (!session || !user) {
 		if (options.mode === 'redirect') {
 			// Preserve the original URL for redirect after login
 			const originalUrl = event.url.pathname + event.url.search;

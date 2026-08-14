@@ -39,6 +39,7 @@
 	let selectedSession = $state(0); // Currently selected session number
 
 	// Simplified state: Only store sessions that actually exist (no pre-filling)
+	/** @type {Record<number, any>} */
 	let sessionData = $state({}); // { [sessionNumber]: { id, title, description, materials, reflection, reflectionEnabled } }
 
 	// Get list of actual session numbers that exist (for sidebar display)
@@ -54,9 +55,11 @@
 	let editingTitle = $state(false);
 	let titleHovered = $state(false);
 	let showDeleteConfirm = $state(false);
+	/** @type {{ id: string; number: number } | null} */
 	let sessionToDelete = $state(null);
 	let showReflectionDeleteConfirm = $state(false);
 	let reflectionDeleteResponseCount = $state(0);
+	/** @type {any} */
 	let publicPageModalSession = $state(null);
 	let sessionLinkCopied = $state(false);
 
@@ -67,6 +70,7 @@
 	// ONLY initialize sessions that actually exist in the database (no pre-filling)
 	const processServerData = (moduleId) => {
 		const moduleSessions = data.sessions.filter(s => s.module_id === moduleId);
+		/** @type {Record<number, any>} */
 		const newSessionData = {};
 
 		// Only add sessions that exist in the database
@@ -569,6 +573,7 @@
 
 			// Update local sessionData with new session_numbers (no server reload needed!)
 			// Build new sessionData with correct keys based on API response
+			/** @type {Record<number, any>} */
 			const newSessionData = {};
 			for (const { id, session_number } of newOrder) {
 				// Find the old session data by ID
@@ -582,7 +587,7 @@
 			// Update selected session if it moved
 			if (selectedSession !== undefined) {
 				const currentSessionId = Object.values(sessionData).find((_, idx) =>
-					Object.keys(sessionData)[idx] == selectedSession
+					Number(Object.keys(sessionData)[idx]) === selectedSession
 				)?.id;
 				if (currentSessionId) {
 					const newPos = newOrder.find(o => o.id === currentSessionId)?.session_number;
@@ -797,7 +802,7 @@
 		<SessionTreeSidebar
 			modules={availableModules}
 			sessions={sessionsWithUpdatedTitles}
-			selectedModuleId={selectedModuleId}
+			selectedModuleId={selectedModuleId ?? ''}
 			selectedSession={selectedSession}
 			onModuleChange={(moduleId) => { handleModuleChange(moduleId); sidebarOpen = false; }}
 			onSessionChange={(session) => { handleSessionChange(session); sidebarOpen = false; }}
@@ -832,11 +837,11 @@
 							<input
 								type="text"
 								value={currentSession.title}
-								oninput={(e) => handleTitleInput(e.target.value)}
+								oninput={(e) => handleTitleInput(e.currentTarget.value)}
 								onblur={() => editingTitle = false}
 								onkeydown={(e) => {
 									if (e.key === 'Enter') {
-										e.target.blur();
+										e.currentTarget.blur();
 									} else if (e.key === 'Escape') {
 										editingTitle = false;
 									}

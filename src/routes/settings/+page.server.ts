@@ -48,8 +48,9 @@ export const load: PageServerLoad = async (event) => {
 	);
 
 	// Group enrollments by user
-	const enrollmentsByUser = {};
+	const enrollmentsByUser: Record<string, any[]> = {};
 	(enrollments || []).forEach((enrollment) => {
+		if (!enrollment.user_profile_id) return;
 		if (!enrollmentsByUser[enrollment.user_profile_id]) {
 			enrollmentsByUser[enrollment.user_profile_id] = [];
 		}

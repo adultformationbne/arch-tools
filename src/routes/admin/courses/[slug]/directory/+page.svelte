@@ -208,7 +208,7 @@
 		if (!cohortId) return;
 		enrollingId = student.id;
 		try {
-			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+			const response = await fetch(`/admin/courses/${course.slug}/directory/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'enroll_in_cohort', enrollmentId: student.id, cohortId })
@@ -321,7 +321,7 @@
 	async function handleApprove(enrollmentId) {
 		approvingId = enrollmentId;
 		try {
-			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+			const response = await fetch(`/admin/courses/${course.slug}/directory/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'approve', enrollmentId })
@@ -342,7 +342,7 @@
 		rejectingId = enrollmentToReject;
 		showRejectConfirm = false;
 		try {
-			const response = await fetch(`/admin/courses/${course.slug}/participants/api`, {
+			const response = await fetch(`/admin/courses/${course.slug}/directory/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'reject', enrollmentId: enrollmentToReject })
@@ -372,7 +372,7 @@
 	}
 </script>
 
-<div class="flex flex-col lg:flex-row min-h-screen">
+<div class="flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
 	<!-- Sidebar Filters (Desktop only) -->
 	<div class="w-64 flex-shrink-0 h-screen hidden lg:flex flex-col border-r" style="background-color: var(--course-accent-dark); border-color: rgba(255,255,255,0.1);">
 		<div class="p-4 border-b" style="border-color: rgba(255,255,255,0.1);">
@@ -495,7 +495,9 @@
 	</div>
 
 	<!-- Main Content -->
-	<div class="flex-1 flex flex-col min-w-0" style="background-color: var(--course-accent-dark);">
+	<div class="flex-1 flex flex-col min-w-0 min-h-0" style="background-color: var(--course-accent-dark);">
+		<!-- Sticky filter/action bar wrapper (sticky on mobile, static on desktop) -->
+		<div class="flex-shrink-0 sticky top-14 lg:static z-30" style="background-color: var(--course-accent-dark);">
 		<!-- Mobile Filter Section -->
 		<div class="lg:hidden flex-shrink-0 p-3 border-b" style="border-color: rgba(255,255,255,0.1);">
 			<!-- Header with stats and filter toggle -->
@@ -657,14 +659,16 @@
 			{/if}
 		</div>
 
+		</div>
+
 		<!-- Table Container -->
 		<div class="flex-1 overflow-y-auto p-3 sm:p-4">
-			<div class="bg-white rounded-lg shadow-lg overflow-hidden">
-				<div class="overflow-x-auto">
+			<div class="bg-white rounded-lg shadow-lg">
+				<div class="overflow-x-auto rounded-lg">
 					<table class="w-full table-fixed min-w-[400px] sm:min-w-[600px]">
 						<thead class="bg-gray-50 border-b border-gray-200">
 							<tr>
-								<th class="w-8 sm:w-10 px-2 sm:px-3 py-2 sm:py-3">
+								<th class="w-8 sm:w-10 px-2 sm:px-3 py-2 sm:py-3 lg:sticky lg:top-0 z-10 bg-gray-50">
 									<input
 										type="checkbox"
 										checked={allFilteredSelected}
@@ -672,19 +676,19 @@
 										class="w-3.5 h-3.5 rounded border-gray-300 focus:ring-2"
 									/>
 								</th>
-								<th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+								<th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 lg:sticky lg:top-0 z-10 bg-gray-50">
 									Participant
 								</th>
-								<th class="w-24 sm:w-32 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 hidden sm:table-cell">
+								<th class="w-24 sm:w-32 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 hidden sm:table-cell lg:sticky lg:top-0 z-10 bg-gray-50">
 									Hub
 								</th>
-								<th class="w-28 sm:w-36 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 hidden md:table-cell">
+								<th class="w-28 sm:w-36 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 hidden md:table-cell lg:sticky lg:top-0 z-10 bg-gray-50">
 									Cohort
 								</th>
-								<th class="w-20 sm:w-24 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+								<th class="w-20 sm:w-24 px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 lg:sticky lg:top-0 z-10 bg-gray-50">
 									Status
 								</th>
-								<th class="w-8 sm:w-10 px-2 sm:px-3 py-2 sm:py-3"></th>
+								<th class="w-8 sm:w-10 px-2 sm:px-3 py-2 sm:py-3 lg:sticky lg:top-0 z-10 bg-gray-50"></th>
 							</tr>
 						</thead>
 					<tbody class="divide-y divide-gray-100">
@@ -731,7 +735,7 @@
 										<select
 											value={student.hub_id || ''}
 											onclick={(e) => e.stopPropagation()}
-											onchange={(e) => handleUpdateHub(student.id, e.target.value || null, e)}
+											onchange={(e) => handleUpdateHub(student.id, e.currentTarget.value || null, e)}
 											class="w-full text-xs px-1.5 sm:px-2 py-1 rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-700 bg-white truncate"
 										>
 											<option value="">No Hub</option>
@@ -778,7 +782,7 @@
 													<select
 														value={student.hub_id || ''}
 														onclick={(e) => e.stopPropagation()}
-														onchange={(e) => handleUpdateHub(student.id, e.target.value || null, e)}
+														onchange={(e) => handleUpdateHub(student.id, e.currentTarget.value || null, e)}
 														class="w-full text-xs px-2 py-1 rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-700 bg-white"
 													>
 														<option value="">No Hub</option>
@@ -873,7 +877,7 @@
 														<select
 															value={enrollCohortSelections.get(student.id) || ''}
 															onclick={(e) => e.stopPropagation()}
-															onchange={(e) => { enrollCohortSelections.set(student.id, e.target.value); enrollCohortSelections = new Map(enrollCohortSelections); }}
+															onchange={(e) => { enrollCohortSelections.set(student.id, e.currentTarget.value); enrollCohortSelections = new Map(enrollCohortSelections); }}
 															class="text-xs px-2 py-1 rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-700 bg-white"
 														>
 															<option value="">Select cohort…</option>
@@ -942,7 +946,6 @@
 <ConfirmationModal
 	show={showRejectConfirm}
 	confirmText="Reject"
-	confirmClass="bg-red-600 hover:bg-red-700"
 	onConfirm={handleReject}
 	onCancel={() => { showRejectConfirm = false; enrollmentToReject = null; }}
 >

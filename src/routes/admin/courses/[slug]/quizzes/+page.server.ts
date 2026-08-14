@@ -13,6 +13,7 @@ export const load: PageServerLoad = async (event) => {
 	if (!courseId) throw error(404, 'Course not found');
 
 	const { user } = await event.locals.safeGetSession();
+	if (!user) throw error(401, 'Unauthorized');
 	const { data: currentUserProfile } = await supabaseAdmin
 		.from('user_profiles')
 		.select('full_name')

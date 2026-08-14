@@ -1,8 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAdmin } from '$lib/server/auth';
-import { RESEND_API_KEY } from '$env/static/private';
-import { Resend } from 'resend';
+import { CourseMutations } from '$lib/server/course-data';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async (event) => {
@@ -162,6 +161,7 @@ export const POST: RequestHandler = async (event) => {
 			email,
 			full_name,
 			status,
+			hub_id,
 			cohort:cohort_id (
 				id,
 				name,
@@ -205,25 +205,26 @@ export const POST: RequestHandler = async (event) => {
 			throw error(500, 'Failed to approve enrollment');
 		}
 
-		// Send approval notification email
-		if (RESEND_API_KEY && enrollment.email) {
-			try {
-				const resend = new Resend(RESEND_API_KEY);
-				await resend.emails.send({
-					from: 'noreply@mail.adultformation.com.au',
-					to: enrollment.email,
-					subject: `Your enrollment in ${course?.name || 'the course'} has been approved`,
-					html: `
-						<p>Hi ${enrollment.full_name || 'there'},</p>
-						<p>Your enrollment request for <strong>${module?.name || cohort?.name || course?.name}</strong> has been approved.</p>
-						<p>You will receive a separate email with login instructions shortly.</p>
-						<p>If you have any questions, please reply to this email.</p>
-					`
+		// Approval *is* the invite - same account provisioning + email every other
+		// enrolment path uses, so there's no separate step an admin has to remember.
+		try {
+			await CourseMutations.ensureParticipantAccount({
+				email: enrollment.email,
+				fullName: enrollment.full_name
+			});
+			await CourseMutations.sendBatchEnrollmentInvitation({
+				enrollmentId,
+				siteUrl: event.url.origin
+			});
+			if (enrollment.hub_id) {
+				await CourseMutations.notifyHubCoordinatorsOfEnrollment({
+					enrollmentId,
+					siteUrl: event.url.origin
 				});
-			} catch (emailError) {
-				console.error('Failed to send approval email:', emailError);
-				// Don't fail the approval if email fails
 			}
+		} catch (emailError) {
+			console.error('Failed to send invite email after approval:', emailError);
+			// Don't fail the approval if email fails - the enrollment is still approved
 		}
 
 		return json({ success: true, message: 'Enrollment approved' });

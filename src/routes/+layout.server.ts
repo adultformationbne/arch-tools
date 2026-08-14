@@ -1,11 +1,16 @@
 import { redirect } from '@sveltejs/kit';
 import { supabaseAdmin, getPlatformSettings } from '$lib/server/supabase.js';
 import type { LayoutServerLoad } from './$types';
+import type { Json } from '$lib/database.types';
 
-type CourseSettings = {
-	theme?: Record<string, unknown> | null;
-	branding?: Record<string, unknown> | null;
-} | null;
+type CourseSettings = Json | null;
+
+function readSettingsSection(settings: CourseSettings, key: 'theme' | 'branding'): Record<string, unknown> {
+	if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return {};
+	const section = settings[key];
+	if (!section || typeof section !== 'object' || Array.isArray(section)) return {};
+	return section;
+}
 
 type CourseRecord = {
 	id: string;
@@ -83,7 +88,7 @@ function lightenHex(hex: string, amount: number) {
 }
 
 function buildCourseTheme(settings: CourseSettings) {
-	const themeSettings = (settings?.theme ?? {}) as Record<string, unknown>;
+	const themeSettings = readSettingsSection(settings, 'theme');
 
 	const accentDark = normalizeColor(themeSettings.accentDark, DEFAULT_THEME.accentDark);
 	const accentLight = normalizeColor(themeSettings.accentLight, DEFAULT_THEME.accentLight);
@@ -133,7 +138,7 @@ function buildCourseTheme(settings: CourseSettings) {
 }
 
 function buildCourseBranding(settings: CourseSettings) {
-	const brandingSettings = (settings?.branding ?? {}) as Record<string, unknown>;
+	const brandingSettings = readSettingsSection(settings, 'branding');
 
 	const logoUrl =
 		typeof brandingSettings.logoUrl === 'string' && brandingSettings.logoUrl.trim()
@@ -155,6 +160,11 @@ function buildCourseBranding(settings: CourseSettings) {
 		showLogo,
 		title
 	};
+}
+
+function unwrapOne<T>(value: T[] | T | null | undefined): T | null {
+	if (!value) return null;
+	return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
 async function resolveCourseForUser(userId?: string | null): Promise<CourseRecord> {
@@ -188,7 +198,9 @@ async function resolveCourseForUser(userId?: string | null): Promise<CourseRecor
 	}
 
 	// Extract course from nested join
-	const course = enrollment?.courses_cohorts?.courses_modules?.courses;
+	const cohort = unwrapOne(enrollment?.courses_cohorts);
+	const module = unwrapOne(cohort?.courses_modules);
+	const course = unwrapOne(module?.courses);
 	return course ?? null;
 }
 
@@ -241,7 +253,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const isPrefixPublic = publicPrefixes.some(prefix => pathname.startsWith(prefix));
 	const isPublicRoute = isExplicitPublic || isPrefixPublic;
 
-	let userProfile = null;
+	let userProfile: { id: string; email: string | null; full_name: string | null; modules: any } | null = null;
 	if (session && user) {
 		const { data: profile, error } = await supabaseAdmin
 			.from('user_profiles')
@@ -265,7 +277,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const isAdminCourseRoute = pathname.startsWith('/admin/courses/');
 	const skipCourseResolution = isAdminCourseRoute;
 
-	let courseRecord = null;
+	let courseRecord: CourseRecord = null;
 	if (!skipCourseResolution) {
 		courseRecord = await resolveCourseForUser(user?.id);
 		if (!courseRecord) {

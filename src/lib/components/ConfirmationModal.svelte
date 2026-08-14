@@ -61,7 +61,7 @@
 			{:else}
 				<div class="modal-header">
 					<h3 id="confirmation-title">{title}</h3>
-					<button onclick={onCancel} class="modal-close">
+					<button onclick={() => onCancel()} class="modal-close">
 						<X size={20} />
 					</button>
 				</div>
@@ -94,17 +94,17 @@
 								</div>
 							</button>
 						{/each}
-						<button onclick={onCancel} class="btn-cancel">
+						<button onclick={() => onCancel()} class="btn-cancel">
 							{cancelText}
 						</button>
 					</div>
 				{:else}
 					<!-- Default mode: confirm/cancel buttons -->
 					<div class="modal-actions">
-						<button onclick={onCancel} class="btn-secondary">
+						<button onclick={() => onCancel()} class="btn-secondary">
 							{cancelText}
 						</button>
-						<button onclick={onConfirm} class="btn-primary {confirmVariant === 'danger' ? 'btn-danger-confirm' : ''}" disabled={confirmDisabled}>
+						<button onclick={() => onConfirm()} class="btn-primary {confirmVariant === 'danger' ? 'btn-danger-confirm' : ''}" disabled={confirmDisabled}>
 							{#if confirmIcon}
 								{@const Icon = confirmIcon}
 								<Icon size={18} />

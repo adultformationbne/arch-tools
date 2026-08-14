@@ -142,7 +142,7 @@ Add a course-wide default for approval requirement.
 
 Currently there's no dedicated UI for approving pending enrollments. Build it.
 
-1. **Participants page** (`src/routes/admin/courses/[slug]/participants/+page.svelte`):
+1. **Participants page** (`src/routes/admin/courses/[slug]/directory/+page.svelte`):
    - Add a filter/tab for "Pending Approval" enrollments (status = 'pending')
    - Show pending count as a badge on the tab
    - For each pending enrollment, show: name, email, phone, parish, submitted date
@@ -158,7 +158,7 @@ Currently there's no dedicated UI for approving pending enrollments. Build it.
    - Optionally send a rejection email
    - Show a confirmation modal before rejecting (use ConfirmationModal component)
 
-4. **API endpoint:** Add approve/reject actions to the existing participants API or create a new endpoint at `/admin/courses/[slug]/participants/api/+server.ts`.
+4. **API endpoint:** Add approve/reject actions to the existing participants API or create a new endpoint at `/admin/courses/[slug]/directory/api/+server.ts`.
 
 ---
 
@@ -226,7 +226,7 @@ Test each phase before moving to the next. Run `npm run validate-api` after any 
 | `src/routes/admin/courses/[slug]/enrollment-links/+page.server.ts` | Redirect if enrollmentEnabled=false |
 | `src/routes/admin/courses/[slug]/enrollment-links/api/+server.ts` | Enforce acceptPayments flag |
 | `src/routes/admin/courses/[slug]/discounts/+page.server.ts` | Redirect if flags disabled |
-| `src/routes/admin/courses/[slug]/participants/+page.svelte` | Pending approval tab + approve/reject UI |
+| `src/routes/admin/courses/[slug]/directory/+page.svelte` | Pending approval tab + approve/reject UI |
 | `src/routes/admin/courses/[slug]/api/+server.ts` | update_cohort_enrollment action |
 | `src/routes/api/enroll/[code]/+server.ts` | Max capacity check, approval logic update |
 | `src/routes/enroll/[code]/+page.server.ts` | Course-full check in load |

@@ -37,6 +37,7 @@
 	let isLoading = $state(true);
 	let uploadProgress = $state(0);
 	let uploadComplete = $state(false);
+	/** @type {string | null} */
 	let uploadError = $state(null);
 	let uploaderElement = $state(null);
 

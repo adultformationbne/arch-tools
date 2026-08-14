@@ -30,8 +30,9 @@ describe('Course Management', () => {
 			expect(course).toBeDefined();
 			expect(course.slug).toBe('test-tcf');
 			expect(course.name).toBe('Test Catholic Formation');
-			expect(course.settings?.theme).toBeDefined();
-			expect(course.settings.theme.accentDark).toBe('#334642');
+			const settings = course.settings as { theme: Record<string, string> };
+			expect(settings.theme).toBeDefined();
+			expect(settings.theme.accentDark).toBe('#334642');
 		});
 
 		it('should retrieve a course by slug', async () => {
@@ -67,8 +68,9 @@ describe('Course Management', () => {
 				.single();
 
 			expect(error).toBeNull();
-			expect(updated?.settings.theme.accentDark).toBe('#000000');
-			expect(updated?.settings.theme.fontFamily).toBe('Georgia');
+			const updatedSettings = updated?.settings as { theme: Record<string, string> };
+			expect(updatedSettings.theme.accentDark).toBe('#000000');
+			expect(updatedSettings.theme.fontFamily).toBe('Georgia');
 		});
 
 		it('should delete a course (cascade deletes modules)', async () => {

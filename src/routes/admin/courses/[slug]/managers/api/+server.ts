@@ -41,7 +41,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	const currentModules: string[] = profile.modules || [];
-	const currentAssigned: string[] = profile.assigned_course_ids || [];
+	const currentAssigned: string[] = (profile.assigned_course_ids as string[] | null) || [];
 
 	if (action === 'add_manager') {
 		const newModules = currentModules.includes('courses.manager')

@@ -59,7 +59,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			// Fetch user profile for name and modules
 			const { data: profile } = await supabaseAdmin
 				.from('user_profiles')
-				.select('name, modules')
+				.select('full_name, modules')
 				.eq('id', session.user.id)
 				.single();
 
@@ -78,7 +78,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			// Return authenticated user info instead of redirecting
 			authenticatedUser = {
 				email: session.user.email || 'Unknown',
-				name: profile?.name || null,
+				name: profile?.full_name || null,
 				redirectTo
 			};
 		}

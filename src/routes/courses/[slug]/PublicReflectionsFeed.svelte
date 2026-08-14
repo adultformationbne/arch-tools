@@ -1,6 +1,7 @@
 <script>
 	import { Globe, ArrowRight, X, HelpCircle, MessageSquare } from '$lib/icons';
 
+	/** @type {{ reflections?: Record<string, any>[] }} */
 	let {
 		reflections = []
 	} = $props();
@@ -10,6 +11,7 @@
 
 	// Modal state
 	let showModal = $state(false);
+	/** @type {Record<string, any> | null} */
 	let selectedReflection = $state(null);
 
 	const openModal = (reflection) => {

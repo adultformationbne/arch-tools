@@ -5,15 +5,19 @@
 	const { course, module, sessions, allModules } = $derived(data);
 
 	// Group all modules by section for sidebar
+	/** @typedef {{ id: string; name: string; orderNumber: number; sectionName: string | null }} SidebarModule */
+	/** @typedef {{ label: string | null; items: SidebarModule[] }} SidebarGroup */
+
 	const sidebarGroups = $derived(() => {
+		/** @type {SidebarGroup[]} */
 		const groups = [];
-		let currentGroup = null;
 		for (const mod of allModules) {
-			if (mod.sectionName !== currentGroup?.label) {
-				currentGroup = { label: mod.sectionName, items: [] };
-				groups.push(currentGroup);
+			const lastGroup = groups[groups.length - 1];
+			if (!lastGroup || lastGroup.label !== mod.sectionName) {
+				groups.push({ label: mod.sectionName, items: [mod] });
+			} else {
+				lastGroup.items.push(mod);
 			}
-			currentGroup.items.push(mod);
 		}
 		return groups;
 	});

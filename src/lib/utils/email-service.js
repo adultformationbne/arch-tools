@@ -184,20 +184,6 @@ export async function getEmailTemplate(supabase, templateKey, context = 'platfor
 }
 
 /**
- * Send an email and log it to the database
- * @param {Object} options Email options
- * @param {string} options.to Recipient email address
- * @param {string} options.subject Email subject
- * @param {string} options.html HTML email body
- * @param {string} options.emailType Type of email (for logging/filtering)
- * @param {string} [options.referenceId] Optional reference ID (e.g., schedule_id, course_id)
- * @param {Object} [options.metadata] Optional metadata to store with the email
- * @param {string} [options.replyTo] Optional reply-to email (overrides platform default)
- * @param {string} [options.resendApiKey] Resend API key (from env)
- * @param {Object} [options.supabase] Supabase client (for logging)
- * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
- */
-/**
  * Build the "from" address for a course email.
  * Always derives from course slug + platform domain: "Course Name <slug@app.domain>"
  * @param {Object} course Course record with name, slug
@@ -210,6 +196,21 @@ export async function buildCourseFromEmail(course) {
 	return `${course.name} <${course.slug}@${domainMatch[1]}>`;
 }
 
+/**
+ * Send an email and log it to the database
+ * @param {Object} options Email options
+ * @param {string} options.to Recipient email address
+ * @param {string} options.subject Email subject
+ * @param {string} options.html HTML email body
+ * @param {string} options.emailType Type of email (for logging/filtering)
+ * @param {string} [options.referenceId] Optional reference ID (e.g., schedule_id, course_id)
+ * @param {Object} [options.metadata] Optional metadata to store with the email
+ * @param {string} [options.replyTo] Optional reply-to email (overrides platform default)
+ * @param {string} [options.fromEmail] Optional from address (overrides platform default)
+ * @param {string} [options.resendApiKey] Resend API key (from env)
+ * @param {Object} [options.supabase] Supabase client (for logging)
+ * @returns {Promise<{success: boolean, emailId?: string, error?: string}>}
+ */
 export async function sendEmail({
 	to,
 	subject,

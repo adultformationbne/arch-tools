@@ -156,6 +156,12 @@
 		(a.status === 'passed' || a.status === 'failed')
 	).length);
 
+	const statusFilters = $derived<[string, string, number | null][]>([
+		['pending', 'Pending', pendingCount],
+		['marked', 'Marked', markedCount],
+		['all', 'All', null]
+	]);
+
 	// ── Instant quiz stats ────────────────────────────────────────────────────
 	const instantStats = $derived.by(() => {
 		const byQuiz: Record<string, { attempts: number; passed: number; scoreSum: number }> = {};
@@ -406,7 +412,7 @@
 
 			{#if activeTab === 'marking'}
 				<div class="flex gap-1">
-					{#each [['pending', 'Pending', pendingCount], ['marked', 'Marked', markedCount], ['all', 'All', null]] as [val, label, count]}
+					{#each statusFilters as [val, label, count]}
 						<button
 							onclick={() => selectedStatusFilter = val}
 							class="px-3 py-1.5 text-xs rounded-full font-medium transition

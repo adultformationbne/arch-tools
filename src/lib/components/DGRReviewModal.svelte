@@ -20,7 +20,9 @@
 	let isSaving = $state(false);
 
 	// Auto-resize textarea refs
+	/** @type {HTMLTextAreaElement | null} */
 	let textareaEl = $state(null);
+	/** @type {HTMLTextAreaElement | null} */
 	let quoteTextareaEl = $state(null);
 
 	$effect(() => {

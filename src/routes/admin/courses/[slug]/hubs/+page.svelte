@@ -22,6 +22,7 @@
 
 	// Delete confirmation state
 	let showDeleteConfirm = $state(false);
+	/** @type {any} */
 	let hubToDelete = $state(null);
 
 	// Expanded hub state

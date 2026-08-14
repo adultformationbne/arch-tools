@@ -204,8 +204,6 @@
 										<iframe
 											src={videoUrl}
 											frameborder="0"
-											webkitallowfullscreen
-											mozallowfullscreen
 											allowfullscreen
 											style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 6px;"
 											title={videoTitle}

@@ -476,7 +476,7 @@ export const actions: Actions = {
 
 		if (isAdmin && allManagers) {
 			for (const manager of allManagers) {
-				const currentAssignments = manager.assigned_course_ids || [];
+				const currentAssignments = (manager.assigned_course_ids as string[] | null) || [];
 				const shouldBeAssigned = managerIds.includes(manager.id);
 				const isCurrentlyAssigned = currentAssignments.includes(courseId);
 
@@ -546,7 +546,8 @@ export const actions: Actions = {
 		}
 
 		// Check permissions based on who created the course
-		const createdByRole = course.metadata?.created_by_role;
+		const courseMetadata = course.metadata as { created_by_role?: string; created_by_user_id?: string } | null;
+		const createdByRole = courseMetadata?.created_by_role;
 
 		if (userRole === 'manager') {
 			// Managers can only delete courses they created (manager courses)
@@ -559,7 +560,7 @@ export const actions: Actions = {
 			}
 
 			// Verify the manager created this specific course
-			const createdByUserId = course.metadata?.created_by_user_id;
+			const createdByUserId = courseMetadata?.created_by_user_id;
 			if (createdByUserId !== userProfile.id) {
 				return fail(403, {
 					type: 'error',
@@ -643,7 +644,7 @@ export const actions: Actions = {
 		// Update each manager's assigned_course_ids
 		for (const manager of allManagers) {
 			if (!isAdmin && hasModuleLevel(manager.modules, 'courses.admin')) continue;
-			const currentAssignments = manager.assigned_course_ids || [];
+			const currentAssignments = (manager.assigned_course_ids as string[] | null) || [];
 			const shouldBeAssigned = managerIds.includes(manager.id);
 			const isCurrentlyAssigned = currentAssignments.includes(courseId);
 

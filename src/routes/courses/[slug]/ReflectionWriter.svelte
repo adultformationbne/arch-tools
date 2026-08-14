@@ -21,6 +21,7 @@
 	let wordCount = $derived(content.trim().split(/\s+/).filter(word => word.length > 0).length);
 	let lastSaved = $state(new Date());
 	let isSaving = $state(false);
+	/** @type {HTMLTextAreaElement | null} */
 	let textareaRef = $state(null);
 
 	// Auto-focus textarea when modal opens

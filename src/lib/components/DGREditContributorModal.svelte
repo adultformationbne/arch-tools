@@ -103,7 +103,7 @@
 		<div class="w-full max-w-lg rounded-xl bg-white shadow-2xl">
 			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
 				<h2 class="text-lg font-semibold text-gray-900">Edit Contributor</h2>
-				<button onclick={onClose} class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+				<button onclick={() => onClose()} class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
 					<X class="h-5 w-5" />
 				</button>
 			</div>
@@ -216,7 +216,7 @@
 
 			<div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
 				<button
-					onclick={onClose}
+					onclick={() => onClose()}
 					class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 				>
 					Cancel

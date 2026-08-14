@@ -42,7 +42,7 @@ export async function GET() {
 		return json({
 			success: true,
 			date: today,
-			liturgical_day: reading.liturgical_day || reading.liturgical_name,
+			liturgical_day: reading.liturgical_day,
 			liturgical_rank: reading.liturgical_rank,
 			liturgical_season: reading.liturgical_season,
 			liturgical_week: reading.liturgical_week,

@@ -8,10 +8,12 @@
     onFormat = null
   } = $props();
 
+  /** @type {import('./CodeMirrorEditor.svelte').default | null} */
   let editor = $state(null);
   let isFormatting = $state(false);
 
   // Dynamic import - if CodeMirror breaks, fallback to textarea
+  /** @type {typeof import('./CodeMirrorEditor.svelte').default | null} */
   let CodeMirrorEditor = $state(null);
   let loadFailed = $state(false);
 

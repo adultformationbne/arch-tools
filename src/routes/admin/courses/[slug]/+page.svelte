@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, Send, MailCheck, UserMinus, Users, Plus, Settings, UserPlus, Download, X, ChevronDown } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, UserMinus, Users, Plus, Settings, UserPlus, Download, X, ChevronDown } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
@@ -54,6 +54,8 @@
 	let hubs = $state([]);
 	let loadingParticipants = $state(false);
 	let selectedParticipants = $state(new Set());
+	let filterBarHeight = $state(0);
+	let reflectionsHeaderHeight = $state(0);
 	let searchQuery = $state('');
 	let filterHub = $state('all');
 	let filterStatus = $state('all');
@@ -275,14 +277,6 @@
 		if (sortColumn !== column) return '';
 		return sortDirection === 'asc' ? ' \u25B2' : ' \u25BC';
 	}
-
-	// Any selected participant already received a welcome email?
-	const anySelectedWelcomed = $derived(
-		Array.from(selectedParticipants).some(id => {
-			const p = participants.find(s => s.id === id);
-			return p?.welcome_email_sent_at;
-		})
-	);
 
 	// "More than a course participant": admin/coordinator role, or any platform module
 	// beyond courses.participant. These accounts can be removed from a cohort but never
@@ -510,6 +504,7 @@
 			const attendance = cohortSession > 0
 				? `${p.attendanceCount || 0} of ${cohortSession}`
 				: '';
+			const seenAt = lastSeenAt(p);
 
 			return [
 				p.full_name || '',
@@ -528,7 +523,7 @@
 				showReflections ? refCount.returned : '',
 				showReflections ? refCount.draft : '',
 				p.payment_status || '',
-				lastSeenAt(p) ? new Date(lastSeenAt(p)).toLocaleDateString() : '',
+				seenAt ? new Date(seenAt).toLocaleDateString() : '',
 				p.created_at ? new Date(p.created_at).toLocaleDateString() : ''
 			];
 		});
@@ -692,44 +687,6 @@
 		}
 	}
 
-	function handleSendWelcome() {
-		if (selectedParticipants.size === 0) return;
-
-		// Get selected participants who haven't received any first-contact email yet
-		const pendingParticipants = participants.filter(
-			p => selectedParticipants.has(p.id) && !p.welcome_email_sent_at
-		);
-
-		if (pendingParticipants.length === 0) {
-			toastWarning('All selected participants have already been emailed');
-			return;
-		}
-
-		// Open email modal with a default template pre-selected - admin can swap it
-		emailRecipients = pendingParticipants;
-		initialTemplateSlug = 'welcome_enrolled';
-		showEmailModal = true;
-	}
-
-	function handleResendWelcome() {
-		if (selectedParticipants.size === 0) return;
-
-		// Get selected participants who HAVE already been emailed
-		const alreadySentParticipants = participants.filter(
-			p => selectedParticipants.has(p.id) && p.welcome_email_sent_at
-		);
-
-		if (alreadySentParticipants.length === 0) {
-			toastWarning('None of the selected participants have been emailed yet. Use "First Email" instead.');
-			return;
-		}
-
-		// Open email modal with welcome template pre-selected
-		emailRecipients = alreadySentParticipants;
-		initialTemplateSlug = 'welcome_enrolled';
-		showEmailModal = true;
-	}
-
 	// Modal handlers
 	async function handleEnrollmentComplete() {
 		showStudentEnrollment = false;
@@ -762,6 +719,13 @@
 		showEmailModal = true;
 	}
 
+	// Whether we have ever actually sent this participant anything - derived
+	// from the real log instead of a separate "welcome email" flag, so it's
+	// accurate no matter which template did it or who triggered it.
+	function hasBeenEmailed(participant) {
+		return (emailHistory[participant.id]?.length ?? 0) > 0;
+	}
+
 	// Most recent email logged for a participant, plus a tooltip listing the
 	// last few - so "Invited" doesn't have to mean one specific template.
 	function getLastEmailInfo(participant) {
@@ -770,7 +734,7 @@
 
 		const [latest, ...rest] = logs;
 		const tooltip = [latest, ...rest]
-			.map((log) => `${emailDisplayName(log)} — ${formatRelativeTime(log.sent_at)}`)
+			.map((log) => `${emailDisplayName(log)} (${log.sent_by_name ? `sent by ${log.sent_by_name}` : 'system'}) — ${formatRelativeTime(log.sent_at)}`)
 			.join('\n');
 
 		return {
@@ -822,7 +786,7 @@
 		}
 
 		// DB status is 'invited' or 'pending' — use communication signals
-		if (!participant.welcome_email_sent_at && !seen) {
+		if (!hasBeenEmailed(participant) && !seen) {
 			return { label: 'Not invited', sub: null, labelClass: 'text-gray-400 italic', dot: null };
 		}
 		if (!seen) {
@@ -839,7 +803,7 @@
 		if (participant.status === 'completed') return { label: 'Completed', class: 'bg-purple-100 text-purple-700' };
 		if (participant.status === 'pending') return { label: 'Pending', class: 'bg-yellow-100 text-yellow-700' };
 		// DB status === 'invited'
-		if (!participant.welcome_email_sent_at && !participant.last_login_at) {
+		if (!hasBeenEmailed(participant) && !participant.last_login_at) {
 			return { label: 'Not Invited', class: 'bg-gray-100 text-gray-600' };
 		}
 		return { label: 'Invited', class: 'bg-blue-100 text-blue-700' };
@@ -853,7 +817,7 @@
 		if (participant.status === 'pending') return 'pending';
 		// DB status === 'invited': split by engagement signals
 		if (participant.last_login_at) return 'active'; // logged in → treat same as DB-active
-		if (!participant.welcome_email_sent_at) return 'not_invited';
+		if (!hasBeenEmailed(participant)) return 'not_invited';
 		return 'invited'; // welcome email sent, hasn't signed in yet
 	}
 
@@ -875,7 +839,7 @@
 	</div>
 
 	<!-- Main Content Area -->
-	<div class="flex-1 overflow-y-auto" style="background-color: var(--course-accent-dark);">
+	<div class="flex-1 overflow-auto" style="background-color: var(--course-accent-dark);">
 		<!-- Mobile Cohort Header - Shows on mobile when cohort is selected -->
 		{#if selectedCohort}
 			<div class="lg:hidden px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.1);">
@@ -982,6 +946,12 @@
 			</div>
 		{:else}
 			<div class="p-3 sm:p-4 lg:p-6">
+				<!-- Sticky filter header + bulk action bar -->
+				<div
+					class="sticky top-0 z-20 -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 pb-3"
+					style="background-color: var(--course-accent-dark);"
+					bind:clientHeight={filterBarHeight}
+				>
 				<!-- Page Header + Search + Filters -->
 				<div class="flex flex-col gap-2 mb-4">
 					<div class="flex flex-wrap items-center gap-2">
@@ -1045,24 +1015,6 @@
 						</div>
 						<div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
 							<button
-								onclick={handleSendWelcome}
-								title="Opens the email composer with a default template pre-selected - pick any template"
-								class="px-2 py-1.5 rounded text-xs font-medium text-emerald-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
-							>
-								<Send size={12} />
-								First Email
-							</button>
-							{#if anySelectedWelcomed}
-							<button
-								onclick={handleResendWelcome}
-								title="Opens the email composer with a default template pre-selected - pick any template"
-								class="px-2 py-1.5 rounded text-xs font-medium text-amber-300 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
-							>
-								<MailCheck size={12} />
-								Resend Email
-							</button>
-							{/if}
-							<button
 								onclick={handleEmailSelected}
 								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
 							>
@@ -1101,6 +1053,8 @@
 					</div>
 				{/if}
 
+				</div>
+
 				<!-- Participants Table -->
 				{#if loadingParticipants}
 					<div class="flex items-center justify-center py-8">
@@ -1130,15 +1084,15 @@
 						</div>
 					{/if}
 				{:else}
-					<div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+					<div class="bg-white rounded-lg border border-gray-200">
 						<table class="w-full min-w-[540px] sm:min-w-[700px] lg:min-w-[900px]">
 							<thead>
 								<!-- Grouped header. lg-only: below lg the reflection columns are
 										hidden and the colspans would not line up. The label doubles as the
 										expand/collapse control for the group beneath it. -->
-								<tr class="hidden lg:table-row bg-gray-100">
-									<th colspan="7"></th>
-									<th colspan={reflectionsExpanded ? 4 : 1} class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+								<tr class="hidden lg:table-row bg-gray-100 sticky z-10" style="top: {filterBarHeight}px" bind:clientHeight={reflectionsHeaderHeight}>
+									<th colspan="7" class="bg-gray-100"></th>
+									<th colspan={reflectionsExpanded ? 4 : 1} class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 bg-gray-100">
 										<button
 											onclick={toggleReflectionColumns}
 											title={reflectionsExpanded ? 'Collapse to a single column' : 'Expand into completed / submitted / returned / draft columns'}
@@ -1150,7 +1104,7 @@
 									</th>
 								</tr>
 								<tr class="border-b border-gray-200 bg-gray-100">
-									<th class="w-8 px-2 sm:px-3 py-2.5">
+									<th class="w-8 px-2 sm:px-3 py-2.5 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<input
 											type="checkbox"
 											onchange={toggleSelectAll}
@@ -1158,37 +1112,37 @@
 											class="rounded border-gray-300 w-3.5 h-3.5"
 										/>
 									</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('name')} class="hover:text-gray-900 cursor-pointer">Participant{sortIndicator('name')}</button>
 									</th>
-									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Phone</th>
-									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">Phone</th>
+									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('hub')} class="hover:text-gray-900 cursor-pointer">Hub{sortIndicator('hub')}</button>
 									</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('status')} class="hover:text-gray-900 cursor-pointer">Activity{sortIndicator('status')}</button>
 									</th>
-									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('session')} class="hover:text-gray-900 cursor-pointer">Sess.{sortIndicator('session')}</button>
 									</th>
-									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('attendance')} class="hover:text-gray-900 cursor-pointer">Attend.{sortIndicator('attendance')}</button>
 									</th>
 									{#if reflectionsExpanded}
-										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 											<button onclick={() => toggleSort('refMarked')} title="Marked as passed - the reflection is done" class="hover:text-gray-900 cursor-pointer">Completed{sortIndicator('refMarked')}</button>
 										</th>
-										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 											<button onclick={() => toggleSort('refPending')} title="Handed in, waiting on review" class="hover:text-gray-900 cursor-pointer">Submitted{sortIndicator('refPending')}</button>
 										</th>
-										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 											<button onclick={() => toggleSort('refReturned')} title="Sent back to the participant to revise" class="hover:text-gray-900 cursor-pointer">Returned{sortIndicator('refReturned')}</button>
 										</th>
-										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 											<button onclick={() => toggleSort('refDraft')} title="Written but never submitted - no reviewer can see it" class="hover:text-gray-900 cursor-pointer">Draft{sortIndicator('refDraft')}</button>
 										</th>
 									{:else}
-										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+										<th class="hidden lg:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 											<button onclick={() => toggleSort('refMarked')} title="Marked as passed - the reflection is done" class="hover:text-gray-900 cursor-pointer">Completed{sortIndicator('refMarked')}</button>
 											<span class="mx-1 text-gray-300">•</span>
 											<button onclick={() => toggleSort('refOther')} title="Submitted, returned and draft added together - expand for a column each" class="hover:text-gray-900 cursor-pointer">Other{sortIndicator('refOther')}</button>

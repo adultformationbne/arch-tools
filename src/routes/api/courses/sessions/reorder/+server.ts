@@ -85,7 +85,12 @@ export const PATCH: RequestHandler = async (event) => {
 		`;
 
 
-		const { error: sqlError } = await supabaseAdmin.rpc('exec_sql', { sql_query: sql });
+		// exec_sql is an optional, hand-rolled RPC that may not exist in every environment
+		// (see fallback below) — it's intentionally not part of the generated Database types.
+		const { error: sqlError } = await supabaseAdmin.rpc(
+			'exec_sql' as Parameters<typeof supabaseAdmin.rpc>[0],
+			{ sql_query: sql } as any
+		);
 
 		// If RPC doesn't exist, fall back to parallel updates
 		if (sqlError?.code === '42883' || sqlError?.message?.includes('function')) {

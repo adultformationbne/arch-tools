@@ -199,6 +199,7 @@ export async function POST({ request }) {
 
 		// Create new entry (only if doesn't exist)
 		// Don't populate readings_data - keep null until submit (SSOT pattern)
+		/** @type {{ date: any, liturgical_date: any, gospel_reference: any, status: 'pending', contributor_id?: any, contributor_email?: any }} */
 		const newEntryData = {
 			date,
 			liturgical_date: reading.liturgical_day,

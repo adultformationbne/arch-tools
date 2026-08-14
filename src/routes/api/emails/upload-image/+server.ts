@@ -11,8 +11,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export const POST = async (event: RequestEvent) => {
 	// Require appropriate module access
+	let user;
 	try {
-		await requireAnyModule(event, ['courses.admin', 'courses.manager', 'dgr', 'users']);
+		({ user } = await requireAnyModule(event, ['courses.admin', 'courses.manager', 'dgr', 'users']));
 	} catch (err) {
 		throw error(403, 'Requires appropriate admin access');
 	}
@@ -126,8 +127,7 @@ export const POST = async (event: RequestEvent) => {
 
 		const publicUrl = urlData.publicUrl;
 
-		// Get user ID from locals
-		const userId = event.locals.user?.id || null;
+		const userId = user?.id || null;
 
 		// Record in email_images table
 		const { data: imageRecord, error: dbError } = await supabaseAdmin

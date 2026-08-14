@@ -2,7 +2,7 @@
 	import { BookOpen, ChevronRight } from '$lib/icons';
 	import { Card } from '$lib/design-system';
 
-	let { data } = $props();
+	let { data }: { data: { courses?: any[]; noEnrollments?: boolean } } = $props();
 	const courses = $derived(data.courses || []);
 	const noEnrollments = $derived(data.noEnrollments || false);
 </script>

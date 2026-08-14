@@ -14,17 +14,15 @@ export async function GET({ url, locals }) {
 	try {
 		const templateKey = url.searchParams.get('key');
 
-		let query = supabaseAdmin
+		const query = supabaseAdmin
 			.from('email_templates')
 			.select('*')
 			.eq('context', 'dgr')
 			.order('name');
 
-		if (templateKey) {
-			query = query.eq('template_key', templateKey).single();
-		}
-
-		const { data, error } = await query;
+		const { data, error } = templateKey
+			? await query.eq('template_key', templateKey).single()
+			: await query;
 
 		if (error) throw error;
 

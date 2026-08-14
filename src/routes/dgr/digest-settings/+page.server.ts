@@ -21,6 +21,6 @@ export async function load(event) {
 	return {
 		task,
 		dgrAdmins: dgrAdmins || [],
-		currentRecipients: task?.config?.recipients || []
+		currentRecipients: (task?.config as { recipients?: Array<{ id: string; email: string; name: string }> } | null)?.recipients || []
 	};
 }

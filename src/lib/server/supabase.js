@@ -29,7 +29,7 @@ import { platform as defaultPlatform } from '$lib/config';
  * and never touch the client's session. To check a password, use
  * `verifyPassword()` below.
  */
-export const supabaseAdmin = createClient(
+export const supabaseAdmin = /** @type {import('@supabase/supabase-js').SupabaseClient<import('$lib/database.types').Database>} */ (createClient(
 	PUBLIC_SUPABASE_URL,
 	SUPABASE_SERVICE_ROLE_KEY,
 	{
@@ -38,7 +38,7 @@ export const supabaseAdmin = createClient(
 			persistSession: false
 		}
 	}
-);
+));
 
 /**
  * Is this the account's current password?

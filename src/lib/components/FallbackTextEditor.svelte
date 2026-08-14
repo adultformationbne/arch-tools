@@ -9,6 +9,7 @@
 		placeholder = 'Write your content...'
 	} = $props();
 
+	/** @type {HTMLDivElement | null} */
 	let editorElement = $state(null);
 	let internalValue = $state('');
 
@@ -40,12 +41,12 @@
 
 	// Basic formatting commands
 	export function toggleBold() {
-		document.execCommand('bold', false, null);
+		document.execCommand('bold');
 		onchange(editorElement?.innerHTML || '');
 	}
 
 	export function toggleItalic() {
-		document.execCommand('italic', false, null);
+		document.execCommand('italic');
 		onchange(editorElement?.innerHTML || '');
 	}
 

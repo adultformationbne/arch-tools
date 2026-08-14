@@ -34,8 +34,11 @@
 		onEditDetails
 	} = $props();
 
+	/** @type {HTMLElement | null} */
 	let dropdownButton = $state(null);
+	/** @type {HTMLElement | null} */
 	let dropdownMenu = $state(null);
+	/** @type {{ show: () => void, hide: () => void, toggle: () => void, destroy: () => void, isOpen: boolean } | null} */
 	let dropdownController = $state(null);
 
 	function getModuleBadgeColor(moduleId) {

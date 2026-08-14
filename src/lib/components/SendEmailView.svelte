@@ -911,7 +911,6 @@
 	onConfirm={confirmSend}
 	onCancel={() => showSendConfirm = false}
 	confirmText="Send {enabledRecipients.length} Email{enabledRecipients.length !== 1 ? 's' : ''}"
-	confirmClass="bg-green-600 hover:bg-green-700 text-white"
 >
 	<div class="flex items-start gap-3">
 		<div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">

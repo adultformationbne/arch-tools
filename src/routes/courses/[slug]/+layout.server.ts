@@ -35,10 +35,9 @@ export const load: LayoutServerLoad = async (event) => {
 	const { userProfile } = parentData;
 
 	// Extract theme and branding from course settings
-	const settings = course.settings || {};
-	const courseTheme = settings.theme || {};
-	const courseBranding = settings.branding || {};
-	const courseSettings = getCourseSettings(settings);
+	const courseSettings = getCourseSettings(course.settings);
+	const courseTheme = courseSettings.theme || {};
+	const courseBranding = courseSettings.branding || {};
 	const chatEnabled = courseSettings.features?.chatEnabled !== false;
 	const chatAllowParticipants = courseSettings.features?.chatAllowParticipants === true;
 	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
@@ -71,7 +70,7 @@ export const load: LayoutServerLoad = async (event) => {
 	}
 
 	// Get hub name for coordinator chat sidebar
-	let hubName = null;
+	let hubName: string | null = null;
 	if (enrollmentRole === 'coordinator' && enrollment?.hub_id) {
 		const { data: hub } = await supabaseAdmin
 			.from('courses_hubs').select('name').eq('id', enrollment.hub_id).maybeSingle();
@@ -80,7 +79,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		userRole: enrollmentRole || 'student', // Use actual role: 'student' or 'coordinator'
-		userName: userProfile?.full_name || userProfile?.display_name || 'User',
+		userName: userProfile?.full_name || 'User',
 		userProfile,
 		courseSlug: slug,
 		enrollmentRole,

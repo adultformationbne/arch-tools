@@ -25,7 +25,9 @@
 	} = $props();
 
 	// Auto-resize textarea refs
+	/** @type {HTMLTextAreaElement | null} */
 	let textareaEl = $state(null);
+	/** @type {HTMLTextAreaElement | null} */
 	let quoteTextareaEl = $state(null);
 
 	// Mobile readings toggle

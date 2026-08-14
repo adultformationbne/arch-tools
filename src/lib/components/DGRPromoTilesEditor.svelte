@@ -13,7 +13,7 @@
 		if (!tile.image_url) return 'empty';
 		if (!tile.expires_at) return 'no_expiry';
 		if (tile.expires_at < today) return 'expired';
-		const ms = new Date(tile.expires_at) - new Date(today);
+		const ms = new Date(tile.expires_at).getTime() - new Date(today).getTime();
 		const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
 		if (days <= 7) return 'expiring_soon';
 		return 'active';
@@ -58,7 +58,7 @@
 							src={tile.image_url}
 							alt={tile.title || 'Promo tile'}
 							class="h-28 w-28 rounded-lg border border-gray-200 object-cover shadow-sm"
-							onerror={(e) => (e.target.style.display = 'none')}
+							onerror={(e) => { if (e.currentTarget instanceof HTMLElement) e.currentTarget.style.display = 'none'; }}
 						/>
 						{#if tile.title}
 							<span class="max-w-28 truncate text-center text-xs text-gray-600">{tile.title}</span>
@@ -163,7 +163,7 @@
 									src={tile.image_url}
 									alt={tile.title || 'Promo tile ' + tile.position}
 									class="h-20 w-20 rounded-lg border border-gray-300 object-cover"
-									onerror={(e) => (e.target.style.display = 'none')}
+									onerror={(e) => { if (e.currentTarget instanceof HTMLElement) e.currentTarget.style.display = 'none'; }}
 								/>
 							</div>
 						{/if}
@@ -176,7 +176,7 @@
 			<div class="flex items-center gap-3">
 				{#if tiles.length < 3}
 					<button
-						onclick={onAddTile}
+						onclick={() => onAddTile()}
 						class="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
 					>
 						+ Add tile

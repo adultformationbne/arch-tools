@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { KeyRound, CheckCircle } from '$lib/icons';
 
+	/** @type {{ data: Omit<import('./$types').PageData, 'courseBranding'> & Pick<import('./$types').PageServerData, 'courseBranding'> }} */
 	let { data } = $props();
 	const supabase = $derived(data.supabase);
 	const user = $derived(data.user);

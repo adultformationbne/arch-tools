@@ -68,12 +68,24 @@ function parseMonthDay(dateStr: string, year: number): Date {
 /**
  * Load year cycle data from CSV
  */
+type YearCycleCsvRow = {
+	year: string;
+	sunday_cycle: string;
+	weekday_cycle: string;
+	first_sunday_of_advent: string;
+	easter_sunday: string;
+	pentecost_sunday: string;
+	ash_wednesday: string;
+	week_of_ot_after_pentecost: string;
+	weeks_of_ot_before_lent: string;
+};
+
 export function loadYearCycleData(): Map<number, YearCycleData> {
 	if (yearDataCache) return yearDataCache;
 
 	const csvPath = join(process.cwd(), 'src/lib/data/liturgical-year.csv');
 	const csvContent = readFileSync(csvPath, 'utf-8');
-	const records = parse(csvContent, { columns: true, skip_empty_lines: true });
+	const records = parse<YearCycleCsvRow>(csvContent, { columns: true, skip_empty_lines: true });
 
 	yearDataCache = new Map();
 	for (const r of records) {

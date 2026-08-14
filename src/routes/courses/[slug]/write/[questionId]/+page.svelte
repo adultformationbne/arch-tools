@@ -329,7 +329,7 @@
 					<div class="flex-1">
 						<h3 class="text-orange-900 font-semibold mb-2">Revision Requested</h3>
 						<p class="text-orange-800">Your instructor has requested revisions to this reflection. Please make the necessary changes and resubmit.</p>
-						{#if existingReflection.feedback}
+						{#if existingReflection?.feedback}
 							<div class="mt-4 p-4 bg-white rounded border border-orange-200">
 								<p class="text-sm font-semibold text-gray-700 mb-2">Feedback:</p>
 								<p class="text-gray-900">{existingReflection.feedback}</p>

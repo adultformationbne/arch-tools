@@ -5,6 +5,7 @@
 
 	let { data } = $props();
 
+	/** @type {typeof data.task} */
 	let task = $state(null);
 	let dgrAdmins = $state([]);
 	let selectedRecipientIds = $state([]);
@@ -24,6 +25,7 @@
 	});
 
 	async function saveSettings() {
+		if (!task) return;
 		saving = true;
 
 		try {
