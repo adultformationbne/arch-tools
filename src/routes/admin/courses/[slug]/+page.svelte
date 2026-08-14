@@ -21,6 +21,7 @@
 	} from '$lib/utils/reflection-status.js';
 	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
 	import { formatRelativeTime } from '$lib/utils/dgr-helpers';
+	import { emailDisplayName } from '$lib/utils/email-labels';
 	import { getTotalSessions } from '$lib/utils/cohort-status';
 
 	let { data } = $props();
@@ -759,31 +760,6 @@
 		emailRecipients = [participant];
 		initialTemplateSlug = '';
 		showEmailModal = true;
-	}
-
-	// Friendly labels for the system email_type strings that never go through a
-	// DB template (and so have no email_templates.name to fall back on).
-	const EMAIL_TYPE_LABELS = {
-		welcome_enrolled: 'Welcome',
-		self_enrollment_welcome: 'Welcome',
-		batch_enrollment_invitation: 'Enrollment Invitation',
-		group_registration_confirmation: 'Group Registration Confirmation',
-		hub_enrollment_notification: 'Hub Enrollment Notification',
-		enrollment_admin_notification: 'Admin Notification',
-		payment_failure_admin_notification: 'Payment Failure Notification',
-		payment_receipt: 'Payment Receipt',
-		reflection_marked: 'Reflection Feedback',
-		quiz_marked: 'Quiz Feedback',
-		session_advance: 'Session Materials Ready',
-		custom: 'Custom Email'
-	};
-
-	function emailDisplayName(log) {
-		return (
-			log.email_templates?.name ||
-			EMAIL_TYPE_LABELS[log.email_type] ||
-			log.email_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-		);
 	}
 
 	// Most recent email logged for a participant, plus a tooltip listing the

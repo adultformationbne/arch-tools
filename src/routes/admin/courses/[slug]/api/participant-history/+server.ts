@@ -16,7 +16,7 @@ export const GET: RequestHandler = async (event) => {
 		throw error(400, 'type is required');
 	}
 
-	if (type !== 'other_courses' && !cohortId) {
+	if (type !== 'other_courses' && type !== 'emails' && !cohortId) {
 		throw error(400, 'cohort_id is required');
 	}
 
@@ -128,6 +128,26 @@ export const GET: RequestHandler = async (event) => {
 			return json({ success: true, data: enrichedData });
 		}
 
+		if (type === 'emails') {
+			const enrollmentId = url.searchParams.get('enrollment_id');
+			if (!enrollmentId) {
+				throw error(400, 'enrollment_id is required for emails');
+			}
+
+			const { data, error: dbError } = await supabaseAdmin
+				.from('platform_email_log')
+				.select('id, email_type, subject, status, sent_at, error_message, email_templates(name)')
+				.eq('enrollment_id', enrollmentId)
+				.order('sent_at', { ascending: false })
+				.limit(25);
+
+			if (dbError) {
+				throw error(500, dbError.message);
+			}
+
+			return json({ success: true, data: data || [] });
+		}
+
 		if (type === 'other_courses') {
 			const userProfileId = url.searchParams.get('user_profile_id');
 			const enrollmentId = url.searchParams.get('enrollment_id');
@@ -186,7 +206,7 @@ export const GET: RequestHandler = async (event) => {
 			return json({ success: true, data: enrichedData });
 		}
 
-		throw error(400, 'Invalid type. Must be "attendance", "reflections", or "other_courses"');
+		throw error(400, 'Invalid type. Must be "attendance", "reflections", "emails", or "other_courses"');
 	} catch (err: any) {
 		console.error('Participant history API error:', err);
 

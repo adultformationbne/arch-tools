@@ -1,7 +1,8 @@
 <script>
-	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight, ExternalLink } from '$lib/icons';
+	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight, ExternalLink, RefreshCw } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { formatPrice } from '$lib/utils/enrollment-links';
+	import { emailDisplayName } from '$lib/utils/email-labels';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -48,6 +49,9 @@
 	let showReflections = $state(true);
 	let otherCourses = $state([]);
 	let showPlatformHistory = $state(true);
+	let emailLog = $state([]);
+	let showEmailHistory = $state(true);
+	let resendingWelcome = $state(false);
 
 	// Billing (payments for this participant, scoped to the course)
 	let payments = $state([]);
@@ -160,12 +164,13 @@
 		try {
 			const fetches = [
 				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=attendance&enrollment_id=${np.id}&cohort_id=${cohortId}`),
-				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`)
+				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=reflections&enrollment_id=${np.id}&cohort_id=${cohortId}`),
+				fetch(`/admin/courses/${courseSlug}/api/participant-history?type=emails&enrollment_id=${np.id}`)
 			];
 			if (np.user_profile_id) {
 				fetches.push(fetch(`/admin/courses/${courseSlug}/api/participant-history?type=other_courses&user_profile_id=${np.user_profile_id}&enrollment_id=${np.id}`));
 			}
-			const [attendanceRes, reflectionsRes, otherCoursesRes] = await Promise.all(fetches);
+			const [attendanceRes, reflectionsRes, emailLogRes, otherCoursesRes] = await Promise.all(fetches);
 
 			if (attendanceRes.ok) {
 				const data = await attendanceRes.json();
@@ -175,6 +180,11 @@
 			if (reflectionsRes.ok) {
 				const data = await reflectionsRes.json();
 				reflectionHistory = data.success ? data.data : [];
+			}
+
+			if (emailLogRes.ok) {
+				const data = await emailLogRes.json();
+				emailLog = data.success ? data.data : [];
 			}
 
 			if (otherCoursesRes?.ok) {
@@ -204,6 +214,39 @@
 			console.error('Error loading participant payments:', err);
 		} finally {
 			loadingPayments = false;
+		}
+	}
+
+	// Resend the participant's first-contact ("welcome") email — the same
+	// action the bulk First Email / Resend Email buttons use, scoped to one person.
+	async function resendWelcomeEmail() {
+		const np = normalizedParticipant;
+		const cohortId = cohort?.id || np?.cohort_id;
+		if (!np || !cohortId) return;
+
+		resendingWelcome = true;
+		try {
+			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'send_welcome_emails',
+					enrollmentIds: [np.id],
+					cohortId
+				})
+			});
+			const result = await response.json();
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || 'Failed to send email');
+			}
+			toastSuccess('Email sent');
+			await loadParticipantHistory(np);
+			onUpdate();
+		} catch (err) {
+			console.error('Error resending welcome email:', err);
+			toastError(err.message || 'Failed to send email');
+		} finally {
+			resendingWelcome = false;
 		}
 	}
 
@@ -430,7 +473,7 @@
 
 				<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
-						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Welcome Email</p>
+						<p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">First Email</p>
 						<p class="text-sm font-medium text-gray-900">
 							{normalizedParticipant?.welcome_email_sent_at ? 'Sent' : 'Not sent'}
 						</p>
@@ -438,6 +481,16 @@
 							<p class="text-[10px] text-gray-400 mt-0.5">
 								{formatDate(normalizedParticipant?.welcome_email_sent_at)}
 							</p>
+						{/if}
+						{#if showCohortHistory}
+							<button
+								onclick={resendWelcomeEmail}
+								disabled={resendingWelcome}
+								class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 hover:text-gray-800 disabled:opacity-50"
+							>
+								<RefreshCw size={10} class={resendingWelcome ? 'animate-spin' : ''} />
+								{resendingWelcome ? 'Sending...' : normalizedParticipant?.welcome_email_sent_at ? 'Resend' : 'Send'}
+							</button>
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
@@ -810,6 +863,71 @@
 														</td>
 														<td class="px-3 py-2 text-gray-500">{formatDateTime(reflection.submitted_at || reflection.updated_at)}</td>
 														<td class="px-3 py-2 text-gray-500">{reflection.word_count || '-'}</td>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
+				<!-- Email History -->
+				{#if showCohortHistory}
+					<div class="mt-6 pt-4 border-t border-gray-200">
+						<button
+							onclick={() => showEmailHistory = !showEmailHistory}
+							class="w-full flex items-center justify-between text-left"
+						>
+							<h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+								<Mail size={14} />
+								Email History
+							</h3>
+							{#if showEmailHistory}
+								<ChevronDown size={16} class="text-gray-400" />
+							{:else}
+								<ChevronRight size={16} class="text-gray-400" />
+							{/if}
+						</button>
+						{#if showEmailHistory}
+							<div class="mt-3">
+								{#if loadingHistory}
+									<p class="text-sm text-gray-500 text-center py-4">Loading...</p>
+								{:else if emailLog.length === 0}
+									<p class="text-sm text-gray-500 text-center py-4">No emails sent</p>
+								{:else}
+									<div class="border border-gray-200 rounded-lg overflow-hidden">
+										<table class="w-full text-sm">
+											<thead class="bg-gray-50">
+												<tr>
+													<th class="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Email</th>
+													<th class="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Sent</th>
+													<th class="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Status</th>
+												</tr>
+											</thead>
+											<tbody class="divide-y divide-gray-100">
+												{#each emailLog as log}
+													<tr>
+														<td class="px-3 py-2 text-gray-900">
+															{emailDisplayName(log)}
+															{#if log.subject}
+																<span class="block text-[10px] text-gray-400 truncate max-w-[220px]">{log.subject}</span>
+															{/if}
+														</td>
+														<td class="px-3 py-2 text-gray-500">{formatDateTime(log.sent_at)}</td>
+														<td class="px-3 py-2">
+															{#if log.status === 'sent'}
+																<span class="inline-flex items-center gap-1 text-green-700 text-xs">
+																	<CheckCircle size={12} /> Sent
+																</span>
+															{:else}
+																<span class="inline-flex items-center gap-1 text-red-600 text-xs" title={log.error_message || ''}>
+																	<XCircle size={12} /> Failed
+																</span>
+															{/if}
+														</td>
 													</tr>
 												{/each}
 											</tbody>
