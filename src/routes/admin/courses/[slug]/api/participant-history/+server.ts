@@ -134,10 +134,26 @@ export const GET: RequestHandler = async (event) => {
 				throw error(400, 'enrollment_id is required for emails');
 			}
 
+			// enrollment_id on the log just means "this email is about this
+			// enrollment" - admin/hub-coordinator notifications about a new
+			// signup carry the signup's enrollment_id too, even though they were
+			// never sent to that person. recipient_email is who actually got it,
+			// so that's what scopes this to "emails we sent them."
+			const { data: enrollment, error: enrollmentError } = await supabaseAdmin
+				.from('courses_enrollments')
+				.select('email')
+				.eq('id', enrollmentId)
+				.single();
+
+			if (enrollmentError || !enrollment) {
+				throw error(404, 'Enrollment not found');
+			}
+
 			const { data, error: dbError } = await supabaseAdmin
 				.from('platform_email_log')
 				.select('id, email_type, subject, status, sent_at, error_message, email_templates(name)')
 				.eq('enrollment_id', enrollmentId)
+				.ilike('recipient_email', enrollment.email)
 				.order('sent_at', { ascending: false })
 				.limit(25);
 

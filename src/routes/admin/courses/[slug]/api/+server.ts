@@ -1193,21 +1193,22 @@ export const GET: RequestHandler = async (event) => {
 
 			const { data: enrollments, error: enrollmentsError } = await supabaseAdmin
 				.from('courses_enrollments')
-				.select('id')
+				.select('id, email')
 				.eq('cohort_id', cohortId);
 
 			if (enrollmentsError) {
 				throw error(500, enrollmentsError.message || 'Failed to fetch enrollments');
 			}
 
-			const enrollmentIds = (enrollments || []).map((e) => e.id);
+			const emailByEnrollmentId = new Map((enrollments || []).map((e) => [e.id, (e.email || '').toLowerCase()]));
+			const enrollmentIds = [...emailByEnrollmentId.keys()];
 			if (enrollmentIds.length === 0) {
 				return json({ success: true, data: {} });
 			}
 
 			const { data: logs, error: logsError } = await supabaseAdmin
 				.from('platform_email_log')
-				.select('enrollment_id, email_type, subject, sent_at, status, email_templates(name)')
+				.select('enrollment_id, recipient_email, email_type, subject, sent_at, status, email_templates(name)')
 				.in('enrollment_id', enrollmentIds)
 				.order('sent_at', { ascending: false });
 
@@ -1215,10 +1216,15 @@ export const GET: RequestHandler = async (event) => {
 				throw error(500, logsError.message || 'Failed to fetch email history');
 			}
 
-			// Group by enrollment, keeping only the most recent 5 per participant
+			// Group by enrollment, keeping only the most recent 5 per participant.
+			// enrollment_id means "this email is about this enrollment" - admin/hub
+			// notifications about a new signup carry it too, even though they went
+			// to someone else. recipient_email is who actually got it, so that's
+			// what scopes this to "emails we sent them."
 			const byEnrollment: Record<string, typeof logs> = {};
 			for (const log of logs || []) {
 				if (!log.enrollment_id) continue;
+				if ((log.recipient_email || '').toLowerCase() !== emailByEnrollmentId.get(log.enrollment_id)) continue;
 				const bucket = (byEnrollment[log.enrollment_id] ??= []);
 				if (bucket.length < 5) bucket.push(log);
 			}
