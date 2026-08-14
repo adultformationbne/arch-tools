@@ -1,5 +1,5 @@
 <script>
-	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight, ExternalLink, RefreshCw } from '$lib/icons';
+	import { X, Mail, Save, User, MapPin, Hash, Clock, Send, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, ChevronDown, ChevronRight, ExternalLink } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { formatPrice } from '$lib/utils/enrollment-links';
 	import { emailDisplayName } from '$lib/utils/email-labels';
@@ -51,7 +51,6 @@
 	let showPlatformHistory = $state(true);
 	let emailLog = $state([]);
 	let showEmailHistory = $state(true);
-	let resendingWelcome = $state(false);
 
 	// Billing (payments for this participant, scoped to the course)
 	let payments = $state([]);
@@ -214,39 +213,6 @@
 			console.error('Error loading participant payments:', err);
 		} finally {
 			loadingPayments = false;
-		}
-	}
-
-	// Resend the participant's first-contact ("welcome") email — the same
-	// action the bulk First Email / Resend Email buttons use, scoped to one person.
-	async function resendWelcomeEmail() {
-		const np = normalizedParticipant;
-		const cohortId = cohort?.id || np?.cohort_id;
-		if (!np || !cohortId) return;
-
-		resendingWelcome = true;
-		try {
-			const response = await fetch(`/admin/courses/${courseSlug}/api`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'send_welcome_emails',
-					enrollmentIds: [np.id],
-					cohortId
-				})
-			});
-			const result = await response.json();
-			if (!response.ok || !result.success) {
-				throw new Error(result.message || 'Failed to send email');
-			}
-			toastSuccess('Email sent');
-			await loadParticipantHistory(np);
-			onUpdate();
-		} catch (err) {
-			console.error('Error resending welcome email:', err);
-			toastError(err.message || 'Failed to send email');
-		} finally {
-			resendingWelcome = false;
 		}
 	}
 
@@ -481,16 +447,6 @@
 							<p class="text-[10px] text-gray-400 mt-0.5">
 								{formatDate(normalizedParticipant?.welcome_email_sent_at)}
 							</p>
-						{/if}
-						{#if showCohortHistory}
-							<button
-								onclick={resendWelcomeEmail}
-								disabled={resendingWelcome}
-								class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 hover:text-gray-800 disabled:opacity-50"
-							>
-								<RefreshCw size={10} class={resendingWelcome ? 'animate-spin' : ''} />
-								{resendingWelcome ? 'Sending...' : normalizedParticipant?.welcome_email_sent_at ? 'Resend' : 'Send'}
-							</button>
 						{/if}
 					</div>
 					<div class="p-3 rounded-lg bg-gray-50 text-center">
