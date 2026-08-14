@@ -29,7 +29,7 @@ When a participant has multiple reflections across sessions, we show the most ur
 
 ## Usage
 
-### In CohortManager Component
+### In the course admin dashboard
 
 ```javascript
 import {
