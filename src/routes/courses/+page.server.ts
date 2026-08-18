@@ -68,7 +68,8 @@ export const load: PageServerLoad = async (event) => {
 					role: enrollment.role,
 					hubId: enrollment.hub_id,
 					hubName: (enrollment.hub as any)?.name ?? null,
-					status: enrollment.status
+					status: enrollment.status,
+					cohortCompleted: enrollment.cohort?.status === 'archived'
 				});
 			}
 		}

@@ -169,6 +169,7 @@ export const CourseQueries = {
 				cohort:cohort_id (
 					id,
 					name,
+					status,
 					module:module_id (
 						id,
 						name,
@@ -632,34 +633,55 @@ export const CourseAggregates = {
 		const cohortId = enrollment.cohort_id;
 		const enrollmentId = enrollment.id;
 
-		// Step 2: Get sessions for the module
-		const { data: sessions, error: sessionsError } = await CourseQueries.getSessions(moduleId);
+		// Completed cohorts serve their frozen content snapshot instead of
+		// live module data, so later edits to the module never retroactively
+		// change what a participant already saw.
+		const snapshot: { sessions: any[]; materials: any[]; questions: any[] } | null =
+			enrollment.cohort.status === 'archived'
+				? (enrollment.cohort.content_snapshot as any)
+				: null;
 
-		if (sessionsError || !sessions) {
-			return { data: null, error: sessionsError };
-		}
+		let sessions, materials, questions;
 
-		const sessionIds = sessions.map((s) => s.id);
+		if (snapshot) {
+			sessions = snapshot.sessions || [];
+			materials = { data: snapshot.materials || [], error: null };
+			questions = { data: snapshot.questions || [], error: null };
+		} else {
+			// Step 2: Get sessions for the module
+			const { data: liveSessions, error: sessionsError } =
+				await CourseQueries.getSessions(moduleId);
 
-		// Step 3: Parallel fetch all session-related data
-		const [materials, questions, responses, publicReflections, hubDataResult] =
-			await Promise.all([
+			if (sessionsError || !liveSessions) {
+				return { data: null, error: sessionsError };
+			}
+
+			sessions = liveSessions;
+			const sessionIds = sessions.map((s) => s.id);
+
+			[materials, questions] = await Promise.all([
 				materialsEnabled
 					? CourseQueries.getMaterials(sessionIds)
 					: Promise.resolve({ data: [], error: null }),
 				reflectionsEnabled
 					? CourseQueries.getReflectionQuestions(sessionIds)
-					: Promise.resolve({ data: [], error: null }),
-				reflectionsEnabled
-					? CourseQueries.getReflectionResponses(enrollmentId)
-					: Promise.resolve({ data: [], error: null }),
-				communityFeedEnabled
-					? CourseQueries.getPublicReflections(cohortId)
-					: Promise.resolve({ data: [], error: null }),
-				hubsEnabled && enrollment.role === 'coordinator' && enrollment.hub_id
-					? CourseQueries.getHubData(enrollment.hub_id, cohortId)
-					: Promise.resolve({ hub: null, students: [], error: null })
+					: Promise.resolve({ data: [], error: null })
 			]);
+		}
+
+		// Step 3: Parallel fetch remaining session-related data (always live —
+		// responses/public feed/hub data are per-enrollment/cohort, not module content)
+		const [responses, publicReflections, hubDataResult] = await Promise.all([
+			reflectionsEnabled
+				? CourseQueries.getReflectionResponses(enrollmentId)
+				: Promise.resolve({ data: [], error: null }),
+			communityFeedEnabled
+				? CourseQueries.getPublicReflections(cohortId)
+				: Promise.resolve({ data: [], error: null }),
+			hubsEnabled && enrollment.role === 'coordinator' && enrollment.hub_id
+				? CourseQueries.getHubData(enrollment.hub_id, cohortId)
+				: Promise.resolve({ hub: null, students: [], error: null })
+		]);
 
 		// Combine results
 		return {
@@ -1643,19 +1665,53 @@ export const CourseMutations = {
 	},
 
 	/**
-	 * Delete a cohort (cascade deletes enrollments, then deletes cohort)
+	 * Archive a cohort: freeze its module's content into content_snapshot so
+	 * later edits to the module's sessions/materials/questions never change
+	 * what an already-completed participant sees.
 	 */
 	async archiveCohort(cohortId: string) {
+		const { data: cohort, error: cohortError } = await supabaseAdmin
+			.from('courses_cohorts')
+			.select('module_id')
+			.eq('id', cohortId)
+			.single();
+
+		if (cohortError || !cohort) {
+			return { data: null, error: cohortError || new Error('Cohort not found') };
+		}
+
+		const { data: sessions, error: sessionsError } = await CourseQueries.getSessions(
+			cohort.module_id
+		);
+
+		if (sessionsError || !sessions) {
+			return { data: null, error: sessionsError };
+		}
+
+		const sessionIds = sessions.map((s) => s.id);
+
+		const [materials, questions] = await Promise.all([
+			CourseQueries.getMaterials(sessionIds),
+			CourseQueries.getReflectionQuestions(sessionIds)
+		]);
+
+		const content_snapshot = {
+			sessions,
+			materials: materials.data || [],
+			questions: questions.data || [],
+			snapshotAt: new Date().toISOString()
+		};
+
 		return supabaseAdmin
 			.from('courses_cohorts')
-			.update({ status: 'archived' })
+			.update({ status: 'archived', content_snapshot })
 			.eq('id', cohortId);
 	},
 
 	async unarchiveCohort(cohortId: string) {
 		return supabaseAdmin
 			.from('courses_cohorts')
-			.update({ status: null })
+			.update({ status: null, content_snapshot: null })
 			.eq('id', cohortId);
 	},
 

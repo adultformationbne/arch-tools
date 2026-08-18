@@ -17,7 +17,8 @@
 		maxSessionNumber,
 		featureSettings = {},
 		quizzesBySession = {},
-		upcomingSessionMaterials = []
+		upcomingSessionMaterials = [],
+		cohortCompleted = false
 	} = $props();
 
 	// Check if features are enabled (default true for backwards compatibility)
@@ -123,7 +124,7 @@
 	};
 
 	const getQuizButtonLabel = (status, quiz) => {
-		if (!status) return 'Start Quiz';
+		if (!status) return cohortCompleted ? 'Not attempted' : 'Start Quiz';
 		if (status === 'in_progress') return 'Continue Quiz';
 		if (status === 'passed') return 'View Results';
 		if (status === 'failed' && quiz?.allow_retakes) return 'Retake Quiz';
@@ -134,6 +135,7 @@
 
 	// Helper to get reflection button label based on status
 	const getReflectionButtonLabel = (status) => {
+		if (cohortCompleted) return status === 'not_started' ? 'Not submitted' : 'View';
 		if (status === 'draft') return 'Continue';
 		if (status === 'not_started') return 'Write';
 		if (isComplete(status)) return 'View';

@@ -80,11 +80,14 @@ export const load: PageServerLoad = async (event) => {
 	// - Status is 'draft'
 	// - Status is 'submitted' AND hasn't been reviewed yet (marked_by is null)
 	// - Status is 'needs_revision' (instructor requested changes)
+	const cohortCompleted = enrollment.cohort.status === 'archived';
+
 	const isEditable =
-		!existingReflection ||
-		existingReflection.status === 'draft' ||
-		(existingReflection.status === 'submitted' && !existingReflection.marked_by) ||
-		existingReflection.status === 'needs_revision';
+		!cohortCompleted &&
+		(!existingReflection ||
+			existingReflection.status === 'draft' ||
+			(existingReflection.status === 'submitted' && !existingReflection.marked_by) ||
+			existingReflection.status === 'needs_revision');
 
 	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 

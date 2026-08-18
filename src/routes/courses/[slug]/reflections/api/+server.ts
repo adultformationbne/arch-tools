@@ -64,7 +64,7 @@ export const POST: RequestHandler = async (event) => {
 
 		let enrollmentQuery = supabaseAdmin
 			.from('courses_enrollments')
-			.select('id, cohort_id')
+			.select('id, cohort_id, cohort:cohort_id (status)')
 			.eq('user_profile_id', userId)
 			.in('cohort_id', courseCohortIds)
 			.in('status', ['active', 'invited', 'accepted']);
@@ -83,6 +83,10 @@ export const POST: RequestHandler = async (event) => {
 		if (studentError || !studentData) {
 			console.error('Student lookup error:', studentError);
 			throw error(400, 'Student enrollment not found');
+		}
+
+		if (studentData.cohort?.status === 'archived') {
+			throw error(403, 'This module is complete and no longer accepts new reflections');
 		}
 
 		// Check existing reflection to enforce status transition rules

@@ -15,7 +15,7 @@ import type { RequestHandler } from './$types';
 async function getEnrollment(userId: string, courseSlug: string, cohortId?: string | null) {
 	let query = supabaseAdmin
 		.from('courses_enrollments')
-		.select('id, cohort_id')
+		.select('id, cohort_id, cohort:cohort_id (status)')
 		.eq('user_profile_id', userId)
 		.in('status', ['active', 'invited', 'accepted']);
 
@@ -84,6 +84,9 @@ export const POST: RequestHandler = async (event) => {
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
 	if (!enrollment) throw error(403, 'Enrollment not found');
+	if (enrollment.cohort?.status === 'archived') {
+		throw error(403, 'This module is complete and no longer accepts quiz attempts');
+	}
 
 	// Fetch quiz to check retake policy (published only)
 	const { data: quiz } = await supabaseAdmin
@@ -167,6 +170,9 @@ export const PUT: RequestHandler = async (event) => {
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
 	if (!enrollment) throw error(403, 'Enrollment not found');
+	if (enrollment.cohort?.status === 'archived') {
+		throw error(403, 'This module is complete and no longer accepts quiz attempts');
+	}
 
 	// Fetch attempt (verify ownership and state)
 	const { data: attempt } = await supabaseAdmin

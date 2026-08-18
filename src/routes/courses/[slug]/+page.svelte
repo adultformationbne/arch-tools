@@ -21,6 +21,7 @@
 	const maxSessionNumber = $derived(data.maxSessionNumber);
 	const featureSettings = $derived(data.featureSettings);
 	const quizzesBySession = $derived(data.quizzesBySession ?? {});
+	const cohortCompleted = $derived(data.cohortCompleted ?? false);
 
 	// Track page view
 	onMount(() => {
@@ -132,8 +133,16 @@
 <!-- Single content wrapper with consistent margins -->
 {#if courseData && currentSessionData}
 <div class="px-4 sm:px-8 lg:px-16" class:pt-6={!hubData}>
-	<!-- Hub Coordinator Bar (only shows for hub coordinators) -->
-	<HubCoordinatorBar hubData={hubData ? { ...hubData, totalSessions } : null} {courseSlug} />
+	{#if cohortCompleted}
+		<div class="mt-6 mb-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+			This module is complete — you're viewing it as it was, along with your reflections.
+		</div>
+	{/if}
+
+	<!-- Hub Coordinator Bar (only shows for hub coordinators, hidden once the cohort is complete) -->
+	{#if !cohortCompleted}
+		<HubCoordinatorBar hubData={hubData ? { ...hubData, totalSessions } : null} {courseSlug} />
+	{/if}
 
 	<!-- Main Content with Session Navigation -->
 	<SessionContent
@@ -149,6 +158,7 @@
 		featureSettings={featureSettings}
 		{quizzesBySession}
 		{upcomingSessionMaterials}
+		{cohortCompleted}
 	/>
 
 	<!-- Past Reflections Section (only if reflections enabled) -->

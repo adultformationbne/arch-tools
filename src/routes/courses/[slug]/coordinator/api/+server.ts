@@ -189,7 +189,7 @@ export const POST: RequestHandler = async (event) => {
 	// Get coordinator's enrollment
 	let coordinatorQuery = supabaseAdmin
 		.from('courses_enrollments')
-		.select('id, role, hub_id, cohort_id')
+		.select('id, role, hub_id, cohort_id, cohort:cohort_id (status)')
 		.eq('user_profile_id', user.id)
 		.eq('role', 'coordinator');
 
@@ -205,6 +205,10 @@ export const POST: RequestHandler = async (event) => {
 
 	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');
+	}
+
+	if (coordinator.cohort?.status === 'archived') {
+		throw error(403, 'This module is complete and attendance can no longer be changed');
 	}
 
 	if (action === 'mark_attendance') {
@@ -292,7 +296,7 @@ export const DELETE: RequestHandler = async (event) => {
 
 	let coordinatorQuery = supabaseAdmin
 		.from('courses_enrollments')
-		.select('id, role, hub_id, cohort_id')
+		.select('id, role, hub_id, cohort_id, cohort:cohort_id (status)')
 		.eq('user_profile_id', user.id)
 		.eq('role', 'coordinator');
 
@@ -308,6 +312,10 @@ export const DELETE: RequestHandler = async (event) => {
 
 	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');
+	}
+
+	if (coordinator.cohort?.status === 'archived') {
+		throw error(403, 'This module is complete and attendance can no longer be changed');
 	}
 
 	const { data: student } = await supabaseAdmin

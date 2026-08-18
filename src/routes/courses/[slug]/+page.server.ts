@@ -164,6 +164,7 @@ export const load: PageServerLoad = async (event) => {
 	const userRole = enrollment.role || 'student';
 	const isStaff = userRole === 'coordinator' || userRole === 'admin';
 	const userHubId = enrollment.hub_id;
+	const cohortCompleted = enrollment.cohort.status === 'archived';
 
 	const canSeeMaterial = (m: any) => {
 		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];
@@ -395,7 +396,11 @@ export const load: PageServerLoad = async (event) => {
 	// - Coordinators: based on settings (all or N sessions ahead)
 	// - Admins: all sessions
 	let availableSessions: number;
-	if (userRole === 'admin') {
+	if (cohortCompleted) {
+		// Completed cohorts show every session that existed in the snapshot —
+		// there's nothing left to gate, and no way to "advance" further.
+		availableSessions = maxSessionNumber;
+	} else if (userRole === 'admin') {
 		availableSessions = maxSessionNumber;
 	} else if (userRole === 'coordinator') {
 		if (coordinatorAccessAhead === 'all') {
@@ -438,6 +443,7 @@ export const load: PageServerLoad = async (event) => {
 		totalSessions,
 		maxSessionNumber,
 		featureSettings,
-		quizzesBySession
+		quizzesBySession,
+		cohortCompleted
 	};
 };

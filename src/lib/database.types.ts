@@ -461,6 +461,7 @@ export type Database = {
       }
       courses_cohorts: {
         Row: {
+          content_snapshot: Json | null
           created_at: string
           currency: string | null
           current_session: number
@@ -481,6 +482,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          content_snapshot?: Json | null
           created_at?: string
           currency?: string | null
           current_session?: number
@@ -501,6 +503,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          content_snapshot?: Json | null
           created_at?: string
           currency?: string | null
           current_session?: number

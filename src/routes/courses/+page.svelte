@@ -75,6 +75,11 @@
 										</div>
 									</div>
 									<div class="flex items-center gap-3">
+										{#if enrollment.cohortCompleted}
+											<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+												Completed
+											</span>
+										{/if}
 										{#if isCoordinator(enrollment.role)}
 											<div class="flex flex-col items-end gap-0.5">
 												<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800">
