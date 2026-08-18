@@ -42,9 +42,11 @@ export const load: LayoutServerLoad = async (event) => {
 	const chatAllowParticipants = courseSettings.features?.chatAllowParticipants === true;
 	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
-	// Determine who can chat: coordinators always, participants only if setting allows
+	// Determine who can chat: hub coordinators always, participants only if setting
+	// allows. Platform/course admins manage chat from the admin side, not here —
+	// an enrollment 'admin' role does NOT get the participant-side chat sidebar.
 	const userCanChat = chatEnabled && cohortId && (
-		enrollmentRole === 'coordinator' || enrollmentRole === 'admin' || chatAllowParticipants
+		enrollmentRole === 'coordinator' || chatAllowParticipants
 	);
 
 	// Check for unread chat messages (only if user can chat)

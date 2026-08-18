@@ -229,7 +229,8 @@ export async function requireModuleLevel(
 async function getUserCourseEnrollment(
 	supabase: SupabaseClient,
 	userId: string,
-	courseSlug: string
+	courseSlug: string,
+	cookies?: RequestEvent['cookies']
 ) {
 	// Avoid unreliable 3-level deep join filter in PostgREST by resolving
 	// course → modules → cohorts in separate simple queries, then filter
@@ -259,14 +260,27 @@ async function getUserCourseEnrollment(
 		.select('id, role, status, cohort_id, hub_id, full_name')
 		.eq('user_profile_id', userId)
 		.in('cohort_id', cohorts.map((c) => c.id))
-		.in('status', ['active', 'invited', 'accepted']);
+		.in('status', ['active', 'invited', 'accepted'])
+		.order('enrolled_at', { ascending: false });
 
 	if (enrollmentError) {
 		console.error('Error fetching course enrollment:', enrollmentError);
 		return null;
 	}
+	if (!enrollments?.length) return null;
 
-	return enrollments?.[0] || null;
+	// A user can be enrolled in more than one cohort of the same course
+	// (e.g. a hub coordinator carried over into a new module's cohort).
+	// Prefer whichever cohort they explicitly picked on "My Courses" —
+	// see src/routes/courses/select-cohort/+server.ts, which sets this cookie.
+	const activeCohortId = cookies?.get(`active_cohort_${course.id}`);
+	if (activeCohortId) {
+		const selected = enrollments.find((e) => e.cohort_id === activeCohortId);
+		if (selected) return selected;
+	}
+
+	// Fall back to the most recently enrolled cohort (deterministic, not arbitrary DB order).
+	return enrollments[0];
 }
 
 /**
@@ -286,7 +300,8 @@ export async function requireCourseRole(
 	const enrollment = await getUserCourseEnrollment(
 		event.locals.supabase,
 		user.id,
-		courseSlug
+		courseSlug,
+		event.cookies
 	);
 
 	if (!enrollment || !allowedRoles.includes(enrollment.role)) {
@@ -363,7 +378,8 @@ export async function requireCourseAccess(
 	const enrollment = await getUserCourseEnrollment(
 		event.locals.supabase,
 		user.id,
-		courseSlug
+		courseSlug,
+		event.cookies
 	);
 
 	if (!enrollment) {

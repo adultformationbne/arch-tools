@@ -9,10 +9,19 @@ export const load: PageServerLoad = async (event) => {
 
 	const chatEnabled = layoutData.courseFeatures?.chatEnabled !== false;
 
+	// Resolve which cohort (and module/status) this chat belongs to, so the page
+	// can make it obvious which room you're looking at instead of just showing
+	// whatever ?cohort= happens to be in the URL.
+	const cohortInfo = cohortId
+		? (layoutData.cohorts?.find((c: any) => c.id === cohortId) ??
+			layoutData.archivedCohorts?.find((c: any) => c.id === cohortId)) ?? null
+		: null;
+
 	if (!cohortId || !userId) {
 		return {
 			messages: [],
 			cohortId: null,
+			cohortInfo: null,
 			chatEnabled,
 			userMeta: null,
 			noCohortSelected: !cohortId
@@ -50,6 +59,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		messages: (messages ?? []).reverse(),
 		cohortId,
+		cohortInfo,
 		chatEnabled,
 		userMeta: {
 			userId,

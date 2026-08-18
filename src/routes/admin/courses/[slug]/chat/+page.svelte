@@ -13,6 +13,10 @@
 	let chatEnabled = $state(data.chatEnabled !== false);
 	let toggling = $state(false);
 
+	const cohortInfo = $derived(data.cohortInfo);
+	const moduleName = $derived(cohortInfo?.module?.name || cohortInfo?.courses_modules?.name || null);
+	const isArchived = $derived(cohortInfo?.status === 'archived');
+
 	// Sync when server data changes (e.g. navigation between cohorts)
 	$effect(() => {
 		chatEnabled = data.chatEnabled !== false;
@@ -49,6 +53,14 @@
 </script>
 
 <div class="chat-toggle-bar">
+	{#if cohortInfo}
+		<div class="chat-viewing" class:archived={isArchived}>
+			<span class="chat-viewing-label">Viewing:</span>
+			<span class="chat-viewing-name">{cohortInfo.name}</span>
+			{#if moduleName}<span class="chat-viewing-module">· {moduleName}</span>{/if}
+			{#if isArchived}<span class="chat-viewing-badge">Archived</span>{/if}
+		</div>
+	{/if}
 	<label class="toggle-label">
 		<span class="text-sm text-white/70">{chatEnabled ? 'Chat enabled' : 'Chat paused'}</span>
 		<button
@@ -87,10 +99,53 @@
 <style>
 	.chat-toggle-bar {
 		display: flex;
-		justify-content: flex-end;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 		padding: 8px 16px;
 		max-width: 900px;
 		margin: 0 auto;
+	}
+
+	.chat-viewing {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.8rem;
+		color: rgba(255, 255, 255, 0.6);
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.chat-viewing-label {
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.chat-viewing-name {
+		color: rgba(255, 255, 255, 0.9);
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.chat-viewing-module {
+		color: rgba(255, 255, 255, 0.5);
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.chat-viewing-badge {
+		flex-shrink: 0;
+		padding: 1px 8px;
+		border-radius: 999px;
+		background: rgba(234, 179, 8, 0.2);
+		border: 1px solid rgba(234, 179, 8, 0.4);
+		color: #eab308;
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 
 	.toggle-label {

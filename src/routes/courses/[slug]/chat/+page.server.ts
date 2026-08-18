@@ -5,11 +5,12 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 export const load: PageServerLoad = async (event) => {
 	const { slug } = event.params;
 
-	// Only coordinators and admins can access chat
+	// Only hub coordinators access chat here — course/platform admins manage
+	// chat from the admin side (/admin/courses/[slug]/chat), not this page.
 	const { user, profile, enrollment } = await requireCourseRole(
 		event,
 		slug,
-		['coordinator', 'admin'],
+		['coordinator'],
 		{ mode: 'redirect', redirectTo: `/courses/${slug}` }
 	);
 
