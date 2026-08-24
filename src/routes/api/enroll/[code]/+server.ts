@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { createEmbeddedCheckoutSession, createStripeCustomer } from '$lib/server/stripe';
+import { createEmbeddedCheckoutSession, createStripeCustomer, getCheckoutSession } from '$lib/server/stripe';
 import { isEnrollmentLinkValid, checkEnrollmentWindow, getEffectivePrice } from '$lib/utils/enrollment-links';
 import { getCourseSettings } from '$lib/types/course-settings';
 import { checkRateLimit } from '$lib/server/rate-limit';
@@ -550,6 +550,41 @@ async function handlePaidBatch(params: {
 		hubId,
 		billingContact
 	};
+
+	// Reuse an in-flight checkout rather than starting a second one.
+	//
+	// Hitting this endpoint used to insert a fresh courses_payments row every
+	// time, so a page refresh or a back-button trip left a trail of rows that
+	// later expired and read as "abandoned". If this payer already has a pending
+	// row for this cohort whose Stripe session is still open and unchanged, hand
+	// back that session's client_secret: same row, same session, no duplicate.
+	const { data: inFlight } = await supabaseAdmin
+		.from('courses_payments')
+		.select('id, amount_cents, pending_data, stripe_checkout_session_id')
+		.eq('cohort_id', cohort.id)
+		.eq('enrollment_link_id', link.id)
+		.eq('email', billingContact.email)
+		.eq('status', 'pending')
+		.not('stripe_checkout_session_id', 'is', null)
+		.order('created_at', { ascending: false })
+		.limit(1)
+		.maybeSingle();
+
+	const sameCart =
+		inFlight &&
+		inFlight.amount_cents === totalAmount &&
+		JSON.stringify(inFlight.pending_data) === JSON.stringify(pendingData);
+
+	if (sameCart && inFlight.stripe_checkout_session_id) {
+		// Only an 'open' session can still be paid; anything else (expired,
+		// complete) falls through to a brand-new checkout below.
+		const existing = await getCheckoutSession(inFlight.stripe_checkout_session_id).catch(
+			() => null
+		);
+		if (existing && (existing as any).status === 'open' && (existing as any).client_secret) {
+			return json({ success: true, clientSecret: (existing as any).client_secret });
+		}
+	}
 
 	const { data: payment, error: paymentError } = await supabaseAdmin
 		.from('courses_payments')

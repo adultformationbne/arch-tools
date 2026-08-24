@@ -17,7 +17,8 @@
 	function statusClass(status) {
 		if (status === 'completed' || status === 'paid') return 'bg-green-100 text-green-800';
 		if (status === 'pending') return 'bg-amber-100 text-amber-800';
-		if (status === 'failed' || status === 'abandoned') return 'bg-red-100 text-red-800';
+		if (status === 'failed') return 'bg-red-100 text-red-800';
+		if (status === 'expired' || status === 'abandoned') return 'bg-gray-100 text-gray-700';
 		return 'bg-gray-100 text-gray-700';
 	}
 

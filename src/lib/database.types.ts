@@ -1203,6 +1203,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_invoice_url: string | null
           stripe_payment_intent_id: string | null
+          superseded_by: string | null
           updated_at: string | null
           user_profile_id: string | null
         }
@@ -1226,6 +1227,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_invoice_url?: string | null
           stripe_payment_intent_id?: string | null
+          superseded_by?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
         }
@@ -1249,6 +1251,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_invoice_url?: string | null
           stripe_payment_intent_id?: string | null
+          superseded_by?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
         }
@@ -1272,6 +1275,13 @@ export type Database = {
             columns: ["enrollment_link_id"]
             isOneToOne: false
             referencedRelation: "courses_enrollment_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_payments_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "courses_payments"
             referencedColumns: ["id"]
           },
           {

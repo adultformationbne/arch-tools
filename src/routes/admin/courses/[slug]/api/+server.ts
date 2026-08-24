@@ -1387,6 +1387,8 @@ export const GET: RequestHandler = async (event) => {
 				`)
 				.eq('email', emailParam)
 				.eq('cohort.module.course.slug', courseSlug)
+				// Superseded retries are noise on a participant's payment history.
+				.is('superseded_by', null)
 				.order('created_at', { ascending: false });
 
 			if (payErr) throw error(500, payErr.message || 'Failed to fetch payments');

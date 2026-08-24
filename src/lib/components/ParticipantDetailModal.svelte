@@ -234,7 +234,8 @@
 	function getPaymentStatusColor(status) {
 		if (status === 'completed' || status === 'paid') return 'bg-green-100 text-green-700';
 		if (status === 'pending') return 'bg-amber-100 text-amber-700';
-		if (status === 'failed' || status === 'abandoned') return 'bg-red-100 text-red-700';
+		if (status === 'failed') return 'bg-red-100 text-red-700';
+		if (status === 'expired' || status === 'abandoned') return 'bg-gray-100 text-gray-600';
 		return 'bg-gray-100 text-gray-600';
 	}
 

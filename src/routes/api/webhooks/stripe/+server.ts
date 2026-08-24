@@ -180,6 +180,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 			discount_amount_cents: discountAmountCents,
 			paid_at: new Date().toISOString()
 		});
+		await markSupersededAttempts(session.id);
 		return;
 	}
 
@@ -192,6 +193,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 		`Checkout completed for session: ${session.id}`,
 		result?.created_enrollment ? '(enrollment created)' : '(enrollment existed or deferred)'
 	);
+
+	await markSupersededAttempts(session.id);
 
 	// Send our own branded receipt via Resend (Stripe's account-wide receipt
 	// emails stay off so they don't double-send alongside the Shopify store).
@@ -312,13 +315,20 @@ async function handleBatchCheckoutCompleted(
 		participants: enrollments.map((e) => ({ fullName: e.full_name, email: e.email }))
 	}).catch((err) => console.error('Failed to send payment receipt:', err));
 
+	await markSupersededAttempts(sessionId);
+
 	console.log(
 		`Batch checkout completed for session ${sessionId}: ${enrollments.length} enrolled (all emailed)`
 	);
 }
 
 /**
- * Handle expired checkout - mark payment as abandoned
+ * Handle expired checkout - record that Stripe expired the session.
+ *
+ * We store 'expired' (the fact Stripe reported), NOT 'abandoned' (a judgement).
+ * Most expiries are someone reloading the page or retrying a card, and a later
+ * session succeeds — that's what `superseded_by` captures. Whether an expiry
+ * really means "gave up" is derived at read time, never assumed here.
  */
 async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 	const { data: payment } = await supabaseAdmin
@@ -331,13 +341,57 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 		await supabaseAdmin
 			.from('courses_payments')
 			.update({
-				status: 'abandoned',
+				status: 'expired',
 				updated_at: new Date().toISOString()
 			})
 			.eq('id', payment.id);
 
 		console.log(`Checkout expired for session: ${session.id}`);
 	}
+}
+
+/**
+ * Point every earlier stalled attempt by this payer at the payment that won.
+ *
+ * A fresh courses_payments row is inserted each time someone opens checkout, so
+ * one registration can leave a trail of pending/expired rows behind the row that
+ * actually paid. Stamping `superseded_by` here — at the moment we know the money
+ * landed — is what lets the admin view show "paid after 3 attempts" instead of
+ * three scary red "abandoned" rows plus a payment.
+ *
+ * Matching is on (cohort_id, lower(email)); we filter the email in JS rather than
+ * with ilike because `_` and `%` are legal in addresses and would act as wildcards.
+ */
+async function markSupersededAttempts(sessionId: string) {
+	const { data: winner } = await supabaseAdmin
+		.from('courses_payments')
+		.select('id, cohort_id, email, created_at')
+		.eq('stripe_checkout_session_id', sessionId)
+		.single();
+
+	if (!winner?.created_at) return;
+
+	const { data: candidates } = await supabaseAdmin
+		.from('courses_payments')
+		.select('id, email')
+		.eq('cohort_id', winner.cohort_id)
+		.in('status', ['pending', 'expired'])
+		.is('superseded_by', null)
+		.lt('created_at', winner.created_at);
+
+	const payerEmail = (winner.email || '').toLowerCase();
+	const staleIds = (candidates || [])
+		.filter((c) => (c.email || '').toLowerCase() === payerEmail)
+		.map((c) => c.id);
+
+	if (staleIds.length === 0) return;
+
+	await supabaseAdmin
+		.from('courses_payments')
+		.update({ superseded_by: winner.id, updated_at: new Date().toISOString() })
+		.in('id', staleIds);
+
+	console.log(`Superseded ${staleIds.length} earlier attempt(s) by payment ${winner.id}`);
 }
 
 /**

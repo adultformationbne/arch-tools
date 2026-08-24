@@ -28,6 +28,9 @@ export const load: PageServerLoad = async (event) => {
 				cohort:courses_cohorts(name, module:courses_modules(name, course:courses(name)))`
 			)
 			.eq('email', billingEmail)
+			// Retries that a later payment absorbed aren't real charges — showing
+			// them here just worries people who paid once and see three rows.
+			.is('superseded_by', null)
 			.order('created_at', { ascending: false });
 		payments = data || [];
 	}
