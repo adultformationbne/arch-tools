@@ -5,6 +5,7 @@ import { supabaseAdmin } from '$lib/server/supabase.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 	const questionId = event.params.questionId;
@@ -80,7 +81,7 @@ export const load: PageServerLoad = async (event) => {
 	// - Status is 'draft'
 	// - Status is 'submitted' AND hasn't been reviewed yet (marked_by is null)
 	// - Status is 'needs_revision' (instructor requested changes)
-	const cohortCompleted = enrollment.cohort.status === 'archived';
+	const cohortCompleted = isCohortArchived(enrollment.cohort);
 
 	const isEditable =
 		!cohortCompleted &&

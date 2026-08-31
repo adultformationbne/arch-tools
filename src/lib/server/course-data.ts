@@ -14,6 +14,7 @@ import { supabaseAdmin } from './supabase.js';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { getCachedPublicReflections, setCachedPublicReflections } from './public-reflections-cache.js';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 /**
  * Helper type for query results
  */
@@ -637,7 +638,7 @@ export const CourseAggregates = {
 		// live module data, so later edits to the module never retroactively
 		// change what a participant already saw.
 		const snapshot: { sessions: any[]; materials: any[]; questions: any[] } | null =
-			enrollment.cohort.status === 'archived'
+			isCohortArchived(enrollment.cohort)
 				? (enrollment.cohort.content_snapshot as any)
 				: null;
 
@@ -746,7 +747,7 @@ export const CourseAggregates = {
 
 		// Archived cohorts only
 		const allCohorts = (allCohortsResult.data || []).map(enrichCohort);
-		const archivedCohorts = allCohorts.filter((c: any) => c.status === 'archived');
+		const archivedCohorts = allCohorts.filter((c: any) => isCohortArchived(c));
 
 		// Enrich modules with their session count so UI (e.g. the sidebar module list)
 		// can show accurate counts without loading every module's full session data.
@@ -1576,7 +1577,9 @@ export const CourseMutations = {
 				start_date: startDate,
 				end_date: calculatedEndDate,
 				current_session: 0,
-				status: 'draft',
+				// Not archived. Progress through the module is computed from
+				// current_session, not stored here — see $lib/utils/cohort-status.ts.
+				status: 'active',
 				// Pricing (price 0/null = free)
 				price_cents: priceCents ?? null,
 				currency: currency ?? 'AUD',
@@ -1711,7 +1714,7 @@ export const CourseMutations = {
 	async unarchiveCohort(cohortId: string) {
 		return supabaseAdmin
 			.from('courses_cohorts')
-			.update({ status: null, content_snapshot: null })
+			.update({ status: 'active', content_snapshot: null })
 			.eq('id', cohortId);
 	},
 

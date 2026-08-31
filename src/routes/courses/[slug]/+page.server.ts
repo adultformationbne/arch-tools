@@ -12,6 +12,7 @@ import { getUserInitials } from '$lib/utils/avatar.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
@@ -164,7 +165,7 @@ export const load: PageServerLoad = async (event) => {
 	const userRole = enrollment.role || 'student';
 	const isStaff = userRole === 'coordinator' || userRole === 'admin';
 	const userHubId = enrollment.hub_id;
-	const cohortCompleted = enrollment.cohort.status === 'archived';
+	const cohortCompleted = isCohortArchived(enrollment.cohort);
 
 	const canSeeMaterial = (m: any) => {
 		const hubRestrictions = (m.hub_visibility || []) as { hub_id: string }[];

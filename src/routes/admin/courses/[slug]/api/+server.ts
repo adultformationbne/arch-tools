@@ -15,6 +15,7 @@ import { generateEmailFromMjml } from '$lib/email/compiler.js';
 import { RESEND_API_KEY } from '$env/static/private';
 import type { RequestHandler } from '@sveltejs/kit';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 // ================================================================
 // VALIDATION HELPERS - Ensure entities belong to the current course
 // ================================================================
@@ -481,7 +482,7 @@ export const POST: RequestHandler = async (event) => {
 					.eq('id', data.cohortId)
 					.single();
 
-				if (cohortRecord?.status !== 'archived') {
+				if (!isCohortArchived(cohortRecord)) {
 					throw error(400, 'Cohort must be archived before it can be permanently deleted');
 				}
 
@@ -992,7 +993,7 @@ export const POST: RequestHandler = async (event) => {
 											session: session ? {
 												session_number: session.session_number,
 												title: session.title
-											} : { session_number: data.targetSession, title: `Session ${data.targetSession}` },
+											} : { session_number: data.targetSession, title: '' },
 											siteUrl
 										});
 

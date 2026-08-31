@@ -476,7 +476,7 @@ export type Database = {
           name: string
           price_cents: number | null
           start_date: string
-          status: string | null
+          status: string
           stripe_price_id: string | null
           stripe_product_id: string | null
           updated_at: string
@@ -497,7 +497,7 @@ export type Database = {
           name: string
           price_cents?: number | null
           start_date: string
-          status?: string | null
+          status?: string
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           updated_at?: string
@@ -518,7 +518,7 @@ export type Database = {
           name?: string
           price_cents?: number | null
           start_date?: string
-          status?: string | null
+          status?: string
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           updated_at?: string

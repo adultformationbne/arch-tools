@@ -3,7 +3,10 @@ import type { RequestHandler } from './$types';
 
 /**
  * Sets the active cohort cookie for a course and redirects to the course dashboard.
- * Cookie persists for 1 year.
+ *
+ * The cookie only breaks ties between two cohorts that are running at the same
+ * time — a single live cohort wins on its own in getUserCourseEnrollment(). So
+ * it is a session cookie: it must not outlive the cohort it points at.
  */
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	const courseSlug = url.searchParams.get('course');
@@ -14,10 +17,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		throw redirect(303, '/courses');
 	}
 
-	// Set cookie for this specific course (expires in 1 year)
+	// Set cookie for this specific course (cleared when the browser closes)
 	cookies.set(`active_cohort_${courseId}`, cohortId, {
 		path: '/',
-		maxAge: 60 * 60 * 24 * 365, // 1 year
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax'

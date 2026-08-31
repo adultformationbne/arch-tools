@@ -4,6 +4,7 @@ import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 
@@ -85,7 +86,7 @@ export const POST: RequestHandler = async (event) => {
 			throw error(400, 'Student enrollment not found');
 		}
 
-		if (studentData.cohort?.status === 'archived') {
+		if (isCohortArchived(studentData.cohort)) {
 			throw error(403, 'This module is complete and no longer accepts new reflections');
 		}
 

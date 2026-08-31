@@ -4,6 +4,7 @@ import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 /**
  * GET: Fetch hub data for coordinator (students, attendance for ALL sessions)
  */
@@ -207,7 +208,7 @@ export const POST: RequestHandler = async (event) => {
 		throw error(403, 'Not authorized as hub coordinator');
 	}
 
-	if (coordinator.cohort?.status === 'archived') {
+	if (isCohortArchived(coordinator.cohort)) {
 		throw error(403, 'This module is complete and attendance can no longer be changed');
 	}
 
@@ -314,7 +315,7 @@ export const DELETE: RequestHandler = async (event) => {
 		throw error(403, 'Not authorized as hub coordinator');
 	}
 
-	if (coordinator.cohort?.status === 'archived') {
+	if (isCohortArchived(coordinator.cohort)) {
 		throw error(403, 'This module is complete and attendance can no longer be changed');
 	}
 

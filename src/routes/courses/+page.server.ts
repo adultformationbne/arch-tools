@@ -4,6 +4,7 @@ import { requireModuleLevel } from '$lib/server/auth';
 import { CourseQueries, CourseMutations } from '$lib/server/course-data';
 import { supabaseAdmin } from '$lib/server/supabase';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 export const load: PageServerLoad = async (event) => {
 	// Require participant module to access My Courses
 	const { profile: userProfile } = await requireModuleLevel(event, 'courses.participant', {
@@ -69,7 +70,7 @@ export const load: PageServerLoad = async (event) => {
 					hubId: enrollment.hub_id,
 					hubName: (enrollment.hub as any)?.name ?? null,
 					status: enrollment.status,
-					cohortCompleted: enrollment.cohort?.status === 'archived'
+					cohortCompleted: isCohortArchived(enrollment.cohort)
 				});
 			}
 		}

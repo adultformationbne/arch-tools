@@ -57,9 +57,11 @@ export const DEFAULT_EMAIL_TEMPLATES: DefaultEmailTemplate[] = [
 		subject_template: 'Session {{sessionNumber}} materials are now available — {{courseName}}',
 		body_template: `<p>Hi {{firstName}},</p>
 
-<p>The materials for <strong>Session {{sessionNumber}}</strong> of <strong>{{courseName}}</strong> are now available.</p>
+<p>Session {{sessionNumber}} of <strong>{{courseName}}</strong> is now open.</p>
 
-<p>Log in to access the new content.</p>
+<p><strong>{{sessionTitle}}</strong></p>
+
+<p>The materials for this session are on your course page, along with the reflection questions.</p>
 
 {{loginButton}}
 

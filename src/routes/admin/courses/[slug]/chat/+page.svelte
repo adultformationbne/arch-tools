@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { apiPost } from '$lib/utils/api-handler.js';
 	import { toastSuccess, toastError } from '$lib/utils/toast-helpers.js';
+	import { isCohortArchived } from '$lib/utils/cohort-status';
 
 	let { data } = $props();
 
@@ -15,7 +16,7 @@
 
 	const cohortInfo = $derived(data.cohortInfo);
 	const moduleName = $derived(cohortInfo?.module?.name || cohortInfo?.courses_modules?.name || null);
-	const isArchived = $derived(cohortInfo?.status === 'archived');
+	const isArchived = $derived(isCohortArchived(cohortInfo));
 
 	// Sync when server data changes (e.g. navigation between cohorts)
 	$effect(() => {

@@ -177,7 +177,9 @@ export const testHelpers = {
 				start_date: data?.start_date || new Date().toISOString().split('T')[0],
 				end_date: data?.end_date || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 				current_session: data?.current_session ?? 1,
-				status: data?.status || null
+				// Matches courseData.createCohort(): not archived. Progress through the
+				// module is computed from current_session, never stored here.
+				status: data?.status || 'active'
 			})
 			.select()
 			.single();

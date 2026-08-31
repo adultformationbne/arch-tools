@@ -2,7 +2,7 @@
 	import { X, Trash2, AlertTriangle, CheckCircle, Archive, RotateCcw } from '$lib/icons';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 	import { apiPost } from '$lib/utils/api-handler.js';
-	import { getCohortStatusFromObject, getTotalSessions } from '$lib/utils/cohort-status';
+	import { getCohortStatusFromObject, getTotalSessions, isCohortArchived } from '$lib/utils/cohort-status';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 
 	let {
@@ -42,7 +42,7 @@
 	let deleteConfirmName = $state('');
 
 	// Check if this cohort is archived
-	const isArchived = $derived(cohort?.status === 'archived');
+	const isArchived = $derived(isCohortArchived(cohort));
 
 	// Computed status based on session progress
 	const statusInfo = $derived(cohort ? getCohortStatusFromObject(cohort) : null);

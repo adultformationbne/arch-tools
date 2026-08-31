@@ -12,6 +12,7 @@ import { requireCourseAccess } from '$lib/server/auth.js';
 import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
+import { isCohortArchived } from '$lib/utils/cohort-status';
 async function getEnrollment(userId: string, courseSlug: string, cohortId?: string | null) {
 	let query = supabaseAdmin
 		.from('courses_enrollments')
@@ -84,7 +85,7 @@ export const POST: RequestHandler = async (event) => {
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
 	if (!enrollment) throw error(403, 'Enrollment not found');
-	if (enrollment.cohort?.status === 'archived') {
+	if (isCohortArchived(enrollment.cohort)) {
 		throw error(403, 'This module is complete and no longer accepts quiz attempts');
 	}
 
@@ -170,7 +171,7 @@ export const PUT: RequestHandler = async (event) => {
 	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
 	if (!enrollment) throw error(403, 'Enrollment not found');
-	if (enrollment.cohort?.status === 'archived') {
+	if (isCohortArchived(enrollment.cohort)) {
 		throw error(403, 'This module is complete and no longer accepts quiz attempts');
 	}
 

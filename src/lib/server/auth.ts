@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { isCohortLive, selectCurrentEnrollment } from '$lib/utils/cohort-status';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -224,9 +225,12 @@ export async function requireModuleLevel(
 // ============================================================================
 
 /**
- * Get user's enrollment in a specific course
+ * Get user's enrollment in a specific course.
+ *
+ * Exported for tests — callers should go through requireCourseAccess() and the
+ * other requireCourse* helpers, which apply the role checks as well.
  */
-async function getUserCourseEnrollment(
+export async function getUserCourseEnrollment(
 	supabase: SupabaseClient,
 	userId: string,
 	courseSlug: string,
@@ -251,9 +255,30 @@ async function getUserCourseEnrollment(
 
 	const { data: cohorts } = await supabase
 		.from('courses_cohorts')
-		.select('id')
+		.select('id, module_id, status, current_session')
 		.in('module_id', modules.map((m) => m.id));
 	if (!cohorts?.length) return null;
+
+	// Session counts per module, so isCohortLive() can tell whether a cohort has
+	// run its course. courses_cohorts.status only records archiving; progress is
+	// always computed — see $lib/utils/cohort-status.ts.
+	const { data: sessionRows } = await supabase
+		.from('courses_sessions')
+		.select('module_id')
+		.in('module_id', modules.map((m) => m.id));
+
+	const totalSessionsByModule = new Map<string, number>();
+	for (const row of sessionRows ?? []) {
+		totalSessionsByModule.set(row.module_id, (totalSessionsByModule.get(row.module_id) ?? 0) + 1);
+	}
+
+	const liveCohortIds = new Set(
+		cohorts
+			.filter((c) =>
+				isCohortLive({ ...c, total_sessions: totalSessionsByModule.get(c.module_id) ?? 0 })
+			)
+			.map((c) => c.id)
+	);
 
 	const { data: enrollments, error: enrollmentError } = await supabase
 		.from('courses_enrollments')
@@ -269,18 +294,15 @@ async function getUserCourseEnrollment(
 	}
 	if (!enrollments?.length) return null;
 
-	// A user can be enrolled in more than one cohort of the same course
-	// (e.g. a hub coordinator carried over into a new module's cohort).
-	// Prefer whichever cohort they explicitly picked on "My Courses" —
-	// see src/routes/courses/select-cohort/+server.ts, which sets this cookie.
-	const activeCohortId = cookies?.get(`active_cohort_${course.id}`);
-	if (activeCohortId) {
-		const selected = enrollments.find((e) => e.cohort_id === activeCohortId);
-		if (selected) return selected;
-	}
-
-	// Fall back to the most recently enrolled cohort (deterministic, not arbitrary DB order).
-	return enrollments[0];
+	// A user can be enrolled in more than one cohort of the same course. The
+	// cookie recording their explicit choice on "My Courses" is only a tiebreaker
+	// — see selectCurrentEnrollment() for why it must not come first, and
+	// src/routes/courses/select-cohort/+server.ts, which sets it.
+	return selectCurrentEnrollment(
+		enrollments,
+		(cohortId) => liveCohortIds.has(cohortId),
+		cookies?.get(`active_cohort_${course.id}`)
+	);
 }
 
 /**
