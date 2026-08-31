@@ -321,8 +321,11 @@
 							{ key: 'contributor_email', desc: 'Email address' },
 							{ key: 'write_url', desc: 'Personal portal link' },
 							{ key: 'write_url_button', desc: 'Styled button HTML' },
-							{ key: 'due_date', desc: 'Formatted due date' },
-							{ key: 'due_date_text', desc: '"tomorrow", "in 3 days"' }
+							{ key: 'due_date', desc: 'Submission deadline (10 days before publication)' },
+							{ key: 'due_date_text', desc: '"tomorrow", "in 3 days", "4 days overdue"' },
+							{ key: 'due_status', desc: '"due in 3 days", "4 days overdue"' },
+							{ key: 'publish_date', desc: 'Date the reflection is published' },
+							{ key: 'submission_lead_days', desc: 'Days before publication reflections are due' }
 						] as variable}
 							<div class="flex items-center gap-2">
 								<code class="text-teal-700 font-mono text-sm bg-teal-50 px-2 py-0.5 rounded">{variable.key}</code>

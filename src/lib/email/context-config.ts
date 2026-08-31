@@ -285,8 +285,11 @@ export const DGR_VARIABLES: EmailVariable[] = [
 	{ name: 'contributor_email', description: 'Contributor email address' },
 	{ name: 'write_url', description: 'Personal writing portal URL' },
 	{ name: 'write_url_button', description: 'Styled button for portal link' },
-	{ name: 'due_date', description: 'Formatted due date', contextDependent: true },
-	{ name: 'due_date_text', description: 'Relative date text', contextDependent: true },
+	{ name: 'due_date', description: 'Formatted submission deadline (10 days before publication)', contextDependent: true },
+	{ name: 'due_date_text', description: 'Relative deadline text, e.g. "in 3 days", "4 days overdue"', contextDependent: true },
+	{ name: 'due_status', description: 'Deadline status phrase, e.g. "due in 3 days", "4 days overdue"', contextDependent: true },
+	{ name: 'publish_date', description: 'Formatted date the reflection is published', contextDependent: true },
+	{ name: 'submission_lead_days', description: 'Days before publication that reflections are due', contextDependent: true },
 	{ name: 'liturgical_date', description: 'Liturgical day name', contextDependent: true },
 	{ name: 'gospel_reference', description: 'Gospel reading reference', contextDependent: true }
 ];
@@ -328,8 +331,11 @@ const dgrContext: EmailContextConfig = {
 			write_url: writeUrl,
 			write_url_button: writeUrlButton,
 			// Context-dependent vars use sample values in test mode
-			due_date: 'Monday, 15 January 2025',
+			due_date: 'Monday, 5 January 2025',
 			due_date_text: 'tomorrow',
+			due_status: 'due tomorrow',
+			publish_date: 'Thursday, 15 January 2025',
+			submission_lead_days: '10',
 			liturgical_date: 'Second Sunday in Ordinary Time',
 			gospel_reference: 'John 2:1-11'
 		};
@@ -345,8 +351,11 @@ const dgrContext: EmailContextConfig = {
 			contributor_email: 'jane.doe@example.com',
 			write_url: 'https://example.com/dgr/write/sample123',
 			write_url_button: createEmailButton('Write Your Reflection', 'https://example.com/dgr/write/sample123', '#009199'),
-			due_date: 'Monday, 15 January 2025',
+			due_date: 'Monday, 5 January 2025',
 			due_date_text: 'tomorrow',
+			due_status: 'due tomorrow',
+			publish_date: 'Thursday, 15 January 2025',
+			submission_lead_days: '10',
 			liturgical_date: 'Second Sunday in Ordinary Time',
 			gospel_reference: 'John 2:1-11'
 		}

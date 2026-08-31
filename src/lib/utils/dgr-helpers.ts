@@ -130,3 +130,66 @@ export function formatReading(reading: string | null | undefined): string {
 	// Replace periods between numbers with ", "
 	return reading.replace(/(\d)\.(\d)/g, '$1, $2');
 }
+
+/**
+ * Contributors are asked to submit their reflection this many days before the
+ * date it is published. The submission deadline — not the publication date —
+ * is what reminder emails and the "due soon" list are measured against.
+ */
+export const SUBMISSION_LEAD_DAYS = 10;
+
+/**
+ * The submission deadline for a reflection published on `publishDate`.
+ * @param publishDate 'YYYY-MM-DD' or a Date
+ */
+export function getSubmissionDeadline(publishDate: string | Date): Date {
+	const publish =
+		typeof publishDate === 'string' ? new Date(publishDate + 'T00:00:00') : new Date(publishDate);
+	publish.setHours(0, 0, 0, 0);
+	publish.setDate(publish.getDate() - SUBMISSION_LEAD_DAYS);
+	return publish;
+}
+
+/**
+ * Whole days from today until `date` (negative once the date has passed).
+ */
+export function daysUntil(date: Date): number {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const target = new Date(date);
+	target.setHours(0, 0, 0, 0);
+	return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Relative wording for a deadline, e.g. 'in 3 days', 'today', '4 days overdue'.
+ */
+export function formatDueDateText(diffDays: number): string {
+	if (diffDays === 0) return 'today';
+	if (diffDays === 1) return 'tomorrow';
+	if (diffDays > 1) return `in ${diffDays} days`;
+	const overdue = Math.abs(diffDays);
+	return overdue === 1 ? '1 day overdue' : `${overdue} days overdue`;
+}
+
+/**
+ * A full status phrase that reads naturally in a subject line or sentence,
+ * e.g. 'due in 3 days', 'due today', '4 days overdue'.
+ */
+export function formatDueStatus(diffDays: number): string {
+	const text = formatDueDateText(diffDays);
+	return diffDays < 0 ? text : `due ${text}`;
+}
+
+/**
+ * Format a date for display in emails, e.g. 'Monday, 15 January 2026'.
+ */
+export function formatLongDate(date: string | Date): string {
+	const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : new Date(date);
+	return d.toLocaleDateString('en-AU', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric'
+	});
+}

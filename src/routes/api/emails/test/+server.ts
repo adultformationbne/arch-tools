@@ -59,8 +59,11 @@ const SAMPLE_DATA: Record<EmailContext, Record<string, string>> = {
 		contributor_email: 'jane.doe@example.com',
 		write_url: 'https://example.com/dgr/write/sample123',
 		write_url_button: createEmailButton('Write Your Reflection', 'https://example.com/dgr/write/sample123', '#009199'),
-		due_date: 'Monday, 15 January 2025',
+		due_date: 'Monday, 5 January 2025',
 		due_date_text: 'tomorrow',
+		due_status: 'due tomorrow',
+		publish_date: 'Thursday, 15 January 2025',
+		submission_lead_days: '10',
 		liturgical_date: 'Second Sunday in Ordinary Time',
 		gospel_reference: 'John 2:1-11'
 	},
@@ -336,8 +339,11 @@ async function fetchDgrRecipientVariables(
 		write_url: writeUrl,
 		write_url_button: createEmailButton('Write Your Reflection', writeUrl, '#009199'),
 		// Context-dependent vars - use sample values
-		due_date: 'Monday, 15 January 2025',
+		due_date: 'Monday, 5 January 2025',
 		due_date_text: 'tomorrow',
+		due_status: 'due tomorrow',
+		publish_date: 'Thursday, 15 January 2025',
+		submission_lead_days: '10',
 		liturgical_date: 'Second Sunday in Ordinary Time',
 		gospel_reference: 'John 2:1-11'
 	};

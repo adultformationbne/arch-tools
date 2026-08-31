@@ -9,6 +9,14 @@ import {
 	renderTemplate
 } from '$lib/utils/email-service.js';
 import { generateEmailFromMjml } from '$lib/email/compiler.js';
+import {
+	getSubmissionDeadline,
+	daysUntil,
+	formatDueDateText,
+	formatDueStatus,
+	formatLongDate,
+	SUBMISSION_LEAD_DAYS
+} from '$lib/utils/dgr-helpers';
 
 // DGR branding colors
 const DGR_COLORS = {
@@ -120,31 +128,14 @@ export async function POST({ request, locals }) {
 			}
 		}
 
-		// Calculate days until due
-		const dueDate = new Date(date + 'T00:00:00');
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-		// Format the due date message
-		let dueDateText = '';
-		if (diffDays === 0) {
-			dueDateText = 'today';
-		} else if (diffDays === 1) {
-			dueDateText = 'tomorrow';
-		} else if (diffDays > 1) {
-			dueDateText = `in ${diffDays} days`;
-		} else {
-			dueDateText = `${Math.abs(diffDays)} days ago (overdue!)`;
-		}
-
-		// Format date for email
-		const formattedDate = dueDate.toLocaleDateString('en-AU', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		// The deadline is SUBMISSION_LEAD_DAYS before the publication date,
+		// not the publication date itself.
+		const dueDate = getSubmissionDeadline(date);
+		const diffDays = daysUntil(dueDate);
+		const dueDateText = formatDueDateText(diffDays);
+		const dueStatus = formatDueStatus(diffDays);
+		const formattedDate = formatLongDate(dueDate);
+		const formattedPublishDate = formatLongDate(date);
 
 		// Build submission URL
 		const submissionUrl = `${process.env.ORIGIN || 'https://app.archdiocesanministries.org.au'}/dgr/write/${contributor.access_token}`;
@@ -176,6 +167,9 @@ export async function POST({ request, locals }) {
 			write_url_button: buttonHtml,
 			due_date: formattedDate,
 			due_date_text: dueDateText,
+			due_status: dueStatus,
+			publish_date: formattedPublishDate,
+			submission_lead_days: String(SUBMISSION_LEAD_DAYS),
 			liturgical_date: scheduleEntry?.liturgical_date || '',
 			gospel_reference: scheduleEntry?.gospel_reference || ''
 		};
@@ -321,31 +315,14 @@ async function handleBulkReminders(reminders, user) {
 			continue;
 		}
 
-		// Calculate days until due
-		const dueDate = new Date(reminder.date + 'T00:00:00');
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-		// Format the due date message
-		let dueDateText = '';
-		if (diffDays === 0) {
-			dueDateText = 'today';
-		} else if (diffDays === 1) {
-			dueDateText = 'tomorrow';
-		} else if (diffDays > 1) {
-			dueDateText = `in ${diffDays} days`;
-		} else {
-			dueDateText = `${Math.abs(diffDays)} days ago (overdue!)`;
-		}
-
-		// Format date for email
-		const formattedDate = dueDate.toLocaleDateString('en-AU', {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		// The deadline is SUBMISSION_LEAD_DAYS before the publication date,
+		// not the publication date itself.
+		const dueDate = getSubmissionDeadline(reminder.date);
+		const diffDays = daysUntil(dueDate);
+		const dueDateText = formatDueDateText(diffDays);
+		const dueStatus = formatDueStatus(diffDays);
+		const formattedDate = formatLongDate(dueDate);
+		const formattedPublishDate = formatLongDate(reminder.date);
 
 		// Build submission URL
 		const submissionUrl = `${process.env.ORIGIN || 'https://app.archdiocesanministries.org.au'}/dgr/write/${contributor.access_token}`;
@@ -371,7 +348,10 @@ async function handleBulkReminders(reminders, user) {
 			write_url: submissionUrl,
 			write_url_button: buttonHtml,
 			due_date: formattedDate,
-			due_date_text: dueDateText
+			due_date_text: dueDateText,
+			due_status: dueStatus,
+			publish_date: formattedPublishDate,
+			submission_lead_days: String(SUBMISSION_LEAD_DAYS)
 		};
 
 		// Render template

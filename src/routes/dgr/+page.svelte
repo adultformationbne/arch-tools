@@ -14,7 +14,7 @@
 	import { decodeHtmlEntities } from '$lib/utils/html.js';
 	import { getHelpForPage, getPageTitle } from '$lib/data/help-content.js';
 	import { getInitialDGRFormData, generateDGRHTML, cleanGospelText } from '$lib/utils/dgr-utils.js';
-	import { formatContributorName } from '$lib/utils/dgr-helpers';
+	import { formatContributorName, getSubmissionDeadline } from '$lib/utils/dgr-helpers';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import { Eye, Send, ExternalLink, Trash2, PlusCircle, Calendar } from '$lib/icons';
 
@@ -571,7 +571,9 @@
 	let bulkReminderConfirmModal = $state({ open: false, entries: [] });
 
 
-	// Get pending entries due within 10 days that can receive reminders
+	// Get pending entries whose submission deadline is within the next 10 days
+	// (or already past) that can receive reminders. The deadline is
+	// SUBMISSION_LEAD_DAYS before the publication date, not the publication date.
 	let pendingReminderEntries = $derived.by(() => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -583,9 +585,10 @@
 			if (entry.status && entry.status !== 'pending') return false;
 			if (entry.reflection_content) return false;
 
-			// Check if due date is within 10 days
-			const dueDate = new Date(entry.date + 'T00:00:00');
-			return dueDate >= today && dueDate <= tenDaysFromNow;
+			// Not yet published, and the deadline is due within 10 days or overdue
+			const publishDate = new Date(entry.date + 'T00:00:00');
+			if (publishDate < today) return false;
+			return getSubmissionDeadline(entry.date) <= tenDaysFromNow;
 		});
 	});
 
@@ -1319,7 +1322,7 @@
 									<button
 										onclick={openBulkReminderConfirm}
 										class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
-										title="Send reminder emails to pending contributors with reflections due in the next 10 days"
+										title="Send reminder emails to pending contributors whose submission deadline falls in the next 10 days, or has already passed"
 									>
 										<Send class="h-4 w-4" />
 										Remind Due Soon ({pendingReminderEntries.length})
@@ -1665,7 +1668,7 @@
 >
 	<div class="space-y-3">
 		<p class="text-sm text-gray-700">
-			Send reminder emails to <strong>{bulkReminderConfirmModal.entries.length}</strong> contributor{bulkReminderConfirmModal.entries.length !== 1 ? 's' : ''} with reflections due in the next 10 days?
+			Send reminder emails to <strong>{bulkReminderConfirmModal.entries.length}</strong> contributor{bulkReminderConfirmModal.entries.length !== 1 ? 's' : ''} whose submission deadline falls in the next 10 days, or has already passed?
 		</p>
 
 		{#if bulkReminderConfirmModal.entries.length > 0}
