@@ -62,11 +62,13 @@ export async function POST({ request, getClientAddress }) {
 		}, { status: 429 });
 	}
 	try {
-		const { email } = await request.json();
+		let { email } = await request.json();
 
 		if (!email) {
 			throw error(400, 'Email is required');
 		}
+
+		email = email.trim().toLowerCase();
 
 		// Validate email format
 		if (!isValidEmail(email)) {

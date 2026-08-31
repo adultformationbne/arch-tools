@@ -214,6 +214,8 @@
 			return;
 		}
 
+		email = email.trim().toLowerCase();
+
 		loading = true;
 		errorMessage = '';
 		infoMessage = '';
