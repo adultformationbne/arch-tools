@@ -8,32 +8,14 @@ export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
 	// Require user to be enrolled in this course (any role)
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
-	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
 	// Check if materials are enabled for this course
 	const materialSettings = getCourseSettings(course?.settings);
 	if (materialSettings.features?.materialsEnabled === false) {
 		throw redirect(302, `/courses/${courseSlug}`);
-	}
-
-	// Get user's enrollment
-	const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
-		user.id,
-		courseSlug,
-		cohortId
-	);
-
-	if (enrollmentError || !enrollment) {
-		throw error(404, 'User enrollment not found. Please contact an administrator.');
-	}
-
-	// Clear stale cohort cookie if it didn't match the actual enrollment
-	if (course && cohortId && enrollment.cohort_id !== cohortId) {
-		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
 	}
 
 	const moduleId = enrollment.cohort.module.id;

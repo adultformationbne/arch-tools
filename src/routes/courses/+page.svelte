@@ -55,7 +55,7 @@
 						<div class="divide-y divide-gray-100">
 							{#each enrollments as enrollment}
 								<a
-									href="/courses/select-cohort?course={course.slug}&cohort={enrollment.cohortId}&courseId={course.id}"
+									href="/courses/select-cohort?course={course.slug}&cohort={enrollment.cohortId}"
 									class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
 								>
 									<div class="flex items-center gap-4">

@@ -14,7 +14,7 @@ import { supabaseAdmin } from './supabase.js';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { getCachedPublicReflections, setCachedPublicReflections } from './public-reflections-cache.js';
 
-import { isCohortArchived } from '$lib/utils/cohort-status';
+import { isCohortArchived, isCohortLive, selectCurrentEnrollment } from '$lib/utils/cohort-status';
 /**
  * Helper type for query results
  */
@@ -72,17 +72,47 @@ export const CourseQueries = {
 	},
 
 	/**
-	 * Get user enrollment for a specific course (via cohort join)
-	 * If cohortId is provided, returns that specific enrollment
-	 * Otherwise, if user has multiple enrollments (different cohorts), returns the most recent one
+	 * Count a module's real sessions, keyed by module id.
+	 *
+	 * Session 0 is the welcome/orientation page every module carries, not a
+	 * teaching session, so it must not count towards the total — a cohort whose
+	 * current_session has passed the last real session has finished.
 	 */
-	async getEnrollment(userId: string, courseSlug: string, cohortId?: string) {
+	async getSessionCountsByModule(moduleIds: string[]): Promise<Map<string, number>> {
+		const counts = new Map<string, number>();
+		if (!moduleIds.length) return counts;
+
+		const { data } = await supabaseAdmin
+			.from('courses_sessions')
+			.select('module_id')
+			.in('module_id', moduleIds)
+			.gt('session_number', 0);
+
+		for (const row of data ?? []) {
+			counts.set(row.module_id, (counts.get(row.module_id) ?? 0) + 1);
+		}
+		return counts;
+	},
+
+	/**
+	 * Get the user's current enrollment in a course (via cohort join).
+	 *
+	 * This is the participant surface's counterpart to getUserCourseEnrollment()
+	 * in $lib/server/auth.ts — that one decides whether they may open the course,
+	 * this one decides which cohort's content they are shown. They have to agree,
+	 * so both resolve through selectCurrentEnrollment(): a single live cohort wins
+	 * outright, and preferredCohortId — the cookie from "My Courses" — only breaks
+	 * ties between two cohorts genuinely running at once. Honouring the cookie
+	 * first would serve someone the module they finished months ago, frozen, with
+	 * their current reflections out of reach.
+	 */
+	async getEnrollment(userId: string, courseSlug: string, preferredCohortId?: string | null) {
 		const cohortIds = await CourseQueries.getCohortIdsForCourse(courseSlug);
 		if (!cohortIds.length) {
 			return { data: null, error: null };
 		}
 
-		const baseQuery = () => supabaseAdmin
+		const { data: enrollments, error } = await supabaseAdmin
 			.from('courses_enrollments')
 			.select(`
 				*,
@@ -101,33 +131,38 @@ export const CourseQueries = {
 			`)
 			.eq('user_profile_id', userId)
 			.in('cohort_id', cohortIds)
-			.in('status', ['active', 'invited', 'accepted']);
+			.in('status', ['active', 'invited', 'accepted'])
+			.order('enrolled_at', { ascending: false });
 
-		// If specific cohort requested, try that first
-		if (cohortId) {
-			const { data, error } = await baseQuery()
-				.eq('cohort_id', cohortId)
-				.order('created_at', { ascending: false })
-				.limit(1);
+		if (error) return { data: null, error };
+		if (!enrollments?.length) return { data: null, error: null };
 
-			// If found with specific cohort, return it
-			if (data && data.length > 0) {
-				return { data: data[0], error: null };
-			}
+		const moduleIds = [
+			...new Set(
+				enrollments.map((e) => (e.cohort as any)?.module_id).filter((id): id is string => !!id)
+			)
+		];
+		const sessionCounts = await CourseQueries.getSessionCountsByModule(moduleIds);
 
-			// Cohort cookie was stale - fall through to query without cohort filter
-			console.log('[getEnrollment] Stale cohort cookie, retrying without cohort filter');
-		}
+		const liveCohortIds = new Set(
+			enrollments
+				.filter((e) => {
+					const cohort = e.cohort as any;
+					return (
+						cohort &&
+						isCohortLive({ ...cohort, total_sessions: sessionCounts.get(cohort.module_id) ?? 0 })
+					);
+				})
+				.map((e) => e.cohort_id)
+		);
 
-		// Query without cohort filter (or retry after stale cookie)
-		const { data, error } = await baseQuery()
-			.order('created_at', { ascending: false })
-			.limit(1);
-
-		// Return in same format as .single() for compatibility
 		return {
-			data: data && data.length > 0 ? data[0] : null,
-			error
+			data: selectCurrentEnrollment(
+				enrollments,
+				(cohortId) => liveCohortIds.has(cohortId),
+				preferredCohortId
+			),
+			error: null
 		};
 	},
 
@@ -604,6 +639,18 @@ async function fetchAllAttendanceForCohort(cohortId: string) {
 /**
  * Higher-level functions that combine multiple queries
  */
+/**
+ * A participant's resolved enrolment, as returned by CourseQueries.getEnrollment().
+ *
+ * The aggregates below take one of these rather than the ingredients to look one
+ * up: resolving which cohort a participant is in happens once per request, in
+ * getUserCourseEnrollment(), and passing the result down is what stops a second
+ * resolution from disagreeing with it.
+ */
+export type ResolvedEnrollment = NonNullable<
+	Awaited<ReturnType<typeof CourseQueries.getEnrollment>>['data']
+>;
+
 export const CourseAggregates = {
 	/**
 	 * Get complete student dashboard data
@@ -611,25 +658,12 @@ export const CourseAggregates = {
 	 * @param cohortId - Optional cohort ID to select a specific enrollment
 	 */
 	async getStudentDashboard(
-		userId: string,
-		courseSlug: string,
-		selectedCohortId?: string,
+		enrollment: ResolvedEnrollment,
 		communityFeedEnabled = true,
 		reflectionsEnabled = true,
 		materialsEnabled = true,
 		hubsEnabled = true
 	) {
-		// Step 1: Get enrollment (must be first to get cohort/module info)
-		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
-			userId,
-			courseSlug,
-			selectedCohortId
-		);
-
-		if (enrollmentError || !enrollment) {
-			return { data: null, error: enrollmentError || new Error('Enrollment not found') };
-		}
-
 		const moduleId = enrollment.cohort.module.id;
 		const cohortId = enrollment.cohort_id;
 		const enrollmentId = enrollment.id;
@@ -802,25 +836,8 @@ export const CourseAggregates = {
 	/**
 	 * Get student reflections page data
 	 * Optimized for reflections view with all necessary data
-	 * @param selectedCohortId - Optional cohort ID to select a specific enrollment
 	 */
-	async getReflectionsPage(
-		userId: string,
-		courseSlug: string,
-		selectedCohortId?: string,
-		communityFeedEnabled = true
-	) {
-		// Step 1: Get enrollment
-		const { data: enrollment, error: enrollmentError } = await CourseQueries.getEnrollment(
-			userId,
-			courseSlug,
-			selectedCohortId
-		);
-
-		if (enrollmentError || !enrollment) {
-			return { data: null, error: enrollmentError || new Error('Enrollment not found') };
-		}
-
+	async getReflectionsPage(enrollment: ResolvedEnrollment, communityFeedEnabled = true) {
 		const moduleId = enrollment.cohort.module.id;
 		const cohortId = enrollment.cohort_id;
 		const enrollmentId = enrollment.id;

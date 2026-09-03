@@ -10,11 +10,9 @@ export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
 	// Require user to be enrolled in this course (any role)
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { user, enrollment } = await requireCourseAccess(event, courseSlug);
 
-	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
 	// Check if reflections are enabled for this course
 	const courseSettings = getCourseSettings(course?.settings);
@@ -24,23 +22,13 @@ export const load: PageServerLoad = async (event) => {
 	const communityFeedEnabled = courseSettings.features?.communityFeedEnabled !== false;
 
 	// Get all reflections page data in one optimized call
-	const result = await CourseAggregates.getReflectionsPage(
-		user.id,
-		courseSlug,
-		cohortId,
-		communityFeedEnabled
-	);
+	const result = await CourseAggregates.getReflectionsPage(enrollment, communityFeedEnabled);
 
 	if (result.error || !result.data) {
 		throw error(500, 'Failed to load reflections');
 	}
 
-	const { enrollment, sessions, questions, responses, publicReflections } = result.data;
-
-	// Clear stale cohort cookie if it didn't match the actual enrollment
-	if (course && cohortId && enrollment.cohort_id !== cohortId) {
-		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
-	}
+	const { sessions, questions, responses, publicReflections } = result.data;
 
 	// Group questions by session number
 	const questionsBySession = groupQuestionsBySession(questions);

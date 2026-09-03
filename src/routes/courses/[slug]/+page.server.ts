@@ -16,8 +16,10 @@ import { isCohortArchived } from '$lib/utils/cohort-status';
 export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
-	// Require user to be enrolled in this course (any role)
-	const { user } = await requireCourseAccess(event, courseSlug);
+	// Require user to be enrolled in this course (any role). This resolves which
+	// cohort is theirs; everything below is handed that enrolment rather than
+	// looking one up again.
+	const { user, enrollment } = await requireCourseAccess(event, courseSlug);
 
 	// Activate any enrollments that haven't been touched by the login flow yet
 	supabaseAdmin
@@ -27,9 +29,7 @@ export const load: PageServerLoad = async (event) => {
 		.is('last_login_at', null)
 		.then(() => {});
 
-	// Get course ID to read the active cohort cookie
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
 
 	// Get course settings for feature toggles and coordinator access
 	const courseSettings = getCourseSettings(course?.settings);
@@ -38,9 +38,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// Get all dashboard data in one optimized call
 	const result = await CourseAggregates.getStudentDashboard(
-		user.id,
-		courseSlug,
-		cohortId,
+		enrollment,
 		featureSettings?.communityFeedEnabled !== false,
 		featureSettings?.reflectionsEnabled !== false,
 		featureSettings?.materialsEnabled !== false,
@@ -51,13 +49,7 @@ export const load: PageServerLoad = async (event) => {
 		throw error(500, 'Failed to load dashboard data');
 	}
 
-	const { enrollment, sessions, materials, questions, responses, publicReflections, hubData } =
-		result.data;
-
-	// Clear stale cohort cookie if it didn't match the actual enrollment
-	if (course && cohortId && enrollment.cohort_id !== cohortId) {
-		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
-	}
+	const { sessions, materials, questions, responses, publicReflections, hubData } = result.data;
 
 	// Group data by session
 	const materialsBySession = groupMaterialsBySession(materials);

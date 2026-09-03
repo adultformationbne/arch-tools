@@ -1,24 +1,12 @@
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseQueries } from '$lib/server/course-data.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 
-	// Require user to be enrolled in this course (any role)
-	const { user } = await requireCourseAccess(event, courseSlug);
-
-	// Get course ID to read the active cohort cookie
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
-
-	// Get user's enrollment details with cohort and hub information using repository
-	const { data: enrollment } = await CourseQueries.getEnrollment(user.id, courseSlug, cohortId);
-
-	// Clear stale cohort cookie if it didn't match the actual enrollment
-	if (course && cohortId && enrollment?.cohort_id !== cohortId) {
-		event.cookies.delete(`active_cohort_${course.id}`, { path: '/' });
-	}
+	// Require user to be enrolled in this course (any role). The enrolment it
+	// resolves carries the cohort, hub and profile this page shows.
+	const { user, enrollment } = await requireCourseAccess(event, courseSlug);
 
 	const profileData = {
 		name: enrollment?.user_profile?.full_name || enrollment?.full_name || user.email,

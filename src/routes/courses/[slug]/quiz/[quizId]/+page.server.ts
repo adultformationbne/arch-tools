@@ -9,12 +9,11 @@ export const load: PageServerLoad = async (event) => {
 	const courseSlug = event.params.slug;
 	const quizId = event.params.quizId;
 
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 	const courseSettings = getCourseSettings(course?.settings);
 	if (courseSettings.features?.quizzesEnabled === false) throw error(404, 'Not found');
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
 
 	// Fetch quiz with questions and options
 	const { data: quiz, error: quizError } = await supabaseAdmin
@@ -52,17 +51,6 @@ export const load: PageServerLoad = async (event) => {
 			options: q.options ? [...q.options].sort((a: any, b: any) => a.order_index - b.order_index) : []
 		}));
 
-	// Get enrollment
-	let enrollmentQuery = supabaseAdmin
-		.from('courses_enrollments')
-		.select('id, cohort_id')
-		.eq('user_profile_id', user.id)
-		.in('status', ['active', 'invited', 'accepted']);
-	if (cohortId) enrollmentQuery = enrollmentQuery.eq('cohort_id', cohortId);
-	const { data: enrollments } = await enrollmentQuery.order('created_at', { ascending: false }).limit(1);
-	const enrollment = enrollments?.[0];
-	if (!enrollment) throw error(403, 'Enrollment not found');
-
 	// Get all attempts for this quiz+enrollment
 	const { data: attempts } = await supabaseAdmin
 		.from('courses_quiz_attempts')
@@ -83,7 +71,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		quiz: { ...quiz, questions },
 		attempts: attempts ?? [],
-		enrollment,
+		enrollment: { id: enrollment.id, cohort_id: enrollment.cohort_id },
 		courseSlug,
 		sessionNumber: session?.session_number ?? 0,
 		sessionTitle: session?.title ?? null

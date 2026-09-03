@@ -71,13 +71,10 @@ export const load: LayoutServerLoad = async (event) => {
 		hasUnreadChat = (newerMessages?.length ?? 0) > 0;
 	}
 
-	// Get hub name for coordinator chat sidebar
-	let hubName: string | null = null;
-	if (enrollmentRole === 'coordinator' && enrollment?.hub_id) {
-		const { data: hub } = await supabaseAdmin
-			.from('courses_hubs').select('name').eq('id', enrollment.hub_id).maybeSingle();
-		hubName = hub?.name || null;
-	}
+	// Hub name for the coordinator chat sidebar. The resolved enrolment already
+	// carries the hub, so this no longer needs a query of its own.
+	const hubName =
+		enrollmentRole === 'coordinator' ? (enrollment?.hub?.name ?? null) : null;
 
 	return {
 		userRole: enrollmentRole || 'student', // Use actual role: 'student' or 'coordinator'

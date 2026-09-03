@@ -1,7 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 import { isCohortArchived } from '$lib/utils/cohort-status';
@@ -10,40 +9,7 @@ import { isCohortArchived } from '$lib/utils/cohort-status';
  */
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
-
-	// Get course ID to read the active cohort cookie
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
-
-	// Get enrollment and verify coordinator role
-	let enrollmentQuery = supabaseAdmin
-		.from('courses_enrollments')
-		.select(`
-			id,
-			role,
-			hub_id,
-			cohort_id,
-			cohort:cohort_id (
-				id,
-				current_session,
-				module:module_id (
-					id
-				)
-			)
-		`)
-		.eq('user_profile_id', user.id)
-		.eq('role', 'coordinator');
-
-	if (selectedCohortId) {
-		enrollmentQuery = enrollmentQuery.eq('cohort_id', selectedCohortId);
-	}
-
-	const { data: enrollmentArr } = await enrollmentQuery
-		.order('created_at', { ascending: false })
-		.limit(1);
-
-	const enrollment = enrollmentArr?.[0] || null;
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
 	if (!enrollment || enrollment.role !== 'coordinator' || !enrollment.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');
@@ -179,30 +145,10 @@ export const GET: RequestHandler = async (event) => {
  */
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { user, enrollment: coordinator } = await requireCourseAccess(event, courseSlug);
 
 	const { action, studentId, present, sessionNumber } = await event.request.json();
 
-	// Get course ID to read the active cohort cookie
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
-
-	// Get coordinator's enrollment
-	let coordinatorQuery = supabaseAdmin
-		.from('courses_enrollments')
-		.select('id, role, hub_id, cohort_id, cohort:cohort_id (status)')
-		.eq('user_profile_id', user.id)
-		.eq('role', 'coordinator');
-
-	if (selectedCohortId) {
-		coordinatorQuery = coordinatorQuery.eq('cohort_id', selectedCohortId);
-	}
-
-	const { data: coordinatorArr } = await coordinatorQuery
-		.order('created_at', { ascending: false })
-		.limit(1);
-
-	const coordinator = coordinatorArr?.[0] || null;
 
 	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');
@@ -284,7 +230,7 @@ export const POST: RequestHandler = async (event) => {
 
 export const DELETE: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment: coordinator } = await requireCourseAccess(event, courseSlug);
 
 	const { studentId, sessionNumber } = await event.request.json();
 
@@ -292,24 +238,6 @@ export const DELETE: RequestHandler = async (event) => {
 		throw error(400, 'Invalid request');
 	}
 
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const selectedCohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
-
-	let coordinatorQuery = supabaseAdmin
-		.from('courses_enrollments')
-		.select('id, role, hub_id, cohort_id, cohort:cohort_id (status)')
-		.eq('user_profile_id', user.id)
-		.eq('role', 'coordinator');
-
-	if (selectedCohortId) {
-		coordinatorQuery = coordinatorQuery.eq('cohort_id', selectedCohortId);
-	}
-
-	const { data: coordinatorArr } = await coordinatorQuery
-		.order('created_at', { ascending: false })
-		.limit(1);
-
-	const coordinator = coordinatorArr?.[0] || null;
 
 	if (!coordinator || coordinator.role !== 'coordinator' || !coordinator.hub_id) {
 		throw error(403, 'Not authorized as hub coordinator');

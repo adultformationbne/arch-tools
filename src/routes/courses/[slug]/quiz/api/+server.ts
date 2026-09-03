@@ -9,35 +9,16 @@
 import { json, error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 import { isCohortArchived } from '$lib/utils/cohort-status';
-async function getEnrollment(userId: string, courseSlug: string, cohortId?: string | null) {
-	let query = supabaseAdmin
-		.from('courses_enrollments')
-		.select('id, cohort_id, cohort:cohort_id (status)')
-		.eq('user_profile_id', userId)
-		.in('status', ['active', 'invited', 'accepted']);
-
-	if (cohortId) query = query.eq('cohort_id', cohortId);
-
-	const { data, error: err } = await query.order('created_at', { ascending: false }).limit(1);
-	if (err || !data?.[0]) return null;
-	return data[0];
-}
-
 export const GET: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
 	const quizId = event.url.searchParams.get('quiz_id');
 	if (!quizId) throw error(400, 'quiz_id is required');
 
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
-	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
-	if (!enrollment) throw error(403, 'Enrollment not found');
 
 	// Fetch quiz with questions (no options — options only shown when taking the quiz)
 	const { data: quiz, error: quizError } = await supabaseAdmin
@@ -75,16 +56,12 @@ export const GET: RequestHandler = async (event) => {
 
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
 	const body = await event.request.json();
 	const { quiz_id } = body;
 	if (!quiz_id) throw error(400, 'quiz_id is required');
 
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
-	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
-	if (!enrollment) throw error(403, 'Enrollment not found');
 	if (isCohortArchived(enrollment.cohort)) {
 		throw error(403, 'This module is complete and no longer accepts quiz attempts');
 	}
@@ -158,7 +135,7 @@ export const POST: RequestHandler = async (event) => {
 
 export const PUT: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
-	const { user } = await requireCourseAccess(event, courseSlug);
+	const { enrollment } = await requireCourseAccess(event, courseSlug);
 
 	const body = await event.request.json();
 	const { attempt_id, responses } = body;
@@ -167,10 +144,6 @@ export const PUT: RequestHandler = async (event) => {
 		throw error(400, 'attempt_id and responses are required');
 	}
 
-	const { data: course } = await CourseQueries.getCourse(courseSlug);
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : null;
-	const enrollment = await getEnrollment(user.id, courseSlug, cohortId);
-	if (!enrollment) throw error(403, 'Enrollment not found');
 	if (isCohortArchived(enrollment.cohort)) {
 		throw error(403, 'This module is complete and no longer accepts quiz attempts');
 	}

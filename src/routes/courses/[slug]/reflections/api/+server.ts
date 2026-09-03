@@ -1,24 +1,16 @@
 import { error, json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { requireCourseAccess } from '$lib/server/auth.js';
-import { CourseQueries } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 
 import { isCohortArchived } from '$lib/utils/cohort-status';
 export const POST: RequestHandler = async (event) => {
 	const courseSlug = event.params.slug;
 
-	// Require authenticated user
-	const { user } = await requireCourseAccess(event, courseSlug);
-	const userId = user.id;
-
-	// Get course ID to read the active cohort cookie (only the id is needed here)
-	const { data: course } = await supabaseAdmin
-		.from('courses')
-		.select('id')
-		.eq('slug', courseSlug)
-		.single();
-	const cohortId = course ? event.cookies.get(`active_cohort_${course.id}`) : undefined;
+	// Require enrolment. The enrolment this resolves is the one the reflection is
+	// saved against — scoped to this course, and to the cohort the participant is
+	// actually in rather than one they finished.
+	const { enrollment: studentData } = await requireCourseAccess(event, courseSlug);
 
 	try {
 		const body = await event.request.json();
@@ -50,40 +42,6 @@ export const POST: RequestHandler = async (event) => {
 		if (questionError || !questionData) {
 			console.error('Question lookup error:', questionError);
 			throw error(400, 'Invalid reflection question');
-		}
-
-		// Get student's courses_enrollments record (need id and cohort_id)
-		// Scope to this course's cohorts so a user enrolled in multiple courses
-		// can't have their reflection saved against the wrong course's enrollment.
-		// Use the cohort cookie if available to select the correct enrollment
-		const courseCohortIds = await CourseQueries.getCohortIdsForCourse(courseSlug);
-
-		if (!courseCohortIds.length) {
-			console.error('Course lookup error: no cohorts found for course', courseSlug);
-			throw error(400, 'Course not found');
-		}
-
-		let enrollmentQuery = supabaseAdmin
-			.from('courses_enrollments')
-			.select('id, cohort_id, cohort:cohort_id (status)')
-			.eq('user_profile_id', userId)
-			.in('cohort_id', courseCohortIds)
-			.in('status', ['active', 'invited', 'accepted']);
-
-		if (cohortId) {
-			enrollmentQuery = enrollmentQuery.eq('cohort_id', cohortId);
-		}
-
-		const { data: studentDataArr, error: studentError } = await enrollmentQuery
-			.order('created_at', { ascending: false })
-			.limit(1);
-
-		const studentData = studentDataArr?.[0] || null;
-
-
-		if (studentError || !studentData) {
-			console.error('Student lookup error:', studentError);
-			throw error(400, 'Student enrollment not found');
 		}
 
 		if (isCohortArchived(studentData.cohort)) {
@@ -180,14 +138,10 @@ export const POST: RequestHandler = async (event) => {
 		// apart. An auto-save on an already-submitted reflection is just an edit:
 		// it bumps updated_at and writes no activity entry.
 		if (isSubmitting && !wasAlreadySubmitted) {
-			// Get student name for activity log
-			const { data: profile } = await supabaseAdmin
-				.from('user_profiles')
-				.select('full_name')
-				.eq('id', userId)
-				.single();
-
-			const studentName = profile?.full_name || 'Student';
+			// Name for the activity log — the resolved enrolment already carries the
+			// profile, so this no longer costs a second lookup.
+			const studentName =
+				studentData.user_profile?.full_name || studentData.full_name || 'Student';
 			await supabaseAdmin.from('courses_activity_log').insert({
 				cohort_id: studentData.cohort_id,
 				enrollment_id: studentData.id,
