@@ -1888,6 +1888,7 @@ export type Database = {
           image_url: string | null
           link_url: string | null
           position: number
+          starts_at: string | null
           title: string | null
           updated_at: string | null
         }
@@ -1899,6 +1900,7 @@ export type Database = {
           image_url?: string | null
           link_url?: string | null
           position: number
+          starts_at?: string | null
           title?: string | null
           updated_at?: string | null
         }
@@ -1910,6 +1912,7 @@ export type Database = {
           image_url?: string | null
           link_url?: string | null
           position?: number
+          starts_at?: string | null
           title?: string | null
           updated_at?: string | null
         }

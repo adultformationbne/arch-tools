@@ -11,6 +11,7 @@ import { renderTemplate } from '$lib/utils/dgr-template-renderer.js';
 import { formatDGRDate, formatReflectionText } from '$lib/utils/dgr-common.js';
 import { minifyHTML } from '$lib/utils/wordpress-safe-html.js';
 import { headerImages, featuredImages } from '$lib/utils/dgr-images.js';
+import { fetchPromoTiles } from '$lib/server/dgr-wordpress.js';
 
 export interface PublishParams {
 	date: string;
@@ -95,21 +96,12 @@ ${truncatedText}<br><br>
 		gospelReference: params.gospelReference || ''
 	};
 
-	// Fetch promo tiles for templates that support them
+	// Fetch promo tiles for templates that support them.
+	// All active tiles are passed through; the renderer picks the ones whose
+	// starts_at/expires_at window covers THIS post's date.
 	try {
-		const today = new Date().toISOString().split('T')[0];
-		const { data: tiles, error } = await supabaseAdmin
-			.from('dgr_promo_tiles')
-			.select('*')
-			.eq('active', true)
-			.not('image_url', 'is', null)
-			.neq('image_url', '')
-			.or(`expires_at.is.null,expires_at.gte.${today}`)
-			.order('position');
-
-		if (!error && tiles) {
-			templateData.promoTiles = tiles;
-		}
+		const tiles = await fetchPromoTiles();
+		templateData.promoTiles = tiles;
 	} catch (err) {
 		console.warn('Could not fetch promo tiles:', err);
 	}

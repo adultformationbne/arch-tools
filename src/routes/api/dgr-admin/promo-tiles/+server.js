@@ -1,5 +1,21 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
+import { listUpcomingDGRPosts } from '$lib/server/dgr-wordpress.js';
+
+const MAX_TILES = 3;
+
+function formatTile(tile) {
+	return {
+		id: tile.id,
+		position: tile.position,
+		image_url: tile.image_url,
+		title: tile.title || '',
+		link_url: tile.link_url || '',
+		active: tile.active ?? true,
+		starts_at: tile.starts_at || null,
+		expires_at: tile.expires_at || null
+	};
+}
 
 export async function GET() {
 	try {
@@ -14,19 +30,11 @@ export async function GET() {
 			return json({ error: error.message }, { status: 500 });
 		}
 
-		// Return all tiles (including expired) for admin management
-		const formattedTiles = tiles
-			?.filter(tile => tile.image_url && tile.image_url.trim())
-			.map(tile => ({
-				id: tile.id,
-				position: tile.position,
-				image_url: tile.image_url,
-				title: tile.title || '',
-				link_url: tile.link_url || '',
-				active: tile.active ?? true,
-				expires_at: tile.expires_at || null
-			}))
-			.sort((a, b) => a.position - b.position) || [];
+		// Return all tiles (including expired / not-yet-started) for admin management
+		const formattedTiles = (tiles || [])
+			.filter((tile) => tile.image_url && tile.image_url.trim())
+			.map(formatTile)
+			.sort((a, b) => a.position - b.position);
 
 		return json({ tiles: formattedTiles });
 	} catch (error) {
@@ -35,47 +43,106 @@ export async function GET() {
 	}
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const HTTP_URL_RE = /^https?:\/\/\S+$/i;
+
+/**
+ * Validate and normalise the submitted tiles.
+ * Returns { tiles } on success or { error } describing the first problem.
+ */
+function validateTiles(input) {
+	if (!Array.isArray(input)) return { error: 'Invalid tiles data' };
+	if (input.length > MAX_TILES) return { error: `At most ${MAX_TILES} tiles are allowed` };
+
+	const tiles = [];
+	for (let i = 0; i < input.length; i++) {
+		const raw = input[i] || {};
+		const label = `Tile ${i + 1}`;
+
+		const image_url = typeof raw.image_url === 'string' ? raw.image_url.trim() : '';
+		if (!image_url) return { error: `${label}: image URL is required` };
+		if (!HTTP_URL_RE.test(image_url)) return { error: `${label}: image URL must start with http:// or https://` };
+
+		const link_url = typeof raw.link_url === 'string' ? raw.link_url.trim() : '';
+		if (link_url && !HTTP_URL_RE.test(link_url)) return { error: `${label}: link URL must start with http:// or https://` };
+
+		const title = typeof raw.title === 'string' ? raw.title.trim().slice(0, 200) : '';
+
+		const dates = {};
+		for (const field of ['starts_at', 'expires_at']) {
+			const value = raw[field];
+			if (value == null || value === '') {
+				dates[field] = null;
+			} else if (typeof value === 'string' && DATE_RE.test(value)) {
+				dates[field] = value;
+			} else {
+				return { error: `${label}: ${field === 'starts_at' ? 'start' : 'expiry'} date must be YYYY-MM-DD` };
+			}
+		}
+		if (dates.starts_at && dates.expires_at && dates.starts_at > dates.expires_at) {
+			return { error: `${label}: start date must be on or before the expiry date` };
+		}
+
+		tiles.push({
+			position: i + 1, // positions are always the submitted order
+			image_url,
+			title,
+			link_url,
+			active: true,
+			...dates
+		});
+	}
+	return { tiles };
+}
+
 export async function POST({ request }) {
 	try {
-		const { tiles } = await request.json();
+		const body = await request.json();
+		const validated = validateTiles(body?.tiles);
+		if (validated.error) return json({ error: validated.error }, { status: 400 });
+		const tiles = validated.tiles || [];
 
-		if (!tiles || !Array.isArray(tiles)) {
-			return json({ error: 'Invalid tiles data' }, { status: 400 });
-		}
-
-		// First, clear all existing tiles
-		const { error: clearError } = await supabaseAdmin
+		// Insert the new set first, then remove the previous rows. If the insert
+		// fails the old tiles are still in place rather than the table being emptied.
+		const { data: existing, error: existingError } = await supabaseAdmin
 			.from('dgr_promo_tiles')
-			.delete()
-			.neq('id', 0); // Delete all rows
+			.select('id');
+		if (existingError) throw existingError;
+		const oldIds = (existing || []).map((t) => t.id);
 
-		if (clearError) {
-			console.error('Error clearing tiles:', clearError);
-			throw clearError;
-		}
-
-		// Then insert the new tiles
 		if (tiles.length > 0) {
-			const tilesToInsert = tiles.map(tile => ({
-				position: tile.position,
-				image_url: tile.image_url || '',
-				title: tile.title || '',
-				link_url: tile.link_url || '',
-				active: true,
-				expires_at: tile.expires_at || null
-			}));
-
-			const { error: insertError } = await supabaseAdmin
-				.from('dgr_promo_tiles')
-				.insert(tilesToInsert);
-
+			const { error: insertError } = await supabaseAdmin.from('dgr_promo_tiles').insert(tiles);
 			if (insertError) {
 				console.error('Error inserting tiles:', insertError);
 				throw insertError;
 			}
 		}
 
-		return json({ success: true, message: 'Promo tiles updated successfully' });
+		if (oldIds.length > 0) {
+			const { error: clearError } = await supabaseAdmin.from('dgr_promo_tiles').delete().in('id', oldIds);
+			if (clearError) {
+				console.error('Error clearing previous tiles:', clearError);
+				throw clearError;
+			}
+		}
+
+		// Saving never touches WordPress. Report which already-published posts now
+		// show out-of-date tiles so the admin can update them with one click.
+		let upcomingPosts = [];
+		let wordpressError = null;
+		try {
+			upcomingPosts = await listUpcomingDGRPosts();
+		} catch (err) {
+			console.warn('Could not check published posts after saving tiles:', err);
+			wordpressError = err instanceof Error ? err.message : String(err);
+		}
+
+		return json({
+			success: true,
+			message: 'Promo tiles updated successfully',
+			upcomingPosts,
+			wordpressError
+		});
 	} catch (error) {
 		console.error('Failed to update promo tiles:', error);
 		return json({ error: error.message || 'Failed to update promo tiles' }, { status: 500 });

@@ -4,7 +4,6 @@
 	import DGRReviewModal from '$lib/components/DGRReviewModal.svelte';
 	import DGRScheduleTable from '$lib/components/DGRScheduleTable.svelte';
 	import DGRContributorManager from '$lib/components/DGRContributorManager.svelte';
-	import DGRPromoTilesEditor from '$lib/components/DGRPromoTilesEditor.svelte';
 	import DGRAssignmentRules from '$lib/components/DGRAssignmentRules.svelte';
 	import DGREditor from '$lib/components/DGREditor.svelte';
 	import DGRNavigation from '$lib/components/DGRNavigation.svelte';
@@ -71,7 +70,6 @@
 	let promoTiles = $state([
 		{ position: 1, image_url: '', title: '', link_url: '' }
 	]);
-	let savingTiles = $state(false);
 
 	// Filter state: 'all', 'needs_review', 'approved', 'published', 'unassigned'
 	let scheduleFilter = $state('all');
@@ -217,11 +215,16 @@
 				// Only include tiles that have image URLs (not empty ones)
 				const activeTiles = data.tiles.filter(tile => tile.image_url);
 				if (activeTiles.length > 0) {
+					// Keep the date window so previews filter tiles by the entry's date,
+					// exactly as the publisher does.
 					promoTiles = activeTiles.map(tile => ({
 						position: tile.position,
 						image_url: tile.image_url || '',
 						title: tile.title || '',
-						link_url: tile.link_url || ''
+						link_url: tile.link_url || '',
+						active: tile.active ?? true,
+						starts_at: tile.starts_at || null,
+						expires_at: tile.expires_at || null
 					}));
 				} else {
 					// No active tiles, start with one empty tile
@@ -246,74 +249,6 @@
 				title: 'Failed to load rules',
 				message: error.message,
 				duration: 3000
-			});
-		}
-	}
-
-	async function savePromoTiles() {
-		savingTiles = true;
-		const loadingId = toast.loading({
-			title: 'Saving promo tiles...',
-			message: 'Updating promotional content'
-		});
-
-		try {
-			// Only save tiles that have image URLs, reposition them as 1, 2, 3
-			const tilesToSave = promoTiles
-				.filter(tile => tile.image_url && tile.image_url.trim())
-				.map((tile, index) => ({
-					...tile,
-					position: index + 1
-				}));
-
-			const response = await fetch('/api/dgr-admin/promo-tiles', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ tiles: tilesToSave })
-			});
-
-			const data = await response.json();
-
-			if (data.error) throw new Error(data.error);
-
-			toast.dismiss(loadingId);
-			toast.success({
-				title: 'Promo tiles saved',
-				message: `${tilesToSave.length} promotional tile${tilesToSave.length !== 1 ? 's' : ''} updated`,
-				duration: 3000
-			});
-
-			// Reload to refresh positions
-			await loadPromoTiles();
-		} catch (error) {
-			toast.dismiss(loadingId);
-			toast.error({
-				title: 'Failed to save promo tiles',
-				message: error.message,
-				duration: 5000
-			});
-		} finally {
-			savingTiles = false;
-		}
-	}
-
-	function addTile() {
-		if (promoTiles.length < 3) {
-			promoTiles.push({
-				position: promoTiles.length + 1,
-				image_url: '',
-				title: '',
-				link_url: ''
-			});
-		}
-	}
-
-	function removeTile(index) {
-		if (promoTiles.length > 1) {
-			promoTiles.splice(index, 1);
-			// Update positions
-			promoTiles.forEach((tile, idx) => {
-				tile.position = idx + 1;
 			});
 		}
 	}

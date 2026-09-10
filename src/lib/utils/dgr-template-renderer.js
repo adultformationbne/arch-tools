@@ -5,6 +5,7 @@ import { parseReadings } from './dgr-utils.js';
 import { formatReflectionText, escapeHtml } from './dgr-common.js';
 import { generateSubscribeSection } from './dgr-subscribe-section.js';
 import { generateShareSection } from './dgr-share-section.js';
+import { renderPromoTilesBlock, brisbaneToday } from './dgr-promo-tiles.js';
 
 export function renderTemplate(templateHtml, data, options = {}) {
   let processed = templateHtml;
@@ -110,34 +111,12 @@ function processSpecialHelpers(template, data, options = {}) {
   });
 
   // Handle promo tiles helper {{promoTiles promoTiles}}
+  // Tiles are filtered by the POST date (not today) so a tile with a start date
+  // only appears on posts from that date onward, and never on earlier posts.
   processed = processed.replace(/{{promoTiles\s+(\w+)}}/g, (match, variable) => {
     const tilesValue = data[variable];
-    if (!tilesValue || !Array.isArray(tilesValue) || tilesValue.length === 0) return '';
-
-    const today = new Date().toISOString().split('T')[0];
-    const activeTiles = tilesValue.filter(tile =>
-      tile.active && tile.image_url &&
-      (tile.expires_at == null || tile.expires_at >= today)
-    );
-    if (activeTiles.length === 0) return '';
-
-    // Adjust tile size based on count - bigger when fewer tiles
-    const tileMaxWidth = activeTiles.length === 1 ? '300px' :
-                         activeTiles.length === 2 ? '250px' :
-                         activeTiles.length === 3 ? '200px' : '180px';
-
-    return `
-    <div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:16px; padding:24px; margin:40px 0;">
-      <h3 style="font-size:16px; color:#495057; margin:0 0 20px 0; font-weight:600; text-align:center;">Upcoming Events</h3>
-      <div style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center;">
-        ${activeTiles.map(tile => `
-          <a href="${tile.link_url}" target="_blank" style="text-decoration:none; display:block; max-width:${tileMaxWidth};">
-            <img src="${tile.image_url}" alt="${tile.title || 'Event'}" style="width:100%; height:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); transition:transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            ${tile.title ? `<div style="text-align:center; margin-top:8px; font-size:13px; color:#666; font-weight:500;">${tile.title}</div>` : ''}
-          </a>
-        `).join('')}
-      </div>
-    </div>`;
+    const postDate = data.date || brisbaneToday();
+    return renderPromoTilesBlock(Array.isArray(tilesValue) ? tilesValue : [], postDate);
   });
 
   // Handle random header image helper {{randomHeaderImage}}
