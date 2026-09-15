@@ -229,3 +229,42 @@ export async function syncPromoTilesToPosts(postIds: number[]): Promise<SyncResu
 	await Promise.all(Array.from({ length: Math.min(SYNC_CONCURRENCY, postIds.length) }, worker));
 	return results;
 }
+
+/**
+ * Upload an image to the WordPress media library so promo tiles are served from
+ * the WordPress CDN alongside the posts. Returns the public source URL.
+ */
+export async function uploadMediaToWordPress(
+	file: File,
+	opts: { title?: string; altText?: string } = {}
+): Promise<{ id: number; url: string }> {
+	const safeName = (file.name || 'promo-tile.jpg').replace(/[^\w.\-]+/g, '-');
+	const buffer = Buffer.from(await file.arrayBuffer());
+
+	const res = await wp('/media', {
+		method: 'POST',
+		body: buffer,
+		headers: {
+			'Content-Type': file.type,
+			'Content-Disposition': `attachment; filename="${safeName}"`
+		}
+	});
+	const media = (await res.json()) as { id: number; source_url: string };
+
+	// Title / alt text are optional niceties; don't fail the upload if they don't stick
+	if (opts.title || opts.altText) {
+		try {
+			await wp(`/media/${media.id}`, {
+				method: 'POST',
+				body: JSON.stringify({
+					...(opts.title ? { title: opts.title } : {}),
+					...(opts.altText ? { alt_text: opts.altText } : {})
+				})
+			});
+		} catch (err) {
+			console.warn('Uploaded promo image but failed to set its metadata:', err);
+		}
+	}
+
+	return { id: media.id, url: media.source_url };
+}

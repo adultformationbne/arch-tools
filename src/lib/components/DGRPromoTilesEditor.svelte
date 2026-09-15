@@ -1,5 +1,6 @@
 <script>
 	import { brisbaneToday, getTileStatus, tilesForDate } from '$lib/utils/dgr-promo-tiles.js';
+	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
 
 	let {
 		tiles = [],
@@ -17,6 +18,38 @@
 	} = $props();
 
 	const today = brisbaneToday();
+
+	/** Index of the tile whose image is currently uploading to WordPress, or null */
+	let uploadingIndex = $state(null);
+
+	async function uploadTileImage(index, event) {
+		const input = event.currentTarget;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+
+		uploadingIndex = index;
+		try {
+			const formData = new FormData();
+			formData.append('image', file);
+			if (tiles[index]?.title) formData.append('title', tiles[index].title);
+
+			const response = await fetch('/api/dgr-admin/promo-tiles/upload', {
+				method: 'POST',
+				body: formData
+			});
+			const result = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(result.error || 'Failed to upload image');
+
+			tiles[index].image_url = result.url;
+			toastSuccess('Image uploaded to WordPress');
+		} catch (err) {
+			console.error('Promo tile upload error:', err);
+			toastError(err.message || 'Failed to upload image');
+		} finally {
+			uploadingIndex = null;
+		}
+	}
 
 	const activeTiles = $derived(tilesForDate(tiles, today));
 	// Posts we can push the new tiles into; posts with an error have no anchor to swap
@@ -209,13 +242,30 @@
 							<label for="tile-{index}-image" class="block text-sm font-medium text-gray-700">
 								Image URL
 							</label>
-							<input
-								id="tile-{index}-image"
-								type="text"
-								bind:value={tile.image_url}
-								placeholder="https://archdiocesanministries.org.au/wp-content/uploads/..."
-								class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-							/>
+							<div class="mt-1 flex gap-2">
+								<input
+									id="tile-{index}-image"
+									type="text"
+									bind:value={tile.image_url}
+									placeholder="https://archdiocesanministries.org.au/wp-content/uploads/..."
+									class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+								/>
+								<label
+									class="inline-flex shrink-0 cursor-pointer items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 {uploadingIndex !== null ? 'pointer-events-none opacity-50' : ''}"
+								>
+									{uploadingIndex === index ? 'Uploading…' : 'Upload'}
+									<input
+										type="file"
+										accept="image/jpeg,image/png,image/gif,image/webp"
+										class="hidden"
+										disabled={uploadingIndex !== null}
+										onchange={(e) => uploadTileImage(index, e)}
+									/>
+								</label>
+							</div>
+							<p class="mt-1 text-xs text-gray-500">
+								Paste a URL, or upload an image to the WordPress media library.
+							</p>
 						</div>
 
 						<div>
