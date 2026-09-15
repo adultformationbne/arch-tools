@@ -102,28 +102,26 @@ export async function POST({ request }) {
 		if (validated.error) return json({ error: validated.error }, { status: 400 });
 		const tiles = validated.tiles || [];
 
-		// Insert the new set first, then remove the previous rows. If the insert
-		// fails the old tiles are still in place rather than the table being emptied.
-		const { data: existing, error: existingError } = await supabaseAdmin
-			.from('dgr_promo_tiles')
-			.select('id');
-		if (existingError) throw existingError;
-		const oldIds = (existing || []).map((t) => t.id);
-
+		// Positions are unique, so overwrite rows 1..n in place, then drop any
+		// leftover rows beyond the submitted count. Old tiles stay put if the
+		// upsert fails rather than the table being emptied first.
 		if (tiles.length > 0) {
-			const { error: insertError } = await supabaseAdmin.from('dgr_promo_tiles').insert(tiles);
-			if (insertError) {
-				console.error('Error inserting tiles:', insertError);
-				throw insertError;
+			const { error: upsertError } = await supabaseAdmin
+				.from('dgr_promo_tiles')
+				.upsert(tiles, { onConflict: 'position' });
+			if (upsertError) {
+				console.error('Error saving tiles:', upsertError);
+				throw upsertError;
 			}
 		}
 
-		if (oldIds.length > 0) {
-			const { error: clearError } = await supabaseAdmin.from('dgr_promo_tiles').delete().in('id', oldIds);
-			if (clearError) {
-				console.error('Error clearing previous tiles:', clearError);
-				throw clearError;
-			}
+		const { error: clearError } = await supabaseAdmin
+			.from('dgr_promo_tiles')
+			.delete()
+			.gt('position', tiles.length);
+		if (clearError) {
+			console.error('Error clearing leftover tiles:', clearError);
+			throw clearError;
 		}
 
 		// Saving never touches WordPress. Report which already-published posts now
