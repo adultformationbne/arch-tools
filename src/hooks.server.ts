@@ -2,6 +2,8 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 import { createServerClient } from '@supabase/ssr';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { requireModule } from '$lib/server/auth';
+import { redirect } from '@sveltejs/kit';
+import { courseDomainForHost, isAppPath, platformSiteUrl } from '$lib/config/course-domains';
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
 	const errorId = crypto.randomUUID().slice(0, 8);
@@ -109,6 +111,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return cachedSession;
 		}
 	};
+
+	// Marketing domains (see $lib/config/course-domains) only serve their site
+	// folder. Anything app-shaped — login, enrol, courses, admin, api — lives on
+	// the platform host so sessions stay on a single domain.
+	const domain = courseDomainForHost(event.url.host);
+	event.locals.courseDomain = domain ? { host: event.url.host, slug: domain.slug } : null;
+	if (domain && isAppPath(event.url.pathname)) {
+		throw redirect(307, `${platformSiteUrl()}${event.url.pathname}${event.url.search}`);
+	}
 
 	// Centralised guard for the DGR API. These endpoints use the service-role client
 	// and were previously either login-only or fully unauthenticated. Require the `dgr`

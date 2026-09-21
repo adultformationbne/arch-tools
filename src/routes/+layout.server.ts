@@ -235,7 +235,7 @@ async function resolveFallbackCourse(): Promise<CourseRecord> {
 	return anyCourse ?? null;
 }
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }) => {
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession, courseDomain }, url, route }) => {
 	const { session, user } = await safeGetSession();
 	const pathname = url.pathname;
 
@@ -248,10 +248,13 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const isCoursesRoute =
 		coursesRoutePrefixes.some(route => pathname.startsWith(route)) || pathname === '/';
 	const publicRoutes = ['/', '/login', '/login/setup-password', '/readings', '/data-policy'];
-	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/', '/enroll/'];
+	const publicPrefixes = ['/api/v1/', '/dgr/write/', '/dgr/publish/submit/', '/enroll/', '/p/'];
 	const isExplicitPublic = publicRoutes.some(route => pathname === route);
 	const isPrefixPublic = publicPrefixes.some(prefix => pathname.startsWith(prefix));
-	const isPublicRoute = isExplicitPublic || isPrefixPublic;
+	// Marketing sites (src/routes/sites/*) are reached via reroute, so check the route id, not the URL.
+	// An unknown path on a marketing domain should 404 as part of the site, not bounce to login.
+	const isMarketingSite = (route.id?.startsWith('/sites/') ?? false) || (Boolean(courseDomain) && !route.id);
+	const isPublicRoute = isExplicitPublic || isPrefixPublic || isMarketingSite;
 
 	let userProfile: { id: string; email: string | null; full_name: string | null; modules: any } | null = null;
 	if (session && user) {

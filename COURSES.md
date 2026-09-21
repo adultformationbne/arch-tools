@@ -1744,3 +1744,15 @@ Upload files directly to Supabase Storage:
 
 ---
 
+
+## Marketing domains per course
+
+A course can have a standalone marketing site on its own domain (e.g. `alivingunion.com` for the `alivingunion` course). The domain serves **only** the marketing pages; sign-in, enrolment, checkout and the course itself stay on `app.archdiocesanministries.org.au`, so sessions live on one host and no Supabase auth changes are needed.
+
+**Hardcoded (deploy-time):** the host → site map in `src/lib/config/course-domains.ts`. Adding a domain needs:
+1. The domain added to the Vercel project (plus DNS).
+2. An entry in `COURSE_DOMAINS` (bare host and `www.` alias) naming the course slug and a `site` folder.
+
+**Site folder:** `src/routes/sites/<site>/` (e.g. `sites/alivingunion`). Every path on the domain that is not an app route is served from this folder without changing the address bar: `/` → `+page.svelte`, `/privacy` → `privacy/+page.svelte`; a new folder is a new page. The folder has its own `+layout.svelte` (header, footer, styling — independent of the platform theme) and a `site.ts` with the copy, nav, and the absolute sign-in / enrol links to the platform. Root layout chrome is hidden for these routes, they are public, and unknown paths 404.
+
+**Routing** (`src/hooks.ts` + `src/hooks.server.ts`): app-shaped paths on a marketing domain (`/login`, `/enroll/...`, `/courses/...`, `/admin`, `/api`, ...) are bounced to the platform host with a 307. In production, hitting `/sites/...` on the platform host redirects to the domain; in dev, `/sites/<site>` is the preview URL.

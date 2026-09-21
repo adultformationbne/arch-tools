@@ -19,7 +19,8 @@
 
 	// Routes where we don't show the navigation and footer
 	$: hideNav = $page.url.pathname === '/login' ||
-	             $page.url.pathname === '/login/setup-password';
+	             $page.url.pathname === '/login/setup-password' ||
+	             ($page.route.id?.startsWith('/sites/') ?? false); // marketing sites bring their own chrome
 
 	// Only show main nav if user has modules beyond just courses.participant
 	// (since courses.participant users can access everything they need via the course sub-nav)

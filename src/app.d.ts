@@ -32,6 +32,8 @@ declare global {
 		interface Locals {
 			supabase: SupabaseClient;
 			safeGetSession: () => Promise<{ session: Session | null; user: User | null }>;
+			/** Set when the request arrived on a course's marketing domain (see $lib/config/course-domains). */
+			courseDomain?: { host: string; slug: string } | null;
 			authCache?: Map<string, any>;
 			courseCache?: Map<string, {
 				course: any;
