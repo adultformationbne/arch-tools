@@ -126,7 +126,7 @@
 										onclick={() => addManager(user.id)}
 										disabled={loadingUserId === user.id}
 										class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-white text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-										style="background-color: var(--course-accent-light);"
+										style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 									>
 										<UserPlus class="w-3.5 h-3.5" />
 										{loadingUserId === user.id ? 'Adding…' : 'Add'}

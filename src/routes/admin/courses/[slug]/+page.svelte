@@ -854,7 +854,7 @@
 					<button
 						onclick={handleAddParticipant}
 						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-						style="background-color: var(--course-accent-light); color: white;"
+						style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 					>
 						<UserPlus size={14} />
 						Add
@@ -909,7 +909,7 @@
 					<button
 						onclick={openCohortWizard}
 						class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
-						style="background-color: var(--course-accent-light); color: white;"
+						style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 					>
 						<Plus size={20} />
 						Create a Cohort

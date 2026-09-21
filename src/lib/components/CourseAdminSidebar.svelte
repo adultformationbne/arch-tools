@@ -536,7 +536,7 @@ function handleMouseEnter(href) {
 
 	.nav-item.active {
 		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		color: var(--course-on-accent-light);
 		font-weight: 600;
 	}
 
@@ -680,7 +680,7 @@ function handleMouseEnter(href) {
 
 	.btn-new-cohort-small:hover {
 		background: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		color: var(--course-on-accent-light);
 		border-color: var(--course-accent-light);
 	}
 

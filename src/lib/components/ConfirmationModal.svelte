@@ -310,7 +310,7 @@
 		background: var(--course-accent-light, #c59a6b);
 		border: none;
 		border-radius: 10px;
-		color: var(--course-accent-darkest, #1e2322);
+		color: var(--course-on-accent-light);
 		font-weight: 700;
 		font-size: 0.9375rem;
 		cursor: pointer;

@@ -51,7 +51,7 @@
 		type="button"
 		onclick={() => controller?.toggle()}
 		class="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border shadow-sm transition-colors cursor-pointer {activeCount > 0 ? 'text-white' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}"
-		style={activeCount > 0 ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
+		style={activeCount > 0 ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light); border-color: var(--course-accent-light);' : ''}
 	>
 		<Filter size={13} class="flex-shrink-0 {activeCount > 0 ? 'opacity-80' : 'text-gray-400'}" />
 		Filters
@@ -74,7 +74,7 @@
 						type="button"
 						onclick={() => { filterSession = opt.value; }}
 						class="px-2.5 py-1 text-xs rounded-full border transition-colors {filterSession === opt.value ? 'text-white' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}"
-						style={filterSession === opt.value ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
+						style={filterSession === opt.value ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light); border-color: var(--course-accent-light);' : ''}
 					>
 						{opt.label}
 					</button>
@@ -90,7 +90,7 @@
 						type="button"
 						onclick={() => { filterAttendance = opt.value; }}
 						class="px-2.5 py-1 text-xs rounded-full border transition-colors {filterAttendance === opt.value ? 'text-white' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}"
-						style={filterAttendance === opt.value ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
+						style={filterAttendance === opt.value ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light); border-color: var(--course-accent-light);' : ''}
 					>
 						{opt.label}
 					</button>
@@ -106,7 +106,7 @@
 						type="button"
 						onclick={() => { filterReflections = opt.value; }}
 						class="px-2.5 py-1 text-xs rounded-full border transition-colors {filterReflections === opt.value ? 'text-white' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}"
-						style={filterReflections === opt.value ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
+						style={filterReflections === opt.value ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light); border-color: var(--course-accent-light);' : ''}
 					>
 						{opt.label}
 					</button>

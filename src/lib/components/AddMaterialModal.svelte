@@ -629,7 +629,7 @@
 					<button
 						type="submit"
 						disabled={saving || !isFormValid()}
-						class="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors disabled:opacity-50"
+						class="btn-primary flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
 					>
 						{#if saving}
 							<Loader2 size={18} class="animate-spin" />
@@ -665,11 +665,12 @@
 	}
 
 	.type-card:hover .icon-wrapper :global(svg) {
-		color: white !important;
+		color: var(--course-on-accent-light) !important;
 	}
 
 	.btn-primary {
 		background-color: var(--course-accent-light, #c59a6b);
+		color: var(--course-on-accent-light);
 	}
 
 	.btn-primary:hover:not(:disabled) {

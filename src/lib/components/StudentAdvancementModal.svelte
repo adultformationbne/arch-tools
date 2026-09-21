@@ -491,7 +491,7 @@
 
 	.btn-primary {
 		background: var(--course-accent-light, #c59a6b);
-		color: var(--course-accent-darkest, #1e2322);
+		color: var(--course-on-accent-light);
 		flex: 1;
 	}
 

@@ -976,7 +976,7 @@
 		height: 40px;
 		border-radius: 50%;
 		background: var(--course-accent-light, #c59a6b);
-		color: var(--course-accent-darkest, #1a2320);
+		color: var(--course-on-accent-light);
 		border: none;
 		cursor: pointer;
 		transition: all 0.15s ease;

@@ -565,7 +565,7 @@ const selectedCohortName = $derived(() => {
 
 	.nav-item.active {
 		background: var(--course-accent-light, #c59a6b);
-		color: var(--course-accent-darkest, #1a2320);
+		color: var(--course-on-accent-light);
 	}
 
 	.nav-item.active :global(.nav-icon) {
@@ -671,7 +671,7 @@ const selectedCohortName = $derived(() => {
 	.btn-new-cohort:hover,
 	.btn-new-cohort:active {
 		background: var(--course-accent-light, #c59a6b);
-		color: var(--course-accent-darkest, #1a2320);
+		color: var(--course-on-accent-light);
 		border-color: var(--course-accent-light, #c59a6b);
 	}
 

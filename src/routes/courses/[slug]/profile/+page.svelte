@@ -294,8 +294,8 @@
 						</div>
 					</div>
 					<div class="flex items-center gap-4">
-						<div class="w-12 h-12 rounded-full flex items-center justify-center" style="background-color: var(--course-accent-light);">
-							<Mail size="20" class="text-white" />
+						<div class="w-12 h-12 rounded-full flex items-center justify-center" style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);">
+							<Mail size="20" />
 						</div>
 						<div>
 							<p class="text-sm text-gray-600">Email Address</p>

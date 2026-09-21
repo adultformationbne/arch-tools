@@ -194,31 +194,31 @@
 									<tr class="border-b border-gray-200">
 										<th
 											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
-											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+											style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 										>
 											Date & Time
 										</th>
 										<th
 											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
-											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+											style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 										>
 											Recipient
 										</th>
 										<th
 											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell"
-											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+											style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 										>
 											Subject
 										</th>
 										<th
 											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
-											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+											style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 										>
 											Template
 										</th>
 										<th
 											class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold uppercase tracking-wider"
-											style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+											style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 										>
 											Status
 										</th>
@@ -338,7 +338,7 @@
 							{#if selectedTemplate.category === 'system'}
 								<span
 									class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium flex-shrink-0"
-									style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+									style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 								>
 									System
 								</span>

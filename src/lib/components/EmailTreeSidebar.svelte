@@ -34,7 +34,7 @@
 			<button
 				onclick={() => handleViewChange('send')}
 				class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors font-semibold {selectedView === 'send' ? 'text-white' : 'text-white/90 hover:bg-white/10 hover:text-white'}"
-				style={selectedView === 'send' ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+				style={selectedView === 'send' ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : ''}
 			>
 				<Send size={16} class="flex-shrink-0" />
 				<span class="text-sm">Send Email</span>
@@ -46,7 +46,7 @@
 			<button
 				onclick={() => handleViewChange('logs')}
 				class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors {selectedView === 'logs' ? 'text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}"
-				style={selectedView === 'logs' ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+				style={selectedView === 'logs' ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : ''}
 			>
 				<List size={16} class="flex-shrink-0" />
 				<span class="text-sm font-medium">Email Logs</span>
@@ -79,7 +79,7 @@
 					<p class="text-xs text-white/40 px-3 py-1 italic">Click to edit</p>
 					{#each systemTemplates as template}
 						<div class="template-item flex items-center rounded-md transition-colors {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
-							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : ''}
 						>
 							<button
 								onclick={() => handleViewChange(template.id)}
@@ -127,7 +127,7 @@
 					{/if}
 					{#each customTemplates as template}
 						<div class="template-item flex items-center rounded-md transition-colors {selectedView === template.id ? 'text-white font-medium' : 'text-white/60 hover:bg-white/5 hover:text-white/80'}"
-							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-accent-darkest);' : ''}
+							style={selectedView === template.id ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : ''}
 						>
 							<button
 								onclick={() => handleViewChange(template.id)}

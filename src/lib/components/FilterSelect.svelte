@@ -40,7 +40,7 @@
 		type="button"
 		onclick={() => controller?.toggle()}
 		class="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border shadow-sm transition-colors cursor-pointer {isActive ? 'text-white' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}"
-		style={isActive ? 'background-color: var(--course-accent-light); border-color: var(--course-accent-light);' : ''}
+		style={isActive ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light); border-color: var(--course-accent-light);' : ''}
 	>
 		{#if Icon}
 			<Icon size={13} class="flex-shrink-0 {isActive ? 'opacity-80' : 'text-gray-400'}" />

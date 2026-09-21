@@ -231,7 +231,7 @@
 		<button
 			onclick={handleCreateHub}
 			class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-colors w-full sm:w-auto"
-			style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+			style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 		>
 			<Plus size={20} />
 			Create Hub
@@ -251,7 +251,7 @@
 			<button
 				onclick={handleCreateHub}
 				class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold w-full sm:w-auto"
-				style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+				style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 			>
 				<Plus size={20} />
 				Create Hub

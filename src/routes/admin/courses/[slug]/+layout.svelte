@@ -1,4 +1,5 @@
 <script>
+	import { readableTextOn, TEXT_ON_DARK } from '$lib/utils/theme-contrast';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page, navigating } from '$app/stores';
 	import { setContext, onMount } from 'svelte';
@@ -188,7 +189,7 @@
 
 <div
 	class="admin-layout"
-	style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};"
+	style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight}; --course-on-accent-dark: {readableTextOn(accentDark, TEXT_ON_DARK)}; --course-on-accent-light: {readableTextOn(accentLight)};"
 >
 	<!-- Mobile Navigation - visible on mobile only -->
 	<CourseAdminMobileNav

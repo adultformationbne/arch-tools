@@ -1,4 +1,5 @@
 <script>
+	import { readableTextOn, TEXT_ON_DARK } from '$lib/utils/theme-contrast';
 	import CourseNavigation from './CourseNavigation.svelte';
 	import ChatRoom from '$lib/components/ChatRoom.svelte';
 	import { page } from '$app/stores';
@@ -127,6 +128,8 @@
 		styles.push(`--course-accent-darkest: ${accentDark}`);
 		styles.push(`--course-accent-dark: ${accentDark}`);
 		styles.push(`--course-accent-light: ${accentLight}`);
+		styles.push(`--course-on-accent-light: ${readableTextOn(accentLight)}`);
+		styles.push(`--course-on-accent-dark: ${readableTextOn(accentDark, TEXT_ON_DARK)}`);
 		styles.push(`--course-surface: ${accentLight}`);
 		styles.push(`--course-lightest: #ffffff`);
 		styles.push(`--course-text-on-dark: #ffffff`);

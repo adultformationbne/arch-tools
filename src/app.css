@@ -53,6 +53,9 @@
   --course-lightest: #ffffff;
   --course-text-on-dark: #ffffff;
   --course-text-on-light: #1e2322;
+  /* Text drawn ON an accent fill; overridden per course from the chosen colour (theme-contrast.ts) */
+  --course-on-accent-light: #1e2322;
+  --course-on-accent-dark: #ffffff;
   --course-border-muted: rgba(234, 226, 217, 0.3);
   --course-font-family: 'Inter';
   --course-nav-bg: rgba(51, 70, 66, 0.85);

@@ -84,7 +84,7 @@
 	/* Completed sessions - darker brown */
 	button.completed {
 		background-color: var(--course-accent-light, #c59a6b);
-		color: #1e2322;
+		color: var(--course-on-accent-light);
 		box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.2);
 	}
 	button.completed:hover {

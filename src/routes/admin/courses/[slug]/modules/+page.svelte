@@ -243,7 +243,7 @@
 			<button
 				onclick={handleCreateModule}
 				class="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold transition-colors"
-				style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+				style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 			>
 				<Plus size={20} />
 				Create Module
@@ -309,7 +309,7 @@
 			<button
 				onclick={handleCreateModule}
 				class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-3 min-h-[44px] rounded-lg font-semibold"
-				style="background-color: var(--course-accent-light); color: var(--course-accent-darkest);"
+				style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 			>
 				<Plus size={20} />
 				Create Module

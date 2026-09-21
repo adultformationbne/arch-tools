@@ -61,6 +61,15 @@ const data = await apiGet('/api/endpoint', { successMessage: 'Done!' });
 await apiPost('/api/endpoint', formData, { successMessage: 'Saved' });
 ```
 
+### Text on course accent colours
+
+Course admins pick any accent colour, so **never hardcode `color: white` / `text-white` / a dark colour on an accent fill.** Use the computed variables (set by the course layouts via `readableTextOn()` in `$lib/utils/theme-contrast.ts`):
+
+```css
+background: var(--course-accent-light); color: var(--course-on-accent-light);
+background: var(--course-accent-dark);  color: var(--course-on-accent-dark);
+```
+
 ### Dropdowns (overflow-safe)
 
 ```ts

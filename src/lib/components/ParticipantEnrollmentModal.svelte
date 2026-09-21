@@ -731,12 +731,12 @@
 	.btn-primary {
 		flex: 1;
 		background: var(--course-accent-light);
-		color: white;
+		color: var(--course-on-accent-light);
 	}
 
 	.btn-primary:hover:not(:disabled) {
 		background: var(--course-accent-dark);
-		color: white;
+		color: var(--course-on-accent-dark);
 	}
 
 	.btn-primary:disabled {

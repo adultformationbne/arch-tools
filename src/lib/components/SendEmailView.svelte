@@ -985,10 +985,10 @@
 
 	.send-btn {
 		background-color: var(--course-accent-light);
-		color: var(--course-accent-darkest);
+		color: var(--course-on-accent-light);
 	}
 	.send-btn:hover:not(:disabled) {
 		background-color: var(--course-accent-dark);
-		color: white;
+		color: var(--course-on-accent-dark);
 	}
 </style>

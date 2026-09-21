@@ -331,7 +331,7 @@
 			<button
 				onclick={() => openCreateModal()}
 				class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 sm:py-2 text-sm font-medium text-white min-h-[44px]"
-				style="background-color: var(--course-accent-light);"
+				style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 			>
 				<Plus class="h-4 w-4" />
 				Create Link
@@ -820,7 +820,7 @@
 						type="submit"
 						disabled={isCreating || !selectedCohortId}
 						class="rounded-lg px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-						style="background-color: var(--course-accent-light);"
+						style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
 					>
 						{isCreating ? 'Creating...' : 'Create Link'}
 					</button>

@@ -1,4 +1,5 @@
 <script>
+	import { readableTextOn, TEXT_ON_DARK } from '$lib/utils/theme-contrast';
 	import { page, navigating } from '$app/stores';
 	import { goto, invalidate } from '$app/navigation';
 	import { untrack } from 'svelte';
@@ -771,7 +772,7 @@
 </script>
 
 <!-- Sessions Page with Tree Sidebar -->
-<div class="flex h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight};">
+<div class="flex h-screen" style="--course-accent-dark: {accentDark}; --course-accent-light: {accentLight}; --course-on-accent-dark: {readableTextOn(accentDark, TEXT_ON_DARK)}; --course-on-accent-light: {readableTextOn(accentLight)};">
 	<!-- Mobile sidebar overlay -->
 	{#if sidebarOpen}
 		<div
