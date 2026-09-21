@@ -1237,6 +1237,10 @@ export const CourseMutations = {
 			.single();
 
 		if (moduleError) {
+			// Order numbers are unique per course (courses_modules_course_id_order_number_key)
+			if (moduleError.code === '23505') {
+				moduleError.message = `This course already has a module with order number ${finalOrderNumber}. Choose a different order number.`;
+			}
 			return { data: null, error: moduleError };
 		}
 
