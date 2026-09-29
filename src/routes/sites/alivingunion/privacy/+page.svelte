@@ -11,20 +11,28 @@
 
 <article class="prose-page">
 	<div class="container">
+		<a href="/" class="back">← {SITE.name}</a>
 		<h1>Privacy Policy</h1>
-		<p class="updated">Last updated: {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+		<p class="updated">Last updated: 29 September 2026</p>
 
 		<h2>What we collect</h2>
 		<p>
-			Placeholder. Describe the information collected at enrolment (name, email, phone, parish,
-			mailing address) and during the course (reflections, attendance).
+			When you register your interest on this site we collect the details you enter: your name, email
+			address, and optionally your parish or community and a message.
 		</p>
 
 		<h2>How we use it</h2>
-		<p>Placeholder. Running the course, contacting participants, hub coordination, payments.</p>
+		<p>
+			Your details are sent to the Archdiocesan Ministries formation team so we can let you know when
+			{SITE.name} is available and answer any questions you have asked. We don’t add you to other
+			mailing lists or sell or share your details with anyone else.
+		</p>
 
-		<h2>Who we share it with</h2>
-		<p>Placeholder. Hub coordinators, payment processor (Stripe), email provider.</p>
+		<h2>How it is handled</h2>
+		<p>
+			Submissions are delivered by email through our email provider and kept only as long as they are
+			needed for this purpose. You can ask us to remove your details at any time.
+		</p>
 
 		<h2>Contact</h2>
 		<p>Questions about this policy: <a href="mailto:{SITE.contactEmail}">{SITE.contactEmail}</a>.</p>
@@ -43,8 +51,8 @@
 	}
 	h1,
 	h2 {
-		font-family: var(--serif);
-		color: var(--accent);
+		color: var(--ink);
+		font-weight: 600;
 	}
 	h1 {
 		font-size: 2.4rem;
@@ -54,8 +62,14 @@
 		font-size: 1.3rem;
 		margin: 2rem 0 0.5rem;
 	}
+	.back {
+		display: inline-block;
+		margin-bottom: 1.5rem;
+		color: var(--ink-soft);
+		text-decoration: none;
+	}
 	.updated {
-		color: var(--muted);
+		color: var(--ink-soft);
 		font-size: 0.9rem;
 		margin-bottom: 2rem;
 	}
@@ -63,6 +77,6 @@
 		line-height: 1.7;
 	}
 	a {
-		color: var(--accent);
+		color: var(--ink);
 	}
 </style>
