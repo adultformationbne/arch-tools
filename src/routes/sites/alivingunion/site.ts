@@ -15,6 +15,7 @@ export const SITE = {
 	/** Where register-interest submissions are sent */
 	interestEmail: 'formation@archdiocesanministries.org.au',
 	contactEmail: 'formation@archdiocesanministries.org.au',
+	privacyUrl: 'https://archdiocesanministries.org.au/privacy-policy/',
 	/** Static assets live in static/sites/alivingunion/ */
 	assets: '/sites/alivingunion'
 } as const;

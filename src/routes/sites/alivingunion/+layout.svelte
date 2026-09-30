@@ -29,7 +29,7 @@
 		</div>
 		<div class="container footer-meta">
 			<span>&copy; {new Date().getFullYear()} Archdiocesan Ministries</span>
-			<a href="/privacy">Privacy</a>
+			<a href={SITE.privacyUrl}>Privacy</a>
 			<a href="mailto:{SITE.contactEmail}">Contact</a>
 		</div>
 	</footer>
