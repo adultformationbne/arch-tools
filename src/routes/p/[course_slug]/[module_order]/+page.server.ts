@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
+import { getGuidePdfLinks } from '$lib/server/guide-pdf-links.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -34,14 +35,13 @@ export const load: PageServerLoad = async ({ params }) => {
 		.eq('module_id', module.id)
 		.order('session_number');
 
-	// All modules for sidebar
-	const { data: allModules } = await supabaseAdmin
-		.from('courses_modules')
-		.select('id, name, order_number, section_name')
-		.eq('course_id', course.id)
-		.order('order_number');
+	const pdfLinks = await getGuidePdfLinks(
+		{ slug: course.slug, name: course.name },
+		{ orderNumber: module.order_number, name: module.name }
+	);
 
 	return {
+		pdfUrl: pdfLinks.guide,
 		course: { name: course.name, shortName: course.short_name, slug: course.slug },
 		module: {
 			id: module.id,
@@ -57,12 +57,6 @@ export const load: PageServerLoad = async ({ params }) => {
 			title: s.title,
 			description: s.description,
 			hasContent: !!s.public_page_content
-		})),
-		allModules: (allModules ?? []).map(m => ({
-			id: m.id,
-			name: m.name,
-			orderNumber: m.order_number,
-			sectionName: m.section_name ?? null
 		}))
 	};
 };

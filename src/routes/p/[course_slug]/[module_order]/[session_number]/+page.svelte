@@ -2,16 +2,24 @@
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
-	const { course, module, sessions, session } = $derived(data);
+	const { course, module, sessions, session, pdfUrl } = $derived(data);
 
 	const prevSession = $derived(sessions.find(s => s.sessionNumber === session.sessionNumber - 1) ?? null);
 	const nextSession = $derived(sessions.find(s => s.sessionNumber === session.sessionNumber + 1) ?? null);
+
+	/** @param {number} n */
+	const sessionLabel = (n) => (n === 0 ? 'Pre-Start' : `Session ${n}`);
+	/** @param {number} n */
+	const sessionNum = (n) => (n === 0 ? 'Pre-Start' : String(n));
+
+	// A session left with its default title ("Session 2") shouldn't read "Session 2: Session 2"
+	const titleIsLabel = $derived(session.title.trim().toLowerCase() === sessionLabel(session.sessionNumber).toLowerCase());
 
 	let showMobilePicker = $state(false);
 </script>
 
 <svelte:head>
-	<title>Session {session.sessionNumber}: {session.title} — {course.name}</title>
+	<title>{titleIsLabel ? session.title : `${sessionLabel(session.sessionNumber)}: ${session.title}`} — {module.name}</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -21,7 +29,7 @@
 	<nav class="top-nav">
 		<a href="/p/{course.slug}/{module.orderNumber}" class="nav-module">{module.name}</a>
 		<button class="mobile-picker-btn" onclick={() => showMobilePicker = !showMobilePicker}>
-			Session {session.sessionNumber} <span class="picker-chevron" class:open={showMobilePicker}>▾</span>
+			{sessionLabel(session.sessionNumber)} <span class="picker-chevron" class:open={showMobilePicker}>▾</span>
 		</button>
 	</nav>
 
@@ -36,7 +44,7 @@
 						class:active={s.sessionNumber === session.sessionNumber}
 						class:dim={!s.hasContent}
 						onclick={() => showMobilePicker = false}>
-						<span class="mobile-picker-num">{s.sessionNumber}</span>{s.title}
+						<span class="mobile-picker-num">{sessionNum(s.sessionNumber)}</span>{s.title}
 					</a>
 				{/each}
 			</div>
@@ -53,7 +61,7 @@
 						class="sidebar-item"
 						class:active={s.sessionNumber === session.sessionNumber}
 						class:dim={!s.hasContent}>
-						<span class="sidebar-num">{s.sessionNumber}</span>
+						<span class="sidebar-num">{sessionNum(s.sessionNumber)}</span>
 						<span>{s.title}</span>
 					</a>
 				{/each}
@@ -61,9 +69,18 @@
 		</aside>
 
 		<main class="main">
-			<div class="session-eyebrow">Session {session.sessionNumber}</div>
+			{#if !titleIsLabel}<div class="session-eyebrow">{sessionLabel(session.sessionNumber)}</div>{/if}
 			<h1 class="session-title">{session.title}</h1>
 			<div class="session-divider"></div>
+
+			{#if session.blocks.length > 0}
+				<div class="export-links">
+					{#if pdfUrl}
+						<a href={pdfUrl} class="export-link"><span class="export-icon">↓</span> Download this session (PDF)</a>
+					{/if}
+					<a href="/p/{course.slug}/{module.orderNumber}/print?session={session.sessionNumber}" class="export-link">Print version</a>
+				</div>
+			{/if}
 
 			{#if session.blocks.length > 0}
 				<PublicPageBlockRenderer blocks={session.blocks} />
@@ -124,7 +141,7 @@
 	.sidebar-item:hover { background: #f5f5f4; color: #1c1917; }
 	.sidebar-item.active { background: #f5f5f4; color: #1c1917; font-weight: 500; }
 	.sidebar-item.dim { opacity: 0.35; pointer-events: none; }
-	.sidebar-num { font-size: 0.7rem; color: #a8a29e; min-width: 18px; }
+	.sidebar-num { font-size: 0.7rem; color: #a8a29e; min-width: 18px; white-space: nowrap; }
 	.sidebar-item.active .sidebar-num { color: #c9a96e; }
 
 	.main { padding: 3rem 4rem; max-width: 780px; }
@@ -147,4 +164,8 @@
 		.main { padding: 1.5rem 1.25rem; }
 		.session-title { font-size: 1.8rem; }
 	}
+	.export-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 2rem; }
+	.export-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; background: white; border: 1px solid #e7e5e4; border-radius: 8px; font-size: 0.8rem; font-weight: 500; color: #57534e; text-decoration: none; transition: all 0.15s; }
+	.export-link:hover { border-color: #c9a96e; color: #1c1917; }
+	.export-icon { color: #c9a96e; }
 </style>

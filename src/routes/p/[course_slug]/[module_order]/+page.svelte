@@ -2,31 +2,21 @@
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
-	const { course, module, sessions, allModules } = $derived(data);
+	const { course, module, sessions, pdfUrl } = $derived(data);
 
-	// Group all modules by section for sidebar
-	/** @typedef {{ id: string; name: string; orderNumber: number; sectionName: string | null }} SidebarModule */
-	/** @typedef {{ label: string | null; items: SidebarModule[] }} SidebarGroup */
+	// The module is the whole experience: no links out to other modules or a course
+	// home. A one-module course usually shares its name with the module, so only
+	// show the course name when it adds something.
+	const sameName = $derived(module.name.trim().toLowerCase() === course.name.trim().toLowerCase());
 
-	const sidebarGroups = $derived(() => {
-		/** @type {SidebarGroup[]} */
-		const groups = [];
-		for (const mod of allModules) {
-			const lastGroup = groups[groups.length - 1];
-			if (!lastGroup || lastGroup.label !== mod.sectionName) {
-				groups.push({ label: mod.sectionName, items: [mod] });
-			} else {
-				lastGroup.items.push(mod);
-			}
-		}
-		return groups;
-	});
+	/** @param {number} n */
+	const sessionLabel = (n) => (n === 0 ? 'Pre-Start' : String(n));
 
 	let showMobilePicker = $state(false);
 </script>
 
 <svelte:head>
-	<title>{module.name} — {course.name}</title>
+	<title>{sameName ? module.name : `${module.name} — ${course.name}`}</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -34,26 +24,21 @@
 
 <div class="page">
 	<nav class="top-nav">
-		<a href="/p/{course.slug}" class="nav-course">{course.name}</a>
+		<span class="nav-course">{module.name}</span>
 		<button class="mobile-picker-btn" onclick={() => showMobilePicker = !showMobilePicker}>
-			{module.name} <span class="picker-chevron" class:open={showMobilePicker}>▾</span>
+			Sessions <span class="picker-chevron" class:open={showMobilePicker}>▾</span>
 		</button>
 	</nav>
 
 	{#if showMobilePicker}
 		<div class="mobile-picker-overlay" onclick={() => showMobilePicker = false}>
 			<div class="mobile-picker" onclick={e => e.stopPropagation()}>
-				<a href="/p/{course.slug}" class="mobile-picker-home" onclick={() => showMobilePicker = false}>← Course home</a>
-				<div class="mobile-picker-divider"></div>
-				{#each sidebarGroups() as group}
-					{#if group.label}<p class="mobile-picker-section">{group.label}</p>{/if}
-					{#each group.items as mod}
-						<a href="/p/{course.slug}/{mod.orderNumber}" class="mobile-picker-item"
-							class:active={mod.orderNumber === module.orderNumber}
-							onclick={() => showMobilePicker = false}>
-							<span class="mobile-picker-num">{mod.orderNumber}</span>{mod.name}
-						</a>
-					{/each}
+				{#each sessions as s}
+					<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="mobile-picker-item"
+						class:dim={!s.hasContent}
+						onclick={() => showMobilePicker = false}>
+						<span class="mobile-picker-num">{sessionLabel(s.sessionNumber)}</span>{s.title}
+					</a>
 				{/each}
 			</div>
 		</div>
@@ -62,24 +47,27 @@
 	<div class="layout">
 		<aside class="sidebar">
 			<div class="sidebar-inner">
-				<a href="/p/{course.slug}" class="sidebar-home">← Course Home</a>
-				<div class="sidebar-divider"></div>
-				{#each sidebarGroups() as group}
-					{#if group.label}<p class="sidebar-section-label">{group.label}</p>{/if}
-					{#each group.items as mod}
-						<a href="/p/{course.slug}/{mod.orderNumber}" class="sidebar-module"
-							class:active={mod.orderNumber === module.orderNumber}>
-							{mod.name}
-						</a>
-					{/each}
+				<p class="sidebar-section-label">Sessions</p>
+				{#each sessions as s}
+					<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="sidebar-item" class:dim={!s.hasContent}>
+						<span class="sidebar-num">{sessionLabel(s.sessionNumber)}</span>
+						<span>{s.title}</span>
+					</a>
 				{/each}
 			</div>
 		</aside>
 
 		<main class="main">
-			<div class="module-eyebrow">Course Module</div>
+			<div class="module-eyebrow">{sameName ? 'Course Guide' : course.name}</div>
 			<h1 class="module-title">{module.name}</h1>
 			<div class="title-divider"></div>
+
+			<div class="export-links">
+				{#if pdfUrl}
+					<a href={pdfUrl} class="export-link"><span class="export-icon">↓</span> Download the full guide (PDF)</a>
+				{/if}
+				<a href="/p/{course.slug}/{module.orderNumber}/print" class="export-link">Print version</a>
+			</div>
 
 			{#if module.blocks.length > 0}
 				<PublicPageBlockRenderer blocks={module.blocks} />
@@ -91,7 +79,7 @@
 				{#each sessions as session}
 					{#if session.hasContent}
 						<a href="/p/{course.slug}/{module.orderNumber}/{session.sessionNumber}" class="session-card">
-							<span class="session-num">{session.sessionNumber}</span>
+							<span class="session-num">{sessionLabel(session.sessionNumber)}</span>
 							<div class="session-text">
 								<p class="session-title">{session.title}</p>
 								{#if session.description}<p class="session-desc">{session.description}</p>{/if}
@@ -100,7 +88,7 @@
 						</a>
 					{:else}
 						<div class="session-card dim">
-							<span class="session-num">{session.sessionNumber}</span>
+							<span class="session-num">{sessionLabel(session.sessionNumber)}</span>
 							<div class="session-text">
 								<p class="session-title">{session.title}</p>
 							</div>
@@ -128,7 +116,7 @@
 	.mobile-picker-divider { border-top: 1px solid #e7e5e4; margin: 0.5rem 0; }
 	.mobile-picker-section { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #a8a29e; padding: 0.5rem 0 0.2rem; }
 	.mobile-picker-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; font-size: 0.9rem; color: #44403c; text-decoration: none; border-bottom: 1px solid #f5f5f4; }
-	.mobile-picker-item.active { font-weight: 600; }
+	.mobile-picker-item.dim { opacity: 0.35; pointer-events: none; }
 	.mobile-picker-num { font-size: 0.7rem; color: #c9a96e; min-width: 18px; }
 
 	.layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 56px); max-width: 1200px; margin: 0 auto; }
@@ -139,9 +127,10 @@
 	.sidebar-home:hover { color: #7c6a52; }
 	.sidebar-divider { border-top: 1px solid #e7e5e4; margin: 0.5rem 0; }
 	.sidebar-section-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #a8a29e; padding: 0.6rem 0.5rem 0.3rem; }
-	.sidebar-module { display: block; padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.875rem; color: #57534e; text-decoration: none; transition: all 0.15s; }
-	.sidebar-module:hover { background: #f5f5f4; color: #1c1917; }
-	.sidebar-module.active { background: #f5f5f4; color: #1c1917; font-weight: 500; }
+	.sidebar-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.85rem; color: #57534e; text-decoration: none; transition: all 0.15s; }
+	.sidebar-item:hover { background: #f5f5f4; color: #1c1917; }
+	.sidebar-item.dim { opacity: 0.35; pointer-events: none; }
+	.sidebar-num { font-size: 0.7rem; color: #a8a29e; min-width: 18px; white-space: nowrap; }
 
 	.main { padding: 3rem 4rem; max-width: 780px; }
 	.module-eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #a8926e; margin-bottom: 0.5rem; }
@@ -167,4 +156,8 @@
 		.main { padding: 1.5rem 1.25rem; }
 		.module-title { font-size: 1.8rem; }
 	}
+	.export-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 2rem; }
+	.export-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; background: white; border: 1px solid #e7e5e4; border-radius: 8px; font-size: 0.8rem; font-weight: 500; color: #57534e; text-decoration: none; transition: all 0.15s; }
+	.export-link:hover { border-color: #c9a96e; color: #1c1917; }
+	.export-icon { color: #c9a96e; }
 </style>

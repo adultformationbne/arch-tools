@@ -1,27 +1,9 @@
 import { error } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
+import { resolveMaterialBlock } from '$lib/server/public-guide.js';
+import { getGuidePdfLinks } from '$lib/server/guide-pdf-links.js';
 import type { PageServerLoad } from './$types';
-
-function resolveMaterialBlock(block: any, materialsById: Map<string, any>): any {
-	if (block.type !== 'material') return block;
-	const mat = materialsById.get(block.materialId);
-	if (!mat) return null;
-
-	if (mat.type === 'mux_video' && mat.mux_playback_id) {
-		return { type: 'video', url: `https://stream.mux.com/${mat.mux_playback_id}`, caption: block.caption ?? mat.title };
-	}
-	if (mat.type === 'video' || mat.type === 'embed') {
-		return { type: 'video', url: mat.content, caption: block.caption ?? mat.title };
-	}
-	if (mat.type === 'image') {
-		return { type: 'image', url: mat.content, caption: block.caption ?? mat.title };
-	}
-	if (mat.type === 'document' || mat.type === 'link' || mat.type === 'native') {
-		return { type: 'download', url: mat.content, title: block.title ?? mat.title, caption: block.caption };
-	}
-	return null;
-}
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { course_slug, module_order, session_number } = params;
@@ -80,7 +62,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			.filter(Boolean);
 	}
 
+	const pdfLinks = await getGuidePdfLinks(
+		{ slug: course.slug, name: course.name },
+		{ orderNumber: module.order_number, name: module.name }
+	);
+
 	return {
+		pdfUrl: pdfLinks.sessions[session.session_number] ?? null,
 		course: { name: course.name, shortName: course.short_name, slug: course.slug },
 		module: {
 			id: module.id,

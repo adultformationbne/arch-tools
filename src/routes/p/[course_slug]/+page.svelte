@@ -40,7 +40,7 @@
 					{#if group.label}
 						<p class="sidebar-section-label">{group.label}</p>
 					{:else}
-						<p class="sidebar-section-label">Sessions</p>
+						<p class="sidebar-section-label">Modules</p>
 					{/if}
 					{#each group.items as mod}
 						<a
@@ -81,7 +81,7 @@
 					{#if group.label}
 						<h2 class="sessions-heading">{group.label}</h2>
 					{:else}
-						<h2 class="sessions-heading">Sessions</h2>
+						<h2 class="sessions-heading">Modules</h2>
 					{/if}
 					<div class="session-grid">
 						{#each group.items as mod}

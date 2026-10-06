@@ -1,5 +1,6 @@
 <script>
-	let { blocks = [] } = $props();
+	// print: static layout for the printable guide — themes expanded, writing space under questions
+	let { blocks = [], print = false } = $props();
 
 	let openAccordions = $state(new Set());
 
@@ -13,7 +14,7 @@
 	}
 </script>
 
-<div class="blocks">
+<div class="blocks" class:print>
 	{#each blocks as block, i}
 		{#if block.type === 'title'}
 			<h2 class="block-title">{block.content}</h2>
@@ -47,6 +48,7 @@
 					<li>
 						<span class="q-num">{qi + 1}</span>
 						<span class="q-text">{q}</span>
+						{#if print}<span class="q-lines" aria-hidden="true"></span>{/if}
 					</li>
 				{/each}
 			</ol>
@@ -72,14 +74,15 @@
 			<div class="block-accordion">
 				{#each block.items as item, ai}
 					{@const key = `${i}-${ai}`}
-					<div class="accordion-item" class:open={openAccordions.has(key)}>
+					{@const open = print || openAccordions.has(key)}
+					<div class="accordion-item" class:open>
 						<button class="accordion-trigger" onclick={() => toggleAccordion(key)}>
 							<span>{item.title}</span>
-							<span class="accordion-chevron" class:rotated={openAccordions.has(key)}>▾</span>
+							<span class="accordion-chevron" class:rotated={open}>▾</span>
 						</button>
-						{#if openAccordions.has(key)}
+						{#if open}
 							<ul class="accordion-body">
-								{#each (item.points ?? item.content ? [item.content] : []) as point}
+								{#each (item.points ?? (item.content ? [item.content] : [])) as point}
 									<li>{point}</li>
 								{/each}
 							</ul>
@@ -87,6 +90,9 @@
 					</div>
 				{/each}
 			</div>
+
+		{:else if block.type === 'video' && print}
+			<p class="block-note">Video{block.caption ? `: ${block.caption}` : ''} — watch it in the online guide.</p>
 
 		{:else if block.type === 'video'}
 			<div class="block-video">
@@ -401,5 +407,27 @@
 	}
 	.download-link:hover { background: #ece9e6; border-color: #c9a96e; }
 	.download-icon { font-size: 1rem; color: var(--pp-gold, #c9a96e); }
+	/* Print layout */
+	.blocks.print .accordion-item { border: none; border-radius: 0; background: none; break-inside: avoid; }
+	.blocks.print .accordion-trigger { padding: 0.6rem 0 0.3rem; cursor: default; }
+	.blocks.print .accordion-trigger:hover { background: none; }
+	.blocks.print .accordion-chevron { display: none; }
+	.blocks.print .accordion-body { padding: 0 0 0.5rem; }
+	.blocks.print .block-questions li { flex-wrap: wrap; break-inside: avoid; }
+	.blocks.print .q-text { flex: 1; }
+	.q-lines {
+		flex-basis: 100%;
+		height: 5.4rem;
+		background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.8rem - 1px), #e7e5e4 calc(1.8rem - 1px), #e7e5e4 1.8rem);
+	}
+	.blocks.print .block-title { break-after: avoid; }
+	.blocks.print .block-summary,
+	.blocks.print .block-quote,
+	.blocks.print .block-scripture,
+	.blocks.print .block-ordered li,
+	.blocks.print .block-unordered li,
+	.blocks.print .block-image { break-inside: avoid; }
+	.blocks.print .download-link::after { content: ' (' attr(href) ')'; font-weight: 400; color: #78716c; }
+
 	.download-caption { font-size: 0.75rem; color: #a8a29e; margin-top: 0.35rem; font-family: 'Inter', sans-serif; }
 </style>
