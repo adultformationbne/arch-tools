@@ -75,6 +75,18 @@
 				{/each}
 			</ul>
 
+		{:else if block.type === 'reading_list'}
+			<ul class="block-reading">
+				{#each block.items as item}
+					<li>
+						<span class="reading-title">{item.title}</span>
+						{#if item.author || item.detail}
+							<span class="reading-meta">{[item.author, item.detail].filter(Boolean).join(' · ')}</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+
 		{:else if block.type === 'accordion'}
 			<div class="block-accordion">
 				{#each block.items as item, ai}
@@ -302,6 +314,32 @@
 		position: absolute;
 		left: 0;
 		color: var(--pp-highlight-text, #c9a96e);
+	}
+
+	.block-reading {
+		list-style: none;
+		padding: 0;
+		margin-bottom: 1.5rem;
+		border-bottom: 1px solid var(--pp-border, #e7e5e4);
+	}
+	.block-reading li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding: 0.8rem 0;
+		border-top: 1px solid var(--pp-border, #e7e5e4);
+		break-inside: avoid;
+	}
+	.reading-title {
+		font-family: var(--pp-font-heading, var(--pp-font-body, 'Lora', Georgia, serif));
+		font-size: 1.15rem;
+		line-height: 1.3;
+		color: var(--pp-ink, #1c1917);
+	}
+	.reading-meta {
+		font-family: var(--pp-font-ui, 'Inter', sans-serif);
+		font-size: 0.78rem;
+		color: var(--pp-muted, #78716c);
 	}
 
 	.block-accordion {

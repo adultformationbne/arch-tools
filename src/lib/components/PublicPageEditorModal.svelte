@@ -134,6 +134,7 @@ COMPANION GUIDE CONTENT TO CONVERT:
 		{ type: 'accordion', props: 'title, items[]{title, points[]}', note: 'Collapsible key themes' },
 		{ type: 'ordered_list', props: 'items[]', note: 'Numbered steps' },
 		{ type: 'unordered_list', props: 'items[]', note: 'Bullet points' },
+		{ type: 'reading_list', props: 'items[]{title, author?, detail?}', note: 'Further reading: title prominent, author and page/section underneath' },
 		{ type: 'video', props: 'url, caption?', note: 'Embedded video (YouTube/Vimeo embed URL)' },
 		{ type: 'image', props: 'url, caption?', note: 'Image' },
 		{ type: 'download', props: 'url, title, caption?', note: 'Download/link button' },
