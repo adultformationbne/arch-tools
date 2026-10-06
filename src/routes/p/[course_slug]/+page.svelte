@@ -1,5 +1,6 @@
 <script>
-	import { getPublicPageTheme, publicPageThemeStyle } from '$lib/config/public-page-themes';
+	import { getPublicPageTheme } from '$lib/public-guides/themes';
+	import { publicPageThemeStyle } from '$lib/public-guides/theme';
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
@@ -143,7 +144,7 @@
 	}
 	.sidebar-item {
 		display: flex; align-items: center; gap: 0.6rem;
-		padding: 0.4rem 0.5rem; border-radius: 6px;
+		padding: 0.4rem 0.5rem; border-radius: var(--pp-radius, 6px);
 		font-size: 0.85rem; color: var(--pp-body, #57534e);
 		text-decoration: none; transition: all 0.15s;
 	}
@@ -163,7 +164,7 @@
 
 	.sessions-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #7c6a52); margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); }
 	.session-grid { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
-	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.15s; }
+	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 10px); text-decoration: none; color: inherit; transition: all 0.15s; }
 	.session-card:hover { border-color: var(--pp-accent, #a8926e); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 	.session-num { font-size: 0.75rem; font-weight: 600; color: var(--pp-highlight-text, #c9a96e); min-width: 24px; }
 	.session-text { flex: 1; min-width: 0; }

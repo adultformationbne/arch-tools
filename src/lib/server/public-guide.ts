@@ -4,6 +4,7 @@ import { getCourseSettings } from '$lib/types/course-settings.js';
 export interface PublicGuideSession {
 	sessionNumber: number;
 	title: string;
+	sectionName: string | null;
 	blocks: any[];
 }
 
@@ -59,7 +60,7 @@ export async function loadPublicGuide(courseSlug: string, moduleOrder: number): 
 
 	const { data: sessions } = await supabaseAdmin
 		.from('courses_sessions')
-		.select('session_number, title, public_page_content')
+		.select('session_number, title, section_name, public_page_content')
 		.eq('module_id', module.id)
 		.not('public_page_content', 'is', null)
 		.order('session_number');
@@ -91,6 +92,7 @@ export async function loadPublicGuide(courseSlug: string, moduleOrder: number): 
 		sessions: withContent.map(s => ({
 			sessionNumber: s.session_number,
 			title: s.title,
+			sectionName: s.section_name ?? null,
 			blocks: (s.public_page_content as any[]).map(b => resolveMaterialBlock(b, materialsById)).filter(Boolean)
 		}))
 	};

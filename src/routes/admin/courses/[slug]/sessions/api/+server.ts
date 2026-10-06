@@ -8,7 +8,7 @@ export const PATCH: RequestHandler = async (event) => {
 	await requireCourseAdmin(event, courseSlug);
 
 	const body = await event.request.json();
-	const { sessionId, publicPageContent } = body;
+	const { sessionId, publicPageContent, sectionName } = body;
 
 	if (!sessionId) return json({ error: 'sessionId required' }, { status: 400 });
 
@@ -27,7 +27,10 @@ export const PATCH: RequestHandler = async (event) => {
 
 	const { error } = await supabaseAdmin
 		.from('courses_sessions')
-		.update({ public_page_content: publicPageContent ?? null })
+		.update({
+			public_page_content: publicPageContent ?? null,
+			...('sectionName' in body ? { section_name: sectionName?.trim() || null } : {})
+		})
 		.eq('id', sessionId);
 
 	if (error) return json({ error: error.message }, { status: 500 });

@@ -1733,6 +1733,7 @@ export type Database = {
           module_id: string
           public_page_content: Json | null
           reflections_enabled: boolean
+          section_name: string | null
           session_number: number
           title: string
           updated_at: string | null
@@ -1745,6 +1746,7 @@ export type Database = {
           module_id: string
           public_page_content?: Json | null
           reflections_enabled?: boolean
+          section_name?: string | null
           session_number: number
           title: string
           updated_at?: string | null
@@ -1757,6 +1759,7 @@ export type Database = {
           module_id?: string
           public_page_content?: Json | null
           reflections_enabled?: boolean
+          section_name?: string | null
           session_number?: number
           title?: string
           updated_at?: string | null

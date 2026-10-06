@@ -1,10 +1,15 @@
 <script>
-	import { getPublicPageTheme, publicPageThemeStyle } from '$lib/config/public-page-themes';
+	import PublicSessionNumber from '$lib/components/PublicSessionNumber.svelte';
+	import { getPublicGuideDesign } from '$lib/public-guides';
+	import { publicPageThemeStyle } from '$lib/public-guides/theme';
+	import { groupSessionsBySection } from '$lib/public-guides/sections';
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
 	const { course, module, sessions, single } = $derived(data);
-	const theme = $derived(getPublicPageTheme(course.slug));
+	const design = $derived(getPublicGuideDesign(course.slug));
+	const theme = $derived(design.theme);
+	const groups = $derived(groupSessionsBySection(sessions));
 
 	const sameName = $derived(module.name.trim().toLowerCase() === course.name.trim().toLowerCase());
 
@@ -30,32 +35,34 @@
 	</div>
 
 	{#if !single}
-		<header class="cover">
-			<div class="eyebrow">{sameName ? 'Companion Guide' : course.name}</div>
-			{#if theme.wordmark && sameName}
-				<h1 class="cover-wordmark">
-					<img src={theme.wordmark.src} alt={module.name} width={theme.wordmark.width} height={theme.wordmark.height} />
-				</h1>
-			{:else}
+		{#if design.components.PrintCover}
+			{@const PrintCover = design.components.PrintCover}
+			<PrintCover {course} {module} {sessions} />
+		{:else}
+			<header class="cover">
+				<div class="eyebrow">{sameName ? 'Companion Guide' : course.name}</div>
 				<h1 class="cover-title">{module.name}</h1>
-			{/if}
-			{#if module.description}<p class="cover-desc">{module.description}</p>{/if}
-			<div class="rule"></div>
-		</header>
+				{#if module.description}<p class="cover-desc">{module.description}</p>{/if}
+				<div class="rule"></div>
+			</header>
+		{/if}
 
 		{#if module.blocks.length > 0}
-			<PublicPageBlockRenderer blocks={module.blocks} print />
+			<PublicPageBlockRenderer blocks={module.blocks} overrides={design.blocks} print />
 		{/if}
 
 		{#if sessions.length > 0}
 			<section class="contents">
 				<h2 class="contents-heading">Contents</h2>
 				<ol class="contents-list">
-					{#each sessions as s}
-						<li>
-							<span class="contents-num">{s.sessionNumber === 0 ? 'Pre-Start' : s.sessionNumber}</span>
-							<span>{s.title}</span>
-						</li>
+					{#each groups as group}
+						{#if group.label}<li class="contents-section">{group.label}</li>{/if}
+						{#each group.items as s}
+							<li>
+								<span class="contents-num"><PublicSessionNumber n={s.sessionNumber} /></span>
+								<span>{s.title}</span>
+							</li>
+						{/each}
 					{/each}
 				</ol>
 			</section>
@@ -64,10 +71,15 @@
 
 	{#each sessions as s}
 		<section class="session" class:new-page={!single}>
-			<div class="eyebrow">{titleIsLabel(s) ? module.name : `${module.name} · ${sessionLabel(s.sessionNumber)}`}</div>
-			<h1 class="session-title">{s.title}</h1>
-			<div class="rule"></div>
-			<PublicPageBlockRenderer blocks={s.blocks} print />
+			{#if design.components.SessionHeader}
+				{@const SessionHeader = design.components.SessionHeader}
+				<SessionHeader {course} {module} session={s} print />
+			{:else}
+				<div class="eyebrow">{[module.name, titleIsLabel(s) ? null : sessionLabel(s.sessionNumber), s.sectionName].filter(Boolean).join(' · ')}</div>
+				<h1 class="session-title">{s.title}</h1>
+				<div class="rule"></div>
+			{/if}
+			<PublicPageBlockRenderer blocks={s.blocks} overrides={design.blocks} print />
 		</section>
 	{/each}
 </div>
@@ -82,7 +94,7 @@
 	.toolbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); }
 	.toolbar-back { font-size: 0.85rem; color: var(--pp-muted, #78716c); text-decoration: none; }
 	.toolbar-back:hover { color: var(--pp-ink, #1c1917); }
-	.toolbar-print { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.85rem; font-weight: 500; color: var(--pp-body, #44403c); background: var(--pp-surface, #f5f5f4); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; }
+	.toolbar-print { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.85rem; font-weight: 500; color: var(--pp-body, #44403c); background: var(--pp-surface, #f5f5f4); border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 8px); padding: 0.5rem 1rem; cursor: pointer; }
 	.toolbar-print:hover { background: var(--pp-surface, #ece9e6); border-color: var(--pp-highlight, #c9a96e); }
 
 	.eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #a8926e); margin-bottom: 0.5rem; }
@@ -95,7 +107,7 @@
 	.contents-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #7c6a52); padding-bottom: 0.5rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); margin-bottom: 0.5rem; }
 	.contents-list { list-style: none; padding: 0; }
 	.contents-list li { display: flex; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--pp-surface, #f5f5f4); font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-size: 0.95rem; color: var(--pp-body, #44403c); }
-	.contents-num { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.75rem; color: var(--pp-highlight-text, #c9a96e); min-width: 4.5rem; padding-top: 2px; }
+	.contents-num { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.75rem; color: var(--pp-highlight-text, #c9a96e); min-width: 2rem; padding-top: 2px; }
 
 	.session { margin-top: 4rem; }
 	.session:first-child, .toolbar + .session { margin-top: 0; }
@@ -106,6 +118,5 @@
 		.session { margin-top: 0; }
 		.session.new-page { break-before: page; }
 	}
-	.cover-wordmark { margin: 0.75rem 0 1.25rem; }
-	.cover-wordmark img { display: block; width: 18rem; height: auto; }
+	.contents-list li.contents-section { display: block; border-bottom: none; padding: 0.9rem 0 0.2rem; font-style: italic; font-size: 0.9rem; color: var(--pp-muted, #78716c); }
 </style>

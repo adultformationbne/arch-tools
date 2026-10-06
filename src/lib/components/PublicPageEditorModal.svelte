@@ -7,7 +7,7 @@
 	let {
 		isOpen = false,
 		module = null,       // { id, name, order_number, public_page_content, section_name }
-		session = null,      // { id, sessionNumber, title, publicPageContent } — alternative to module for session editing
+		session = null,      // { id, sessionNumber, title, publicPageContent, sectionName } — alternative to module for session editing
 		moduleOrderNumber = null,  // required when session is set, for preview link
 		courseSlug = '',
 		onClose = () => {},
@@ -27,7 +27,7 @@
 			sectionName = module.section_name ?? '';
 		} else if (isOpen && session) {
 			json = session.publicPageContent ? JSON.stringify(session.publicPageContent, null, 2) : '';
-			sectionName = '';
+			sectionName = session.sectionName ?? '';
 		}
 	});
 
@@ -55,12 +55,12 @@
 				const res = await fetch(`/admin/courses/${courseSlug}/sessions/api`, {
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ sessionId: session.id, publicPageContent: blocks })
+					body: JSON.stringify({ sessionId: session.id, publicPageContent: blocks, sectionName: sectionName.trim() || null })
 				});
 				const result = await res.json();
 				if (!res.ok || !result.success) throw new Error(result.error || 'Save failed');
 				toastSuccess('Saved');
-				onSaved({ ...session, publicPageContent: blocks });
+				onSaved({ ...session, publicPageContent: blocks, sectionName: sectionName.trim() || null });
 			} else {
 				const res = await fetch(`/admin/courses/${courseSlug}/modules/api`, {
 					method: 'PATCH',
@@ -148,10 +148,10 @@ COMPANION GUIDE CONTENT TO CONVERT:
 	<div class="editor-layout">
 		<!-- Left: editor -->
 		<div class="editor-pane">
-			<!-- Section name (modules only) -->
-			{#if !session}
+			<!-- Section name: groups modules on the course page, or sessions within a guide -->
+			{#if true}
 			<div class="field">
-				<label class="field-label" for="section-name">Section name <span class="field-optional">(optional — groups sessions in the sidebar)</span></label>
+				<label class="field-label" for="section-name">Section name <span class="field-optional">(optional — {session ? 'consecutive sessions with the same name are grouped under it' : 'groups modules in the sidebar'})</span></label>
 				<input
 					id="section-name"
 					type="text"

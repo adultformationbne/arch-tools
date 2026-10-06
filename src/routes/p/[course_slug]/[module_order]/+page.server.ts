@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const { data: sessions } = await supabaseAdmin
 		.from('courses_sessions')
-		.select('id, session_number, title, description, public_page_content')
+		.select('id, session_number, title, description, section_name, public_page_content')
 		.eq('module_id', module.id)
 		.order('session_number');
 
@@ -56,6 +56,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			sessionNumber: s.session_number,
 			title: s.title,
 			description: s.description,
+			sectionName: s.section_name ?? null,
 			hasContent: !!s.public_page_content
 		}))
 	};

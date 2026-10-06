@@ -1,18 +1,21 @@
 <script>
-	import { getPublicPageTheme, publicPageThemeStyle } from '$lib/config/public-page-themes';
+	import PublicSessionNumber from '$lib/components/PublicSessionNumber.svelte';
+	import { getPublicGuideDesign } from '$lib/public-guides';
+	import { publicPageThemeStyle } from '$lib/public-guides/theme';
+	import { groupSessionsBySection } from '$lib/public-guides/sections';
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
 	const { course, module, sessions, pdfUrl } = $derived(data);
-	const theme = $derived(getPublicPageTheme(course.slug));
+	// A course can bring its own theme, components and block overrides — see $lib/public-guides
+	const design = $derived(getPublicGuideDesign(course.slug));
+	const theme = $derived(design.theme);
+	const groups = $derived(groupSessionsBySection(sessions));
 
 	// The module is the whole experience: no links out to other modules or a course
 	// home. A one-module course usually shares its name with the module, so only
 	// show the course name when it adds something.
 	const sameName = $derived(module.name.trim().toLowerCase() === course.name.trim().toLowerCase());
-
-	/** @param {number} n */
-	const sessionLabel = (n) => (n === 0 ? 'Pre-Start' : String(n));
 
 	let showMobilePicker = $state(false);
 </script>
@@ -25,6 +28,10 @@
 </svelte:head>
 
 <div class="page" style={publicPageThemeStyle(theme)}>
+	{#if design.components.Backdrop}
+		{@const Backdrop = design.components.Backdrop}
+		<Backdrop {course} {module} />
+	{/if}
 	<nav class="top-nav">
 		<span class="nav-course">{module.name}</span>
 		<button class="mobile-picker-btn" onclick={() => showMobilePicker = !showMobilePicker}>
@@ -35,12 +42,15 @@
 	{#if showMobilePicker}
 		<div class="mobile-picker-overlay" onclick={() => showMobilePicker = false}>
 			<div class="mobile-picker" onclick={e => e.stopPropagation()}>
-				{#each sessions as s}
-					<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="mobile-picker-item"
-						class:dim={!s.hasContent}
-						onclick={() => showMobilePicker = false}>
-						<span class="mobile-picker-num">{sessionLabel(s.sessionNumber)}</span>{s.title}
-					</a>
+				{#each groups as group}
+					{#if group.label}<p class="mobile-picker-section">{group.label}</p>{/if}
+					{#each group.items as s}
+						<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="mobile-picker-item"
+							class:dim={!s.hasContent}
+							onclick={() => showMobilePicker = false}>
+							<span class="mobile-picker-num"><PublicSessionNumber n={s.sessionNumber} /></span>{s.title}
+						</a>
+					{/each}
 				{/each}
 			</div>
 		</div>
@@ -49,26 +59,31 @@
 	<div class="layout">
 		<aside class="sidebar">
 			<div class="sidebar-inner">
-				<p class="sidebar-section-label">Sessions</p>
-				{#each sessions as s}
-					<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="sidebar-item" class:dim={!s.hasContent}>
-						<span class="sidebar-num">{sessionLabel(s.sessionNumber)}</span>
-						<span>{s.title}</span>
-					</a>
+				{#each groups as group, gi}
+					{#if group.label}
+						<p class="sidebar-section-label">{group.label}</p>
+					{:else if gi === 0}
+						<p class="sidebar-section-label">Sessions</p>
+					{/if}
+					{#each group.items as s}
+						<a href="/p/{course.slug}/{module.orderNumber}/{s.sessionNumber}" class="sidebar-item" class:dim={!s.hasContent}>
+							<span class="sidebar-num"><PublicSessionNumber n={s.sessionNumber} /></span>
+							<span>{s.title}</span>
+						</a>
+					{/each}
 				{/each}
 			</div>
 		</aside>
 
 		<main class="main">
-			<div class="module-eyebrow">{sameName ? 'Course Guide' : course.name}</div>
-			{#if theme.wordmark && sameName}
-				<h1 class="module-wordmark">
-					<img src={theme.wordmark.src} alt={module.name} width={theme.wordmark.width} height={theme.wordmark.height} />
-				</h1>
+			{#if design.components.LandingHero}
+				{@const LandingHero = design.components.LandingHero}
+				<LandingHero {course} {module} {sessions} />
 			{:else}
+				<div class="module-eyebrow">{sameName ? 'Course Guide' : course.name}</div>
 				<h1 class="module-title">{module.name}</h1>
+				<div class="title-divider"></div>
 			{/if}
-			<div class="title-divider"></div>
 
 			<div class="export-links">
 				{#if pdfUrl}
@@ -78,16 +93,22 @@
 			</div>
 
 			{#if module.blocks.length > 0}
-				<PublicPageBlockRenderer blocks={module.blocks} />
+				<PublicPageBlockRenderer blocks={module.blocks} overrides={design.blocks} />
 				<hr class="section-break" />
 			{/if}
 
+			{#if design.components.SessionList}
+				{@const SessionList = design.components.SessionList}
+				<SessionList {course} {module} {groups} />
+			{:else}
 			<h2 class="sessions-heading">Sessions</h2>
 			<div class="session-list">
-				{#each sessions as session}
+				{#each groups as group}
+				{#if group.label}<h3 class="session-group-label">{group.label}</h3>{/if}
+				{#each group.items as session}
 					{#if session.hasContent}
 						<a href="/p/{course.slug}/{module.orderNumber}/{session.sessionNumber}" class="session-card">
-							<span class="session-num">{sessionLabel(session.sessionNumber)}</span>
+							<span class="session-num"><PublicSessionNumber n={session.sessionNumber} /></span>
 							<div class="session-text">
 								<p class="session-title">{session.title}</p>
 								{#if session.description}<p class="session-desc">{session.description}</p>{/if}
@@ -96,14 +117,16 @@
 						</a>
 					{:else}
 						<div class="session-card dim">
-							<span class="session-num">{sessionLabel(session.sessionNumber)}</span>
+							<span class="session-num"><PublicSessionNumber n={session.sessionNumber} /></span>
 							<div class="session-text">
 								<p class="session-title">{session.title}</p>
 							</div>
 						</div>
 					{/if}
 				{/each}
+				{/each}
 			</div>
+			{/if}
 		</main>
 	</div>
 </div>
@@ -115,7 +138,7 @@
 	.top-nav { position: sticky; top: 0; z-index: 200; background: var(--pp-card, white); border-bottom: 1px solid var(--pp-border, #e7e5e4); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
 	.nav-course { font-family: var(--pp-font-heading, 'Lora', Georgia, serif); font-size: 1rem; font-weight: 500; color: var(--pp-ink, #292524); text-decoration: none; }
 	.nav-course:hover { color: var(--pp-accent, #7c6a52); }
-	.mobile-picker-btn { display: none; background: none; border: 1px solid var(--pp-border, #e7e5e4); border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.8rem; color: var(--pp-body, #57534e); cursor: pointer; align-items: center; gap: 0.3rem; }
+	.mobile-picker-btn { display: none; background: none; border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 6px); padding: 0.35rem 0.75rem; font-size: 0.8rem; color: var(--pp-body, #57534e); cursor: pointer; align-items: center; gap: 0.3rem; }
 	.picker-chevron { transition: transform 0.15s; display: inline-block; }
 	.picker-chevron.open { transform: rotate(180deg); }
 
@@ -136,7 +159,7 @@
 	.sidebar-home:hover { color: var(--pp-accent, #7c6a52); }
 	.sidebar-divider { border-top: 1px solid var(--pp-border, #e7e5e4); margin: 0.5rem 0; }
 	.sidebar-section-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--pp-muted, #a8a29e); padding: 0.6rem 0.5rem 0.3rem; }
-	.sidebar-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.85rem; color: var(--pp-body, #57534e); text-decoration: none; transition: all 0.15s; }
+	.sidebar-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.5rem; border-radius: var(--pp-radius, 6px); font-size: 0.85rem; color: var(--pp-body, #57534e); text-decoration: none; transition: all 0.15s; }
 	.sidebar-item:hover { background: var(--pp-surface, #f5f5f4); color: var(--pp-ink, #1c1917); }
 	.sidebar-item.dim { opacity: 0.35; pointer-events: none; }
 	.sidebar-num { font-size: 0.7rem; color: var(--pp-muted, #a8a29e); min-width: 18px; white-space: nowrap; }
@@ -149,7 +172,7 @@
 
 	.sessions-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #7c6a52); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); }
 	.session-list { display: flex; flex-direction: column; gap: 0.6rem; }
-	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.15s; }
+	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 10px); text-decoration: none; color: inherit; transition: all 0.15s; }
 	.session-card:not(.dim):hover { border-color: var(--pp-accent, #a8926e); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 	.session-card.dim { opacity: 0.45; }
 	.session-num { font-size: 0.75rem; font-weight: 600; color: var(--pp-highlight-text, #c9a96e); min-width: 24px; flex-shrink: 0; }
@@ -166,9 +189,10 @@
 		.module-title { font-size: 1.8rem; }
 	}
 	.export-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 2rem; }
-	.export-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 8px; font-size: 0.8rem; font-weight: 500; color: var(--pp-body, #57534e); text-decoration: none; transition: all 0.15s; }
+	.export-link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 8px); font-size: 0.8rem; font-weight: 500; color: var(--pp-body, #57534e); text-decoration: none; transition: all 0.15s; }
 	.export-link:hover { border-color: var(--pp-highlight, #c9a96e); color: var(--pp-ink, #1c1917); }
 	.export-icon { color: var(--pp-highlight-text, #c9a96e); }
-	.module-wordmark { margin: 0.75rem 0 1.5rem; }
-	.module-wordmark img { display: block; width: min(100%, 22rem); height: auto; }
+	.session-group-label { font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-style: italic; font-size: 0.95rem; font-weight: var(--pp-body-weight, 400); color: var(--pp-muted, #78716c); margin: 1.25rem 0 0.1rem; }
+	.page { position: relative; overflow-x: clip; }
+	.layout { position: relative; z-index: 1; }
 </style>

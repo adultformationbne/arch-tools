@@ -1,6 +1,7 @@
 <script>
 	// print: static layout for the printable guide — themes expanded, writing space under questions
-	let { blocks = [], print = false } = $props();
+	// overrides: components keyed by block type, from a course's guide design ($lib/public-guides)
+	let { blocks = [], print = false, overrides = {} } = $props();
 
 	let openAccordions = $state(new Set());
 
@@ -16,8 +17,12 @@
 
 <div class="blocks" class:print>
 	{#each blocks as block, i}
-		{#if block.type === 'title'}
-			<h2 class="block-title">{block.content}</h2>
+		{#if overrides[block.type]}
+			{@const Override = overrides[block.type]}
+			<Override {block} {print} />
+
+		{:else if block.type === 'title'}
+			<h2 class="block-title" id={block.anchor}>{block.content}</h2>
 
 		{:else if block.type === 'text'}
 			<p class="block-text">{block.content}</p>
@@ -135,6 +140,7 @@
 		margin-bottom: 1rem;
 		padding-bottom: 0.5rem;
 		border-bottom: 1px solid var(--pp-border, #e7e5e4);
+		scroll-margin-top: 80px; /* clears the sticky top bar when jumped to */
 	}
 
 	.block-text {
@@ -157,7 +163,7 @@
 
 	.block-summary {
 		background: var(--pp-summary-bg, linear-gradient(135deg, #f9f6f2 0%, #f3ede5 100%));
-		border-radius: 12px;
+		border-radius: var(--pp-radius, 12px);
 		padding: 1.25rem 1.5rem;
 		margin-bottom: 1.5rem;
 		border: 1px solid var(--pp-border, #e8dfd4);
@@ -228,7 +234,7 @@
 		padding: 0.9rem 1.1rem;
 		background: var(--pp-card, white);
 		border: 1px solid var(--pp-border, #e7e5e4);
-		border-radius: 10px;
+		border-radius: var(--pp-radius, 10px);
 	}
 	.q-num {
 		font-size: 0.8rem;
@@ -306,7 +312,7 @@
 	}
 	.accordion-item {
 		border: 1px solid var(--pp-border, #e7e5e4);
-		border-radius: 10px;
+		border-radius: var(--pp-radius, 10px);
 		overflow: hidden;
 		background: var(--pp-card, white);
 	}
@@ -350,7 +356,7 @@
 
 	.block-video {
 		margin-bottom: 1.5rem;
-		border-radius: 12px;
+		border-radius: var(--pp-radius, 12px);
 		overflow: hidden;
 		aspect-ratio: 16/9;
 		background: var(--pp-ink, #1c1917);
@@ -366,7 +372,7 @@
 	}
 	.block-image img {
 		width: 100%;
-		border-radius: 12px;
+		border-radius: var(--pp-radius, 12px);
 		display: block;
 	}
 	.media-caption, figcaption {
@@ -391,7 +397,7 @@
 		padding: 0.6rem 1.1rem;
 		background: var(--pp-surface, #f5f5f4);
 		border: 1px solid var(--pp-border, #e7e5e4);
-		border-radius: 8px;
+		border-radius: var(--pp-radius, 8px);
 		font-family: var(--pp-font-ui, 'Inter', sans-serif);
 		font-size: 0.875rem;
 		font-weight: 500;

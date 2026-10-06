@@ -111,7 +111,8 @@
 				materials,
 				reflection,
 				reflectionEnabled: hasQuestion ? (session.reflections_enabled ?? true) : false,
-				publicPageContent: session.public_page_content ?? null
+				publicPageContent: session.public_page_content ?? null,
+				sectionName: session.section_name ?? null
 			};
 		}
 
@@ -317,6 +318,7 @@
 	const handlePublicPageSaved = (updatedSession) => {
 		if (sessionData[selectedSession]) {
 			sessionData[selectedSession].publicPageContent = updatedSession.publicPageContent;
+			sessionData[selectedSession].sectionName = updatedSession.sectionName ?? null;
 		}
 		publicPageModalSession = null;
 	};
@@ -980,7 +982,7 @@
 									>↗ View</a>
 								{/if}
 								<button
-									onclick={() => publicPageModalSession = { id: currentSession.id, sessionNumber: selectedSession, title: currentSession.title, publicPageContent: currentSession.publicPageContent ?? null, materials: currentSession.materials || [] }}
+									onclick={() => publicPageModalSession = { id: currentSession.id, sessionNumber: selectedSession, title: currentSession.title, publicPageContent: currentSession.publicPageContent ?? null, sectionName: currentSession.sectionName ?? null, materials: currentSession.materials || [] }}
 									class="px-4 py-2 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
 								>
 									{currentSession.publicPageContent?.length > 0 ? 'Edit' : 'Add content'}
