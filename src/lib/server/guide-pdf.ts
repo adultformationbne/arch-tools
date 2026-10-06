@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { getCourseSettings } from '$lib/types/course-settings.js';
+import { getPublicPageTheme } from '$lib/config/public-page-themes.js';
 import { loadPublicGuide, type PublicGuide } from '$lib/server/public-guide.js';
 import { GUIDE_PDF_BUCKET, folderFor, listStoredGuidePdfs } from '$lib/server/guide-pdf-links.js';
 
@@ -12,7 +13,7 @@ import { GUIDE_PDF_BUCKET, folderFor, listStoredGuidePdfs } from '$lib/server/gu
 // only re-renders what changed and the browser never serves a stale cached copy.
 
 /** Bump when the print layout changes, so every PDF is rebuilt on the next run. */
-const TEMPLATE_VERSION = 1;
+const TEMPLATE_VERSION = 2;
 
 // Must match the installed @sparticuz/chromium-min version (and puppeteer-core's Chrome).
 // The binary is fetched when the cron runs rather than shipped inside the function.
@@ -36,7 +37,8 @@ const hashOf = (value: unknown) =>
 	createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 12);
 
 function targetsFor(guide: PublicGuide): PdfTarget[] {
-	const base = { v: TEMPLATE_VERSION, course: guide.course.name, module: guide.module.name };
+	// The theme is part of the hash, so restyling a course rebuilds its PDFs
+	const base = { v: TEMPLATE_VERSION, course: guide.course.name, module: guide.module.name, theme: getPublicPageTheme(guide.course.slug) };
 	const targets: PdfTarget[] = [];
 
 	if (guide.module.blocks.length > 0 || guide.sessions.length > 0) {

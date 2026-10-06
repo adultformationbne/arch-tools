@@ -1,8 +1,10 @@
 <script>
+	import { getPublicPageTheme, publicPageThemeStyle } from '$lib/config/public-page-themes';
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
 	const { course, module, sessions, single } = $derived(data);
+	const theme = $derived(getPublicPageTheme(course.slug));
 
 	const sameName = $derived(module.name.trim().toLowerCase() === course.name.trim().toLowerCase());
 
@@ -16,12 +18,12 @@
 <svelte:head>
 	<title>{single ? `${sessions[0].title} — ${module.name}` : module.name}</title>
 	<meta name="robots" content="noindex" />
-	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+	{#each theme.fontStylesheets as href (href)}
+		<link rel="stylesheet" {href} />
+	{/each}
 </svelte:head>
 
-<div class="print-doc">
+<div class="print-doc" style={publicPageThemeStyle(theme, { print: true })}>
 	<div class="toolbar">
 		<a href="/p/{course.slug}/{module.orderNumber}{single ? `/${sessions[0].sessionNumber}` : ''}" class="toolbar-back">← Back</a>
 		<button class="toolbar-print" onclick={() => window.print()}>Print / Save as PDF</button>
@@ -30,7 +32,13 @@
 	{#if !single}
 		<header class="cover">
 			<div class="eyebrow">{sameName ? 'Companion Guide' : course.name}</div>
-			<h1 class="cover-title">{module.name}</h1>
+			{#if theme.wordmark && sameName}
+				<h1 class="cover-wordmark">
+					<img src={theme.wordmark.src} alt={module.name} width={theme.wordmark.width} height={theme.wordmark.height} />
+				</h1>
+			{:else}
+				<h1 class="cover-title">{module.name}</h1>
+			{/if}
 			{#if module.description}<p class="cover-desc">{module.description}</p>{/if}
 			<div class="rule"></div>
 		</header>
@@ -67,27 +75,27 @@
 <style>
 	/* The app footer belongs to the site, not the document */
 	:global(body:has(.print-doc) footer) { display: none; }
-	:global(body:has(.print-doc) .min-h-screen) { background: white; min-height: 0; }
+	:global(body:has(.print-doc) .min-h-screen) { background: var(--pp-card, white); min-height: 0; }
 
-	.print-doc { max-width: 720px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; background: white; font-family: 'Inter', sans-serif; }
+	.print-doc { max-width: 720px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; background: var(--pp-card, white); color: var(--pp-ink, #292524); font-family: var(--pp-font-ui, 'Inter', sans-serif); font-weight: var(--pp-body-weight, 400); }
 
-	.toolbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #e7e5e4; }
-	.toolbar-back { font-size: 0.85rem; color: #78716c; text-decoration: none; }
-	.toolbar-back:hover { color: #1c1917; }
-	.toolbar-print { font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; color: #44403c; background: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; }
-	.toolbar-print:hover { background: #ece9e6; border-color: #c9a96e; }
+	.toolbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); }
+	.toolbar-back { font-size: 0.85rem; color: var(--pp-muted, #78716c); text-decoration: none; }
+	.toolbar-back:hover { color: var(--pp-ink, #1c1917); }
+	.toolbar-print { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.85rem; font-weight: 500; color: var(--pp-body, #44403c); background: var(--pp-surface, #f5f5f4); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; }
+	.toolbar-print:hover { background: var(--pp-surface, #ece9e6); border-color: var(--pp-highlight, #c9a96e); }
 
-	.eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #a8926e; margin-bottom: 0.5rem; }
-	.cover-title { font-family: 'Lora', Georgia, serif; font-size: 2.6rem; font-weight: 500; color: #1c1917; line-height: 1.15; }
-	.cover-desc { font-family: 'Lora', Georgia, serif; font-style: italic; font-size: 1.1rem; color: #78716c; margin-top: 0.75rem; }
-	.session-title { font-family: 'Lora', Georgia, serif; font-size: 2rem; font-weight: 500; color: #1c1917; line-height: 1.2; }
-	.rule { width: 48px; height: 2px; background: #c9a96e; margin: 1.25rem 0 1.75rem; }
+	.eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #a8926e); margin-bottom: 0.5rem; }
+	.cover-title { font-family: var(--pp-font-heading, 'Lora', Georgia, serif); font-size: 2.6rem; font-weight: 500; color: var(--pp-ink, #1c1917); line-height: 1.15; }
+	.cover-desc { font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-style: italic; font-size: 1.1rem; color: var(--pp-muted, #78716c); margin-top: 0.75rem; }
+	.session-title { font-family: var(--pp-font-heading, 'Lora', Georgia, serif); font-size: 2rem; font-weight: 500; color: var(--pp-ink, #1c1917); line-height: 1.2; }
+	.rule { width: 48px; height: 2px; background: var(--pp-highlight, #c9a96e); margin: 1.25rem 0 1.75rem; }
 
 	.contents { margin-top: 2.5rem; break-inside: avoid; }
-	.contents-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #7c6a52; padding-bottom: 0.5rem; border-bottom: 1px solid #e7e5e4; margin-bottom: 0.5rem; }
+	.contents-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #7c6a52); padding-bottom: 0.5rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); margin-bottom: 0.5rem; }
 	.contents-list { list-style: none; padding: 0; }
-	.contents-list li { display: flex; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid #f5f5f4; font-family: 'Lora', Georgia, serif; font-size: 0.95rem; color: #44403c; }
-	.contents-num { font-family: 'Inter', sans-serif; font-size: 0.75rem; color: #c9a96e; min-width: 4.5rem; padding-top: 2px; }
+	.contents-list li { display: flex; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--pp-surface, #f5f5f4); font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-size: 0.95rem; color: var(--pp-body, #44403c); }
+	.contents-num { font-family: var(--pp-font-ui, 'Inter', sans-serif); font-size: 0.75rem; color: var(--pp-highlight-text, #c9a96e); min-width: 4.5rem; padding-top: 2px; }
 
 	.session { margin-top: 4rem; }
 	.session:first-child, .toolbar + .session { margin-top: 0; }
@@ -98,4 +106,6 @@
 		.session { margin-top: 0; }
 		.session.new-page { break-before: page; }
 	}
+	.cover-wordmark { margin: 0.75rem 0 1.25rem; }
+	.cover-wordmark img { display: block; width: 18rem; height: auto; }
 </style>

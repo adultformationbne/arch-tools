@@ -1,8 +1,10 @@
 <script>
+	import { getPublicPageTheme, publicPageThemeStyle } from '$lib/config/public-page-themes';
 	import PublicPageBlockRenderer from '$lib/components/PublicPageBlockRenderer.svelte';
 
 	let { data } = $props();
 	const { course, modules } = $derived(data);
+	const theme = $derived(getPublicPageTheme(course.slug));
 
 	// Group modules by section_name for sidebar
 	const sidebarGroups = $derived(() => {
@@ -23,12 +25,12 @@
 
 <svelte:head>
 	<title>{course.name}</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+	{#each theme.fontStylesheets as href (href)}
+		<link rel="stylesheet" {href} />
+	{/each}
 </svelte:head>
 
-<div class="page">
+<div class="page" style={publicPageThemeStyle(theme)}>
 	<nav class="top-nav">
 		<span class="nav-course">{course.name}</span>
 	</nav>
@@ -106,15 +108,16 @@
 </div>
 
 <style>
-	:global(body) { margin: 0; font-family: 'Inter', sans-serif; background: #faf8f5; color: #292524; }
+	.page { min-height: 100vh; background: var(--pp-bg, #faf8f5); color: var(--pp-ink, #292524); font-family: var(--pp-font-ui, 'Inter', sans-serif); font-weight: var(--pp-body-weight, 400); }
+	:global(body) { margin: 0; font-family: var(--pp-font-ui, 'Inter', sans-serif); background: var(--pp-bg, #faf8f5); color: var(--pp-ink, #292524); }
 
 	.top-nav {
 		position: sticky; top: 0; z-index: 100;
-		background: white; border-bottom: 1px solid #e7e5e4;
+		background: var(--pp-card, white); border-bottom: 1px solid var(--pp-border, #e7e5e4);
 		padding: 0 1.5rem; height: 56px;
 		display: flex; align-items: center;
 	}
-	.nav-course { font-family: 'Lora', Georgia, serif; font-size: 1rem; font-weight: 500; }
+	.nav-course { font-family: var(--pp-font-heading, 'Lora', Georgia, serif); font-size: 1rem; font-weight: 500; }
 
 	.layout {
 		display: grid;
@@ -125,7 +128,7 @@
 	}
 
 	.sidebar {
-		border-right: 1px solid #e7e5e4;
+		border-right: 1px solid var(--pp-border, #e7e5e4);
 		padding: 2rem 1.25rem;
 		position: sticky; top: 56px;
 		height: calc(100vh - 56px);
@@ -135,38 +138,38 @@
 	.sidebar-section-label {
 		font-size: 0.65rem; font-weight: 600;
 		text-transform: uppercase; letter-spacing: 0.1em;
-		color: #a8a29e; padding: 0.6rem 0.5rem 0.3rem;
+		color: var(--pp-muted, #a8a29e); padding: 0.6rem 0.5rem 0.3rem;
 		margin-top: 0.25rem;
 	}
 	.sidebar-item {
 		display: flex; align-items: center; gap: 0.6rem;
 		padding: 0.4rem 0.5rem; border-radius: 6px;
-		font-size: 0.85rem; color: #57534e;
+		font-size: 0.85rem; color: var(--pp-body, #57534e);
 		text-decoration: none; transition: all 0.15s;
 	}
-	.sidebar-item:hover { background: #f5f5f4; color: #1c1917; }
+	.sidebar-item:hover { background: var(--pp-surface, #f5f5f4); color: var(--pp-ink, #1c1917); }
 	.sidebar-item.dim { opacity: 0.35; pointer-events: none; }
-	.sidebar-num { font-size: 0.7rem; color: #a8a29e; min-width: 18px; }
+	.sidebar-num { font-size: 0.7rem; color: var(--pp-muted, #a8a29e); min-width: 18px; }
 
 	.main { padding: 3rem 4rem; max-width: 780px; }
 
 	.hero { margin-bottom: 3rem; }
-	.eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #a8926e; margin-bottom: 0.6rem; }
-	.course-title { font-family: 'Lora', Georgia, serif; font-size: 2.6rem; font-weight: 500; color: #1c1917; line-height: 1.2; margin-bottom: 0.4rem; }
-	.course-subtitle { font-family: 'Lora', Georgia, serif; font-size: 1.1rem; color: #78716c; margin-bottom: 1rem; }
-	.title-divider { width: 48px; height: 2px; background: #c9a96e; margin: 1rem 0; }
-	.course-desc { font-family: 'Lora', Georgia, serif; font-size: 1rem; color: #57534e; line-height: 1.8; }
+	.eyebrow { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #a8926e); margin-bottom: 0.6rem; }
+	.course-title { font-family: var(--pp-font-heading, 'Lora', Georgia, serif); font-size: 2.6rem; font-weight: 500; color: var(--pp-ink, #1c1917); line-height: 1.2; margin-bottom: 0.4rem; }
+	.course-subtitle { font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-size: 1.1rem; color: var(--pp-muted, #78716c); margin-bottom: 1rem; }
+	.title-divider { width: 48px; height: 2px; background: var(--pp-highlight, #c9a96e); margin: 1rem 0; }
+	.course-desc { font-family: var(--pp-font-body, 'Lora', Georgia, serif); font-size: 1rem; color: var(--pp-body, #57534e); line-height: 1.8; }
 	.title-page-blocks { margin-bottom: 2rem; }
 
-	.sessions-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #7c6a52; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e7e5e4; }
+	.sessions-heading { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pp-accent, #7c6a52); margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--pp-border, #e7e5e4); }
 	.session-grid { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
-	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: white; border: 1px solid #e7e5e4; border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.15s; }
-	.session-card:hover { border-color: #a8926e; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-	.session-num { font-size: 0.75rem; font-weight: 600; color: #c9a96e; min-width: 24px; }
+	.session-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--pp-card, white); border: 1px solid var(--pp-border, #e7e5e4); border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.15s; }
+	.session-card:hover { border-color: var(--pp-accent, #a8926e); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+	.session-num { font-size: 0.75rem; font-weight: 600; color: var(--pp-highlight-text, #c9a96e); min-width: 24px; }
 	.session-text { flex: 1; min-width: 0; }
-	.session-name { font-size: 0.95rem; font-weight: 500; color: #1c1917; margin-bottom: 0.1rem; }
-	.session-desc { font-size: 0.8rem; color: #78716c; line-height: 1.5; }
-	.session-arrow { color: #a8a29e; flex-shrink: 0; }
+	.session-name { font-size: 0.95rem; font-weight: 500; color: var(--pp-ink, #1c1917); margin-bottom: 0.1rem; }
+	.session-desc { font-size: 0.8rem; color: var(--pp-muted, #78716c); line-height: 1.5; }
+	.session-arrow { color: var(--pp-muted, #a8a29e); flex-shrink: 0; }
 
 	@media (max-width: 768px) {
 		.layout { grid-template-columns: 1fr; }
