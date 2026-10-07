@@ -1,6 +1,6 @@
 <script>
-	import { Save, Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, UserPlus, Link, Zap } from '$lib/icons';
-	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { Upload, X, Loader2, PenSquare, MessageCircle, Calendar, BookOpen, MapPin, UserPlus, Link, Zap } from '$lib/icons';
+	import { toastError } from '$lib/utils/toast-helpers.js';
 	import { invalidateAll } from '$app/navigation';
 	import DocumentUpload from '$lib/components/DocumentUpload.svelte';
 	import { getCourseSettings, DEFAULT_COURSE_SETTINGS } from '$lib/types/course-settings.js';
@@ -170,7 +170,8 @@
 			}
 
 			settings.branding.logoUrl = result.url;
-			toastSuccess('Logo uploaded successfully');
+			settings.branding.showLogo = true;
+			await saveSettings();
 		} catch (error) {
 			console.error('Logo upload error:', error);
 			toastError(error instanceof Error ? error.message : 'Failed to upload logo');
@@ -179,8 +180,9 @@
 		}
 	}
 
-	function removeLogo() {
+	async function removeLogo() {
 		settings.branding.logoUrl = '';
+		await saveSettings();
 	}
 
 	/** @param {'all' | 'limited'} mode */
@@ -200,33 +202,44 @@
 		}
 	}
 
+	function buildPayload() {
+		return {
+			name: settings.name,
+			short_name: settings.shortName,
+			description: settings.description,
+			settings: {
+				mode: settings.mode,
+				theme: settings.theme,
+				branding: settings.branding,
+				legal: settings.legal,
+				coordinatorAccess: settings.coordinatorAccess,
+				sessionProgression: settings.sessionProgression,
+				features: settings.features
+			},
+			email_branding_config: {
+				reply_to_email: settings.emailBranding.replyToEmail || null
+			}
+		};
+	}
+
+	/** Last payload known to match the database (JSON), null until first load. */
+	let lastSaved = $state(/** @type {string | null} */ (null));
+	let saveError = $state(false);
+	let saveTimer = /** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined);
+
 	async function saveSettings() {
+		clearTimeout(saveTimer);
+		const payload = buildPayload();
+		const snapshot = JSON.stringify(payload);
+		if (snapshot === lastSaved) return;
+		if (!payload.name.trim()) return;
 		saving = true;
 
 		try {
 			const response = await fetch(`/admin/courses/${courseSlug}/settings/api`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'update_settings',
-					settings: {
-						name: settings.name,
-						short_name: settings.shortName,
-						description: settings.description,
-						settings: {
-							mode: settings.mode,
-							theme: settings.theme,
-							branding: settings.branding,
-							legal: settings.legal,
-							coordinatorAccess: settings.coordinatorAccess,
-							sessionProgression: settings.sessionProgression,
-							features: settings.features
-						},
-						email_branding_config: {
-							reply_to_email: settings.emailBranding.replyToEmail || null
-						}
-					}
-				})
+				body: JSON.stringify({ action: 'update_settings', settings: payload })
 			});
 
 			const result = await response.json();
@@ -235,15 +248,31 @@
 				throw new Error(result.error || 'Failed to save settings');
 			}
 
-			toastSuccess('Settings saved successfully');
+			lastSaved = snapshot;
+			saveError = false;
 			await invalidateAll();
 		} catch (error) {
 			console.error('Save error:', error);
+			saveError = true;
 			toastError(error instanceof Error ? error.message : 'Failed to save settings');
 		} finally {
 			saving = false;
 		}
 	}
+
+	// Autosave: debounce edits, skip when nothing changed
+	$effect(() => {
+		const snapshot = JSON.stringify(buildPayload());
+		if (!course) return;
+		if (lastSaved === null) {
+			lastSaved = snapshot;
+			return;
+		}
+		if (snapshot === lastSaved) return;
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(saveSettings, 800);
+		return () => clearTimeout(saveTimer);
+	});
 
 	// Feature toggle style helpers
 	/** @param {boolean} enabled */
@@ -1067,41 +1096,10 @@
 				</div>
 			</div>
 
-			<!-- Actions - Desktop only (hidden on mobile, shown as sticky bar) -->
-			<div class="hidden sm:block p-4 sm:p-5 lg:p-6">
-				<div class="flex justify-end gap-3">
-					<button
-						onclick={saveSettings}
-						disabled={saving}
-						class="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
-					>
-						{#if saving}
-							<Loader2 size={18} class="animate-spin" />
-							<span>Saving...</span>
-						{:else}
-							<Save size={18} />
-							<span>Save Settings</span>
-						{/if}
-					</button>
-				</div>
-			</div>
+			<p class="px-4 pb-4 sm:px-5 lg:px-6 text-right text-sm {saveError ? 'text-red-600' : 'text-gray-500'}" aria-live="polite">
+				{#if saving}Saving…{:else if saveError}Couldn't save — will retry on your next change{:else}Changes save automatically{/if}
+			</p>
 		</div>
 	</div>
 
-	<!-- Sticky Save Button for Mobile -->
-	<div class="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 shadow-lg z-50">
-		<button
-			onclick={saveSettings}
-			disabled={saving}
-			class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
-		>
-			{#if saving}
-				<Loader2 size={18} class="animate-spin" />
-				<span>Saving...</span>
-			{:else}
-				<Save size={18} />
-				<span>Save Settings</span>
-			{/if}
-		</button>
-	</div>
 </div>
