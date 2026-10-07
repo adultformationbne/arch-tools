@@ -937,12 +937,14 @@
 						hubs={data.hubs || []}
 					/>
 
+					{#if data.courseFeatures?.reflectionsEnabled !== false}
 					<ReflectionEditor
 						reflectionQuestion={currentSession.reflection}
 						onReflectionChange={handleReflectionChange}
 						onDeleteQuestion={handleDeleteQuestion}
 						sessionNumber={selectedSession}
 					/>
+					{/if}
 
 					{#if data.courseFeatures?.quizzesEnabled !== false}
 					<QuizEditor
