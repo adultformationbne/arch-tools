@@ -155,6 +155,7 @@
 		courseBranding={branding}
 		featureSettings={data.courseFeatures}
 		{hasUnreadChat}
+		hubLeaderMode={data.hubLeaderMode}
 		onChatToggle={canChat ? () => chatOpen = !chatOpen : null}
 	/>
 

@@ -90,6 +90,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		courseData,
 		userRole: derivedRole,
-		noEnrollments: totalEnrollments === 0
+		noEnrollments: totalEnrollments === 0,
+		userEmail: userProfile.email ?? null
 	};
 };

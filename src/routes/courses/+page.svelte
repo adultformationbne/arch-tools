@@ -110,6 +110,16 @@
 				<p class="mt-2 text-sm text-gray-500">
 					Contact an administrator to enroll in a course.
 				</p>
+				{#if data.userEmail}
+					<p class="mt-1 text-sm text-gray-500">Signed in as {data.userEmail}</p>
+				{/if}
+				<a
+					href="/auth/logout"
+					data-sveltekit-reload
+					class="mt-6 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+				>
+					Sign out
+				</a>
 			</Card>
 		{/if}
 	</div>

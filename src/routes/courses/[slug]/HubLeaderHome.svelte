@@ -49,8 +49,12 @@
 		!hero ? 'none' : hero.muxStatus === 'ready' && hero.muxPlaybackId ? 'ready' : hero.muxStatus === 'errored' ? 'errored' : 'processing'
 	);
 
-	/** @param {{ materials: { type: string }[] }} session */
-	const hasVideo = (session) => session.materials.some((m) => m.type === 'mux_video');
+	const next = $derived.by(() => {
+		const i = sessions.findIndex((s) => s.sessionNumber === current?.sessionNumber);
+		return i >= 0 ? (sessions[i + 1] ?? null) : null;
+	});
+
+	let pickerOpen = $state(false);
 
 	/** @param {number} n */
 	const pad = (n) => String(n).padStart(2, '0');
@@ -61,11 +65,17 @@
 	/** @param {number} n */
 	function select(n) {
 		selectedNumber = n;
+		pickerOpen = false;
 		const url = new URL(page.url);
 		url.searchParams.set('session', String(n));
 		replaceState(url, {});
 		const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		document.getElementById('session-top')?.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+	}
+
+	/** @param {KeyboardEvent} e */
+	function onKeydown(e) {
+		if (e.key === 'Escape') pickerOpen = false;
 	}
 
 	/** @param {string} url */
@@ -78,6 +88,8 @@
 		}
 	}
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <svelte:head>
 	{#each theme.fontStylesheets as href (href)}
@@ -94,27 +106,65 @@
 	{:else}
 		{@const art = design.sessionArtwork?.(current.sessionNumber) ?? null}
 
-		<header class="wrap head" id="session-top">
-			<div class="head-text">
-				<p class="where">
-					{#if current.sessionNumber === 0}
-						<span class="where-label">Before you start</span>
-					{:else}
-						<span class="where-number">{pad(current.sessionNumber)}</span>
-						{#if current.sectionName}<span class="where-section">{current.sectionName}</span>{/if}
-					{/if}
-				</p>
-				<h1 class="title">{current.title}</h1>
-				{#if current.description}
-					<p class="lead">{current.description}</p>
+		<div class="top" id="session-top">
+			<div class="picker">
+				<button type="button" class="tab" aria-haspopup="listbox" aria-expanded={pickerOpen} onclick={() => (pickerOpen = !pickerOpen)}>
+					<svg class="chev" class:open={pickerOpen} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+					<span>{current.sessionNumber === 0 ? 'Start' : `Session ${current.sessionNumber}`}</span>
+				</button>
+				{#if pickerOpen}
+					<button type="button" class="picker-scrim" aria-label="Close session list" onclick={() => (pickerOpen = false)}></button>
+					<div class="menu" role="listbox" aria-label="Choose a session">
+						<div class="menu-head">
+							<span class="menu-title">Sessions</span>
+							<button type="button" class="menu-close" aria-label="Close session list" onclick={() => (pickerOpen = false)}>
+								<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+							</button>
+						</div>
+						{#each data.groups as group}
+							{#if group.label}<p class="menu-group">{group.label}</p>{/if}
+							{#each group.items as session (session.sessionNumber)}
+								<button
+									type="button"
+									role="option"
+									class="menu-item"
+									class:active={session.sessionNumber === current.sessionNumber}
+									aria-selected={session.sessionNumber === current.sessionNumber}
+									onclick={() => select(session.sessionNumber)}
+								>
+									<span class="menu-number">{session.sessionNumber === 0 ? 'Start' : pad(session.sessionNumber)}</span>
+									<span>{session.title}</span>
+								</button>
+							{/each}
+						{/each}
+					</div>
 				{/if}
 			</div>
+
+			<header class="wrap head">
+				<div class="head-text">
+					<p class="where">
+						{#if current.sessionNumber === 0}
+							<span class="where-label">Before you start</span>
+						{:else}
+							<span class="where-number">{pad(current.sessionNumber)}</span>
+							{#if current.sectionName}<span class="where-section">{current.sectionName}</span>{/if}
+						{/if}
+					</p>
+					<h1 class="title">{current.title}</h1>
+					{#if current.description}
+						<p class="lead">{current.description}</p>
+					{/if}
+				</div>
+			</header>
 			{#if art}
-				<div class="head-art">
-					<GuideArtwork src={art.src} width={art.width} height={art.height} color="var(--pp-ink, #1c1917)" size={artWidth(art, 7.5)} />
+				<div class="art-clip">
+					<div class="head-art">
+						<GuideArtwork src={art.src} width={art.width} height={art.height} color="var(--pp-ink, #1c1917)" size={artWidth(art, 20)} />
+					</div>
 				</div>
 			{/if}
-		</header>
+		</div>
 
 		<section class="screen" aria-label="Session video">
 			<div class="screen-inner">
@@ -148,8 +198,8 @@
 			{#if data.guideUrl}
 				<section class="share" aria-labelledby="share-title">
 					<div class="share-text">
-						<h2 id="share-title">Send the Companion Guide to your group</h2>
-						<p>It has every session, and they can read it on any phone. They don't need an account.</p>
+						<h2 id="share-title">Companion Guide</h2>
+						<p>Send the Companion Guide to your group.<br />It has every session, and they can read it on any device without an account.</p>
 					</div>
 					<div class="actions">
 						<button type="button" class="btn primary" onclick={() => copyLink(data.guideUrl)}>Copy link</button>
@@ -187,43 +237,23 @@
 					{/if}
 				</section>
 			{/if}
-
-			<section class="index" aria-labelledby="index-title">
-				<div class="index-head">
-					<h2 id="index-title">All sessions</h2>
-				</div>
-
-				{#each data.groups as group}
-					<div class="group">
-						{#if group.label}<h3 class="group-label">{group.label}</h3>{/if}
-						<ul class="cards">
-							{#each group.items as session (session.sessionNumber)}
-								{@const cardArt = design.sessionArtwork?.(session.sessionNumber) ?? null}
-								{@const active = session.sessionNumber === current.sessionNumber}
-								<li>
-									<button
-										type="button"
-										class="card"
-										class:active
-										aria-current={active ? 'true' : undefined}
-										onclick={() => select(session.sessionNumber)}
-									>
-										{#if cardArt}
-											<span class="card-art">
-												<GuideArtwork src={cardArt.src} width={cardArt.width} height={cardArt.height} color="var(--pp-ink, #1c1917)" size={artWidth(cardArt, 4)} />
-											</span>
-										{/if}
-										<span class="card-number">{session.sessionNumber === 0 ? 'Start' : pad(session.sessionNumber)}</span>
-										<span class="card-title">{session.title}</span>
-										{#if hasVideo(session)}<span class="card-tag">Has video</span>{/if}
-									</button>
-								</li>
-							{/each}
-						</ul>
-					</div>
-				{/each}
-			</section>
 		</div>
+
+		{#if next}
+			{@const nextArt = design.sessionArtwork?.(next.sessionNumber) ?? null}
+			<button type="button" class="progress" onclick={() => select(next.sessionNumber)}>
+				{#if nextArt}
+					<span class="progress-art">
+						<GuideArtwork src={nextArt.src} width={nextArt.width} height={nextArt.height} color="var(--pp-ink, #1c1917)" size={artWidth(nextArt, 14)} />
+					</span>
+				{/if}
+				<span class="progress-text">
+					<span class="progress-kicker">Progress to</span>
+					<span class="progress-title">{next.sessionNumber === 0 ? 'Start' : `Session ${next.sessionNumber}`}</span>
+				</span>
+				<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+			</button>
+		{/if}
 	{/if}
 </div>
 
@@ -241,7 +271,7 @@
 		font-family: var(--pp-font-body, 'Lora', Georgia, serif);
 		font-weight: var(--pp-body-weight, 400);
 		line-height: 1.6;
-		padding-bottom: 5rem;
+		padding-bottom: 0;
 	}
 
 	.wrap {
@@ -258,14 +288,136 @@
 		margin: 0;
 	}
 
-	/* Session heading */
+	/* Session picker tab and heading */
+	.top {
+		position: relative;
+		min-height: 24rem;
+	}
+	.art-clip {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.picker {
+		position: relative;
+		z-index: 5;
+		display: inline-block;
+	}
+	.tab {
+		display: flex;
+		align-items: center;
+		gap: 1.1rem;
+		padding: 0.7rem 3.5rem 0.7rem 1.5rem;
+		background: var(--hl);
+		color: var(--on-hl);
+		border: 0;
+		border-bottom-right-radius: 1.6rem;
+		font-family: var(--pp-font-display, var(--font-heading));
+		font-size: 1.3rem;
+		cursor: pointer;
+	}
+	.chev {
+		transition: transform 0.15s;
+	}
+	.chev.open {
+		transform: rotate(180deg);
+	}
+	.picker-scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		background: rgb(0 0 0 / 0.4);
+		border: 0;
+		cursor: default;
+	}
+	.menu {
+		position: fixed;
+		z-index: 61;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: min(24rem, 90vw);
+		overflow-y: auto;
+		padding: 0 0 2rem;
+		background: var(--pp-card, #fff);
+		box-shadow: 0 0 40px rgb(0 0 0 / 0.3);
+		animation: slide-in 0.2s ease-out;
+	}
+	.menu-head {
+		position: sticky;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem 1.25rem;
+		background: var(--hl);
+		color: var(--on-hl);
+	}
+	.menu-title {
+		font-family: var(--pp-font-display, var(--font-heading));
+		font-size: 1.3rem;
+	}
+	.menu-close {
+		display: flex;
+		padding: 0.25rem;
+		background: transparent;
+		border: 0;
+		color: inherit;
+		cursor: pointer;
+	}
+	@keyframes slide-in {
+		from { transform: translateX(-100%); }
+		to { transform: none; }
+	}
+	.menu-group {
+		margin: 0.75rem 1.25rem 0.25rem;
+		font-style: italic;
+		font-size: 0.9rem;
+		color: var(--pp-muted, #78716c);
+	}
+	.menu-item {
+		display: flex;
+		gap: 0.9rem;
+		align-items: baseline;
+		width: 100%;
+		padding: 0.55rem 1.25rem;
+		text-align: left;
+		background: transparent;
+		border: 0;
+		color: var(--pp-ink, #1c1917);
+		font-family: var(--font-heading);
+		font-size: 1.05rem;
+		cursor: pointer;
+	}
+	.menu-item:hover {
+		background: var(--pp-surface, #f5f5f4);
+	}
+	.menu-item.active {
+		background: var(--hl);
+		color: var(--on-hl);
+	}
+	.menu-number {
+		min-width: 2.2rem;
+		font-family: var(--pp-font-display, var(--font-heading));
+		font-size: 0.95rem;
+	}
 	.head {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: end;
-		gap: 2rem;
-		padding-top: clamp(1.75rem, 4vw, 3rem);
-		padding-bottom: clamp(1.25rem, 3vw, 2rem);
+		position: relative;
+		z-index: 1;
+		padding-top: clamp(1.5rem, 4vw, 3rem);
+		padding-bottom: clamp(2.5rem, 6vw, 5rem);
+	}
+	.head-text {
+		max-width: 38rem;
+	}
+	.head-art {
+		position: absolute;
+		right: clamp(-3rem, -2vw, 0rem);
+		bottom: -2.5rem;
+		width: min(40vw, 30rem);
+		display: flex;
+		justify-content: flex-end;
 	}
 	.where {
 		display: flex;
@@ -292,19 +444,13 @@
 		font-size: clamp(2.1rem, 5vw, 3.4rem);
 		line-height: 1.08;
 		letter-spacing: -0.01em;
-		max-width: 22ch;
+		max-width: 18ch;
 	}
 	.lead {
 		margin: 1rem 0 0;
 		max-width: 58ch;
 		font-size: 1.05rem;
 		color: var(--pp-muted, #78716c);
-	}
-	.head-art {
-		align-self: stretch;
-		display: flex;
-		align-items: flex-end;
-		opacity: 0.9;
 	}
 
 	/* The screen: the only dark thing on the page */
@@ -356,12 +502,10 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 1.25rem 2rem;
-		padding: 1.75rem 0;
-		border-bottom: 1px dotted var(--rule);
+		padding: 4rem 0;
 	}
 	.share h2,
-	.more h2,
-	.index h2 {
+	.more h2 {
 		font-size: 1.5rem;
 		line-height: 1.2;
 	}
@@ -444,91 +588,52 @@
 		color: var(--pp-muted, #78716c);
 	}
 
-	/* Index of sessions */
-	.index {
-		padding-top: 2.25rem;
-	}
-	.index-head {
+	/* Progress band */
+	.progress {
+		position: relative;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.75rem 2rem;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 1.25rem;
+		width: 100%;
+		min-height: 14rem;
+		padding: 2rem clamp(1.5rem, 8vw, 7rem);
+		overflow: hidden;
+		background: var(--hl);
+		color: var(--on-hl);
+		border: 0;
+		text-align: right;
+		cursor: pointer;
 	}
-	.index-head + .group {
-		margin-top: 1rem;
+	.progress-art {
+		position: absolute;
+		left: 0;
+		bottom: -3rem;
+		display: flex;
 	}
-	.group {
-		margin-top: 1.75rem;
-		padding-top: 0.9rem;
-		border-top: 1px dotted var(--rule);
-	}
-	.group-label {
-		font-family: var(--font-heading);
-		font-style: italic;
-		font-size: 1.05rem;
-		color: var(--pp-muted, #78716c);
-		margin-bottom: 0.9rem;
-	}
-	.cards {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
-		gap: 0.75rem;
-	}
-	.card {
+	.progress-text {
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.15rem;
-		width: 100%;
-		height: 100%;
-		min-height: 11.5rem;
-		padding: 0.9rem;
-		text-align: left;
-		background: var(--pp-card, #fff);
-		color: var(--pp-ink, #1c1917);
-		border: 1px solid var(--pp-border, #e7e5e4);
-		border-radius: var(--radius);
-		cursor: pointer;
-		transition: border-color 0.15s, background-color 0.15s;
-	}
-	.card:hover {
-		border-color: var(--pp-ink, #1c1917);
-	}
-	.card.active {
-		background: var(--hl);
-		color: var(--on-hl);
-		border-color: var(--hl);
-	}
-	.card-art {
-		display: flex;
-		height: 4rem;
-		margin-bottom: 0.6rem;
-		opacity: 0.85;
-	}
-	.card.active .card-art :global(.artwork) {
-		background-color: var(--on-hl) !important;
-	}
-	.card-number {
-		font-family: var(--pp-font-display, var(--font-heading));
-		font-size: 0.95rem;
-		letter-spacing: 0.04em;
-	}
-	.card-title {
 		font-family: var(--font-heading);
-		font-size: 1.05rem;
+	}
+	.progress-kicker {
+		font-size: 1.6rem;
 		line-height: 1.2;
 	}
-	.card-tag {
-		margin-top: auto;
-		padding-top: 0.5rem;
-		font-family: var(--font-ui);
-		font-size: 0.75rem;
-		opacity: 0.8;
+	.progress-title {
+		font-size: clamp(2.2rem, 5vw, 3.2rem);
+		line-height: 1.1;
+	}
+	.progress svg {
+		position: relative;
+		flex: none;
+	}
+	.progress:hover svg {
+		transform: translateX(4px);
+	}
+	.progress svg {
+		transition: transform 0.15s;
 	}
 
 	.empty {
@@ -548,11 +653,12 @@
 	}
 
 	@media (max-width: 640px) {
-		.head {
-			grid-template-columns: 1fr;
-		}
 		.head-art {
-			display: none;
+			width: 9rem;
+			opacity: 0.35;
+		}
+		.progress-art {
+			opacity: 0.4;
 		}
 		.no-video {
 			flex-direction: column;
@@ -569,8 +675,12 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.menu {
+			animation: none;
+		}
 		.btn,
-		.card {
+		.chev,
+		.progress svg {
 			transition: none;
 		}
 	}

@@ -2,7 +2,7 @@
 	import { User, Home, BookOpen, MessageSquare, MessageCircle, Menu, X } from '$lib/icons';
 	import { page } from '$app/stores';
 
-	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false, onChatToggle = null, featureSettings = {} } = $props();
+	let { courseSlug, userName = 'User', userRole = 'student', courseBranding = {}, hasUnreadChat = false, onChatToggle = null, featureSettings = {}, hubLeaderMode = false } = $props();
 
 	const materialsVisible = $derived(featureSettings?.materialsEnabled !== false);
 	const reflectionsVisible = $derived(featureSettings?.reflectionsEnabled !== false);
@@ -28,10 +28,39 @@
 		return 'dashboard';
 	});
 
+	// Hub-leader home publishes the Companion Guide link as page data
+	const guideUrl = $derived(hubLeaderMode ? ($page.data.guideUrl ?? null) : null);
+
+	const firstName = $derived(userName.trim().split(/\s+/)[0] || 'there');
+
 	const logoUrl = $derived(courseBranding?.logoUrl || '/accf-logo.png');
 	const showLogo = $derived(courseBranding?.showLogo !== false);
 </script>
 
+{#if hubLeaderMode}
+	<nav class="leader-nav">
+		{#if showLogo}
+			<a href="/courses/{courseSlug}" class="leader-logo"><img src={logoUrl} alt="Course home" /></a>
+		{/if}
+		<div class="leader-nav-actions">
+			{#if guideUrl}
+				<a class="leader-guide" href={guideUrl} target="_blank" rel="noopener noreferrer" aria-label="Companion Guide">
+					<span class="leader-guide-text">Companion Guide</span>
+					<BookOpen class="leader-guide-icon" size="20" />
+				</a>
+			{/if}
+			<a
+				href="/courses/{courseSlug}/profile"
+				class="leader-profile"
+				class:profile-active={currentPage === 'profile'}
+				aria-label="Your profile"
+			>
+				<span>Hi, {firstName}</span>
+				<User size="20" />
+			</a>
+		</div>
+	</nav>
+{:else}
 <!-- Ultra Glassy Header -->
 <nav class="glass-nav backdrop-blur-xl border-b border-white/20 relative overflow-hidden">
 	<!-- Clean Background -->
@@ -137,6 +166,7 @@
 		</div>
 	</div>
 </nav>
+{/if}
 
 <!-- Mobile Menu Overlay -->
 {#if mobileMenuOpen}
@@ -200,6 +230,69 @@
 {/if}
 
 <style>
+	.leader-nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.9rem clamp(1rem, 5vw, 4rem);
+		background: var(--course-accent-dark);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+	}
+	.leader-logo img {
+		display: block;
+		height: 3.25rem;
+		width: auto;
+	}
+	.leader-nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+	.leader-guide {
+		display: flex;
+		align-items: center;
+		height: 2.9rem;
+		padding: 0 1.4rem;
+		background: var(--course-accent-light);
+		color: var(--course-on-accent-light);
+		font-family: 'Inter', system-ui, sans-serif;
+		font-weight: 500;
+		line-height: 1;
+		font-size: 0.85rem;
+		text-decoration: none;
+	}
+	.leader-guide :global(.leader-guide-icon) {
+		display: none;
+	}
+	.leader-guide:hover {
+		filter: brightness(0.94);
+	}
+	.leader-profile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		height: 2.9rem;
+		padding: 0 1rem;
+		font-family: 'Inter', system-ui, sans-serif;
+		font-weight: 500;
+		line-height: 1;
+		font-size: 0.85rem;
+		text-decoration: none;
+		background: #f1eddf;
+		color: var(--course-accent-dark);
+	}
+	.leader-profile:hover,
+	.leader-profile.profile-active {
+		background: #fff;
+	}
+	@media (max-width: 640px) {
+		.leader-logo img { height: 2.4rem; }
+		.leader-guide { justify-content: center; width: 2.4rem; height: 2.4rem; padding: 0; }
+		.leader-guide-text { display: none; }
+		.leader-guide :global(.leader-guide-icon) { display: block; }
+		.leader-profile { height: 2.4rem; padding: 0 0.7rem; font-size: 0.8rem; }
+	}
 	.glass-nav {
 		background: color-mix(in srgb, var(--course-accent-dark, #334642) 30%, transparent);
 		backdrop-filter: blur(20px);
