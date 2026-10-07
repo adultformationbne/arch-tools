@@ -11,6 +11,7 @@ import Scripture from './blocks/Scripture.svelte';
 import Summary from './blocks/Summary.svelte';
 import Themes from './blocks/Themes.svelte';
 import Title from './blocks/Title.svelte';
+import { flowerForSession } from './flowers';
 
 // Editorial print is the reference: flat colour, ruled bands, highlighter tags and
 // small ink illustrations, with no shadows, gradients or rounded cards.
@@ -24,5 +25,6 @@ export const design: PublicGuideDesign = {
 		scripture: Scripture,
 		quote: Quote,
 		illustration: Illustration
-	}
+	},
+	sessionArtwork: flowerForSession
 };

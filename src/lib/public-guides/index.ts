@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 import { getPublicPageTheme } from './themes';
 import type { PublicPageTheme } from './theme';
 import { design as alivingunion } from './alivingunion';
+import type { GuideArtworkFile } from './alivingunion/artwork';
 
 /**
  * A course's design for its public guide pages. Everything is optional: a part
@@ -32,6 +33,11 @@ export interface PublicGuideDesign {
 	 * or add a block type of the course's own. Props: block, print
 	 */
 	blocks?: Record<string, Component<any>>;
+	/**
+	 * An illustration for each session. Used by the guide's own pages and by the
+	 * hub-leader home, which draws it in the theme's highlight colour.
+	 */
+	sessionArtwork?: (sessionNumber: number) => GuideArtworkFile | null;
 }
 
 const DESIGNS: Record<string, PublicGuideDesign> = {
@@ -42,6 +48,7 @@ export interface ResolvedGuideDesign {
 	theme: PublicPageTheme;
 	components: NonNullable<PublicGuideDesign['components']>;
 	blocks: Record<string, Component<any>>;
+	sessionArtwork: ((sessionNumber: number) => GuideArtworkFile | null) | null;
 }
 
 export function getPublicGuideDesign(courseSlug: string): ResolvedGuideDesign {
@@ -49,6 +56,7 @@ export function getPublicGuideDesign(courseSlug: string): ResolvedGuideDesign {
 	return {
 		theme: getPublicPageTheme(courseSlug),
 		components: design?.components ?? {},
-		blocks: design?.blocks ?? {}
+		blocks: design?.blocks ?? {},
+		sessionArtwork: design?.sessionArtwork ?? null
 	};
 }

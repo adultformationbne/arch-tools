@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import HubCoordinatorBar from './HubCoordinatorBar.svelte';
+	import HubLeaderHome from './HubLeaderHome.svelte';
 	import SessionContent from './SessionContent.svelte';
 	import PastReflectionsSection from './PastReflectionsSection.svelte';
 	import PublicReflectionsFeed from './PublicReflectionsFeed.svelte';
@@ -131,7 +132,9 @@
 </script>
 
 <!-- Single content wrapper with consistent margins -->
-{#if courseData && currentSessionData}
+{#if data.hubLeader}
+	<HubLeaderHome {data} />
+{:else if courseData && currentSessionData}
 <div class="px-4 sm:px-8 lg:px-16" class:pt-6={!hubData}>
 	{#if cohortCompleted}
 		<div class="mt-6 mb-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

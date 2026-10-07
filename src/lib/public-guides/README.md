@@ -33,6 +33,7 @@ public-guides/
 | `components.SessionList` | the landing page's list of sessions | `course`, `module`, `groups` |
 | `components.PrintCover` | start of the whole-guide print version / PDF | `course`, `module`, `sessions` |
 | `blocks[type]` | wherever a block of that type appears | `block`, `print` |
+| `sessionArtwork(n)` | a function returning the session's illustration; the hub-leader home draws it in the theme's highlight colour | session number |
 
 Anything not overridden falls back to the standard rendering.
 

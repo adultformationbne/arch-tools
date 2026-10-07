@@ -5,7 +5,15 @@
  * Use getCourseSettings() to safely access settings with defaults.
  */
 
+/**
+ * 'standard' = cohorts of participants working through sessions together.
+ * 'hub_leader' = leaders log in, pick any session, and pass the public guide to
+ * their own group. No reflections, quizzes, attendance, chat or progress tracking.
+ */
+export type CourseMode = 'standard' | 'hub_leader';
+
 export interface CourseSettings {
+	mode?: CourseMode;
 	// Existing settings (preserve backward compatibility)
 	theme?: {
 		accentDark?: string;
@@ -104,6 +112,8 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 	const settings = (rawSettings ?? {}) as CourseSettings;
 
 	return {
+		mode: settings.mode === 'hub_leader' ? 'hub_leader' : 'standard',
+
 		// Preserve existing settings as-is
 		theme: settings.theme,
 		branding: settings.branding,
@@ -156,4 +166,33 @@ export function getCourseSettings(rawSettings: unknown): CourseSettings {
 				settings.features?.publicPagesEnabled ?? DEFAULT_COURSE_SETTINGS.features.publicPagesEnabled
 		}
 	};
+}
+
+export function isHubLeaderMode(settings: CourseSettings | null | undefined): boolean {
+	return settings?.mode === 'hub_leader';
+}
+
+/** Features a hub-leader course never has, whatever is stored in `features`. */
+const HUB_LEADER_FEATURE_OVERRIDES: NonNullable<CourseSettings['features']> = {
+	reflectionsEnabled: false,
+	communityFeedEnabled: false,
+	attendanceEnabled: false,
+	chatEnabled: false,
+	chatAllowParticipants: false,
+	quizzesEnabled: false,
+	hubsEnabled: false,
+	// The hub-leader home shows materials itself; this only hides the Materials tab.
+	materialsEnabled: false
+};
+
+/**
+ * getCourseSettings() with the course mode applied. Use this where participants
+ * see the course (layout, navigation, dashboard). Admin screens must keep using
+ * getCourseSettings(): they edit the stored flags, and saving the overridden
+ * values back would leave every feature off after switching to 'standard'.
+ */
+export function getEffectiveCourseSettings(rawSettings: unknown): CourseSettings {
+	const settings = getCourseSettings(rawSettings);
+	if (!isHubLeaderMode(settings)) return settings;
+	return { ...settings, features: { ...settings.features, ...HUB_LEADER_FEATURE_OVERRIDES } };
 }

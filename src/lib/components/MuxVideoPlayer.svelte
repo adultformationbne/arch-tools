@@ -12,7 +12,8 @@
 	let {
 		playbackId = null,
 		title = '',
-		status = 'ready'
+		status = 'ready',
+		accentColor = '#c59a6b'
 	} = $props();
 
 	let muxLoaded = $state(false);
@@ -42,7 +43,7 @@
 			<mux-player
 				playback-id={playbackId}
 				metadata-video-title={title}
-				accent-color="#c59a6b"
+				accent-color={accentColor}
 				style="width: 100%; height: 100%;"
 			></mux-player>
 		</div>

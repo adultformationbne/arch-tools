@@ -39,6 +39,7 @@
 			requireAcknowledgement: false,
 			checkboxLabel: ''
 		},
+		mode: /** @type {'standard' | 'hub_leader'} */ ('standard'),
 		coordinatorAccess: {
 			sessionsAhead: /** @type {'all' | number} */ ('all')
 		},
@@ -90,6 +91,7 @@
 
 			// Use getCourseSettings to get defaults for advanced settings
 			const parsedSettings = getCourseSettings(course.settings);
+			settings.mode = parsedSettings.mode ?? 'standard';
 
 			// Legal / consent
 			settings.legal.text = parsedSettings.legal?.text || '';
@@ -212,6 +214,7 @@
 						short_name: settings.shortName,
 						description: settings.description,
 						settings: {
+							mode: settings.mode,
 							theme: settings.theme,
 							branding: settings.branding,
 							legal: settings.legal,
@@ -710,6 +713,37 @@
 						{/if}
 					</div>
 				</div>
+			</div>
+
+			<!-- Course Type Section -->
+			<div class="p-4 sm:p-5 lg:p-6 border-b border-gray-200">
+				<h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-1">Course type</h2>
+				<p class="text-sm text-gray-500 mb-4 sm:mb-5">
+					How people use this course after they sign in
+				</p>
+
+				<div class="space-y-3">
+					<label class="flex items-start gap-3 cursor-pointer">
+						<input type="radio" name="course-mode" value="standard" bind:group={settings.mode} class="mt-1 w-4 h-4" />
+						<span>
+							<span class="block text-sm font-medium text-gray-900">Cohort course</span>
+							<span class="block text-sm text-gray-500">Participants progress through sessions together, with reflections, quizzes and the other features below.</span>
+						</span>
+					</label>
+					<label class="flex items-start gap-3 cursor-pointer">
+						<input type="radio" name="course-mode" value="hub_leader" bind:group={settings.mode} class="mt-1 w-4 h-4" />
+						<span>
+							<span class="block text-sm font-medium text-gray-900">Hub leaders only</span>
+							<span class="block text-sm text-gray-500">Hub leaders sign in, choose any session and view its materials, then send the public guide to their own group. Group members have no accounts and nothing is tracked.</span>
+						</span>
+					</label>
+				</div>
+
+				{#if settings.mode === 'hub_leader'}
+					<p class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+						Reflections, quizzes, attendance, chat and the community feed are switched off for hub-leader courses, whatever the feature toggles below say. Your choices are kept if you switch back.
+					</p>
+				{/if}
 			</div>
 
 			<!-- Feature Toggles Section -->

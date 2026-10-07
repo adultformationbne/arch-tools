@@ -1,9 +1,12 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { CourseQueries } from '$lib/server/course-data.js';
 import { requireCourseAccess } from '$lib/server/auth';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getCourseSettings } from '$lib/types/course-settings.js';
+import { getEffectiveCourseSettings, isHubLeaderMode } from '$lib/types/course-settings.js';
+
+/** Course sub-routes that do not exist in a hub-leader course. */
+const HUB_LEADER_CLOSED_SECTIONS = new Set(['reflections', 'write', 'quiz', 'chat', 'coordinator']);
 
 export const load: LayoutServerLoad = async (event) => {
 	const { params } = event;
@@ -35,7 +38,16 @@ export const load: LayoutServerLoad = async (event) => {
 	const { userProfile } = parentData;
 
 	// Extract theme and branding from course settings
-	const courseSettings = getCourseSettings(course.settings);
+	const courseSettings = getEffectiveCourseSettings(course.settings);
+	const hubLeaderMode = isHubLeaderMode(courseSettings);
+
+	// A hub-leader course has no reflections, quizzes or chat, and its materials
+	// live on the home page. Close the routes rather than just hiding the links.
+	if (hubLeaderMode) {
+		const section = event.url.pathname.split('/')[3] ?? '';
+		if (section === 'materials') throw redirect(302, `/courses/${slug}`);
+		if (HUB_LEADER_CLOSED_SECTIONS.has(section)) throw error(404, 'Not found');
+	}
 	const courseTheme = courseSettings.theme || {};
 	const courseBranding = courseSettings.branding || {};
 	const chatEnabled = courseSettings.features?.chatEnabled !== false;
@@ -81,6 +93,7 @@ export const load: LayoutServerLoad = async (event) => {
 		userName: userProfile?.full_name || 'User',
 		userProfile,
 		courseSlug: slug,
+		hubLeaderMode,
 		enrollmentRole,
 		cohortId,
 		userId: user.id,

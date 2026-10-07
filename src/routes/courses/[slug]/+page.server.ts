@@ -9,7 +9,8 @@ import {
 import { supabaseAdmin } from '$lib/server/supabase.js';
 import { isComplete, normalizeStatus } from '$lib/utils/reflection-status.js';
 import { getUserInitials } from '$lib/utils/avatar.js';
-import { getCourseSettings } from '$lib/types/course-settings.js';
+import { getEffectiveCourseSettings, isHubLeaderMode } from '$lib/types/course-settings.js';
+import { loadHubLeaderHome } from '$lib/server/hub-leader-home.js';
 import type { PageServerLoad } from './$types';
 
 import { isCohortArchived } from '$lib/utils/cohort-status';
@@ -32,8 +33,18 @@ export const load: PageServerLoad = async (event) => {
 	const { data: course } = await CourseQueries.getCourse(courseSlug);
 
 	// Get course settings for feature toggles and coordinator access
-	const courseSettings = getCourseSettings(course?.settings);
+	const courseSettings = getEffectiveCourseSettings(course?.settings);
 	const featureSettings = courseSettings.features;
+
+	// Hub-leader courses skip the cohort dashboard entirely: no reflections,
+	// quizzes, hub data or session gating, just every session and its materials.
+	if (isHubLeaderMode(courseSettings) && course) {
+		return loadHubLeaderHome(
+			enrollment,
+			{ slug: course.slug, name: course.name },
+			courseSettings.features?.publicPagesEnabled === true
+		);
+	}
 	const coordinatorAccessAhead = courseSettings.coordinatorAccess?.sessionsAhead ?? 'all';
 
 	// Get all dashboard data in one optimized call
