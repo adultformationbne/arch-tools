@@ -8,6 +8,8 @@
 		onAdvanceSession = () => {},
 		onEmailAll = () => {},
 		onSendWelcome = null,
+		// Hub-leader courses: no sessions to advance and no cohort to configure, just leaders
+		hubLeaderMode = false,
 		welcomeCount = 0,
 		onExport = () => {},
 		onAddParticipant = () => {},
@@ -52,40 +54,46 @@
 <div class="h-full flex flex-col" style="background-color: var(--course-accent-dark);">
 	<!-- Sidebar Header -->
 	<div class="px-3 py-2 border-b" style="border-color: rgba(255,255,255,0.1);">
-		<h2 class="text-xs font-bold text-white/90 uppercase tracking-wide">Cohort Admin</h2>
+		<h2 class="text-xs font-bold text-white/90 uppercase tracking-wide">{hubLeaderMode ? 'Leaders' : 'Cohort Admin'}</h2>
 	</div>
 
 	<div class="flex-1 overflow-y-auto">
 		{#if cohort}
 			<!-- Cohort Info -->
 			<div class="px-3 py-3 border-b" style="border-color: rgba(255,255,255,0.1);">
-				<h3 class="text-sm font-bold text-white truncate">{cohort.name}</h3>
-				<p class="text-xs text-white/70 truncate">{cohort.module?.name || 'Module'}</p>
-				<p class="text-xs text-white/50 mt-0.5">
-					{#if isEvergreenCohort(cohort)}
-						Always open
-					{:else}
-						{formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
-					{/if}
-				</p>
+				{#if hubLeaderMode}
+					<h3 class="text-sm font-bold text-white truncate">{cohort.module?.name || 'Module'}</h3>
+					<p class="text-xs text-white/70 mt-0.5">{stats.participantCount} leader{stats.participantCount === 1 ? '' : 's'}</p>
+				{:else}
+					<h3 class="text-sm font-bold text-white truncate">{cohort.name}</h3>
+					<p class="text-xs text-white/70 truncate">{cohort.module?.name || 'Module'}</p>
+					<p class="text-xs text-white/50 mt-0.5">
+						{#if isEvergreenCohort(cohort)}
+							Always open
+						{:else}
+							{formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
+						{/if}
+					</p>
 
-				<!-- Session Indicator -->
-				<div class="rounded-lg p-2.5 text-center mt-3" style="background-color: rgba(255,255,255,0.1);">
-					<div class="text-xs text-white/70 uppercase tracking-wide mb-0.5">Current Session</div>
-					<div class="text-2xl font-bold text-white">
-						{cohort.current_session}<span class="text-base text-white/50">/{getTotalSessions(cohort)}</span>
+					<!-- Session Indicator -->
+					<div class="rounded-lg p-2.5 text-center mt-3" style="background-color: rgba(255,255,255,0.1);">
+						<div class="text-xs text-white/70 uppercase tracking-wide mb-0.5">Current Session</div>
+						<div class="text-2xl font-bold text-white">
+							{cohort.current_session}<span class="text-base text-white/50">/{getTotalSessions(cohort)}</span>
+						</div>
 					</div>
-				</div>
 
-				<!-- Quick Stats -->
-				<div class="mt-2 text-xs text-white/70">
-					{stats.participantCount} participants
-				</div>
+					<!-- Quick Stats -->
+					<div class="mt-2 text-xs text-white/70">
+						{stats.participantCount} participants
+					</div>
+				{/if}
 			</div>
 
 			<!-- Actions -->
 			<div class="px-3 py-3 border-b" style="border-color: rgba(255,255,255,0.1);">
 				<div class="space-y-1">
+					{#if !hubLeaderMode}
 					<button
 						onclick={() => onAdvanceSession()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
@@ -93,6 +101,7 @@
 						<ArrowUp size={14} />
 						<span>Advance Session</span>
 					</button>
+					{/if}
 
 					{#if onSendWelcome}
 						<!-- Stands out while someone still has not been sent their welcome email -->
@@ -114,7 +123,7 @@
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<Mail size={14} />
-						<span>Email Cohort</span>
+						<span>{hubLeaderMode ? 'Email Leaders' : 'Email Cohort'}</span>
 					</button>
 
 					<button
@@ -122,9 +131,10 @@
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
 					>
 						<UserPlus size={14} />
-						<span>Add Participant</span>
+						<span>{hubLeaderMode ? 'Add Leader' : 'Add Participant'}</span>
 					</button>
 
+					{#if !hubLeaderMode}
 					<button
 						onclick={() => onCohortSettings()}
 						class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs"
@@ -132,6 +142,7 @@
 						<Settings size={14} />
 						<span>Cohort Settings</span>
 					</button>
+					{/if}
 
 					<button
 						onclick={() => onExport()}

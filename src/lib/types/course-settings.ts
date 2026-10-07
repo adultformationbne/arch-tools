@@ -196,3 +196,15 @@ export function getEffectiveCourseSettings(rawSettings: unknown): CourseSettings
 	if (!isHubLeaderMode(settings)) return settings;
 	return { ...settings, features: { ...settings.features, ...HUB_LEADER_FEATURE_OVERRIDES } };
 }
+
+/**
+ * The feature flags the admin screens should see. A hub-leader course has no
+ * reflections, quizzes, attendance, chat, community feed or hubs, so the admin
+ * menu and editors for them are hidden. Materials stay on: admins always manage
+ * them (the participant side shows materials on the home page itself).
+ */
+export function getAdminCourseFeatures(rawSettings: unknown): NonNullable<CourseSettings['features']> {
+	const stored = getCourseSettings(rawSettings);
+	const effective = getEffectiveCourseSettings(rawSettings);
+	return { ...effective.features, materialsEnabled: stored.features?.materialsEnabled };
+}

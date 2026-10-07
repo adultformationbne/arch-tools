@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+	getAdminCourseFeatures,
 	getCourseSettings,
 	getEffectiveCourseSettings,
 	isHubLeaderMode
@@ -60,5 +61,27 @@ describe('Course mode', () => {
 		getEffectiveCourseSettings(stored);
 		expect(raw.features?.reflectionsEnabled).toBe(true);
 		expect(getCourseSettings(stored).features?.chatEnabled).toBe(true);
+	});
+
+	it('hides the cohort features from the admin screens of a hub-leader course', () => {
+		const features = getAdminCourseFeatures({ ...stored, features: { ...stored.features, hubsEnabled: true } });
+		expect(features.reflectionsEnabled).toBe(false);
+		expect(features.quizzesEnabled).toBe(false);
+		expect(features.attendanceEnabled).toBe(false);
+		expect(features.chatEnabled).toBe(false);
+		expect(features.hubsEnabled).toBe(false);
+	});
+
+	it('keeps materials editable for admins whatever the course type', () => {
+		// the leader screen shows materials itself, so the stored "materials" flag only matters for admins
+		const features = getAdminCourseFeatures({ mode: 'hub_leader', features: { materialsEnabled: true } });
+		expect(features.materialsEnabled).toBe(true);
+	});
+
+	it('leaves the admin features of a cohort course exactly as stored', () => {
+		const features = getAdminCourseFeatures({ features: { reflectionsEnabled: true, hubsEnabled: true, quizzesEnabled: false } });
+		expect(features.reflectionsEnabled).toBe(true);
+		expect(features.hubsEnabled).toBe(true);
+		expect(features.quizzesEnabled).toBe(false);
 	});
 });

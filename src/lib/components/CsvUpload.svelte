@@ -13,11 +13,17 @@
 		onUpload = (data) => {},
 		accept = '.csv,.xlsx,.xls',
 		maxSize = 5 * 1024 * 1024, // 5MB
-		disabled = false
+		disabled = false,
+		// Hub-leader courses: no role or hub columns, everyone is imported as a participant
+		hubLeaderMode = false
 	} = $props();
 
 	function downloadTemplate() {
-		const template = `first_name,last_name,email,phone,mailing_address,parish_community,hub,ministry_role,cohort_role,notes
+		const template = hubLeaderMode
+			? `first_name,last_name,email,phone,parish_community
+Jane,Smith,jane.smith@example.com,+61 400 123 456,St Mary's Cathedral
+John,Doe,john.doe@example.com,,Holy Spirit Parish`
+			: `first_name,last_name,email,phone,mailing_address,parish_community,hub,ministry_role,cohort_role,notes
 Jane,Smith,jane.smith@example.com,+61 400 123 456,123 Church St Brisbane QLD 4000,St Mary's Cathedral,St Mary's Parish,Catechist,student,
 John,Doe,john.doe@example.com,+61 400 789 012,45 Faith Ave Sydney NSW 2000,Holy Spirit Parish,Downtown Hub,Parish Council Chair,coordinator,Experienced facilitator
 Mary,Johnson,mary.johnson@example.com,,,Our Lady of Mercy,St Mary's Parish,Reader,student,
@@ -446,7 +452,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 
 			const missingColumns = [];
 			if (!hasEmail) missingColumns.push('email');
-			if (!hasRole) missingColumns.push('cohort_role');
+			if (!hasRole && !hubLeaderMode) missingColumns.push('cohort_role');
 			if (!hasAnyName) missingColumns.push('name (full_name or first_name)');
 
 			console.log('[CsvUpload] parsed headers:', header);
@@ -498,7 +504,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 					facilitator: 'coordinator'
 				};
 
-				const roleLower = row.role.toLowerCase().trim();
+				const roleLower = hubLeaderMode ? '' : (row.role || '').toLowerCase().trim();
 				const normalizedRole = roleLower ? (roleMap[roleLower] || roleLower) : 'student';
 
 				if (!['student', 'coordinator'].includes(normalizedRole)) {
@@ -519,7 +525,7 @@ Robert,Williams,robert.w@example.com,+61 400 555 666,,St Patrick's,Downtown Hub,
 					parish_role: row.parish_role ? row.parish_role.trim() : null,
 					notes: row.notes ? row.notes.trim() : null,
 					role: normalizedRole,
-					hub: row.hub ? row.hub.trim() : null
+					hub: !hubLeaderMode && row.hub ? row.hub.trim() : null
 				});
 			}
 

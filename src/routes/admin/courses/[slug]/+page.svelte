@@ -30,6 +30,8 @@
 	let modules = $derived(data.modules || []);
 	let cohorts = $derived(data.cohorts || []);
 	const courseFeatures = $derived(data.courseFeatures || {});
+	// Hub-leader course: a plain list of leaders, with no sessions, hubs, reflections or attendance
+	const hubLeaderMode = $derived(data.courseMode === 'hub_leader');
 	const courseHubs = $derived(data.courseHubs || []);
 	const cohortHubMap = $derived(data.cohortHubMap || {});
 
@@ -860,6 +862,7 @@
 			onAdvanceSession={handleAdvanceSession}
 			onEmailAll={handleEmailAll}
 			onSendWelcome={handleSendWelcome}
+			{hubLeaderMode}
 			welcomeCount={notInvited.length}
 			onExport={handleExport}
 			onAddParticipant={handleAddParticipant}
@@ -875,7 +878,7 @@
 				<div class="flex items-center justify-between mb-2">
 					<div class="min-w-0">
 						<h2 class="text-sm font-bold text-white truncate">{selectedCohort.name}</h2>
-						<p class="text-xs text-white/60">Session {selectedCohort.current_session}/{getTotalSessions(selectedCohort)} • {stats.participantCount} participants</p>
+						<p class="text-xs text-white/60">{#if hubLeaderMode}{stats.participantCount} leader{stats.participantCount === 1 ? '' : 's'}{:else}Session {selectedCohort.current_session}/{getTotalSessions(selectedCohort)} • {stats.participantCount} participants{/if}</p>
 					</div>
 				</div>
 				<!-- Mobile Quick Actions -->
@@ -888,6 +891,7 @@
 						<UserPlus size={14} />
 						Add
 					</button>
+					{#if !hubLeaderMode}
 					<button
 						onclick={handleAdvanceSession}
 						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
@@ -896,6 +900,7 @@
 						<ArrowRight size={14} />
 						Advance
 					</button>
+					{/if}
 					<button
 						onclick={handleSendWelcome}
 						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
@@ -920,6 +925,7 @@
 						<Download size={14} />
 						Export
 					</button>
+					{#if !hubLeaderMode}
 					<button
 						onclick={handleCohortSettings}
 						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 whitespace-nowrap transition-colors"
@@ -928,6 +934,7 @@
 						<Settings size={14} />
 						Settings
 					</button>
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -1006,7 +1013,7 @@
 				<!-- Page Header + Search + Filters -->
 				<div class="flex flex-col gap-2 mb-4">
 					<div class="flex flex-wrap items-center gap-2">
-						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block shrink-0">Participants</h1>
+						<h1 class="text-lg sm:text-xl font-bold text-white hidden lg:block shrink-0">{hubLeaderMode ? 'Leaders' : 'Participants'}</h1>
 						<div class="relative">
 							<Search size={16} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
 							<input
@@ -1016,8 +1023,11 @@
 								class="w-36 sm:w-44 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-300 focus:outline-none bg-white text-gray-800 placeholder:text-gray-400 shadow-sm"
 							/>
 						</div>
-						<FilterSelect bind:value={filterHub} options={hubOptions} icon={MapPin} />
+						{#if !hubLeaderMode}
+							<FilterSelect bind:value={filterHub} options={hubOptions} icon={MapPin} />
+						{/if}
 						<FilterSelect bind:value={filterStatus} options={statusOptions} icon={Users} />
+						{#if !hubLeaderMode}
 						<FiltersPanel
 							bind:filterSession
 							bind:filterAttendance
@@ -1026,6 +1036,7 @@
 							{attendanceOptions}
 							{reflectionOptions}
 						/>
+						{/if}
 						{#if anyFilterActive}
 							<button type="button" onclick={clearAllFilters} class="flex items-center gap-1 px-2 py-1.5 text-xs text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10">
 								<X size={12} />
@@ -1037,9 +1048,9 @@
 					<div class="flex items-center justify-between text-xs text-white/60 mt-0.5">
 						<span>
 							{#if filteredParticipants.length !== participants.length}
-								<span class="text-white/90 font-medium">{filteredParticipants.length}</span> of {participants.length} participants
+								<span class="text-white/90 font-medium">{filteredParticipants.length}</span> of {participants.length} {hubLeaderMode ? 'leaders' : 'participants'}
 							{:else}
-								{participants.length} participant{participants.length === 1 ? '' : 's'}
+								{participants.length} {hubLeaderMode ? 'leader' : 'participant'}{participants.length === 1 ? '' : 's'}
 							{/if}
 						</span>
 						{#if filteredParticipants.length > 0}
@@ -1072,6 +1083,7 @@
 								<Mail size={12} />
 								Email
 							</button>
+							{#if !hubLeaderMode}
 							<button
 								onclick={handleAdvanceSelected}
 								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -1079,6 +1091,8 @@
 								<ArrowRight size={12} />
 								Advance
 							</button>
+							{/if}
+							{#if !hubLeaderMode}
 							<button
 								onclick={handleAssignHub}
 								class="px-2 py-1.5 rounded text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -1086,6 +1100,7 @@
 								<MapPin size={12} />
 								Assign to Hub
 							</button>
+							{/if}
 							<button
 								onclick={handleRemoveSelected}
 								class="px-2 py-1 rounded text-xs font-medium text-red-400 hover:bg-white/10 flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -1118,15 +1133,15 @@
 							<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style="background-color: var(--course-accent-dark, #334642)20;">
 								<UserPlus size={22} style="color: var(--course-accent-dark, #334642);" />
 							</div>
-							<h3 class="mb-1 text-sm font-semibold text-gray-900">No participants yet</h3>
-							<p class="mb-5 text-sm text-gray-500">Add participants manually or via CSV upload to get started.</p>
+							<h3 class="mb-1 text-sm font-semibold text-gray-900">{hubLeaderMode ? 'No leaders yet' : 'No participants yet'}</h3>
+							<p class="mb-5 text-sm text-gray-500">{hubLeaderMode ? 'Add leaders one at a time or by CSV, or share the enrolment link so they can sign up themselves.' : 'Add participants manually or via CSV upload to get started.'}</p>
 							<button
 								onclick={handleAddParticipant}
 								class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
 								style="background-color: var(--course-accent-dark, #334642);"
 							>
 								<UserPlus size={16} />
-								Add Participants
+								{hubLeaderMode ? 'Add Leaders' : 'Add Participants'}
 							</button>
 						</div>
 					{:else}
@@ -1141,6 +1156,7 @@
 								<!-- Grouped header. lg-only: below lg the reflection columns are
 										hidden and the colspans would not line up. The label doubles as the
 										expand/collapse control for the group beneath it. -->
+								{#if !hubLeaderMode}
 								<tr class="hidden lg:table-row bg-gray-100 sticky z-10" style="top: {filterBarHeight}px" bind:clientHeight={reflectionsHeaderHeight}>
 									<th colspan="7" class="bg-gray-100"></th>
 									<th colspan={reflectionsExpanded ? 4 : 1} class="px-2 sm:px-3 pt-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 bg-gray-100">
@@ -1154,6 +1170,7 @@
 										</button>
 									</th>
 								</tr>
+								{/if}
 								<tr class="border-b border-gray-200 bg-gray-100">
 									<th class="w-8 px-2 sm:px-3 py-2.5 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<input
@@ -1164,15 +1181,18 @@
 										/>
 									</th>
 									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
-										<button onclick={() => toggleSort('name')} class="hover:text-gray-900 cursor-pointer">Participant{sortIndicator('name')}</button>
+										<button onclick={() => toggleSort('name')} class="hover:text-gray-900 cursor-pointer">{hubLeaderMode ? 'Leader' : 'Participant'}{sortIndicator('name')}</button>
 									</th>
 									<th class="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">Phone</th>
+									{#if !hubLeaderMode}
 									<th class="hidden md:table-cell px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('hub')} class="hover:text-gray-900 cursor-pointer">Hub{sortIndicator('hub')}</button>
 									</th>
+									{/if}
 									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('status')} class="hover:text-gray-900 cursor-pointer">Activity{sortIndicator('status')}</button>
 									</th>
+									{#if !hubLeaderMode}
 									<th class="px-2 sm:px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sticky z-10 bg-gray-100" style="top: {filterBarHeight + reflectionsHeaderHeight}px">
 										<button onclick={() => toggleSort('session')} class="hover:text-gray-900 cursor-pointer">Sess.{sortIndicator('session')}</button>
 									</th>
@@ -1198,6 +1218,7 @@
 											<span class="mx-1 text-gray-300">•</span>
 											<button onclick={() => toggleSort('refOther')} title="Submitted, returned and draft added together - expand for a column each" class="hover:text-gray-900 cursor-pointer">Other{sortIndicator('refOther')}</button>
 										</th>
+									{/if}
 									{/if}
 								</tr>
 							</thead>
@@ -1245,10 +1266,12 @@
 										<td class="hidden sm:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.user_profile?.phone || '-'}</span>
 										</td>
+										{#if !hubLeaderMode}
 										<!-- Hub - hidden on mobile/tablet -->
 										<td class="hidden md:table-cell px-2 sm:px-3 py-2">
 											<span class="text-xs text-gray-600">{participant.courses_hubs?.name || '-'}</span>
 										</td>
+										{/if}
 										<!-- Activity -->
 										<td class="px-2 sm:px-3 py-2">
 											<span class="text-[10px] sm:text-xs font-medium {activityInfo.labelClass}">
@@ -1266,6 +1289,7 @@
 												</span>
 											{/if}
 										</td>
+										{#if !hubLeaderMode}
 										<!-- Session progress -->
 										<td class="px-2 sm:px-3 py-2">
 											<span class="text-xs tabular-nums text-gray-700">
@@ -1305,6 +1329,7 @@
 										{:else}
 											<td class="hidden lg:table-cell px-2 sm:px-3 py-2 text-xs text-gray-400">-</td>
 										{/if}
+										{/if}
 									</tr>
 								{/each}
 							</tbody>
@@ -1313,7 +1338,7 @@
 
 					<!-- Pagination info -->
 					<div class="mt-2 text-xs text-white/70 text-center">
-						{filteredParticipants.length} of {participants.length} participants
+						{filteredParticipants.length} of {participants.length} {hubLeaderMode ? 'leaders' : 'participants'}
 					</div>
 				{/if}
 			</div>
@@ -1339,6 +1364,7 @@
 	cohort={selectedCohort}
 	show={showStudentEnrollment}
 	{hubs}
+	{hubLeaderMode}
 	onClose={() => showStudentEnrollment = false}
 	onComplete={handleEnrollmentComplete}
 />

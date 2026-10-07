@@ -39,7 +39,9 @@ let {
     isCourseAdmin = false,
     courseBranding = {},
     courseFeatures = {},
-    hasUnreadChat = false
+    hasUnreadChat = false,
+    // Hub-leader courses: each module has one standing group of leaders, so the cohort list is a module list
+    hubLeaderMode = false
 } = $props();
 
 // Sidebar expansion state - defaults to collapsed (icons only)
@@ -92,10 +94,10 @@ function withCohort(basePath) {
 // Course items are the same regardless of which cohort is selected.
 const cohortNavItems = $derived([
     {
-        label: 'Cohort',
+        label: hubLeaderMode ? 'Leaders' : 'Cohort',
         href: withCohort(`/admin/courses/${courseSlug}`),
         icon: LayoutDashboard,
-        description: 'Cohort overview',
+        description: hubLeaderMode ? 'Hub leaders' : 'Cohort overview',
         visible: true
     },
     {
@@ -296,7 +298,7 @@ function handleMouseEnter(href) {
 			<div class="nav-section cohorts-section">
 				<div class="section-header">
 					<h3 class="nav-section-title">
-						<span class="section-title-text">Active Cohorts</span>
+						<span class="section-title-text">{hubLeaderMode ? 'Modules' : 'Active Cohorts'}</span>
 					</h3>
 					{#if onNewCohort}
 						<button onclick={onNewCohort} class="btn-new-cohort-small" title="Create New Cohort">
@@ -311,13 +313,16 @@ function handleMouseEnter(href) {
 								onclick={() => onSelectCohort?.(cohort.id)}
 								class="nav-item cohort-item"
 								class:active={selectedCohortId === cohort.id}
-								title="{cohort.name}"
+								title="{hubLeaderMode ? (cohort.module?.name ?? cohort.courses_modules?.name ?? cohort.name) : cohort.name}"
 							>
 								<div class="cohort-info">
-									<span class="cohort-name">{cohort.name}</span>
-									<span class="cohort-session">Session {cohort.current_session}</span>
+									<span class="cohort-name">{hubLeaderMode ? (cohort.module?.name ?? cohort.courses_modules?.name ?? cohort.name) : cohort.name}</span>
+									{#if !hubLeaderMode}
+										<span class="cohort-session">Session {cohort.current_session}</span>
+									{/if}
 								</div>
 							</button>
+							{#if !hubLeaderMode}
 							<button
 								class="cohort-archive-btn"
 								onclick={(e) => { e.stopPropagation(); onArchiveCohort(cohort.id, cohort.name); }}
@@ -325,6 +330,7 @@ function handleMouseEnter(href) {
 							>
 								<Archive size={13} />
 							</button>
+							{/if}
 						</li>
 					{/each}
 				</ul>

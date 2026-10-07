@@ -12,7 +12,7 @@ import type { LayoutServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
-import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings.js';
+import { getCourseSettings, getAdminCourseFeatures, isHubLeaderMode } from '$lib/types/course-settings.js';
 import { getCachedCourseData, setCachedCourseData, invalidateCourseCache } from '$lib/server/course-cache.js';
 import { ensureHubLeaderCohorts } from '$lib/server/hub-leader-cohorts.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
@@ -101,7 +101,9 @@ export const load: LayoutServerLoad = async (event) => {
 	// Extract theme, branding, and feature settings
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
-	const courseFeatures = settings.features || {};
+	// In a hub-leader course the participant-facing features are off, so the admin
+	// menu and editors for them are hidden too
+	const courseFeatures = getAdminCourseFeatures(course.settings);
 
 	// Check for unread chat messages in selected cohort
 	const selectedCohortId = event.url.searchParams.get('cohort');

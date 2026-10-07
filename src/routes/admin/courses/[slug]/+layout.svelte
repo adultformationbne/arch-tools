@@ -204,6 +204,7 @@
 		{courseBranding}
 		{courseFeatures}
 		{hasUnreadChat}
+		hubLeaderMode={isHubLeaderCourse}
 		selectedCohortId={selectedCohortId}
 		onNewCohort={isHubLeaderCourse ? null : handleNewCohort}
 		onSelectCohort={handleSelectCohort}
@@ -222,6 +223,7 @@
 			{courseBranding}
 			{courseFeatures}
 			{hasUnreadChat}
+			hubLeaderMode={isHubLeaderCourse}
 			selectedCohortId={selectedCohortId}
 			onNewCohort={isHubLeaderCourse ? null : handleNewCohort}
 			onSelectCohort={handleSelectCohort}

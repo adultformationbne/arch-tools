@@ -2,7 +2,10 @@
 	import { X, UserPlus, Upload, Users, AlertTriangle } from '$lib/icons';
 	import CsvUpload from './CsvUpload.svelte';
 
-	let { cohort = null, show = false, courseSlug, hubs = [], onClose = () => {}, onComplete = () => {} } = $props();
+	let { cohort = null, show = false, courseSlug, hubs = [], hubLeaderMode = false, onClose = () => {}, onComplete = () => {} } = $props();
+
+	// Hub-leader courses have one kind of person and no hubs: name and email is all that is asked
+	const who = $derived(hubLeaderMode ? 'Leader' : 'Participant');
 
 	let mode = $state('choice'); // 'choice', 'single', 'bulk', 'conflicts'
 	let hubMode = $state('select'); // 'select' or 'new'
@@ -198,9 +201,9 @@
 			<!-- Header -->
 			<div class="modal-header">
 				<div>
-					<h2 id="enrollment-title">Add Participants</h2>
+					<h2 id="enrollment-title">{hubLeaderMode ? 'Add Hub Leaders' : 'Add Participants'}</h2>
 					{#if cohort}
-						<p class="cohort-name">{cohort.name}</p>
+						<p class="cohort-name">{hubLeaderMode ? (cohort.module?.name ?? cohort.courses_modules?.name ?? '') : cohort.name}</p>
 					{/if}
 				</div>
 				<button type="button" onclick={handleClose} class="close-button">
@@ -211,19 +214,19 @@
 			<!-- Choice Mode -->
 			{#if mode === 'choice'}
 				<div class="modal-body">
-					<p class="intro-text">Choose how you'd like to add participants to this cohort:</p>
+					<p class="intro-text">{hubLeaderMode ? 'Choose how you\'d like to add hub leaders:' : 'Choose how you\'d like to add participants to this cohort:'}</p>
 
 					<div class="choice-grid">
 						<button type="button" onclick={() => selectMode('single')} class="choice-card">
 							<UserPlus size={48} color="#1f2937" />
-							<h3>Add Single Participant</h3>
-							<p>Manually enter participant information</p>
+							<h3>{hubLeaderMode ? 'Add One Leader' : 'Add Single Participant'}</h3>
+							<p>{hubLeaderMode ? 'Enter their name and email' : 'Manually enter participant information'}</p>
 						</button>
 
 						<button type="button" onclick={() => selectMode('bulk')} class="choice-card">
 							<Users size={48} color="#1f2937" />
 							<h3>Bulk Upload</h3>
-							<p>Import multiple participants via CSV</p>
+							<p>{hubLeaderMode ? 'Import several leaders from a CSV' : 'Import multiple participants via CSV'}</p>
 						</button>
 					</div>
 				</div>
@@ -259,6 +262,7 @@
 							/>
 						</div>
 
+						{#if !hubLeaderMode}
 						<div class="form-group">
 							<label for="participant-role">Role</label>
 							<select id="participant-role" bind:value={participantData.role}>
@@ -305,6 +309,7 @@
 								</select>
 							{/if}
 						</div>
+						{/if}
 
 						{#if error}
 							<div class="error-message">{error}</div>
@@ -315,7 +320,7 @@
 								Cancel
 							</button>
 							<button type="submit" class="btn-primary" disabled={isLoading}>
-								{isLoading ? 'Adding...' : 'Add Participant'}
+								{isLoading ? 'Adding...' : `Add ${who}`}
 							</button>
 						</div>
 					</form>
@@ -329,12 +334,12 @@
 						← Back to options
 					</button>
 
-					<CsvUpload onUpload={handleCsvUpload} />
+					<CsvUpload onUpload={handleCsvUpload} {hubLeaderMode} />
 
 					{#if uploadResult}
 						<div class="upload-result">
 							<p class="success-text">
-								<strong>{uploadResult.successful}</strong> participants added successfully
+								<strong>{uploadResult.successful}</strong> {hubLeaderMode ? 'leaders' : 'participants'} added successfully
 							</p>
 
 							{#if uploadResult.errors > 0}

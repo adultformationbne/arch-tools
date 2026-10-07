@@ -36,7 +36,8 @@ let {
 	isCourseAdmin = false,
 	courseBranding = {},
 	courseFeatures = {},
-	hasUnreadChat = false
+	hasUnreadChat = false,
+	hubLeaderMode = false
 } = $props();
 
 // Mobile menu state
@@ -88,10 +89,10 @@ function withCohort(basePath) {
 // Course items are the same regardless of which cohort is selected.
 const cohortNavItems = $derived([
 	{
-		label: 'Cohort',
+		label: hubLeaderMode ? 'Leaders' : 'Cohort',
 		href: withCohort(`/admin/courses/${courseSlug}`),
 		icon: LayoutDashboard,
-		description: 'Cohort overview',
+		description: hubLeaderMode ? 'Hub leaders' : 'Cohort overview',
 		visible: true
 	},
 	{
@@ -341,7 +342,7 @@ const selectedCohortName = $derived(() => {
 		{#if cohorts.length > 0 || onNewCohort}
 			<div class="nav-section cohorts-section">
 				<div class="section-header">
-					<h3 class="section-title">Active Cohorts</h3>
+					<h3 class="section-title">{hubLeaderMode ? 'Modules' : 'Active Cohorts'}</h3>
 					{#if onNewCohort}
 						<button onclick={handleNewCohortClick} class="btn-new-cohort" title="Create New Cohort">
 							<Plus size={16} />
@@ -357,8 +358,10 @@ const selectedCohortName = $derived(() => {
 								class="cohort-item"
 								class:active={selectedCohortId === cohort.id}
 							>
-								<span class="cohort-name">{cohort.name}</span>
-								<span class="cohort-session">Session {cohort.current_session}</span>
+								<span class="cohort-name">{hubLeaderMode ? (cohort.module?.name ?? cohort.courses_modules?.name ?? cohort.name) : cohort.name}</span>
+								{#if !hubLeaderMode}
+									<span class="cohort-session">Session {cohort.current_session}</span>
+								{/if}
 							</button>
 						{/each}
 					</div>
