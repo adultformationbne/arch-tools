@@ -10,8 +10,7 @@
  */
 
 import { parse } from 'csv-parse/sync';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import liturgicalYearCsv from '$lib/data/liturgical-year.csv?raw';
 import { DAY_NAMES } from '$lib/utils/dgr-helpers';
 
 // Types
@@ -83,9 +82,7 @@ type YearCycleCsvRow = {
 export function loadYearCycleData(): Map<number, YearCycleData> {
 	if (yearDataCache) return yearDataCache;
 
-	const csvPath = join(process.cwd(), 'src/lib/data/liturgical-year.csv');
-	const csvContent = readFileSync(csvPath, 'utf-8');
-	const records = parse<YearCycleCsvRow>(csvContent, { columns: true, skip_empty_lines: true });
+	const records = parse<YearCycleCsvRow>(liturgicalYearCsv, { columns: true, skip_empty_lines: true });
 
 	yearDataCache = new Map();
 	for (const r of records) {
