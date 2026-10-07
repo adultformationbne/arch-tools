@@ -10,6 +10,9 @@
 
 	let { data } = $props();
 
+	// Hub-leader courses: one person signs up, with name + email (phone optional) and no billing step
+	const hubLeaderMode = $derived(!!data.hubLeaderMode);
+
 	type Participant = {
 		firstName: string;
 		surname: string;
@@ -149,8 +152,8 @@
 		if (!surname.trim()) formErrors.surname = 'Surname is required';
 		if (!email.trim()) formErrors.email = 'Email is required';
 		else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) formErrors.email = 'Invalid email address';
-		if (!phone.trim()) formErrors.phone = 'Phone number is required';
-		if (!mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
+		if (!hubLeaderMode && !phone.trim()) formErrors.phone = 'Phone number is required';
+		if (!hubLeaderMode && !mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
 		return Object.keys(formErrors).length === 0;
 	}
 
@@ -198,8 +201,8 @@
 		if (!existing) {
 			if (!firstName.trim()) formErrors.firstName = 'First name is required';
 			if (!surname.trim()) formErrors.surname = 'Surname is required';
-			if (!phone.trim()) formErrors.phone = 'Phone number is required';
-			if (!mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
+			if (!hubLeaderMode && !phone.trim()) formErrors.phone = 'Phone number is required';
+			if (!hubLeaderMode && !mailingAddress.trim()) formErrors.mailingAddress = 'Mailing address is required';
 			if (Object.keys(formErrors).length > 0) {
 				toastError('Please fix the errors below');
 				return false;
@@ -276,6 +279,22 @@
 			return;
 		}
 		if (billingParticipantIndex >= participants.length) billingParticipantIndex = 0;
+		// Hub leaders have nothing to pay and no billing contact, so enrol straight away.
+		// If the course asks for a consent tick, that checkbox lives on the review step.
+		if (hubLeaderMode) {
+			if (isSubmitting) return;
+			if (legal.requireAcknowledgement && !legalAccepted) {
+				step = 3;
+				scrollTop();
+				return;
+			}
+			await handleSubmit(new Event('submit'));
+			// A failed submit leaves the entry in the list; reopen it so it can be corrected.
+			if (!showPendingApproval && !showInvitationsSent && !showLoadingOverlay && !showEmbedded) {
+				editParticipant(0);
+			}
+			return;
+		}
 		step = 2;
 		scrollTop();
 	}
@@ -356,7 +375,7 @@
 		event.preventDefault();
 
 		// Safety: only submit from the review step with at least one participant
-		if (step !== 3 || participants.length === 0) {
+		if ((step !== 3 && !hubLeaderMode) || participants.length === 0) {
 			proceedFromPeople();
 			return;
 		}
@@ -466,9 +485,11 @@
 
 			<div class="flex flex-1 flex-col justify-center">
 				<!-- Progress stepper -->
-				<div class="mb-6">
-					<EnrollmentProgressStepper flow={flowType()} currentStep={1} accentColor={accentDark} />
-				</div>
+				{#if !hubLeaderMode}
+					<div class="mb-6">
+						<EnrollmentProgressStepper flow={flowType()} currentStep={1} accentColor={accentDark} />
+					</div>
+				{/if}
 
 				{#if showPendingApproval}
 					<div class="flex flex-col items-center justify-center py-10 text-center">
@@ -513,11 +534,13 @@
 								<p class="truncate text-xs font-medium uppercase tracking-wide" style="color: {accentDark};">{data.course?.name}</p>
 								<h2 class="mt-0.5 text-base font-bold text-gray-900">{data.module?.name}</h2>
 								<div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
-									{#if data.cohort?.startDate}
+									{#if data.cohort?.startDate && !hubLeaderMode}
 										<span>Starts {new Date(data.cohort.startDate).toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
 										<span>·</span>
 									{/if}
-									<span>{data.cohort?.name}</span>
+									{#if !hubLeaderMode}
+										<span>{data.cohort?.name}</span>
+									{/if}
 									{#if displayHub}
 										<span>·</span>
 										<span>{displayHub.name}</span>
@@ -540,10 +563,14 @@
 						<!-- STEP 1: Add people + hub -->
 						<div class="mx-auto w-full max-w-sm">
 							<h1 class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-								Register for this course
+								{hubLeaderMode ? 'Hub leader sign-up' : 'Register for this course'}
 							</h1>
 							<p class="mt-1 text-sm text-gray-500">
-								Start with the participant's email — if they already have an account we'll just add them. Enrolling a group? Add each person below.
+								{#if hubLeaderMode}
+									Enter your details to create your hub leader login. We'll email you a link to sign in.
+								{:else}
+									Start with the participant's email — if they already have an account we'll just add them. Enrolling a group? Add each person below.
+								{/if}
 							</p>
 
 							<!-- Participants already added -->
@@ -601,7 +628,11 @@
 										<p class="mt-1 text-xs text-gray-400">Checking…</p>
 									{:else if emailStatus === 'registered'}
 										<p class="mt-1 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
-											✓ We found an account for this email. We'll add them — no other details needed; they'll sign in with their existing account.
+											{#if hubLeaderMode}
+												✓ You already have an account. We'll add this course to it — sign in as usual.
+											{:else}
+												✓ We found an account for this email. We'll add them — no other details needed; they'll sign in with their existing account.
+											{/if}
 										</p>
 									{/if}
 								</div>
@@ -633,7 +664,7 @@
 									<!-- Phone -->
 									<div>
 										<label for="phone" class="block text-sm font-medium text-gray-900">
-											Phone <span class="text-red-500">*</span>
+											Phone{#if hubLeaderMode} (optional){:else} <span class="text-red-500">*</span>{/if}
 										</label>
 										<input type="tel" id="phone" bind:value={phone} placeholder="04XX XXX XXX"
 											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none"
@@ -650,6 +681,7 @@
 											class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none" />
 									</div>
 
+									{#if !hubLeaderMode}
 									<!-- Mailing address -->
 									<div>
 										<label for="mailingAddress" class="block text-sm font-medium text-gray-900">
@@ -660,6 +692,7 @@
 											class:border-red-500={formErrors.mailingAddress}></textarea>
 										{#if formErrors.mailingAddress}<p class="mt-1 text-xs text-red-500">{formErrors.mailingAddress}</p>{/if}
 									</div>
+									{/if}
 								{/if}
 
 								<!-- Hub / Location selection (only when participants choose; a
@@ -683,6 +716,7 @@
 									</div>
 								{/if}
 
+								{#if !hubLeaderMode}
 								<!-- Add another person -->
 								<button
 									type="button"
@@ -693,6 +727,8 @@
 									{editingIndex !== null ? 'Save participant' : '+ Add another person'}
 								</button>
 
+								{/if}
+
 								<!-- Continue -->
 								<div class="pt-1">
 									<button
@@ -700,7 +736,7 @@
 										class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 focus:outline-none"
 										style="background-color: {accentDark};"
 									>
-										Continue
+										{hubLeaderMode ? 'Create my login' : 'Continue'}
 									</button>
 								</div>
 							</form>
@@ -989,11 +1025,13 @@
 			<!-- Bottom: cohort details + price -->
 			<div class="space-y-5">
 				<div class="flex flex-wrap gap-3">
+					{#if !hubLeaderMode}
 					<div class="rounded-lg px-3.5 py-2.5" style="background-color: rgba(255,255,255,0.1);">
 						<p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Cohort</p>
 						<p class="mt-0.5 text-sm font-semibold">{data.cohort?.name}</p>
 					</div>
-					{#if data.cohort?.startDate}
+					{/if}
+					{#if data.cohort?.startDate && !hubLeaderMode}
 						<div class="rounded-lg px-3.5 py-2.5" style="background-color: rgba(255,255,255,0.1);">
 							<p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Starts</p>
 							<p class="mt-0.5 text-sm font-semibold">

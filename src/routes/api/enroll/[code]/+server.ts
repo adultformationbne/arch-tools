@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { createEmbeddedCheckoutSession, createStripeCustomer, getCheckoutSession } from '$lib/server/stripe';
 import { isEnrollmentLinkValid, checkEnrollmentWindow, getEffectivePrice } from '$lib/utils/enrollment-links';
-import { getCourseSettings } from '$lib/types/course-settings';
+import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings';
 import { checkRateLimit } from '$lib/server/rate-limit';
 import { CourseMutations } from '$lib/server/course-data';
 import { PUBLIC_SITE_URL } from '$env/static/public';
@@ -43,15 +43,18 @@ type BillingContact = {
 /**
  * Normalise + validate a single participant entry.
  * Throws a 400 with a clear message on the first problem.
+ *
+ * `relaxed` (hub-leader courses) asks only for name and email: phone is optional
+ * and no mailing address is collected.
  */
-function normalizeParticipant(raw: RawParticipant, label: string): Participant {
+function normalizeParticipant(raw: RawParticipant, label: string, relaxed = false): Participant {
 	const firstName = (raw.firstName || '').trim();
 	const surname = (raw.surname || '').trim();
 	const email = (raw.email || '').trim().toLowerCase();
 	const phone = (raw.phone || '').trim();
 	const mailingAddress = (raw.mailingAddress || '').trim();
 
-	if (!firstName || !surname || !email || !phone || !mailingAddress) {
+	if (!firstName || !surname || !email || (!relaxed && (!phone || !mailingAddress))) {
 		throw error(400, `Missing required fields for ${label}`);
 	}
 	if (firstName.length > 100 || surname.length > 100) {
@@ -86,7 +89,8 @@ function normalizeParticipant(raw: RawParticipant, label: string): Participant {
 function resolveParticipant(
 	raw: RawParticipant,
 	profileMap: Map<string, { full_name: string | null; phone: string | null; parish_id: string | null }>,
-	label: string
+	label: string,
+	relaxed = false
 ): Participant {
 	const email = (raw.email || '').trim().toLowerCase();
 	if (!email) throw error(400, `Email is required for ${label}`);
@@ -105,7 +109,7 @@ function resolveParticipant(
 			mailingAddress: null
 		};
 	}
-	return normalizeParticipant(raw, label);
+	return normalizeParticipant(raw, label, relaxed);
 }
 
 export const POST: RequestHandler = async ({ params, request, getClientAddress }) => {
@@ -129,64 +133,6 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 	}
 	if (rawParticipants.length > 50) {
 		throw error(400, 'Too many participants in a single submission');
-	}
-
-	// Resolve each participant against any existing profile (authoritative for a
-	// registered email). One lookup covers the whole batch.
-	const lowerEmails = rawParticipants
-		.map((p) => (p.email || '').trim().toLowerCase())
-		.filter(Boolean);
-	const { data: profileRows } = lowerEmails.length
-		? await supabaseAdmin
-				.from('user_profiles')
-				.select('email, full_name, phone, parish_id')
-				.in('email', lowerEmails)
-		: { data: [] as Array<{ email: string; full_name: string | null; phone: string | null; parish_id: string | null }> };
-	const profileMap = new Map(
-		(profileRows || []).map((pr) => [
-			pr.email.toLowerCase(),
-			{ full_name: pr.full_name, phone: pr.phone, parish_id: pr.parish_id }
-		])
-	);
-
-	const participants: Participant[] = rawParticipants.map((p, i) =>
-		resolveParticipant(p, profileMap, `participant ${i + 1}`)
-	);
-
-	// Dedupe emails within the batch
-	const seen = new Set<string>();
-	for (const p of participants) {
-		if (seen.has(p.email)) {
-			throw error(400, `Duplicate email in this group: ${p.email}`);
-		}
-		seen.add(p.email);
-	}
-
-	// Resolve the billing contact (defaults to the first participant paying for themselves)
-	const rawBilling = body.billingContact;
-	let billingContact: BillingContact;
-	if (rawBilling && rawBilling.participantIndex !== null && rawBilling.participantIndex !== undefined) {
-		const idx = Number(rawBilling.participantIndex);
-		if (!Number.isInteger(idx) || idx < 0 || idx >= participants.length) {
-			throw error(400, 'Invalid billing contact selection');
-		}
-		billingContact = { participantIndex: idx, name: participants[idx].fullName, email: participants[idx].email };
-	} else if (rawBilling) {
-		// Separate, non-attending organiser
-		const name = (rawBilling.name || '').trim();
-		const email = (rawBilling.email || '').trim().toLowerCase();
-		if (!name || !isValidEmail(email)) {
-			throw error(400, 'A valid name and email are required for the billing contact');
-		}
-		billingContact = { participantIndex: null, name, email };
-	} else {
-		// No billing contact supplied — first participant pays
-		billingContact = { participantIndex: 0, name: participants[0].fullName, email: participants[0].email };
-	}
-
-	// Rate limiting: 5 submissions per payer email per hour
-	if (!checkRateLimit(`enroll:email:${billingContact.email}`, 5, 60 * 60_000)) {
-		throw error(429, 'Too many enrollment attempts for this email. Please try again later.');
 	}
 
 	// Fetch enrollment link with related data
@@ -236,6 +182,70 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress }
 
 	if (linkError || !link) {
 		throw error(404, 'Enrollment link not found');
+	}
+
+	// Hub-leader courses enrol one leader at a time and ask for less than a cohort course
+	const hubLeaderMode = isHubLeaderMode(getCourseSettings(link.cohort?.module?.course?.settings));
+	if (hubLeaderMode && rawParticipants.length !== 1) {
+		throw error(400, 'Hub leaders sign up one at a time');
+	}
+
+	// Resolve each participant against any existing profile (authoritative for a
+	// registered email). One lookup covers the whole batch.
+	const lowerEmails = rawParticipants
+		.map((p) => (p.email || '').trim().toLowerCase())
+		.filter(Boolean);
+	const { data: profileRows } = lowerEmails.length
+		? await supabaseAdmin
+				.from('user_profiles')
+				.select('email, full_name, phone, parish_id')
+				.in('email', lowerEmails)
+		: { data: [] as Array<{ email: string; full_name: string | null; phone: string | null; parish_id: string | null }> };
+	const profileMap = new Map(
+		(profileRows || []).map((pr) => [
+			pr.email.toLowerCase(),
+			{ full_name: pr.full_name, phone: pr.phone, parish_id: pr.parish_id }
+		])
+	);
+
+	const participants: Participant[] = rawParticipants.map((p, i) =>
+		resolveParticipant(p, profileMap, `participant ${i + 1}`, hubLeaderMode)
+	);
+
+	// Dedupe emails within the batch
+	const seen = new Set<string>();
+	for (const p of participants) {
+		if (seen.has(p.email)) {
+			throw error(400, `Duplicate email in this group: ${p.email}`);
+		}
+		seen.add(p.email);
+	}
+
+	// Resolve the billing contact (defaults to the first participant paying for themselves)
+	const rawBilling = body.billingContact;
+	let billingContact: BillingContact;
+	if (rawBilling && rawBilling.participantIndex !== null && rawBilling.participantIndex !== undefined) {
+		const idx = Number(rawBilling.participantIndex);
+		if (!Number.isInteger(idx) || idx < 0 || idx >= participants.length) {
+			throw error(400, 'Invalid billing contact selection');
+		}
+		billingContact = { participantIndex: idx, name: participants[idx].fullName, email: participants[idx].email };
+	} else if (rawBilling) {
+		// Separate, non-attending organiser
+		const name = (rawBilling.name || '').trim();
+		const email = (rawBilling.email || '').trim().toLowerCase();
+		if (!name || !isValidEmail(email)) {
+			throw error(400, 'A valid name and email are required for the billing contact');
+		}
+		billingContact = { participantIndex: null, name, email };
+	} else {
+		// No billing contact supplied — first participant pays
+		billingContact = { participantIndex: 0, name: participants[0].fullName, email: participants[0].email };
+	}
+
+	// Rate limiting: 5 submissions per payer email per hour
+	if (!checkRateLimit(`enroll:email:${billingContact.email}`, 5, 60 * 60_000)) {
+		throw error(429, 'Too many enrollment attempts for this email. Please try again later.');
 	}
 
 	// Validate link
@@ -399,7 +409,7 @@ async function handleFreeBatch(params: {
 			p_payment_status: 'not_required',
 			p_payment_id: undefined,
 			p_claim_token: claimToken,
-			p_phone: p.phone,
+			p_phone: p.phone || undefined,
 			p_parish_id: p.parishId ?? undefined,
 			p_parish_other: p.parishOther ?? undefined,
 			p_referral_source: p.referralSource ?? undefined,

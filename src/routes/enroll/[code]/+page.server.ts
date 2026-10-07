@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { isEnrollmentLinkValid, checkEnrollmentWindow, getEffectivePrice } from '$lib/utils/enrollment-links';
-import { getCourseSettings } from '$lib/types/course-settings';
+import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings';
 import { getStripePublishableKey } from '$lib/server/stripe';
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
@@ -210,6 +210,8 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 			settings: course.settings
 		},
 		pricing,
+		// Hub-leader courses use a short one-person signup
+		hubLeaderMode: isHubLeaderMode(courseSettings),
 		referralSources,
 		existingUser,
 		paymentCancelled,

@@ -15,6 +15,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { getCachedPublicReflections, setCachedPublicReflections } from './public-reflections-cache.js';
 
 import { isCohortArchived, isCohortLive, selectCurrentEnrollment } from '$lib/utils/cohort-status';
+import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings';
 /**
  * Helper type for query results
  */
@@ -3345,14 +3346,24 @@ export const CourseMutations = {
 				: `${siteUrl}/login?email=${encodeURIComponent(enrollment.email)}&send=true`;
 			const loginButton = createEmailButton('Sign In / Set Up My Account', loginUrl, courseColors.accentDark);
 
-			const startDateLine = variables.startDate
+			// Hub-leader courses have no cohort to name and no start date: leaders just
+			// sign in, pick a session and share its guide with their own group.
+			const hubLeader = isHubLeaderMode(getCourseSettings(course.settings));
+
+			const startDateLine = variables.startDate && !hubLeader
 				? `<p>The course begins on <strong>${variables.startDate}</strong>.</p>`
 				: '';
 
-			const bodyContent = `
-				<h2>You've been enrolled in ${variables.courseName}</h2>
+			const introContent = hubLeader
+				? `<h2>Your ${variables.courseName} hub leader login is ready</h2>
 				<p>Hi ${variables.firstName || 'there'},</p>
-				<p>You have been enrolled as a participant in <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}. Click below to sign in or set up your account.</p>
+				<p>You're set up as a hub leader for <strong>${variables.courseName}</strong>. Sign in to choose a session, view its materials and send the guide to your group.</p>`
+				: `<h2>You've been enrolled in ${variables.courseName}</h2>
+				<p>Hi ${variables.firstName || 'there'},</p>
+				<p>You have been enrolled as a participant in <strong>${variables.courseName}</strong>${variables.cohortName ? ` (${variables.cohortName})` : ''}. Click below to sign in or set up your account.</p>`;
+
+			const bodyContent = `
+				${introContent}
 				${startDateLine}
 				${loginButton}
 				<p>If the button doesn't work, copy and paste this link into your browser:</p>
@@ -3365,13 +3376,15 @@ export const CourseMutations = {
 				courseName: course.name,
 				logoUrl: courseLogoUrl,
 				colors: courseColors,
-				previewText: `Set up your account for ${course.name}`
+				previewText: hubLeader ? `Sign in to ${course.name}` : `Set up your account for ${course.name}`
 			});
 
 			const courseFromEmail = await buildCourseFromEmail(course);
 			const result = await sendEmail({
 				to: enrollment.email,
-				subject: `You're enrolled in ${course.name} — set up your account`,
+				subject: hubLeader
+					? `Your ${course.name} hub leader login`
+					: `You're enrolled in ${course.name} — set up your account`,
 				html: compiledHtml,
 				emailType: 'batch_enrollment_invitation',
 				fromEmail: courseFromEmail,

@@ -4,6 +4,8 @@
 	let { data } = $props();
 
 	let accentDark = $derived(data.course?.settings?.theme?.accentDark || '#2563eb');
+	// Hub-leader courses have a single evergreen cohort, so its name means nothing to the leader
+	let hubLeaderMode = $derived(data.course?.settings?.mode === 'hub_leader');
 </script>
 
 <svelte:head>
@@ -47,10 +49,12 @@
 						<span class="text-gray-500">Module</span>
 						<span class="font-medium">{data.module.name}</span>
 					</div>
+					{#if !hubLeaderMode}
 					<div class="flex justify-between">
 						<span class="text-gray-500">Cohort</span>
 						<span class="font-medium">{data.cohort.name}</span>
 					</div>
+					{/if}
 					<div class="flex justify-between">
 						<span class="text-gray-500">Email</span>
 						<span class="font-medium">{data.email}</span>
