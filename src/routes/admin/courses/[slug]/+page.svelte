@@ -902,18 +902,32 @@
 					<div class="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
 						<Users size={40} class="text-white/60" />
 					</div>
-					<h2 class="text-2xl font-bold text-white mb-3">Create Your First Cohort</h2>
-					<p class="text-white/70 mb-8">
-						Cohorts are groups of participants taking your course together. Create one to start enrolling participants.
-					</p>
-					<button
-						onclick={openCohortWizard}
-						class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
-						style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
-					>
-						<Plus size={20} />
-						Create a Cohort
-					</button>
+					{#if data.courseMode === 'hub_leader'}
+						<h2 class="text-2xl font-bold text-white mb-3">Add a module to get started</h2>
+						<p class="text-white/70 mb-8">
+							Each module gets its own group of hub leaders automatically. Once a module exists, share its enrolment link with your leaders.
+						</p>
+						<a
+							href="/admin/courses/{courseSlug}/modules"
+							class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
+							style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
+						>
+							Go to modules
+						</a>
+					{:else}
+						<h2 class="text-2xl font-bold text-white mb-3">Create Your First Cohort</h2>
+						<p class="text-white/70 mb-8">
+							Cohorts are groups of participants taking your course together. Create one to start enrolling participants.
+						</p>
+						<button
+							onclick={openCohortWizard}
+							class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 hover:shadow-lg"
+							style="background-color: var(--course-accent-light); color: var(--course-on-accent-light);"
+						>
+							<Plus size={20} />
+							Create a Cohort
+						</button>
+					{/if}
 				</div>
 			</div>
 		{:else if !selectedCohort}

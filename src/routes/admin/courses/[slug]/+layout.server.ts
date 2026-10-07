@@ -12,8 +12,9 @@ import type { LayoutServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { requireCourseAdmin } from '$lib/server/auth.js';
 import { CourseQueries, CourseAggregates } from '$lib/server/course-data.js';
-import { getCourseSettings } from '$lib/types/course-settings.js';
-import { getCachedCourseData, setCachedCourseData } from '$lib/server/course-cache.js';
+import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings.js';
+import { getCachedCourseData, setCachedCourseData, invalidateCourseCache } from '$lib/server/course-cache.js';
+import { ensureHubLeaderCohorts } from '$lib/server/hub-leader-cohorts.js';
 import { supabaseAdmin } from '$lib/server/supabase.js';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -74,8 +75,30 @@ export const load: LayoutServerLoad = async (event) => {
 		setCachedCourseData(courseSlug, { course, modules, cohorts, archivedCohorts, hubs });
 	}
 
-	// Extract theme, branding, and feature settings
 	const settings = getCourseSettings(course.settings);
+
+	// Hub-leader courses never ask an admin to create cohorts: every module gets one
+	// standing cohort. Checked against the data already loaded, so it costs nothing
+	// unless a module is actually missing one (a new module, or the mode just changed).
+	if (isHubLeaderMode(settings) && modules.some((m) => !cohorts.some((c) => c.module_id === m.id))) {
+		try {
+			const created = await ensureHubLeaderCohorts(course.id, modules.map((m) => m.id));
+			if (created > 0) {
+				invalidateCourseCache(courseSlug);
+				const refreshed = await CourseAggregates.getAdminCourseData(course.id);
+				if (refreshed.data) {
+					modules = refreshed.data.modules;
+					cohorts = refreshed.data.cohorts;
+					archivedCohorts = refreshed.data.archivedCohorts;
+					setCachedCourseData(courseSlug, { course, modules, cohorts, archivedCohorts, hubs });
+				}
+			}
+		} catch (err) {
+			console.error('Failed to ensure hub-leader cohorts:', err);
+		}
+	}
+
+	// Extract theme, branding, and feature settings
 	const courseTheme = settings.theme || {};
 	const courseBranding = settings.branding || {};
 	const courseFeatures = settings.features || {};
@@ -113,6 +136,7 @@ export const load: LayoutServerLoad = async (event) => {
 		archivedCohorts,
 		hubs,
 		course,
+		courseMode: settings.mode ?? 'standard',
 		userId: user.id,
 		hasUnreadChat,
 		courseInfo: {

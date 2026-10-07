@@ -51,6 +51,8 @@
 	const courseTheme = $derived(data.courseTheme || {});
 	const courseBranding = $derived(data.courseBranding || {});
 	const courseFeatures = $derived(data.courseFeatures || {});
+	// Hub-leader courses get their cohorts automatically, so there is nothing to create
+	const isHubLeaderCourse = $derived(data.courseMode === 'hub_leader');
 
 	// Default theme colors - use $derived to properly react to courseTheme changes
 	const accentDark = $derived(courseTheme.accentDark || '#334642');
@@ -203,7 +205,7 @@
 		{courseFeatures}
 		{hasUnreadChat}
 		selectedCohortId={selectedCohortId}
-		onNewCohort={handleNewCohort}
+		onNewCohort={isHubLeaderCourse ? null : handleNewCohort}
 		onSelectCohort={handleSelectCohort}
 		onSettingsClick={handleSettingsClick}
 	/>
@@ -221,7 +223,7 @@
 			{courseFeatures}
 			{hasUnreadChat}
 			selectedCohortId={selectedCohortId}
-			onNewCohort={handleNewCohort}
+			onNewCohort={isHubLeaderCourse ? null : handleNewCohort}
 			onSelectCohort={handleSelectCohort}
 			onArchiveCohort={handleArchiveCohort}
 			onDeleteCohort={handleDeleteCohort}

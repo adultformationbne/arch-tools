@@ -1,6 +1,6 @@
 <script>
 	import { ArrowUp, Mail, UserPlus, ChevronRight, Edit, Send, CheckCircle, Settings, Download } from '$lib/icons';
-	import { getTotalSessions } from '$lib/utils/cohort-status';
+	import { getTotalSessions, isEvergreenCohort } from '$lib/utils/cohort-status';
 
 	let {
 		cohort = null,
@@ -60,7 +60,11 @@
 				<h3 class="text-sm font-bold text-white truncate">{cohort.name}</h3>
 				<p class="text-xs text-white/70 truncate">{cohort.module?.name || 'Module'}</p>
 				<p class="text-xs text-white/50 mt-0.5">
-					{formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
+					{#if isEvergreenCohort(cohort)}
+						Always open
+					{:else}
+						{formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
+					{/if}
 				</p>
 
 				<!-- Session Indicator -->

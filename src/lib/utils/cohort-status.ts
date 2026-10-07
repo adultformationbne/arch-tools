@@ -155,3 +155,15 @@ export function selectCurrentEnrollment<T extends { cohort_id: string }>(
 	}
 	return candidates[0];
 }
+
+/**
+ * Hub-leader courses give every module one standing cohort that never finishes.
+ * cohorts.end_date is NOT NULL, so "no end" is a date far enough away to mean it.
+ * Nothing branches on end_date (it is only shown and put in emails), so this is
+ * safe; use isEvergreenCohort() to display such a cohort as "Always open".
+ */
+export const EVERGREEN_END_DATE = '2099-12-31';
+
+export function isEvergreenCohort(cohort: { end_date?: string | null; endDate?: string | null } | null | undefined): boolean {
+	return (cohort?.end_date ?? cohort?.endDate ?? '') >= EVERGREEN_END_DATE;
+}
