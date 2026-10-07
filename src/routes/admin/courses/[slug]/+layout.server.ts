@@ -147,6 +147,11 @@ export const load: LayoutServerLoad = async (event) => {
 			name: course.name,
 			shortName: course.short_name,
 			description: course.description,
+			// The email preview builds its variables in the browser from this object, so it needs the
+			// same email settings and theme a real send uses (without them it fell back to ACCF's
+			// support address and the default button colour)
+			settings: course.settings,
+			email_branding_config: course.email_branding_config ?? null,
 			logo_url: courseBranding?.logoUrl || null,
 			accent_dark: courseTheme?.accentDark || course.accent_dark || '#334642',
 			accent_light: courseTheme?.accentLight || course.accent_light || '#eae2d9',
