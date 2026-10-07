@@ -28,5 +28,5 @@ export const design: PublicGuideDesign = {
 	},
 	sessionArtwork: flowerForSession,
 	surveyUrl:
-		'https://forms.cloud.microsoft/Pages/DesignPageV2.aspx?origin=NeoPortalPage&subpage=design&id=qPHaAoUgEkOv60RMPA_dqgyGjJnYjoBDrrPbMHVwm-dUM0IyQjA5MkpZSjY2MDAwUE9PWjYzWTBZVS4u'
+		'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=qPHaAoUgEkOv60RMPA_dqrMvU70uNgRMrPZXidbEqEZUODE1OUI4S1AxMTlDOEZPUjRRU0RNN1FaRCQlQCN0PWcu'
 };
