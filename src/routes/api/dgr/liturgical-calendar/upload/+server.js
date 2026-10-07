@@ -310,6 +310,11 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 			if (lectYear !== sundayCycle) continue;
 		}
 
+		// Weekday solemnities/feasts with A/B/C variants (e.g. "MOST SACRED HEART OF JESUS, Year B")
+		if (!isSunday && /,\s*year [abc]$/i.test(lect.liturgical_day.trim()) && lectYear !== sundayCycle) {
+			continue;
+		}
+
 		// For Ordinary Time weekdays, filter by year cycle (1/2)
 		if (!isSunday && liturgical_season === 'Ordinary Time' && ['1', '2'].includes(lectYear)) {
 			if (lectYear !== weekdayYear) continue;
@@ -378,6 +383,11 @@ function findLectionaryMatch(ordoEntry, lectionary, sundayCycle, weekdayCycle, d
 		// For Sundays, filter by year cycle (A/B/C)
 		if (isSunday && lectYear && !['Season', '1', '2', 'Feast'].includes(lectYear)) {
 			if (lectYear !== sundayCycle) continue;
+		}
+
+		// Weekday solemnities/feasts with A/B/C variants (e.g. "MOST SACRED HEART OF JESUS, Year B")
+		if (!isSunday && /,\s*year [abc]$/i.test(lect.liturgical_day.trim()) && lectYear !== sundayCycle) {
+			continue;
 		}
 
 		// For Ordinary Time weekdays, filter by year cycle (1/2)
