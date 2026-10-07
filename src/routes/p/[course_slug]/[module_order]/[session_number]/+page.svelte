@@ -133,6 +133,12 @@
 				<p class="empty">Content coming soon.</p>
 			{/if}
 
+			{#if design.surveyUrl}
+				<div class="survey">
+					<a href={design.surveyUrl} class="survey-btn" target="_blank" rel="noopener noreferrer">Fill In Survey</a>
+				</div>
+			{/if}
+
 			<nav class="session-nav">
 				{#if prevSession}
 					<a href="/p/{course.slug}/{module.orderNumber}/{prevSession.sessionNumber}" class="nav-btn">
@@ -193,6 +199,9 @@
 	.session-divider { width: 48px; height: 2px; background: var(--pp-highlight, #c9a96e); margin-bottom: 2.5rem; }
 	.empty { font-family: var(--pp-font-body, 'Lora', Georgia, serif); color: var(--pp-muted, #a8a29e); font-style: italic; }
 
+	.survey { display: flex; justify-content: center; margin-top: 2.5rem; }
+	.survey-btn { display: inline-block; padding: 0.7rem 1.6rem; background: var(--pp-ink, #1c1917); color: var(--pp-bg, #faf8f5); border-radius: var(--pp-radius, 8px); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.15s; }
+	.survey-btn:hover { opacity: 0.88; }
 	.session-nav { display: flex; justify-content: space-between; gap: 1rem; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid var(--pp-border, #e7e5e4); }
 	.nav-btn { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; padding: 0.75rem 1.25rem; border: 1px solid var(--pp-border, #e7e5e4); border-radius: var(--pp-radius, 8px); background: var(--pp-card, white); text-decoration: none; color: var(--pp-body, #44403c); transition: all 0.15s; }
 	.nav-btn:hover { border-color: var(--pp-accent, #a8926e); }

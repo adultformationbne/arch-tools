@@ -38,6 +38,8 @@ export interface PublicGuideDesign {
 	 * hub-leader home, which draws it in the theme's highlight colour.
 	 */
 	sessionArtwork?: (sessionNumber: number) => GuideArtworkFile | null;
+	/** A feedback survey linked from a "Fill In Survey" button at the bottom of every session page */
+	surveyUrl?: string;
 }
 
 const DESIGNS: Record<string, PublicGuideDesign> = {
@@ -49,6 +51,7 @@ export interface ResolvedGuideDesign {
 	components: NonNullable<PublicGuideDesign['components']>;
 	blocks: Record<string, Component<any>>;
 	sessionArtwork: ((sessionNumber: number) => GuideArtworkFile | null) | null;
+	surveyUrl: string | null;
 }
 
 export function getPublicGuideDesign(courseSlug: string): ResolvedGuideDesign {
@@ -57,6 +60,7 @@ export function getPublicGuideDesign(courseSlug: string): ResolvedGuideDesign {
 		theme: getPublicPageTheme(courseSlug),
 		components: design?.components ?? {},
 		blocks: design?.blocks ?? {},
-		sessionArtwork: design?.sessionArtwork ?? null
+		sessionArtwork: design?.sessionArtwork ?? null,
+		surveyUrl: design?.surveyUrl ?? null
 	};
 }

@@ -16,6 +16,7 @@ import { getCachedPublicReflections, setCachedPublicReflections } from './public
 
 import { isCohortArchived, isCohortLive, selectCurrentEnrollment } from '$lib/utils/cohort-status';
 import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings';
+import type { PausePoint } from '$lib/utils/pause-points';
 /**
  * Helper type for query results
  */
@@ -4106,6 +4107,7 @@ export const CourseMutations = {
 			muxPlaybackId?: string;
 			muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored' | null;
 			availableEarly?: boolean;
+			pausePoints?: PausePoint[];
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -4121,6 +4123,7 @@ export const CourseMutations = {
 		if (updates.muxPlaybackId !== undefined) payload.mux_playback_id = updates.muxPlaybackId;
 		if (updates.muxStatus !== undefined) payload.mux_status = updates.muxStatus;
 		if (updates.availableEarly !== undefined) payload.available_early = updates.availableEarly;
+		if (updates.pausePoints !== undefined) payload.pause_points = updates.pausePoints;
 
 		return supabaseAdmin
 			.from('courses_materials')

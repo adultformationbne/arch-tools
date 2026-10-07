@@ -3,6 +3,7 @@
 	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical, Lock } from '$lib/icons';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
+	import PausePointsEditor from './PausePointsEditor.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
@@ -34,6 +35,7 @@
 		sessionId = null,
 		courseId = null,
 		hubs = [],
+		pausePointsEnabled = false,
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -51,7 +53,8 @@
 	 *   availableEarly: boolean,
 	 *   mux_status: string,
 	 *   mux_playback_id: string,
-	 *   mux_asset_id: string
+	 *   mux_asset_id: string,
+	 *   pausePoints?: { id: string, time: number, prompt: string }[]
 	 * }} EditingMaterial
 	 */
 	let editingMaterial = $state(/** @type {EditingMaterial | null} */ (null));
@@ -250,7 +253,8 @@
 					availableEarly: material.available_early ?? false,
 					mux_status: editing.mux_status,
 					mux_playback_id: editing.mux_playback_id,
-					mux_asset_id: editing.mux_asset_id
+					mux_asset_id: editing.mux_asset_id,
+					pausePoints: editing.pausePoints ?? []
 				};
 
 				const updatedMaterials = materials.map(m =>
@@ -726,7 +730,13 @@
 									</div>
 								{/if}
 							{:else if material.type === 'mux_video'}
-								{#if material.mux_status === 'ready' && material.mux_playback_id}
+								{#if material.mux_status === 'ready' && material.mux_playback_id && pausePointsEnabled}
+									<PausePointsEditor
+										{material}
+										onSaved={(pausePoints) =>
+											onMaterialsChange(materials.map((m) => (m.id === material.id ? { ...m, pausePoints } : m)))}
+									/>
+								{:else if material.mux_status === 'ready' && material.mux_playback_id}
 									<div class="max-w-2xl">
 										<MuxVideoPlayer
 											playbackId={material.mux_playback_id}

@@ -96,7 +96,8 @@
 					mux_upload_id: m.mux_upload_id,
 					mux_asset_id: m.mux_asset_id,
 					mux_playback_id: m.mux_playback_id,
-					mux_status: m.mux_status
+					mux_status: m.mux_status,
+					pausePoints: m.pause_points || []
 				}));
 
 			// Get reflection question for this session
@@ -935,6 +936,7 @@
 						sessionId={currentSession.id}
 						courseId={data.course.id}
 						hubs={data.hubs || []}
+						pausePointsEnabled={data.pausePointsEnabled}
 					/>
 
 					{#if data.courseFeatures?.reflectionsEnabled !== false}

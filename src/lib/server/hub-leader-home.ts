@@ -9,6 +9,7 @@ import { CourseQueries, groupMaterialsBySession, type ResolvedEnrollment } from 
 import { getGuidePdfLinks } from '$lib/server/guide-pdf-links.js';
 import { groupSessionsBySection } from '$lib/public-guides/sections';
 import { platformSiteUrl } from '$lib/config/course-domains';
+import { normalizePausePoints, type PausePoint } from '$lib/utils/pause-points';
 
 export interface HubLeaderMaterial {
 	id: string;
@@ -20,6 +21,8 @@ export interface HubLeaderMaterial {
 	/** mux_video materials */
 	muxPlaybackId: string | null;
 	muxStatus: string | null;
+	/** mux_video materials: moments where the player stops and shows a prompt */
+	pausePoints: PausePoint[];
 }
 
 export interface HubLeaderSession {
@@ -75,7 +78,8 @@ export async function loadHubLeaderHome(
 				description: m.description ?? null,
 				url: m.type === 'mux_video' ? null : (m.content ?? null),
 				muxPlaybackId: m.mux_playback_id ?? null,
-				muxStatus: m.mux_status ?? null
+				muxStatus: m.mux_status ?? null,
+				pausePoints: m.type === 'mux_video' ? normalizePausePoints(m.pause_points) : []
 			})),
 		guideUrl:
 			publicPagesEnabled && s.public_page_content

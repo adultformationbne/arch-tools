@@ -9,6 +9,7 @@
 
 import { error, redirect } from '@sveltejs/kit';
 import { CourseAggregates } from '$lib/server/course-data.js';
+import { getCourseSettings, isHubLeaderMode } from '$lib/types/course-settings.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -22,6 +23,8 @@ export const load: PageServerLoad = async (event) => {
 	const layoutData = await event.parent();
 	const modules = layoutData?.modules || [];
 	const courseInfo = layoutData?.courseInfo || {};
+	// Pause points are a hub-leader feature; the stored mode, not the effective settings, decides.
+	const pausePointsEnabled = isHubLeaderMode(getCourseSettings(layoutData?.course?.settings));
 
 	// Auto-select first module if none selected
 	const moduleParam = event.url.searchParams.get('module');
@@ -33,6 +36,7 @@ export const load: PageServerLoad = async (event) => {
 	if (!moduleParam || modules.length === 0) {
 		return {
 			course: courseInfo,
+			pausePointsEnabled,
 			modules,
 			sessions: [],
 			materials: [],
@@ -51,6 +55,7 @@ export const load: PageServerLoad = async (event) => {
 
 		return {
 			course: courseInfo,
+			pausePointsEnabled,
 			modules,
 			sessions: result.data?.sessions || [],
 			materials: result.data?.materials || [],

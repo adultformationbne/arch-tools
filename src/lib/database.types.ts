@@ -946,6 +946,7 @@ export type Database = {
           mux_playback_id: string | null
           mux_status: string | null
           mux_upload_id: string | null
+          pause_points: Json
           session_id: string
           title: string
           type: string
@@ -963,6 +964,7 @@ export type Database = {
           mux_playback_id?: string | null
           mux_status?: string | null
           mux_upload_id?: string | null
+          pause_points?: Json
           session_id: string
           title: string
           type: string
@@ -980,6 +982,7 @@ export type Database = {
           mux_playback_id?: string | null
           mux_status?: string | null
           mux_upload_id?: string | null
+          pause_points?: Json
           session_id?: string
           title?: string
           type?: string

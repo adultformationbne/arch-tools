@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { CourseQueries, CourseMutations } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
+import { normalizePausePoints } from '$lib/utils/pause-points';
 
 export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) => {
 	try {
@@ -163,7 +164,8 @@ export const PUT: RequestHandler = async (event) => {
 			mux_upload_id,
 			mux_asset_id,
 			mux_playback_id,
-			mux_status
+			mux_status,
+			pause_points
 		} = body;
 
 		if (!id) {
@@ -191,7 +193,8 @@ export const PUT: RequestHandler = async (event) => {
 			muxUploadId: mux_upload_id,
 			muxAssetId: mux_asset_id,
 			muxPlaybackId: mux_playback_id,
-			muxStatus: mux_status
+			muxStatus: mux_status,
+			pausePoints: pause_points === undefined ? undefined : normalizePausePoints(pause_points)
 		});
 
 		if (error) {

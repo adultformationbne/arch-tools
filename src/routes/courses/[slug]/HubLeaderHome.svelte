@@ -122,7 +122,7 @@
 		<section class="screen" aria-label="Session video">
 			<div class="screen-inner">
 				{#if heroState === 'ready'}
-					<MuxVideoPlayer playbackId={hero.muxPlaybackId} title={hero.title} status="ready" accentColor={highlight} />
+					<MuxVideoPlayer playbackId={hero.muxPlaybackId} title={hero.title} status="ready" accentColor={highlight} pausePoints={hero.pausePoints} />
 				{:else}
 					<div class="no-video">
 						{#if art}
@@ -171,7 +171,7 @@
 						<div class="more-video">
 							<h3>{video.title}</h3>
 							{#if video.description}<p>{video.description}</p>{/if}
-							<MuxVideoPlayer playbackId={video.muxPlaybackId} title={video.title} status={video.muxStatus ?? 'processing'} accentColor={highlight} />
+							<MuxVideoPlayer playbackId={video.muxPlaybackId} title={video.title} status={video.muxStatus ?? 'processing'} accentColor={highlight} pausePoints={video.pausePoints} />
 						</div>
 					{/each}
 					{#if files.length > 0}
