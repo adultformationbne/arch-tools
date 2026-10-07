@@ -7,6 +7,8 @@
 		stats = { participantCount: 0, avgAttendance: 0, pendingReflections: 0 },
 		onAdvanceSession = () => {},
 		onEmailAll = () => {},
+		onSendWelcome = null,
+		welcomeCount = 0,
 		onExport = () => {},
 		onAddParticipant = () => {},
 		onCohortSettings = () => {},
@@ -91,6 +93,21 @@
 						<ArrowUp size={14} />
 						<span>Advance Session</span>
 					</button>
+
+					{#if onSendWelcome}
+						<!-- Stands out while someone still has not been sent their welcome email -->
+						<button
+							onclick={() => onSendWelcome()}
+							class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors text-white/90 hover:bg-white/10 text-xs font-semibold"
+							style={welcomeCount > 0 ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : ''}
+						>
+							<Send size={14} />
+							<span>Welcome Email</span>
+							{#if welcomeCount > 0}
+								<span class="ml-auto rounded-full px-1.5 text-[10px] leading-4 font-bold" style="background-color: var(--course-accent-dark); color: var(--course-on-accent-dark);">{welcomeCount}</span>
+							{/if}
+						</button>
+					{/if}
 
 					<button
 						onclick={() => onEmailAll()}

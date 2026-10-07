@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
-	import { AlertTriangle, Home, Loader2, Search, Mail, ArrowRight, Trash2, MapPin, UserMinus, Users, Plus, Settings, UserPlus, Download, X, ChevronDown } from '$lib/icons';
+	import { AlertTriangle, Home, Loader2, Search, Mail, Send, ArrowRight, Trash2, MapPin, UserMinus, Users, Plus, Settings, UserPlus, Download, X, ChevronDown } from '$lib/icons';
 
 	// Get modal opener from layout context
 	const openCohortWizard = getContext('openCohortWizard');
@@ -478,6 +478,33 @@
 		showAdvancementModal = true;
 	}
 
+	// Never sent anything and never seen, so they have not been told how to sign in
+	const notInvited = $derived(participants.filter((p) => getStatusKey(p) === 'not_invited'));
+	// Emailed, but have not signed in yet
+	const emailedNotSignedIn = $derived(participants.filter((p) => getStatusKey(p) === 'invited'));
+
+	// One step to the welcome email: the people and the template are already chosen, so
+	// what is left is reading the preview and pressing send. It goes to whoever has not
+	// been invited yet; if everyone has, it offers a resend to those who have not signed in.
+	function handleSendWelcome() {
+		if (loadingParticipants) {
+			toastWarning('Still loading the participant list. Try again in a moment.');
+			return;
+		}
+		let targets = notInvited;
+		if (targets.length === 0 && emailedNotSignedIn.length > 0) {
+			targets = emailedNotSignedIn;
+			toastWarning(`Everyone has already had a welcome email. Resending to the ${targets.length} who haven't signed in yet.`);
+		}
+		if (targets.length === 0) {
+			toastSuccess('Everyone has already signed in.');
+			return;
+		}
+		emailRecipients = targets;
+		initialTemplateSlug = 'welcome_enrolled';
+		showEmailModal = true;
+	}
+
 	function handleEmailAll() {
 		emailRecipients = participants;
 		initialTemplateSlug = '';
@@ -832,6 +859,8 @@
 			{recentActivity}
 			onAdvanceSession={handleAdvanceSession}
 			onEmailAll={handleEmailAll}
+			onSendWelcome={handleSendWelcome}
+			welcomeCount={notInvited.length}
 			onExport={handleExport}
 			onAddParticipant={handleAddParticipant}
 			onCohortSettings={handleCohortSettings}
@@ -866,6 +895,14 @@
 					>
 						<ArrowRight size={14} />
 						Advance
+					</button>
+					<button
+						onclick={handleSendWelcome}
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+						style={notInvited.length > 0 ? 'background-color: var(--course-accent-light); color: var(--course-on-accent-light);' : 'background-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);'}
+					>
+						<Send size={14} />
+						Welcome{notInvited.length > 0 ? ` (${notInvited.length})` : ''}
 					</button>
 										<button
 						onclick={handleEmailAll}
