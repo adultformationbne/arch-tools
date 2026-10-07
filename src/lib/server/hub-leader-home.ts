@@ -1,12 +1,12 @@
 /**
  * Data for the home page of a hub-leader course (courses.settings.mode = 'hub_leader').
  *
- * A hub leader picks any session and shares its public guide with their own group.
+ * A hub leader picks any session to view its materials, and sends the whole
+ * Companion Guide (all sessions) to their own group.
  * Nothing here depends on the enrolment's role or current_session — every enrolled
  * leader sees every session — and nothing is written back, so there is no progress.
  */
 import { CourseQueries, groupMaterialsBySession, type ResolvedEnrollment } from '$lib/server/course-data.js';
-import { getGuidePdfLinks } from '$lib/server/guide-pdf-links.js';
 import { groupSessionsBySection } from '$lib/public-guides/sections';
 import { platformSiteUrl } from '$lib/config/course-domains';
 import { normalizePausePoints, type PausePoint } from '$lib/utils/pause-points';
@@ -31,9 +31,6 @@ export interface HubLeaderSession {
 	description: string | null;
 	sectionName: string | null;
 	materials: HubLeaderMaterial[];
-	/** Public guide page to send to the group; null when the course has no public pages */
-	guideUrl: string | null;
-	pdfUrl: string | null;
 }
 
 /** Material types the hub-leader home can show. Anything else is left out. */
@@ -55,13 +52,6 @@ export async function loadHubLeaderHome(
 	if (materialsError) throw new Error('Failed to load materials');
 	const materialsBySession = groupMaterialsBySession(materials ?? []);
 
-	const pdfLinks = publicPagesEnabled
-		? await getGuidePdfLinks(
-				{ slug: course.slug, name: course.name },
-				{ orderNumber: module.order_number, name: module.name }
-			)
-		: { guide: null, sessions: {} as Record<number, string> };
-
 	const siteUrl = platformSiteUrl();
 
 	const items: HubLeaderSession[] = sessions.map((s) => ({
@@ -80,20 +70,15 @@ export async function loadHubLeaderHome(
 				muxPlaybackId: m.mux_playback_id ?? null,
 				muxStatus: m.mux_status ?? null,
 				pausePoints: m.type === 'mux_video' ? normalizePausePoints(m.pause_points) : []
-			})),
-		guideUrl:
-			publicPagesEnabled && s.public_page_content
-				? `${siteUrl}/p/${course.slug}/${module.order_number}/${s.session_number}`
-				: null,
-		pdfUrl: pdfLinks.sessions[s.session_number] ?? null
+			}))
 	}));
 
 	return {
 		hubLeader: true as const,
 		courseSlug: course.slug,
 		moduleName: module.name as string,
+		// Leaders always send the whole Companion Guide, never a single session
 		guideUrl: publicPagesEnabled ? `${siteUrl}/p/${course.slug}/${module.order_number}` : null,
-		guidePdfUrl: pdfLinks.guide,
 		groups: groupSessionsBySection(items)
 	};
 }

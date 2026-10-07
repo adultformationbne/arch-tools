@@ -38,9 +38,6 @@
 			sessions[0] ??
 			null
 	);
-	const position = $derived(current ? sessions.indexOf(current) : -1);
-	const previous = $derived(position > 0 ? sessions[position - 1] : null);
-	const next = $derived(position >= 0 && position < sessions.length - 1 ? sessions[position + 1] : null);
 
 	// The first video is the hero; any others, and the links and documents, sit below it.
 	const videos = $derived(current?.materials.filter((m) => m.type === 'mux_video') ?? []);
@@ -139,7 +136,7 @@
 								<p>Ask a course admin to upload it again.</p>
 							{:else}
 								<h2>No video for this session yet</h2>
-								<p>{current.guideUrl ? 'The guide is ready to share with your group.' : 'Check back soon.'}</p>
+								<p>{data.guideUrl ? 'The Companion Guide is ready to share with your group.' : 'Check back soon.'}</p>
 							{/if}
 						</div>
 					</div>
@@ -148,18 +145,15 @@
 		</section>
 
 		<div class="wrap">
-			{#if current.guideUrl}
+			{#if data.guideUrl}
 				<section class="share" aria-labelledby="share-title">
 					<div class="share-text">
-						<h2 id="share-title">Send this session to your group</h2>
-						<p>They can read the guide on any phone. They don't need an account.</p>
+						<h2 id="share-title">Send the Companion Guide to your group</h2>
+						<p>It has every session, and they can read it on any phone. They don't need an account.</p>
 					</div>
 					<div class="actions">
-						<button type="button" class="btn primary" onclick={() => copyLink(current.guideUrl)}>Copy link</button>
-						<a class="btn" href={current.guideUrl} target="_blank" rel="noopener noreferrer">Open the guide</a>
-						{#if current.pdfUrl}
-							<a class="btn" href={current.pdfUrl} target="_blank" rel="noopener noreferrer">Download the PDF</a>
-						{/if}
+						<button type="button" class="btn primary" onclick={() => copyLink(data.guideUrl)}>Copy link</button>
+						<a class="btn" href={data.guideUrl} target="_blank" rel="noopener noreferrer">Go to Companion Guide</a>
 					</div>
 				</section>
 			{/if}
@@ -194,36 +188,9 @@
 				</section>
 			{/if}
 
-			{#if previous || next}
-				<nav class="stepper" aria-label="Neighbouring sessions">
-					{#if previous}
-						<button type="button" class="step" onclick={() => select(previous.sessionNumber)}>
-							<span class="step-label">Previous session</span>
-							<span class="step-title">{previous.title}</span>
-						</button>
-					{:else}
-						<span></span>
-					{/if}
-					{#if next}
-						<button type="button" class="step next" onclick={() => select(next.sessionNumber)}>
-							<span class="step-label">Next session</span>
-							<span class="step-title">{next.title}</span>
-						</button>
-					{/if}
-				</nav>
-			{/if}
-
 			<section class="index" aria-labelledby="index-title">
 				<div class="index-head">
 					<h2 id="index-title">All sessions</h2>
-					{#if data.guideUrl}
-						<div class="whole">
-							<button type="button" class="text-link" onclick={() => copyLink(data.guideUrl)}>Copy link to the whole guide</button>
-							{#if data.guidePdfUrl}
-								<a class="text-link" href={data.guidePdfUrl} target="_blank" rel="noopener noreferrer">Download the whole guide</a>
-							{/if}
-						</div>
-					{/if}
 				</div>
 
 				{#each data.groups as group}
@@ -434,17 +401,6 @@
 	.btn.primary:hover {
 		background: color-mix(in srgb, var(--hl) 85%, var(--pp-ink, #1c1917));
 	}
-	.text-link {
-		font-family: var(--font-ui);
-		font-size: 0.85rem;
-		color: var(--pp-ink, #1c1917);
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
-		background: none;
-		border: 0;
-		padding: 0;
-		cursor: pointer;
-	}
 
 	/* Further materials */
 	.more {
@@ -488,46 +444,6 @@
 		color: var(--pp-muted, #78716c);
 	}
 
-	/* Previous / next */
-	.stepper {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-		padding: 1.5rem 0;
-		border-bottom: 1px dotted var(--rule);
-	}
-	.step {
-		display: block;
-		text-align: left;
-		background: none;
-		border: 0;
-		padding: 0.25rem 0;
-		cursor: pointer;
-		color: var(--pp-ink, #1c1917);
-	}
-	.step.next {
-		text-align: right;
-		grid-column: 2;
-	}
-	.step-label {
-		display: block;
-		font-family: var(--font-ui);
-		font-size: 0.8rem;
-		color: var(--pp-muted, #78716c);
-	}
-	.step-title {
-		display: block;
-		font-family: var(--font-heading);
-		font-size: 1.15rem;
-		text-decoration: underline;
-		text-decoration-color: transparent;
-		text-underline-offset: 0.2em;
-		transition: text-decoration-color 0.15s;
-	}
-	.step:hover .step-title {
-		text-decoration-color: currentColor;
-	}
-
 	/* Index of sessions */
 	.index {
 		padding-top: 2.25rem;
@@ -538,12 +454,9 @@
 		align-items: baseline;
 		justify-content: space-between;
 		gap: 0.75rem 2rem;
-		margin-bottom: 0.5rem;
 	}
-	.whole {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem 1.5rem;
+	.index-head + .group {
+		margin-top: 1rem;
 	}
 	.group {
 		margin-top: 1.75rem;
@@ -649,13 +562,6 @@
 		.no-video-art :global(.artwork) {
 			width: 3.5rem !important;
 		}
-		.stepper {
-			grid-template-columns: 1fr;
-		}
-		.step.next {
-			grid-column: 1;
-			text-align: left;
-		}
 		.files li {
 			flex-direction: column;
 			align-items: flex-start;
@@ -664,8 +570,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.btn,
-		.card,
-		.step-title {
+		.card {
 			transition: none;
 		}
 	}
