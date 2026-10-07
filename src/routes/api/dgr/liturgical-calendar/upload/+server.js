@@ -41,6 +41,17 @@ export async function POST({ request }) {
 		// Process and match entries
 		const results = await processAndMatch(records, year);
 
+		if (results.total === 0) {
+			return json(
+				{
+					success: false,
+					error:
+						'No valid rows found. Dates must be DD/MM/YYYY, YYYY-MM-DD or "1 January".'
+				},
+				{ status: 400 }
+			);
+		}
+
 		return json({
 			success: true,
 			results
@@ -62,6 +73,16 @@ function parseBrisbaneDate(rawDate, year) {
 	// Already in ISO format?
 	if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
 		return cleaned;
+	}
+
+	// Day-first numeric format (Australian): "01/01/2027" or "1/1/2027"
+	const dmy = cleaned.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+	if (dmy) {
+		const [, d, m, y] = dmy;
+		const dayNum = parseInt(d, 10);
+		const monthNum = parseInt(m, 10);
+		if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12) return null;
+		return `${y}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
 	}
 
 	// Parse "1 January" or "25 December" format
