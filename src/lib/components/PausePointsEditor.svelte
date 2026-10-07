@@ -13,8 +13,7 @@
 		formatTimestamp,
 		parseTimestamp,
 		normalizePausePoints,
-		MAX_PAUSE_POINTS,
-		MAX_PROMPT_LENGTH
+		MAX_PAUSE_POINTS
 	} from '$lib/utils/pause-points';
 
 	let { material, onSaved = () => {} } = $props();
@@ -22,7 +21,7 @@
 	let player = $state(/** @type {any} */ (null));
 	let saving = $state(false);
 
-	/** @type {{ id: string, time: number, prompt: string }[]} */
+	/** @type {{ id: string, time: number }[]} */
 	let points = $state(normalizePausePoints(material.pausePoints));
 	let savedJson = $state(JSON.stringify(normalizePausePoints(material.pausePoints)));
 
@@ -41,7 +40,7 @@
 	const addAtCurrentTime = () => {
 		if (atLimit) return;
 		const time = clampTime(player?.currentTime ?? 0);
-		points = [...points, { id: crypto.randomUUID(), time, prompt: '' }];
+		points = [...points, { id: crypto.randomUUID(), time }];
 		sortPoints();
 	};
 
@@ -105,7 +104,7 @@
 			<div>
 				<h4 class="text-sm font-semibold text-gray-700">Pause points</h4>
 				<p class="text-xs text-gray-500">
-					The video stops here and shows your prompt. Leaders can always skip past. With AirPlay or Cast the prompt shows only on the leader's device; screen mirroring shows it to the whole room.
+					The video pauses here and waits for play, so the group can read what's on screen. Leaders can always skip past.
 				</p>
 			</div>
 			<button
@@ -141,7 +140,7 @@
 							/>
 						</button>
 
-						<div class="flex-1 min-w-0 space-y-2">
+						<div class="flex-1 min-w-0">
 							<div class="flex items-center gap-1.5">
 								<input
 									type="text"
@@ -162,14 +161,6 @@
 									<Trash2 size="16" />
 								</button>
 							</div>
-							<textarea
-								bind:value={point.prompt}
-								rows="2"
-								maxlength={MAX_PROMPT_LENGTH}
-								placeholder="What should the group reflect on? (Leave blank for a simple pause.)"
-								aria-label="Prompt"
-								class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-							></textarea>
 						</div>
 					</li>
 				{/each}

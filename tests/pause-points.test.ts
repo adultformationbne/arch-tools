@@ -4,13 +4,12 @@ import {
 	normalizePausePoints,
 	formatTimestamp,
 	parseTimestamp,
-	MAX_PAUSE_POINTS,
-	MAX_PROMPT_LENGTH
+	MAX_PAUSE_POINTS
 } from '$lib/utils/pause-points';
 
 const points = [
-	{ id: 'a', time: 30, prompt: 'First' },
-	{ id: 'b', time: 90, prompt: 'Second' }
+	{ id: 'a', time: 30 },
+	{ id: 'b', time: 90 }
 ];
 
 /** Plays from `from` to `to` in quarter-second steps, like timeupdate / rAF would. */
@@ -66,7 +65,7 @@ describe('PausePointTracker', () => {
 	it('keeps the passed state when the list is edited', () => {
 		const tracker = new PausePointTracker(points);
 		play(tracker, 0, 40);
-		tracker.setPoints([...points, { id: 'c', time: 35, prompt: 'Behind the playhead' }, { id: 'd', time: 50, prompt: 'Ahead' }], 40);
+		tracker.setPoints([...points, { id: 'c', time: 35 }, { id: 'd', time: 50 }], 40);
 		expect(play(tracker, 40, 100)).toEqual(['d', 'b']);
 	});
 });
@@ -74,8 +73,8 @@ describe('PausePointTracker', () => {
 describe('normalizePausePoints', () => {
 	it('sorts by time and rounds to hundredths', () => {
 		const out = normalizePausePoints([
-			{ id: 'b', time: 20.456, prompt: 'x' },
-			{ id: 'a', time: 5, prompt: 'y' }
+			{ id: 'b', time: 20.456 },
+			{ id: 'a', time: 5 }
 		]);
 		expect(out.map((p) => p.id)).toEqual(['a', 'b']);
 		expect(out[1].time).toBe(20.46);
@@ -84,13 +83,13 @@ describe('normalizePausePoints', () => {
 	it('drops invalid, duplicate and out-of-range entries without rejecting the rest', () => {
 		const out = normalizePausePoints(
 			[
-				{ id: 'ok', time: 10, prompt: 'keep' },
-				{ id: 'ok', time: 11, prompt: 'duplicate id' },
-				{ id: '', time: 12, prompt: 'no id' },
-				{ id: 'neg', time: -1, prompt: '' },
-				{ id: 'nan', time: Number.NaN, prompt: '' },
-				{ id: 'str', time: '12', prompt: '' },
-				{ id: 'late', time: 500, prompt: 'past the end' },
+				{ id: 'ok', time: 10 },
+				{ id: 'ok', time: 11 },
+				{ id: '', time: 12 },
+				{ id: 'neg', time: -1 },
+				{ id: 'nan', time: Number.NaN },
+				{ id: 'str', time: '12' },
+				{ id: 'late', time: 500 },
 				null,
 				'junk'
 			],
@@ -99,19 +98,10 @@ describe('normalizePausePoints', () => {
 		expect(out.map((p) => p.id)).toEqual(['ok']);
 	});
 
-	it('trims and caps the prompt, and tolerates a missing one', () => {
-		const out = normalizePausePoints([
-			{ id: 'a', time: 1, prompt: `  ${'x'.repeat(MAX_PROMPT_LENGTH + 50)}  ` },
-			{ id: 'b', time: 2 }
-		]);
-		expect(out[0].prompt).toHaveLength(MAX_PROMPT_LENGTH);
-		expect(out[1].prompt).toBe('');
-	});
-
 	it('returns an empty list for anything that is not an array, and caps the count', () => {
 		expect(normalizePausePoints(null)).toEqual([]);
 		expect(normalizePausePoints({})).toEqual([]);
-		const many = Array.from({ length: MAX_PAUSE_POINTS + 10 }, (_, i) => ({ id: `p${i}`, time: i, prompt: '' }));
+		const many = Array.from({ length: MAX_PAUSE_POINTS + 10 }, (_, i) => ({ id: `p${i}`, time: i }));
 		expect(normalizePausePoints(many)).toHaveLength(MAX_PAUSE_POINTS);
 	});
 });

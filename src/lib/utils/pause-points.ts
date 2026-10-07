@@ -1,6 +1,7 @@
 /**
- * Pause points: moments in a course video where the player stops by itself and
- * shows a short prompt. The viewer presses Continue (or play) to carry on.
+ * Pause points: moments in a course video where the player stops by itself and waits
+ * for the viewer to press play. The video carries the on-screen questions; nothing is
+ * drawn over it.
  * Everything is skippable — scrubbing past a point never blocks the viewer.
  *
  * Only hub-leader courses use these (see course-settings.ts). The points live on
@@ -12,12 +13,9 @@ export interface PausePoint {
 	id: string;
 	/** Seconds into the video */
 	time: number;
-	/** The text shown over the paused video */
-	prompt: string;
 }
 
 export const MAX_PAUSE_POINTS = 50;
-export const MAX_PROMPT_LENGTH = 500;
 
 /**
  * Clean untrusted input (an API body or a jsonb column) into a sorted, valid list.
@@ -31,18 +29,14 @@ export function normalizePausePoints(raw: unknown, duration?: number): PausePoin
 
 	for (const item of raw.slice(0, MAX_PAUSE_POINTS)) {
 		if (!item || typeof item !== 'object') continue;
-		const { id, time, prompt } = item as Record<string, unknown>;
+		const { id, time } = item as Record<string, unknown>;
 
 		if (typeof id !== 'string' || id.length === 0 || id.length > 64 || seen.has(id)) continue;
 		if (typeof time !== 'number' || !Number.isFinite(time) || time < 0) continue;
 		if (duration !== undefined && Number.isFinite(duration) && time > duration) continue;
 
 		seen.add(id);
-		points.push({
-			id,
-			time: Math.round(time * 100) / 100,
-			prompt: typeof prompt === 'string' ? prompt.trim().slice(0, MAX_PROMPT_LENGTH) : ''
-		});
+		points.push({ id, time: Math.round(time * 100) / 100 });
 	}
 
 	return points.sort((a, b) => a.time - b.time);

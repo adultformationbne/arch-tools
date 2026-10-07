@@ -1,5 +1,5 @@
--- Pause points: moments in a video where the player stops and shows a prompt.
--- Shape: [{ "id": text, "time": seconds, "prompt": text }], validated in the API
+-- Pause points: moments in a video where the player stops and waits for play.
+-- Shape: [{ "id": text, "time": seconds }], validated in the API
 -- (see src/lib/utils/pause-points.ts). Only hub-leader courses use them.
 ALTER TABLE public.courses_materials
 	ADD COLUMN IF NOT EXISTS pause_points jsonb NOT NULL DEFAULT '[]'::jsonb;

@@ -21,7 +21,7 @@ export interface HubLeaderMaterial {
 	/** mux_video materials */
 	muxPlaybackId: string | null;
 	muxStatus: string | null;
-	/** mux_video materials: moments where the player stops and shows a prompt */
+	/** mux_video materials: moments where the player stops and waits for play */
 	pausePoints: PausePoint[];
 }
 
