@@ -948,6 +948,7 @@ export type Database = {
           mux_upload_id: string | null
           pause_points: Json
           public_watch_enabled: boolean
+          leader_download_enabled: boolean
           session_id: string
           title: string
           type: string
@@ -967,6 +968,7 @@ export type Database = {
           mux_upload_id?: string | null
           pause_points?: Json
           public_watch_enabled?: boolean
+          leader_download_enabled?: boolean
           session_id: string
           title: string
           type: string
@@ -986,6 +988,7 @@ export type Database = {
           mux_upload_id?: string | null
           pause_points?: Json
           public_watch_enabled?: boolean
+          leader_download_enabled?: boolean
           session_id?: string
           title?: string
           type?: string

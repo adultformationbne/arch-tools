@@ -3,6 +3,7 @@ import { CourseQueries, CourseMutations } from '$lib/server/course-data.js';
 import type { RequestHandler } from './$types';
 import { requireAnyModule } from '$lib/server/auth';
 import { normalizePausePoints } from '$lib/utils/pause-points';
+import { enableLeaderDownload, type DownloadState } from '$lib/server/mux-download';
 
 export const GET: RequestHandler = async ({ url, locals: { safeGetSession } }) => {
 	try {
@@ -166,11 +167,15 @@ export const PUT: RequestHandler = async (event) => {
 			mux_playback_id,
 			mux_status,
 			pause_points,
-			public_watch_enabled
+			public_watch_enabled,
+			leader_download_enabled
 		} = body;
 
 		if (public_watch_enabled !== undefined && typeof public_watch_enabled !== 'boolean') {
 			return json({ error: 'public_watch_enabled must be true or false' }, { status: 400 });
+		}
+		if (leader_download_enabled !== undefined && typeof leader_download_enabled !== 'boolean') {
+			return json({ error: 'leader_download_enabled must be true or false' }, { status: 400 });
 		}
 
 		if (!id) {
@@ -187,6 +192,21 @@ export const PUT: RequestHandler = async (event) => {
 			}
 		}
 
+		// Letting leaders download means Mux has to make the file, so do that first: if Mux
+		// refuses, the setting is left as it was rather than promising a download that cannot work.
+		let download: DownloadState | undefined;
+		if (leader_download_enabled === true) {
+			try {
+				download = await enableLeaderDownload(id);
+			} catch (err) {
+				console.error('Could not prepare a video download:', err);
+				return json(
+					{ error: err instanceof Error ? err.message : 'Could not prepare the download' },
+					{ status: 502 }
+				);
+			}
+		}
+
 		const { data, error } = await CourseMutations.updateMaterial(id, {
 			type,
 			title,
@@ -200,7 +220,8 @@ export const PUT: RequestHandler = async (event) => {
 			muxPlaybackId: mux_playback_id,
 			muxStatus: mux_status,
 			pausePoints: pause_points === undefined ? undefined : normalizePausePoints(pause_points),
-			publicWatchEnabled: public_watch_enabled
+			publicWatchEnabled: public_watch_enabled,
+			leaderDownloadEnabled: leader_download_enabled
 		});
 
 		if (error) {
@@ -216,7 +237,7 @@ export const PUT: RequestHandler = async (event) => {
 			await CourseMutations.setMaterialHubVisibility(id, hub_ids);
 		}
 
-		return json({ material: data });
+		return json({ material: data, download: download?.state });
 
 	} catch (error) {
 		console.error('Error in module materials PUT endpoint:', error);

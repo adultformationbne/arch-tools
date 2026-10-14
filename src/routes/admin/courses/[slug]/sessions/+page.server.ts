@@ -27,6 +27,8 @@ export const load: PageServerLoad = async (event) => {
 	const pausePointsEnabled = isHubLeaderMode(getCourseSettings(layoutData?.course?.settings));
 	// Likewise a video's public watch link, which leaders send to people who need to rewatch a session.
 	const publicWatchEnabled = pausePointsEnabled;
+	// And letting leaders download it (Mux then keeps a stored MP4, so it is opt-in per video).
+	const leaderDownloadEnabled = pausePointsEnabled;
 
 	// Auto-select first module if none selected
 	const moduleParam = event.url.searchParams.get('module');
@@ -40,6 +42,7 @@ export const load: PageServerLoad = async (event) => {
 			course: courseInfo,
 			pausePointsEnabled,
 			publicWatchEnabled,
+			leaderDownloadEnabled,
 			modules,
 			sessions: [],
 			materials: [],
@@ -60,6 +63,7 @@ export const load: PageServerLoad = async (event) => {
 			course: courseInfo,
 			pausePointsEnabled,
 			publicWatchEnabled,
+			leaderDownloadEnabled,
 			modules,
 			sessions: result.data?.sessions || [],
 			materials: result.data?.materials || [],

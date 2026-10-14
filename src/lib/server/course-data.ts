@@ -4109,6 +4109,7 @@ export const CourseMutations = {
 			availableEarly?: boolean;
 			pausePoints?: PausePoint[];
 			publicWatchEnabled?: boolean;
+			leaderDownloadEnabled?: boolean;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -4126,6 +4127,7 @@ export const CourseMutations = {
 		if (updates.availableEarly !== undefined) payload.available_early = updates.availableEarly;
 		if (updates.pausePoints !== undefined) payload.pause_points = updates.pausePoints;
 		if (updates.publicWatchEnabled !== undefined) payload.public_watch_enabled = updates.publicWatchEnabled;
+		if (updates.leaderDownloadEnabled !== undefined) payload.leader_download_enabled = updates.leaderDownloadEnabled;
 
 		return supabaseAdmin
 			.from('courses_materials')

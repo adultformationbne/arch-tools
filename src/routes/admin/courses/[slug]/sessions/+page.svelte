@@ -98,7 +98,8 @@
 					mux_playback_id: m.mux_playback_id,
 					mux_status: m.mux_status,
 					pausePoints: m.pause_points || [],
-					publicWatchEnabled: m.public_watch_enabled || false
+					publicWatchEnabled: m.public_watch_enabled || false,
+					leaderDownloadEnabled: m.leader_download_enabled || false
 				}));
 
 			// Get reflection question for this session
@@ -939,6 +940,7 @@
 						hubs={data.hubs || []}
 						pausePointsEnabled={data.pausePointsEnabled}
 						publicWatchEnabled={data.publicWatchEnabled}
+						leaderDownloadEnabled={data.leaderDownloadEnabled}
 					/>
 
 					{#if data.courseFeatures?.reflectionsEnabled !== false}

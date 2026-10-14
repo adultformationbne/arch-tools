@@ -5,6 +5,7 @@
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import PausePointsEditor from './PausePointsEditor.svelte';
 	import PublicWatchToggle from './PublicWatchToggle.svelte';
+	import VideoDownloadToggle from './VideoDownloadToggle.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
@@ -39,6 +40,8 @@
 		pausePointsEnabled = false,
 		// Hub-leader courses: a Mux video can be shared on its own page
 		publicWatchEnabled = false,
+		// Hub-leader courses: leaders can be allowed to download a Mux video
+		leaderDownloadEnabled = false,
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -58,7 +61,8 @@
 	 *   mux_playback_id: string,
 	 *   mux_asset_id: string,
 	 *   pausePoints?: { id: string, time: number, prompt: string }[],
-	 *   publicWatchEnabled?: boolean
+	 *   publicWatchEnabled?: boolean,
+	 *   leaderDownloadEnabled?: boolean
 	 * }} EditingMaterial
 	 */
 	let editingMaterial = $state(/** @type {EditingMaterial | null} */ (null));
@@ -259,7 +263,8 @@
 					mux_playback_id: editing.mux_playback_id,
 					mux_asset_id: editing.mux_asset_id,
 					pausePoints: editing.pausePoints ?? [],
-					publicWatchEnabled: material.public_watch_enabled ?? editing.publicWatchEnabled ?? false
+					publicWatchEnabled: material.public_watch_enabled ?? editing.publicWatchEnabled ?? false,
+					leaderDownloadEnabled: material.leader_download_enabled ?? editing.leaderDownloadEnabled ?? false
 				};
 
 				const updatedMaterials = materials.map(m =>
@@ -763,6 +768,14 @@
 										{material}
 										onSaved={(on) =>
 											onMaterialsChange(materials.map((m) => (m.id === material.id ? { ...m, publicWatchEnabled: on } : m)))}
+									/>
+								{/if}
+
+								{#if leaderDownloadEnabled && material.mux_status === 'ready' && material.mux_playback_id}
+									<VideoDownloadToggle
+										{material}
+										onSaved={(on) =>
+											onMaterialsChange(materials.map((m) => (m.id === material.id ? { ...m, leaderDownloadEnabled: on } : m)))}
 									/>
 								{/if}
 							{:else if material.type === 'native' && material.content}

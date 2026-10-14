@@ -25,6 +25,8 @@ export interface HubLeaderMaterial {
 	pausePoints: PausePoint[];
 	/** mux_video materials: the page a leader can send so one person can rewatch it; null when switched off */
 	watchUrl: string | null;
+	/** mux_video materials: leader-only endpoint that returns the MP4's address; null unless an admin allowed downloads */
+	downloadUrl: string | null;
 }
 
 export interface HubLeaderSession {
@@ -75,6 +77,10 @@ export async function loadHubLeaderHome(
 				watchUrl:
 					m.type === 'mux_video' && m.public_watch_enabled && m.mux_playback_id
 						? `${siteUrl}/p/watch/${m.id}`
+						: null,
+				downloadUrl:
+					m.type === 'mux_video' && m.leader_download_enabled && m.mux_asset_id
+						? `/api/courses/${course.slug}/video-download/${m.id}`
 						: null
 			}))
 	}));

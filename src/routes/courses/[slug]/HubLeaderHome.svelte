@@ -16,7 +16,7 @@
 	import { getPublicGuideDesign } from '$lib/public-guides';
 	import { publicPageThemeStyle } from '$lib/public-guides/theme';
 	import { readableTextOn } from '$lib/utils/theme-contrast';
-	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
+	import { toastError, toastSuccess, toastWarning } from '$lib/utils/toast-helpers.js';
 
 	let { data } = $props();
 
@@ -76,6 +76,34 @@
 	/** @param {KeyboardEvent} e */
 	function onKeydown(e) {
 		if (e.key === 'Escape') pickerOpen = false;
+	}
+
+	// Which video is being fetched, so a second click cannot start it twice
+	let downloadingId = $state(/** @type {string | null} */ (null));
+
+	/**
+	 * Ask for the video's file address, then let the browser save it. The address only
+	 * comes back to a signed-in leader, and only once Mux has finished making the file.
+	 * @param {{ id: string, downloadUrl: string | null }} video
+	 */
+	async function downloadVideo(video) {
+		if (!video.downloadUrl || downloadingId) return;
+		downloadingId = video.id;
+		try {
+			const response = await fetch(video.downloadUrl);
+			const body = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(body.message || body.error || 'The download is not available right now');
+			if (body.state === 'ready' && body.url) {
+				window.location.assign(body.url);
+				toastSuccess('Your download is starting');
+			} else {
+				toastWarning('This video is still being prepared for download. Please try again in a few minutes.');
+			}
+		} catch (err) {
+			toastError(err instanceof Error ? err.message : 'The download is not available right now');
+		} finally {
+			downloadingId = null;
+		}
 	}
 
 	/** @param {string} url */
@@ -170,9 +198,16 @@
 			<div class="screen-inner">
 				{#if heroState === 'ready'}
 					<MuxVideoPlayer playbackId={hero.muxPlaybackId} title={hero.title} status="ready" accentColor={highlight} pausePoints={hero.pausePoints} />
-					{#if hero.watchUrl}
+					{#if hero.watchUrl || hero.downloadUrl}
 						<div class="video-actions">
-							<button type="button" class="video-copy" onclick={() => copyLink(hero.watchUrl)}>Copy link to this video</button>
+							{#if hero.downloadUrl}
+								<button type="button" class="video-copy" disabled={downloadingId === hero.id} onclick={() => downloadVideo(hero)}>
+									{downloadingId === hero.id ? 'Preparing...' : 'Download video'}
+								</button>
+							{/if}
+							{#if hero.watchUrl}
+								<button type="button" class="video-copy" onclick={() => copyLink(hero.watchUrl)}>Copy link to this video</button>
+							{/if}
 						</div>
 					{/if}
 				{:else}
@@ -221,9 +256,16 @@
 							<h3>{video.title}</h3>
 							{#if video.description}<p>{video.description}</p>{/if}
 							<MuxVideoPlayer playbackId={video.muxPlaybackId} title={video.title} status={video.muxStatus ?? 'processing'} accentColor={highlight} pausePoints={video.pausePoints} />
-							{#if video.watchUrl}
-								<button type="button" class="btn more-copy" onclick={() => copyLink(video.watchUrl)}>Copy link to this video</button>
-							{/if}
+							<div class="more-actions">
+								{#if video.downloadUrl}
+									<button type="button" class="btn" disabled={downloadingId === video.id} onclick={() => downloadVideo(video)}>
+										{downloadingId === video.id ? 'Preparing...' : 'Download video'}
+									</button>
+								{/if}
+								{#if video.watchUrl}
+									<button type="button" class="btn" onclick={() => copyLink(video.watchUrl)}>Copy link to this video</button>
+								{/if}
+							</div>
 						</div>
 					{/each}
 					{#if files.length > 0}
@@ -476,7 +518,9 @@
 	}
 	.video-actions {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: flex-end;
+		gap: 0.5rem;
 		margin-top: 0.75rem;
 	}
 	.video-copy {
@@ -494,8 +538,15 @@
 	.video-copy:hover {
 		background: color-mix(in srgb, var(--pp-card, #fff) 12%, transparent);
 	}
-	.more-copy {
+	.more-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
 		margin-top: 0.75rem;
+	}
+	.video-copy:disabled {
+		opacity: 0.6;
+		cursor: wait;
 	}
 	.no-video {
 		min-height: 17rem;
