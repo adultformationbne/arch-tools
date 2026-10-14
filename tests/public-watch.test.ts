@@ -56,7 +56,7 @@ describe('Public watch page', () => {
 
 		expect(data.video).toEqual({ title: 'Session video', playbackId: PLAYBACK, status: 'ready' });
 		expect(data.session).toMatchObject({ number: 1, title: 'Session 1' });
-		expect(data.course).toEqual({ slug: course.slug, name: 'Watch Test Course' });
+		expect(data.course).toEqual({ slug: course.slug, name: 'Watch Test Course', logoUrl: null });
 		// Nothing that would let a viewer reach another video or session
 		expect(Object.keys(data).sort()).toEqual(['course', 'guideUrl', 'session', 'video']);
 		// Unlisted
@@ -72,6 +72,21 @@ describe('Public watch page', () => {
 			.eq('id', course.id);
 
 		expect((await run(video.id).result).guideUrl).toBe(`/p/${course.slug}/${module.order_number}`);
+	});
+
+	it("shows the course's own logo, unless the admin has switched it off", async () => {
+		const logoUrl = 'https://example.org/logo.png';
+		await supabaseAdmin
+			.from('courses')
+			.update({ settings: { features: { publicPagesEnabled: true }, branding: { logoUrl, showLogo: true } } })
+			.eq('id', course.id);
+		expect((await run(video.id).result).course.logoUrl).toBe(logoUrl);
+
+		await supabaseAdmin
+			.from('courses')
+			.update({ settings: { features: { publicPagesEnabled: true }, branding: { logoUrl, showLogo: false } } })
+			.eq('id', course.id);
+		expect((await run(video.id).result).course.logoUrl).toBeNull();
 	});
 
 	it('turning it off closes the link again', async () => {

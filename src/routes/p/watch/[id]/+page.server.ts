@@ -44,9 +44,11 @@ export const load: PageServerLoad = async ({ params, setHeaders }) => {
 	setHeaders({ 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'private, no-store' });
 
 	const settings = getCourseSettings(course.settings);
+	// The course's own logo, unless the admin has switched it off
+	const logoUrl = settings.branding?.showLogo !== false ? settings.branding?.logoUrl || null : null;
 
 	return {
-		course: { slug: course.slug as string, name: course.name as string },
+		course: { slug: course.slug as string, name: course.name as string, logoUrl },
 		session: {
 			number: session.session_number as number,
 			title: session.title as string,
