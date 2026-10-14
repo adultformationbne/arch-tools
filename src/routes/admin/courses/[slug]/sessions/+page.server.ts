@@ -25,6 +25,8 @@ export const load: PageServerLoad = async (event) => {
 	const courseInfo = layoutData?.courseInfo || {};
 	// Pause points are a hub-leader feature; the stored mode, not the effective settings, decides.
 	const pausePointsEnabled = isHubLeaderMode(getCourseSettings(layoutData?.course?.settings));
+	// Likewise a video's public watch link, which leaders send to people who need to rewatch a session.
+	const publicWatchEnabled = pausePointsEnabled;
 
 	// Auto-select first module if none selected
 	const moduleParam = event.url.searchParams.get('module');
@@ -37,6 +39,7 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			course: courseInfo,
 			pausePointsEnabled,
+			publicWatchEnabled,
 			modules,
 			sessions: [],
 			materials: [],
@@ -56,6 +59,7 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			course: courseInfo,
 			pausePointsEnabled,
+			publicWatchEnabled,
 			modules,
 			sessions: result.data?.sessions || [],
 			materials: result.data?.materials || [],

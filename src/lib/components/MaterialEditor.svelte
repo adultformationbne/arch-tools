@@ -4,6 +4,7 @@
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
 	import PausePointsEditor from './PausePointsEditor.svelte';
+	import PublicWatchToggle from './PublicWatchToggle.svelte';
 	import ConfirmationModal from './ConfirmationModal.svelte';
 	import AddMaterialModal from './AddMaterialModal.svelte';
 	import { toastError, toastSuccess } from '$lib/utils/toast-helpers.js';
@@ -36,6 +37,8 @@
 		courseId = null,
 		hubs = [],
 		pausePointsEnabled = false,
+		// Hub-leader courses: a Mux video can be shared on its own page
+		publicWatchEnabled = false,
 		onSaveStatusChange = () => {}
 	} = $props();
 
@@ -54,7 +57,8 @@
 	 *   mux_status: string,
 	 *   mux_playback_id: string,
 	 *   mux_asset_id: string,
-	 *   pausePoints?: { id: string, time: number, prompt: string }[]
+	 *   pausePoints?: { id: string, time: number, prompt: string }[],
+	 *   publicWatchEnabled?: boolean
 	 * }} EditingMaterial
 	 */
 	let editingMaterial = $state(/** @type {EditingMaterial | null} */ (null));
@@ -254,7 +258,8 @@
 					mux_status: editing.mux_status,
 					mux_playback_id: editing.mux_playback_id,
 					mux_asset_id: editing.mux_asset_id,
-					pausePoints: editing.pausePoints ?? []
+					pausePoints: editing.pausePoints ?? [],
+					publicWatchEnabled: material.public_watch_enabled ?? editing.publicWatchEnabled ?? false
 				};
 
 				const updatedMaterials = materials.map(m =>
@@ -751,6 +756,14 @@
 									</div>
 								{:else if material.mux_status === 'errored'}
 									<div class="text-red-600">Video processing failed</div>
+								{/if}
+
+								{#if publicWatchEnabled && material.mux_status === 'ready' && material.mux_playback_id}
+									<PublicWatchToggle
+										{material}
+										onSaved={(on) =>
+											onMaterialsChange(materials.map((m) => (m.id === material.id ? { ...m, publicWatchEnabled: on } : m)))}
+									/>
 								{/if}
 							{:else if material.type === 'native' && material.content}
 								<div class="content-preview max-w-none">

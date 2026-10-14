@@ -23,6 +23,8 @@ export interface HubLeaderMaterial {
 	muxStatus: string | null;
 	/** mux_video materials: moments where the player stops and waits for play */
 	pausePoints: PausePoint[];
+	/** mux_video materials: the page a leader can send so one person can rewatch it; null when switched off */
+	watchUrl: string | null;
 }
 
 export interface HubLeaderSession {
@@ -69,7 +71,11 @@ export async function loadHubLeaderHome(
 				url: m.type === 'mux_video' ? null : (m.content ?? null),
 				muxPlaybackId: m.mux_playback_id ?? null,
 				muxStatus: m.mux_status ?? null,
-				pausePoints: m.type === 'mux_video' ? normalizePausePoints(m.pause_points) : []
+				pausePoints: m.type === 'mux_video' ? normalizePausePoints(m.pause_points) : [],
+				watchUrl:
+					m.type === 'mux_video' && m.public_watch_enabled && m.mux_playback_id
+						? `${siteUrl}/p/watch/${m.id}`
+						: null
 			}))
 	}));
 

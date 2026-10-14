@@ -4108,6 +4108,7 @@ export const CourseMutations = {
 			muxStatus?: 'uploading' | 'processing' | 'ready' | 'errored' | null;
 			availableEarly?: boolean;
 			pausePoints?: PausePoint[];
+			publicWatchEnabled?: boolean;
 		}
 	) {
 		const payload: any = { updated_at: new Date().toISOString() };
@@ -4124,6 +4125,7 @@ export const CourseMutations = {
 		if (updates.muxStatus !== undefined) payload.mux_status = updates.muxStatus;
 		if (updates.availableEarly !== undefined) payload.available_early = updates.availableEarly;
 		if (updates.pausePoints !== undefined) payload.pause_points = updates.pausePoints;
+		if (updates.publicWatchEnabled !== undefined) payload.public_watch_enabled = updates.publicWatchEnabled;
 
 		return supabaseAdmin
 			.from('courses_materials')

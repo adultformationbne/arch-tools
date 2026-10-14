@@ -170,6 +170,11 @@
 			<div class="screen-inner">
 				{#if heroState === 'ready'}
 					<MuxVideoPlayer playbackId={hero.muxPlaybackId} title={hero.title} status="ready" accentColor={highlight} pausePoints={hero.pausePoints} />
+					{#if hero.watchUrl}
+						<div class="video-actions">
+							<button type="button" class="video-copy" onclick={() => copyLink(hero.watchUrl)}>Copy link to this video</button>
+						</div>
+					{/if}
 				{:else}
 					<div class="no-video">
 						{#if art}
@@ -216,6 +221,9 @@
 							<h3>{video.title}</h3>
 							{#if video.description}<p>{video.description}</p>{/if}
 							<MuxVideoPlayer playbackId={video.muxPlaybackId} title={video.title} status={video.muxStatus ?? 'processing'} accentColor={highlight} pausePoints={video.pausePoints} />
+							{#if video.watchUrl}
+								<button type="button" class="btn more-copy" onclick={() => copyLink(video.watchUrl)}>Copy link to this video</button>
+							{/if}
 						</div>
 					{/each}
 					{#if files.length > 0}
@@ -465,6 +473,29 @@
 	.screen-inner :global(.aspect-video) {
 		border-radius: var(--radius);
 		box-shadow: none;
+	}
+	.video-actions {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 0.75rem;
+	}
+	.video-copy {
+		font-family: var(--font-ui);
+		font-size: 0.85rem;
+		line-height: 1.2;
+		padding: 0.5rem 0.9rem;
+		color: var(--pp-card, #fff);
+		background: transparent;
+		border: 1px solid color-mix(in srgb, var(--pp-card, #fff) 45%, transparent);
+		border-radius: var(--radius);
+		cursor: pointer;
+		transition: background-color 0.15s;
+	}
+	.video-copy:hover {
+		background: color-mix(in srgb, var(--pp-card, #fff) 12%, transparent);
+	}
+	.more-copy {
+		margin-top: 0.75rem;
 	}
 	.no-video {
 		min-height: 17rem;

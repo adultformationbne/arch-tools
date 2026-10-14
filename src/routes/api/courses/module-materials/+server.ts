@@ -165,8 +165,13 @@ export const PUT: RequestHandler = async (event) => {
 			mux_asset_id,
 			mux_playback_id,
 			mux_status,
-			pause_points
+			pause_points,
+			public_watch_enabled
 		} = body;
+
+		if (public_watch_enabled !== undefined && typeof public_watch_enabled !== 'boolean') {
+			return json({ error: 'public_watch_enabled must be true or false' }, { status: 400 });
+		}
 
 		if (!id) {
 			return json({ error: 'Material id is required' }, { status: 400 });
@@ -194,7 +199,8 @@ export const PUT: RequestHandler = async (event) => {
 			muxAssetId: mux_asset_id,
 			muxPlaybackId: mux_playback_id,
 			muxStatus: mux_status,
-			pausePoints: pause_points === undefined ? undefined : normalizePausePoints(pause_points)
+			pausePoints: pause_points === undefined ? undefined : normalizePausePoints(pause_points),
+			publicWatchEnabled: public_watch_enabled
 		});
 
 		if (error) {
