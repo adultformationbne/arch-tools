@@ -28,6 +28,8 @@ export const POST: RequestHandler = async (event) => {
 			cors_origin: PUBLIC_SITE_URL || '*',
 			new_asset_settings: {
 				playback_policy: ['public'],
+				// Free auto-captions; Mux Player shows them by default. Correct them via the material's captions panel.
+				inputs: [{ generated_subtitles: [{ language_code: 'en', name: 'English (generated)' }] }],
 				// Pass session context - material will be created when upload starts
 				passthrough: JSON.stringify({
 					session_id

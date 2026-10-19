@@ -77,6 +77,30 @@
 		};
 	});
 
+	// Captions on by default. Mux Player usually does this itself, but the stream marks no
+	// track as default, so Safari's native player can start with them off. Turn the first
+	// English track on once when it arrives; the viewer can still switch it off.
+	$effect(() => {
+		const tracks = player?.textTracks;
+		if (!tracks) return;
+
+		let done = false;
+		const showCaptions = () => {
+			if (done) return;
+			const list = Array.from(tracks);
+			const captions = list.filter((t) => t.kind === 'subtitles' || t.kind === 'captions');
+			if (captions.length === 0) return;
+			done = true;
+			if (captions.some((t) => t.mode === 'showing')) return;
+			const english = captions.find((t) => t.language?.startsWith('en')) ?? captions[0];
+			english.mode = 'showing';
+		};
+
+		tracks.addEventListener('addtrack', showCaptions);
+		showCaptions();
+		return () => tracks.removeEventListener('addtrack', showCaptions);
+	});
+
 	onMount(async () => {
 		try {
 			await import('@mux/mux-player');

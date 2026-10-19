@@ -3,6 +3,7 @@
 	import { Plus, Edit3, Trash2, Save, X, FileText, Video, Link, BookOpen, Upload, FileSpreadsheet, Presentation, Archive, Image, ChevronDown, ChevronRight, Loader2, GripVertical, Lock } from '$lib/icons';
 	import SimplifiedRichTextEditor from './SimplifiedRichTextEditor.svelte';
 	import MuxVideoPlayer from './MuxVideoPlayer.svelte';
+	import VideoCaptions from './VideoCaptions.svelte';
 	import PausePointsEditor from './PausePointsEditor.svelte';
 	import PublicWatchToggle from './PublicWatchToggle.svelte';
 	import VideoDownloadToggle from './VideoDownloadToggle.svelte';
@@ -761,6 +762,10 @@
 									</div>
 								{:else if material.mux_status === 'errored'}
 									<div class="text-red-600">Video processing failed</div>
+								{/if}
+
+								{#if material.mux_status === 'ready' && material.mux_playback_id}
+									<VideoCaptions {material} />
 								{/if}
 
 								{#if publicWatchEnabled && material.mux_status === 'ready' && material.mux_playback_id}
