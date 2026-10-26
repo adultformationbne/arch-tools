@@ -752,6 +752,7 @@
 										<MuxVideoPlayer
 											playbackId={material.mux_playback_id}
 											title={material.title}
+											track={false}
 											status={material.mux_status}
 										/>
 									</div>

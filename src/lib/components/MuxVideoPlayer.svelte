@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { Loader2, AlertCircle, Video } from '$lib/icons';
 	import { PausePointTracker } from '$lib/utils/pause-points';
+	import { trackVideo } from '$lib/analytics/tracker';
 
 	/**
 	 * pausePoints: [{ id, time }]. When playback reaches one the video pauses and waits
@@ -16,6 +17,9 @@
 	 * nothing is drawn over it. Scrubbing past a point never blocks the viewer.
 	 *
 	 * player (bindable): the <mux-player> element, so an admin editor can read currentTime.
+	 *
+	 * track: record how much of the video is watched (see $lib/analytics/tracker.ts).
+	 * Admin previews and editors switch it off.
 	 */
 	let {
 		playbackId = null,
@@ -23,6 +27,7 @@
 		status = 'ready',
 		accentColor = '#c59a6b',
 		pausePoints = [],
+		track = true,
 		player = $bindable(/** @type {any} */ (null))
 	} = $props();
 
@@ -75,6 +80,13 @@
 			el.removeEventListener('seeked', onSeeked);
 			el.removeEventListener('timeupdate', check);
 		};
+	});
+
+	// Watch analytics: nothing is sent until the viewer presses play
+	$effect(() => {
+		const el = player;
+		if (!el || !track || !playbackId) return;
+		return trackVideo(el, { playbackId });
 	});
 
 	// Captions on by default. Mux Player usually does this itself, but the stream marks no

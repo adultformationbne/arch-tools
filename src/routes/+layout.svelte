@@ -1,7 +1,7 @@
 <script>
 	import '../app.css';
 	import '$lib/styles/tooltip.css';
-	import { invalidate } from '$app/navigation';
+	import { afterNavigate, invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
@@ -10,8 +10,16 @@
 	import AppNavigation from '$lib/components/AppNavigation.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+	import { trackPageView } from '$lib/analytics/tracker';
 
 	injectAnalytics();
+
+	// First-party page views (see $lib/analytics/tracker.ts); runs on the first load too.
+	// Query-only changes (filters, tabs) on the same page are not a new view.
+	afterNavigate(({ from, to }) => {
+		if (from && to && from.url.pathname === to.url.pathname) return;
+		if (to) trackPageView({ url: to.url, routeId: to.route.id, params: to.params ?? {} });
+	});
 
 	export let data;
 

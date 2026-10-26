@@ -114,10 +114,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Marketing domains (see $lib/config/course-domains) only serve their site
 	// folder. Anything app-shaped — login, enrol, courses, admin, api — lives on
-	// the platform host so sessions stay on a single domain.
+	// the platform host so sessions stay on a single domain. The analytics collector is
+	// the exception: the site's own beacons post to it, and a redirect would lose them.
 	const domain = courseDomainForHost(event.url.host);
 	event.locals.courseDomain = domain ? { host: event.url.host, slug: domain.slug } : null;
-	if (domain && isAppPath(event.url.pathname)) {
+	if (domain && isAppPath(event.url.pathname) && event.url.pathname !== '/api/analytics') {
 		throw redirect(307, `${platformSiteUrl()}${event.url.pathname}${event.url.search}`);
 	}
 

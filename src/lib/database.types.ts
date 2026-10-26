@@ -41,6 +41,152 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_page_views: {
+        Row: {
+          country: string | null
+          course_slug: string | null
+          created_at: string
+          device: string | null
+          engaged_seconds: number
+          host: string
+          id: string
+          path: string
+          referrer_host: string | null
+          route_id: string | null
+          session_id: string
+          updated_at: string
+          user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          country?: string | null
+          course_slug?: string | null
+          created_at?: string
+          device?: string | null
+          engaged_seconds?: number
+          host: string
+          id: string
+          path: string
+          referrer_host?: string | null
+          route_id?: string | null
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          country?: string | null
+          course_slug?: string | null
+          created_at?: string
+          device?: string | null
+          engaged_seconds?: number
+          host?: string
+          id?: string
+          path?: string
+          referrer_host?: string | null
+          route_id?: string | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      analytics_video_views: {
+        Row: {
+          completed: boolean
+          country: string | null
+          course_slug: string | null
+          created_at: string
+          device: string | null
+          duration_seconds: number | null
+          host: string
+          id: string
+          material_id: string | null
+          max_position_seconds: number
+          page_view_id: string | null
+          path: string
+          play_seconds: number
+          playback_id: string
+          plays: number
+          route_id: string | null
+          seeks: number
+          session_id: string
+          updated_at: string
+          user_id: string | null
+          visitor_id: string
+          watched_ranges: Json
+          watched_seconds: number
+        }
+        Insert: {
+          completed?: boolean
+          country?: string | null
+          course_slug?: string | null
+          created_at?: string
+          device?: string | null
+          duration_seconds?: number | null
+          host: string
+          id: string
+          material_id?: string | null
+          max_position_seconds?: number
+          page_view_id?: string | null
+          path: string
+          play_seconds?: number
+          playback_id: string
+          plays?: number
+          route_id?: string | null
+          seeks?: number
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
+          visitor_id: string
+          watched_ranges?: Json
+          watched_seconds?: number
+        }
+        Update: {
+          completed?: boolean
+          country?: string | null
+          course_slug?: string | null
+          created_at?: string
+          device?: string | null
+          duration_seconds?: number | null
+          host?: string
+          id?: string
+          material_id?: string | null
+          max_position_seconds?: number
+          page_view_id?: string | null
+          path?: string
+          play_seconds?: number
+          playback_id?: string
+          plays?: number
+          route_id?: string | null
+          seeks?: number
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
+          visitor_id?: string
+          watched_ranges?: Json
+          watched_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_video_views_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "courses_materials"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       auth_otp_tracker: {
         Row: {
           email: string
@@ -2735,6 +2881,7 @@ export type Database = {
     }
     Functions: {
       activate_template_version: { Args: { p_id: string }; Returns: Json }
+      analytics_record_video_view: { Args: { p: Json }; Returns: undefined }
       assign_contributor_to_date: {
         Args: { target_date: string }
         Returns: string
