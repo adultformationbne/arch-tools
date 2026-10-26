@@ -99,6 +99,7 @@
 				<li>Written reflection submissions, and grading/feedback on them</li>
 				<li>Your progress through the course (current session, completion status)</li>
 				<li>Login activity, for account security</li>
+				<li>Usage of the site, including public course pages: which pages are visited, for how long, and how much of each course video is watched. Visitors are identified by an anonymous ID stored in their browser (linked to your account if you are signed in); we do not record IP addresses.</li>
 			</ul>
 		</section>
 
