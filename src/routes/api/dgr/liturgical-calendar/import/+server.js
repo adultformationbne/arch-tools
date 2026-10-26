@@ -1,12 +1,12 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabase.js';
-import { getYearCycles } from '$lib/server/liturgical-rules.js';
+import { cyclesForDate } from '$lib/server/ordo-processor';
 
 /**
  * POST /api/dgr/liturgical-calendar/import
  * Import matched calendar entries into database
  *
- * Uses centralized liturgical-rules module to ensure correct year_cycle
+ * Entries come from the upload preview ($lib/server/ordo-processor); year_cycle is recalculated here
  */
 export async function POST({ request }) {
 	try {
@@ -16,10 +16,20 @@ export async function POST({ request }) {
 			return json({ success: false, error: 'No entries to import' }, { status: 400 });
 		}
 
+		const unmatched = entries.filter((e) => !e.lectionary_id);
+		if (unmatched.length > 0) {
+			return json(
+				{
+					success: false,
+					error: `${unmatched.length} day(s) have no readings (first: ${unmatched[0].calendar_date}). Fix the Ordo file and upload again.`
+				},
+				{ status: 400 }
+			);
+		}
+
 		// Prepare ordo_calendar entries with CORRECTED year_cycle from centralized module
 		const ordoEntries = entries.map(e => {
-			const date = new Date(e.calendar_date);
-			const { sundayCycle, weekdayCycle } = getYearCycles(date);
+			const { sundayCycle } = cyclesForDate(e.calendar_date);
 
 			return {
 				calendar_date: e.calendar_date,

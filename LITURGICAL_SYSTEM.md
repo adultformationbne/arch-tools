@@ -1,6 +1,6 @@
 # Liturgical System - Complete Reference
 
-Last Updated: 2026-03-04
+Last Updated: 2026-10-26
 
 This document covers the complete liturgical calendar, lectionary readings, and DGR (Daily Gospel Reflection) integration.
 
@@ -134,269 +134,77 @@ CREATE TABLE ordo_lectionary_mapping (
 
 ---
 
-## Mapping Algorithm
+## Mapping: the Ordo processor
 
-Located in `scripts/generate_ordo_lectionary_mapping.py`
+**One processor, used everywhere:** `src/lib/server/ordo-processor.ts`. The upload page
+(`/dgr/liturgical-calendar` → `/api/dgr/liturgical-calendar/upload`) and the CLI
+(`scripts/process-ordo.ts`) both call it. Don't add another matcher — change this one and
+`tests/ordo-processor.test.ts`.
 
-### Core Logic
+### How a date gets its readings
 
-```python
-def find_lectionary_match(ordo_entry, lectionary_entries, year_letter, ordo_data):
-    # 1. For MEMORIALS: Use weekday readings (except apostles/evangelists)
-    if ordo_rank in ['memorial', 'optional memorial']:
-        if is_apostle_or_evangelist(ordo_name):
-            # Apostles get proper readings even as memorials
-            return match_by_name_or_date(ordo_name, ordo_date)
-        season, week = infer_season_and_week(ordo_date, ordo_data)
-        return find_weekday_lectionary_entry(weekday, season, week)
+1. **The date decides the season.** Easter (computus), Ash Wednesday, Pentecost, Advent,
+   Epiphany (Sunday 2–8 Jan), Baptism, Holy Family, Trinity, Corpus Christi, Sacred Heart and
+   Christ the King are all *calculated*. So are the season, week, A/B/C cycle (switching at
+   the First Sunday of Advent) and I/II cycle. OT weeks after Pentecost count back from
+   Christ the King (week 34). The Brisbane Ordo numbers Sundays the same way as the
+   lectionary, so no "Brisbane adjustment" is needed.
+2. **The Ordo decides the celebration.** The first dated line for each day is used:
+   - Seasonal names ("Monday of the thirtieth week…", "15 ORDINARY", "2 LENT") take the
+     calculated seasonal readings. The wording is cross-checked against the date, and any
+     disagreement becomes a **warning** in the preview (e.g. the 2027 Ordo's "sixteenth weke"
+     in week 15).
+   - Fixed seasonal days always win: Sundays of Advent/Lent/Easter, Holy Week, the Triduum,
+     the Easter octave, Christmas and its octave, 1 January, Epiphany, Baptism, Ascension,
+     Pentecost, Trinity, Corpus Christi, Sacred Heart and Christ the King.
+   - **Solemnities** (ALL CAPS in the Brisbane Ordo) and the entries in
+     `PROPER_CELEBRATIONS` take their proper readings. A transferred celebration (e.g. Help of
+     Christians moved to 25 May) is found by name.
+   - **Every other saint's day is a memorial and uses the weekday readings.**
+3. Cycle variants are picked automatically: "(Year B)" or ", Year B" entries, and the Year A
+   gospels for St Dominic and St John Vianney.
 
-    # 2. For FEASTS/SOLEMNITIES: Match by name aliases, then date
-    # 3. For SUNDAYS: Match by name
-    # 4. For FERIA: Match by name
-```
+### `PROPER_CELEBRATIONS`
 
-### Name Alias System
+The rule is "take the Ordo's first option to the lectionary". On a memorial that still
+means the **weekday** readings, because that's what the Brisbane Ordo prints (checked
+against its 2026 readings: St Anthony, St Dominic, St John Vianney, Queenship, St Thérèse,
+Presentation of Mary and others all print weekday readings). The exceptions are the
+memorials whose readings the lectionary makes compulsory, and the Ordo prints those with
+their own readings: Timothy & Titus, Barnabas, Martha, Passion of John the Baptist, Our Lady
+of Sorrows, Guardian Angels and Mary, Mother of the Church. The list holds these plus all the
+feasts. `tests/ordo-processor.test.ts` pins the memorial readings to what the 2026 Ordo printed.
 
-Ordo names often differ from Lectionary names. The algorithm uses keyword matching:
+Lectionary rows #946/#947 ("St Dominic / St John Vianney (Year A)") are an old workaround
+that stores 2026 weekday readings under a saint's name. They're no longer used.
 
-```python
-# If Ordo name contains these keywords...     → Match this Lectionary pattern
-('our lady', 'help of christians')            → 'mary help of christians'
-('nativity', 'john', 'baptist')               → 'birth of john the baptist'
-('exaltation', 'cross')                       → 'exaltation of the cross'
-```
+### Australian calendar specifics
 
-This handles Australian-specific feasts and common naming variations.
+- Epiphany, Ascension and Corpus Christi are kept on Sundays.
+- St Mark is on 26 April, because Anzac Day takes 25 April.
+- Australia Day, Anzac Day, St Patrick and St Mary of the Cross have proper Masses.
 
-### Memorial Handling
+## Importing a year
 
-Memorials don't have season/week in the Ordo, so we infer from surrounding dates:
+1. `/dgr/liturgical-calendar` → upload the Ordo CSV (`calendar_date,liturgical_name`; dates
+   can be `DD/MM/YYYY`, `YYYY-MM-DD` or `1 January`) → **Process & Match**.
+2. The preview lists every day that needs checking (Ordo wording that disagrees with the
+   date, unknown saints) plus problems with the file (missing or duplicate dates). The
+   **Show all days** list shows the readings chosen for each day.
+3. **Confirm & Import** is disabled while any day has no readings, and the import endpoint
+   refuses such days too.
 
-```python
-def infer_season_and_week(ordo_date, ordo_data):
-    # Look back up to 7 days for a date with season info
-    # Account for Sunday boundaries (Sunday starts new week)
-    # Return inferred season and week number
-```
-
-### Weekday Pattern Matching
-
-```python
-def find_weekday_lectionary_entry(weekday, season, week):
-    # Build patterns like:
-    # "Friday of the first week of Lent"
-    # "Monday of the thirty-second week"
-    # "Easter Monday" (for Octave)
-
-    # CRITICAL: Filter by season to avoid cross-season matches
-    # (e.g., don't match "Monday Week 2" in Ordinary Time
-    #  when looking for Easter Week 2)
-```
-
----
-
-## Scripts & Workflow
-
-### Generate Mapping (Dry Run)
+To check a file from the terminal, which never writes to the database:
 
 ```bash
-# Generate CSV only - review before pushing
-python scripts/generate_ordo_lectionary_mapping.py
+node --experimental-strip-types scripts/process-ordo.ts "data/source/ordo_template 2027.csv" 2027
 ```
 
-Output: `data/generated/ordo_lectionary_mapping.csv`
+Pending `dgr_schedule` rows read readings live from the mapping. Submitted, approved and
+published rows keep a snapshot in `readings_data`, so fix those separately if a mapping
+changes. Published reflections are also in WordPress, and republishing from the app
+creates a new post.
 
-### Verify Test Dates
-
-```bash
-# Check specific problematic dates
-grep -E "2025-01-17|2025-04-28|2025-11-10" data/generated/ordo_lectionary_mapping.csv
-```
-
-**Expected Results:**
-| Date | Saint | Should Map To |
-|------|-------|---------------|
-| Jan 17 | St Anthony (Memorial) | Friday Week 1 OT |
-| Apr 28 | St Peter Chanel (Memorial) | Monday Easter Week 2 |
-| Nov 10 | St Leo (Memorial) | Monday Week 32 |
-| Mar 17 | St Patrick (Feast) | 17 March St Patrick |
-
-### Push to Production
-
-```bash
-# Import to database
-python scripts/import_lectionary_mapping.py
-```
-
-### Full Workflow
-
-```bash
-# 1. Make algorithm changes to generate_ordo_lectionary_mapping.py
-
-# 2. Generate and verify
-python scripts/generate_ordo_lectionary_mapping.py
-grep "2025-04-28" data/generated/ordo_lectionary_mapping.csv
-
-# 3. When happy, push to production
-python scripts/import_lectionary_mapping.py
-
-# 4. Verify in database
-# SELECT * FROM ordo_lectionary_mapping WHERE calendar_date = '2025-04-28';
-```
-
-### Backfill Seasons for Feasts/Memorials
-
-After importing Ordo data, feasts and memorials may have NULL seasons. Run this to backfill:
-
-```sql
--- Infer season from nearest previous date
-WITH dates_with_season AS (
-  SELECT calendar_date, liturgical_season FROM ordo_calendar WHERE liturgical_season IS NOT NULL
-),
-dates_missing AS (
-  SELECT calendar_date FROM ordo_calendar WHERE liturgical_season IS NULL
-),
-inferred AS (
-  SELECT d.calendar_date,
-    (SELECT s.liturgical_season FROM dates_with_season s
-     WHERE s.calendar_date < d.calendar_date ORDER BY s.calendar_date DESC LIMIT 1) as season
-  FROM dates_missing d
-)
-UPDATE ordo_calendar oc SET liturgical_season = i.season
-FROM inferred i WHERE oc.calendar_date = i.calendar_date AND i.season IS NOT NULL;
-
--- Fix Christmas season boundaries (Dec 25 starts Christmas, not Advent)
-UPDATE ordo_calendar SET liturgical_season = 'Christmas'
-WHERE calendar_date >= '2025-12-25' AND calendar_date <= '2026-01-11';
-```
-
----
-
-## CLI Reference
-
-The mapping script includes CLI commands for checking dates, editing source data, and managing the mapping process.
-
-### Check a Specific Date
-
-```bash
-# Check mapping for a specific date
-python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
-```
-
-Output shows: Ordo entry, matched lectionary entry, readings, and match method.
-
-### List Unmatched Dates
-
-```bash
-# Find all dates with no lectionary match
-python3 scripts/generate_ordo_lectionary_mapping.py --list-unmatched
-```
-
-### List Special Handling
-
-```bash
-# List apostles/evangelists who get proper readings (not weekday)
-python3 scripts/generate_ordo_lectionary_mapping.py --list-apostles
-
-# List name alias mappings (Ordo → Lectionary)
-python3 scripts/generate_ordo_lectionary_mapping.py --list-aliases
-```
-
-### Edit Ordo CSV
-
-Edit `data/generated/ordo_normalized.csv` entries:
-
-```bash
-# Edit liturgical name
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --name "OUR LADY HELP OF CHRISTIANS"
-
-# Edit rank
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --rank Solemnity
-
-# Edit season and week
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-26 --season "Ordinary Time" --week 8
-
-# Combine multiple edits
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-07-22 --rank Feast --name "SAINT MARY MAGDALENE"
-```
-
-**Valid ranks:** `Solemnity`, `Feast`, `Memorial`, `Optional Memorial`, `Feria`
-**Valid seasons:** `Ordinary Time`, `Lent`, `Easter`, `Advent`, `Christmas`
-
-### Edit Lectionary CSV
-
-Edit `data/source/Lectionary.csv` entries (by admin_order ID):
-
-```bash
-# Edit first reading
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --first-reading "Sir 4:11-19"
-
-# Edit psalm
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --psalm "Ps 119:165, 168, 171-172, 174-175"
-
-# Edit gospel
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --gospel "Jn 19:25-27"
-
-# Combine multiple edits
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-lectionary 586 --first-reading "Sir 4:11-19" --psalm "Ps 119" --gospel "Jn 19:25-27"
-```
-
-### Generate and Push Mappings
-
-```bash
-# Generate CSV only (dry run)
-python3 scripts/generate_ordo_lectionary_mapping.py
-
-# Generate and push to database
-python3 scripts/generate_ordo_lectionary_mapping.py --push
-```
-
-### Typical Workflow
-
-```bash
-# 1. Check a date that seems wrong
-python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
-
-# 2. If Ordo data is wrong, fix it
-python3 scripts/generate_ordo_lectionary_mapping.py --edit-ordo 2026-05-25 --rank Solemnity
-
-# 3. Regenerate and verify the fix
-python3 scripts/generate_ordo_lectionary_mapping.py --check-date 2026-05-25
-
-# 4. Check for any remaining unmatched dates
-python3 scripts/generate_ordo_lectionary_mapping.py --list-unmatched
-
-# 5. When satisfied, push to production
-python3 scripts/generate_ordo_lectionary_mapping.py --push
-```
-
-### Apostles & Evangelists
-
-These saints get their **proper readings** even when ranked as Memorial (exception to the memorial rule):
-
-- Barnabas
-- Matthias
-- Mark
-- Luke
-- Timothy
-- Titus
-- Mary Magdalene (elevated to Feast by Pope Francis 2016)
-
-### Name Aliases
-
-The algorithm includes name mappings for Australian feasts and common variations:
-
-| Ordo Name Pattern | Maps To |
-|-------------------|---------|
-| "our lady" + "help of christians" | Mary Help of Christians |
-| "nativity" + "john" + "baptist" | Birth of John the Baptist |
-| "beheading" + "john" + "baptist" | Beheading of John the Baptist |
-| "exaltation" + "cross" | Exaltation of the Cross |
-| "chair" + "peter" | Chair of Peter |
-| "dedication" + "lateran" | Dedication of St John Lateran |
-| "faithful departed" | All Souls |
-
----
 
 ## DGR Integration
 
@@ -468,73 +276,22 @@ POST /api/dgr-admin/schedule
 
 ---
 
-## Ordo CSV Import
-
-### Required Format
-
-Only 2 columns needed:
-
-```csv
-calendar_date,liturgical_name
-2027-01-01,SOLEMNITY OF MARY THE HOLY MOTHER OF GOD
-2027-01-02,Saint Basil and Gregory
-2027-01-03,Sunday before Epiphany
-```
-
-### Auto-Populated Fields
-
-Everything else is matched automatically:
-- liturgical_rank
-- liturgical_season
-- liturgical_week
-- first_reading, psalm, second_reading, gospel_reading
-- year_cycle
-
-### Upload Process
-
-1. Navigate to `/dgr/liturgical-calendar`
-2. Download template CSV
-3. Fill in dates and names from your diocesan Ordo
-4. Upload and click "Process & Match"
-5. Review match statistics
-6. Confirm import
-
-### Name Normalization
-
-The system handles variations:
-- "St." → "Saint"
-- "SS." → "Saints"
-- "TWENTY-FIRST" → "21"
-- "The Most Holy Trinity" → "Trinity Sunday"
-
----
-
 ## File Reference
 
-### Data Files
-
 | File | Purpose |
 |------|---------|
-| `data/source/Lectionary.csv` | Master lectionary (942 entries) |
-| `data/generated/ordo_normalized.csv` | Processed Ordo calendar |
-| `data/generated/ordo_lectionary_mapping.csv` | Generated mappings |
-
-### Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/generate_ordo_lectionary_mapping.py` | Generate mappings from Ordo |
-| `scripts/import_lectionary_mapping.py` | Push mappings to database |
-
-### Key Source Files
-
-| File | Purpose |
-|------|---------|
+| `src/lib/server/ordo-processor.ts` | **The** Ordo → lectionary processor |
+| `tests/ordo-processor.test.ts` | Calendar maths vs `src/lib/data/liturgical-year.csv`, plus 2025–2027 Ordo checks |
+| `scripts/process-ordo.ts` | CLI dry run of an Ordo CSV |
+| `src/routes/api/dgr/liturgical-calendar/upload/+server.js` | Upload preview (no writes) |
+| `src/routes/api/dgr/liturgical-calendar/import/+server.js` | Writes `ordo_calendar` + `ordo_lectionary_mapping` |
+| `src/routes/dgr/liturgical-calendar/+page.svelte` | Calendar admin UI |
 | `src/routes/api/dgr/readings/+server.js` | Readings API |
 | `src/routes/api/dgr-admin/schedule/+server.js` | Schedule management |
-| `src/routes/dgr/liturgical-calendar/+page.svelte` | Calendar admin UI |
+| `data/source/*.csv` | Raw Brisbane Ordo files (2025, 2026, 2027) |
 
 ---
+
 
 ## Troubleshooting
 
@@ -558,15 +315,11 @@ SELECT * FROM lectionary WHERE admin_order = 888;
 -- Verify it's the correct weekday reading
 ```
 
-### Regenerate Mappings
+### Fixing a mapping
 
-If mappings are wrong:
-```bash
-# Fix algorithm in generate_ordo_lectionary_mapping.py
-python scripts/generate_ordo_lectionary_mapping.py
-# Verify fixes
-python scripts/import_lectionary_mapping.py
-```
+Fix the processor (and add a test case), then re-upload that year's Ordo on the calendar
+page. Re-importing upserts by date. A one-off correction can also go straight into
+`ordo_lectionary_mapping` (`match_method = 'manual_fix'`).
 
 ---
 

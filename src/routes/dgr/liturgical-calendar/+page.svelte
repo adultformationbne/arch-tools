@@ -16,7 +16,7 @@
 	/** @type {string | null} */
 	let uploadPreview = $state(null);
 	let uploadYear = $state(2027);
-	/** @type {{ total: number, exact: number, partial: number, unmatched: number, entries: any[] } | null} */
+	/** @type {{ total: number, exact: number, partial: number, unmatched: number, warningCount: number, errorCount: number, fileWarnings: string[], entries: any[] } | null} */
 	let matchingResults = $state(null);
 	/** @type {Record<string, any> | null} */
 	let editingEntry = $state(null);
@@ -315,48 +315,102 @@
 
 				<!-- Matching Results -->
 				{#if matchingResults}
+					{@const flagged = matchingResults.entries.filter((e) => e.error || e.warnings?.length)}
 					<div class="mt-6 rounded-lg border border-gray-300 bg-white p-6">
 						<h3 class="mb-4 text-lg font-bold text-gray-900">Matching Results</h3>
 
-						<div class="mb-4 grid grid-cols-4 gap-4">
+						<div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
 							<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-								<p class="text-sm text-gray-600">Total Entries</p>
+								<p class="text-sm text-gray-600">Days</p>
 								<p class="text-2xl font-bold text-gray-900">{matchingResults.total}</p>
 							</div>
 							<div class="rounded-lg border border-green-200 bg-green-50 p-4">
-								<p class="text-sm text-green-700">Exact Matches</p>
+								<p class="text-sm text-green-700">Matched</p>
 								<p class="text-2xl font-bold text-green-900">{matchingResults.exact}</p>
 							</div>
 							<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-								<p class="text-sm text-yellow-700">Partial Matches</p>
-								<p class="text-2xl font-bold text-yellow-900">{matchingResults.partial}</p>
+								<p class="text-sm text-yellow-700">To check</p>
+								<p class="text-2xl font-bold text-yellow-900">{matchingResults.warningCount}</p>
 							</div>
 							<div class="rounded-lg border border-red-200 bg-red-50 p-4">
-								<p class="text-sm text-red-700">No Match</p>
+								<p class="text-sm text-red-700">No readings</p>
 								<p class="text-2xl font-bold text-red-900">{matchingResults.unmatched}</p>
 							</div>
 						</div>
 
-						{#if matchingResults.unmatched === 0}
+						{#each matchingResults.fileWarnings as warning}
+							<div class="mb-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+								<AlertCircle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+								<p>{warning}</p>
+							</div>
+						{/each}
+
+						{#if matchingResults.unmatched > 0}
+							<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+								<div class="flex items-center gap-2">
+									<AlertCircle class="h-5 w-5 text-red-600" />
+									<p class="font-semibold text-red-900">{matchingResults.unmatched} day(s) have no readings. Fix the Ordo file and upload again.</p>
+								</div>
+							</div>
+						{:else if flagged.length === 0}
 							<div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
 								<div class="flex items-center gap-2">
 									<Check class="h-5 w-5 text-green-600" />
-									<p class="font-semibold text-green-900">Perfect! 100% of entries matched to Lectionary readings.</p>
-								</div>
-							</div>
-						{:else}
-							<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-								<div class="flex items-center gap-2">
-									<AlertCircle class="h-5 w-5 text-amber-600" />
-									<p class="font-semibold text-amber-900">{matchingResults.unmatched} entries could not be matched automatically.</p>
+									<p class="font-semibold text-green-900">Every day matched, and the Ordo agrees with the calculated calendar.</p>
 								</div>
 							</div>
 						{/if}
 
+						{#if flagged.length > 0}
+							<div class="mb-4 overflow-x-auto rounded-lg border border-gray-200">
+								<table class="min-w-full divide-y divide-gray-200 text-sm">
+									<thead class="bg-gray-50">
+										<tr>
+											<th class="px-3 py-2 text-left font-semibold text-gray-700">Date</th>
+											<th class="px-3 py-2 text-left font-semibold text-gray-700">Ordo says</th>
+											<th class="px-3 py-2 text-left font-semibold text-gray-700">Readings used</th>
+											<th class="px-3 py-2 text-left font-semibold text-gray-700">Check</th>
+										</tr>
+									</thead>
+									<tbody class="divide-y divide-gray-100">
+										{#each flagged as entry}
+											<tr class={entry.error ? 'bg-red-50' : ''}>
+												<td class="whitespace-nowrap px-3 py-2 text-gray-900">{formatDate(entry.calendar_date)}</td>
+												<td class="px-3 py-2 text-gray-900">{entry.liturgical_name}</td>
+												<td class="px-3 py-2 text-gray-700">
+													{entry.lectionary_name || '—'}
+													{#if entry.gospel_reading}<span class="block text-xs text-gray-500">{entry.gospel_reading}</span>{/if}
+												</td>
+												<td class="px-3 py-2 text-gray-700">{entry.error || entry.warnings.join(' ')}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/if}
+
+						<details class="mb-4 rounded-lg border border-gray-200">
+							<summary class="cursor-pointer px-4 py-2 text-sm font-semibold text-gray-700">Show all {matchingResults.total} days</summary>
+							<div class="max-h-96 overflow-auto">
+								<table class="min-w-full divide-y divide-gray-200 text-sm">
+									<tbody class="divide-y divide-gray-100">
+										{#each matchingResults.entries as entry}
+											<tr>
+												<td class="whitespace-nowrap px-3 py-1.5 text-gray-900">{formatDate(entry.calendar_date)}</td>
+												<td class="px-3 py-1.5 text-gray-900">{entry.liturgical_name}</td>
+												<td class="px-3 py-1.5 text-gray-600">{entry.lectionary_name || '—'}</td>
+												<td class="whitespace-nowrap px-3 py-1.5 text-gray-600">{entry.gospel_reading || '—'}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						</details>
+
 						<div class="flex gap-3">
 							<button
 								onclick={confirmImport}
-								disabled={loading}
+								disabled={loading || matchingResults.unmatched > 0}
 								class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								<Check class="h-5 w-5" />
