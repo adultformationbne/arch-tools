@@ -185,10 +185,15 @@ export function trackPageView({ url, routeId, params }: PageInfo) {
 // ---- Video ------------------------------------------------------------------
 
 /**
- * Track how much of a video is watched. `el` is a <mux-player> (or any media element).
+ * Track how much of a video is watched. `el` is a <mux-player>, or anything shaped like a
+ * media element (see youtube.ts). `materialId` is the courses_materials row when the
+ * caller knows it; otherwise the server finds it from the Mux playback id.
  * Nothing is recorded until the viewer first presses play. Returns a cleanup function.
  */
-export function trackVideo(el: HTMLMediaElement, { playbackId }: { playbackId: string }): () => void {
+export function trackVideo(
+	el: HTMLMediaElement,
+	{ playbackId, materialId = null }: { playbackId: string; materialId?: string | null }
+): () => void {
 	if (!browser || !el) return () => {};
 
 	const id = uuid();
@@ -208,7 +213,7 @@ export function trackVideo(el: HTMLMediaElement, { playbackId }: { playbackId: s
 		if (key === lastSent) return;
 		lastSent = key;
 		enqueue(
-			{ type: 'video', id, visitorId: visitorId(), sessionId: sessionId(), pageViewId, playbackId, path, routeId, ...snap },
+			{ type: 'video', id, visitorId: visitorId(), sessionId: sessionId(), pageViewId, playbackId, materialId, path, routeId, ...snap },
 			now
 		);
 	};

@@ -109,6 +109,7 @@ export function parseVideo(e: Record<string, unknown>, ctx: RequestContext) {
 		session_id: sessionId,
 		user_id: ctx.userId,
 		page_view_id: uuidOrNull(e.pageViewId),
+		material_id: uuidOrNull(e.materialId),
 		playback_id: playbackId,
 		host: ctx.host,
 		path,
@@ -127,20 +128,22 @@ export function parseVideo(e: Record<string, unknown>, ctx: RequestContext) {
 	};
 }
 
-// Material + course for a Mux playback id. Materials rarely change, so cache per instance.
+// Material + course for a video: by the material id the page sent (YouTube embeds), else
+// by Mux playback id. Materials rarely change, so cache per instance.
 const materialCache = new Map<string, { materialId: string | null; courseSlug: string | null; at: number }>();
 const MATERIAL_TTL_MS = 10 * 60_000;
 
-async function materialFor(playbackId: string) {
-	const hit = materialCache.get(playbackId);
+async function materialFor(playbackId: string, materialId: string | null) {
+	const key = materialId ?? playbackId;
+	const hit = materialCache.get(key);
 	if (hit && Date.now() - hit.at < MATERIAL_TTL_MS) return hit;
 
-	const { data } = await supabaseAdmin
+	const query = supabaseAdmin
 		.from('courses_materials')
 		.select(
 			`id, session:courses_sessions!session_id ( module:courses_modules!module_id ( course:courses!course_id ( slug ) ) )`
-		)
-		.eq('mux_playback_id', playbackId)
+		);
+	const { data } = await (materialId ? query.eq('id', materialId) : query.eq('mux_playback_id', playbackId))
 		.limit(1)
 		.maybeSingle();
 
@@ -148,7 +151,7 @@ async function materialFor(playbackId: string) {
 	const course = one(one(one((data as any)?.session)?.module)?.course) as { slug?: string } | undefined;
 	const entry = { materialId: (data?.id as string) ?? null, courseSlug: course?.slug ?? null, at: Date.now() };
 	if (materialCache.size > 1000) materialCache.clear();
-	materialCache.set(playbackId, entry);
+	materialCache.set(key, entry);
 	return entry;
 }
 
@@ -192,7 +195,7 @@ export async function recordBatch(events: unknown[], ctx: RequestContext) {
 			if (error) console.error('[analytics] page end:', error.message);
 		}),
 		...videos.map(async (row) => {
-			const material = await materialFor(row.playback_id);
+			const material = await materialFor(row.playback_id, row.material_id);
 			const { error } = await supabaseAdmin.rpc('analytics_record_video_view', {
 				p: { ...row, material_id: material.materialId, course_slug: material.courseSlug }
 			});

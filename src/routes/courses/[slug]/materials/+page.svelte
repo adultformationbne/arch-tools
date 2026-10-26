@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { Download, ChevronDown, ChevronRight, FileText, Play, Book, Printer } from '$lib/icons';
 	import MuxVideoPlayer from '$lib/components/MuxVideoPlayer.svelte';
+	import { trackYouTube } from '$lib/analytics/youtube';
 
 	/**
 	 * @typedef {{
@@ -394,16 +395,20 @@
 					{@const videoId = getYouTubeId(selectedMaterial.content)}
 					{#if videoId}
 						<div class="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
-							<iframe
-								width="100%"
-								height="100%"
-								src="https://www.youtube.com/embed/{videoId}?rel=0&modestbranding=1"
-								title={selectedMaterial.title}
-								frameborder="0"
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-								allowfullscreen
-								class="w-full h-full"
-							></iframe>
+							<!-- A fresh iframe per video so watch analytics start a new viewing -->
+							{#key selectedMaterial.id}
+								<iframe
+									width="100%"
+									height="100%"
+									src="https://www.youtube.com/embed/{videoId}?rel=0&modestbranding=1&enablejsapi=1&origin={$page.url.origin}"
+									title={selectedMaterial.title}
+									frameborder="0"
+									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+									allowfullscreen
+									class="w-full h-full"
+									use:trackYouTube={{ videoId, materialId: selectedMaterial.id }}
+								></iframe>
+							{/key}
 						</div>
 					{:else}
 						<div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
