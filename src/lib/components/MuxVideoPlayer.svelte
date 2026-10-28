@@ -113,6 +113,140 @@
 		return () => tracks.removeEventListener('addtrack', showCaptions);
 	});
 
+	// Caption style: yellow text, black outline, no box. Browsers draw native captions in a
+	// black box that page CSS cannot reliably remove (macOS applies its own caption style),
+	// so the native drawing is hidden and the active cues are drawn here instead, inside
+	// mux-video's shadow root so they also show in fullscreen. The CC button still works:
+	// it toggles the track's mode, which is what this follows. iOS's native fullscreen
+	// player draws its own captions, so the native ones are let through there.
+	$effect(() => {
+		const el = player;
+		if (!el) return;
+
+		let stop = () => {};
+		let tries = 0;
+		const attach = () => {
+			const video = el.media?.nativeEl;
+			const root = video?.getRootNode();
+			if (!(root instanceof ShadowRoot)) {
+				if (tries++ < 100) frame = requestAnimationFrame(attach);
+				return;
+			}
+			stop = drawCaptions(el, video, root);
+		};
+		let frame = requestAnimationFrame(attach);
+		return () => {
+			cancelAnimationFrame(frame);
+			stop();
+		};
+	});
+
+	/** @param {any} el @param {HTMLVideoElement} video @param {ShadowRoot} root */
+	function drawCaptions(el, video, root) {
+		const style = document.createElement('style');
+		style.textContent = CAPTION_CSS;
+		const layer = document.createElement('div');
+		layer.className = 'af-captions';
+		layer.setAttribute('aria-hidden', 'true');
+		root.append(style, layer);
+
+		// Scale with the player, like native captions do
+		const resize = new ResizeObserver(() => {
+			layer.style.fontSize = `${Math.min(44, Math.max(14, video.clientWidth * 0.034))}px`;
+		});
+		resize.observe(video);
+
+		// Lift the captions above the control bar while it is showing
+		const controller = findController(el);
+		const syncControls = () => {
+			const active = controller && !controller.hasAttribute('userinactive') || video.paused;
+			layer.classList.toggle('af-lifted', !!active);
+		};
+		const observer = controller ? new MutationObserver(syncControls) : null;
+		if (controller) observer?.observe(controller, { attributes: true, attributeFilter: ['userinactive'] });
+
+		const render = () => {
+			const track = Array.from(video.textTracks).find(
+				(t) => (t.kind === 'subtitles' || t.kind === 'captions') && t.mode === 'showing'
+			);
+			layer.replaceChildren();
+			for (const cue of Array.from(track?.activeCues ?? [])) {
+				const line = document.createElement('span');
+				line.append(/** @type {VTTCue} */ (cue).getCueAsHTML());
+				layer.append(line);
+			}
+			syncControls();
+		};
+
+		/** @type {TextTrack[]} */
+		let watched = [];
+		const watchTracks = () => {
+			watched.forEach((t) => t.removeEventListener('cuechange', render));
+			watched = Array.from(video.textTracks);
+			watched.forEach((t) => t.addEventListener('cuechange', render));
+			render();
+		};
+		const nativeFullscreen = (/** @type {boolean} */ on) => () => (style.disabled = on);
+		const onBegin = nativeFullscreen(true);
+		const onEnd = nativeFullscreen(false);
+
+		video.textTracks.addEventListener('addtrack', watchTracks);
+		video.textTracks.addEventListener('change', render);
+		video.addEventListener('play', syncControls);
+		video.addEventListener('pause', syncControls);
+		video.addEventListener('webkitbeginfullscreen', onBegin);
+		video.addEventListener('webkitendfullscreen', onEnd);
+		watchTracks();
+
+		return () => {
+			watched.forEach((t) => t.removeEventListener('cuechange', render));
+			video.textTracks.removeEventListener('addtrack', watchTracks);
+			video.textTracks.removeEventListener('change', render);
+			video.removeEventListener('play', syncControls);
+			video.removeEventListener('pause', syncControls);
+			video.removeEventListener('webkitbeginfullscreen', onBegin);
+			video.removeEventListener('webkitendfullscreen', onEnd);
+			observer?.disconnect();
+			resize.disconnect();
+			style.remove();
+			layer.remove();
+		};
+	}
+
+	/** media-chrome's controller (it marks the control bar hidden with `userinactive`) */
+	function findController(/** @type {Element} */ el) {
+		/** @param {ShadowRoot | null | undefined} root @returns {Element | null} */
+		const search = (root) => {
+			if (!root) return null;
+			const found = root.querySelector('media-controller');
+			if (found) return found;
+			for (const child of root.querySelectorAll('*')) {
+				const deeper = search(child.shadowRoot);
+				if (deeper) return deeper;
+			}
+			return null;
+		};
+		return search(el.shadowRoot);
+	}
+
+	const CAPTION_CSS = `
+		video::cue { opacity: 0; visibility: hidden; color: transparent; background: transparent; text-shadow: none; }
+		video::-webkit-media-text-track-container { visibility: hidden; }
+		.af-captions {
+			position: absolute; inset: auto 0 6%; z-index: 1;
+			display: flex; flex-direction: column; align-items: center; gap: 0.1em;
+			padding: 0 5%; pointer-events: none; text-align: center;
+			font: 600 16px/1.25 system-ui, -apple-system, 'Segoe UI', sans-serif;
+			color: #ffe600;
+			text-shadow:
+				-0.06em -0.06em 0 #000, 0.06em -0.06em 0 #000, -0.06em 0.06em 0 #000, 0.06em 0.06em 0 #000,
+				0 -0.07em 0 #000, 0 0.07em 0 #000, -0.07em 0 0 #000, 0.07em 0 0 #000, 0 0 0.15em #000;
+			transition: bottom 0.2s ease;
+		}
+		.af-captions.af-lifted { bottom: calc(6% + 44px); }
+		.af-captions span { white-space: pre-line; max-width: 100%; }
+	`;
+
 	onMount(async () => {
 		try {
 			await import('@mux/mux-player');
