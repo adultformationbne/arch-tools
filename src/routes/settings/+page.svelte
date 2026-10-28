@@ -16,6 +16,9 @@
 	import RolesInfoAccordion from '$lib/components/users/RolesInfoAccordion.svelte';
 	import PlatformSettingsSection from '$lib/components/users/PlatformSettingsSection.svelte';
 	import SettingsNavigation from '$lib/components/SettingsNavigation.svelte';
+	import AnalyticsSection from '$lib/components/analytics/AnalyticsSection.svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 
 	let { data } = $props();
 	let users = $derived(data.users);
@@ -28,7 +31,10 @@
 	let loading = $state(false);
 
 	// Navigation state
-	let activeSection = $state('users'); // 'users' or 'platform'
+	// 'users', 'analytics' or 'platform'; ?section= makes a tab linkable
+	const SECTIONS = ['users', 'analytics', 'platform'];
+	const requestedSection = page.url.searchParams.get('section') ?? '';
+	let activeSection = $state(SECTIONS.includes(requestedSection) ? requestedSection : 'users');
 	let activeSubSection = $state('active'); // 'active' or 'pending'
 
 	// Filter state
@@ -37,6 +43,10 @@
 
 	function handleNavigate(section: string) {
 		activeSection = section;
+		const url = new URL(page.url);
+		if (section === 'users') url.searchParams.delete('section');
+		else url.searchParams.set('section', section);
+		replaceState(url, {});
 	}
 
 	// Accordion state
@@ -341,6 +351,11 @@
 						</div>
 					</div>
 				</div>
+			{/if}
+
+			<!-- Analytics Content -->
+			{#if activeSection === 'analytics'}
+				<AnalyticsSection />
 			{/if}
 
 			<!-- Platform Settings Content -->

@@ -1,5 +1,5 @@
 <script>
-	import { Users, Settings } from '$lib/icons';
+	import { Users, Settings, BarChart3 } from '$lib/icons';
 
 	let { activeSection = 'users', onNavigate } = $props();
 
@@ -9,6 +9,11 @@
 			id: 'users',
 			name: 'User Management',
 			icon: Users
+		},
+		{
+			id: 'analytics',
+			name: 'Analytics',
+			icon: BarChart3
 		},
 		{
 			id: 'platform',

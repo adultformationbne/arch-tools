@@ -2881,6 +2881,10 @@ export type Database = {
     }
     Functions: {
       activate_template_version: { Args: { p_id: string }; Returns: Json }
+      analytics_overview: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       analytics_record_video_view: { Args: { p: Json }; Returns: undefined }
       assign_contributor_to_date: {
         Args: { target_date: string }
