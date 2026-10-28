@@ -159,8 +159,13 @@ export async function GET({ url, locals }) {
 
 		const calendar = calendarData.map((cal) => {
 			const date = cal.calendar_date;
-			const scheduleEntry = scheduleMap.get(date) || null;
 			const patternContributor = patternMap.get(date) || null;
+			// An empty row with no contributor (e.g. after an unassign) doesn't block the
+			// pattern - matches get_contributor_assigned_dates(), so admin and contributor agree
+			const rawEntry = scheduleMap.get(date) || null;
+			const isEmptyPlaceholder =
+				rawEntry && !rawEntry.contributor_id && !rawEntry.reflection_content?.trim();
+			const scheduleEntry = isEmptyPlaceholder && patternContributor ? null : rawEntry;
 
 			// Get readings from helper (respects pending vs non-pending status)
 			let readings = null;
@@ -253,7 +258,9 @@ function calculatePatternDates(pattern, startDate, endDate) {
 		const daysOfMonth = getValues(pattern);
 
 		for (const dayOfMonth of daysOfMonth) {
-			const current = new Date(start);
+			// Walk month by month from the 1st: stepping from the start day would stop
+			// before a final partial month and skip months after a 29th-31st start.
+			const current = new Date(Date.UTC(startYear, startMonth - 1, 1));
 
 			while (current <= end) {
 				// Check if this day exists in this month (e.g., 31st doesn't exist in Feb)
@@ -514,11 +521,15 @@ async function createWithStatus({ date, contributorId, status }) {
 		// Check if entry already exists for this date
 		const { data: existing } = await supabaseAdmin
 			.from('dgr_schedule')
-			.select('id')
+			.select('id, contributor_id')
 			.eq('date', date)
 			.maybeSingle();
 
 		if (existing) {
+			// An empty placeholder row is shown as the pattern contributor, so claim it for them
+			if (contributorId && !existing.contributor_id) {
+				await assignContributor({ date, contributorId });
+			}
 			// Update existing entry instead
 			return await updateStatus({ scheduleId: existing.id, status });
 		}
