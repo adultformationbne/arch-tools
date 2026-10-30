@@ -113,7 +113,7 @@
 		return () => tracks.removeEventListener('addtrack', showCaptions);
 	});
 
-	// Caption style: yellow text, black outline, no box. Browsers draw native captions in a
+	// Caption style: white text, soft drop shadow, no box. Browsers draw native captions in a
 	// black box that page CSS cannot reliably remove (macOS applies its own caption style),
 	// so the native drawing is hidden and the active cues are drawn here instead, inside
 	// mux-video's shadow root so they also show in fullscreen. The CC button still works:
@@ -237,10 +237,8 @@
 			display: flex; flex-direction: column; align-items: center; gap: 0.1em;
 			padding: 0 5%; pointer-events: none; text-align: center;
 			font: 600 16px/1.25 system-ui, -apple-system, 'Segoe UI', sans-serif;
-			color: #ffe600;
-			text-shadow:
-				-0.06em -0.06em 0 #000, 0.06em -0.06em 0 #000, -0.06em 0.06em 0 #000, 0.06em 0.06em 0 #000,
-				0 -0.07em 0 #000, 0 0.07em 0 #000, -0.07em 0 0 #000, 0.07em 0 0 #000, 0 0 0.15em #000;
+			color: #fff;
+			text-shadow: 0 0.05em 0.1em rgba(0, 0, 0, 0.9), 0 0 0.3em rgba(0, 0, 0, 0.6), 0 0 0.6em rgba(0, 0, 0, 0.35);
 			transition: bottom 0.2s ease;
 		}
 		.af-captions.af-lifted { bottom: calc(6% + 44px); }
